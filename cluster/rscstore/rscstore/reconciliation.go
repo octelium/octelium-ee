@@ -13,6 +13,7 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/octelium/octelium-ee/pkg/apiutils/uaccessv1"
@@ -654,6 +655,8 @@ func (s *Server) upsertResourceExec(ctx context.Context, e execer, rsc umetav1.R
 		return nil
 	}
 
+	rsc = stripSecretData(rsc)
+
 	rscJSON, err := pbutils.MarshalJSON(rsc, false)
 	if err != nil {
 		return err
@@ -677,4 +680,20 @@ func (s *Server) upsertResourceExec(ctx context.Context, e execer, rsc umetav1.R
 		getResourceInsertArgs(api, version, kind, uid, resourceVersion, string(rscJSON), rscStr)...)
 
 	return err
+}
+
+func stripSecretData(rsc umetav1.ResourceObjectI) umetav1.ResourceObjectI {
+	if !strings.HasSuffix(rsc.GetKind(), "Secret") {
+		return rsc
+	}
+
+	fd := rsc.ProtoReflect().Descriptor().Fields().ByName("data")
+	if fd == nil {
+		return rsc
+	}
+
+	ret := pbutils.Clone(rsc).(umetav1.ResourceObjectI)
+	ret.ProtoReflect().Clear(fd)
+
+	return ret
 }

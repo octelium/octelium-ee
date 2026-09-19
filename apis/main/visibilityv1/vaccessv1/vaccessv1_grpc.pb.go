@@ -28,14 +28,22 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ResourceService_GetPolicySummary_FullMethodName  = "/octelium.api.main.visibility.access.v1.ResourceService/GetPolicySummary"
-	ResourceService_GetCatalogSummary_FullMethodName = "/octelium.api.main.visibility.access.v1.ResourceService/GetCatalogSummary"
-	ResourceService_GetRequestSummary_FullMethodName = "/octelium.api.main.visibility.access.v1.ResourceService/GetRequestSummary"
-	ResourceService_GetReviewSummary_FullMethodName  = "/octelium.api.main.visibility.access.v1.ResourceService/GetReviewSummary"
-	ResourceService_ListPolicy_FullMethodName        = "/octelium.api.main.visibility.access.v1.ResourceService/ListPolicy"
-	ResourceService_ListCatalog_FullMethodName       = "/octelium.api.main.visibility.access.v1.ResourceService/ListCatalog"
-	ResourceService_ListRequest_FullMethodName       = "/octelium.api.main.visibility.access.v1.ResourceService/ListRequest"
-	ResourceService_ListReview_FullMethodName        = "/octelium.api.main.visibility.access.v1.ResourceService/ListReview"
+	ResourceService_GetPolicySummary_FullMethodName              = "/octelium.api.main.visibility.access.v1.ResourceService/GetPolicySummary"
+	ResourceService_GetCatalogSummary_FullMethodName             = "/octelium.api.main.visibility.access.v1.ResourceService/GetCatalogSummary"
+	ResourceService_GetRequestSummary_FullMethodName             = "/octelium.api.main.visibility.access.v1.ResourceService/GetRequestSummary"
+	ResourceService_GetReviewSummary_FullMethodName              = "/octelium.api.main.visibility.access.v1.ResourceService/GetReviewSummary"
+	ResourceService_GetSecretSummary_FullMethodName              = "/octelium.api.main.visibility.access.v1.ResourceService/GetSecretSummary"
+	ResourceService_GetIntegrationSummary_FullMethodName         = "/octelium.api.main.visibility.access.v1.ResourceService/GetIntegrationSummary"
+	ResourceService_GetIntegrationIdentitySummary_FullMethodName = "/octelium.api.main.visibility.access.v1.ResourceService/GetIntegrationIdentitySummary"
+	ResourceService_GetIntegrationBindingSummary_FullMethodName  = "/octelium.api.main.visibility.access.v1.ResourceService/GetIntegrationBindingSummary"
+	ResourceService_ListPolicy_FullMethodName                    = "/octelium.api.main.visibility.access.v1.ResourceService/ListPolicy"
+	ResourceService_ListCatalog_FullMethodName                   = "/octelium.api.main.visibility.access.v1.ResourceService/ListCatalog"
+	ResourceService_ListRequest_FullMethodName                   = "/octelium.api.main.visibility.access.v1.ResourceService/ListRequest"
+	ResourceService_ListReview_FullMethodName                    = "/octelium.api.main.visibility.access.v1.ResourceService/ListReview"
+	ResourceService_ListSecret_FullMethodName                    = "/octelium.api.main.visibility.access.v1.ResourceService/ListSecret"
+	ResourceService_ListIntegration_FullMethodName               = "/octelium.api.main.visibility.access.v1.ResourceService/ListIntegration"
+	ResourceService_ListIntegrationIdentity_FullMethodName       = "/octelium.api.main.visibility.access.v1.ResourceService/ListIntegrationIdentity"
+	ResourceService_ListIntegrationBinding_FullMethodName        = "/octelium.api.main.visibility.access.v1.ResourceService/ListIntegrationBinding"
 )
 
 // ResourceServiceClient is the client API for ResourceService service.
@@ -46,10 +54,18 @@ type ResourceServiceClient interface {
 	GetCatalogSummary(ctx context.Context, in *GetCatalogSummaryRequest, opts ...grpc.CallOption) (*GetCatalogSummaryResponse, error)
 	GetRequestSummary(ctx context.Context, in *GetRequestSummaryRequest, opts ...grpc.CallOption) (*GetRequestSummaryResponse, error)
 	GetReviewSummary(ctx context.Context, in *GetReviewSummaryRequest, opts ...grpc.CallOption) (*GetReviewSummaryResponse, error)
+	GetSecretSummary(ctx context.Context, in *GetSecretSummaryRequest, opts ...grpc.CallOption) (*GetSecretSummaryResponse, error)
+	GetIntegrationSummary(ctx context.Context, in *GetIntegrationSummaryRequest, opts ...grpc.CallOption) (*GetIntegrationSummaryResponse, error)
+	GetIntegrationIdentitySummary(ctx context.Context, in *GetIntegrationIdentitySummaryRequest, opts ...grpc.CallOption) (*GetIntegrationIdentitySummaryResponse, error)
+	GetIntegrationBindingSummary(ctx context.Context, in *GetIntegrationBindingSummaryRequest, opts ...grpc.CallOption) (*GetIntegrationBindingSummaryResponse, error)
 	ListPolicy(ctx context.Context, in *ListPolicyOptions, opts ...grpc.CallOption) (*accessv1.PolicyList, error)
 	ListCatalog(ctx context.Context, in *ListCatalogOptions, opts ...grpc.CallOption) (*accessv1.CatalogList, error)
 	ListRequest(ctx context.Context, in *ListRequestOptions, opts ...grpc.CallOption) (*accessv1.RequestList, error)
 	ListReview(ctx context.Context, in *ListReviewOptions, opts ...grpc.CallOption) (*accessv1.ReviewList, error)
+	ListSecret(ctx context.Context, in *ListSecretOptions, opts ...grpc.CallOption) (*accessv1.SecretList, error)
+	ListIntegration(ctx context.Context, in *ListIntegrationOptions, opts ...grpc.CallOption) (*accessv1.IntegrationList, error)
+	ListIntegrationIdentity(ctx context.Context, in *ListIntegrationIdentityOptions, opts ...grpc.CallOption) (*accessv1.IntegrationIdentityList, error)
+	ListIntegrationBinding(ctx context.Context, in *ListIntegrationBindingOptions, opts ...grpc.CallOption) (*accessv1.IntegrationBindingList, error)
 }
 
 type resourceServiceClient struct {
@@ -100,6 +116,46 @@ func (c *resourceServiceClient) GetReviewSummary(ctx context.Context, in *GetRev
 	return out, nil
 }
 
+func (c *resourceServiceClient) GetSecretSummary(ctx context.Context, in *GetSecretSummaryRequest, opts ...grpc.CallOption) (*GetSecretSummaryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSecretSummaryResponse)
+	err := c.cc.Invoke(ctx, ResourceService_GetSecretSummary_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) GetIntegrationSummary(ctx context.Context, in *GetIntegrationSummaryRequest, opts ...grpc.CallOption) (*GetIntegrationSummaryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetIntegrationSummaryResponse)
+	err := c.cc.Invoke(ctx, ResourceService_GetIntegrationSummary_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) GetIntegrationIdentitySummary(ctx context.Context, in *GetIntegrationIdentitySummaryRequest, opts ...grpc.CallOption) (*GetIntegrationIdentitySummaryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetIntegrationIdentitySummaryResponse)
+	err := c.cc.Invoke(ctx, ResourceService_GetIntegrationIdentitySummary_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) GetIntegrationBindingSummary(ctx context.Context, in *GetIntegrationBindingSummaryRequest, opts ...grpc.CallOption) (*GetIntegrationBindingSummaryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetIntegrationBindingSummaryResponse)
+	err := c.cc.Invoke(ctx, ResourceService_GetIntegrationBindingSummary_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *resourceServiceClient) ListPolicy(ctx context.Context, in *ListPolicyOptions, opts ...grpc.CallOption) (*accessv1.PolicyList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(accessv1.PolicyList)
@@ -140,6 +196,46 @@ func (c *resourceServiceClient) ListReview(ctx context.Context, in *ListReviewOp
 	return out, nil
 }
 
+func (c *resourceServiceClient) ListSecret(ctx context.Context, in *ListSecretOptions, opts ...grpc.CallOption) (*accessv1.SecretList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(accessv1.SecretList)
+	err := c.cc.Invoke(ctx, ResourceService_ListSecret_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) ListIntegration(ctx context.Context, in *ListIntegrationOptions, opts ...grpc.CallOption) (*accessv1.IntegrationList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(accessv1.IntegrationList)
+	err := c.cc.Invoke(ctx, ResourceService_ListIntegration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) ListIntegrationIdentity(ctx context.Context, in *ListIntegrationIdentityOptions, opts ...grpc.CallOption) (*accessv1.IntegrationIdentityList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(accessv1.IntegrationIdentityList)
+	err := c.cc.Invoke(ctx, ResourceService_ListIntegrationIdentity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) ListIntegrationBinding(ctx context.Context, in *ListIntegrationBindingOptions, opts ...grpc.CallOption) (*accessv1.IntegrationBindingList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(accessv1.IntegrationBindingList)
+	err := c.cc.Invoke(ctx, ResourceService_ListIntegrationBinding_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ResourceServiceServer is the server API for ResourceService service.
 // All implementations must embed UnimplementedResourceServiceServer
 // for forward compatibility.
@@ -148,10 +244,18 @@ type ResourceServiceServer interface {
 	GetCatalogSummary(context.Context, *GetCatalogSummaryRequest) (*GetCatalogSummaryResponse, error)
 	GetRequestSummary(context.Context, *GetRequestSummaryRequest) (*GetRequestSummaryResponse, error)
 	GetReviewSummary(context.Context, *GetReviewSummaryRequest) (*GetReviewSummaryResponse, error)
+	GetSecretSummary(context.Context, *GetSecretSummaryRequest) (*GetSecretSummaryResponse, error)
+	GetIntegrationSummary(context.Context, *GetIntegrationSummaryRequest) (*GetIntegrationSummaryResponse, error)
+	GetIntegrationIdentitySummary(context.Context, *GetIntegrationIdentitySummaryRequest) (*GetIntegrationIdentitySummaryResponse, error)
+	GetIntegrationBindingSummary(context.Context, *GetIntegrationBindingSummaryRequest) (*GetIntegrationBindingSummaryResponse, error)
 	ListPolicy(context.Context, *ListPolicyOptions) (*accessv1.PolicyList, error)
 	ListCatalog(context.Context, *ListCatalogOptions) (*accessv1.CatalogList, error)
 	ListRequest(context.Context, *ListRequestOptions) (*accessv1.RequestList, error)
 	ListReview(context.Context, *ListReviewOptions) (*accessv1.ReviewList, error)
+	ListSecret(context.Context, *ListSecretOptions) (*accessv1.SecretList, error)
+	ListIntegration(context.Context, *ListIntegrationOptions) (*accessv1.IntegrationList, error)
+	ListIntegrationIdentity(context.Context, *ListIntegrationIdentityOptions) (*accessv1.IntegrationIdentityList, error)
+	ListIntegrationBinding(context.Context, *ListIntegrationBindingOptions) (*accessv1.IntegrationBindingList, error)
 	mustEmbedUnimplementedResourceServiceServer()
 }
 
@@ -174,6 +278,18 @@ func (UnimplementedResourceServiceServer) GetRequestSummary(context.Context, *Ge
 func (UnimplementedResourceServiceServer) GetReviewSummary(context.Context, *GetReviewSummaryRequest) (*GetReviewSummaryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetReviewSummary not implemented")
 }
+func (UnimplementedResourceServiceServer) GetSecretSummary(context.Context, *GetSecretSummaryRequest) (*GetSecretSummaryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSecretSummary not implemented")
+}
+func (UnimplementedResourceServiceServer) GetIntegrationSummary(context.Context, *GetIntegrationSummaryRequest) (*GetIntegrationSummaryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIntegrationSummary not implemented")
+}
+func (UnimplementedResourceServiceServer) GetIntegrationIdentitySummary(context.Context, *GetIntegrationIdentitySummaryRequest) (*GetIntegrationIdentitySummaryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIntegrationIdentitySummary not implemented")
+}
+func (UnimplementedResourceServiceServer) GetIntegrationBindingSummary(context.Context, *GetIntegrationBindingSummaryRequest) (*GetIntegrationBindingSummaryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIntegrationBindingSummary not implemented")
+}
 func (UnimplementedResourceServiceServer) ListPolicy(context.Context, *ListPolicyOptions) (*accessv1.PolicyList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPolicy not implemented")
 }
@@ -185,6 +301,18 @@ func (UnimplementedResourceServiceServer) ListRequest(context.Context, *ListRequ
 }
 func (UnimplementedResourceServiceServer) ListReview(context.Context, *ListReviewOptions) (*accessv1.ReviewList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListReview not implemented")
+}
+func (UnimplementedResourceServiceServer) ListSecret(context.Context, *ListSecretOptions) (*accessv1.SecretList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListSecret not implemented")
+}
+func (UnimplementedResourceServiceServer) ListIntegration(context.Context, *ListIntegrationOptions) (*accessv1.IntegrationList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListIntegration not implemented")
+}
+func (UnimplementedResourceServiceServer) ListIntegrationIdentity(context.Context, *ListIntegrationIdentityOptions) (*accessv1.IntegrationIdentityList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListIntegrationIdentity not implemented")
+}
+func (UnimplementedResourceServiceServer) ListIntegrationBinding(context.Context, *ListIntegrationBindingOptions) (*accessv1.IntegrationBindingList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListIntegrationBinding not implemented")
 }
 func (UnimplementedResourceServiceServer) mustEmbedUnimplementedResourceServiceServer() {}
 func (UnimplementedResourceServiceServer) testEmbeddedByValue()                         {}
@@ -279,6 +407,78 @@ func _ResourceService_GetReviewSummary_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ResourceService_GetSecretSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSecretSummaryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).GetSecretSummary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_GetSecretSummary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).GetSecretSummary(ctx, req.(*GetSecretSummaryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_GetIntegrationSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIntegrationSummaryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).GetIntegrationSummary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_GetIntegrationSummary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).GetIntegrationSummary(ctx, req.(*GetIntegrationSummaryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_GetIntegrationIdentitySummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIntegrationIdentitySummaryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).GetIntegrationIdentitySummary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_GetIntegrationIdentitySummary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).GetIntegrationIdentitySummary(ctx, req.(*GetIntegrationIdentitySummaryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_GetIntegrationBindingSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIntegrationBindingSummaryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).GetIntegrationBindingSummary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_GetIntegrationBindingSummary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).GetIntegrationBindingSummary(ctx, req.(*GetIntegrationBindingSummaryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ResourceService_ListPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListPolicyOptions)
 	if err := dec(in); err != nil {
@@ -351,6 +551,78 @@ func _ResourceService_ListReview_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ResourceService_ListSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSecretOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).ListSecret(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_ListSecret_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).ListSecret(ctx, req.(*ListSecretOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_ListIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListIntegrationOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).ListIntegration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_ListIntegration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).ListIntegration(ctx, req.(*ListIntegrationOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_ListIntegrationIdentity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListIntegrationIdentityOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).ListIntegrationIdentity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_ListIntegrationIdentity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).ListIntegrationIdentity(ctx, req.(*ListIntegrationIdentityOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_ListIntegrationBinding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListIntegrationBindingOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).ListIntegrationBinding(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_ListIntegrationBinding_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).ListIntegrationBinding(ctx, req.(*ListIntegrationBindingOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ResourceService_ServiceDesc is the grpc.ServiceDesc for ResourceService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -375,6 +647,22 @@ var ResourceService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ResourceService_GetReviewSummary_Handler,
 		},
 		{
+			MethodName: "GetSecretSummary",
+			Handler:    _ResourceService_GetSecretSummary_Handler,
+		},
+		{
+			MethodName: "GetIntegrationSummary",
+			Handler:    _ResourceService_GetIntegrationSummary_Handler,
+		},
+		{
+			MethodName: "GetIntegrationIdentitySummary",
+			Handler:    _ResourceService_GetIntegrationIdentitySummary_Handler,
+		},
+		{
+			MethodName: "GetIntegrationBindingSummary",
+			Handler:    _ResourceService_GetIntegrationBindingSummary_Handler,
+		},
+		{
 			MethodName: "ListPolicy",
 			Handler:    _ResourceService_ListPolicy_Handler,
 		},
@@ -389,6 +677,22 @@ var ResourceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListReview",
 			Handler:    _ResourceService_ListReview_Handler,
+		},
+		{
+			MethodName: "ListSecret",
+			Handler:    _ResourceService_ListSecret_Handler,
+		},
+		{
+			MethodName: "ListIntegration",
+			Handler:    _ResourceService_ListIntegration_Handler,
+		},
+		{
+			MethodName: "ListIntegrationIdentity",
+			Handler:    _ResourceService_ListIntegrationIdentity_Handler,
+		},
+		{
+			MethodName: "ListIntegrationBinding",
+			Handler:    _ResourceService_ListIntegrationBinding_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -10,6 +10,10 @@
 //
 // See the LICENSE file in the repository root for full license text.
 //
+import { IntegrationBindingList } from "../../accessv1/accessv1";
+import { IntegrationIdentityList } from "../../accessv1/accessv1";
+import { IntegrationList } from "../../accessv1/accessv1";
+import { SecretList } from "../../accessv1/accessv1";
 import { ReviewList } from "../../accessv1/accessv1";
 import { RequestList } from "../../accessv1/accessv1";
 import { CatalogList } from "../../accessv1/accessv1";
@@ -24,6 +28,15 @@ import { UnknownFieldHandler } from "@protobuf-ts/runtime";
 import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
+import { Policy_Spec_Rule_Surface_InteractionMode } from "../../accessv1/accessv1";
+import { Policy_Spec_Rule_Surface_Destination_Audience } from "../../accessv1/accessv1";
+import { IntegrationBinding_Status_Purpose } from "../../accessv1/accessv1";
+import { IntegrationBinding_Status_State } from "../../accessv1/accessv1";
+import { IntegrationIdentity_Status_Source } from "../../accessv1/accessv1";
+import { Integration_Status_Capability } from "../../accessv1/accessv1";
+import { Integration_Status_Synchronization_State } from "../../accessv1/accessv1";
+import { Integration_Status_State } from "../../accessv1/accessv1";
+import { Integration_Status_Type } from "../../accessv1/accessv1";
 import { Review_Spec_Decision } from "../../accessv1/accessv1";
 import { Request_Spec_Urgency } from "../../accessv1/accessv1";
 import { Request_Status_State_Status } from "../../accessv1/accessv1";
@@ -62,6 +75,42 @@ export interface GetRequestSummaryRequest {
  * @generated from protobuf message octelium.api.main.visibility.access.v1.GetReviewSummaryRequest
  */
 export interface GetReviewSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.GetSecretSummaryRequest
+ */
+export interface GetSecretSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.GetIntegrationSummaryRequest
+ */
+export interface GetIntegrationSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.GetIntegrationIdentitySummaryRequest
+ */
+export interface GetIntegrationIdentitySummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryRequest
+ */
+export interface GetIntegrationBindingSummaryRequest {
     /**
      * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
      */
@@ -280,6 +329,221 @@ export interface GetReviewSummaryResponse {
     previous?: GetReviewSummaryResponse;
 }
 /**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.GetSecretSummaryResponse
+ */
+export interface GetSecretSummaryResponse {
+    /**
+     * @generated from protobuf field: uint64 totalNumber = 1
+     */
+    totalNumber: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetSecretSummaryResponse previous = 2
+     */
+    previous?: GetSecretSummaryResponse;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.GetIntegrationSummaryResponse
+ */
+export interface GetIntegrationSummaryResponse {
+    /**
+     * @generated from protobuf field: uint64 totalNumber = 1
+     */
+    totalNumber: number;
+    /**
+     * @generated from protobuf field: uint64 totalDisabled = 2
+     */
+    totalDisabled: number;
+    /**
+     * @generated from protobuf field: uint64 totalSlack = 3
+     */
+    totalSlack: number;
+    /**
+     * @generated from protobuf field: uint64 totalJira = 4
+     */
+    totalJira: number;
+    /**
+     * @generated from protobuf field: uint64 totalWebhook = 5
+     */
+    totalWebhook: number;
+    /**
+     * @generated from protobuf field: uint64 totalReady = 6
+     */
+    totalReady: number;
+    /**
+     * @generated from protobuf field: uint64 totalDegraded = 7
+     */
+    totalDegraded: number;
+    /**
+     * @generated from protobuf field: uint64 totalError = 8
+     */
+    totalError: number;
+    /**
+     * @generated from protobuf field: uint64 totalSynchronizing = 9
+     */
+    totalSynchronizing: number;
+    /**
+     * @generated from protobuf field: uint64 totalSynchronizationSuccess = 10
+     */
+    totalSynchronizationSuccess: number;
+    /**
+     * @generated from protobuf field: uint64 totalSynchronizationFailed = 11
+     */
+    totalSynchronizationFailed: number;
+    /**
+     * @generated from protobuf field: uint64 totalNotification = 12
+     */
+    totalNotification: number;
+    /**
+     * @generated from protobuf field: uint64 totalDirectUserDelivery = 13
+     */
+    totalDirectUserDelivery: number;
+    /**
+     * @generated from protobuf field: uint64 totalInteractiveReview = 14
+     */
+    totalInteractiveReview: number;
+    /**
+     * @generated from protobuf field: uint64 totalRequestCreation = 15
+     */
+    totalRequestCreation: number;
+    /**
+     * @generated from protobuf field: uint64 totalIdentityResolution = 16
+     */
+    totalIdentityResolution: number;
+    /**
+     * @generated from protobuf field: uint64 totalPresentationUpdate = 17
+     */
+    totalPresentationUpdate: number;
+    /**
+     * TotalExternalTenant is the number of the distinct provider tenants that
+     * the Integrations are bound to. It is lower than `totalNumber` whenever
+     * several Integrations share the same tenant (e.g. the same Slack app
+     * delivering to a different channel each).
+     *
+     * @generated from protobuf field: uint64 totalExternalTenant = 18
+     */
+    totalExternalTenant: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetIntegrationSummaryResponse previous = 19
+     */
+    previous?: GetIntegrationSummaryResponse;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.GetIntegrationIdentitySummaryResponse
+ */
+export interface GetIntegrationIdentitySummaryResponse {
+    /**
+     * @generated from protobuf field: uint64 totalNumber = 1
+     */
+    totalNumber: number;
+    /**
+     * @generated from protobuf field: uint64 totalEmailDiscovery = 2
+     */
+    totalEmailDiscovery: number;
+    /**
+     * @generated from protobuf field: uint64 totalIntegration = 3
+     */
+    totalIntegration: number;
+    /**
+     * @generated from protobuf field: uint64 totalUser = 4
+     */
+    totalUser: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetIntegrationIdentitySummaryResponse previous = 5
+     */
+    previous?: GetIntegrationIdentitySummaryResponse;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryResponse
+ */
+export interface GetIntegrationBindingSummaryResponse {
+    /**
+     * @generated from protobuf field: uint64 totalNumber = 1
+     */
+    totalNumber: number;
+    /**
+     * @generated from protobuf field: uint64 totalPending = 2
+     */
+    totalPending: number;
+    /**
+     * @generated from protobuf field: uint64 totalReady = 3
+     */
+    totalReady: number;
+    /**
+     * @generated from protobuf field: uint64 totalDegraded = 4
+     */
+    totalDegraded: number;
+    /**
+     * @generated from protobuf field: uint64 totalClosed = 5
+     */
+    totalClosed: number;
+    /**
+     * @generated from protobuf field: uint64 totalReviewSurface = 6
+     */
+    totalReviewSurface: number;
+    /**
+     * @generated from protobuf field: uint64 totalNotification = 7
+     */
+    totalNotification: number;
+    /**
+     * @generated from protobuf field: uint64 totalShared = 8
+     */
+    totalShared: number;
+    /**
+     * @generated from protobuf field: uint64 totalReviewers = 9
+     */
+    totalReviewers: number;
+    /**
+     * @generated from protobuf field: uint64 totalRequester = 10
+     */
+    totalRequester: number;
+    /**
+     * @generated from protobuf field: uint64 totalSubject = 11
+     */
+    totalSubject: number;
+    /**
+     * @generated from protobuf field: uint64 totalInteractive = 12
+     */
+    totalInteractive: number;
+    /**
+     * TotalOutOfDate is the number of the IntegrationBindings whose external
+     * object does not reflect the presentation that it has to reflect yet.
+     *
+     * @generated from protobuf field: uint64 totalOutOfDate = 13
+     */
+    totalOutOfDate: number;
+    /**
+     * TotalFailing is the number of the IntegrationBindings whose last delivery
+     * failed.
+     *
+     * @generated from protobuf field: uint64 totalFailing = 14
+     */
+    totalFailing: number;
+    /**
+     * @generated from protobuf field: uint64 totalIntegration = 15
+     */
+    totalIntegration: number;
+    /**
+     * @generated from protobuf field: uint64 totalRequest = 16
+     */
+    totalRequest: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryResponse previous = 17
+     */
+    previous?: GetIntegrationBindingSummaryResponse;
+}
+/**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.ListPolicyOptions
  */
 export interface ListPolicyOptions {
@@ -415,6 +679,124 @@ export interface ListReviewOptions {
      * @generated from protobuf field: bool isDecided = 5
      */
     isDecided: boolean;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.ListSecretOptions
+ */
+export interface ListSecretOptions {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonListOptions common = 1
+     */
+    common?: CommonListOptions;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.ListIntegrationOptions
+ */
+export interface ListIntegrationOptions {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonListOptions common = 1
+     */
+    common?: CommonListOptions;
+    /**
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Status.Type type = 2
+     */
+    type: Integration_Status_Type;
+    /**
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Status.State state = 3
+     */
+    state: Integration_Status_State;
+    /**
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Status.Synchronization.State synchronizationState = 4
+     */
+    synchronizationState: Integration_Status_Synchronization_State;
+    /**
+     * Capability only lists the Integrations that support it.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Status.Capability capability = 5
+     */
+    capability: Integration_Status_Capability;
+    /**
+     * @generated from protobuf field: bool isDisabled = 6
+     */
+    isDisabled: boolean;
+    /**
+     * ExternalTenantID only lists the Integrations that are bound to a specific
+     * provider tenant.
+     *
+     * @generated from protobuf field: string externalTenantID = 7
+     */
+    externalTenantID: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.ListIntegrationIdentityOptions
+ */
+export interface ListIntegrationIdentityOptions {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonListOptions common = 1
+     */
+    common?: CommonListOptions;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 2
+     */
+    integrationRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 3
+     */
+    userRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.access.v1.IntegrationIdentity.Status.Source source = 4
+     */
+    source: IntegrationIdentity_Status_Source;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.ListIntegrationBindingOptions
+ */
+export interface ListIntegrationBindingOptions {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonListOptions common = 1
+     */
+    common?: CommonListOptions;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 2
+     */
+    integrationRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 3
+     */
+    requestRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 4
+     */
+    userRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.access.v1.IntegrationBinding.Status.State state = 5
+     */
+    state: IntegrationBinding_Status_State;
+    /**
+     * @generated from protobuf field: octelium.api.main.access.v1.IntegrationBinding.Status.Purpose purpose = 6
+     */
+    purpose: IntegrationBinding_Status_Purpose;
+    /**
+     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Audience audience = 7
+     */
+    audience: Policy_Spec_Rule_Surface_Destination_Audience;
+    /**
+     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Surface.InteractionMode interactionMode = 8
+     */
+    interactionMode: Policy_Spec_Rule_Surface_InteractionMode;
+    /**
+     * IsOutOfDate only lists the IntegrationBindings whose external object does
+     * not reflect the presentation that it has to reflect yet.
+     *
+     * @generated from protobuf field: bool isOutOfDate = 9
+     */
+    isOutOfDate: boolean;
+    /**
+     * IsFailing only lists the IntegrationBindings whose last delivery failed.
+     *
+     * @generated from protobuf field: bool isFailing = 10
+     */
+    isFailing: boolean;
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class GetPolicySummaryRequest$Type extends MessageType<GetPolicySummaryRequest> {
@@ -600,6 +982,190 @@ class GetReviewSummaryRequest$Type extends MessageType<GetReviewSummaryRequest> 
  * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.GetReviewSummaryRequest
  */
 export const GetReviewSummaryRequest = new GetReviewSummaryRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetSecretSummaryRequest$Type extends MessageType<GetSecretSummaryRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.GetSecretSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
+    }
+    create(value?: PartialMessage<GetSecretSummaryRequest>): GetSecretSummaryRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<GetSecretSummaryRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetSecretSummaryRequest): GetSecretSummaryRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetSecretSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.GetSecretSummaryRequest
+ */
+export const GetSecretSummaryRequest = new GetSecretSummaryRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetIntegrationSummaryRequest$Type extends MessageType<GetIntegrationSummaryRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.GetIntegrationSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
+    }
+    create(value?: PartialMessage<GetIntegrationSummaryRequest>): GetIntegrationSummaryRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<GetIntegrationSummaryRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetIntegrationSummaryRequest): GetIntegrationSummaryRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetIntegrationSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.GetIntegrationSummaryRequest
+ */
+export const GetIntegrationSummaryRequest = new GetIntegrationSummaryRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetIntegrationIdentitySummaryRequest$Type extends MessageType<GetIntegrationIdentitySummaryRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.GetIntegrationIdentitySummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
+    }
+    create(value?: PartialMessage<GetIntegrationIdentitySummaryRequest>): GetIntegrationIdentitySummaryRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<GetIntegrationIdentitySummaryRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetIntegrationIdentitySummaryRequest): GetIntegrationIdentitySummaryRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetIntegrationIdentitySummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.GetIntegrationIdentitySummaryRequest
+ */
+export const GetIntegrationIdentitySummaryRequest = new GetIntegrationIdentitySummaryRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetIntegrationBindingSummaryRequest$Type extends MessageType<GetIntegrationBindingSummaryRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
+    }
+    create(value?: PartialMessage<GetIntegrationBindingSummaryRequest>): GetIntegrationBindingSummaryRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<GetIntegrationBindingSummaryRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetIntegrationBindingSummaryRequest): GetIntegrationBindingSummaryRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetIntegrationBindingSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryRequest
+ */
+export const GetIntegrationBindingSummaryRequest = new GetIntegrationBindingSummaryRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class GetPolicySummaryResponse$Type extends MessageType<GetPolicySummaryResponse> {
     constructor() {
@@ -1113,6 +1679,502 @@ class GetReviewSummaryResponse$Type extends MessageType<GetReviewSummaryResponse
  */
 export const GetReviewSummaryResponse = new GetReviewSummaryResponse$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class GetSecretSummaryResponse$Type extends MessageType<GetSecretSummaryResponse> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.GetSecretSummaryResponse", [
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "previous", kind: "message", T: () => GetSecretSummaryResponse }
+        ]);
+    }
+    create(value?: PartialMessage<GetSecretSummaryResponse>): GetSecretSummaryResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.totalNumber = 0;
+        if (value !== undefined)
+            reflectionMergePartial<GetSecretSummaryResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetSecretSummaryResponse): GetSecretSummaryResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.access.v1.GetSecretSummaryResponse previous */ 2:
+                    message.previous = GetSecretSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetSecretSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint64 totalNumber = 1; */
+        if (message.totalNumber !== 0)
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* octelium.api.main.visibility.access.v1.GetSecretSummaryResponse previous = 2; */
+        if (message.previous)
+            GetSecretSummaryResponse.internalBinaryWrite(message.previous, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.GetSecretSummaryResponse
+ */
+export const GetSecretSummaryResponse = new GetSecretSummaryResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetIntegrationSummaryResponse$Type extends MessageType<GetIntegrationSummaryResponse> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.GetIntegrationSummaryResponse", [
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalDisabled", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalSlack", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "totalJira", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "totalWebhook", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "totalReady", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "totalDegraded", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "totalError", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 9, name: "totalSynchronizing", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "totalSynchronizationSuccess", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 11, name: "totalSynchronizationFailed", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 12, name: "totalNotification", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 13, name: "totalDirectUserDelivery", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 14, name: "totalInteractiveReview", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 15, name: "totalRequestCreation", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 16, name: "totalIdentityResolution", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 17, name: "totalPresentationUpdate", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 18, name: "totalExternalTenant", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 19, name: "previous", kind: "message", T: () => GetIntegrationSummaryResponse }
+        ]);
+    }
+    create(value?: PartialMessage<GetIntegrationSummaryResponse>): GetIntegrationSummaryResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.totalNumber = 0;
+        message.totalDisabled = 0;
+        message.totalSlack = 0;
+        message.totalJira = 0;
+        message.totalWebhook = 0;
+        message.totalReady = 0;
+        message.totalDegraded = 0;
+        message.totalError = 0;
+        message.totalSynchronizing = 0;
+        message.totalSynchronizationSuccess = 0;
+        message.totalSynchronizationFailed = 0;
+        message.totalNotification = 0;
+        message.totalDirectUserDelivery = 0;
+        message.totalInteractiveReview = 0;
+        message.totalRequestCreation = 0;
+        message.totalIdentityResolution = 0;
+        message.totalPresentationUpdate = 0;
+        message.totalExternalTenant = 0;
+        if (value !== undefined)
+            reflectionMergePartial<GetIntegrationSummaryResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetIntegrationSummaryResponse): GetIntegrationSummaryResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalDisabled */ 2:
+                    message.totalDisabled = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalSlack */ 3:
+                    message.totalSlack = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalJira */ 4:
+                    message.totalJira = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalWebhook */ 5:
+                    message.totalWebhook = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalReady */ 6:
+                    message.totalReady = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalDegraded */ 7:
+                    message.totalDegraded = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalError */ 8:
+                    message.totalError = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalSynchronizing */ 9:
+                    message.totalSynchronizing = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalSynchronizationSuccess */ 10:
+                    message.totalSynchronizationSuccess = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalSynchronizationFailed */ 11:
+                    message.totalSynchronizationFailed = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalNotification */ 12:
+                    message.totalNotification = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalDirectUserDelivery */ 13:
+                    message.totalDirectUserDelivery = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalInteractiveReview */ 14:
+                    message.totalInteractiveReview = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalRequestCreation */ 15:
+                    message.totalRequestCreation = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalIdentityResolution */ 16:
+                    message.totalIdentityResolution = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalPresentationUpdate */ 17:
+                    message.totalPresentationUpdate = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalExternalTenant */ 18:
+                    message.totalExternalTenant = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.access.v1.GetIntegrationSummaryResponse previous */ 19:
+                    message.previous = GetIntegrationSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetIntegrationSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint64 totalNumber = 1; */
+        if (message.totalNumber !== 0)
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalDisabled = 2; */
+        if (message.totalDisabled !== 0)
+            writer.tag(2, WireType.Varint).uint64(message.totalDisabled);
+        /* uint64 totalSlack = 3; */
+        if (message.totalSlack !== 0)
+            writer.tag(3, WireType.Varint).uint64(message.totalSlack);
+        /* uint64 totalJira = 4; */
+        if (message.totalJira !== 0)
+            writer.tag(4, WireType.Varint).uint64(message.totalJira);
+        /* uint64 totalWebhook = 5; */
+        if (message.totalWebhook !== 0)
+            writer.tag(5, WireType.Varint).uint64(message.totalWebhook);
+        /* uint64 totalReady = 6; */
+        if (message.totalReady !== 0)
+            writer.tag(6, WireType.Varint).uint64(message.totalReady);
+        /* uint64 totalDegraded = 7; */
+        if (message.totalDegraded !== 0)
+            writer.tag(7, WireType.Varint).uint64(message.totalDegraded);
+        /* uint64 totalError = 8; */
+        if (message.totalError !== 0)
+            writer.tag(8, WireType.Varint).uint64(message.totalError);
+        /* uint64 totalSynchronizing = 9; */
+        if (message.totalSynchronizing !== 0)
+            writer.tag(9, WireType.Varint).uint64(message.totalSynchronizing);
+        /* uint64 totalSynchronizationSuccess = 10; */
+        if (message.totalSynchronizationSuccess !== 0)
+            writer.tag(10, WireType.Varint).uint64(message.totalSynchronizationSuccess);
+        /* uint64 totalSynchronizationFailed = 11; */
+        if (message.totalSynchronizationFailed !== 0)
+            writer.tag(11, WireType.Varint).uint64(message.totalSynchronizationFailed);
+        /* uint64 totalNotification = 12; */
+        if (message.totalNotification !== 0)
+            writer.tag(12, WireType.Varint).uint64(message.totalNotification);
+        /* uint64 totalDirectUserDelivery = 13; */
+        if (message.totalDirectUserDelivery !== 0)
+            writer.tag(13, WireType.Varint).uint64(message.totalDirectUserDelivery);
+        /* uint64 totalInteractiveReview = 14; */
+        if (message.totalInteractiveReview !== 0)
+            writer.tag(14, WireType.Varint).uint64(message.totalInteractiveReview);
+        /* uint64 totalRequestCreation = 15; */
+        if (message.totalRequestCreation !== 0)
+            writer.tag(15, WireType.Varint).uint64(message.totalRequestCreation);
+        /* uint64 totalIdentityResolution = 16; */
+        if (message.totalIdentityResolution !== 0)
+            writer.tag(16, WireType.Varint).uint64(message.totalIdentityResolution);
+        /* uint64 totalPresentationUpdate = 17; */
+        if (message.totalPresentationUpdate !== 0)
+            writer.tag(17, WireType.Varint).uint64(message.totalPresentationUpdate);
+        /* uint64 totalExternalTenant = 18; */
+        if (message.totalExternalTenant !== 0)
+            writer.tag(18, WireType.Varint).uint64(message.totalExternalTenant);
+        /* octelium.api.main.visibility.access.v1.GetIntegrationSummaryResponse previous = 19; */
+        if (message.previous)
+            GetIntegrationSummaryResponse.internalBinaryWrite(message.previous, writer.tag(19, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.GetIntegrationSummaryResponse
+ */
+export const GetIntegrationSummaryResponse = new GetIntegrationSummaryResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetIntegrationIdentitySummaryResponse$Type extends MessageType<GetIntegrationIdentitySummaryResponse> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.GetIntegrationIdentitySummaryResponse", [
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalEmailDiscovery", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalIntegration", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "totalUser", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "previous", kind: "message", T: () => GetIntegrationIdentitySummaryResponse }
+        ]);
+    }
+    create(value?: PartialMessage<GetIntegrationIdentitySummaryResponse>): GetIntegrationIdentitySummaryResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.totalNumber = 0;
+        message.totalEmailDiscovery = 0;
+        message.totalIntegration = 0;
+        message.totalUser = 0;
+        if (value !== undefined)
+            reflectionMergePartial<GetIntegrationIdentitySummaryResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetIntegrationIdentitySummaryResponse): GetIntegrationIdentitySummaryResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalEmailDiscovery */ 2:
+                    message.totalEmailDiscovery = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalIntegration */ 3:
+                    message.totalIntegration = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalUser */ 4:
+                    message.totalUser = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.access.v1.GetIntegrationIdentitySummaryResponse previous */ 5:
+                    message.previous = GetIntegrationIdentitySummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetIntegrationIdentitySummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint64 totalNumber = 1; */
+        if (message.totalNumber !== 0)
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalEmailDiscovery = 2; */
+        if (message.totalEmailDiscovery !== 0)
+            writer.tag(2, WireType.Varint).uint64(message.totalEmailDiscovery);
+        /* uint64 totalIntegration = 3; */
+        if (message.totalIntegration !== 0)
+            writer.tag(3, WireType.Varint).uint64(message.totalIntegration);
+        /* uint64 totalUser = 4; */
+        if (message.totalUser !== 0)
+            writer.tag(4, WireType.Varint).uint64(message.totalUser);
+        /* octelium.api.main.visibility.access.v1.GetIntegrationIdentitySummaryResponse previous = 5; */
+        if (message.previous)
+            GetIntegrationIdentitySummaryResponse.internalBinaryWrite(message.previous, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.GetIntegrationIdentitySummaryResponse
+ */
+export const GetIntegrationIdentitySummaryResponse = new GetIntegrationIdentitySummaryResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetIntegrationBindingSummaryResponse$Type extends MessageType<GetIntegrationBindingSummaryResponse> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryResponse", [
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalPending", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalReady", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "totalDegraded", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "totalClosed", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "totalReviewSurface", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "totalNotification", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "totalShared", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 9, name: "totalReviewers", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "totalRequester", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 11, name: "totalSubject", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 12, name: "totalInteractive", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 13, name: "totalOutOfDate", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 14, name: "totalFailing", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 15, name: "totalIntegration", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 16, name: "totalRequest", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 17, name: "previous", kind: "message", T: () => GetIntegrationBindingSummaryResponse }
+        ]);
+    }
+    create(value?: PartialMessage<GetIntegrationBindingSummaryResponse>): GetIntegrationBindingSummaryResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.totalNumber = 0;
+        message.totalPending = 0;
+        message.totalReady = 0;
+        message.totalDegraded = 0;
+        message.totalClosed = 0;
+        message.totalReviewSurface = 0;
+        message.totalNotification = 0;
+        message.totalShared = 0;
+        message.totalReviewers = 0;
+        message.totalRequester = 0;
+        message.totalSubject = 0;
+        message.totalInteractive = 0;
+        message.totalOutOfDate = 0;
+        message.totalFailing = 0;
+        message.totalIntegration = 0;
+        message.totalRequest = 0;
+        if (value !== undefined)
+            reflectionMergePartial<GetIntegrationBindingSummaryResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetIntegrationBindingSummaryResponse): GetIntegrationBindingSummaryResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalPending */ 2:
+                    message.totalPending = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalReady */ 3:
+                    message.totalReady = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalDegraded */ 4:
+                    message.totalDegraded = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalClosed */ 5:
+                    message.totalClosed = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalReviewSurface */ 6:
+                    message.totalReviewSurface = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalNotification */ 7:
+                    message.totalNotification = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalShared */ 8:
+                    message.totalShared = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalReviewers */ 9:
+                    message.totalReviewers = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalRequester */ 10:
+                    message.totalRequester = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalSubject */ 11:
+                    message.totalSubject = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalInteractive */ 12:
+                    message.totalInteractive = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOutOfDate */ 13:
+                    message.totalOutOfDate = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalFailing */ 14:
+                    message.totalFailing = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalIntegration */ 15:
+                    message.totalIntegration = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalRequest */ 16:
+                    message.totalRequest = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryResponse previous */ 17:
+                    message.previous = GetIntegrationBindingSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetIntegrationBindingSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint64 totalNumber = 1; */
+        if (message.totalNumber !== 0)
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalPending = 2; */
+        if (message.totalPending !== 0)
+            writer.tag(2, WireType.Varint).uint64(message.totalPending);
+        /* uint64 totalReady = 3; */
+        if (message.totalReady !== 0)
+            writer.tag(3, WireType.Varint).uint64(message.totalReady);
+        /* uint64 totalDegraded = 4; */
+        if (message.totalDegraded !== 0)
+            writer.tag(4, WireType.Varint).uint64(message.totalDegraded);
+        /* uint64 totalClosed = 5; */
+        if (message.totalClosed !== 0)
+            writer.tag(5, WireType.Varint).uint64(message.totalClosed);
+        /* uint64 totalReviewSurface = 6; */
+        if (message.totalReviewSurface !== 0)
+            writer.tag(6, WireType.Varint).uint64(message.totalReviewSurface);
+        /* uint64 totalNotification = 7; */
+        if (message.totalNotification !== 0)
+            writer.tag(7, WireType.Varint).uint64(message.totalNotification);
+        /* uint64 totalShared = 8; */
+        if (message.totalShared !== 0)
+            writer.tag(8, WireType.Varint).uint64(message.totalShared);
+        /* uint64 totalReviewers = 9; */
+        if (message.totalReviewers !== 0)
+            writer.tag(9, WireType.Varint).uint64(message.totalReviewers);
+        /* uint64 totalRequester = 10; */
+        if (message.totalRequester !== 0)
+            writer.tag(10, WireType.Varint).uint64(message.totalRequester);
+        /* uint64 totalSubject = 11; */
+        if (message.totalSubject !== 0)
+            writer.tag(11, WireType.Varint).uint64(message.totalSubject);
+        /* uint64 totalInteractive = 12; */
+        if (message.totalInteractive !== 0)
+            writer.tag(12, WireType.Varint).uint64(message.totalInteractive);
+        /* uint64 totalOutOfDate = 13; */
+        if (message.totalOutOfDate !== 0)
+            writer.tag(13, WireType.Varint).uint64(message.totalOutOfDate);
+        /* uint64 totalFailing = 14; */
+        if (message.totalFailing !== 0)
+            writer.tag(14, WireType.Varint).uint64(message.totalFailing);
+        /* uint64 totalIntegration = 15; */
+        if (message.totalIntegration !== 0)
+            writer.tag(15, WireType.Varint).uint64(message.totalIntegration);
+        /* uint64 totalRequest = 16; */
+        if (message.totalRequest !== 0)
+            writer.tag(16, WireType.Varint).uint64(message.totalRequest);
+        /* octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryResponse previous = 17; */
+        if (message.previous)
+            GetIntegrationBindingSummaryResponse.internalBinaryWrite(message.previous, writer.tag(17, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryResponse
+ */
+export const GetIntegrationBindingSummaryResponse = new GetIntegrationBindingSummaryResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class ListPolicyOptions$Type extends MessageType<ListPolicyOptions> {
     constructor() {
         super("octelium.api.main.visibility.access.v1.ListPolicyOptions", [
@@ -1473,6 +2535,329 @@ class ListReviewOptions$Type extends MessageType<ListReviewOptions> {
  * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.ListReviewOptions
  */
 export const ListReviewOptions = new ListReviewOptions$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListSecretOptions$Type extends MessageType<ListSecretOptions> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.ListSecretOptions", [
+            { no: 1, name: "common", kind: "message", T: () => CommonListOptions }
+        ]);
+    }
+    create(value?: PartialMessage<ListSecretOptions>): ListSecretOptions {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<ListSecretOptions>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListSecretOptions): ListSecretOptions {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonListOptions common */ 1:
+                    message.common = CommonListOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListSecretOptions, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonListOptions common = 1; */
+        if (message.common)
+            CommonListOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.ListSecretOptions
+ */
+export const ListSecretOptions = new ListSecretOptions$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListIntegrationOptions$Type extends MessageType<ListIntegrationOptions> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.ListIntegrationOptions", [
+            { no: 1, name: "common", kind: "message", T: () => CommonListOptions },
+            { no: 2, name: "type", kind: "enum", T: () => ["octelium.api.main.access.v1.Integration.Status.Type", Integration_Status_Type] },
+            { no: 3, name: "state", kind: "enum", T: () => ["octelium.api.main.access.v1.Integration.Status.State", Integration_Status_State] },
+            { no: 4, name: "synchronizationState", kind: "enum", T: () => ["octelium.api.main.access.v1.Integration.Status.Synchronization.State", Integration_Status_Synchronization_State] },
+            { no: 5, name: "capability", kind: "enum", T: () => ["octelium.api.main.access.v1.Integration.Status.Capability", Integration_Status_Capability] },
+            { no: 6, name: "isDisabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 7, name: "externalTenantID", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListIntegrationOptions>): ListIntegrationOptions {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.state = 0;
+        message.synchronizationState = 0;
+        message.capability = 0;
+        message.isDisabled = false;
+        message.externalTenantID = "";
+        if (value !== undefined)
+            reflectionMergePartial<ListIntegrationOptions>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListIntegrationOptions): ListIntegrationOptions {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonListOptions common */ 1:
+                    message.common = CommonListOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Status.Type type */ 2:
+                    message.type = reader.int32();
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Status.State state */ 3:
+                    message.state = reader.int32();
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Status.Synchronization.State synchronizationState */ 4:
+                    message.synchronizationState = reader.int32();
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Status.Capability capability */ 5:
+                    message.capability = reader.int32();
+                    break;
+                case /* bool isDisabled */ 6:
+                    message.isDisabled = reader.bool();
+                    break;
+                case /* string externalTenantID */ 7:
+                    message.externalTenantID = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListIntegrationOptions, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonListOptions common = 1; */
+        if (message.common)
+            CommonListOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Integration.Status.Type type = 2; */
+        if (message.type !== 0)
+            writer.tag(2, WireType.Varint).int32(message.type);
+        /* octelium.api.main.access.v1.Integration.Status.State state = 3; */
+        if (message.state !== 0)
+            writer.tag(3, WireType.Varint).int32(message.state);
+        /* octelium.api.main.access.v1.Integration.Status.Synchronization.State synchronizationState = 4; */
+        if (message.synchronizationState !== 0)
+            writer.tag(4, WireType.Varint).int32(message.synchronizationState);
+        /* octelium.api.main.access.v1.Integration.Status.Capability capability = 5; */
+        if (message.capability !== 0)
+            writer.tag(5, WireType.Varint).int32(message.capability);
+        /* bool isDisabled = 6; */
+        if (message.isDisabled !== false)
+            writer.tag(6, WireType.Varint).bool(message.isDisabled);
+        /* string externalTenantID = 7; */
+        if (message.externalTenantID !== "")
+            writer.tag(7, WireType.LengthDelimited).string(message.externalTenantID);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.ListIntegrationOptions
+ */
+export const ListIntegrationOptions = new ListIntegrationOptions$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListIntegrationIdentityOptions$Type extends MessageType<ListIntegrationIdentityOptions> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.ListIntegrationIdentityOptions", [
+            { no: 1, name: "common", kind: "message", T: () => CommonListOptions },
+            { no: 2, name: "integrationRef", kind: "message", T: () => ObjectReference },
+            { no: 3, name: "userRef", kind: "message", T: () => ObjectReference },
+            { no: 4, name: "source", kind: "enum", T: () => ["octelium.api.main.access.v1.IntegrationIdentity.Status.Source", IntegrationIdentity_Status_Source] }
+        ]);
+    }
+    create(value?: PartialMessage<ListIntegrationIdentityOptions>): ListIntegrationIdentityOptions {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.source = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListIntegrationIdentityOptions>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListIntegrationIdentityOptions): ListIntegrationIdentityOptions {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonListOptions common */ 1:
+                    message.common = CommonListOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 2:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 3:
+                    message.userRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.userRef);
+                    break;
+                case /* octelium.api.main.access.v1.IntegrationIdentity.Status.Source source */ 4:
+                    message.source = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListIntegrationIdentityOptions, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonListOptions common = 1; */
+        if (message.common)
+            CommonListOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 2; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 3; */
+        if (message.userRef)
+            ObjectReference.internalBinaryWrite(message.userRef, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.IntegrationIdentity.Status.Source source = 4; */
+        if (message.source !== 0)
+            writer.tag(4, WireType.Varint).int32(message.source);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.ListIntegrationIdentityOptions
+ */
+export const ListIntegrationIdentityOptions = new ListIntegrationIdentityOptions$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListIntegrationBindingOptions$Type extends MessageType<ListIntegrationBindingOptions> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.ListIntegrationBindingOptions", [
+            { no: 1, name: "common", kind: "message", T: () => CommonListOptions },
+            { no: 2, name: "integrationRef", kind: "message", T: () => ObjectReference },
+            { no: 3, name: "requestRef", kind: "message", T: () => ObjectReference },
+            { no: 4, name: "userRef", kind: "message", T: () => ObjectReference },
+            { no: 5, name: "state", kind: "enum", T: () => ["octelium.api.main.access.v1.IntegrationBinding.Status.State", IntegrationBinding_Status_State] },
+            { no: 6, name: "purpose", kind: "enum", T: () => ["octelium.api.main.access.v1.IntegrationBinding.Status.Purpose", IntegrationBinding_Status_Purpose] },
+            { no: 7, name: "audience", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Audience", Policy_Spec_Rule_Surface_Destination_Audience] },
+            { no: 8, name: "interactionMode", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Surface.InteractionMode", Policy_Spec_Rule_Surface_InteractionMode] },
+            { no: 9, name: "isOutOfDate", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 10, name: "isFailing", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListIntegrationBindingOptions>): ListIntegrationBindingOptions {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.state = 0;
+        message.purpose = 0;
+        message.audience = 0;
+        message.interactionMode = 0;
+        message.isOutOfDate = false;
+        message.isFailing = false;
+        if (value !== undefined)
+            reflectionMergePartial<ListIntegrationBindingOptions>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListIntegrationBindingOptions): ListIntegrationBindingOptions {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonListOptions common */ 1:
+                    message.common = CommonListOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 2:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference requestRef */ 3:
+                    message.requestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requestRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 4:
+                    message.userRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.userRef);
+                    break;
+                case /* octelium.api.main.access.v1.IntegrationBinding.Status.State state */ 5:
+                    message.state = reader.int32();
+                    break;
+                case /* octelium.api.main.access.v1.IntegrationBinding.Status.Purpose purpose */ 6:
+                    message.purpose = reader.int32();
+                    break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Audience audience */ 7:
+                    message.audience = reader.int32();
+                    break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.InteractionMode interactionMode */ 8:
+                    message.interactionMode = reader.int32();
+                    break;
+                case /* bool isOutOfDate */ 9:
+                    message.isOutOfDate = reader.bool();
+                    break;
+                case /* bool isFailing */ 10:
+                    message.isFailing = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListIntegrationBindingOptions, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonListOptions common = 1; */
+        if (message.common)
+            CommonListOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 2; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference requestRef = 3; */
+        if (message.requestRef)
+            ObjectReference.internalBinaryWrite(message.requestRef, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 4; */
+        if (message.userRef)
+            ObjectReference.internalBinaryWrite(message.userRef, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.IntegrationBinding.Status.State state = 5; */
+        if (message.state !== 0)
+            writer.tag(5, WireType.Varint).int32(message.state);
+        /* octelium.api.main.access.v1.IntegrationBinding.Status.Purpose purpose = 6; */
+        if (message.purpose !== 0)
+            writer.tag(6, WireType.Varint).int32(message.purpose);
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Audience audience = 7; */
+        if (message.audience !== 0)
+            writer.tag(7, WireType.Varint).int32(message.audience);
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.InteractionMode interactionMode = 8; */
+        if (message.interactionMode !== 0)
+            writer.tag(8, WireType.Varint).int32(message.interactionMode);
+        /* bool isOutOfDate = 9; */
+        if (message.isOutOfDate !== false)
+            writer.tag(9, WireType.Varint).bool(message.isOutOfDate);
+        /* bool isFailing = 10; */
+        if (message.isFailing !== false)
+            writer.tag(10, WireType.Varint).bool(message.isFailing);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.ListIntegrationBindingOptions
+ */
+export const ListIntegrationBindingOptions = new ListIntegrationBindingOptions$Type();
 /**
  * @generated ServiceType for protobuf service octelium.api.main.visibility.access.v1.ResourceService
  */
@@ -1481,8 +2866,16 @@ export const ResourceService = new ServiceType("octelium.api.main.visibility.acc
     { name: "GetCatalogSummary", options: {}, I: GetCatalogSummaryRequest, O: GetCatalogSummaryResponse },
     { name: "GetRequestSummary", options: {}, I: GetRequestSummaryRequest, O: GetRequestSummaryResponse },
     { name: "GetReviewSummary", options: {}, I: GetReviewSummaryRequest, O: GetReviewSummaryResponse },
+    { name: "GetSecretSummary", options: {}, I: GetSecretSummaryRequest, O: GetSecretSummaryResponse },
+    { name: "GetIntegrationSummary", options: {}, I: GetIntegrationSummaryRequest, O: GetIntegrationSummaryResponse },
+    { name: "GetIntegrationIdentitySummary", options: {}, I: GetIntegrationIdentitySummaryRequest, O: GetIntegrationIdentitySummaryResponse },
+    { name: "GetIntegrationBindingSummary", options: {}, I: GetIntegrationBindingSummaryRequest, O: GetIntegrationBindingSummaryResponse },
     { name: "ListPolicy", options: {}, I: ListPolicyOptions, O: PolicyList },
     { name: "ListCatalog", options: {}, I: ListCatalogOptions, O: CatalogList },
     { name: "ListRequest", options: {}, I: ListRequestOptions, O: RequestList },
-    { name: "ListReview", options: {}, I: ListReviewOptions, O: ReviewList }
+    { name: "ListReview", options: {}, I: ListReviewOptions, O: ReviewList },
+    { name: "ListSecret", options: {}, I: ListSecretOptions, O: SecretList },
+    { name: "ListIntegration", options: {}, I: ListIntegrationOptions, O: IntegrationList },
+    { name: "ListIntegrationIdentity", options: {}, I: ListIntegrationIdentityOptions, O: IntegrationIdentityList },
+    { name: "ListIntegrationBinding", options: {}, I: ListIntegrationBindingOptions, O: IntegrationBindingList }
 ]);

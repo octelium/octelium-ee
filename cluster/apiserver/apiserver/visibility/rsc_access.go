@@ -31,6 +31,22 @@ func (s *ServerResourceAccess) GetReviewSummary(ctx context.Context, req *vacces
 	return s.accessC.GetReviewSummary(ctx, req)
 }
 
+func (s *ServerResourceAccess) GetSecretSummary(ctx context.Context, req *vaccessv1.GetSecretSummaryRequest) (*vaccessv1.GetSecretSummaryResponse, error) {
+	return s.accessC.GetSecretSummary(ctx, req)
+}
+
+func (s *ServerResourceAccess) GetIntegrationSummary(ctx context.Context, req *vaccessv1.GetIntegrationSummaryRequest) (*vaccessv1.GetIntegrationSummaryResponse, error) {
+	return s.accessC.GetIntegrationSummary(ctx, req)
+}
+
+func (s *ServerResourceAccess) GetIntegrationIdentitySummary(ctx context.Context, req *vaccessv1.GetIntegrationIdentitySummaryRequest) (*vaccessv1.GetIntegrationIdentitySummaryResponse, error) {
+	return s.accessC.GetIntegrationIdentitySummary(ctx, req)
+}
+
+func (s *ServerResourceAccess) GetIntegrationBindingSummary(ctx context.Context, req *vaccessv1.GetIntegrationBindingSummaryRequest) (*vaccessv1.GetIntegrationBindingSummaryResponse, error) {
+	return s.accessC.GetIntegrationBindingSummary(ctx, req)
+}
+
 func (s *ServerResourceAccess) ListPolicy(ctx context.Context, req *vaccessv1.ListPolicyOptions) (*accessv1.PolicyList, error) {
 	return s.accessC.ListPolicy(ctx, req)
 }
@@ -45,4 +61,20 @@ func (s *ServerResourceAccess) ListRequest(ctx context.Context, req *vaccessv1.L
 
 func (s *ServerResourceAccess) ListReview(ctx context.Context, req *vaccessv1.ListReviewOptions) (*accessv1.ReviewList, error) {
 	return s.accessC.ListReview(ctx, req)
+}
+
+func (s *ServerResourceAccess) ListSecret(ctx context.Context, req *vaccessv1.ListSecretOptions) (*accessv1.SecretList, error) {
+	return s.accessC.ListSecret(ctx, req)
+}
+
+func (s *ServerResourceAccess) ListIntegration(ctx context.Context, req *vaccessv1.ListIntegrationOptions) (*accessv1.IntegrationList, error) {
+	return s.accessC.ListIntegration(ctx, req)
+}
+
+func (s *ServerResourceAccess) ListIntegrationIdentity(ctx context.Context, req *vaccessv1.ListIntegrationIdentityOptions) (*accessv1.IntegrationIdentityList, error) {
+	return s.accessC.ListIntegrationIdentity(ctx, req)
+}
+
+func (s *ServerResourceAccess) ListIntegrationBinding(ctx context.Context, req *vaccessv1.ListIntegrationBindingOptions) (*accessv1.IntegrationBindingList, error) {
+	return s.accessC.ListIntegrationBinding(ctx, req)
 }

@@ -71,6 +71,16 @@ const (
 	colStatusAmbiguous      = "status_ambiguous"
 	colStatusFailedUpdates  = "status_failed_updates"
 
+	colStatusSource           = "status_source"
+	colStatusPurpose          = "status_purpose"
+	colStatusAudience         = "status_audience"
+	colStatusInteractionMode  = "status_interaction_mode"
+	colStatusAttempts         = "status_attempts"
+	colStatusExternalTenantID = "status_external_tenant_id"
+	colStatusDesiredRevision  = "status_desired_revision"
+	colStatusAppliedRevision  = "status_applied_revision"
+	colStatusCapabilities     = "status_capabilities"
+
 	colUserUID               = "user_uid"
 	colUserName              = "user_name"
 	colDeviceUID             = "device_uid"
@@ -91,6 +101,8 @@ const (
 	colPolicyTriggerName     = "policy_trigger_name"
 	colRequestUID            = "request_uid"
 	colRequestName           = "request_name"
+	colIntegrationUID        = "integration_uid"
+	colIntegrationName       = "integration_name"
 	colDirectoryProviderUID  = "directory_provider_uid"
 	colDirectoryProviderName = "directory_provider_name"
 	colCertificateIssuerUID  = "certificate_issuer_uid"
@@ -199,6 +211,14 @@ func getResourceColumns() []*resourceColumn {
 		{name: colStatusWaitingApprove, kind: kindBigint, path: "$.status.linking.waitingApproval"},
 		{name: colStatusAmbiguous, kind: kindBigint, path: "$.status.linking.ambiguous"},
 		{name: colStatusFailedUpdates, kind: kindBigint, path: "$.status.linking.failedUpdates"},
+		{name: colStatusSource, kind: kindVarchar, path: "$.status.source"},
+		{name: colStatusPurpose, kind: kindVarchar, path: "$.status.purpose"},
+		{name: colStatusAudience, kind: kindVarchar, path: "$.status.audience"},
+		{name: colStatusInteractionMode, kind: kindVarchar, path: "$.status.interactionMode"},
+		{name: colStatusAttempts, kind: kindBigint, path: "$.status.attempts"},
+		{name: colStatusExternalTenantID, kind: kindVarchar, path: "$.status.externalTenantID"},
+		{name: colStatusDesiredRevision, kind: kindVarchar, path: "$.status.desiredRevision"},
+		{name: colStatusAppliedRevision, kind: kindVarchar, path: "$.status.appliedRevision"},
 
 		{name: colUserUID, kind: kindVarchar, path: "$.status.userRef.uid"},
 		{name: colUserName, kind: kindVarchar, path: "$.status.userRef.name"},
@@ -220,12 +240,15 @@ func getResourceColumns() []*resourceColumn {
 		{name: colPolicyTriggerName, kind: kindVarchar, path: "$.status.policyTriggerRef.name"},
 		{name: colRequestUID, kind: kindVarchar, path: "$.status.requestRef.uid"},
 		{name: colRequestName, kind: kindVarchar, path: "$.status.requestRef.name"},
+		{name: colIntegrationUID, kind: kindVarchar, path: "$.status.integrationRef.uid"},
+		{name: colIntegrationName, kind: kindVarchar, path: "$.status.integrationRef.name"},
 		{name: colDirectoryProviderUID, kind: kindVarchar, path: "$.status.directoryProviderRef.uid"},
 		{name: colDirectoryProviderName, kind: kindVarchar, path: "$.status.directoryProviderRef.name"},
 		{name: colCertificateIssuerUID, kind: kindVarchar, path: "$.status.certificateIssuerRef.uid"},
 		{name: colCertificateIssuerName, kind: kindVarchar, path: "$.status.certificateIssuerRef.name"},
 
 		{name: colTags, kind: kindVarcharList, path: "$.metadata.tags"},
+		{name: colStatusCapabilities, kind: kindVarcharList, path: "$.status.capabilities"},
 		{name: colSpecGroups, kind: kindVarcharList, path: "$.spec.groups"},
 		{name: colSpecServices, kind: kindVarcharList,
 			path: "$.spec.resourceCollection.service.services"},

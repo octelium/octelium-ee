@@ -1060,6 +1060,22 @@ func (s *srvAccess) GetReviewSummary(ctx context.Context, req *vaccessv1.GetRevi
 	return s.s.getSummaryAccessReview(ctx, req)
 }
 
+func (s *srvAccess) GetSecretSummary(ctx context.Context, req *vaccessv1.GetSecretSummaryRequest) (*vaccessv1.GetSecretSummaryResponse, error) {
+	return s.s.getSummaryAccessSecret(ctx, req)
+}
+
+func (s *srvAccess) GetIntegrationSummary(ctx context.Context, req *vaccessv1.GetIntegrationSummaryRequest) (*vaccessv1.GetIntegrationSummaryResponse, error) {
+	return s.s.getSummaryAccessIntegration(ctx, req)
+}
+
+func (s *srvAccess) GetIntegrationIdentitySummary(ctx context.Context, req *vaccessv1.GetIntegrationIdentitySummaryRequest) (*vaccessv1.GetIntegrationIdentitySummaryResponse, error) {
+	return s.s.getSummaryAccessIntegrationIdentity(ctx, req)
+}
+
+func (s *srvAccess) GetIntegrationBindingSummary(ctx context.Context, req *vaccessv1.GetIntegrationBindingSummaryRequest) (*vaccessv1.GetIntegrationBindingSummaryResponse, error) {
+	return s.s.getSummaryAccessIntegrationBinding(ctx, req)
+}
+
 func (s *srvAccess) ListPolicy(ctx context.Context, req *vaccessv1.ListPolicyOptions) (*accessv1.PolicyList, error) {
 
 	doListReq := &doListReq{
@@ -1311,6 +1327,163 @@ func (s *srvAccess) ListReview(ctx context.Context, req *vaccessv1.ListReviewOpt
 	}
 
 	return ret.(*accessv1.ReviewList), nil
+}
+
+func (s *srvAccess) ListSecret(ctx context.Context, req *vaccessv1.ListSecretOptions) (*accessv1.SecretList, error) {
+
+	doListReq := &doListReq{
+		api:     uaccessv1.API,
+		version: uaccessv1.Version,
+		kind:    uaccessv1.KindSecret,
+		common:  req.Common,
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*accessv1.SecretList), nil
+}
+
+func (s *srvAccess) ListIntegration(ctx context.Context, req *vaccessv1.ListIntegrationOptions) (*accessv1.IntegrationList, error) {
+
+	doListReq := &doListReq{
+		api:     uaccessv1.API,
+		version: uaccessv1.Version,
+		kind:    uaccessv1.KindIntegration,
+		common:  req.Common,
+	}
+
+	if req.Type != accessv1.Integration_Status_TYPE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusType).Eq(req.Type.String()))
+	}
+
+	if req.State != accessv1.Integration_Status_STATE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusState).Eq(req.State.String()))
+	}
+
+	if req.SynchronizationState != accessv1.Integration_Status_Synchronization_STATE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusSyncState).Eq(req.SynchronizationState.String()))
+	}
+
+	if req.Capability != accessv1.Integration_Status_CAPABILITY_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`list_contains(%s, ?)`, colStatusCapabilities), req.Capability.String()))
+	}
+
+	if req.IsDisabled {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`%s = true`, colSpecIsDisabled)))
+	}
+
+	if req.ExternalTenantID != "" {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusExternalTenantID).Eq(req.ExternalTenantID))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*accessv1.IntegrationList), nil
+}
+
+func (s *srvAccess) ListIntegrationIdentity(ctx context.Context, req *vaccessv1.ListIntegrationIdentityOptions) (*accessv1.IntegrationIdentityList, error) {
+
+	doListReq := &doListReq{
+		api:     uaccessv1.API,
+		version: uaccessv1.Version,
+		kind:    uaccessv1.KindIntegrationIdentity,
+		common:  req.Common,
+	}
+	var err error
+
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.IntegrationRef, nil, "status.integrationRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.UserRef, nil, "status.userRef")
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Source != accessv1.IntegrationIdentity_Status_SOURCE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusSource).Eq(req.Source.String()))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*accessv1.IntegrationIdentityList), nil
+}
+
+func (s *srvAccess) ListIntegrationBinding(ctx context.Context, req *vaccessv1.ListIntegrationBindingOptions) (*accessv1.IntegrationBindingList, error) {
+
+	doListReq := &doListReq{
+		api:     uaccessv1.API,
+		version: uaccessv1.Version,
+		kind:    uaccessv1.KindIntegrationBinding,
+		common:  req.Common,
+	}
+	var err error
+
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.IntegrationRef, nil, "status.integrationRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.RequestRef, nil, "status.requestRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.UserRef, nil, "status.userRef")
+	if err != nil {
+		return nil, err
+	}
+
+	if req.State != accessv1.IntegrationBinding_Status_STATE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusState).Eq(req.State.String()))
+	}
+
+	if req.Purpose != accessv1.IntegrationBinding_Status_PURPOSE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusPurpose).Eq(req.Purpose.String()))
+	}
+
+	if req.Audience != accessv1.Policy_Spec_Rule_Surface_Destination_AUDIENCE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusAudience).Eq(req.Audience.String()))
+	}
+
+	if req.InteractionMode != accessv1.Policy_Spec_Rule_Surface_INTERACTION_MODE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusInteractionMode).Eq(req.InteractionMode.String()))
+	}
+
+	if req.IsOutOfDate {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`COALESCE(%s, '') != COALESCE(%s, '')`, colStatusDesiredRevision, colStatusAppliedRevision)))
+	}
+
+	if req.IsFailing {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`%s > 0`, colStatusAttempts)))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*accessv1.IntegrationBindingList), nil
 }
 
 type srvClusterAccess struct {

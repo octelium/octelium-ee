@@ -13,6 +13,14 @@
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { ResourceService } from "./vaccessv1";
+import type { IntegrationBindingList } from "../../accessv1/accessv1";
+import type { ListIntegrationBindingOptions } from "./vaccessv1";
+import type { IntegrationIdentityList } from "../../accessv1/accessv1";
+import type { ListIntegrationIdentityOptions } from "./vaccessv1";
+import type { IntegrationList } from "../../accessv1/accessv1";
+import type { ListIntegrationOptions } from "./vaccessv1";
+import type { SecretList } from "../../accessv1/accessv1";
+import type { ListSecretOptions } from "./vaccessv1";
 import type { ReviewList } from "../../accessv1/accessv1";
 import type { ListReviewOptions } from "./vaccessv1";
 import type { RequestList } from "../../accessv1/accessv1";
@@ -21,6 +29,14 @@ import type { CatalogList } from "../../accessv1/accessv1";
 import type { ListCatalogOptions } from "./vaccessv1";
 import type { PolicyList } from "../../accessv1/accessv1";
 import type { ListPolicyOptions } from "./vaccessv1";
+import type { GetIntegrationBindingSummaryResponse } from "./vaccessv1";
+import type { GetIntegrationBindingSummaryRequest } from "./vaccessv1";
+import type { GetIntegrationIdentitySummaryResponse } from "./vaccessv1";
+import type { GetIntegrationIdentitySummaryRequest } from "./vaccessv1";
+import type { GetIntegrationSummaryResponse } from "./vaccessv1";
+import type { GetIntegrationSummaryRequest } from "./vaccessv1";
+import type { GetSecretSummaryResponse } from "./vaccessv1";
+import type { GetSecretSummaryRequest } from "./vaccessv1";
 import type { GetReviewSummaryResponse } from "./vaccessv1";
 import type { GetReviewSummaryRequest } from "./vaccessv1";
 import type { GetRequestSummaryResponse } from "./vaccessv1";
@@ -53,6 +69,22 @@ export interface IResourceServiceClient {
      */
     getReviewSummary(input: GetReviewSummaryRequest, options?: RpcOptions): UnaryCall<GetReviewSummaryRequest, GetReviewSummaryResponse>;
     /**
+     * @generated from protobuf rpc: GetSecretSummary
+     */
+    getSecretSummary(input: GetSecretSummaryRequest, options?: RpcOptions): UnaryCall<GetSecretSummaryRequest, GetSecretSummaryResponse>;
+    /**
+     * @generated from protobuf rpc: GetIntegrationSummary
+     */
+    getIntegrationSummary(input: GetIntegrationSummaryRequest, options?: RpcOptions): UnaryCall<GetIntegrationSummaryRequest, GetIntegrationSummaryResponse>;
+    /**
+     * @generated from protobuf rpc: GetIntegrationIdentitySummary
+     */
+    getIntegrationIdentitySummary(input: GetIntegrationIdentitySummaryRequest, options?: RpcOptions): UnaryCall<GetIntegrationIdentitySummaryRequest, GetIntegrationIdentitySummaryResponse>;
+    /**
+     * @generated from protobuf rpc: GetIntegrationBindingSummary
+     */
+    getIntegrationBindingSummary(input: GetIntegrationBindingSummaryRequest, options?: RpcOptions): UnaryCall<GetIntegrationBindingSummaryRequest, GetIntegrationBindingSummaryResponse>;
+    /**
      * @generated from protobuf rpc: ListPolicy
      */
     listPolicy(input: ListPolicyOptions, options?: RpcOptions): UnaryCall<ListPolicyOptions, PolicyList>;
@@ -68,6 +100,22 @@ export interface IResourceServiceClient {
      * @generated from protobuf rpc: ListReview
      */
     listReview(input: ListReviewOptions, options?: RpcOptions): UnaryCall<ListReviewOptions, ReviewList>;
+    /**
+     * @generated from protobuf rpc: ListSecret
+     */
+    listSecret(input: ListSecretOptions, options?: RpcOptions): UnaryCall<ListSecretOptions, SecretList>;
+    /**
+     * @generated from protobuf rpc: ListIntegration
+     */
+    listIntegration(input: ListIntegrationOptions, options?: RpcOptions): UnaryCall<ListIntegrationOptions, IntegrationList>;
+    /**
+     * @generated from protobuf rpc: ListIntegrationIdentity
+     */
+    listIntegrationIdentity(input: ListIntegrationIdentityOptions, options?: RpcOptions): UnaryCall<ListIntegrationIdentityOptions, IntegrationIdentityList>;
+    /**
+     * @generated from protobuf rpc: ListIntegrationBinding
+     */
+    listIntegrationBinding(input: ListIntegrationBindingOptions, options?: RpcOptions): UnaryCall<ListIntegrationBindingOptions, IntegrationBindingList>;
 }
 /**
  * @generated from protobuf service octelium.api.main.visibility.access.v1.ResourceService
@@ -107,31 +155,87 @@ export class ResourceServiceClient implements IResourceServiceClient, ServiceInf
         return stackIntercept<GetReviewSummaryRequest, GetReviewSummaryResponse>("unary", this._transport, method, opt, input);
     }
     /**
+     * @generated from protobuf rpc: GetSecretSummary
+     */
+    getSecretSummary(input: GetSecretSummaryRequest, options?: RpcOptions): UnaryCall<GetSecretSummaryRequest, GetSecretSummaryResponse> {
+        const method = this.methods[4], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetSecretSummaryRequest, GetSecretSummaryResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: GetIntegrationSummary
+     */
+    getIntegrationSummary(input: GetIntegrationSummaryRequest, options?: RpcOptions): UnaryCall<GetIntegrationSummaryRequest, GetIntegrationSummaryResponse> {
+        const method = this.methods[5], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetIntegrationSummaryRequest, GetIntegrationSummaryResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: GetIntegrationIdentitySummary
+     */
+    getIntegrationIdentitySummary(input: GetIntegrationIdentitySummaryRequest, options?: RpcOptions): UnaryCall<GetIntegrationIdentitySummaryRequest, GetIntegrationIdentitySummaryResponse> {
+        const method = this.methods[6], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetIntegrationIdentitySummaryRequest, GetIntegrationIdentitySummaryResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: GetIntegrationBindingSummary
+     */
+    getIntegrationBindingSummary(input: GetIntegrationBindingSummaryRequest, options?: RpcOptions): UnaryCall<GetIntegrationBindingSummaryRequest, GetIntegrationBindingSummaryResponse> {
+        const method = this.methods[7], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetIntegrationBindingSummaryRequest, GetIntegrationBindingSummaryResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
      * @generated from protobuf rpc: ListPolicy
      */
     listPolicy(input: ListPolicyOptions, options?: RpcOptions): UnaryCall<ListPolicyOptions, PolicyList> {
-        const method = this.methods[4], opt = this._transport.mergeOptions(options);
+        const method = this.methods[8], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListPolicyOptions, PolicyList>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: ListCatalog
      */
     listCatalog(input: ListCatalogOptions, options?: RpcOptions): UnaryCall<ListCatalogOptions, CatalogList> {
-        const method = this.methods[5], opt = this._transport.mergeOptions(options);
+        const method = this.methods[9], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListCatalogOptions, CatalogList>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: ListRequest
      */
     listRequest(input: ListRequestOptions, options?: RpcOptions): UnaryCall<ListRequestOptions, RequestList> {
-        const method = this.methods[6], opt = this._transport.mergeOptions(options);
+        const method = this.methods[10], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListRequestOptions, RequestList>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: ListReview
      */
     listReview(input: ListReviewOptions, options?: RpcOptions): UnaryCall<ListReviewOptions, ReviewList> {
-        const method = this.methods[7], opt = this._transport.mergeOptions(options);
+        const method = this.methods[11], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListReviewOptions, ReviewList>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: ListSecret
+     */
+    listSecret(input: ListSecretOptions, options?: RpcOptions): UnaryCall<ListSecretOptions, SecretList> {
+        const method = this.methods[12], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListSecretOptions, SecretList>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: ListIntegration
+     */
+    listIntegration(input: ListIntegrationOptions, options?: RpcOptions): UnaryCall<ListIntegrationOptions, IntegrationList> {
+        const method = this.methods[13], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListIntegrationOptions, IntegrationList>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: ListIntegrationIdentity
+     */
+    listIntegrationIdentity(input: ListIntegrationIdentityOptions, options?: RpcOptions): UnaryCall<ListIntegrationIdentityOptions, IntegrationIdentityList> {
+        const method = this.methods[14], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListIntegrationIdentityOptions, IntegrationIdentityList>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: ListIntegrationBinding
+     */
+    listIntegrationBinding(input: ListIntegrationBindingOptions, options?: RpcOptions): UnaryCall<ListIntegrationBindingOptions, IntegrationBindingList> {
+        const method = this.methods[15], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListIntegrationBindingOptions, IntegrationBindingList>("unary", this._transport, method, opt, input);
     }
 }

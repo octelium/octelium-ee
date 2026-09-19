@@ -28,8 +28,12 @@ import { GetDNSProviderSummaryResponse } from "./enterprise/venterprisev1";
 import { GetCertificateIssuerSummaryResponse } from "./enterprise/venterprisev1";
 import { GetCertificateSummaryResponse } from "./enterprise/venterprisev1";
 import { GetSecretStoreSummaryResponse } from "./enterprise/venterprisev1";
-import { GetSecretSummaryResponse as GetSecretSummaryResponse$ } from "./enterprise/venterprisev1";
+import { GetSecretSummaryResponse as GetSecretSummaryResponse$2 } from "./enterprise/venterprisev1";
 import { GetCollectorExporterSummaryResponse } from "./enterprise/venterprisev1";
+import { GetIntegrationBindingSummaryResponse } from "./access/vaccessv1";
+import { GetIntegrationIdentitySummaryResponse } from "./access/vaccessv1";
+import { GetIntegrationSummaryResponse } from "./access/vaccessv1";
+import { GetSecretSummaryResponse as GetSecretSummaryResponse$ } from "./access/vaccessv1";
 import { GetReviewSummaryResponse } from "./access/vaccessv1";
 import { GetRequestSummaryResponse } from "./access/vaccessv1";
 import { GetCatalogSummaryResponse } from "./access/vaccessv1";
@@ -2739,7 +2743,23 @@ export enum GetClusterSummaryRequest_Kind {
     /**
      * @generated from protobuf enum value: ENTERPRISE_DEVICE_MANAGER = 27;
      */
-    ENTERPRISE_DEVICE_MANAGER = 27
+    ENTERPRISE_DEVICE_MANAGER = 27,
+    /**
+     * @generated from protobuf enum value: ACCESS_SECRET = 28;
+     */
+    ACCESS_SECRET = 28,
+    /**
+     * @generated from protobuf enum value: ACCESS_INTEGRATION = 29;
+     */
+    ACCESS_INTEGRATION = 29,
+    /**
+     * @generated from protobuf enum value: ACCESS_INTEGRATION_IDENTITY = 30;
+     */
+    ACCESS_INTEGRATION_IDENTITY = 30,
+    /**
+     * @generated from protobuf enum value: ACCESS_INTEGRATION_BINDING = 31;
+     */
+    ACCESS_INTEGRATION_BINDING = 31
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetClusterSummaryResponse
@@ -2846,6 +2866,22 @@ export interface GetClusterSummaryResponse_Access {
      * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetReviewSummaryResponse review = 4
      */
     review?: GetReviewSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetSecretSummaryResponse secret = 5
+     */
+    secret?: GetSecretSummaryResponse$;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetIntegrationSummaryResponse integration = 6
+     */
+    integration?: GetIntegrationSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetIntegrationIdentitySummaryResponse integrationIdentity = 7
+     */
+    integrationIdentity?: GetIntegrationIdentitySummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryResponse integrationBinding = 8
+     */
+    integrationBinding?: GetIntegrationBindingSummaryResponse;
 }
 /**
  * Enterprise holds the summaries of the enterprise API resources.
@@ -2860,7 +2896,7 @@ export interface GetClusterSummaryResponse_Enterprise {
     /**
      * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetSecretSummaryResponse secret = 2
      */
-    secret?: GetSecretSummaryResponse$;
+    secret?: GetSecretSummaryResponse$2;
     /**
      * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryResponse secretStore = 3
      */
@@ -9878,7 +9914,11 @@ class GetClusterSummaryResponse_Access$Type extends MessageType<GetClusterSummar
             { no: 1, name: "policy", kind: "message", T: () => GetPolicySummaryResponse$ },
             { no: 2, name: "catalog", kind: "message", T: () => GetCatalogSummaryResponse },
             { no: 3, name: "request", kind: "message", T: () => GetRequestSummaryResponse },
-            { no: 4, name: "review", kind: "message", T: () => GetReviewSummaryResponse }
+            { no: 4, name: "review", kind: "message", T: () => GetReviewSummaryResponse },
+            { no: 5, name: "secret", kind: "message", T: () => GetSecretSummaryResponse$ },
+            { no: 6, name: "integration", kind: "message", T: () => GetIntegrationSummaryResponse },
+            { no: 7, name: "integrationIdentity", kind: "message", T: () => GetIntegrationIdentitySummaryResponse },
+            { no: 8, name: "integrationBinding", kind: "message", T: () => GetIntegrationBindingSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetClusterSummaryResponse_Access>): GetClusterSummaryResponse_Access {
@@ -9904,6 +9944,18 @@ class GetClusterSummaryResponse_Access$Type extends MessageType<GetClusterSummar
                 case /* octelium.api.main.visibility.access.v1.GetReviewSummaryResponse review */ 4:
                     message.review = GetReviewSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.review);
                     break;
+                case /* octelium.api.main.visibility.access.v1.GetSecretSummaryResponse secret */ 5:
+                    message.secret = GetSecretSummaryResponse$.internalBinaryRead(reader, reader.uint32(), options, message.secret);
+                    break;
+                case /* octelium.api.main.visibility.access.v1.GetIntegrationSummaryResponse integration */ 6:
+                    message.integration = GetIntegrationSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.integration);
+                    break;
+                case /* octelium.api.main.visibility.access.v1.GetIntegrationIdentitySummaryResponse integrationIdentity */ 7:
+                    message.integrationIdentity = GetIntegrationIdentitySummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.integrationIdentity);
+                    break;
+                case /* octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryResponse integrationBinding */ 8:
+                    message.integrationBinding = GetIntegrationBindingSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.integrationBinding);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -9928,6 +9980,18 @@ class GetClusterSummaryResponse_Access$Type extends MessageType<GetClusterSummar
         /* octelium.api.main.visibility.access.v1.GetReviewSummaryResponse review = 4; */
         if (message.review)
             GetReviewSummaryResponse.internalBinaryWrite(message.review, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.access.v1.GetSecretSummaryResponse secret = 5; */
+        if (message.secret)
+            GetSecretSummaryResponse$.internalBinaryWrite(message.secret, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.access.v1.GetIntegrationSummaryResponse integration = 6; */
+        if (message.integration)
+            GetIntegrationSummaryResponse.internalBinaryWrite(message.integration, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.access.v1.GetIntegrationIdentitySummaryResponse integrationIdentity = 7; */
+        if (message.integrationIdentity)
+            GetIntegrationIdentitySummaryResponse.internalBinaryWrite(message.integrationIdentity, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryResponse integrationBinding = 8; */
+        if (message.integrationBinding)
+            GetIntegrationBindingSummaryResponse.internalBinaryWrite(message.integrationBinding, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -9943,7 +10007,7 @@ class GetClusterSummaryResponse_Enterprise$Type extends MessageType<GetClusterSu
     constructor() {
         super("octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise", [
             { no: 1, name: "collectorExporter", kind: "message", T: () => GetCollectorExporterSummaryResponse },
-            { no: 2, name: "secret", kind: "message", T: () => GetSecretSummaryResponse$ },
+            { no: 2, name: "secret", kind: "message", T: () => GetSecretSummaryResponse$2 },
             { no: 3, name: "secretStore", kind: "message", T: () => GetSecretStoreSummaryResponse },
             { no: 4, name: "certificate", kind: "message", T: () => GetCertificateSummaryResponse },
             { no: 5, name: "certificateIssuer", kind: "message", T: () => GetCertificateIssuerSummaryResponse },
@@ -9969,7 +10033,7 @@ class GetClusterSummaryResponse_Enterprise$Type extends MessageType<GetClusterSu
                     message.collectorExporter = GetCollectorExporterSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.collectorExporter);
                     break;
                 case /* octelium.api.main.visibility.enterprise.v1.GetSecretSummaryResponse secret */ 2:
-                    message.secret = GetSecretSummaryResponse$.internalBinaryRead(reader, reader.uint32(), options, message.secret);
+                    message.secret = GetSecretSummaryResponse$2.internalBinaryRead(reader, reader.uint32(), options, message.secret);
                     break;
                 case /* octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryResponse secretStore */ 3:
                     message.secretStore = GetSecretStoreSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.secretStore);
@@ -10012,7 +10076,7 @@ class GetClusterSummaryResponse_Enterprise$Type extends MessageType<GetClusterSu
             GetCollectorExporterSummaryResponse.internalBinaryWrite(message.collectorExporter, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         /* octelium.api.main.visibility.enterprise.v1.GetSecretSummaryResponse secret = 2; */
         if (message.secret)
-            GetSecretSummaryResponse$.internalBinaryWrite(message.secret, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+            GetSecretSummaryResponse$2.internalBinaryWrite(message.secret, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         /* octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryResponse secretStore = 3; */
         if (message.secretStore)
             GetSecretStoreSummaryResponse.internalBinaryWrite(message.secretStore, writer.tag(3, WireType.LengthDelimited).fork(), options).join();

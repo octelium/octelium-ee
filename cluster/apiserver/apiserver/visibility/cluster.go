@@ -236,6 +236,41 @@ func (s *ServerCluster) getSummaryTasks() []*summaryTask {
 			},
 		},
 		{
+			kind: pb.GetClusterSummaryRequest_ACCESS_SECRET,
+			fn: func(ctx context.Context, common *vmetav1.CommonSummaryOptions, ret *pb.GetClusterSummaryResponse) error {
+				res, err := s.accessC.GetSecretSummary(ctx, &vaccessv1.GetSecretSummaryRequest{Common: common})
+				ret.Access.Secret = res
+				return err
+			},
+		},
+		{
+			kind: pb.GetClusterSummaryRequest_ACCESS_INTEGRATION,
+			fn: func(ctx context.Context, common *vmetav1.CommonSummaryOptions, ret *pb.GetClusterSummaryResponse) error {
+				res, err := s.accessC.GetIntegrationSummary(ctx,
+					&vaccessv1.GetIntegrationSummaryRequest{Common: common})
+				ret.Access.Integration = res
+				return err
+			},
+		},
+		{
+			kind: pb.GetClusterSummaryRequest_ACCESS_INTEGRATION_IDENTITY,
+			fn: func(ctx context.Context, common *vmetav1.CommonSummaryOptions, ret *pb.GetClusterSummaryResponse) error {
+				res, err := s.accessC.GetIntegrationIdentitySummary(ctx,
+					&vaccessv1.GetIntegrationIdentitySummaryRequest{Common: common})
+				ret.Access.IntegrationIdentity = res
+				return err
+			},
+		},
+		{
+			kind: pb.GetClusterSummaryRequest_ACCESS_INTEGRATION_BINDING,
+			fn: func(ctx context.Context, common *vmetav1.CommonSummaryOptions, ret *pb.GetClusterSummaryResponse) error {
+				res, err := s.accessC.GetIntegrationBindingSummary(ctx,
+					&vaccessv1.GetIntegrationBindingSummaryRequest{Common: common})
+				ret.Access.IntegrationBinding = res
+				return err
+			},
+		},
+		{
 			kind: pb.GetClusterSummaryRequest_ENTERPRISE_COLLECTOR_EXPORTER,
 			fn: func(ctx context.Context, common *vmetav1.CommonSummaryOptions, ret *pb.GetClusterSummaryResponse) error {
 				res, err := s.enterpriseC.GetCollectorExporterSummary(ctx,
