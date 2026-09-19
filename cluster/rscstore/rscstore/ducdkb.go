@@ -27,8 +27,6 @@ func (s *Server) insertResource(ctx context.Context, rsc umetav1.ResourceObjectI
 		return err
 	}
 
-	go s.idxDebouncer.debounce()
-
 	return nil
 }
 
@@ -45,8 +43,6 @@ func (s *Server) removeResource(ctx context.Context, rsc umetav1.ResourceObjectI
 	); err != nil {
 		return err
 	}
-
-	go s.idxDebouncer.debounce()
 
 	return nil
 }

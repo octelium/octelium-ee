@@ -37,17 +37,17 @@ func (s *Server) listSubjectUser(ctx context.Context, req *caccessv1.ListSubject
 	filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
 	filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
 	filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindUser))
-	filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
-	filters = append(filters, goqu.L(`rsc->>'$.spec.type'`).Eq(corev1.User_Spec_HUMAN.String()))
-	filters = append(filters, goqu.L(`json_extract(rsc, '$.spec.isDisabled')`).IsNotTrue())
+	filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters = append(filters, goqu.L(colSpecType).Eq(corev1.User_Spec_HUMAN.String()))
+	filters = append(filters, goqu.L(colSpecIsDisabled).IsNotTrue())
 
 	if query != "" {
 		pattern := fmt.Sprintf(`%%%s%%`, escapeLikePattern(query))
 
 		filters = append(filters, goqu.Or(
-			goqu.L(`json_extract_string(rsc, '$.metadata.name') ILIKE ? ESCAPE '\'`, pattern),
-			goqu.L(`json_extract_string(rsc, '$.metadata.displayName') ILIKE ? ESCAPE '\'`, pattern),
-			goqu.L(`json_extract_string(rsc, '$.spec.email') ILIKE ? ESCAPE '\'`, pattern),
+			goqu.L(fmt.Sprintf(`%s ILIKE ? ESCAPE '\'`, colName), pattern),
+			goqu.L(fmt.Sprintf(`%s ILIKE ? ESCAPE '\'`, colDisplayName), pattern),
+			goqu.L(fmt.Sprintf(`%s ILIKE ? ESCAPE '\'`, colSpecEmail), pattern),
 		))
 	}
 
@@ -61,13 +61,10 @@ func (s *Server) listSubjectUser(ctx context.Context, req *caccessv1.ListSubject
 	ds := goqu.From("resources").
 		Prepared(true).
 		Where(filters...).
-		Select(
-			goqu.L(`COUNT(*) OVER() as count`),
-			goqu.L(`rsc`),
-		).
+		Select(goqu.L(fmt.Sprintf(`CAST(rsc AS %s)`, kindVarchar))).
 		Offset(uint(req.Page * limit)).
 		Limit(uint(limit)).
-		OrderAppend(goqu.L(`rsc->'metadata'->>'name'`).Asc())
+		OrderAppend(goqu.L(colName).Asc())
 
 	sqln, sqlargs, err := ds.ToSQL()
 	if err != nil {
@@ -87,21 +84,18 @@ func (s *Server) listSubjectUser(ctx context.Context, req *caccessv1.ListSubject
 	}
 
 	for rows.Next() {
-		rscMap := make(map[string]any)
-		var count int
+		var rscJSON []byte
 
-		if err := rows.Scan(&count, &rscMap); err != nil {
+		if err := rows.Scan(&rscJSON); err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
-
-		listMeta.TotalCount = uint32(count)
 
 		rsc, err := ovutils.NewResourceObject(ucorev1.API, ucorev1.Version, ucorev1.KindUser)
 		if err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
 
-		if err := pbutils.UnmarshalFromMap(rscMap, rsc); err != nil {
+		if err := pbutils.UnmarshalJSON(rscJSON, rsc); err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
 
@@ -110,6 +104,15 @@ func (s *Server) listSubjectUser(ctx context.Context, req *caccessv1.ListSubject
 
 	if err := rows.Err(); err != nil {
 		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	if listMeta.Page == 0 && uint32(len(items)) < limit {
+		listMeta.TotalCount = uint32(len(items))
+	} else {
+		listMeta.TotalCount, err = s.getListTotalCount(ctx, filters)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if listMeta.TotalCount > (listMeta.Page+1)*listMeta.ItemsPerPage {

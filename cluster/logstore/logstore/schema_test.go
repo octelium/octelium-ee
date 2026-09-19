@@ -358,3 +358,34 @@ func TestUpgradeFromLegacyLogSchema(t *testing.T) {
 	assert.Nil(t, ts.srv.initDB(ts.ctx))
 	assert.Equal(t, 21, getTableCount(t, ts.srv, "access_logs"))
 }
+
+func TestBackfillLogColumnsTerminatesWithoutCreatedAt(t *testing.T) {
+	ts := newTestServer(t)
+	if ts == nil {
+		return
+	}
+
+	table := "access_logs"
+
+	_, err := ts.srv.db.ExecContext(ts.ctx, fmt.Sprintf(
+		`INSERT INTO %s (rsc) VALUES (CAST(? AS JSON))`, table),
+		`{"metadata":{"id":"no-created-at"},"entry":{"common":{"status":"ALLOWED"}}}`)
+	assert.Nil(t, err, "%+v", err)
+
+	done := make(chan error, 1)
+	go func() {
+		done <- ts.srv.backfillLogColumns(ts.ctx, table, getLogTableColumns(table))
+	}()
+
+	select {
+	case err := <-done:
+		assert.Nil(t, err, "%+v", err)
+	case <-time.After(30 * time.Second):
+		t.Fatal("backfillLogColumns did not terminate")
+	}
+
+	var pending int
+	assert.Nil(t, ts.srv.db.QueryRowContext(ts.ctx, fmt.Sprintf(
+		`SELECT COUNT(*) FROM %s WHERE %s IS NULL`, table, colCreatedAt)).Scan(&pending))
+	assert.Equal(t, 1, pending)
+}

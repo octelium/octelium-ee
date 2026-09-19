@@ -33,15 +33,15 @@ func (s *Server) getSummaryCoreUser(ctx context.Context, req *vcorev1.GetUserSum
 		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindUser))
 		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.type' = 'HUMAN') AS count_human`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.type' = 'WORKLOAD') AS count_workload`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isDisabled') = true) AS count_deactivated`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'HUMAN') AS count_human`, colSpecType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'WORKLOAD') AS count_workload`, colSpecType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_deactivated`, colSpecIsDisabled)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -92,22 +92,22 @@ func (s *Server) getSummaryCoreSession(ctx context.Context, req *vcorev1.GetSess
 		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindSession))
 		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'CLIENT') AS count_client`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'CLIENTLESS') AS count_clientless`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.status.isConnected') = true) AS count_connected`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.userRef.uid')) AS count_user`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.deviceRef.uid')) AS count_device`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.status.isBrowser') = true) AS count_browser`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.authentication.info.credential.type' = 'OAUTH2') AS count_oauth2`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.state' = 'ACTIVE') AS count_active`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.state' = 'REJECTED') AS count_rejected`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.state' = 'PENDING') AS count_pending`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'CLIENT') AS count_client`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'CLIENTLESS') AS count_clientless`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_connected`, colStatusIsConnected)),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_user`, colUserUID)),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_device`, colDeviceUID)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_browser`, colStatusIsBrowser)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'OAUTH2') AS count_oauth2`, colStatusCredentialType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'ACTIVE') AS count_active`, colSpecState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'REJECTED') AS count_rejected`, colSpecState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'PENDING') AS count_pending`, colSpecState)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -151,12 +151,12 @@ func (s *Server) getSummaryCoreService(ctx context.Context, req *vcorev1.GetServ
 		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindService))
 		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	getModeCount := func(mode corev1.Service_Spec_Mode) exp.LiteralExpression {
-		return goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE rsc->>'$.spec.mode' = '%s') AS count_%s`,
-			mode.String(), strings.ToLower(mode.String())))
+		return goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = '%s') AS count_%s`,
+			colSpecMode, mode.String(), strings.ToLower(mode.String())))
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -176,9 +176,9 @@ func (s *Server) getSummaryCoreService(ctx context.Context, req *vcorev1.GetServ
 			getModeCount(corev1.Service_Spec_RDP_WEB),
 			getModeCount(corev1.Service_Spec_MCP),
 			getModeCount(corev1.Service_Spec_LLM),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isPublic') = true) AS count_public`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isAnonymous') = true) AS count_anonymous`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isDisabled') = true) AS count_disabled`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_public`, colSpecIsPublic)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_anonymous`, colSpecIsAnonymous)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_disabled`, colSpecIsDisabled)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -228,13 +228,13 @@ func (s *Server) getSummaryCorePolicy(ctx context.Context, req *vcorev1.GetPolic
 		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindPolicy))
 		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isDisabled') = true) AS count_disabled`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_disabled`, colSpecIsDisabled)),
 			goqu.L(`COALESCE(SUM(json_array_length(rsc, '$.spec.rules')), 0) AS count_rules`),
 			goqu.L(`COALESCE(SUM(
 			len(list_filter(
@@ -290,18 +290,18 @@ func (s *Server) getSummaryCoreCredential(ctx context.Context, req *vcorev1.GetC
 		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindCredential))
 		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isDisabled') = true) AS count_disabled`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.userRef.uid')) AS count_user`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_disabled`, colSpecIsDisabled)),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_user`, colUserUID)),
 
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.type' = 'AUTH_TOKEN') AS count_auth_token`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.type' = 'OAUTH2') AS count_oauth2`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.type' = 'ACCESS_TOKEN') AS count_access_token`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'AUTH_TOKEN') AS count_auth_token`, colSpecType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'OAUTH2') AS count_oauth2`, colSpecType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'ACCESS_TOKEN') AS count_access_token`, colSpecType)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -344,18 +344,18 @@ func (s *Server) getSummaryCoreIdentityProvider(ctx context.Context, req *vcorev
 		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindIdentityProvider))
 		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isDisabled') = true) AS count_disabled`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_disabled`, colSpecIsDisabled)),
 
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'GITHUB') AS count_github`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'OIDC') AS count_oidc`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'SAML') AS count_saml`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'OIDC_IDENTITY_TOKEN') AS count_oidc_idtoken`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'GITHUB') AS count_github`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'OIDC') AS count_oidc`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'SAML') AS count_saml`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'OIDC_IDENTITY_TOKEN') AS count_oidc_idtoken`, colStatusType)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -398,24 +398,24 @@ func (s *Server) getSummaryCoreDevice(ctx context.Context, req *vcorev1.GetDevic
 		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindDevice))
 		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
 
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.userRef.uid')) AS count_user`),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_user`, colUserUID)),
 
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.state' = 'ACTIVE') AS count_active`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.state' = 'REJECTED') AS count_rejected`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.state' = 'PENDING') AS count_pending`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'ACTIVE') AS count_active`, colSpecState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'REJECTED') AS count_rejected`, colSpecState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'PENDING') AS count_pending`, colSpecState)),
 
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.osType' = 'LINUX') AS count_linux`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.osType' = 'WINDOWS') AS count_windows`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.osType' = 'MAC') AS count_mac`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.osType' = 'ANDROID') AS count_android`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.osType' = 'IOS') AS count_ios`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'LINUX') AS count_linux`, colStatusOsType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'WINDOWS') AS count_windows`, colStatusOsType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'MAC') AS count_mac`, colStatusOsType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'ANDROID') AS count_android`, colStatusOsType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'IOS') AS count_ios`, colStatusOsType)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -458,26 +458,26 @@ func (s *Server) getSummaryCoreAuthenticator(ctx context.Context, req *vcorev1.G
 		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindAuthenticator))
 		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'TPM') AS count_tpm`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'FIDO') AS count_fido`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'TOTP') AS count_totp`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.userRef.uid')) AS count_user`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.deviceRef.uid')) AS count_device`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'TPM') AS count_tpm`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'FIDO') AS count_fido`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'TOTP') AS count_totp`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_user`, colUserUID)),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_device`, colDeviceUID)),
 
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.state' = 'ACTIVE') AS count_active`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.state' = 'REJECTED') AS count_rejected`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.state' = 'PENDING') AS count_pending`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'ACTIVE') AS count_active`, colSpecState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'REJECTED') AS count_rejected`, colSpecState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'PENDING') AS count_pending`, colSpecState)),
 
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.info.fido.type' = 'PLATFORM') AS count_fido_platform`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.info.fido.type' = 'ROAMING') AS count_fido_roaming`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.status.info.fido.isPasskey') = true) AS count_fido_passkey`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.status.info.fido.isHardware') = true) AS count_fido_hardware`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'PLATFORM') AS count_fido_platform`, colStatusFidoType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'ROAMING') AS count_fido_roaming`, colStatusFidoType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_fido_passkey`, colStatusFidoIsPasskey)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_fido_hardware`, colStatusFidoIsHardware)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -523,7 +523,7 @@ func (s *Server) getSummaryCoreGroup(ctx context.Context, req *vcorev1.GetGroupS
 		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindGroup))
 		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -568,7 +568,7 @@ func (s *Server) getSummaryCoreRegion(ctx context.Context, req *vcorev1.GetRegio
 		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindRegion))
 		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -613,7 +613,7 @@ func (s *Server) getSummaryCoreGateway(ctx context.Context, req *vcorev1.GetGate
 		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindGateway))
 		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -658,7 +658,7 @@ func (s *Server) getSummaryCoreSecret(ctx context.Context, req *vcorev1.GetSecre
 		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindSecret))
 		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -703,7 +703,7 @@ func (s *Server) getSummaryCoreNamespace(ctx context.Context, req *vcorev1.GetNa
 		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindNamespace))
 		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).

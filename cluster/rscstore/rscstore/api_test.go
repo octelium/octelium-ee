@@ -76,9 +76,6 @@ func TestDoListCommonOptionsComprehensive(t *testing.T) {
 		Status: &corev1.User_Status{},
 	})
 
-	err := env.srv.recreateFTSIndex(env.ctx)
-	assert.Nil(t, err, "%+v", err)
-
 	srvCore := &srvCore{s: env.srv}
 
 	{

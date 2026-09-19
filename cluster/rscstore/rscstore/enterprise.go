@@ -12,6 +12,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
@@ -30,25 +31,25 @@ func (s *Server) getSummaryEnterpriseCollectorExporter(ctx context.Context, req 
 		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindCollectorExporter))
 		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isDisabled') = true) AS count_disabled`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.otlp') IS NOT NULL) AS count_otlp`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.otlpHTTP') IS NOT NULL) AS count_otlp_http`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.clickhouse') IS NOT NULL) AS count_clickhouse`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.elasticsearch') IS NOT NULL) AS count_elasticsearch`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.logzio') IS NOT NULL) AS count_logzio`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.influxDB') IS NOT NULL) AS count_influxdb`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.kafka') IS NOT NULL) AS count_kafka`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.datadog') IS NOT NULL) AS count_datadog`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.splunk') IS NOT NULL) AS count_splunk`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.azureMonitor') IS NOT NULL) AS count_azure_monitor`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.azureDataExplorer') IS NOT NULL) AS count_azure_data_explorer`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.prometheusRemoteWrite') IS NOT NULL) AS count_prometheus_remote_write`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_disabled`, colSpecIsDisabled)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'otlp')) AS count_otlp`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'otlpHTTP')) AS count_otlp_http`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'clickhouse')) AS count_clickhouse`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'elasticsearch')) AS count_elasticsearch`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'logzio')) AS count_logzio`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'influxDB')) AS count_influxdb`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'kafka')) AS count_kafka`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'datadog')) AS count_datadog`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'splunk')) AS count_splunk`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'azureMonitor')) AS count_azure_monitor`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'azureDataExplorer')) AS count_azure_data_explorer`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'prometheusRemoteWrite')) AS count_prometheus_remote_write`, colSpecKeys)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -92,7 +93,7 @@ func (s *Server) getSummaryEnterpriseSecret(ctx context.Context, req *venterpris
 		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindSecret))
 		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -137,22 +138,22 @@ func (s *Server) getSummaryEnterpriseSecretStore(ctx context.Context, req *vente
 		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindSecretStore))
 		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'TYPE_AZURE_KEY_VAULT') AS count_azure_key_vault`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'TYPE_HASHICORP_VAULT') AS count_hashicorp_vault`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'TYPE_GCP_KMS') AS count_gcp_kms`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'TYPE_AWS_KMS') AS count_aws_kms`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'KUBERNETES') AS count_kubernetes`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.state' = 'OK') AS count_ok`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.state' = 'LOADING') AS count_loading`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.synchronization.state' = 'SYNCING') AS count_synchronizing`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.synchronization.state' = 'SUCCESS') AS count_sync_success`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.synchronization.state' = 'FAILED') AS count_sync_failed`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'TYPE_AZURE_KEY_VAULT') AS count_azure_key_vault`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'TYPE_HASHICORP_VAULT') AS count_hashicorp_vault`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'TYPE_GCP_KMS') AS count_gcp_kms`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'TYPE_AWS_KMS') AS count_aws_kms`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'KUBERNETES') AS count_kubernetes`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'OK') AS count_ok`, colStatusState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'LOADING') AS count_loading`, colStatusState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'SYNCING') AS count_synchronizing`, colStatusSyncState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'SUCCESS') AS count_sync_success`, colStatusSyncState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'FAILED') AS count_sync_failed`, colStatusSyncState)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -195,28 +196,27 @@ func (s *Server) getSummaryEnterpriseCertificate(ctx context.Context, req *vente
 		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindCertificate))
 		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	now := time.Now().UTC()
-	nowStr := now.Format(time.RFC3339Nano)
-	expiringSoonStr := now.Add(30 * 24 * time.Hour).Format(time.RFC3339Nano)
+	expiringSoon := now.Add(30 * 24 * time.Hour)
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.mode' = 'MANAGED') AS count_managed`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.mode' = 'MANUAL') AS count_manual`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.issuance.state' = 'ISSUANCE_REQUESTED') AS count_issuance_requested`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.issuance.state' = 'ISSUING') AS count_issuing`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.issuance.state' = 'SUCCESS') AS count_issuance_success`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.issuance.state' = 'FAILED') AS count_issuance_failed`),
-			goqu.L(`COUNT(*) FILTER (WHERE (rsc->>'$.status.issuance.expiresAt') < ?) AS count_expired`, nowStr),
-			goqu.L(`COUNT(*) FILTER (WHERE (rsc->>'$.status.issuance.expiresAt' >= ?) AND (rsc->>'$.status.issuance.expiresAt' < ?)) AS count_expiring_soon`,
-				nowStr, expiringSoonStr),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.status.serviceRef') IS NOT NULL) AS count_service`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.status.namespaceRef') IS NOT NULL) AS count_namespace`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.certificateIssuerRef.uid')) AS count_certificate_issuer`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'MANAGED') AS count_managed`, colSpecMode)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'MANUAL') AS count_manual`, colSpecMode)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'ISSUANCE_REQUESTED') AS count_issuance_requested`, colStatusIssuanceState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'ISSUING') AS count_issuing`, colStatusIssuanceState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'SUCCESS') AS count_issuance_success`, colStatusIssuanceState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'FAILED') AS count_issuance_failed`, colStatusIssuanceState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s < ?) AS count_expired`, colStatusIssuanceExpiry), now),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE (%s >= ?) AND (%s < ?)) AS count_expiring_soon`, colStatusIssuanceExpiry, colStatusIssuanceExpiry),
+				now, expiringSoon),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'serviceRef')) AS count_service`, colStatusKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'namespaceRef')) AS count_namespace`, colStatusKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_certificate_issuer`, colCertificateIssuerUID)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -260,16 +260,16 @@ func (s *Server) getSummaryEnterpriseCertificateIssuer(ctx context.Context, req 
 		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindCertificateIssuer))
 		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.acme') IS NOT NULL) AS count_acme`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.state' = 'PREPARING') AS count_preparing`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.state' = 'READY') AS count_ready`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.state' = 'NOT_READY') AS count_not_ready`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'acme')) AS count_acme`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'PREPARING') AS count_preparing`, colStatusState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'READY') AS count_ready`, colStatusState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'NOT_READY') AS count_not_ready`, colStatusState)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -310,19 +310,19 @@ func (s *Server) getSummaryEnterpriseDNSProvider(ctx context.Context, req *vente
 		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindDNSProvider))
 		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.cloudflare') IS NOT NULL) AS count_cloudflare`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.aws') IS NOT NULL) AS count_aws`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.digitalocean') IS NOT NULL) AS count_digitalocean`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.google') IS NOT NULL) AS count_google`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.azure') IS NOT NULL) AS count_azure`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.linode') IS NOT NULL) AS count_linode`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.ovh') IS NOT NULL) AS count_ovh`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'cloudflare')) AS count_cloudflare`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'aws')) AS count_aws`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'digitalocean')) AS count_digitalocean`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'google')) AS count_google`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'azure')) AS count_azure`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'linode')) AS count_linode`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'ovh')) AS count_ovh`, colSpecKeys)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -364,19 +364,19 @@ func (s *Server) getSummaryEnterpriseDirectoryProvider(ctx context.Context, req 
 		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindDirectoryProvider))
 		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isDisabled') = true) AS count_disabled`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.scim') IS NOT NULL) AS count_scim`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.googleWorkspace') IS NOT NULL) AS count_google_workspace`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.keycloak') IS NOT NULL) AS count_keycloak`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.synchronization.state' = 'SYNCING') AS count_synchronizing`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.synchronization.state' = 'SUCCESS') AS count_sync_success`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.synchronization.state' = 'FAILED') AS count_sync_failed`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_disabled`, colSpecIsDisabled)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'scim')) AS count_scim`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'googleWorkspace')) AS count_google_workspace`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'keycloak')) AS count_keycloak`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'SYNCING') AS count_synchronizing`, colStatusSyncState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'SUCCESS') AS count_sync_success`, colStatusSyncState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'FAILED') AS count_sync_failed`, colStatusSyncState)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -412,7 +412,7 @@ func (s *Server) getSummaryEnterpriseDirectoryProvider(ctx context.Context, req 
 		userFilters = append(userFilters, goqu.L(`kind`).Eq(uenterprisev1.KindDirectoryProviderUser))
 		userFilters = append(userFilters, goqu.L(`api`).Eq(uenterprisev1.API))
 		userFilters = append(userFilters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		userFilters = append(userFilters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		userFilters = append(userFilters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	userDS := goqu.From("resources").Where(userFilters...).Select(goqu.L(`COUNT(*) AS count_total`))
@@ -442,7 +442,7 @@ func (s *Server) getSummaryEnterpriseDirectoryProvider(ctx context.Context, req 
 		groupFilters = append(groupFilters, goqu.L(`kind`).Eq(uenterprisev1.KindDirectoryProviderGroup))
 		groupFilters = append(groupFilters, goqu.L(`api`).Eq(uenterprisev1.API))
 		groupFilters = append(groupFilters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		groupFilters = append(groupFilters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		groupFilters = append(groupFilters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	groupDS := goqu.From("resources").Where(groupFilters...).Select(goqu.L(`COUNT(*) AS count_total`))
@@ -479,14 +479,14 @@ func (s *Server) getSummaryEnterpriseDirectoryProviderUser(ctx context.Context, 
 		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindDirectoryProviderUser))
 		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.directoryProviderRef.uid')) AS count_directory_provider`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.userRef.uid')) AS count_user`),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_directory_provider`, colDirectoryProviderUID)),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_user`, colUserUID)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -526,14 +526,14 @@ func (s *Server) getSummaryEnterpriseDirectoryProviderGroup(ctx context.Context,
 		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindDirectoryProviderGroup))
 		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.directoryProviderRef.uid')) AS count_directory_provider`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.groupRef.uid')) AS count_group`),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_directory_provider`, colDirectoryProviderUID)),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_group`, colGroupUID)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -573,30 +573,30 @@ func (s *Server) getSummaryEnterpriseDeviceManager(ctx context.Context, req *ven
 		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindDeviceManager))
 		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
 		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'CROWDSTRIKE') AS count_crowdstrike`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'SENTINELONE') AS count_sentinelone`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'MICROSOFT_INTUNE') AS count_microsoft_intune`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'JAMF_PRO') AS count_jamf_pro`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'ONEPASSWORD') AS count_onepassword`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'FLEETDM') AS count_fleetdm`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'HUNTRESS') AS count_huntress`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.type' = 'IRU') AS count_iru`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.state' = 'OK') AS count_ok`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.state' = 'LOADING') AS count_loading`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.state' = 'ERROR') AS count_error`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.state' = 'DEGRADED') AS count_degraded`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.polling.isDisabled') = true) AS count_polling_disabled`),
-			goqu.L(`COALESCE(SUM(TRY_CAST(rsc->>'$.status.collection.managedDevices' AS BIGINT)), 0) AS sum_managed_devices`),
-			goqu.L(`COALESCE(SUM(TRY_CAST(rsc->>'$.status.linking.linkedDevices' AS BIGINT)), 0) AS sum_linked_devices`),
-			goqu.L(`COALESCE(SUM(TRY_CAST(rsc->>'$.status.linking.waitingApproval' AS BIGINT)), 0) AS sum_waiting_approval`),
-			goqu.L(`COALESCE(SUM(TRY_CAST(rsc->>'$.status.linking.ambiguous' AS BIGINT)), 0) AS sum_ambiguous`),
-			goqu.L(`COALESCE(SUM(TRY_CAST(rsc->>'$.status.linking.failedUpdates' AS BIGINT)), 0) AS sum_failed_updates`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'CROWDSTRIKE') AS count_crowdstrike`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'SENTINELONE') AS count_sentinelone`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'MICROSOFT_INTUNE') AS count_microsoft_intune`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'JAMF_PRO') AS count_jamf_pro`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'ONEPASSWORD') AS count_onepassword`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'FLEETDM') AS count_fleetdm`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'HUNTRESS') AS count_huntress`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'IRU') AS count_iru`, colStatusType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'OK') AS count_ok`, colStatusState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'LOADING') AS count_loading`, colStatusState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'ERROR') AS count_error`, colStatusState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'DEGRADED') AS count_degraded`, colStatusState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_polling_disabled`, colSpecPollingIsDisabled)),
+			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_managed_devices`, colStatusManagedDevices)),
+			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_linked_devices`, colStatusLinkedDevices)),
+			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_waiting_approval`, colStatusWaitingApprove)),
+			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_ambiguous`, colStatusAmbiguous)),
+			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_failed_updates`, colStatusFailedUpdates)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()

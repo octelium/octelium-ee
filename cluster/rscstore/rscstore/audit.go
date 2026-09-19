@@ -10,6 +10,7 @@ package rscstore
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/doug-martin/goqu/v9"
@@ -124,7 +125,7 @@ func (s *Server) getSessionFromActorRef(ctx context.Context, actorRef *metav1.Ob
 
 	ds := goqu.From("resources").Where(goqu.L(`uid`).Eq(actorRef.Uid)).
 		Select(
-			goqu.L(`rsc`),
+			goqu.L(fmt.Sprintf(`CAST(rsc AS %s)`, kindVarchar)),
 		)
 	sqln, sqlargs, err := ds.ToSQL()
 	if err != nil {
@@ -133,13 +134,13 @@ func (s *Server) getSessionFromActorRef(ctx context.Context, actorRef *metav1.Ob
 
 	ret := &corev1.Session{}
 
-	rsc := make(map[string]any)
+	var rscJSON []byte
 
-	if err := s.db.QueryRowContext(ctx, sqln, sqlargs...).Scan(&rsc); err != nil {
+	if err := s.db.QueryRowContext(ctx, sqln, sqlargs...).Scan(&rscJSON); err != nil {
 		return nil, err
 	}
 
-	if err := pbutils.UnmarshalFromMap(rsc, ret); err != nil {
+	if err := pbutils.UnmarshalJSON(rscJSON, ret); err != nil {
 		return nil, err
 	}
 

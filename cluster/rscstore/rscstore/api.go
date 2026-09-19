@@ -137,10 +137,10 @@ func (s *srvCore) ListService(ctx context.Context, req *vcorev1.ListServiceOptio
 		switch {
 		case req.NamespaceRef.Name != "":
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`rsc->>'$.status.namespaceRef.name'`).Eq(req.NamespaceRef.Name))
+				goqu.L(colNamespaceName).Eq(req.NamespaceRef.Name))
 		case req.NamespaceRef.Uid != "":
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`rsc->>'$.status.namespaceRef.uid'`).Eq(req.NamespaceRef.Uid))
+				goqu.L(colNamespaceUID).Eq(req.NamespaceRef.Uid))
 		}
 	}
 
@@ -152,31 +152,31 @@ func (s *srvCore) ListService(ctx context.Context, req *vcorev1.ListServiceOptio
 		switch {
 		case req.RegionRef.Name != "":
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`rsc->>'$.status.regionRef.name'`).Eq(req.RegionRef.Name))
+				goqu.L(colRegionName).Eq(req.RegionRef.Name))
 		case req.RegionRef.Uid != "":
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`rsc->>'$.status.regionRef.uid'`).Eq(req.RegionRef.Uid))
+				goqu.L(colRegionUID).Eq(req.RegionRef.Uid))
 		}
 	}
 
 	if req.Mode != corev1.Service_Spec_MODE_UNSET {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.spec.mode'`).Eq(req.Mode.String()))
+			goqu.L(colSpecMode).Eq(req.Mode.String()))
 	}
 
 	if req.IsPublic {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`json_extract(rsc, '$.spec.isPublic') = true`))
+			goqu.L(fmt.Sprintf(`%s = true`, colSpecIsPublic)))
 	}
 
 	if req.IsAnonymous {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`json_extract(rsc, '$.spec.isAnonymous') = true`))
+			goqu.L(fmt.Sprintf(`%s = true`, colSpecIsAnonymous)))
 	}
 
 	if req.IsDisabled {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`json_extract(rsc, '$.spec.isDisabled') = true`))
+			goqu.L(fmt.Sprintf(`%s = true`, colSpecIsDisabled)))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)
@@ -198,12 +198,12 @@ func (s *srvCore) ListUser(ctx context.Context, req *vcorev1.ListUserOptions) (*
 
 	if req.Type != corev1.User_Spec_TYPE_UNKNOWN {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.spec.type'`).Eq(req.Type.String()))
+			goqu.L(colSpecType).Eq(req.Type.String()))
 	}
 
 	if req.IsDisabled {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`json_extract(rsc, '$.spec.isDisabled') = true`))
+			goqu.L(fmt.Sprintf(`%s = true`, colSpecIsDisabled)))
 	}
 
 	if req.GroupRef != nil && req.GroupRef.Name != "" {
@@ -211,7 +211,7 @@ func (s *srvCore) ListUser(ctx context.Context, req *vcorev1.ListUserOptions) (*
 			return nil, err
 		}
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(fmt.Sprintf(`list_contains(CAST(json_extract(rsc, '$.spec.groups') AS VARCHAR[]),'%s')`, req.GroupRef.Name)))
+			goqu.L(fmt.Sprintf(`list_contains(%s, ?)`, colSpecGroups), req.GroupRef.Name))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)
@@ -267,7 +267,7 @@ func (s *srvCore) ListPolicy(ctx context.Context, req *vcorev1.ListPolicyOptions
 
 	if req.IsDisabled {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`json_extract(rsc, '$.spec.isDisabled') = true`))
+			goqu.L(fmt.Sprintf(`%s = true`, colSpecIsDisabled)))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)
@@ -352,21 +352,21 @@ func (s *srvCore) ListCredential(ctx context.Context, req *vcorev1.ListCredentia
 		switch {
 		case req.UserRef.Name != "":
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`rsc->>'$.status.userRef.name'`).Eq(req.UserRef.Name))
+				goqu.L(colUserName).Eq(req.UserRef.Name))
 		case req.UserRef.Uid != "":
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`rsc->>'$.status.userRef.uid'`).Eq(req.UserRef.Uid))
+				goqu.L(colUserUID).Eq(req.UserRef.Uid))
 		}
 	}
 
 	if req.Type != corev1.Credential_Spec_TYPE_UNKNOWN {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.spec.type'`).Eq(req.Type.String()))
+			goqu.L(colSpecType).Eq(req.Type.String()))
 	}
 
 	if req.IsDisabled {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`json_extract(rsc, '$.spec.isDisabled') = true`))
+			goqu.L(fmt.Sprintf(`%s = true`, colSpecIsDisabled)))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)
@@ -388,12 +388,12 @@ func (s *srvCore) ListIdentityProvider(ctx context.Context, req *vcorev1.ListIde
 
 	if req.Type != corev1.IdentityProvider_Status_TYPE_UNKNOWN {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.status.type'`).Eq(req.Type.String()))
+			goqu.L(colStatusType).Eq(req.Type.String()))
 	}
 
 	if req.IsDisabled {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`json_extract(rsc, '$.spec.isDisabled') = true`))
+			goqu.L(fmt.Sprintf(`%s = true`, colSpecIsDisabled)))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)
@@ -415,22 +415,22 @@ func (s *srvCore) ListSession(ctx context.Context, req *vcorev1.ListSessionOptio
 
 	if req.Type != corev1.Session_Status_TYPE_UNKNOWN {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.status.type'`).Eq(req.Type.String()))
+			goqu.L(colStatusType).Eq(req.Type.String()))
 	}
 
 	if req.IsBrowser {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`json_extract(rsc, '$.status.isBrowser') = true`))
+			goqu.L(fmt.Sprintf(`%s = true`, colStatusIsBrowser)))
 	}
 
 	if req.IsConnected {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`json_extract(rsc, '$.status.isConnected') = true`))
+			goqu.L(fmt.Sprintf(`%s = true`, colStatusIsConnected)))
 	}
 
 	if req.State != corev1.Session_Spec_STATE_UNKNOWN {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.spec.state'`).Eq(req.State.String()))
+			goqu.L(colSpecState).Eq(req.State.String()))
 	}
 
 	if req.UserRef != nil {
@@ -441,10 +441,10 @@ func (s *srvCore) ListSession(ctx context.Context, req *vcorev1.ListSessionOptio
 		switch {
 		case req.UserRef.Name != "":
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`rsc->>'$.status.userRef.name'`).Eq(req.UserRef.Name))
+				goqu.L(colUserName).Eq(req.UserRef.Name))
 		case req.UserRef.Uid != "":
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`rsc->>'$.status.userRef.uid'`).Eq(req.UserRef.Uid))
+				goqu.L(colUserUID).Eq(req.UserRef.Uid))
 		}
 	}
 
@@ -456,10 +456,10 @@ func (s *srvCore) ListSession(ctx context.Context, req *vcorev1.ListSessionOptio
 		switch {
 		case req.DeviceRef.Name != "":
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`rsc->>'$.status.deviceRef.name'`).Eq(req.DeviceRef.Name))
+				goqu.L(colDeviceName).Eq(req.DeviceRef.Name))
 		case req.DeviceRef.Uid != "":
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`rsc->>'$.status.deviceRef.uid'`).Eq(req.DeviceRef.Uid))
+				goqu.L(colDeviceUID).Eq(req.DeviceRef.Uid))
 		}
 	}
 
@@ -471,10 +471,10 @@ func (s *srvCore) ListSession(ctx context.Context, req *vcorev1.ListSessionOptio
 		switch {
 		case req.CredentialRef.Name != "":
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`rsc->>'$.status.credentialRef.name'`).Eq(req.CredentialRef.Name))
+				goqu.L(colCredentialName).Eq(req.CredentialRef.Name))
 		case req.CredentialRef.Uid != "":
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`rsc->>'$.status.credentialRef.uid'`).Eq(req.CredentialRef.Uid))
+				goqu.L(colCredentialUID).Eq(req.CredentialRef.Uid))
 		}
 	}
 
@@ -503,21 +503,21 @@ func (s *srvCore) ListDevice(ctx context.Context, req *vcorev1.ListDeviceOptions
 		switch {
 		case req.UserRef.Name != "":
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`rsc->>'$.status.userRef.name'`).Eq(req.UserRef.Name))
+				goqu.L(colUserName).Eq(req.UserRef.Name))
 		case req.UserRef.Uid != "":
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`rsc->>'$.status.userRef.uid'`).Eq(req.UserRef.Uid))
+				goqu.L(colUserUID).Eq(req.UserRef.Uid))
 		}
 	}
 
 	if req.State != corev1.Device_Spec_STATE_UNKNOWN {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.spec.state'`).Eq(req.State.String()))
+			goqu.L(colSpecState).Eq(req.State.String()))
 	}
 
 	if req.OsType != corev1.Device_Status_OS_TYPE_UNKNOWN {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.status.osType'`).Eq(req.OsType.String()))
+			goqu.L(colStatusOsType).Eq(req.OsType.String()))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)
@@ -549,17 +549,17 @@ func (s *srvCore) ListAuthenticator(ctx context.Context, req *vcorev1.ListAuthen
 
 	if req.State != corev1.Authenticator_Spec_STATE_UNKNOWN {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.spec.state'`).Eq(req.State.String()))
+			goqu.L(colSpecState).Eq(req.State.String()))
 	}
 
 	if req.Type != corev1.Authenticator_Status_TYPE_UNKNOWN {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.status.type'`).Eq(req.Type.String()))
+			goqu.L(colStatusType).Eq(req.Type.String()))
 	}
 
 	if req.IsRegistered {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`json_extract(rsc, '$.status.isRegistered') = true`))
+			goqu.L(fmt.Sprintf(`%s = true`, colStatusIsRegistered)))
 	}
 
 	/*
@@ -571,10 +571,10 @@ func (s *srvCore) ListAuthenticator(ctx context.Context, req *vcorev1.ListAuthen
 			switch {
 			case req.UserRef.Name != "":
 				doListReq.filters = append(doListReq.filters,
-					goqu.L(`rsc->>'$.status.userRef.name'`).Eq(req.UserRef.Name))
+					goqu.L(colUserName).Eq(req.UserRef.Name))
 			case req.UserRef.Uid != "":
 				doListReq.filters = append(doListReq.filters,
-					goqu.L(`rsc->>'$.status.userRef.uid'`).Eq(req.UserRef.Uid))
+					goqu.L(colUserUID).Eq(req.UserRef.Uid))
 			}
 		}
 	*/
@@ -600,16 +600,24 @@ func appendRefFilter(filters []exp.Expression, ref *metav1.ObjectReference, o *a
 	}
 
 	if ref.Uid != "" {
-		filterName := fmt.Sprintf(`rsc->>'$.%s.uid'`, pth)
-		filters = append(filters, goqu.L(filterName).Eq(ref.Uid))
+		filters = append(filters, goqu.L(getRefFilterExpr(pth, "uid")).Eq(ref.Uid))
 	}
 
 	if ref.Name != "" {
-		filterName := fmt.Sprintf(`rsc->>'$.%s.name'`, pth)
-		filters = append(filters, goqu.L(filterName).Eq(ref.Name))
+		filters = append(filters, goqu.L(getRefFilterExpr(pth, "name")).Eq(ref.Name))
 	}
 
 	return filters, nil
+}
+
+func getRefFilterExpr(pth, field string) string {
+	path := fmt.Sprintf(`$.%s.%s`, pth, field)
+
+	if name, ok := getResourceColumnNameByPath(path); ok {
+		return name
+	}
+
+	return fmt.Sprintf(`rsc->>'%s'`, path)
 }
 
 type srvEnterprise struct {
@@ -699,12 +707,12 @@ func (s *srvEnterprise) ListCollectorExporter(ctx context.Context, req *venterpr
 
 	if field := collectorExporterTypeField(req.Type); field != "" {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(fmt.Sprintf(`json_extract(rsc, '$.spec.%s') IS NOT NULL`, field)))
+			goqu.L(fmt.Sprintf(`list_contains(%s, ?)`, colSpecKeys), field))
 	}
 
 	if req.IsDisabled {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`json_extract(rsc, '$.spec.isDisabled') = true`))
+			goqu.L(fmt.Sprintf(`%s = true`, colSpecIsDisabled)))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)
@@ -743,17 +751,17 @@ func (s *srvEnterprise) ListSecretStore(ctx context.Context, req *venterprisev1.
 
 	if req.Type != enterprisev1.SecretStore_Status_TYPE_UNKNOWN {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.status.type'`).Eq(req.Type.String()))
+			goqu.L(colStatusType).Eq(req.Type.String()))
 	}
 
 	if req.State != enterprisev1.SecretStore_Status_STATE_UNKNOWN {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.status.state'`).Eq(req.State.String()))
+			goqu.L(colStatusState).Eq(req.State.String()))
 	}
 
 	if req.SynchronizationState != enterprisev1.SecretStore_Status_Synchronization_STATE_UNSET {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.status.synchronization.state'`).Eq(req.SynchronizationState.String()))
+			goqu.L(colStatusSyncState).Eq(req.SynchronizationState.String()))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)
@@ -776,12 +784,12 @@ func (s *srvEnterprise) ListCertificate(ctx context.Context, req *venterprisev1.
 
 	if req.Mode != enterprisev1.Certificate_Spec_MODE_UNSET {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.spec.mode'`).Eq(req.Mode.String()))
+			goqu.L(colSpecMode).Eq(req.Mode.String()))
 	}
 
 	if req.IssuanceState != enterprisev1.Certificate_Status_Issuance_STATE_UNSET {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.status.issuance.state'`).Eq(req.IssuanceState.String()))
+			goqu.L(colStatusIssuanceState).Eq(req.IssuanceState.String()))
 	}
 
 	doListReq.filters, err = appendRefFilter(doListReq.filters, req.CertificateIssuerRef, nil, "status.certificateIssuerRef")
@@ -802,13 +810,13 @@ func (s *srvEnterprise) ListCertificate(ctx context.Context, req *venterprisev1.
 
 		if req.IsExpired {
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`(rsc->>'$.status.issuance.expiresAt') < ?`, now.Format(time.RFC3339Nano)))
+				goqu.L(fmt.Sprintf(`%s < ?`, colStatusIssuanceExpiry), now))
 		}
 
 		if req.IsExpiringSoon {
 			doListReq.filters = append(doListReq.filters,
-				goqu.L(`(rsc->>'$.status.issuance.expiresAt' >= ?) AND (rsc->>'$.status.issuance.expiresAt' < ?)`,
-					now.Format(time.RFC3339Nano), now.Add(30*24*time.Hour).Format(time.RFC3339Nano)))
+				goqu.L(fmt.Sprintf(`(%s >= ?) AND (%s < ?)`, colStatusIssuanceExpiry, colStatusIssuanceExpiry),
+					now, now.Add(30*24*time.Hour)))
 		}
 	}
 
@@ -831,12 +839,12 @@ func (s *srvEnterprise) ListCertificateIssuer(ctx context.Context, req *venterpr
 
 	if req.Type == venterprisev1.ListCertificateIssuerOptions_ACME {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`json_extract(rsc, '$.spec.acme') IS NOT NULL`))
+			goqu.L(fmt.Sprintf(`list_contains(%s, ?)`, colSpecKeys), "acme"))
 	}
 
 	if req.State != enterprisev1.CertificateIssuer_Status_STATE_UNKNOWN {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.status.state'`).Eq(req.State.String()))
+			goqu.L(colStatusState).Eq(req.State.String()))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)
@@ -879,7 +887,7 @@ func (s *srvEnterprise) ListDNSProvider(ctx context.Context, req *venterprisev1.
 
 	if field := dnsProviderTypeField(req.Type); field != "" {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(fmt.Sprintf(`json_extract(rsc, '$.spec.%s') IS NOT NULL`, field)))
+			goqu.L(fmt.Sprintf(`list_contains(%s, ?)`, colSpecKeys), field))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)
@@ -914,17 +922,17 @@ func (s *srvEnterprise) ListDirectoryProvider(ctx context.Context, req *venterpr
 
 	if field := directoryProviderTypeField(req.Type); field != "" {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(fmt.Sprintf(`json_extract(rsc, '$.spec.%s') IS NOT NULL`, field)))
+			goqu.L(fmt.Sprintf(`list_contains(%s, ?)`, colSpecKeys), field))
 	}
 
 	if req.IsDisabled {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`json_extract(rsc, '$.spec.isDisabled') = true`))
+			goqu.L(fmt.Sprintf(`%s = true`, colSpecIsDisabled)))
 	}
 
 	if req.SynchronizationState != enterprisev1.DirectoryProvider_Status_Synchronization_STATE_UNSET {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.status.synchronization.state'`).Eq(req.SynchronizationState.String()))
+			goqu.L(colStatusSyncState).Eq(req.SynchronizationState.String()))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)
@@ -1000,27 +1008,27 @@ func (s *srvEnterprise) ListDeviceManager(ctx context.Context, req *venterprisev
 
 	if req.Type != enterprisev1.DeviceManager_Status_TYPE_UNKNOWN {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.status.type'`).Eq(req.Type.String()))
+			goqu.L(colStatusType).Eq(req.Type.String()))
 	}
 
 	if req.State != enterprisev1.DeviceManager_Status_STATE_UNKNOWN {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.status.state'`).Eq(req.State.String()))
+			goqu.L(colStatusState).Eq(req.State.String()))
 	}
 
 	if req.Strategy != enterprisev1.DeviceManager_Spec_Linking_STRATEGY_UNSET {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.spec.linking.strategy'`).Eq(req.Strategy.String()))
+			goqu.L(colSpecLinkingStrategy).Eq(req.Strategy.String()))
 	}
 
 	if req.ApprovalMode != enterprisev1.DeviceManager_Spec_Linking_APPROVAL_MODE_UNSET {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.spec.linking.approvalMode'`).Eq(req.ApprovalMode.String()))
+			goqu.L(colSpecLinkingApproval).Eq(req.ApprovalMode.String()))
 	}
 
 	if req.IsPollingDisabled {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`json_extract(rsc, '$.spec.polling.isDisabled') = true`))
+			goqu.L(fmt.Sprintf(`%s = true`, colSpecPollingIsDisabled)))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)
@@ -1063,7 +1071,7 @@ func (s *srvAccess) ListPolicy(ctx context.Context, req *vaccessv1.ListPolicyOpt
 
 	if req.IsDisabled {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`json_extract(rsc, '$.spec.isDisabled') = true`))
+			goqu.L(fmt.Sprintf(`%s = true`, colSpecIsDisabled)))
 	}
 
 	if req.Effect != accessv1.Policy_Spec_Rule_EFFECT_UNSET {
@@ -1158,7 +1166,7 @@ func (s *srvAccess) ListCatalog(ctx context.Context, req *vaccessv1.ListCatalogO
 			return nil, err
 		}
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`list_contains(CAST(json_extract(rsc, '$.spec.resourceCollection.service.services') AS VARCHAR[]), ?)`, req.ServiceRef.Name))
+			goqu.L(fmt.Sprintf(`list_contains(%s, ?)`, colSpecServices), req.ServiceRef.Name))
 	}
 
 	if req.NamespaceRef != nil && req.NamespaceRef.Name != "" {
@@ -1166,7 +1174,7 @@ func (s *srvAccess) ListCatalog(ctx context.Context, req *vaccessv1.ListCatalogO
 			return nil, err
 		}
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`list_contains(CAST(json_extract(rsc, '$.spec.resourceCollection.service.namespaces') AS VARCHAR[]), ?)`, req.NamespaceRef.Name))
+			goqu.L(fmt.Sprintf(`list_contains(%s, ?)`, colSpecNamespaces), req.NamespaceRef.Name))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)
@@ -1236,18 +1244,18 @@ func (s *srvAccess) ListRequest(ctx context.Context, req *vaccessv1.ListRequestO
 
 	if req.State != accessv1.Request_Status_State_STATUS_UNKNOWN {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.status.state.status'`).Eq(req.State.String()))
+			goqu.L(colStatusStateStatus).Eq(req.State.String()))
 	}
 
 	if req.Urgency != accessv1.Request_Spec_URGENCY_UNSET {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.spec.urgency'`).Eq(req.Urgency.String()))
+			goqu.L(colSpecUrgency).Eq(req.Urgency.String()))
 	}
 
 	if req.IsActive {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`(rsc->>'$.status.state.status' = ?) AND ((json_extract(rsc, '$.status.accessEndsAt') IS NULL) OR (rsc->>'$.status.accessEndsAt' > ?))`,
-				accessv1.Request_Status_State_APPROVED.String(), time.Now().UTC().Format(time.RFC3339Nano)))
+			goqu.L(fmt.Sprintf(`(%s = ?) AND ((%s IS NULL) OR (%s > ?))`, colStatusStateStatus, colStatusAccessEndsAt, colStatusAccessEndsAt),
+				accessv1.Request_Status_State_APPROVED.String(), time.Now().UTC()))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)
@@ -1279,12 +1287,12 @@ func (s *srvAccess) ListReview(ctx context.Context, req *vaccessv1.ListReviewOpt
 
 	if req.Decision != accessv1.Review_Spec_DECISION_UNSET {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`rsc->>'$.spec.decision'`).Eq(req.Decision.String()))
+			goqu.L(colSpecDecision).Eq(req.Decision.String()))
 	}
 
 	if req.IsDecided {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`(rsc->>'$.spec.decision' = 'DECISION_APPROVE') OR (rsc->>'$.spec.decision' = 'DECISION_REJECT')`))
+			goqu.L(fmt.Sprintf(`(%s = 'DECISION_APPROVE') OR (%s = 'DECISION_REJECT')`, colSpecDecision, colSpecDecision)))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)

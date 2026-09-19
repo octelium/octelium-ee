@@ -176,8 +176,6 @@ func (s *Server) reconcileAllResources(ctx context.Context) error {
 		}
 	}
 
-	go s.idxDebouncer.debounce()
-
 	return nil
 }
 
@@ -634,7 +632,17 @@ type execer interface {
 }
 
 func (s *Server) upsertResource(ctx context.Context, rsc umetav1.ResourceObjectI) error {
-	return s.upsertResourceExec(ctx, s.db, rsc)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if err := s.upsertResourceExec(ctx, tx, rsc); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (s *Server) upsertResourceTx(ctx context.Context, tx *sql.Tx, rsc umetav1.ResourceObjectI) error {
@@ -661,28 +669,12 @@ func (s *Server) upsertResourceExec(ctx context.Context, e execer, rsc umetav1.R
 		return err
 	}
 
-	_, err = e.ExecContext(ctx, `
-INSERT INTO resources
-    (api, version, kind, uid, resource_version, rsc, rsc_str)
-VALUES
-    (?, ?, ?, ?, ?, ?, ?)
-ON CONFLICT (uid)
-DO UPDATE SET
-    api = EXCLUDED.api,
-    version = EXCLUDED.version,
-    kind = EXCLUDED.kind,
-    resource_version = EXCLUDED.resource_version,
-    rsc = EXCLUDED.rsc,
-    rsc_str = EXCLUDED.rsc_str
-`,
-		api,
-		version,
-		kind,
-		uid,
-		resourceVersion,
-		string(rscJSON),
-		rscStr,
-	)
+	if _, err := e.ExecContext(ctx, `DELETE FROM resources WHERE uid = ?`, uid); err != nil {
+		return err
+	}
+
+	_, err = e.ExecContext(ctx, getResourceInsertQuery(),
+		getResourceInsertArgs(api, version, kind, uid, resourceVersion, string(rscJSON), rscStr)...)
 
 	return err
 }

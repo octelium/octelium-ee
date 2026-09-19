@@ -10,11 +10,8 @@ package rscstore
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
@@ -29,6 +26,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type doListReq struct {
@@ -45,7 +43,6 @@ const maxItemsPerPage = 1000
 func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, error) {
 	var filters []exp.Expression
 
-	var items []umetav1.ResourceObjectI
 	listMeta := &metav1.ListResponseMeta{}
 	if req.common == nil {
 		req.common = &vmetav1.CommonListOptions{}
@@ -61,56 +58,25 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 		return nil, grpcutils.InvalidArg("Query is too long")
 	}
 
-	useFTS := hasQuery && isSimpleFTSQuery(query)
-
 	zap.L().Debug("New list req",
 		zap.String("api", req.api), zap.String("kind", req.kind), zap.Any("req", req.common))
 
 	filters = append(filters, goqu.L(`api`).Eq(req.api))
 	filters = append(filters, goqu.L(`version`).Eq(req.version))
 	filters = append(filters, goqu.L(`kind`).Eq(req.kind))
-	filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+	filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 
 	if req.common.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).
-			Gte(req.common.From.AsTime().UTC().Format(time.RFC3339Nano)))
+		filters = append(filters, goqu.L(colCreatedAt).Gte(req.common.From.AsTime().UTC()))
 	}
 
 	if req.common.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).
-			Lte(req.common.To.AsTime().UTC().Format(time.RFC3339Nano)))
+		filters = append(filters, goqu.L(colCreatedAt).Lte(req.common.To.AsTime().UTC()))
 	}
 
-	selects := []any{
-		goqu.L(`COUNT(*) OVER() as count`),
-		goqu.L(`rsc`),
-	}
-
+	normalizedQuery := strings.ToLower(query)
 	if hasQuery {
-		normalizedQuery := strings.ToLower(query)
-		queryAtWordBoundary := " " + normalizedQuery
-
 		filters = append(filters, goqu.L(`contains(rsc_str, ?)`, normalizedQuery))
-
-		textRank := goqu.L(`
-		CASE
-			WHEN rsc_str = ? THEN 4
-			WHEN starts_with(rsc_str, ?) OR contains(rsc_str, ?) THEN 3
-			ELSE 2
-		END
-	`, normalizedQuery, normalizedQuery, queryAtWordBoundary).As("text_rank")
-
-		if useFTS {
-			selects = append(selects,
-				goqu.L(`fts_main_resources.match_bm25(uid, ?)`, normalizedQuery).As("score"),
-				textRank,
-			)
-		} else {
-			selects = append(selects,
-				goqu.L(`CAST(NULL AS DOUBLE)`).As("score"),
-				textRank,
-			)
-		}
 	}
 
 	filters = append(filters, req.filters...)
@@ -120,18 +86,8 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 			return nil, grpcutils.InvalidArg("Invalid tag: %s", req.common.Tag)
 		}
 
-		filters = append(filters,
-			goqu.L(
-				`list_contains(CAST(json_extract(rsc, '$.metadata.tags') AS VARCHAR[]), ?)`,
-				req.common.Tag,
-			),
-		)
+		filters = append(filters, goqu.L(fmt.Sprintf(`list_contains(%s, ?)`, colTags), req.common.Tag))
 	}
-
-	ds := goqu.From("resources").
-		Prepared(true).
-		Where(filters...).
-		Select(selects...)
 
 	limit := req.common.ItemsPerPage
 	if req.common.Page > 10000 {
@@ -144,40 +100,21 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 		limit = maxItemsPerPage
 	}
 
-	offset := req.common.Page * limit
-
-	ds = ds.Offset(uint(offset)).Limit(uint(limit))
-
 	listMeta.ItemsPerPage = limit
 	listMeta.Page = req.common.Page
 
+	ds := goqu.From("resources").
+		Prepared(true).
+		Where(filters...).
+		Select(goqu.L(fmt.Sprintf(`CAST(rsc AS %s)`, kindVarchar))).
+		Offset(uint(req.common.Page * limit)).
+		Limit(uint(limit))
+
 	if hasQuery {
-		ds = ds.OrderAppend(
-			goqu.L(`text_rank`).Desc(),
-			goqu.L(`score`).Desc().NullsLast(),
-		)
+		ds = ds.OrderAppend(getQueryRankExpr(normalizedQuery).Desc())
 	}
 
-	if req.common.OrderBy != nil {
-		switch req.common.OrderBy.Type {
-		case vmetav1.CommonListOptions_OrderBy_CREATED_AT:
-			if req.common.OrderBy.Mode == vmetav1.CommonListOptions_OrderBy_DESC {
-				ds = ds.OrderAppend(goqu.L(`rsc->'metadata'->>'createdAt'`).Desc())
-			} else {
-				ds = ds.OrderAppend(goqu.L(`rsc->'metadata'->>'createdAt'`).Asc())
-			}
-		case vmetav1.CommonListOptions_OrderBy_NAME:
-			if req.common.OrderBy.Mode == vmetav1.CommonListOptions_OrderBy_DESC {
-				ds = ds.OrderAppend(goqu.L(`rsc->'metadata'->>'name'`).Desc())
-			} else {
-				ds = ds.OrderAppend(goqu.L(`rsc->'metadata'->>'name'`).Asc())
-			}
-		default:
-			ds = ds.OrderAppend(goqu.L(`rsc->'metadata'->>'createdAt'`).Desc())
-		}
-	} else {
-		ds = ds.OrderAppend(goqu.L(`rsc->'metadata'->>'createdAt'`).Desc())
-	}
+	ds = ds.OrderAppend(getOrderByExpr(req.common.OrderBy))
 
 	sqln, sqlargs, err := ds.ToSQL()
 	if err != nil {
@@ -190,43 +127,42 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 	}
 	defer rows.Close()
 
+	var items []umetav1.ResourceObjectI
+
 	for rows.Next() {
-		rscMap := make(map[string]any)
-		var count int
+		var rscJSON []byte
 
-		if hasQuery {
-			var score sql.NullFloat64
-			var textRank int
-
-			if err := rows.Scan(&count, &rscMap, &score, &textRank); err != nil {
-				return nil, err
-			}
-		} else {
-			if err := rows.Scan(&count, &rscMap); err != nil {
-				return nil, err
-			}
+		if err := rows.Scan(&rscJSON); err != nil {
+			return nil, grpcutils.InternalWithErr(err)
 		}
-
-		listMeta.TotalCount = uint32(count)
 
 		rsc, err := ovutils.NewResourceObject(req.api, req.version, req.kind)
 		if err != nil {
 			return nil, err
 		}
 
-		if err := pbutils.UnmarshalFromMap(rscMap, rsc); err != nil {
+		if err := pbutils.UnmarshalJSON(rscJSON, rsc); err != nil {
 			return nil, err
 		}
 
 		items = append(items, rsc)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
 	if len(items) == 0 && listMeta.Page > 0 {
 		return nil, grpcutils.NotFound("Not Items found for that page")
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, grpcutils.InternalWithErr(err)
+	if listMeta.Page == 0 && uint32(len(items)) < limit {
+		listMeta.TotalCount = uint32(len(items))
+	} else {
+		listMeta.TotalCount, err = s.getListTotalCount(ctx, filters)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if listMeta.TotalCount > (listMeta.Page+1)*listMeta.ItemsPerPage {
@@ -236,63 +172,108 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 	return s.toResourceList(items, listMeta, req.api, req.version, req.kind)
 }
 
-func isSimpleFTSQuery(q string) bool {
-	if q == "" || len(q) > 100 {
-		return false
+func (s *Server) getListTotalCount(ctx context.Context, filters []exp.Expression) (uint32, error) {
+	ds := goqu.From("resources").
+		Prepared(true).
+		Where(filters...).
+		Select(goqu.L(`COUNT(*)`))
+
+	sqln, sqlargs, err := ds.ToSQL()
+	if err != nil {
+		return 0, grpcutils.InternalWithErr(err)
 	}
 
-	for _, r := range q {
-		switch {
-		case r >= 'a' && r <= 'z':
-		case r >= 'A' && r <= 'Z':
-		case r >= '0' && r <= '9':
-		case r == ' ' || r == '-' || r == '_' || r == '.' || r == '@' || r == ':':
-		default:
-			return false
-		}
+	var count int64
+	if err := s.db.QueryRowContext(ctx, sqln, sqlargs...).Scan(&count); err != nil {
+		return 0, grpcutils.InternalWithErr(err)
 	}
 
-	return true
+	if count < 0 {
+		return 0, nil
+	}
+
+	return uint32(count), nil
+}
+
+func getQueryRankExpr(normalizedQuery string) exp.LiteralExpression {
+	return goqu.L(fmt.Sprintf(`
+	CASE
+		WHEN lower(%s) = ? THEN 5
+		WHEN lower(%s) = ? THEN 4
+		WHEN starts_with(lower(%s), ?) OR starts_with(lower(%s), ?) THEN 3
+		WHEN contains(lower(%s), ?) OR contains(lower(%s), ?) THEN 2
+		ELSE 1
+	END`, colName, colDisplayName, colName, colDisplayName, colName, colDisplayName),
+		normalizedQuery, normalizedQuery, normalizedQuery,
+		normalizedQuery, normalizedQuery, normalizedQuery)
+}
+
+func getOrderByExpr(orderBy *vmetav1.CommonListOptions_OrderBy) exp.OrderedExpression {
+	if orderBy == nil {
+		return goqu.L(colCreatedAt).Desc()
+	}
+
+	var column string
+	switch orderBy.Type {
+	case vmetav1.CommonListOptions_OrderBy_CREATED_AT:
+		column = colCreatedAt
+	case vmetav1.CommonListOptions_OrderBy_NAME:
+		column = colName
+	default:
+		return goqu.L(colCreatedAt).Desc()
+	}
+
+	if orderBy.Mode == vmetav1.CommonListOptions_OrderBy_DESC {
+		return goqu.L(column).Desc()
+	}
+
+	return goqu.L(column).Asc()
 }
 
 func (s *Server) toResourceList(lst []umetav1.ResourceObjectI, listMeta *metav1.ListResponseMeta, api, version, kind string) (proto.Message, error) {
-	retMap := map[string]any{
-		"apiVersion": vutils.GetApiVersion(api, version),
-		"kind":       fmt.Sprintf("%sList", kind),
-		"items":      []map[string]any{},
-	}
-
-	if listMeta != nil {
-		retMap["listResponseMeta"] = map[string]any{
-			"page":         listMeta.Page,
-			"hasMore":      listMeta.HasMore,
-			"totalCount":   listMeta.TotalCount,
-			"itemsPerPage": listMeta.ItemsPerPage,
-		}
-	}
-
-	itemsMap := []map[string]any{}
-	for _, itm := range lst {
-		objMap, err := pbutils.ConvertToMap(itm)
-		if err != nil {
-			return nil, err
-		}
-		itemsMap = append(itemsMap, objMap)
-	}
-
-	retMap["items"] = itemsMap
-	jsonBytes, err := json.Marshal(retMap)
-	if err != nil {
-		return nil, err
-	}
-
 	objList, err := ovutils.NewResourceObjectList(api, version, kind)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := pbutils.UnmarshalJSON(jsonBytes, objList); err != nil {
+	msg := objList.ProtoReflect()
+	fields := msg.Descriptor().Fields()
+
+	setListField := func(name string, val protoreflect.Value) error {
+		fd := fields.ByName(protoreflect.Name(name))
+		if fd == nil {
+			return errors.Errorf("The %sList message has no %s field", kind, name)
+		}
+
+		msg.Set(fd, val)
+		return nil
+	}
+
+	if err := setListField("apiVersion",
+		protoreflect.ValueOfString(vutils.GetApiVersion(api, version))); err != nil {
 		return nil, err
+	}
+
+	if err := setListField("kind",
+		protoreflect.ValueOfString(fmt.Sprintf("%sList", kind))); err != nil {
+		return nil, err
+	}
+
+	if listMeta != nil {
+		if err := setListField("listResponseMeta",
+			protoreflect.ValueOfMessage(listMeta.ProtoReflect())); err != nil {
+			return nil, err
+		}
+	}
+
+	itemsField := fields.ByName("items")
+	if itemsField == nil {
+		return nil, errors.Errorf("The %sList message has no items field", kind)
+	}
+
+	items := msg.Mutable(itemsField).List()
+	for _, itm := range lst {
+		items.Append(protoreflect.ValueOfMessage(itm.ProtoReflect()))
 	}
 
 	return objList, nil

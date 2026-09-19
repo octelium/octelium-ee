@@ -10,7 +10,6 @@ package logstore
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 
@@ -145,32 +144,32 @@ func (s *Server) backfillLogColumns(ctx context.Context, table string, columns [
 		assignments = append(assignments, fmt.Sprintf("%s = %s", column.name, column.sourceExpr("rsc")))
 	}
 
-	cursor := int64(-1)
+	remaining := int64(-1)
 	total := int64(0)
 
 	for {
-		var maxRowID sql.NullInt64
-		if err := s.db.QueryRowContext(ctx, fmt.Sprintf(`
-SELECT max(rowid) FROM (
-	SELECT rowid FROM %s WHERE %s IS NULL AND rowid > ? ORDER BY rowid LIMIT %d
-)`, table, colCreatedAt, logBackfillBatchSize), cursor).Scan(&maxRowID); err != nil {
+		var pending int64
+		if err := s.db.QueryRowContext(ctx, fmt.Sprintf(
+			`SELECT COUNT(*) FROM %s WHERE %s IS NULL`, table, colCreatedAt)).Scan(&pending); err != nil {
 			return err
 		}
-		if !maxRowID.Valid {
+
+		if pending == 0 || (remaining >= 0 && pending >= remaining) {
 			break
 		}
 
-		result, err := s.db.ExecContext(ctx, fmt.Sprintf(
-			`UPDATE %s SET %s WHERE %s IS NULL AND rowid > ? AND rowid <= ?`,
-			table, strings.Join(assignments, ", "), colCreatedAt), cursor, maxRowID.Int64)
+		remaining = pending
+
+		result, err := s.db.ExecContext(ctx, fmt.Sprintf(`
+UPDATE %s SET %s WHERE rowid IN (
+	SELECT rowid FROM %s WHERE %s IS NULL ORDER BY rowid LIMIT %d
+)`, table, strings.Join(assignments, ", "), table, colCreatedAt, logBackfillBatchSize))
 		if err != nil {
 			return err
 		}
 		if count, err := result.RowsAffected(); err == nil {
 			total += count
 		}
-
-		cursor = maxRowID.Int64
 
 		if err := s.checkpointStorage(ctx); err != nil {
 			return err

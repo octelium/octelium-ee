@@ -60,16 +60,8 @@ func newRscStoreTestEnv(t *testing.T) *rscStoreTestEnv {
 		return nil
 	}
 
-	srv.idxDebouncer.after = time.Hour
-
 	t.Cleanup(func() {
 		cancel()
-
-		srv.idxDebouncer.mu.Lock()
-		if srv.idxDebouncer.timer != nil {
-			srv.idxDebouncer.timer.Stop()
-		}
-		srv.idxDebouncer.mu.Unlock()
 
 		assert.Nil(t, srv.db.Close())
 		tst.Destroy()
@@ -125,28 +117,12 @@ func insertRawRscStoreResource(t *testing.T, env *rscStoreTestEnv, kind string, 
 		return
 	}
 
-	_, err = env.srv.db.ExecContext(env.ctx, `
-INSERT INTO resources
-	(api, version, kind, uid, resource_version, rsc, rsc_str)
-VALUES
-	(?, ?, ?, ?, ?, ?, ?)
-ON CONFLICT (uid)
-DO UPDATE SET
-	api = EXCLUDED.api,
-	version = EXCLUDED.version,
-	kind = EXCLUDED.kind,
-	resource_version = EXCLUDED.resource_version,
-	rsc = EXCLUDED.rsc,
-	rsc_str = EXCLUDED.rsc_str
-`,
-		ucorev1.API,
-		ucorev1.Version,
-		kind,
-		uid,
-		resourceVersion,
-		string(rscJSON),
-		rscStr,
-	)
+	_, err = env.srv.db.ExecContext(env.ctx, `DELETE FROM resources WHERE uid = ?`, uid)
+	assert.Nil(t, err, "%+v", err)
+
+	_, err = env.srv.db.ExecContext(env.ctx, getResourceInsertQuery(),
+		getResourceInsertArgs(ucorev1.API, ucorev1.Version, kind, uid, resourceVersion,
+			string(rscJSON), rscStr)...)
 	assert.Nil(t, err, "%+v", err)
 }
 

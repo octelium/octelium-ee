@@ -10,7 +10,6 @@ package rscstore
 
 import (
 	"encoding/json"
-	"strings"
 	"testing"
 	"time"
 
@@ -24,32 +23,6 @@ import (
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestIsSimpleFTSQuery(t *testing.T) {
-	for _, query := range []string{
-		"alice",
-		"Alice Smith",
-		"alice@example.com",
-		"service-name",
-		"service_name",
-		"core:v1",
-		"10.0.0.1",
-	} {
-		assert.True(t, isSimpleFTSQuery(query), query)
-	}
-
-	for _, query := range []string{
-		"",
-		"alice+smith",
-		"alice/smith",
-		"alice%",
-		"alice_%",
-		"こんにちは",
-		strings.Repeat("a", 101),
-	} {
-		assert.False(t, isSimpleFTSQuery(query), query)
-	}
-}
 
 func TestGetRSCStrIndexesExpectedResourceFields(t *testing.T) {
 	env := newRscStoreTestEnv(t)
@@ -130,9 +103,6 @@ func TestSearchDoesNotReturnStaleFTSMatches(t *testing.T) {
 		Status: &corev1.User_Status{},
 	}
 	insertRscStoreObject(t, env, user)
-
-	err := env.srv.recreateFTSIndex(env.ctx)
-	assert.Nil(t, err, "%+v", err)
 
 	user.Metadata.ResourceVersion = vutils.UUIDv7()
 	user.Spec.Email = "new-search-value@example.com"

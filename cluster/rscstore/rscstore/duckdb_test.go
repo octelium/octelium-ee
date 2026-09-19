@@ -65,8 +65,6 @@ func TestInsertResource(t *testing.T) {
 
 		{
 			rows, err := srv.db.QueryContext(ctx,
-				// `SELECT uid, rsc, score FROM (SELECT *, fts_main_resources.match_bm25(uid, 'User', fields := 'rsc_strr') AS score FROM resources) sq WHERE score IS NOT NULL ORDER BY score DESC`,
-				// `with fts as (select *, fts_main_resources.match_bm25(uid, 'user', fields := 'rsc_str') as score FROM resources) SELECT uid, rsc, score FROM fts WHERE score IS NOT NULL ORDER BY score DESC`,
 				fmt.Sprintf(`SELECT rsc FROM resources WHERE uid = '%s'`, rsc.Metadata.Uid),
 			)
 			assert.Nil(t, err)
@@ -93,8 +91,6 @@ func TestInsertResource(t *testing.T) {
 
 		{
 			rows, err := srv.db.QueryContext(ctx,
-				// `SELECT uid, rsc, score FROM (SELECT *, fts_main_resources.match_bm25(uid, 'User', fields := 'rsc_strr') AS score FROM resources) sq WHERE score IS NOT NULL ORDER BY score DESC`,
-				// `with fts as (select *, fts_main_resources.match_bm25(uid, 'user', fields := 'rsc_str') as score FROM resources) SELECT uid, rsc, score FROM fts WHERE score IS NOT NULL ORDER BY score DESC`,
 				fmt.Sprintf(`SELECT rsc FROM resources WHERE uid = '%s'`, rsc.Metadata.Uid),
 			)
 			assert.Nil(t, err)
@@ -115,29 +111,6 @@ func TestInsertResource(t *testing.T) {
 		}
 
 		{
-
-			err := srv.recreateFTSIndex(ctx)
-			assert.Nil(t, err)
-		}
-
-		{
-			rows, err := srv.db.QueryContext(ctx,
-				// `SELECT uid, rsc, score FROM (SELECT *, fts_main_resources.match_bm25(uid, 'User', fields := 'rsc_strr') AS score FROM resources) sq WHERE score IS NOT NULL ORDER BY score DESC`,
-				`with fts as (select *, fts_main_resources.match_bm25(uid, 'example', fields := 'rsc_str') as score FROM resources) SELECT uid, rsc, score FROM fts WHERE score is NOT NULL ORDER BY score DESC`,
-				// fmt.Sprintf(`SELECT uid, rsc, fts_main_resources.match_bm25(uid, '%s') AS score FROM resources WHERE score IS NOT NULL ORDER BY score DESC`, "human"),
-			)
-			assert.Nil(t, err)
-
-			for rows.Next() {
-				var uid string
-				rsc := make(map[string]any)
-				var score float64
-				err = rows.Scan(&uid, &rsc, &score)
-				assert.Nil(t, err)
-			}
-		}
-
-		{
 			res, err := srvCore.ListUser(ctx, &vcorev1.ListUserOptions{})
 			assert.Nil(t, err)
 			assert.True(t, len(res.Items) == 1)
@@ -148,8 +121,6 @@ func TestInsertResource(t *testing.T) {
 
 		{
 			rows, err := srv.db.QueryContext(ctx,
-				// `SELECT uid, rsc, score FROM (SELECT *, fts_main_resources.match_bm25(uid, 'User', fields := 'rsc_strr') AS score FROM resources) sq WHERE score IS NOT NULL ORDER BY score DESC`,
-				// `with fts as (select *, fts_main_resources.match_bm25(uid, 'user', fields := 'rsc_str') as score FROM resources) SELECT uid, rsc, score FROM fts WHERE score IS NOT NULL ORDER BY score DESC`,
 				fmt.Sprintf(`SELECT COUNT(*) FROM resources WHERE uid = '%s'`, rsc.Metadata.Uid),
 			)
 			assert.Nil(t, err)
@@ -170,8 +141,6 @@ func TestInsertResource(t *testing.T) {
 
 		{
 			rows, err := srv.db.QueryContext(ctx,
-				// `SELECT uid, rsc, score FROM (SELECT *, fts_main_resources.match_bm25(uid, 'User', fields := 'rsc_strr') AS score FROM resources) sq WHERE score IS NOT NULL ORDER BY score DESC`,
-				// `with fts as (select *, fts_main_resources.match_bm25(uid, 'user', fields := 'rsc_str') as score FROM resources) SELECT uid, rsc, score FROM fts WHERE score IS NOT NULL ORDER BY score DESC`,
 				fmt.Sprintf(`SELECT COUNT(*) FROM resources WHERE uid = '%s'`, rsc.Metadata.Uid),
 			)
 			assert.Nil(t, err)

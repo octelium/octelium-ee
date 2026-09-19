@@ -12,6 +12,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
@@ -30,13 +31,13 @@ func (s *Server) getSummaryAccessPolicy(ctx context.Context, req *vaccessv1.GetP
 		filters = append(filters, goqu.L(`kind`).Eq(uaccessv1.KindPolicy))
 		filters = append(filters, goqu.L(`api`).Eq(uaccessv1.API))
 		filters = append(filters, goqu.L(`version`).Eq(uaccessv1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isDisabled') = true) AS count_disabled`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_disabled`, colSpecIsDisabled)),
 			goqu.L(`COALESCE(SUM(json_array_length(rsc, '$.spec.rules')), 0) AS count_rules`),
 			goqu.L(`COALESCE(SUM(
 				len(list_filter(
@@ -127,7 +128,7 @@ func (s *Server) getSummaryAccessCatalog(ctx context.Context, req *vaccessv1.Get
 		filters = append(filters, goqu.L(`kind`).Eq(uaccessv1.KindCatalog))
 		filters = append(filters, goqu.L(`api`).Eq(uaccessv1.API))
 		filters = append(filters, goqu.L(`version`).Eq(uaccessv1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -174,35 +175,35 @@ func (s *Server) getSummaryAccessRequest(ctx context.Context, req *vaccessv1.Get
 		filters = append(filters, goqu.L(`kind`).Eq(uaccessv1.KindRequest))
 		filters = append(filters, goqu.L(`api`).Eq(uaccessv1.API))
 		filters = append(filters, goqu.L(`version`).Eq(uaccessv1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
-	nowStr := time.Now().UTC().Format(time.RFC3339Nano)
+	now := time.Now().UTC()
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.state.status' = 'PENDING') AS count_pending`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.state.status' = 'APPROVED') AS count_approved`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.state.status' = 'REJECTED') AS count_rejected`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.state.status' = 'REVOKED') AS count_revoked`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.state.status' = 'EXPIRED') AS count_expired`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.state.status' = 'CANCELLED') AS count_cancelled`),
-			goqu.L(`COUNT(*) FILTER (WHERE (rsc->>'$.status.state.status' = 'APPROVED') AND ((json_extract(rsc, '$.status.accessEndsAt') IS NULL) OR (rsc->>'$.status.accessEndsAt' > ?))) AS count_active`,
-				nowStr),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.userRef.uid')) AS count_user`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.spec.subject.userRef.uid')) AS count_subject_user`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.spec.resource.serviceRef.uid')) AS count_service`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.spec.resource.catalog.catalogRef.uid')) AS count_catalog`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.policyRef.uid')) AS count_policy`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.urgency' = 'VERY_LOW') AS count_urgency_very_low`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.urgency' = 'LOW') AS count_urgency_low`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.urgency' = 'NORMAL') AS count_urgency_normal`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.urgency' = 'HIGH') AS count_urgency_high`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.urgency' = 'VERY_HIGH') AS count_urgency_very_high`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.urgency' = 'HIGHEST') AS count_urgency_highest`),
-			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.deadline') IS NOT NULL) AS count_with_deadline`),
-			goqu.L(`COUNT(*) FILTER (WHERE (rsc->>'$.spec.deadline') < ?) AS count_deadline_passed`, nowStr),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'PENDING') AS count_pending`, colStatusStateStatus)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'APPROVED') AS count_approved`, colStatusStateStatus)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'REJECTED') AS count_rejected`, colStatusStateStatus)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'REVOKED') AS count_revoked`, colStatusStateStatus)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'EXPIRED') AS count_expired`, colStatusStateStatus)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'CANCELLED') AS count_cancelled`, colStatusStateStatus)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE (%s = 'APPROVED') AND ((%s IS NULL) OR (%s > ?))) AS count_active`, colStatusStateStatus, colStatusAccessEndsAt, colStatusAccessEndsAt),
+				now),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_user`, colUserUID)),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_subject_user`, colSpecSubjectUserUID)),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_service`, colSpecServiceUID)),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_catalog`, colSpecCatalogUID)),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_policy`, colPolicyUID)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'VERY_LOW') AS count_urgency_very_low`, colSpecUrgency)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'LOW') AS count_urgency_low`, colSpecUrgency)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'NORMAL') AS count_urgency_normal`, colSpecUrgency)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'HIGH') AS count_urgency_high`, colSpecUrgency)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'VERY_HIGH') AS count_urgency_very_high`, colSpecUrgency)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'HIGHEST') AS count_urgency_highest`, colSpecUrgency)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'deadline')) AS count_with_deadline`, colSpecKeys)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s < ?) AS count_deadline_passed`, colSpecDeadline), now),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -248,18 +249,18 @@ func (s *Server) getSummaryAccessReview(ctx context.Context, req *vaccessv1.GetR
 		filters = append(filters, goqu.L(`kind`).Eq(uaccessv1.KindReview))
 		filters = append(filters, goqu.L(`api`).Eq(uaccessv1.API))
 		filters = append(filters, goqu.L(`version`).Eq(uaccessv1.Version))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
+		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
 	}
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
-			goqu.L(`COUNT(*) FILTER (WHERE (json_extract(rsc, '$.spec.decision') IS NULL) OR (rsc->>'$.spec.decision' = 'DECISION_UNSET')) AS count_pending`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.decision' = 'DECISION_APPROVE') AS count_approved`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.decision' = 'DECISION_REJECT') AS count_rejected`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE (%s IS NULL) OR (%s = 'DECISION_UNSET')) AS count_pending`, colSpecDecision, colSpecDecision)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'DECISION_APPROVE') AS count_approved`, colSpecDecision)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'DECISION_REJECT') AS count_rejected`, colSpecDecision)),
 			goqu.L(`COUNT(*) FILTER (WHERE json_array_length(rsc, '$.status.lastRevisions') > 0) AS count_revised`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.userRef.uid')) AS count_user`),
-			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.requestRef.uid')) AS count_request`),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_user`, colUserUID)),
+			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_request`, colRequestUID)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()

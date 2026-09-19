@@ -12,7 +12,6 @@ import (
 	"context"
 	"database/sql"
 	"net"
-	"sync"
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -48,24 +47,6 @@ type Server struct {
 	db            *sql.DB
 	auditLogItem  chan umetav1.ResourceObjectI
 	client        plogotlp.GRPCClient
-	idxDebouncer  idxDebouncer
-}
-
-type idxDebouncer struct {
-	mu    sync.Mutex
-	after time.Duration
-	timer *time.Timer
-	s     *Server
-}
-
-func (d *idxDebouncer) debounce() {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	if d.timer != nil {
-		d.timer.Stop()
-	}
-	d.timer = time.AfterFunc(d.after, d.s.runRecreateFTSIndex)
 }
 
 func getAddr() string {
@@ -83,11 +64,6 @@ func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 		octeliumC:    octeliumC,
 		genCache:     cache.New(cache.NoExpiration, 1*time.Minute),
 		auditLogItem: make(chan umetav1.ResourceObjectI, 10000),
-	}
-
-	ret.idxDebouncer = idxDebouncer{
-		after: 3 * time.Second,
-		s:     ret,
 	}
 
 	cc, err := octeliumC.CoreV1Utils().GetClusterConfig(ctx)
@@ -239,50 +215,29 @@ func (s *Server) initDB(ctx context.Context) error {
 		return err
 	}
 
-	/*
-		s.db.Exec(`INSTALL json`)
-		s.db.Exec(`LOAD json`)
-	*/
-
-	/*
-		if _, err := s.db.ExecContext(ctx, `INSTALL fts`); err != nil {
-			return err
-		}
-
-		if _, err := s.db.ExecContext(ctx, `LOAD fts`); err != nil {
-			return err
-		}
-	*/
-
-	if err := s.recreateFTSIndex(ctx); err != nil {
+	if err := s.initResourceColumns(ctx); err != nil {
 		return err
 	}
+
+	s.dropLegacyFTSIndex(ctx)
 
 	return nil
 }
 
-func (s *Server) recreateFTSIndex(ctx context.Context) error {
-	// zap.L().Debug("Recreating FTS index")
-	if _, err := s.db.ExecContext(ctx,
-		`PRAGMA drop_fts_index('resources')`); err != nil {
-		zap.L().Warn("Could not drop_ftx_index", zap.Error(err))
+func (s *Server) dropLegacyFTSIndex(ctx context.Context) {
+	var hasIndex bool
+	if err := s.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) > 0 FROM duckdb_tables() WHERE schema_name = 'fts_main_resources'`).
+		Scan(&hasIndex); err != nil || !hasIndex {
+		return
 	}
 
-	if _, err := s.db.ExecContext(ctx,
-		`PRAGMA create_fts_index('resources', 'uid', 'rsc_str')`); err != nil {
-		zap.L().Warn("Could not create_fts_index", zap.Error(err))
-		return err
+	if _, err := s.db.ExecContext(ctx, `PRAGMA drop_fts_index('resources')`); err != nil {
+		zap.L().Warn("Could not drop the legacy FTS index", zap.Error(err))
+		return
 	}
 
-	return nil
-}
-
-func (s *Server) runRecreateFTSIndex() {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	if err := s.recreateFTSIndex(ctx); err != nil {
-		zap.L().Warn("Could not recreateFTSIndex", zap.Error(err))
-	}
+	zap.L().Info("Dropped the legacy RscStore FTS index")
 }
 
 func (s *Server) setResources(ctx context.Context) error {
