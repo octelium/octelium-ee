@@ -11,9 +11,11 @@ import {
   Select,
   Switch,
   TagsInput,
+  Textarea,
   TextInput,
 } from "@mantine/core";
 
+import { Struct } from "@/apis/google/protobuf/struct";
 import Cond from "@/components/Condition";
 import DurationPicker from "@/components/DurationPicker";
 import Editor from "@/components/Editor";
@@ -23,9 +25,9 @@ import SelectPolicies from "@/components/ResourceLayout/SelectPolicies";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
 import TextAreaCustom from "@/components/TextAreaCustom";
 import { strToNum } from "@/utils/convert";
+import { useListKeys } from "@/utils/forms";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
-import { useListKeys } from "@/utils/forms";
 
 type SegmentedTabsContextValue = {
   value: string | null;
@@ -466,8 +468,13 @@ const configTypeTitle = (
 };
 
 type GatewayConfig =
-  | CoreP.Service_Spec_Config_MCP
-  | CoreP.Service_Spec_Config_LLM;
+  CoreP.Service_Spec_Config_MCP | CoreP.Service_Spec_Config_LLM;
+
+type AuthConfig = { auth?: CoreP.Service_Spec_Config_HTTP_Auth };
+
+type HeaderConfig = { header?: CoreP.Service_Spec_Config_HTTP_Header };
+
+type PathConfig = { path?: CoreP.Service_Spec_Config_HTTP_Path };
 
 type GatewayPluginKind = "mcp" | "llm";
 
@@ -486,14 +493,19 @@ const StringListEditor = (props: {
     onAddListItem={() => props.onChange([...props.values, ""])}
   >
     {props.values.map((value, index) => (
-      <div className="mb-3 flex w-full items-center" key={`${props.title}-${index}`}>
+      <div
+        className="mb-3 flex w-full items-center"
+        key={`${props.title}-${index}`}
+      >
         <CloseButton
           size="sm"
           variant="subtle"
           className="mr-2"
           aria-label={`Remove ${props.title} item ${index + 1}`}
           onClick={() =>
-            props.onChange(props.values.filter((_, itemIndex) => itemIndex !== index))
+            props.onChange(
+              props.values.filter((_, itemIndex) => itemIndex !== index),
+            )
           }
         />
         <TextInput
@@ -513,6 +525,210 @@ const StringListEditor = (props: {
   </ItemMessage>
 );
 
+const StructEditor = (props: {
+  title: string;
+  description: string;
+  label: string;
+  placeholder?: string;
+  value?: Struct;
+  onChange: (value?: Struct) => void;
+}) => {
+  const [text, setText] = React.useState(() =>
+    props.value ? JSON.stringify(Struct.toJson(props.value), null, 2) : "",
+  );
+  const [error, setError] = React.useState<string>();
+
+  return (
+    <EditItem
+      title={props.title}
+      description={props.description}
+      obj={props.value}
+      onUnset={() => {
+        setText("");
+        setError(undefined);
+        props.onChange(undefined);
+      }}
+      onSet={() => props.onChange(Struct.fromJson({}))}
+    >
+      {props.value && (
+        <Textarea
+          label={props.label}
+          placeholder={props.placeholder}
+          autosize
+          minRows={5}
+          maxRows={16}
+          value={text}
+          error={error}
+          onChange={(event) => {
+            const next = event.target.value;
+            setText(next);
+
+            if (!next.trim()) {
+              setError(undefined);
+              props.onChange(Struct.fromJson({}));
+              return;
+            }
+
+            try {
+              const parsed = JSON.parse(next);
+              if (
+                !parsed ||
+                Array.isArray(parsed) ||
+                typeof parsed !== "object"
+              ) {
+                setError("Enter a JSON object");
+                return;
+              }
+              setError(undefined);
+              props.onChange(Struct.fromJson(parsed));
+            } catch {
+              setError("Enter valid JSON");
+            }
+          }}
+        />
+      )}
+    </EditItem>
+  );
+};
+
+const createInlineBody = (kind: string): any =>
+  kind === "inlineBytes"
+    ? { oneofKind: "inlineBytes", inlineBytes: new Uint8Array() }
+    : { oneofKind: "inline", inline: "" };
+
+const InlineBodyEditor = (props: {
+  description: string;
+  placeholder?: string;
+  body: any;
+  onSet: () => void;
+  onUnset: () => void;
+  onChange: () => void;
+}) => (
+  <EditItem
+    title="Body"
+    description={props.description}
+    obj={props.body}
+    onSet={props.onSet}
+    onUnset={props.onUnset}
+  >
+    {props.body && (
+      <Tabs
+        className="mb-4"
+        value={props.body.type.oneofKind ?? "inline"}
+        onChange={(value) => {
+          if (!value) return;
+          props.body.type = createInlineBody(value);
+          props.onChange();
+        }}
+      >
+        <Tabs.List>
+          <Tabs.Tab value="inline">Inline Text</Tabs.Tab>
+          <Tabs.Tab value="inlineBytes">Inline Bytes</Tabs.Tab>
+        </Tabs.List>
+
+        <Tabs.Panel value="inline">
+          <TextAreaCustom
+            label="Inline body"
+            description="Body returned directly to the downstream client."
+            placeholder={props.placeholder}
+            value={
+              props.body.type.oneofKind === "inline"
+                ? props.body.type.inline
+                : ""
+            }
+            onChange={(value) => {
+              props.body.type = { oneofKind: "inline", inline: value ?? "" };
+              props.onChange();
+            }}
+          />
+        </Tabs.Panel>
+
+        <Tabs.Panel value="inlineBytes">
+          <TextAreaCustom
+            label="Inline bytes"
+            description="Raw bytes returned directly to the downstream client."
+            placeholder="Raw bytes content"
+            value={
+              props.body.type.oneofKind === "inlineBytes"
+                ? new TextDecoder().decode(props.body.type.inlineBytes)
+                : ""
+            }
+            onChange={(value) => {
+              props.body.type = {
+                oneofKind: "inlineBytes",
+                inlineBytes: new TextEncoder().encode(value ?? ""),
+              };
+              props.onChange();
+            }}
+          />
+        </Tabs.Panel>
+      </Tabs>
+    )}
+  </EditItem>
+);
+
+const PluginHeadersEditor = (props: {
+  description: string;
+  headers: any[];
+  create: () => any;
+  onChange: () => void;
+}) => (
+  <ItemMessage
+    title="Headers"
+    description={props.description}
+    obj={props.headers}
+    isList
+    onSet={() => {
+      props.headers.push(props.create());
+      props.onChange();
+    }}
+    onAddListItem={() => {
+      props.headers.push(props.create());
+      props.onChange();
+    }}
+  >
+    {props.headers.map((header, index) => (
+      <div
+        className="mb-3 flex w-full items-center"
+        key={`plugin-header-${index}`}
+      >
+        <CloseButton
+          size="sm"
+          variant="subtle"
+          className="mr-2"
+          aria-label={`Remove header ${index + 1}`}
+          onClick={() => {
+            props.headers.splice(index, 1);
+            props.onChange();
+          }}
+        />
+        <Group grow className="flex-1">
+          <TextInput
+            label="Key"
+            description="Set the Header key"
+            placeholder="X-My-Header"
+            value={header.key}
+            onChange={(event) => {
+              header.key = event.target.value;
+              props.onChange();
+            }}
+          />
+          <TextInput
+            label="Value"
+            description="Set the Header value"
+            placeholder="my-value"
+            value={header.value}
+            onChange={(event) => {
+              header.value = event.target.value;
+              props.onChange();
+            }}
+          />
+        </Group>
+      </div>
+    ))}
+  </ItemMessage>
+);
+
 const CORSConfigEditor = (props: {
   cors?: CoreP.Service_Spec_Config_HTTP_CORS;
   onChange: (cors: CoreP.Service_Spec_Config_HTTP_CORS | undefined) => void;
@@ -522,9 +738,7 @@ const CORSConfigEditor = (props: {
     description="Allow browser applications from selected origins to call this Service"
     obj={props.cors}
     onUnset={() => props.onChange(undefined)}
-    onSet={() =>
-      props.onChange(CoreP.Service_Spec_Config_HTTP_CORS.create())
-    }
+    onSet={() => props.onChange(CoreP.Service_Spec_Config_HTTP_CORS.create())}
   >
     {props.cors && (
       <div className="space-y-3">
@@ -605,8 +819,9 @@ const CORSConfigEditor = (props: {
   </EditItem>
 );
 
-const GatewayAuthEditor = (props: {
-  config: GatewayConfig;
+const ConfigAuthEditor = (props: {
+  config: AuthConfig;
+  description?: string;
   onChange: () => void;
 }) => {
   const { config, onChange } = props;
@@ -614,7 +829,10 @@ const GatewayAuthEditor = (props: {
   return (
     <EditItem
       title="Upstream authentication"
-      description="Authenticate requests sent to the MCP or model provider upstream"
+      description={
+        props.description ??
+        "Authenticate the requests that the Service sends to its upstream"
+      }
       obj={config.auth}
       onUnset={() => {
         config.auth = undefined;
@@ -690,12 +908,14 @@ const GatewayAuthEditor = (props: {
                         : {
                             oneofKind: "bearer" as const,
                             bearer:
-                              CoreP.Service_Spec_Config_HTTP_Auth_Bearer.create({
-                                type: {
-                                  oneofKind: "fromSecret",
-                                  fromSecret: "",
+                              CoreP.Service_Spec_Config_HTTP_Auth_Bearer.create(
+                                {
+                                  type: {
+                                    oneofKind: "fromSecret",
+                                    fromSecret: "",
+                                  },
                                 },
-                              }),
+                              ),
                           };
               config.auth!.type = type;
               onChange();
@@ -749,7 +969,9 @@ const GatewayAuthEditor = (props: {
                     description="Secret whose value is sent as the Basic authentication password."
                     defaultValue={auth.basic.password.type.fromSecret}
                     onChange={(value) => {
-                      if (auth.basic.password?.type.oneofKind === "fromSecret") {
+                      if (
+                        auth.basic.password?.type.oneofKind === "fromSecret"
+                      ) {
                         auth.basic.password.type.fromSecret =
                           value?.metadata?.name ?? "";
                       }
@@ -797,7 +1019,8 @@ const GatewayAuthEditor = (props: {
                     description="OAuth2 client identifier sent to the token endpoint."
                     value={auth.oauth2ClientCredentials.clientID}
                     onChange={(event) => {
-                      auth.oauth2ClientCredentials.clientID = event.target.value;
+                      auth.oauth2ClientCredentials.clientID =
+                        event.target.value;
                       onChange();
                     }}
                   />
@@ -806,7 +1029,8 @@ const GatewayAuthEditor = (props: {
                     description="OAuth2 endpoint used to obtain an access token."
                     value={auth.oauth2ClientCredentials.tokenURL}
                     onChange={(event) => {
-                      auth.oauth2ClientCredentials.tokenURL = event.target.value;
+                      auth.oauth2ClientCredentials.tokenURL =
+                        event.target.value;
                       onChange();
                     }}
                   />
@@ -876,7 +1100,8 @@ const GatewayAuthEditor = (props: {
                     }}
                   />
                 </Group>
-                {auth.sigv4.secretAccessKey?.type.oneofKind === "fromSecret" && (
+                {auth.sigv4.secretAccessKey?.type.oneofKind ===
+                  "fromSecret" && (
                   <SelectResource
                     api="core"
                     kind="Secret"
@@ -884,7 +1109,10 @@ const GatewayAuthEditor = (props: {
                     description="Secret containing the AWS SigV4 secret access key."
                     defaultValue={auth.sigv4.secretAccessKey.type.fromSecret}
                     onChange={(value) => {
-                      if (auth.sigv4.secretAccessKey?.type.oneofKind === "fromSecret") {
+                      if (
+                        auth.sigv4.secretAccessKey?.type.oneofKind ===
+                        "fromSecret"
+                      ) {
                         auth.sigv4.secretAccessKey.type.fromSecret =
                           value?.metadata?.name ?? "";
                       }
@@ -901,8 +1129,8 @@ const GatewayAuthEditor = (props: {
   );
 };
 
-const GatewayPathEditor = (props: {
-  config: GatewayConfig;
+const ConfigPathEditor = (props: {
+  config: PathConfig;
   onChange: () => void;
 }) => (
   <EditItem
@@ -945,13 +1173,238 @@ const GatewayPathEditor = (props: {
   </EditItem>
 );
 
-const GatewayHeaderEditor = (props: {
-  config: GatewayConfig;
+const createHeaderKeyValue = () =>
+  CoreP.Service_Spec_Config_HTTP_Header_KeyValue.create({
+    key: "",
+    type: { oneofKind: "value", value: "" },
+  });
+
+const HeaderKeyValueEditor = (props: {
+  title: string;
+  description: string;
+  headers: CoreP.Service_Spec_Config_HTTP_Header_KeyValue[];
+  onChange: () => void;
+}) => (
+  <ItemMessage
+    title={props.title}
+    description={props.description}
+    obj={props.headers}
+    isList
+    onSet={() => {
+      props.headers.push(createHeaderKeyValue());
+      props.onChange();
+    }}
+    onAddListItem={() => {
+      props.headers.push(createHeaderKeyValue());
+      props.onChange();
+    }}
+  >
+    {props.headers.map((header, index) => (
+      <div
+        className="mb-3 flex w-full items-center"
+        key={`${props.title}-${index}`}
+      >
+        <CloseButton
+          size="sm"
+          variant="subtle"
+          className="mr-2"
+          aria-label={`Remove ${props.title} item ${index + 1}`}
+          onClick={() => {
+            props.headers.splice(index, 1);
+            props.onChange();
+          }}
+        />
+        <Group className="flex-1" grow>
+          <TextInput
+            required
+            label="Key"
+            description="Set the Header key"
+            placeholder="X-My-Header"
+            value={header.key}
+            onChange={(event) => {
+              header.key = event.target.value;
+              props.onChange();
+            }}
+          />
+          <Select
+            label="Value type"
+            description="Use a literal header value or evaluate it with CEL."
+            data={[
+              { label: "Literal", value: "value" },
+              { label: "Eval (CEL)", value: "eval" },
+            ]}
+            value={header.type.oneofKind ?? "value"}
+            onChange={(value) => {
+              if (!value) return;
+              header.type =
+                value === "eval"
+                  ? { oneofKind: "eval", eval: "" }
+                  : { oneofKind: "value", value: "" };
+              props.onChange();
+            }}
+          />
+          <TextInput
+            required
+            label={
+              header.type.oneofKind === "eval" ? "CEL expression" : "Value"
+            }
+            description="Set the Header value"
+            placeholder={
+              header.type.oneofKind === "eval"
+                ? "ctx.user.metadata.name"
+                : "my-value"
+            }
+            value={match(header.type)
+              .when(
+                (x) => x.oneofKind === "value",
+                (x) => x.value,
+              )
+              .when(
+                (x) => x.oneofKind === "eval",
+                (x) => x.eval,
+              )
+              .otherwise(() => "")}
+            onChange={(event) => {
+              match(header.type)
+                .when(
+                  (x) => x.oneofKind === "value",
+                  (x) => {
+                    x.value = event.target.value;
+                  },
+                )
+                .when(
+                  (x) => x.oneofKind === "eval",
+                  (x) => {
+                    x.eval = event.target.value;
+                  },
+                );
+              props.onChange();
+            }}
+          />
+          <Switch
+            label="Append"
+            description="Append to the existing header instead of overwriting it"
+            checked={header.append}
+            onChange={(event) => {
+              header.append = event.currentTarget.checked;
+              props.onChange();
+            }}
+          />
+        </Group>
+      </div>
+    ))}
+  </ItemMessage>
+);
+
+const HostHeaderEditor = (props: {
+  header: CoreP.Service_Spec_Config_HTTP_Header;
+  onChange: () => void;
+}) => (
+  <EditItem
+    title="Host header"
+    description="Set the Host header related configs"
+    obj={props.header.host}
+    onUnset={() => {
+      props.header.host = undefined;
+      props.onChange();
+    }}
+    onSet={() => {
+      props.header.host = CoreP.Service_Spec_Config_HTTP_Header_Host.create({
+        type: { oneofKind: "preserve", preserve: true },
+      });
+      props.onChange();
+    }}
+  >
+    {props.header.host && (
+      <Tabs
+        value={props.header.host.type.oneofKind ?? "preserve"}
+        onChange={(value) => {
+          if (!value) return;
+          props.header.host!.type = match(value)
+            .with("value", () => ({ oneofKind: "value" as const, value: "" }))
+            .with("eval", () => ({ oneofKind: "eval" as const, eval: "" }))
+            .otherwise(() => ({
+              oneofKind: "preserve" as const,
+              preserve: true,
+            }));
+          props.onChange();
+        }}
+      >
+        <Tabs.List className="mb-2">
+          <Tabs.Tab value="preserve">Preserve</Tabs.Tab>
+          <Tabs.Tab value="value">Value</Tabs.Tab>
+          <Tabs.Tab value="eval">Eval (CEL)</Tabs.Tab>
+        </Tabs.List>
+
+        <Tabs.Panel value="preserve">
+          <Switch
+            label="Preserve host header"
+            description="Preserve the downstream Host header to the upstream"
+            checked={
+              props.header.host.type.oneofKind === "preserve" &&
+              props.header.host.type.preserve
+            }
+            onChange={(event) => {
+              props.header.host!.type = {
+                oneofKind: "preserve",
+                preserve: event.currentTarget.checked,
+              };
+              props.onChange();
+            }}
+          />
+        </Tabs.Panel>
+
+        <Tabs.Panel value="value">
+          <TextInput
+            label="Host value"
+            description="Set a fixed Host header value sent to the upstream"
+            placeholder="example.com"
+            value={
+              props.header.host.type.oneofKind === "value"
+                ? props.header.host.type.value
+                : ""
+            }
+            onChange={(event) => {
+              props.header.host!.type = {
+                oneofKind: "value",
+                value: event.target.value,
+              };
+              props.onChange();
+            }}
+          />
+        </Tabs.Panel>
+
+        <Tabs.Panel value="eval">
+          <TextInput
+            label="Host eval (CEL)"
+            description="Set a CEL expression that evaluates to the Host header value"
+            placeholder={'ctx.service.metadata.name + ".internal"'}
+            value={
+              props.header.host.type.oneofKind === "eval"
+                ? props.header.host.type.eval
+                : ""
+            }
+            onChange={(event) => {
+              props.header.host!.type = {
+                oneofKind: "eval",
+                eval: event.target.value,
+              };
+              props.onChange();
+            }}
+          />
+        </Tabs.Panel>
+      </Tabs>
+    )}
+  </EditItem>
+);
+
+const ConfigHeaderEditor = (props: {
+  config: HeaderConfig;
   onChange: () => void;
 }) => (
   <EditItem
     title="Headers"
-    description="Control forwarded, added, and removed request headers"
+    description="Set Request/Response header related configs"
     obj={props.config.header}
     onUnset={() => {
       props.config.header = undefined;
@@ -963,44 +1416,104 @@ const GatewayHeaderEditor = (props: {
     }}
   >
     {props.config.header && (
-      <Group grow>
-        <Select
-          label="Forwarded headers"
-          description="How the downstream Forwarded header is handled."
-          data={["DROP", "OBFUSCATE", "TRANSPARENT"]}
-          value={
-            CoreP.Service_Spec_Config_HTTP_Header_ForwardedMode[
-              props.config.header.forwardedMode
-            ] ?? "DROP"
-          }
-          onChange={(value) => {
-            if (!value) return;
-            props.config.header!.forwardedMode =
-              CoreP.Service_Spec_Config_HTTP_Header_ForwardedMode[
-                value as keyof typeof CoreP.Service_Spec_Config_HTTP_Header_ForwardedMode
-              ];
+      <div>
+        <Group grow>
+          <Select
+            label="Forwarded Headers Mode"
+            clearable
+            description="Obfuscate, drop or pass the X-Forwarded-* headers to the upstream. Unset drops them."
+            data={[
+              { label: "Obfuscate", value: "OBFUSCATE" },
+              { label: "Transparent", value: "TRANSPARENT" },
+              { label: "Drop", value: "DROP" },
+            ]}
+            value={
+              props.config.header.forwardedMode ===
+              CoreP.Service_Spec_Config_HTTP_Header_ForwardedMode.UNSET
+                ? null
+                : CoreP.Service_Spec_Config_HTTP_Header_ForwardedMode[
+                    props.config.header.forwardedMode
+                  ]
+            }
+            onChange={(value) => {
+              props.config.header!.forwardedMode = value
+                ? CoreP.Service_Spec_Config_HTTP_Header_ForwardedMode[
+                    value as keyof typeof CoreP.Service_Spec_Config_HTTP_Header_ForwardedMode
+                  ]
+                : CoreP.Service_Spec_Config_HTTP_Header_ForwardedMode.UNSET;
+              props.onChange();
+            }}
+          />
+          <Select
+            label="Authorization Header Mode"
+            clearable
+            description="Explicitly delete or pass the downstream Authorization request header. Unset deletes it unless the Service is anonymous."
+            data={[
+              { label: "Delete", value: "DELETE" },
+              { label: "Pass", value: "PASS" },
+            ]}
+            value={
+              props.config.header.authorizationMode ===
+              CoreP.Service_Spec_Config_HTTP_Header_AuthorizationMode
+                .AUTHORIZATION_MODE_UNSET
+                ? null
+                : CoreP.Service_Spec_Config_HTTP_Header_AuthorizationMode[
+                    props.config.header.authorizationMode
+                  ]
+            }
+            onChange={(value) => {
+              props.config.header!.authorizationMode = value
+                ? CoreP.Service_Spec_Config_HTTP_Header_AuthorizationMode[
+                    value as keyof typeof CoreP.Service_Spec_Config_HTTP_Header_AuthorizationMode
+                  ]
+                : CoreP.Service_Spec_Config_HTTP_Header_AuthorizationMode
+                    .AUTHORIZATION_MODE_UNSET;
+              props.onChange();
+            }}
+          />
+        </Group>
+
+        <HeaderKeyValueEditor
+          title="Add Request Headers"
+          description="Headers set on the request before it is forwarded upstream."
+          headers={props.config.header.addRequestHeaders}
+          onChange={props.onChange}
+        />
+
+        <HeaderKeyValueEditor
+          title="Add Response Headers"
+          description="Headers set on the response before it is served downstream."
+          headers={props.config.header.addResponseHeaders}
+          onChange={props.onChange}
+        />
+
+        <StringListEditor
+          title="Remove Request Headers"
+          description="Headers removed from the request before it is forwarded upstream."
+          values={props.config.header.removeRequestHeaders}
+          onChange={(values) => {
+            props.config.header!.removeRequestHeaders = values;
             props.onChange();
           }}
+          placeholder="X-My-Header"
         />
-        <Select
-          label="Authorization header"
-          description="Whether the downstream Authorization header is removed or passed upstream."
-          data={["DELETE", "PASS"]}
-          value={
-            CoreP.Service_Spec_Config_HTTP_Header_AuthorizationMode[
-              props.config.header.authorizationMode
-            ] ?? "DELETE"
-          }
-          onChange={(value) => {
-            if (!value) return;
-            props.config.header!.authorizationMode =
-              CoreP.Service_Spec_Config_HTTP_Header_AuthorizationMode[
-                value as keyof typeof CoreP.Service_Spec_Config_HTTP_Header_AuthorizationMode
-              ];
+
+        <StringListEditor
+          title="Remove Response Headers"
+          description="Headers removed from the response before it is served downstream."
+          values={props.config.header.removeResponseHeaders}
+          onChange={(values) => {
+            props.config.header!.removeResponseHeaders = values;
             props.onChange();
           }}
+          placeholder="X-My-Header"
         />
-      </Group>
+
+        <HostHeaderEditor
+          header={props.config.header}
+          onChange={props.onChange}
+        />
+      </div>
     )}
   </EditItem>
 );
@@ -1116,7 +1629,11 @@ const EnumSelect = (props: {
     label={props.label}
     description={props.description}
     data={props.values}
-    value={props.enumObj[props.value] ?? props.values[0]}
+    value={
+      props.values.includes(props.enumObj[props.value])
+        ? props.enumObj[props.value]
+        : props.values[0]
+    }
     onChange={(value) => {
       if (!value) return;
       props.onChange(props.enumObj[value]);
@@ -1201,7 +1718,8 @@ const GuardrailPatternsEditor = (props: {
         CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern.create({
           match: { oneofKind: "regex", regex: "" },
           action:
-            CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern_Action.REDACT,
+            CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern_Action
+              .REDACT,
         }),
       ])
     }
@@ -1211,7 +1729,8 @@ const GuardrailPatternsEditor = (props: {
         CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern.create({
           match: { oneofKind: "regex", regex: "" },
           action:
-            CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern_Action.REDACT,
+            CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern_Action
+              .REDACT,
         }),
       ])
     }
@@ -1453,7 +1972,9 @@ const EmbeddingEditor = (props: {
                 label="Source"
                 description="Embed on the Service's own upstream or on a dedicated one."
                 data={["currentUpstream", "upstream"]}
-                value={props.embedding.source.type.oneofKind ?? "currentUpstream"}
+                value={
+                  props.embedding.source.type.oneofKind ?? "currentUpstream"
+                }
                 onChange={(value) => {
                   if (!value) return;
                   props.embedding!.source!.type =
@@ -1468,38 +1989,45 @@ const EmbeddingEditor = (props: {
                 }}
               />
               {props.embedding.source.type.oneofKind === "upstream" && (
-                <Group grow align="flex-start">
-                  <TextInput
-                    label="Upstream URL"
-                    description="Base URL of the dedicated embedding upstream."
-                    placeholder="https://api.openai.com"
-                    value={props.embedding.source.type.upstream.url}
-                    onChange={(event) => {
-                      if (
-                        props.embedding?.source?.type.oneofKind === "upstream"
-                      ) {
-                        props.embedding.source.type.upstream.url =
-                          event.target.value;
-                      }
-                      props.onChange(props.embedding);
-                    }}
+                <div>
+                  <Group grow align="flex-start">
+                    <TextInput
+                      label="Upstream URL"
+                      description="Base URL of the dedicated embedding upstream."
+                      placeholder="https://api.openai.com"
+                      value={props.embedding.source.type.upstream.url}
+                      onChange={(event) => {
+                        if (
+                          props.embedding?.source?.type.oneofKind === "upstream"
+                        ) {
+                          props.embedding.source.type.upstream.url =
+                            event.target.value;
+                        }
+                        props.onChange(props.embedding);
+                      }}
+                    />
+                    <EnumSelect
+                      label="Upstream protocol"
+                      description="Inference protocol spoken by the embedding upstream."
+                      values={llmProtocolNames}
+                      enumObj={CoreP.Service_Spec_Config_LLM_Protocol}
+                      value={props.embedding.source.type.upstream.protocol}
+                      onChange={(value) => {
+                        if (
+                          props.embedding?.source?.type.oneofKind === "upstream"
+                        ) {
+                          props.embedding.source.type.upstream.protocol = value;
+                        }
+                        props.onChange(props.embedding);
+                      }}
+                    />
+                  </Group>
+                  <ConfigAuthEditor
+                    config={props.embedding.source.type.upstream}
+                    description="Authenticate the requests sent to the dedicated embedding upstream"
+                    onChange={() => props.onChange(props.embedding)}
                   />
-                  <EnumSelect
-                    label="Upstream protocol"
-                    description="Inference protocol spoken by the embedding upstream."
-                    values={llmProtocolNames}
-                    enumObj={CoreP.Service_Spec_Config_LLM_Protocol}
-                    value={props.embedding.source.type.upstream.protocol}
-                    onChange={(value) => {
-                      if (
-                        props.embedding?.source?.type.oneofKind === "upstream"
-                      ) {
-                        props.embedding.source.type.upstream.protocol = value;
-                      }
-                      props.onChange(props.embedding);
-                    }}
-                  />
-                </Group>
+                </div>
               )}
             </>
           )}
@@ -1655,26 +2183,51 @@ const createGatewayPluginType = (
   }
 };
 
-const SharedPluginTypeEditor = (props: {
-  type: any;
-  onChange: () => void;
-}) => {
+const extProcHeaderModeNames = ["SEND", "SKIP"];
+
+const extProcBodyModeNames = ["NONE", "BUFFERED"];
+
+const SharedPluginTypeEditor = (props: { type: any; onChange: () => void }) => {
   const type = props.type;
 
   return (
     <>
       {type.oneofKind === "direct" && (
-        <NumberInput
-          label="Status code"
-          description="HTTP status returned by the direct response."
-          min={100}
-          max={599}
-          value={type.direct.statusCode}
-          onChange={(value) => {
-            type.direct.statusCode = strToNum(value);
-            props.onChange();
-          }}
-        />
+        <>
+          <NumberInput
+            label="Status code"
+            description="HTTP status returned by the direct response."
+            min={100}
+            max={599}
+            value={type.direct.statusCode}
+            onChange={(value) => {
+              type.direct.statusCode = strToNum(value);
+              props.onChange();
+            }}
+          />
+          <InlineBodyEditor
+            description="Body returned directly to the downstream client"
+            placeholder={'{ "message": "ok" }'}
+            body={type.direct.body}
+            onSet={() => {
+              type.direct.body = createDirectResponseBody();
+              props.onChange();
+            }}
+            onUnset={() => {
+              type.direct.body = undefined;
+              props.onChange();
+            }}
+            onChange={props.onChange}
+          />
+          <PluginHeadersEditor
+            description="Headers set on the direct response"
+            headers={type.direct.headers}
+            create={() =>
+              CoreP.Service_Spec_Config_HTTP_Plugin_Direct_KeyValue.create()
+            }
+            onChange={props.onChange}
+          />
+        </>
       )}
       {type.oneofKind === "rateLimit" && (
         <>
@@ -1686,6 +2239,17 @@ const SharedPluginTypeEditor = (props: {
               value={Number(type.rateLimit.limit)}
               onChange={(value) => {
                 type.rateLimit.limit = strToNum(value);
+                props.onChange();
+              }}
+            />
+            <NumberInput
+              label="Status code"
+              description="HTTP status returned when the request is rate limited."
+              min={100}
+              max={599}
+              value={type.rateLimit.statusCode}
+              onChange={(value) => {
+                type.rateLimit.statusCode = strToNum(value);
                 props.onChange();
               }}
             />
@@ -1705,6 +2269,31 @@ const SharedPluginTypeEditor = (props: {
               type.rateLimit.key = value;
               props.onChange();
             }}
+          />
+          <InlineBodyEditor
+            description="Body returned to the downstream client when rate limited"
+            placeholder={'{ "message": "Too Many Requests" }'}
+            body={type.rateLimit.body}
+            onSet={() => {
+              type.rateLimit.body =
+                CoreP.Service_Spec_Config_HTTP_Plugin_RateLimit_Body.create({
+                  type: { oneofKind: "inline", inline: "" },
+                });
+              props.onChange();
+            }}
+            onUnset={() => {
+              type.rateLimit.body = undefined;
+              props.onChange();
+            }}
+            onChange={props.onChange}
+          />
+          <PluginHeadersEditor
+            description="Headers set on the rate-limited response"
+            headers={type.rateLimit.headers}
+            create={() =>
+              CoreP.Service_Spec_Config_HTTP_Plugin_RateLimit_KeyValue.create()
+            }
+            onChange={props.onChange}
           />
         </>
       )}
@@ -1742,7 +2331,7 @@ const SharedPluginTypeEditor = (props: {
         </Group>
       )}
       {type.oneofKind === "jsonSchema" && (
-        <div>
+        <>
           <NumberInput
             label="Status code"
             description="HTTP status returned when JSON validation fails."
@@ -1755,7 +2344,9 @@ const SharedPluginTypeEditor = (props: {
             }}
           />
           <TextAreaCustom
+            label="JSON Schema"
             description="Inline JSON Schema used to validate the request body."
+            placeholder={'{ "type": "object" }'}
             value={
               type.jsonSchema.type.oneofKind === "inline"
                 ? type.jsonSchema.type.inline
@@ -1769,58 +2360,184 @@ const SharedPluginTypeEditor = (props: {
               props.onChange();
             }}
           />
-        </div>
+          <InlineBodyEditor
+            description="Body returned to the downstream client when validation fails"
+            placeholder="Invalid request body"
+            body={type.jsonSchema.body}
+            onSet={() => {
+              type.jsonSchema.body =
+                CoreP.Service_Spec_Config_HTTP_Plugin_JSONSchema_Body.create({
+                  type: { oneofKind: "inline", inline: "" },
+                });
+              props.onChange();
+            }}
+            onUnset={() => {
+              type.jsonSchema.body = undefined;
+              props.onChange();
+            }}
+            onChange={props.onChange}
+          />
+          <PluginHeadersEditor
+            description="Headers set on the validation failure response"
+            headers={type.jsonSchema.headers}
+            create={() =>
+              CoreP.Service_Spec_Config_HTTP_Plugin_JSONSchema_KeyValue.create()
+            }
+            onChange={props.onChange}
+          />
+        </>
       )}
       {type.oneofKind === "extProc" && (
-        <Group grow>
-          <Select
-            label="Endpoint type"
-            description="Use a fixed address or a managed container for ext_proc."
-            data={["address", "container"]}
-            value={type.extProc.type.oneofKind ?? "address"}
-            onChange={(value) => {
-              if (!value) return;
-              type.extProc.type =
-                value === "container"
-                  ? {
-                      oneofKind: "container",
-                      container:
-                        CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_Container.create(),
+        <>
+          <Group grow align="flex-start">
+            <Select
+              label="Endpoint type"
+              description="Use a fixed address or a managed container for ext_proc."
+              data={["address", "container"]}
+              value={type.extProc.type.oneofKind ?? "address"}
+              onChange={(value) => {
+                if (!value) return;
+                type.extProc.type =
+                  value === "container"
+                    ? {
+                        oneofKind: "container",
+                        container:
+                          CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_Container.create(),
+                      }
+                    : { oneofKind: "address", address: "" };
+                props.onChange();
+              }}
+            />
+            {type.extProc.type.oneofKind === "address" ? (
+              <TextInput
+                label="Address"
+                description="Address of the Envoy ext_proc gRPC server."
+                value={type.extProc.type.address}
+                onChange={(event) => {
+                  if (type.extProc.type.oneofKind === "address") {
+                    type.extProc.type.address = event.target.value;
+                  }
+                  props.onChange();
+                }}
+              />
+            ) : (
+              <>
+                <TextInput
+                  label="Container image"
+                  description="Container image that serves the ext_proc gRPC endpoint."
+                  value={
+                    type.extProc.type.oneofKind === "container"
+                      ? type.extProc.type.container.image
+                      : ""
+                  }
+                  onChange={(event) => {
+                    if (type.extProc.type.oneofKind === "container") {
+                      type.extProc.type.container.image = event.target.value;
                     }
-                  : { oneofKind: "address", address: "" };
+                    props.onChange();
+                  }}
+                />
+                <NumberInput
+                  label="Container port"
+                  description="Port exposed by the ext_proc container."
+                  min={0}
+                  max={65535}
+                  value={
+                    type.extProc.type.oneofKind === "container"
+                      ? type.extProc.type.container.port
+                      : 0
+                  }
+                  onChange={(value) => {
+                    if (type.extProc.type.oneofKind === "container") {
+                      type.extProc.type.container.port = strToNum(value);
+                    }
+                    props.onChange();
+                  }}
+                />
+              </>
+            )}
+          </Group>
+          <DurationPicker
+            title="Message timeout"
+            description="Maximum time the ext_proc server is given to answer a message."
+            value={type.extProc.messageTimeout}
+            onChange={(value) => {
+              type.extProc.messageTimeout = value;
               props.onChange();
             }}
           />
-          {type.extProc.type.oneofKind === "address" ? (
-            <TextInput
-              label="Address"
-              description="Address of the Envoy ext_proc gRPC server."
-              value={type.extProc.type.address}
-              onChange={(event) => {
-                if (type.extProc.type.oneofKind === "address") {
-                  type.extProc.type.address = event.target.value;
-                }
-                props.onChange();
-              }}
-            />
-          ) : (
-            <TextInput
-              label="Container image"
-              description="Container image that serves the ext_proc gRPC endpoint."
-              value={
-                type.extProc.type.oneofKind === "container"
-                  ? type.extProc.type.container.image
-                  : ""
-              }
-              onChange={(event) => {
-                if (type.extProc.type.oneofKind === "container") {
-                  type.extProc.type.container.image = event.target.value;
-                }
-                props.onChange();
-              }}
-            />
-          )}
-        </Group>
+          <EditItem
+            title="Processing Mode"
+            description="Choose which headers and bodies are sent to the ext_proc server"
+            obj={type.extProc.processingMode}
+            onUnset={() => {
+              type.extProc.processingMode = undefined;
+              props.onChange();
+            }}
+            onSet={() => {
+              type.extProc.processingMode =
+                CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode.create();
+              props.onChange();
+            }}
+          >
+            {type.extProc.processingMode && (
+              <Group grow align="flex-start">
+                <EnumSelect
+                  label="Request header mode"
+                  description="Whether the request headers are sent to the ext_proc server."
+                  values={extProcHeaderModeNames}
+                  enumObj={
+                    CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode
+                  }
+                  value={type.extProc.processingMode.requestHeaderMode}
+                  onChange={(value) => {
+                    type.extProc.processingMode.requestHeaderMode = value;
+                    props.onChange();
+                  }}
+                />
+                <EnumSelect
+                  label="Response header mode"
+                  description="Whether the response headers are sent to the ext_proc server."
+                  values={extProcHeaderModeNames}
+                  enumObj={
+                    CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode
+                  }
+                  value={type.extProc.processingMode.responseHeaderMode}
+                  onChange={(value) => {
+                    type.extProc.processingMode.responseHeaderMode = value;
+                    props.onChange();
+                  }}
+                />
+                <EnumSelect
+                  label="Request body mode"
+                  description="Whether the request body is buffered and sent to the ext_proc server."
+                  values={extProcBodyModeNames}
+                  enumObj={
+                    CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode
+                  }
+                  value={type.extProc.processingMode.requestBodyMode}
+                  onChange={(value) => {
+                    type.extProc.processingMode.requestBodyMode = value;
+                    props.onChange();
+                  }}
+                />
+                <EnumSelect
+                  label="Response body mode"
+                  description="Whether the response body is buffered and sent to the ext_proc server."
+                  values={extProcBodyModeNames}
+                  enumObj={
+                    CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode
+                  }
+                  value={type.extProc.processingMode.responseBodyMode}
+                  onChange={(value) => {
+                    type.extProc.processingMode.responseBodyMode = value;
+                    props.onChange();
+                  }}
+                />
+              </Group>
+            )}
+          </EditItem>
+        </>
       )}
     </>
   );
@@ -1960,8 +2677,8 @@ const LLMPromptEditor = (props: {
                 oneofKind: "message",
                 message:
                   CoreP.Service_Spec_Config_LLM_Plugin_Prompt_Message.create({
-                    role: CoreP.Service_Spec_Config_LLM_Plugin_Prompt_Message_Role
-                      .USER,
+                    role: CoreP
+                      .Service_Spec_Config_LLM_Plugin_Prompt_Message_Role.USER,
                     position:
                       CoreP
                         .Service_Spec_Config_LLM_Plugin_Prompt_Message_Position
@@ -1981,7 +2698,8 @@ const LLMPromptEditor = (props: {
                 system:
                   CoreP.Service_Spec_Config_LLM_Plugin_Prompt_System.create({
                     mode: CoreP
-                      .Service_Spec_Config_LLM_Plugin_Prompt_System_Mode.PREPEND,
+                      .Service_Spec_Config_LLM_Plugin_Prompt_System_Mode
+                      .PREPEND,
                     content:
                       CoreP.Service_Spec_Config_LLM_Plugin_Prompt_Content.create(
                         { type: { oneofKind: "value", value: "" } },
@@ -2176,9 +2894,13 @@ const LLMToolsEditor = (props: {
               }}
             />
             <TextInput
-              label={filter.match.oneofKind === "type" ? "Tool type" : "Tool name"}
+              label={
+                filter.match.oneofKind === "type" ? "Tool type" : "Tool name"
+              }
               description="Matched verbatim, or as a `*` suffixed prefix."
-              placeholder={filter.match.oneofKind === "type" ? "function" : "exec_*"}
+              placeholder={
+                filter.match.oneofKind === "type" ? "function" : "exec_*"
+              }
               value={
                 filter.match.oneofKind === "type"
                   ? filter.match.type
@@ -2786,6 +3508,7 @@ const GatewayPluginsEditor = (props: {
   kind: GatewayPluginKind;
   onChange: () => void;
 }) => {
+  const rows = useListKeys();
   const plugins = props.config.plugins as any[];
   const types = props.kind === "mcp" ? mcpPluginTypes : llmPluginTypes;
 
@@ -2805,10 +3528,11 @@ const GatewayPluginsEditor = (props: {
     >
       {plugins.map((plugin, index) => (
         <EditItem
-          key={`${plugin.name || "plugin"}-${index}`}
+          key={rows.keyAt("plugins", index)}
           title={plugin.name || `Plugin ${index + 1}`}
           obj={plugin}
           onUnset={() => {
+            rows.removeAt("plugins", index);
             plugins.splice(index, 1);
             props.onChange();
           }}
@@ -2875,7 +3599,10 @@ const GatewayPluginsEditor = (props: {
               ))}
             </Tabs.List>
           </Tabs>
-          <SharedPluginTypeEditor type={plugin.type} onChange={props.onChange} />
+          <SharedPluginTypeEditor
+            type={plugin.type}
+            onChange={props.onChange}
+          />
           {plugin.type.oneofKind === "guardrail" &&
             (props.kind === "mcp" ? (
               <MCPGuardrailEditor
@@ -2895,7 +3622,10 @@ const GatewayPluginsEditor = (props: {
             />
           )}
           {plugin.type.oneofKind === "tools" && (
-            <LLMToolsEditor tools={plugin.type.tools} onChange={props.onChange} />
+            <LLMToolsEditor
+              tools={plugin.type.tools}
+              onChange={props.onChange}
+            />
           )}
           {plugin.type.oneofKind === "model" && (
             <ValueEvalEditor
@@ -2965,9 +3695,9 @@ const GatewayCommonEditor = (props: {
         }}
       />
     </Group>
-    <GatewayAuthEditor {...props} />
-    <GatewayHeaderEditor {...props} />
-    <GatewayPathEditor {...props} />
+    <ConfigAuthEditor {...props} />
+    <ConfigHeaderEditor {...props} />
+    <ConfigPathEditor {...props} />
     <GatewayPluginsEditor {...props} />
   </>
 );
@@ -3004,8 +3734,7 @@ const MCPConfigEditor = (props: {
         props.onChange();
       }}
       onSet={() => {
-        props.config.protocol =
-          CoreP.Service_Spec_Config_MCP_Protocol.create();
+        props.config.protocol = CoreP.Service_Spec_Config_MCP_Protocol.create();
         props.onChange();
       }}
     >
@@ -3028,7 +3757,8 @@ const MCPConfigEditor = (props: {
               description="Reject requests that do not provide an accepted MCP-Protocol-Version."
               checked={props.config.protocol.requireVersion}
               onChange={(event) => {
-                props.config.protocol!.requireVersion = event.currentTarget.checked;
+                props.config.protocol!.requireVersion =
+                  event.currentTarget.checked;
                 props.onChange();
               }}
             />
@@ -3199,7 +3929,11 @@ const MCPConfigEditor = (props: {
         </>
       )}
     </EditItem>
-    <GatewayCommonEditor config={props.config} kind="mcp" onChange={props.onChange} />
+    <GatewayCommonEditor
+      config={props.config}
+      kind="mcp"
+      onChange={props.onChange}
+    />
   </div>
 );
 
@@ -3235,53 +3969,16 @@ const LLMConfigEditor = (props: {
       }}
     >
       {props.config.model && (
-        <Group grow align="flex-start">
-          <Select
-            label="Rewrite source"
-            description="Use a fixed model name or evaluate a CEL expression."
-            data={["value", "eval"]}
-            value={props.config.model.type.oneofKind ?? "value"}
-            onChange={(value) => {
-              if (!value) return;
-              props.config.model!.type =
-                value === "eval"
-                  ? { oneofKind: "eval", eval: "" }
-                  : { oneofKind: "value", value: "" };
-              props.onChange();
-            }}
-          />
-          {props.config.model.type.oneofKind === "value" ? (
-            <TextInput
-              label="Model name"
-              description="Model name sent to the upstream provider."
-              placeholder="gpt-4.1"
-              value={props.config.model.type.value}
-              onChange={(event) => {
-                if (props.config.model?.type.oneofKind === "value") {
-                  props.config.model.type.value = event.target.value;
-                }
-                props.onChange();
-              }}
-            />
-          ) : (
-            <TextInput
-              label="CEL expression"
-              description="CEL expression that resolves to the upstream model name."
-              placeholder="ctx.request.llm.model"
-              value={
-                props.config.model.type.oneofKind === "eval"
-                  ? props.config.model.type.eval
-                  : ""
-              }
-              onChange={(event) => {
-                if (props.config.model?.type.oneofKind === "eval") {
-                  props.config.model.type.eval = event.target.value;
-                }
-                props.onChange();
-              }}
-            />
-          )}
-        </Group>
+        <ValueEvalEditor
+          label="Model name"
+          description="Model name sent to the upstream provider."
+          placeholder="gpt-5-mini"
+          value={props.config.model.type}
+          onChange={(value) => {
+            props.config.model!.type = value;
+            props.onChange();
+          }}
+        />
       )}
     </EditItem>
     <EditItem
@@ -3371,12 +4068,14 @@ const LLMConfigEditor = (props: {
         props.onChange();
       }}
       onSet={() => {
-        props.config.reasoning = CoreP.Service_Spec_Config_LLM_Reasoning.create({
-          type: {
-            oneofKind: "level",
-            level: CoreP.Service_Spec_Config_LLM_Reasoning_Level.MEDIUM,
+        props.config.reasoning = CoreP.Service_Spec_Config_LLM_Reasoning.create(
+          {
+            type: {
+              oneofKind: "level",
+              level: CoreP.Service_Spec_Config_LLM_Reasoning_Level.MEDIUM,
+            },
           },
-        });
+        );
         props.onChange();
       }}
     >
@@ -3394,6 +4093,47 @@ const LLMConfigEditor = (props: {
         props.onChange();
       }}
     />
+    <EditItem
+      title="Translation"
+      description="Serve downstreams that speak a protocol other than the upstream's own one"
+      obj={props.config.translation}
+      onUnset={() => {
+        props.config.translation = undefined;
+        props.onChange();
+      }}
+      onSet={() => {
+        props.config.translation =
+          CoreP.Service_Spec_Config_LLM_Translation.create();
+        props.onChange();
+      }}
+    >
+      {props.config.translation && (
+        <Group grow align="flex-start">
+          <EnumSelect
+            label="Upstream protocol"
+            description="Inference protocol spoken by the upstream, when it differs from the downstream one."
+            values={llmProtocolNames}
+            enumObj={CoreP.Service_Spec_Config_LLM_Protocol}
+            value={props.config.translation.upstreamProtocol}
+            onChange={(value) => {
+              props.config.translation!.upstreamProtocol = value;
+              props.onChange();
+            }}
+          />
+          <NumberInput
+            label="Default max output tokens"
+            description="Output limit served to an upstream that requires one while the request declares none."
+            min={0}
+            value={Number(props.config.translation.defaultMaxOutputTokens)}
+            onChange={(value) => {
+              props.config.translation!.defaultMaxOutputTokens =
+                strToNum(value);
+              props.onChange();
+            }}
+          />
+        </Group>
+      )}
+    </EditItem>
     <EditItem
       title="LLM visibility"
       description="Control recording of sensitive prompts, completions, and headers"
@@ -3520,7 +4260,11 @@ const LLMConfigEditor = (props: {
         props.onChange();
       }}
     />
-    <GatewayCommonEditor config={props.config} kind="llm" onChange={props.onChange} />
+    <GatewayCommonEditor
+      config={props.config}
+      kind="llm"
+      onChange={props.onChange}
+    />
   </div>
 );
 
@@ -3557,6 +4301,20 @@ const Config = (props: {
             value={req.name}
             onChange={(v) => {
               req.name = v.target.value;
+              updateReq();
+            }}
+          />
+        </div>
+      )}
+      {!props.default && (
+        <div className="mb-6">
+          <TextInput
+            label="Parent"
+            description="Set the name of the parent configuration that this configuration inherits from"
+            placeholder="default"
+            value={req.parent}
+            onChange={(v) => {
+              req.parent = v.target.value;
               updateReq();
             }}
           />
@@ -3765,7 +4523,10 @@ const Config = (props: {
                             }}
                           >
                             {container.container.env.map((envVar, idx) => (
-                              <div className="w-full flex mb-3" key={rows.keyAt("env", idx)}>
+                              <div
+                                className="w-full flex mb-3"
+                                key={rows.keyAt("env", idx)}
+                              >
                                 <CloseButton
                                   size={"sm"}
                                   variant="subtle"
@@ -4214,7 +4975,10 @@ const Config = (props: {
                             }}
                           >
                             {container.container.command.map((x, idx) => (
-                              <div className="w-full flex mb-3" key={rows.keyAt("command", idx)}>
+                              <div
+                                className="w-full flex mb-3"
+                                key={rows.keyAt("command", idx)}
+                              >
                                 <CloseButton
                                   size="sm"
                                   variant="subtle"
@@ -4255,7 +5019,10 @@ const Config = (props: {
                             }}
                           >
                             {container.container.args.map((x, idx) => (
-                              <div className="w-full flex mb-3" key={rows.keyAt("args", idx)}>
+                              <div
+                                className="w-full flex mb-3"
+                                key={rows.keyAt("args", idx)}
+                              >
                                 <CloseButton
                                   size="sm"
                                   variant="subtle"
@@ -5022,6 +5789,18 @@ const Config = (props: {
                                       updateReq();
                                     }}
                                   />
+
+                                  <StringListEditor
+                                    title="Trusted CAs"
+                                    description="PEM-encoded root CAs trusted for the Kubernetes API server certificate."
+                                    values={bearerToken.bearerToken.trustedCAs}
+                                    onChange={(values) => {
+                                      bearerToken.bearerToken.trustedCAs =
+                                        values;
+                                      updateReq();
+                                    }}
+                                    placeholder="-----BEGIN CERTIFICATE-----"
+                                  />
                                 </div>
                               );
                             },
@@ -5038,19 +5817,13 @@ const Config = (props: {
             .when(
               (x) => x.oneofKind === `mcp`,
               (mcp) => (
-                <MCPConfigEditor
-                  config={mcp.mcp}
-                  onChange={updateReq}
-                />
+                <MCPConfigEditor config={mcp.mcp} onChange={updateReq} />
               ),
             )
             .when(
               (x) => x.oneofKind === `llm`,
               (llm) => (
-                <LLMConfigEditor
-                  config={llm.llm}
-                  onChange={updateReq}
-                />
+                <LLMConfigEditor config={llm.llm} onChange={updateReq} />
               ),
             )
             .when(
@@ -5090,693 +5863,12 @@ const Config = (props: {
                       />
                     </Group>
 
-                    <EditItem
-                      title="Headers"
-                      description="Set Request/Response header related configs"
-                      onUnset={() => {
-                        http.http.header = undefined;
-                        updateReq();
-                      }}
-                      obj={http.http.header}
-                      onSet={() => {
-                        http.http.header =
-                          CoreP.Service_Spec_Config_HTTP_Header.create();
+                    <ConfigHeaderEditor
+                      config={http.http}
+                      onChange={updateReq}
+                    />
 
-                        updateReq();
-                      }}
-                    >
-                      {http.http.header && (
-                        <div>
-                          <Group grow>
-                            <Select
-                              label="Forwarded Headers Mode"
-                              required
-                              description="Obfuscate, drop or pass the the X-Forwarded-* headers to the upstream"
-                              data={[
-                                {
-                                  label: "Obfuscate",
-                                  value:
-                                    CoreP
-                                      .Service_Spec_Config_HTTP_Header_ForwardedMode[
-                                      CoreP
-                                        .Service_Spec_Config_HTTP_Header_ForwardedMode
-                                        .OBFUSCATE
-                                    ],
-                                },
-                                {
-                                  label: "Transparent",
-                                  value:
-                                    CoreP
-                                      .Service_Spec_Config_HTTP_Header_ForwardedMode[
-                                      CoreP
-                                        .Service_Spec_Config_HTTP_Header_ForwardedMode
-                                        .TRANSPARENT
-                                    ],
-                                },
-                                {
-                                  label: "Drop",
-                                  value:
-                                    CoreP
-                                      .Service_Spec_Config_HTTP_Header_ForwardedMode[
-                                      CoreP
-                                        .Service_Spec_Config_HTTP_Header_ForwardedMode
-                                        .DROP
-                                    ],
-                                },
-                              ]}
-                              value={
-                                CoreP
-                                  .Service_Spec_Config_HTTP_Header_ForwardedMode[
-                                  http.http.header.forwardedMode
-                                ] ??
-                                CoreP
-                                  .Service_Spec_Config_HTTP_Header_ForwardedMode[
-                                  CoreP
-                                    .Service_Spec_Config_HTTP_Header_ForwardedMode
-                                    .OBFUSCATE
-                                ]
-                              }
-                              onChange={(v) => {
-                                if (!v) return;
-                                http.http.header!.forwardedMode =
-                                  CoreP.Service_Spec_Config_HTTP_Header_ForwardedMode[
-                                    v as "OBFUSCATE"
-                                  ];
-
-                                updateReq();
-                              }}
-                            />
-
-                            <Select
-                              label="Authorization Header Mode"
-                              required
-                              description="Explicitly delete or pass the downstream Authorization request header"
-                              data={[
-                                {
-                                  label: "Delete",
-                                  value:
-                                    CoreP
-                                      .Service_Spec_Config_HTTP_Header_AuthorizationMode[
-                                      CoreP
-                                        .Service_Spec_Config_HTTP_Header_AuthorizationMode
-                                        .DELETE
-                                    ],
-                                },
-                                {
-                                  label: "Pass",
-                                  value:
-                                    CoreP
-                                      .Service_Spec_Config_HTTP_Header_AuthorizationMode[
-                                      CoreP
-                                        .Service_Spec_Config_HTTP_Header_AuthorizationMode
-                                        .PASS
-                                    ],
-                                },
-                              ]}
-                              value={
-                                CoreP
-                                  .Service_Spec_Config_HTTP_Header_AuthorizationMode[
-                                  http.http.header.authorizationMode
-                                ]
-                              }
-                              onChange={(v) => {
-                                if (!v) return;
-                                http.http.header!.authorizationMode =
-                                  CoreP.Service_Spec_Config_HTTP_Header_AuthorizationMode[
-                                    v as "PASS"
-                                  ];
-
-                                updateReq();
-                              }}
-                            />
-                          </Group>
-                          <ItemMessage
-                            title="Add Request Headers"
-                            obj={http.http.header.addRequestHeaders}
-                            isList
-                            onSet={() => {
-                              http.http.header!.addRequestHeaders = [
-                                CoreP.Service_Spec_Config_HTTP_Header_KeyValue.create(
-                                  {
-                                    key: "",
-                                    type: {
-                                      oneofKind: "value",
-                                      value: "",
-                                    },
-                                  },
-                                ),
-                              ];
-
-                              updateReq();
-                            }}
-                            onAddListItem={() => {
-                              http.http.header!.addRequestHeaders.push(
-                                CoreP.Service_Spec_Config_HTTP_Header_KeyValue.create(
-                                  {
-                                    key: "",
-                                    type: {
-                                      oneofKind: "value",
-                                      value: "",
-                                    },
-                                  },
-                                ),
-                              );
-
-                              updateReq();
-                            }}
-                          >
-                            {http.http.header!.addRequestHeaders.map(
-                              (x, idx) => (
-                                <div className="w-full flex mb-3" key={rows.keyAt("addRequestHeaders", idx)}>
-                                  <CloseButton
-                                    size={"sm"}
-                                    variant="subtle"
-                                    className="mr-2"
-                                    onClick={() => {
-                                      rows.removeAt("addRequestHeaders", idx);
-                                      http.http.header!.addRequestHeaders.splice(
-                                        idx,
-                                        1,
-                                      );
-                                      updateReq();
-                                    }}
-                                  ></CloseButton>
-                                  <Group className="flex w-full" grow>
-                                    <TextInput
-                                      required
-                                      label="Key"
-                                      description="Set the Header key"
-                                      placeholder="MY_KEY"
-                                      value={
-                                        http.http.header!.addRequestHeaders[idx]
-                                          .key
-                                      }
-                                      onChange={(v) => {
-                                        http.http.header!.addRequestHeaders[
-                                          idx
-                                        ].key = v.target.value;
-                                        updateReq();
-                                      }}
-                                    />
-                                    <Select
-                                      label="Value type"
-                                      description="Use a literal header value or evaluate it with CEL."
-                                      data={[
-                                        { label: "Literal", value: "value" },
-                                        { label: "Eval (CEL)", value: "eval" },
-                                      ]}
-                                      value={
-                                        http.http.header!.addRequestHeaders[idx]
-                                          .type.oneofKind ?? "value"
-                                      }
-                                      onChange={(v) => {
-                                        if (!v) return;
-                                        http.http.header!.addRequestHeaders[
-                                          idx
-                                        ].type =
-                                          v === "eval"
-                                            ? { oneofKind: "eval", eval: "" }
-                                            : { oneofKind: "value", value: "" };
-                                        updateReq();
-                                      }}
-                                    />
-                                    <TextInput
-                                      required
-                                      label={
-                                        http.http.header!.addRequestHeaders[idx]
-                                          .type.oneofKind === "eval"
-                                          ? "CEL expression"
-                                          : "Value"
-                                      }
-                                      description="Set the Header value"
-                                      placeholder="my-value"
-                                      value={match(
-                                        http.http.header!.addRequestHeaders[idx]
-                                          .type,
-                                      )
-                                        .when(
-                                          (v) => v.oneofKind === `value`,
-                                          (v) => v.value,
-                                        )
-                                        .when(
-                                          (v) => v.oneofKind === `eval`,
-                                          (v) => v.eval,
-                                        )
-                                        .otherwise(() => undefined)}
-                                      onChange={(val) => {
-                                        match(
-                                          http.http.header!.addRequestHeaders[
-                                            idx
-                                          ].type,
-                                        )
-                                          .when(
-                                            (v) => v.oneofKind === `value`,
-                                            (v) => {
-                                              v.value = val.target.value;
-                                            },
-                                          )
-                                          .when(
-                                            (v) => v.oneofKind === `eval`,
-                                            (v) => {
-                                              v.eval = val.target.value;
-                                            },
-                                          );
-
-                                        updateReq();
-                                      }}
-                                    />
-                                  </Group>
-                                </div>
-                              ),
-                            )}
-                          </ItemMessage>
-
-                          <ItemMessage
-                            title="Add Response Headers"
-                            obj={http.http.header.addResponseHeaders}
-                            isList
-                            onSet={() => {
-                              http.http.header!.addResponseHeaders = [
-                                CoreP.Service_Spec_Config_HTTP_Header_KeyValue.create(
-                                  {
-                                    key: "",
-                                    type: {
-                                      oneofKind: "value",
-                                      value: "",
-                                    },
-                                  },
-                                ),
-                              ];
-
-                              updateReq();
-                            }}
-                            onAddListItem={() => {
-                              http.http.header!.addResponseHeaders.push(
-                                CoreP.Service_Spec_Config_HTTP_Header_KeyValue.create(
-                                  {
-                                    key: "",
-                                    type: {
-                                      oneofKind: "value",
-                                      value: "",
-                                    },
-                                  },
-                                ),
-                              );
-
-                              updateReq();
-                            }}
-                          >
-                            {http.http.header!.addResponseHeaders.map(
-                              (x, idx) => (
-                                <div className="w-full flex mb-3" key={rows.keyAt("addResponseHeaders", idx)}>
-                                  <CloseButton
-                                    size={"sm"}
-                                    variant="subtle"
-                                    className="mr-2"
-                                    onClick={() => {
-                                      rows.removeAt("addResponseHeaders", idx);
-                                      http.http.header!.addResponseHeaders.splice(
-                                        idx,
-                                        1,
-                                      );
-                                      updateReq();
-                                    }}
-                                  ></CloseButton>
-                                  <Group className="flex w-full" grow>
-                                    <TextInput
-                                      required
-                                      label="Key"
-                                      description="Set the Header key"
-                                      placeholder="MY_KEY"
-                                      value={
-                                        http.http.header!.addResponseHeaders[
-                                          idx
-                                        ].key
-                                      }
-                                      onChange={(v) => {
-                                        http.http.header!.addResponseHeaders[
-                                          idx
-                                        ].key = v.target.value;
-                                        updateReq();
-                                      }}
-                                    />
-                                    <Select
-                                      label="Value type"
-                                      description="Use a literal header value or evaluate it with CEL."
-                                      data={[
-                                        { label: "Literal", value: "value" },
-                                        { label: "Eval (CEL)", value: "eval" },
-                                      ]}
-                                      value={
-                                        http.http.header!.addResponseHeaders[
-                                          idx
-                                        ].type.oneofKind ?? "value"
-                                      }
-                                      onChange={(v) => {
-                                        if (!v) return;
-                                        http.http.header!.addResponseHeaders[
-                                          idx
-                                        ].type =
-                                          v === "eval"
-                                            ? { oneofKind: "eval", eval: "" }
-                                            : { oneofKind: "value", value: "" };
-                                        updateReq();
-                                      }}
-                                    />
-                                    <TextInput
-                                      required
-                                      label={
-                                        http.http.header!.addResponseHeaders[
-                                          idx
-                                        ].type.oneofKind === "eval"
-                                          ? "CEL expression"
-                                          : "Value"
-                                      }
-                                      description="Set the Header value"
-                                      placeholder="my-value"
-                                      value={match(
-                                        http.http.header!.addResponseHeaders[
-                                          idx
-                                        ].type,
-                                      )
-                                        .when(
-                                          (v) => v.oneofKind === `value`,
-                                          (v) => v.value,
-                                        )
-                                        .when(
-                                          (v) => v.oneofKind === `eval`,
-                                          (v) => v.eval,
-                                        )
-                                        .otherwise(() => undefined)}
-                                      onChange={(val) => {
-                                        let f = req.type as {
-                                          oneofKind: "http";
-                                          http: CoreP.Service_Spec_Config_HTTP;
-                                        };
-
-                                        match(
-                                          f.http.header!.addResponseHeaders[idx]
-                                            .type,
-                                        )
-                                          .when(
-                                            (v) => v.oneofKind === `value`,
-                                            (v) => {
-                                              v.value = val.target.value;
-                                            },
-                                          )
-                                          .when(
-                                            (v) => v.oneofKind === `eval`,
-                                            (v) => {
-                                              v.eval = val.target.value;
-                                            },
-                                          );
-                                        updateReq();
-                                      }}
-                                    />
-                                  </Group>
-                                </div>
-                              ),
-                            )}
-                          </ItemMessage>
-
-                          <ItemMessage
-                            title="Remove Request Headers"
-                            obj={http.http.header.removeRequestHeaders}
-                            isList
-                            onSet={() => {
-                              http.http.header!.removeRequestHeaders = [""];
-
-                              updateReq();
-                            }}
-                            onAddListItem={() => {
-                              http.http.header!.removeRequestHeaders.push("");
-
-                              updateReq();
-                            }}
-                          >
-                            {http.http.header!.removeRequestHeaders.map(
-                              (x, idx) => (
-                                <div className="w-full flex mb-3" key={rows.keyAt("removeRequestHeaders", idx)}>
-                                  <CloseButton
-                                    size={"sm"}
-                                    variant="subtle"
-                                    className="mr-2"
-                                    onClick={() => {
-                                      rows.removeAt("removeRequestHeaders", idx);
-                                      http.http.header!.removeRequestHeaders.splice(
-                                        idx,
-                                        1,
-                                      );
-                                      updateReq();
-                                    }}
-                                  ></CloseButton>
-                                  <Group className="flex w-full" grow>
-                                    <TextInput
-                                      required
-                                      label="Key"
-                                      description="Set the Header key"
-                                      placeholder="MY_KEY"
-                                      value={
-                                        http.http.header!.removeRequestHeaders[
-                                          idx
-                                        ]
-                                      }
-                                      onChange={(v) => {
-                                        http.http.header!.removeRequestHeaders[
-                                          idx
-                                        ] = v.target.value;
-                                        updateReq();
-                                      }}
-                                    />
-                                  </Group>
-                                </div>
-                              ),
-                            )}
-                          </ItemMessage>
-
-                          <ItemMessage
-                            title="Remove Response Headers"
-                            obj={http.http.header.removeResponseHeaders}
-                            isList
-                            onSet={() => {
-                              http.http.header!.removeResponseHeaders = [""];
-
-                              updateReq();
-                            }}
-                            onAddListItem={() => {
-                              http.http.header!.removeResponseHeaders.push("");
-
-                              updateReq();
-                            }}
-                          >
-                            {http.http.header!.removeResponseHeaders.map(
-                              (x, idx) => (
-                                <div className="w-full flex mb-3" key={rows.keyAt("removeResponseHeaders", idx)}>
-                                  <CloseButton
-                                    size={"sm"}
-                                    variant="subtle"
-                                    className="mr-2"
-                                    onClick={() => {
-                                      rows.removeAt("removeResponseHeaders", idx);
-                                      http.http.header!.removeResponseHeaders.splice(
-                                        idx,
-                                        1,
-                                      );
-                                      updateReq();
-                                    }}
-                                  ></CloseButton>
-                                  <Group className="flex w-full" grow>
-                                    <TextInput
-                                      required
-                                      label="Key"
-                                      description="Set the Header key"
-                                      placeholder="MY_KEY"
-                                      value={
-                                        http.http.header!.removeResponseHeaders[
-                                          idx
-                                        ]
-                                      }
-                                      onChange={(v) => {
-                                        http.http.header!.removeResponseHeaders[
-                                          idx
-                                        ] = v.target.value;
-                                        updateReq();
-                                      }}
-                                    />
-                                  </Group>
-                                </div>
-                              ),
-                            )}
-                          </ItemMessage>
-
-                          <EditItem
-                            title="Host header"
-                            description="Set the Host header related configs"
-                            onUnset={() => {
-                              http.http.header!.host = undefined;
-                              updateReq();
-                            }}
-                            obj={http.http.header.host}
-                            onSet={() => {
-                              http.http.header!.host =
-                                CoreP.Service_Spec_Config_HTTP_Header_Host.create(
-                                  {
-                                    type: {
-                                      oneofKind: "preserve",
-                                      preserve: true,
-                                    },
-                                  },
-                                );
-                              updateReq();
-                            }}
-                          >
-                            {http.http.header.host && (
-                              <Tabs
-                                value={http.http.header.host.type.oneofKind}
-                                onChange={(v) => {
-                                  match(v)
-                                    .with("preserve", () => {
-                                      http.http.header!.host!.type = {
-                                        oneofKind: "preserve",
-                                        preserve: true,
-                                      };
-                                    })
-                                    .with("value", () => {
-                                      http.http.header!.host!.type = {
-                                        oneofKind: "value",
-                                        value: "",
-                                      };
-                                    })
-                                    .with("eval", () => {
-                                      http.http.header!.host!.type = {
-                                        oneofKind: "eval",
-                                        eval: "",
-                                      };
-                                    })
-                                    .otherwise(() => {});
-                                  updateReq();
-                                }}
-                              >
-                                <Tabs.List className="mb-2">
-                                  <Tabs.Tab value="preserve">Preserve</Tabs.Tab>
-                                  <Tabs.Tab value="value">Value</Tabs.Tab>
-                                  <Tabs.Tab value="eval">Eval (CEL)</Tabs.Tab>
-                                </Tabs.List>
-
-                                <Tabs.Panel value="preserve">
-                                  {match(http.http.header.host.type)
-                                    .when(
-                                      (x) => x.oneofKind === "preserve",
-                                      (preserve) => (
-                                        <Switch
-                                          label="Preserve host header"
-                                          description="Preserve the downstream Host header to the upstream"
-                                          checked={preserve.preserve}
-                                          onChange={(v) => {
-                                            preserve.preserve =
-                                              v.target.checked;
-                                            updateReq();
-                                          }}
-                                        />
-                                      ),
-                                    )
-                                    .otherwise(() => (
-                                      <></>
-                                    ))}
-                                </Tabs.Panel>
-
-                                <Tabs.Panel value="value">
-                                  {match(http.http.header.host.type)
-                                    .when(
-                                      (x) => x.oneofKind === "value",
-                                      (value) => (
-                                        <TextInput
-                                          label="Host value"
-                                          description="Set a fixed Host header value sent to the upstream"
-                                          placeholder="example.com"
-                                          value={value.value}
-                                          onChange={(v) => {
-                                            value.value = v.target.value;
-                                            updateReq();
-                                          }}
-                                        />
-                                      ),
-                                    )
-                                    .otherwise(() => (
-                                      <></>
-                                    ))}
-                                </Tabs.Panel>
-
-                                <Tabs.Panel value="eval">
-                                  {match(http.http.header.host.type)
-                                    .when(
-                                      (x) => x.oneofKind === "eval",
-                                      (evalType) => (
-                                        <TextInput
-                                          label="Host eval (CEL)"
-                                          description="Set a CEL expression that evaluates to the Host header value"
-                                          placeholder='ctx.service.metadata.name + ".internal"'
-                                          value={evalType.eval}
-                                          onChange={(v) => {
-                                            evalType.eval = v.target.value;
-                                            updateReq();
-                                          }}
-                                        />
-                                      ),
-                                    )
-                                    .otherwise(() => (
-                                      <></>
-                                    ))}
-                                </Tabs.Panel>
-                              </Tabs>
-                            )}
-                          </EditItem>
-                        </div>
-                      )}
-                    </EditItem>
-
-                    <EditItem
-                      title="Path"
-                      description="Set the request path related configs"
-                      onUnset={() => {
-                        http.http.path = undefined;
-                        updateReq();
-                      }}
-                      obj={http.http.path}
-                      onSet={() => {
-                        http.http.path =
-                          CoreP.Service_Spec_Config_HTTP_Path.create();
-
-                        updateReq();
-                      }}
-                    >
-                      {http.http.path && (
-                        <div>
-                          <Group grow>
-                            <TextInput
-                              label="Add prefix"
-                              description="Add Prefix to the request path"
-                              placeholder="/api/v1"
-                              value={http.http.path.addPrefix}
-                              onChange={(v) => {
-                                http.http.path!.addPrefix = v.target.value;
-                                updateReq();
-                              }}
-                            />
-                            <TextInput
-                              label="Remove prefix"
-                              description="Remove prefix from the request path"
-                              placeholder="/api/v2"
-                              value={http.http.path.removePrefix}
-                              onChange={(v) => {
-                                http.http.path!.removePrefix = v.target.value;
-                                updateReq();
-                              }}
-                            />
-                          </Group>
-                        </div>
-                      )}
-                    </EditItem>
+                    <ConfigPathEditor config={http.http} onChange={updateReq} />
 
                     <EditItem
                       title="Response"
@@ -5939,648 +6031,113 @@ const Config = (props: {
                       }}
                     >
                       {http.http.body && (
-                        <Group grow>
-                          <NumberInput
-                            label="Mox body size"
-                            placeholder="8080"
-                            description="Set the max request body size in Bytes"
-                            min={0}
-                            value={http.http.body.maxRequestSize}
-                            onChange={(v) => {
-                              http.http.body!.maxRequestSize = strToNum(v);
-                              updateReq();
-                            }}
-                          />
-
-                          <Select
-                            label="Body Content Mode"
-                            clearable
-                            description="Set the request body mode (e.g. JSON)"
-                            data={[
-                              {
-                                label: "JSON",
-                                value:
-                                  CoreP.Service_Spec_Config_HTTP_Body_Mode[
-                                    CoreP.Service_Spec_Config_HTTP_Body_Mode
-                                      .JSON
-                                  ],
-                              },
-                            ]}
-                            value={
-                              CoreP.Service_Spec_Config_HTTP_Body_Mode[
-                                http.http.body!.mode
-                              ]
-                            }
-                            onChange={(v) => {
-                              if (!v) return;
-                              http.http.body!.mode =
-                                CoreP.Service_Spec_Config_HTTP_Body_Mode[
-                                  v as "JSON"
-                                ];
-                              updateReq();
-                            }}
-                          />
-                        </Group>
-                      )}
-                    </EditItem>
-                    <EditItem
-                      title="Authentication"
-                      description="Set authentication-related info required by the upstream to provide secretless access"
-                      onUnset={() => {
-                        http.http.auth = undefined;
-                        updateReq();
-                      }}
-                      obj={http.http.auth}
-                      onSet={() => {
-                        http.http.auth =
-                          CoreP.Service_Spec_Config_HTTP_Auth.create({
-                            type: {
-                              oneofKind: `bearer`,
-                              bearer: {
-                                type: {
-                                  oneofKind: `fromSecret`,
-                                  fromSecret: ``,
-                                },
-                              },
-                            },
-                          });
-                        updateReq();
-                      }}
-                    >
-                      {http.http.auth && (
                         <div>
-                          <Tabs
-                            value={http.http.auth!.type.oneofKind}
-                            onChange={(v) => {
-                              match(v)
-                                .with("bearer", () => {
-                                  match(
-                                    init.type.oneofKind === `http`
-                                      ? init.type.http.auth?.type.oneofKind
-                                      : undefined,
-                                  )
-                                    .with(`bearer`, () => {
-                                      http.http.auth!.type =
-                                        init.type.oneofKind === `http`
-                                          ? structuredClone(
-                                              init.type.http.auth!.type,
-                                            )
-                                          : {
-                                              oneofKind: "bearer",
-                                              bearer:
-                                                CoreP.Service_Spec_Config_HTTP_Auth_Bearer.create(
-                                                  {
-                                                    type: {
-                                                      oneofKind: "fromSecret",
-                                                      fromSecret: "",
-                                                    },
-                                                  },
-                                                ),
-                                            };
-                                    })
-                                    .otherwise(() => {
-                                      http.http.auth!.type = {
-                                        oneofKind: "bearer",
-                                        bearer:
-                                          CoreP.Service_Spec_Config_HTTP_Auth_Bearer.create(
-                                            {
-                                              type: {
-                                                oneofKind: "fromSecret",
-                                                fromSecret: "",
-                                              },
-                                            },
-                                          ),
-                                      };
-                                    });
+                          <Group grow>
+                            <NumberInput
+                              label="Max body size"
+                              placeholder="1048576"
+                              description="Set the max request body size in Bytes"
+                              min={0}
+                              value={http.http.body.maxRequestSize}
+                              onChange={(v) => {
+                                http.http.body!.maxRequestSize = strToNum(v);
+                                updateReq();
+                              }}
+                            />
 
-                                  updateReq();
-                                })
-                                .with("basic", () => {
-                                  match(
-                                    init.type.oneofKind === `http`
-                                      ? init.type.http.auth?.type.oneofKind
-                                      : undefined,
-                                  )
-                                    .with(`basic`, () => {
-                                      http.http.auth!.type =
-                                        init.type.oneofKind === `http`
-                                          ? structuredClone(
-                                              init.type.http.auth!.type,
-                                            )
-                                          : {
-                                              oneofKind: "basic",
-                                              basic:
-                                                CoreP.Service_Spec_Config_HTTP_Auth_Basic.create(
-                                                  {
-                                                    password: {
-                                                      type: {
-                                                        oneofKind: "fromSecret",
-                                                        fromSecret: "",
-                                                      },
-                                                    },
-                                                  },
-                                                ),
-                                            };
-                                    })
-                                    .otherwise(() => {
-                                      http.http.auth!.type = {
-                                        oneofKind: "basic",
-                                        basic:
-                                          CoreP.Service_Spec_Config_HTTP_Auth_Basic.create(
-                                            {
-                                              password: {
-                                                type: {
-                                                  oneofKind: "fromSecret",
-                                                  fromSecret: "",
-                                                },
-                                              },
-                                            },
-                                          ),
-                                      };
-                                    });
+                            <Select
+                              label="Body Content Mode"
+                              clearable
+                              description="Set the request body mode (e.g. JSON)"
+                              data={[
+                                {
+                                  label: "JSON",
+                                  value:
+                                    CoreP.Service_Spec_Config_HTTP_Body_Mode[
+                                      CoreP.Service_Spec_Config_HTTP_Body_Mode
+                                        .JSON
+                                    ],
+                                },
+                              ]}
+                              value={
+                                http.http.body.mode ===
+                                CoreP.Service_Spec_Config_HTTP_Body_Mode
+                                  .MODE_UNSET
+                                  ? null
+                                  : CoreP.Service_Spec_Config_HTTP_Body_Mode[
+                                      http.http.body.mode
+                                    ]
+                              }
+                              onChange={(v) => {
+                                http.http.body!.mode = v
+                                  ? CoreP.Service_Spec_Config_HTTP_Body_Mode[
+                                      v as "JSON"
+                                    ]
+                                  : CoreP.Service_Spec_Config_HTTP_Body_Mode
+                                      .MODE_UNSET;
+                                updateReq();
+                              }}
+                            />
+                          </Group>
 
-                                  updateReq();
-                                })
-                                .with("oauth2ClientCredentials", () => {
-                                  let f = item.type as {
-                                    oneofKind: "http";
-                                    http: CoreP.Service_Spec_Config_HTTP;
-                                  };
-                                  let ff = req.type as {
-                                    oneofKind: "http";
-                                    http: CoreP.Service_Spec_Config_HTTP;
-                                  };
-
-                                  match(
-                                    init.type.oneofKind === `http`
-                                      ? init.type.http.auth?.type.oneofKind
-                                      : undefined,
-                                  )
-                                    .with(`oauth2ClientCredentials`, () => {
-                                      ff.http.auth!.type =
-                                        init!.type.oneofKind === `http`
-                                          ? structuredClone(
-                                              init!.type.http.auth!.type,
-                                            )
-                                          : {
-                                              oneofKind:
-                                                "oauth2ClientCredentials",
-                                              oauth2ClientCredentials:
-                                                CoreP.Service_Spec_Config_HTTP_Auth_OAuth2ClientCredentials.create(
-                                                  {
-                                                    clientSecret: {
-                                                      type: {
-                                                        oneofKind: "fromSecret",
-                                                        fromSecret: "",
-                                                      },
-                                                    },
-                                                  },
-                                                ),
-                                            };
-                                    })
-                                    .otherwise(() => {
-                                      ff.http.auth!.type = {
-                                        oneofKind: "oauth2ClientCredentials",
-                                        oauth2ClientCredentials:
-                                          CoreP.Service_Spec_Config_HTTP_Auth_OAuth2ClientCredentials.create(
-                                            {
-                                              clientSecret: {
-                                                type: {
-                                                  oneofKind: "fromSecret",
-                                                  fromSecret: "",
-                                                },
-                                              },
-                                            },
-                                          ),
-                                      };
-                                    });
-
-                                  updateReq();
-                                })
-                                .with("custom", () => {
-                                  let f = item.type as {
-                                    oneofKind: "http";
-                                    http: CoreP.Service_Spec_Config_HTTP;
-                                  };
-                                  let ff = req.type as {
-                                    oneofKind: "http";
-                                    http: CoreP.Service_Spec_Config_HTTP;
-                                  };
-
-                                  match(
-                                    init.type.oneofKind === `http`
-                                      ? init.type.http.auth?.type.oneofKind
-                                      : undefined,
-                                  )
-                                    .with(`custom`, () => {
-                                      ff.http.auth!.type =
-                                        init!.type.oneofKind === `http`
-                                          ? structuredClone(
-                                              init!.type.http.auth!.type,
-                                            )
-                                          : {
-                                              oneofKind: "custom",
-                                              custom:
-                                                CoreP.Service_Spec_Config_HTTP_Auth_Custom.create(
-                                                  {
-                                                    value: {
-                                                      type: {
-                                                        oneofKind: "fromSecret",
-                                                        fromSecret: "",
-                                                      },
-                                                    },
-                                                  },
-                                                ),
-                                            };
-                                    })
-                                    .otherwise(() => {
-                                      ff.http.auth!.type = {
-                                        oneofKind: "custom",
-                                        custom:
-                                          CoreP.Service_Spec_Config_HTTP_Auth_Custom.create(
-                                            {
-                                              value: {
-                                                type: {
-                                                  oneofKind: "fromSecret",
-                                                  fromSecret: "",
-                                                },
-                                              },
-                                            },
-                                          ),
-                                      };
-                                    });
-
-                                  updateReq();
-                                })
-                                .with(`sigv4`, () => {
-                                  let f = item.type as {
-                                    oneofKind: "http";
-                                    http: CoreP.Service_Spec_Config_HTTP;
-                                  };
-                                  let ff = req.type as {
-                                    oneofKind: "http";
-                                    http: CoreP.Service_Spec_Config_HTTP;
-                                  };
-
-                                  match(
-                                    init.type.oneofKind === `http`
-                                      ? init.type.http.auth?.type.oneofKind
-                                      : undefined,
-                                  )
-                                    .with(`sigv4`, () => {
-                                      ff.http.auth!.type =
-                                        init.type.oneofKind === `http`
-                                          ? structuredClone(
-                                              init.type.http.auth!.type,
-                                            )
-                                          : {
-                                              oneofKind: "sigv4",
-                                              sigv4:
-                                                CoreP.Service_Spec_Config_HTTP_Auth_Sigv4.create(
-                                                  {
-                                                    secretAccessKey: {
-                                                      type: {
-                                                        oneofKind: "fromSecret",
-                                                        fromSecret: "",
-                                                      },
-                                                    },
-                                                  },
-                                                ),
-                                            };
-                                    })
-                                    .otherwise(() => {
-                                      ff.http.auth!.type = {
-                                        oneofKind: "sigv4",
-                                        sigv4:
-                                          CoreP.Service_Spec_Config_HTTP_Auth_Sigv4.create(
-                                            {
-                                              secretAccessKey: {
-                                                type: {
-                                                  oneofKind: "fromSecret",
-                                                  fromSecret: "",
-                                                },
-                                              },
-                                            },
-                                          ),
-                                      };
-                                    });
-
-                                  updateReq();
-                                });
+                          <EditItem
+                            title="Validation"
+                            description="Validate the request body before it is proxied upstream"
+                            obj={http.http.body.validation}
+                            onUnset={() => {
+                              http.http.body!.validation = undefined;
+                              updateReq();
+                            }}
+                            onSet={() => {
+                              http.http.body!.validation =
+                                CoreP.Service_Spec_Config_HTTP_Body_Validation.create(
+                                  {
+                                    type: {
+                                      oneofKind: "jsonSchema",
+                                      jsonSchema: {
+                                        type: {
+                                          oneofKind: "inline",
+                                          inline: "",
+                                        },
+                                      },
+                                    },
+                                  },
+                                );
+                              updateReq();
                             }}
                           >
-                            <Tabs.List>
-                              <Tabs.Tab value="bearer">
-                                Bearer Authentication
-                              </Tabs.Tab>
-                              <Tabs.Tab value="basic">
-                                Basic Authentication
-                              </Tabs.Tab>
-                              <Tabs.Tab value="oauth2ClientCredentials">
-                                OAuth2 Client Credentials
-                              </Tabs.Tab>
-                              <Tabs.Tab value="custom">Custom Header</Tabs.Tab>
-                              <Tabs.Tab value="sigv4">AWS SigV4</Tabs.Tab>
-                            </Tabs.List>
-                            <Tabs.Panel value="bearer">
-                              {match(http.http.auth.type)
-                                .when(
-                                  (x) => x.oneofKind == `bearer`,
-                                  (bearer) => {
-                                    return (
-                                      <div className="w-full">
-                                        <SelectResource
-                                          api="core"
-                                          kind="Secret"
-                                          label="Bearer access token Secret"
-                                          description="Select the Secret of the bearer access token"
-                                          defaultValue={
-                                            bearer.bearer.type.oneofKind ===
-                                            `fromSecret`
-                                              ? bearer.bearer.type.fromSecret
-                                              : undefined
-                                          }
-                                          onChange={(val) => {
-                                            match(bearer.bearer.type).when(
-                                              (x) =>
-                                                x.oneofKind === `fromSecret`,
-                                              (x) => {
-                                                x.fromSecret =
-                                                  val?.metadata?.name ?? "";
-                                              },
-                                            );
-
-                                            updateReq();
-                                          }}
-                                        />
-                                      </div>
-                                    );
-                                  },
-                                )
-                                .otherwise(() => (
-                                  <></>
-                                ))}
-                            </Tabs.Panel>
-                            <Tabs.Panel value="oauth2ClientCredentials">
-                              {match(http.http.auth.type)
-                                .when(
-                                  (x) =>
-                                    x.oneofKind == `oauth2ClientCredentials`,
-                                  (oauth2ClientCredentials) => {
-                                    return (
-                                      <Group grow>
-                                        <TextInput
-                                          required
-                                          label="Client ID"
-                                          description="OAuth2 client identifier sent to the token endpoint."
-                                          placeholder="user1234"
-                                          value={
-                                            oauth2ClientCredentials
-                                              .oauth2ClientCredentials.clientID
-                                          }
-                                          onChange={(v) => {
-                                            oauth2ClientCredentials.oauth2ClientCredentials.clientID =
-                                              v.target.value;
-                                            updateReq();
-                                          }}
-                                        />
-                                        {match(
-                                          oauth2ClientCredentials
-                                            .oauth2ClientCredentials
-                                            .clientSecret?.type,
-                                        )
-                                          .when(
-                                            (x) =>
-                                              x?.oneofKind === `fromSecret`,
-                                            (x) => {
-                                              return (
-                                                <SelectResource
-                                                  api="core"
-                                                  kind="Secret"
-                                                  label="Client Secret"
-                                                  description="Select the Secret of the OAuth2 client secret"
-                                                  defaultValue={x.fromSecret}
-                                                  onChange={(v) => {
-                                                    x.fromSecret =
-                                                      v?.metadata?.name ?? "";
-                                                    updateReq();
-                                                  }}
-                                                />
-                                              );
-                                            },
-                                          )
-                                          .otherwise(() => (
-                                            <></>
-                                          ))}
-
-                                      <TextInput
-                                        required
-                                        label="Token endpoint URL"
-                                        description="OAuth2 endpoint used to obtain an upstream access token."
-                                          placeholder="https://oauth2.example.com/token"
-                                          value={
-                                            oauth2ClientCredentials
-                                              .oauth2ClientCredentials.tokenURL
-                                          }
-                                          onChange={(v) => {
-                                            oauth2ClientCredentials.oauth2ClientCredentials.tokenURL =
-                                              v.target.value;
-                                            updateReq();
-                                          }}
-                                        />
-                                      </Group>
-                                    );
-                                  },
-                                )
-                                .otherwise(() => (
-                                  <></>
-                                ))}
-                            </Tabs.Panel>
-
-                            <Tabs.Panel value="basic">
-                              {match(http.http.auth.type)
-                                .when(
-                                  (x) => x.oneofKind == `basic`,
-                                  (basic) => {
-                                    return (
-                                      <Group grow>
-                                        <TextInput
-                                          required
-                                          label="Username"
-                                          description="Username sent to the upstream for Basic authentication."
-                                          placeholder="user1234"
-                                          value={basic.basic.username}
-                                          onChange={(v) => {
-                                            basic.basic.username =
-                                              v.target.value;
-                                            updateReq();
-                                          }}
-                                        />
-                                        {match(basic.basic.password?.type)
-                                          .when(
-                                            (x) =>
-                                              x?.oneofKind === `fromSecret`,
-                                            (x) => {
-                                              return (
-                                                <SelectResource
-                                                  api="core"
-                                                  kind="Secret"
-                                                  label="Password Secret"
-                                                  description="Select the Secret of the basic authentication password"
-                                                  defaultValue={x.fromSecret}
-                                                  onChange={(v) => {
-                                                    x.fromSecret =
-                                                      v?.metadata?.name ?? "";
-                                                    updateReq();
-                                                  }}
-                                                />
-                                              );
-                                            },
-                                          )
-                                          .otherwise(() => (
-                                            <></>
-                                          ))}
-                                      </Group>
-                                    );
-                                  },
-                                )
-                                .otherwise(() => (
-                                  <></>
-                                ))}
-                            </Tabs.Panel>
-                            <Tabs.Panel value="custom">
-                              {match(http.http.auth.type)
-                                .when(
-                                  (x) => x.oneofKind == `custom`,
-                                  (custom) => {
-                                    return (
-                                      <Group grow>
-                                        <TextInput
-                                          required
-                                          label="Header Name"
-                                          description="Custom header used to carry the upstream credential."
-                                          placeholder="X-CUSTOM-AUTH-HEADER"
-                                          value={custom.custom.header}
-                                          onChange={(v) => {
-                                            custom.custom.header =
-                                              v.target.value;
-                                            updateReq();
-                                          }}
-                                        />
-                                        {match(custom.custom.value?.type)
-                                          .when(
-                                            (x) =>
-                                              x?.oneofKind === `fromSecret`,
-                                            (x) => {
-                                              return (
-                                                <SelectResource
-                                                  api="core"
-                                                  kind="Secret"
-                                                  label="Header value Secret"
-                                                  description="Select the Secret of the header value"
-                                                  defaultValue={x.fromSecret}
-                                                  onChange={(v) => {
-                                                    x.fromSecret =
-                                                      v?.metadata?.name ?? "";
-                                                    updateReq();
-                                                  }}
-                                                />
-                                              );
-                                            },
-                                          )
-                                          .otherwise(() => (
-                                            <></>
-                                          ))}
-                                      </Group>
-                                    );
-                                  },
-                                )
-                                .otherwise(() => (
-                                  <></>
-                                ))}
-                            </Tabs.Panel>
-
-                            <Tabs.Panel value="sigv4">
-                              {match(http.http.auth.type)
-                                .when(
-                                  (x) => x.oneofKind == `sigv4`,
-                                  (sigv4) => {
-                                    return (
-                                      <Group grow>
-                                        <TextInput
-                                          required
-                                          label="Access Key ID"
-                                          description="AWS access key ID used to sign upstream requests."
-                                          placeholder="ABCDEDF123456"
-                                          value={sigv4.sigv4.accessKeyID}
-                                          onChange={(v) => {
-                                            sigv4.sigv4.accessKeyID =
-                                              v.target.value;
-                                            updateReq();
-                                          }}
-                                        />
-                                        <TextInput
-                                          required
-                                          label="Region"
-                                          description="AWS region used to generate the SigV4 signature."
-                                          placeholder="eu-west-1"
-                                          value={sigv4.sigv4.region}
-                                          onChange={(v) => {
-                                            sigv4.sigv4.region = v.target.value;
-                                            updateReq();
-                                          }}
-                                        />
-                                        <TextInput
-                                          required
-                                          label="Service"
-                                          description="AWS service name used to generate the SigV4 signature."
-                                          placeholder="s3"
-                                          value={sigv4.sigv4.service}
-                                          onChange={(v) => {
-                                            sigv4.sigv4.service =
-                                              v.target.value;
-                                            updateReq();
-                                          }}
-                                        />
-
-                                        {match(
-                                          sigv4.sigv4.secretAccessKey?.type,
-                                        )
-                                          .when(
-                                            (x) =>
-                                              x?.oneofKind === `fromSecret`,
-                                            (x) => {
-                                              return (
-                                                <SelectResource
-                                                  api="core"
-                                                  kind="Secret"
-                                                  label="Secret Access Key"
-                                                  description="Set the Secret of the Sigv4 Secret Access Key"
-                                                  defaultValue={x.fromSecret}
-                                                  onChange={(v) => {
-                                                    x.fromSecret =
-                                                      v?.metadata?.name ?? "";
-                                                    updateReq();
-                                                  }}
-                                                />
-                                              );
-                                            },
-                                          )
-                                          .otherwise(() => (
-                                            <></>
-                                          ))}
-                                      </Group>
-                                    );
-                                  },
-                                )
-                                .otherwise(() => (
-                                  <></>
-                                ))}
-                            </Tabs.Panel>
-                          </Tabs>
+                            {match(http.http.body.validation?.type)
+                              .when(
+                                (x) => x?.oneofKind === "jsonSchema",
+                                (jsonSchema) => (
+                                  <TextAreaCustom
+                                    label="JSON Schema"
+                                    description="Inline JSON Schema used to validate the request body"
+                                    placeholder={'{ "type": "object" }'}
+                                    value={
+                                      jsonSchema.jsonSchema.type.oneofKind ===
+                                      "inline"
+                                        ? jsonSchema.jsonSchema.type.inline
+                                        : ""
+                                    }
+                                    onChange={(v) => {
+                                      jsonSchema.jsonSchema.type = {
+                                        oneofKind: "inline",
+                                        inline: v ?? "",
+                                      };
+                                      updateReq();
+                                    }}
+                                  />
+                                ),
+                              )
+                              .otherwise(() => (
+                                <></>
+                              ))}
+                          </EditItem>
                         </div>
                       )}
                     </EditItem>
+                    <ConfigAuthEditor config={http.http} onChange={updateReq} />
 
                     <EditItem
                       title="Retry"
@@ -6687,7 +6244,10 @@ const Config = (props: {
                             }}
                           >
                             {http.http.retry.statusCodes.map((x, idx) => (
-                              <div className="w-full flex mb-3" key={rows.keyAt("statusCodes", idx)}>
+                              <div
+                                className="w-full flex mb-3"
+                                key={rows.keyAt("statusCodes", idx)}
+                              >
                                 <CloseButton
                                   size="sm"
                                   variant="subtle"
@@ -6719,147 +6279,13 @@ const Config = (props: {
                       )}
                     </EditItem>
 
-                    <EditItem
-                      title="CORS"
-                      description="Set Cross-Origin Resource Sharing (CORS)-specific configs"
-                      onUnset={() => {
-                        http.http.cors = undefined;
+                    <CORSConfigEditor
+                      cors={http.http.cors}
+                      onChange={(cors) => {
+                        http.http.cors = cors;
                         updateReq();
                       }}
-                      obj={http.http.cors}
-                      onSet={() => {
-                        http.http.cors =
-                          CoreP.Service_Spec_Config_HTTP_CORS.create();
-                        updateReq();
-                      }}
-                    >
-                      {http.http.cors && (
-                        <div>
-                          <Group grow>
-                            <TextInput
-                              label="Allow Methods"
-                              placeholder="POST, GET, OPTIONS"
-                              description="Set the allowed methods"
-                              value={http.http.cors.allowMethods}
-                              onChange={(v) => {
-                                http.http.cors!.allowMethods = v.target.value;
-                                updateReq();
-                              }}
-                            />
-
-                            <TextInput
-                              label="Allow Headers"
-                              placeholder="X-PINGOTHER, Content-Type"
-                              description="Set the allowed headers"
-                              value={http.http.cors.allowHeaders}
-                              onChange={(v) => {
-                                http.http.cors!.allowHeaders = v.target.value;
-                                updateReq();
-                              }}
-                            />
-
-                            <Switch
-                              label="Allow Credentials"
-                              checked={http.http.cors!.allowCredentials}
-                              description="Allow credentials (such as Cookies and HTTP Authentication) to be sent with requests"
-                              onChange={(v) => {
-                                http.http.cors!.allowCredentials =
-                                  v.target.checked;
-                                updateReq();
-                              }}
-                            />
-                          </Group>
-                          <Group grow>
-                            <TextInput
-                              label="Expose Headers"
-                              placeholder="Content-Encoding, Kuma-Revision"
-                              description="Specify the content for the access-control-expose-headers header"
-                              value={http.http.cors.exposeHeaders}
-                              onChange={(v) => {
-                                http.http.cors!.exposeHeaders = v.target.value;
-                                updateReq();
-                              }}
-                            />
-
-                            <TextInput
-                              label="Max Age"
-                              placeholder="86400"
-                              description="Specify the content for the access-control-max-age header"
-                              value={http.http.cors.maxAge}
-                              onChange={(v) => {
-                                http.http.cors!.maxAge = v.target.value;
-                                updateReq();
-                              }}
-                            />
-
-                            <Switch
-                              label="Allow Cluster Services"
-                              description="Trust origins from Services in this Cluster"
-                              checked={http.http.cors.allowClusterServices}
-                              onChange={(event) => {
-                                http.http.cors!.allowClusterServices =
-                                  event.currentTarget.checked;
-                                updateReq();
-                              }}
-                            />
-                          </Group>
-                          <ItemMessage
-                            title="Allow Origin String Match"
-                            obj={
-                              http.http.cors.allowOriginStringMatch.length > 0
-                                ? http.http.cors.allowOriginStringMatch
-                                : undefined
-                            }
-                            isList
-                            onSet={() => {
-                              http.http.cors!.allowOriginStringMatch = [""];
-                              updateReq();
-                            }}
-                            onAddListItem={() => {
-                              http.http.cors!.allowOriginStringMatch.push("");
-                              updateReq();
-                            }}
-                          >
-                            {http.http.cors.allowOriginStringMatch.map(
-                              (x, idx) => (
-                                <div className="w-full flex mb-3" key={rows.keyAt("allowOrigin", idx)}>
-                                  <CloseButton
-                                    size="sm"
-                                    variant="subtle"
-                                    onClick={() => {
-                                      rows.removeAt("allowOrigin", idx);
-                                      http.http.cors!.allowOriginStringMatch.splice(
-                                        idx,
-                                        1,
-                                      );
-                                      updateReq();
-                                    }}
-                                  />
-                                  <TextInput
-                                    required
-                                    label="Origin pattern"
-                                    description="Exact origin or wildcard allowed to call this Service."
-                                    placeholder="https://example.com"
-                                    className="flex-1"
-                                    value={
-                                      http.http.cors!.allowOriginStringMatch[
-                                        idx
-                                      ]
-                                    }
-                                    onChange={(v) => {
-                                      http.http.cors!.allowOriginStringMatch[
-                                        idx
-                                      ] = v.target.value;
-                                      updateReq();
-                                    }}
-                                  />
-                                </div>
-                              ),
-                            )}
-                          </ItemMessage>
-                        </div>
-                      )}
-                    </EditItem>
+                    />
 
                     <EditItem
                       title="Visibility"
@@ -6944,7 +6370,10 @@ const Config = (props: {
                             >
                               {http.http.visibility!.includeRequestHeaders.map(
                                 (x, idx) => (
-                                  <div className="w-full flex mb-3" key={rows.keyAt("visIncludeRequest", idx)}>
+                                  <div
+                                    className="w-full flex mb-3"
+                                    key={rows.keyAt("visIncludeRequest", idx)}
+                                  >
                                     <CloseButton
                                       size="sm"
                                       variant="subtle"
@@ -6998,12 +6427,18 @@ const Config = (props: {
                             >
                               {http.http.visibility!.includeResponseHeaders.map(
                                 (x, idx) => (
-                                  <div className="w-full flex mb-3" key={rows.keyAt("visIncludeResponse", idx)}>
+                                  <div
+                                    className="w-full flex mb-3"
+                                    key={rows.keyAt("visIncludeResponse", idx)}
+                                  >
                                     <CloseButton
                                       size="sm"
                                       variant="subtle"
                                       onClick={() => {
-                                        rows.removeAt("visIncludeResponse", idx);
+                                        rows.removeAt(
+                                          "visIncludeResponse",
+                                          idx,
+                                        );
                                         http.http.visibility!.includeResponseHeaders.splice(
                                           idx,
                                           1,
@@ -7057,7 +6492,10 @@ const Config = (props: {
                             >
                               {http.http.visibility!.excludeRequestHeaders.map(
                                 (x, idx) => (
-                                  <div className="w-full flex mb-3" key={rows.keyAt("visExcludeRequest", idx)}>
+                                  <div
+                                    className="w-full flex mb-3"
+                                    key={rows.keyAt("visExcludeRequest", idx)}
+                                  >
                                     <CloseButton
                                       size="sm"
                                       variant="subtle"
@@ -7116,12 +6554,18 @@ const Config = (props: {
                             >
                               {http.http.visibility!.excludeResponseHeaders.map(
                                 (x, idx) => (
-                                  <div className="w-full flex mb-3" key={rows.keyAt("visExcludeResponse", idx)}>
+                                  <div
+                                    className="w-full flex mb-3"
+                                    key={rows.keyAt("visExcludeResponse", idx)}
+                                  >
                                     <CloseButton
                                       size="sm"
                                       variant="subtle"
                                       onClick={() => {
-                                        rows.removeAt("visExcludeResponse", idx);
+                                        rows.removeAt(
+                                          "visExcludeResponse",
+                                          idx,
+                                        );
                                         http.http.visibility!.excludeResponseHeaders.splice(
                                           idx,
                                           1,
@@ -7188,23 +6632,21 @@ const Config = (props: {
                       obj={http.http.plugins}
                       isList
                       onSet={() => {
-                        http.http.plugins = [
-                          createHTTPPlugin(),
-                        ];
+                        http.http.plugins = [createHTTPPlugin()];
                         updateReq();
                       }}
                       onAddListItem={() => {
-                        http.http.plugins.push(
-                          createHTTPPlugin(),
-                        );
+                        http.http.plugins.push(createHTTPPlugin());
                         updateReq();
                       }}
                     >
                       {http.http.plugins.map((plugin, idx) => (
                         <EditItem
-                          key={`${idx}`}
+                          key={rows.keyAt("plugins", idx)}
+                          title={plugin.name || `Plugin ${idx + 1}`}
                           obj={http.http.plugins[idx]}
                           onUnset={() => {
+                            rows.removeAt("plugins", idx);
                             http.http.plugins.splice(idx, 1);
                             updateReq();
                           }}
@@ -7295,9 +6737,11 @@ const Config = (props: {
                                   plugin.type = {
                                     oneofKind: "direct",
                                     direct:
-                                      CoreP.Service_Spec_Config_HTTP_Plugin_Direct.create({
-                                        body: createDirectResponseBody(),
-                                      }),
+                                      CoreP.Service_Spec_Config_HTTP_Plugin_Direct.create(
+                                        {
+                                          body: createDirectResponseBody(),
+                                        },
+                                      ),
                                   };
                                 })
                                 .with("rateLimit", () => {
@@ -7642,6 +7086,46 @@ const Config = (props: {
                                           }}
                                         />
                                       </Group>
+
+                                      <RateLimitKeyEditor
+                                        keyValue={rateLimit.rateLimit.key}
+                                        onChange={(v) => {
+                                          rateLimit.rateLimit.key = v;
+                                          updateReq();
+                                        }}
+                                      />
+
+                                      <InlineBodyEditor
+                                        description="Body returned to the downstream client when rate limited"
+                                        placeholder='{ "message": "Too Many Requests" }'
+                                        body={rateLimit.rateLimit.body}
+                                        onSet={() => {
+                                          rateLimit.rateLimit.body =
+                                            CoreP.Service_Spec_Config_HTTP_Plugin_RateLimit_Body.create(
+                                              {
+                                                type: {
+                                                  oneofKind: "inline",
+                                                  inline: "",
+                                                },
+                                              },
+                                            );
+                                          updateReq();
+                                        }}
+                                        onUnset={() => {
+                                          rateLimit.rateLimit.body = undefined;
+                                          updateReq();
+                                        }}
+                                        onChange={updateReq}
+                                      />
+
+                                      <PluginHeadersEditor
+                                        description="Headers set on the rate-limited response"
+                                        headers={rateLimit.rateLimit.headers}
+                                        create={() =>
+                                          CoreP.Service_Spec_Config_HTTP_Plugin_RateLimit_KeyValue.create()
+                                        }
+                                        onChange={updateReq}
+                                      />
                                     </div>
                                   ),
                                 )
@@ -7655,48 +7139,94 @@ const Config = (props: {
                                 .when(
                                   (x) => x.oneofKind === "cache",
                                   (cache) => (
-                                    <Group grow>
-                                      <NumberInput
-                                        label="Max size"
-                                        description="Maximum number of cached entries"
-                                        min={0}
-                                        value={Number(cache.cache.maxSize)}
-                                        onChange={(v) => {
-                                          cache.cache.maxSize = strToNum(v);
+                                    <div>
+                                      <Group grow>
+                                        <NumberInput
+                                          label="Max size"
+                                          description="Maximum number of cached entries"
+                                          min={0}
+                                          value={Number(cache.cache.maxSize)}
+                                          onChange={(v) => {
+                                            cache.cache.maxSize = strToNum(v);
 
+                                            updateReq();
+                                          }}
+                                        />
+                                        <DurationPicker
+                                          value={cache.cache.ttl}
+                                          title="TTL"
+                                          description="How long a cached response remains valid."
+                                          onChange={(v) => {
+                                            cache.cache.ttl = v;
+                                            updateReq();
+                                          }}
+                                        />
+                                        <Switch
+                                          label="Use X-Cache header"
+                                          description="Add an X-Cache response header indicating cache status."
+                                          checked={cache.cache.useXCacheHeader}
+                                          onChange={(v) => {
+                                            cache.cache.useXCacheHeader =
+                                              v.target.checked;
+                                            updateReq();
+                                          }}
+                                        />
+                                        <Switch
+                                          label="Allow unsafe methods"
+                                          description="Allow caching methods beyond GET and HEAD."
+                                          checked={
+                                            cache.cache.allowUnsafeMethods
+                                          }
+                                          onChange={(v) => {
+                                            cache.cache.allowUnsafeMethods =
+                                              v.target.checked;
+                                            updateReq();
+                                          }}
+                                        />
+                                      </Group>
+
+                                      <EditItem
+                                        title="Cache key"
+                                        description="Set how the cached responses are keyed"
+                                        obj={cache.cache.key}
+                                        onUnset={() => {
+                                          cache.cache.key = undefined;
                                           updateReq();
                                         }}
-                                      />
-                                      <DurationPicker
-                                        value={cache.cache.ttl}
-                                        title="TTL"
-                                        description="How long a cached response remains valid."
-                                        onChange={(v) => {
-                                          cache.cache.ttl = v;
+                                        onSet={() => {
+                                          cache.cache.key =
+                                            CoreP.Service_Spec_Config_HTTP_Plugin_Cache_Key.create(
+                                              {
+                                                type: {
+                                                  oneofKind: "eval",
+                                                  eval: "",
+                                                },
+                                              },
+                                            );
                                           updateReq();
                                         }}
-                                      />
-                                      <Switch
-                                        label="Use X-Cache header"
-                                        description="Add an X-Cache response header indicating cache status."
-                                        checked={cache.cache.useXCacheHeader}
-                                        onChange={(v) => {
-                                          cache.cache.useXCacheHeader =
-                                            v.target.checked;
-                                          updateReq();
-                                        }}
-                                      />
-                                      <Switch
-                                        label="Allow unsafe methods"
-                                        description="Allow caching methods beyond GET and HEAD."
-                                        checked={cache.cache.allowUnsafeMethods}
-                                        onChange={(v) => {
-                                          cache.cache.allowUnsafeMethods =
-                                            v.target.checked;
-                                          updateReq();
-                                        }}
-                                      />
-                                    </Group>
+                                      >
+                                        {match(cache.cache.key?.type)
+                                          .when(
+                                            (x) => x?.oneofKind === "eval",
+                                            (x) => (
+                                              <TextInput
+                                                label="CEL expression"
+                                                description="CEL expression that resolves to the cache key"
+                                                placeholder="ctx.request.http.path"
+                                                value={x.eval}
+                                                onChange={(v) => {
+                                                  x.eval = v.target.value;
+                                                  updateReq();
+                                                }}
+                                              />
+                                            ),
+                                          )
+                                          .otherwise(() => (
+                                            <></>
+                                          ))}
+                                      </EditItem>
+                                    </div>
                                   ),
                                 )
                                 .otherwise(() => (
@@ -7771,15 +7301,10 @@ const Config = (props: {
                                         }}
                                       />
 
-                                      <EditItem
-                                        title="Body"
+                                      <InlineBodyEditor
                                         description="Set the response body on validation failure"
-                                        onUnset={() => {
-                                          jsonSchema.jsonSchema.body =
-                                            undefined;
-                                          updateReq();
-                                        }}
-                                        obj={jsonSchema.jsonSchema.body}
+                                        placeholder="Invalid request body"
+                                        body={jsonSchema.jsonSchema.body}
                                         onSet={() => {
                                           jsonSchema.jsonSchema.body =
                                             CoreP.Service_Spec_Config_HTTP_Plugin_JSONSchema_Body.create(
@@ -7792,28 +7317,13 @@ const Config = (props: {
                                             );
                                           updateReq();
                                         }}
-                                      >
-                                        {jsonSchema.jsonSchema.body &&
-                                          match(jsonSchema.jsonSchema.body.type)
-                                            .when(
-                                              (x) => x.oneofKind === "inline",
-                                              (inline) => (
-                                                <div>
-                                                  <TextAreaCustom
-                                                    label="Inline body"
-                                                    description="Response body returned when validation fails."
-                                                    placeholder="Invalid request body"
-                                                    value={inline.inline}
-                                                    onChange={(v) => {
-                                                      inline.inline = v ?? "";
-                                                      updateReq();
-                                                    }}
-                                                  />
-                                                </div>
-                                              ),
-                                            )
-                                            .otherwise(() => <></>)}
-                                      </EditItem>
+                                        onUnset={() => {
+                                          jsonSchema.jsonSchema.body =
+                                            undefined;
+                                          updateReq();
+                                        }}
+                                        onChange={updateReq}
+                                      />
 
                                       <ItemMessage
                                         title="Headers"
@@ -8642,6 +8152,14 @@ const Config = (props: {
                         description="Set the upstream TLS mode"
                         data={[
                           {
+                            label: "Disable",
+                            value:
+                              CoreP.Service_Spec_Config_Postgres_SSLMode[
+                                CoreP.Service_Spec_Config_Postgres_SSLMode
+                                  .DISABLE
+                              ],
+                          },
+                          {
                             label: "Require",
                             value:
                               CoreP.Service_Spec_Config_Postgres_SSLMode[
@@ -8650,18 +8168,30 @@ const Config = (props: {
                               ],
                           },
                           {
-                            label: "Disable",
+                            label: "Verify CA",
                             value:
                               CoreP.Service_Spec_Config_Postgres_SSLMode[
                                 CoreP.Service_Spec_Config_Postgres_SSLMode
-                                  .DISABLE
+                                  .VERIFY_CA
+                              ],
+                          },
+                          {
+                            label: "Verify Full",
+                            value:
+                              CoreP.Service_Spec_Config_Postgres_SSLMode[
+                                CoreP.Service_Spec_Config_Postgres_SSLMode
+                                  .VERIFY_FULL
                               ],
                           },
                         ]}
                         value={
-                          CoreP.Service_Spec_Config_Postgres_SSLMode[
-                            postgres.postgres.sslMode
-                          ]
+                          postgres.postgres.sslMode ===
+                          CoreP.Service_Spec_Config_Postgres_SSLMode
+                            .SSL_MODE_UNSET
+                            ? null
+                            : CoreP.Service_Spec_Config_Postgres_SSLMode[
+                                postgres.postgres.sslMode
+                              ]
                         }
                         onChange={(v) => {
                           if (!v) {
@@ -8768,6 +8298,34 @@ const Config = (props: {
                         />
                       )}
                     </EditItem>
+
+                    <EditItem
+                      title="Visibility"
+                      description="Set PostgreSQL access logging options"
+                      onUnset={() => {
+                        postgres.postgres.visibility = undefined;
+                        updateReq();
+                      }}
+                      obj={postgres.postgres.visibility}
+                      onSet={() => {
+                        postgres.postgres.visibility =
+                          CoreP.Service_Spec_Config_Postgres_Visibility.create();
+                        updateReq();
+                      }}
+                    >
+                      {postgres.postgres.visibility && (
+                        <Switch
+                          label="Disable query recording"
+                          description="Do not record the SQL queries in AccessLogs"
+                          checked={postgres.postgres.visibility.disableQuery}
+                          onChange={(v) => {
+                            postgres.postgres.visibility!.disableQuery =
+                              v.target.checked;
+                            updateReq();
+                          }}
+                        />
+                      )}
+                    </EditItem>
                   </div>
                 );
               },
@@ -8779,7 +8337,6 @@ const Config = (props: {
                   <div>
                     <Group grow>
                       <TextInput
-                        required
                         label="User"
                         description="Force a specific user"
                         placeholder="root"
@@ -8792,7 +8349,6 @@ const Config = (props: {
                       />
 
                       <TextInput
-                        required
                         label="Database"
                         placeholder="default"
                         description="Force a specific database"
@@ -8842,6 +8398,91 @@ const Config = (props: {
                           <></>
                         ))}
                     </Group>
+
+                    <EditItem
+                      title="Authorization"
+                      description="Set MySQL-specific authorization configuration"
+                      onUnset={() => {
+                        mysql.mysql.authorization = undefined;
+                        updateReq();
+                      }}
+                      obj={mysql.mysql.authorization}
+                      onSet={() => {
+                        mysql.mysql.authorization =
+                          CoreP.Service_Spec_Config_MySQL_Authorization.create();
+                        updateReq();
+                      }}
+                    >
+                      {mysql.mysql.authorization && (
+                        <Select
+                          label="Authorization Mode"
+                          description="Set when authorization is enforced"
+                          data={[
+                            {
+                              label: "None (connection only)",
+                              value:
+                                CoreP
+                                  .Service_Spec_Config_MySQL_Authorization_Mode[
+                                  CoreP
+                                    .Service_Spec_Config_MySQL_Authorization_Mode
+                                    .NONE
+                                ],
+                            },
+                            {
+                              label: "All (every command)",
+                              value:
+                                CoreP
+                                  .Service_Spec_Config_MySQL_Authorization_Mode[
+                                  CoreP
+                                    .Service_Spec_Config_MySQL_Authorization_Mode
+                                    .ALL
+                                ],
+                            },
+                          ]}
+                          value={
+                            CoreP.Service_Spec_Config_MySQL_Authorization_Mode[
+                              mysql.mysql.authorization.mode
+                            ]
+                          }
+                          onChange={(v) => {
+                            if (!v) return;
+                            mysql.mysql.authorization!.mode =
+                              CoreP.Service_Spec_Config_MySQL_Authorization_Mode[
+                                v as "ALL"
+                              ];
+                            updateReq();
+                          }}
+                        />
+                      )}
+                    </EditItem>
+
+                    <EditItem
+                      title="Visibility"
+                      description="Set MySQL access logging options"
+                      onUnset={() => {
+                        mysql.mysql.visibility = undefined;
+                        updateReq();
+                      }}
+                      obj={mysql.mysql.visibility}
+                      onSet={() => {
+                        mysql.mysql.visibility =
+                          CoreP.Service_Spec_Config_MySQL_Visibility.create();
+                        updateReq();
+                      }}
+                    >
+                      {mysql.mysql.visibility && (
+                        <Switch
+                          label="Disable query recording"
+                          description="Do not record the SQL queries in AccessLogs"
+                          checked={mysql.mysql.visibility.disableQuery}
+                          onChange={(v) => {
+                            mysql.mysql.visibility!.disableQuery =
+                              v.target.checked;
+                            updateReq();
+                          }}
+                        />
+                      )}
+                    </EditItem>
                   </div>
                 );
               },
@@ -9091,7 +8732,10 @@ const Config = (props: {
                         >
                           {rdp.rdp.upstreamTLS.pinnedCertSHA256.map(
                             (x, idx) => (
-                              <div className="w-full flex mb-3" key={rows.keyAt("pinnedCerts", idx)}>
+                              <div
+                                className="w-full flex mb-3"
+                                key={rows.keyAt("pinnedCerts", idx)}
+                              >
                                 <CloseButton
                                   size="sm"
                                   variant="subtle"
@@ -9272,6 +8916,7 @@ const Edit = (props: {
   onUpdate: (item: CoreP.Service) => void;
 }) => {
   const { item, onUpdate } = props;
+  const rows = useListKeys();
   const [req, setReq] = React.useState(CoreP.Service.clone(item));
   const [init, setInit] = React.useState(CoreP.Service.clone(item));
   const configsByMode = React.useRef<
@@ -9383,303 +9028,33 @@ const Edit = (props: {
             ] as CoreP.Service_Spec_Mode;
             req.spec!.mode = nextMode;
 
-            match(req.spec!.mode)
-              .when(
-                (x) =>
-                  x === CoreP.Service_Spec_Mode.HTTP ||
-                  x === CoreP.Service_Spec_Mode.GRPC ||
-                  x === CoreP.Service_Spec_Mode.WEB,
-                () => {
-                  if (
-                    previousMode === CoreP.Service_Spec_Mode.HTTP ||
-                    previousMode === CoreP.Service_Spec_Mode.GRPC ||
-                    previousMode === CoreP.Service_Spec_Mode.WEB
-                  ) {
-                    return;
-                  }
+            const expectedType = configTypeForMode(nextMode);
+            if (
+              req.spec!.config &&
+              req.spec!.config.type.oneofKind !== expectedType
+            ) {
+              const previousConfig =
+                configsByMode.current[nextMode] ??
+                Object.values(configsByMode.current).find(
+                  (x) => x?.type.oneofKind === expectedType,
+                ) ??
+                (init.spec!.config?.type.oneofKind === expectedType
+                  ? init.spec!.config
+                  : undefined);
 
-                  const previousConfig =
-                    configsByMode.current[nextMode] ??
-                    configsByMode.current[CoreP.Service_Spec_Mode.HTTP] ??
-                    configsByMode.current[CoreP.Service_Spec_Mode.WEB] ??
-                    configsByMode.current[CoreP.Service_Spec_Mode.GRPC];
-                  if (previousConfig) {
-                    req.spec!.config =
-                      CoreP.Service_Spec_Config.clone(previousConfig);
-                    return;
-                  }
-
-                  match(init.spec!.config?.type)
-                    .when(
-                      (x) => x?.oneofKind === `http`,
-                      () => {
-                        req.spec!.config = CoreP.Service_Spec_Config.clone(
-                          init.spec!.config!,
-                        );
+              req.spec!.config = previousConfig
+                ? cloneConfigForMode(previousConfig, nextMode)
+                : CoreP.Service_Spec_Config.create({
+                    upstream: {
+                      type: {
+                        oneofKind: "url",
+                        url: "",
                       },
-                    )
-                    .otherwise(() => {
-                      req.spec!.config = CoreP.Service_Spec_Config.create({
-                        upstream: {
-                          type: {
-                            oneofKind: "url",
-                            url: "",
-                          },
-                        },
-                        type: {
-                          oneofKind: "http",
-                          http: {} as CoreP.Service_Spec_Config_HTTP,
-                        },
-                      });
-                    });
-                },
-              )
-              .with(CoreP.Service_Spec_Mode.SSH, () => {
-                match(init.spec!.config?.type)
-                  .when(
-                    (x) => x?.oneofKind === `ssh`,
-                    (x) => {
-                      req.spec!.config = CoreP.Service_Spec_Config.clone(
-                        init.spec!.config!,
-                      );
                     },
-                  )
-                  .otherwise(() => {
-                    req.spec!.config = CoreP.Service_Spec_Config.create({
-                      upstream: {
-                        type: {
-                          oneofKind: "url",
-                          url: "",
-                        },
-                      },
-                      type: {
-                        oneofKind: "ssh",
-                        ssh: {
-                          auth: {
-                            type: {
-                              oneofKind: "password",
-                              password: {
-                                type: {
-                                  oneofKind: "fromSecret",
-                                  fromSecret: "",
-                                },
-                              },
-                            },
-                          },
-                        } as CoreP.Service_Spec_Config_SSH,
-                      },
-                    });
+                    type: createConfigTypeForMode(nextMode),
                   });
-              })
-              .with(CoreP.Service_Spec_Mode.POSTGRES, () => {
-                match(init.spec!.config?.type)
-                  .when(
-                    (x) => x?.oneofKind === `postgres`,
-                    (x) => {
-                      req.spec!.config = CoreP.Service_Spec_Config.clone(
-                        init.spec!.config!,
-                      );
-                    },
-                  )
-                  .otherwise(() => {
-                    req.spec!.config = CoreP.Service_Spec_Config.create({
-                      upstream: {
-                        type: {
-                          oneofKind: "url",
-                          url: "",
-                        },
-                      },
-                      type: {
-                        oneofKind: "postgres",
-                        //@ts-ignore
-                        postgres: {
-                          auth: {
-                            type: {
-                              oneofKind: "password",
-                              password: {
-                                type: {
-                                  oneofKind: "fromSecret",
-                                  fromSecret: "",
-                                },
-                              },
-                            },
-                          },
-                        },
-                      },
-                    });
-                  });
-              })
-              .with(CoreP.Service_Spec_Mode.MYSQL, () => {
-                match(init.spec!.config?.type)
-                  .when(
-                    (x) => x?.oneofKind === `mysql`,
-                    (x) => {
-                      req.spec!.config = CoreP.Service_Spec_Config.clone(
-                        init.spec!.config!,
-                      );
-                    },
-                  )
-                  .otherwise(() => {
-                    req.spec!.config = CoreP.Service_Spec_Config.create({
-                      upstream: {
-                        type: {
-                          oneofKind: "url",
-                          url: "",
-                        },
-                      },
-                      type: {
-                        oneofKind: "mysql",
+            }
 
-                        //@ts-ignore
-                        mysql: {
-                          auth: {
-                            type: {
-                              oneofKind: "password",
-                              password: {
-                                type: {
-                                  oneofKind: "fromSecret",
-                                  fromSecret: "",
-                                },
-                              },
-                            },
-                          },
-                        },
-                      },
-                    });
-                  });
-              })
-              .with(CoreP.Service_Spec_Mode.KUBERNETES, () => {
-                const previousConfig =
-                  configsByMode.current[CoreP.Service_Spec_Mode.KUBERNETES];
-                req.spec!.config = previousConfig
-                  ? CoreP.Service_Spec_Config.clone(previousConfig)
-                  : CoreP.Service_Spec_Config.create({
-                      upstream: {
-                        type: {
-                          oneofKind: "url",
-                          url: "",
-                        },
-                      },
-                      type: {
-                        oneofKind: "kubernetes",
-                        kubernetes: {
-                          type: {
-                            oneofKind: `kubeconfig`,
-                            kubeconfig: {
-                              type: {
-                                oneofKind: `fromSecret`,
-                                fromSecret: "",
-                              },
-                            },
-                          },
-                        } as CoreP.Service_Spec_Config_Kubernetes,
-                      },
-                    });
-              })
-              .with(CoreP.Service_Spec_Mode.SOCKS5, () => {
-                const previousConfig =
-                  configsByMode.current[CoreP.Service_Spec_Mode.SOCKS5];
-                req.spec!.config = previousConfig
-                  ? CoreP.Service_Spec_Config.clone(previousConfig)
-                  : CoreP.Service_Spec_Config.create({
-                      upstream: {
-                        type: {
-                          oneofKind: "url",
-                          url: "",
-                        },
-                      },
-                      type: {
-                        oneofKind: "socks5",
-                        socks5: {
-                          auth: { type: { oneofKind: "noAuth", noAuth: true } },
-                        } as CoreP.Service_Spec_Config_SOCKS5,
-                      },
-                    });
-              })
-              .with(
-                CoreP.Service_Spec_Mode.RDP_WEB,
-                CoreP.Service_Spec_Mode.RDP,
-                (mode) => {
-                  const previousConfig = configsByMode.current[mode];
-                  req.spec!.config = previousConfig
-                    ? CoreP.Service_Spec_Config.clone(previousConfig)
-                    : CoreP.Service_Spec_Config.create({
-                        upstream: {
-                          type: {
-                            oneofKind: "url",
-                            url: "",
-                          },
-                        },
-                        type: {
-                          oneofKind: "rdp",
-                          rdp: {
-                            auth: {
-                              password: {
-                                type: {
-                                  oneofKind: "fromSecret",
-                                  fromSecret: "",
-                                },
-                              },
-                            },
-                          } as CoreP.Service_Spec_Config_RDP,
-                        },
-                      });
-                },
-              )
-              .with(CoreP.Service_Spec_Mode.MCP, () => {
-                const previousConfig =
-                  configsByMode.current[CoreP.Service_Spec_Mode.MCP];
-                req.spec!.config = previousConfig
-                  ? CoreP.Service_Spec_Config.clone(previousConfig)
-                  : CoreP.Service_Spec_Config.create({
-                      upstream: {
-                        type: { oneofKind: "url", url: "" },
-                      },
-                      type: {
-                        oneofKind: "mcp",
-                        mcp: CoreP.Service_Spec_Config_MCP.create(),
-                      },
-                    });
-              })
-              .with(CoreP.Service_Spec_Mode.LLM, () => {
-                const previousConfig =
-                  configsByMode.current[CoreP.Service_Spec_Mode.LLM];
-                req.spec!.config = previousConfig
-                  ? CoreP.Service_Spec_Config.clone(previousConfig)
-                  : CoreP.Service_Spec_Config.create({
-                      upstream: {
-                        type: { oneofKind: "url", url: "" },
-                      },
-                      type: {
-                        oneofKind: "llm",
-                        llm: CoreP.Service_Spec_Config_LLM.create(),
-                      },
-                    });
-              })
-
-              .when(
-                (x) =>
-                  x === CoreP.Service_Spec_Mode.TCP ||
-                  x === CoreP.Service_Spec_Mode.DNS ||
-                  x === CoreP.Service_Spec_Mode.UDP,
-                () => {
-                  const previousConfig = configsByMode.current[nextMode];
-                  req.spec!.config = previousConfig
-                    ? CoreP.Service_Spec_Config.clone(previousConfig)
-                    : CoreP.Service_Spec_Config.create({
-                        upstream: {
-                          type: {
-                            oneofKind: "url",
-                            url: "",
-                          },
-                        },
-                        type: {
-                          oneofKind: undefined,
-                        },
-                      });
-                },
-              )
-              .otherwise(() => {});
             updateReq();
           }}
         />
@@ -9693,6 +9068,27 @@ const Edit = (props: {
           value={req.spec!.port}
           onChange={(v) => {
             req.spec!.port = strToNum(v);
+            updateReq();
+          }}
+        />
+
+        <TextInput
+          label="Region"
+          placeholder="default"
+          description="Region in which the Service is deployed."
+          value={req.spec!.region}
+          onChange={(v) => {
+            req.spec!.region = v.target.value;
+            updateReq();
+          }}
+        />
+
+        <Switch
+          label="Enable TLS"
+          description="Serve the listener over TLS using the Namespace certificate."
+          checked={req.spec!.isTLS}
+          onChange={(v) => {
+            req.spec!.isTLS = v.target.checked;
             updateReq();
           }}
         />
@@ -9728,16 +9124,6 @@ const Edit = (props: {
                   req.spec!.authorization.enableAnonymous = false;
                 }
               }
-              updateReq();
-            }}
-          />
-
-          <Switch
-            label="Enable TLS"
-            description="Serve the public listener over TLS."
-            checked={req.spec!.isTLS}
-            onChange={(v) => {
-              req.spec!.isTLS = v.target.checked;
               updateReq();
             }}
           />
@@ -9785,6 +9171,7 @@ const Edit = (props: {
                     url: "",
                   },
                 },
+                type: createConfigTypeForMode(req.spec!.mode),
               });
             });
 
@@ -9894,6 +9281,19 @@ const Edit = (props: {
         )}
       </EditItem>
 
+      <StructEditor
+        key={`${itemKey}-attrs`}
+        title="Attributes"
+        description="Set user-defined attributes that are mostly used in authorization rules"
+        label="Attributes (JSON)"
+        placeholder={'{\n  "tier": "internal"\n}'}
+        value={req.spec!.attrs}
+        onChange={(v) => {
+          req.spec!.attrs = v;
+          updateReq();
+        }}
+      />
+
       <EditItem
         title="Dynamic Configuration"
         description="Set multiple named dynamic Configurations"
@@ -9928,16 +9328,17 @@ const Edit = (props: {
             >
               {req.spec!.dynamicConfig.configs.map((x, idx) => (
                 <EditItem
-                  key={`${idx}`}
+                  key={rows.keyAt("dynamicConfigs", idx)}
                   obj={{}}
                   title={x.name || `Configuration ${idx + 1}`}
                   onUnset={() => {
+                    rows.removeAt("dynamicConfigs", idx);
                     req.spec!.dynamicConfig!.configs.splice(idx, 1);
                     updateReq();
                   }}
                 >
                   <Config
-                    key={`${idx}-${req.spec!.mode}`}
+                    key={`${rows.keyAt("dynamicConfigs", idx)}-${req.spec!.mode}`}
                     item={req.spec!.dynamicConfig!.configs[idx]}
                     mode={req.spec!.mode}
                     onUpdate={(v) => {
@@ -9979,10 +9380,11 @@ const Edit = (props: {
               {req.spec!.dynamicConfig!.rules &&
                 req.spec!.dynamicConfig!.rules.map(
                   (rule: any, ruleIdx: number) => (
-                    <div key={`${ruleIdx}`}>
+                    <div key={rows.keyAt("dynamicConfigRules", ruleIdx)}>
                       <EditItem
                         obj={req.spec!.dynamicConfig!.rules[ruleIdx]}
                         onUnset={() => {
+                          rows.removeAt("dynamicConfigRules", ruleIdx);
                           req.spec!.dynamicConfig!.rules.splice(ruleIdx, 1);
                           updateReq();
                         }}
@@ -10045,7 +9447,8 @@ const Edit = (props: {
                             }}
                           />
                           <p className="text-xs font-medium text-slate-500">
-                            Choose a named configuration or evaluate a complete service configuration object.
+                            Choose a named configuration or evaluate a complete
+                            service configuration object.
                           </p>
                         </div>
                       </EditItem>
@@ -10060,10 +9463,12 @@ const Edit = (props: {
                                   label="Config name"
                                   required
                                   description="Select the config name"
-                                  value={configName.configName}
-                                  data={req.spec!.dynamicConfig!.configs.map(
-                                    (x) => x.name,
-                                  )}
+                                  value={configName.configName || null}
+                                  data={req
+                                    .spec!.dynamicConfig!.configs.map(
+                                      (x) => x.name,
+                                    )
+                                    .filter((x) => !!x)}
                                   onChange={(v) => {
                                     configName.configName = v ?? "";
                                     updateReq();
