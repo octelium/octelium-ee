@@ -1,7 +1,7 @@
 // Copyright (c) 2025-present Octelium Labs, LLC. All rights reserved.
 //
-// This software is licensed under the Octelium Enterprise Source-Available License.
-// Commercial and production use is strictly prohibited without a valid
+// This software is licensed under the Octelium Enterprise Source-Available
+// License. Commercial and production use is strictly prohibited without a valid
 // Commercial Agreement from Octelium Labs, LLC.
 //
 // See the LICENSE file in the repository root for full license text.
@@ -27,16 +27,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AccessLogService_GetAccessLogSummary_FullMethodName     = "/octelium.api.main.visibility.v1.AccessLogService/GetAccessLogSummary"
-	AccessLogService_ListAccessLog_FullMethodName           = "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLog"
-	AccessLogService_ListSSHSession_FullMethodName          = "/octelium.api.main.visibility.v1.AccessLogService/ListSSHSession"
-	AccessLogService_GetSSHSession_FullMethodName           = "/octelium.api.main.visibility.v1.AccessLogService/GetSSHSession"
-	AccessLogService_ListSSHSessionRecording_FullMethodName = "/octelium.api.main.visibility.v1.AccessLogService/ListSSHSessionRecording"
-	AccessLogService_GetAccessLogDataPoint_FullMethodName   = "/octelium.api.main.visibility.v1.AccessLogService/GetAccessLogDataPoint"
-	AccessLogService_ListAccessLogTopUser_FullMethodName    = "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLogTopUser"
-	AccessLogService_ListAccessLogTopService_FullMethodName = "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLogTopService"
-	AccessLogService_ListAccessLogTopSession_FullMethodName = "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLogTopSession"
-	AccessLogService_ListAccessLogTopPolicy_FullMethodName  = "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLogTopPolicy"
+	AccessLogService_GetAccessLogSummary_FullMethodName        = "/octelium.api.main.visibility.v1.AccessLogService/GetAccessLogSummary"
+	AccessLogService_ListAccessLog_FullMethodName              = "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLog"
+	AccessLogService_ListSSHSession_FullMethodName             = "/octelium.api.main.visibility.v1.AccessLogService/ListSSHSession"
+	AccessLogService_GetSSHSession_FullMethodName              = "/octelium.api.main.visibility.v1.AccessLogService/GetSSHSession"
+	AccessLogService_ListSSHSessionRecording_FullMethodName    = "/octelium.api.main.visibility.v1.AccessLogService/ListSSHSessionRecording"
+	AccessLogService_GetAccessLogDataPoint_FullMethodName      = "/octelium.api.main.visibility.v1.AccessLogService/GetAccessLogDataPoint"
+	AccessLogService_ListAccessLogTopUser_FullMethodName       = "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLogTopUser"
+	AccessLogService_ListAccessLogTopService_FullMethodName    = "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLogTopService"
+	AccessLogService_ListAccessLogTopSession_FullMethodName    = "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLogTopSession"
+	AccessLogService_ListAccessLogTopPolicy_FullMethodName     = "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLogTopPolicy"
+	AccessLogService_ListAccessLogTopDenyReason_FullMethodName = "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLogTopDenyReason"
 )
 
 // AccessLogServiceClient is the client API for AccessLogService service.
@@ -53,6 +54,7 @@ type AccessLogServiceClient interface {
 	ListAccessLogTopService(ctx context.Context, in *ListAccessLogTopServiceRequest, opts ...grpc.CallOption) (*ListAccessLogTopServiceResponse, error)
 	ListAccessLogTopSession(ctx context.Context, in *ListAccessLogTopSessionRequest, opts ...grpc.CallOption) (*ListAccessLogTopSessionResponse, error)
 	ListAccessLogTopPolicy(ctx context.Context, in *ListAccessLogTopPolicyRequest, opts ...grpc.CallOption) (*ListAccessLogTopPolicyResponse, error)
+	ListAccessLogTopDenyReason(ctx context.Context, in *ListAccessLogTopDenyReasonRequest, opts ...grpc.CallOption) (*ListAccessLogTopDenyReasonResponse, error)
 }
 
 type accessLogServiceClient struct {
@@ -163,6 +165,16 @@ func (c *accessLogServiceClient) ListAccessLogTopPolicy(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *accessLogServiceClient) ListAccessLogTopDenyReason(ctx context.Context, in *ListAccessLogTopDenyReasonRequest, opts ...grpc.CallOption) (*ListAccessLogTopDenyReasonResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAccessLogTopDenyReasonResponse)
+	err := c.cc.Invoke(ctx, AccessLogService_ListAccessLogTopDenyReason_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AccessLogServiceServer is the server API for AccessLogService service.
 // All implementations must embed UnimplementedAccessLogServiceServer
 // for forward compatibility.
@@ -177,6 +189,7 @@ type AccessLogServiceServer interface {
 	ListAccessLogTopService(context.Context, *ListAccessLogTopServiceRequest) (*ListAccessLogTopServiceResponse, error)
 	ListAccessLogTopSession(context.Context, *ListAccessLogTopSessionRequest) (*ListAccessLogTopSessionResponse, error)
 	ListAccessLogTopPolicy(context.Context, *ListAccessLogTopPolicyRequest) (*ListAccessLogTopPolicyResponse, error)
+	ListAccessLogTopDenyReason(context.Context, *ListAccessLogTopDenyReasonRequest) (*ListAccessLogTopDenyReasonResponse, error)
 	mustEmbedUnimplementedAccessLogServiceServer()
 }
 
@@ -216,6 +229,9 @@ func (UnimplementedAccessLogServiceServer) ListAccessLogTopSession(context.Conte
 }
 func (UnimplementedAccessLogServiceServer) ListAccessLogTopPolicy(context.Context, *ListAccessLogTopPolicyRequest) (*ListAccessLogTopPolicyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAccessLogTopPolicy not implemented")
+}
+func (UnimplementedAccessLogServiceServer) ListAccessLogTopDenyReason(context.Context, *ListAccessLogTopDenyReasonRequest) (*ListAccessLogTopDenyReasonResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAccessLogTopDenyReason not implemented")
 }
 func (UnimplementedAccessLogServiceServer) mustEmbedUnimplementedAccessLogServiceServer() {}
 func (UnimplementedAccessLogServiceServer) testEmbeddedByValue()                          {}
@@ -418,6 +434,24 @@ func _AccessLogService_ListAccessLogTopPolicy_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AccessLogService_ListAccessLogTopDenyReason_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAccessLogTopDenyReasonRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccessLogServiceServer).ListAccessLogTopDenyReason(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccessLogService_ListAccessLogTopDenyReason_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccessLogServiceServer).ListAccessLogTopDenyReason(ctx, req.(*ListAccessLogTopDenyReasonRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AccessLogService_ServiceDesc is the grpc.ServiceDesc for AccessLogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -464,6 +498,10 @@ var AccessLogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListAccessLogTopPolicy",
 			Handler:    _AccessLogService_ListAccessLogTopPolicy_Handler,
+		},
+		{
+			MethodName: "ListAccessLogTopDenyReason",
+			Handler:    _AccessLogService_ListAccessLogTopDenyReason_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -1018,9 +1056,10 @@ var AuditLogService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	ComponentLogService_ListComponentLog_FullMethodName         = "/octelium.api.main.visibility.v1.ComponentLogService/ListComponentLog"
-	ComponentLogService_GetComponentLogSummary_FullMethodName   = "/octelium.api.main.visibility.v1.ComponentLogService/GetComponentLogSummary"
-	ComponentLogService_GetComponentLogDataPoint_FullMethodName = "/octelium.api.main.visibility.v1.ComponentLogService/GetComponentLogDataPoint"
+	ComponentLogService_ListComponentLog_FullMethodName             = "/octelium.api.main.visibility.v1.ComponentLogService/ListComponentLog"
+	ComponentLogService_GetComponentLogSummary_FullMethodName       = "/octelium.api.main.visibility.v1.ComponentLogService/GetComponentLogSummary"
+	ComponentLogService_GetComponentLogDataPoint_FullMethodName     = "/octelium.api.main.visibility.v1.ComponentLogService/GetComponentLogDataPoint"
+	ComponentLogService_ListComponentLogTopComponent_FullMethodName = "/octelium.api.main.visibility.v1.ComponentLogService/ListComponentLogTopComponent"
 )
 
 // ComponentLogServiceClient is the client API for ComponentLogService service.
@@ -1030,6 +1069,7 @@ type ComponentLogServiceClient interface {
 	ListComponentLog(ctx context.Context, in *ListComponentLogRequest, opts ...grpc.CallOption) (*ListComponentLogResponse, error)
 	GetComponentLogSummary(ctx context.Context, in *GetComponentLogSummaryRequest, opts ...grpc.CallOption) (*GetComponentLogSummaryResponse, error)
 	GetComponentLogDataPoint(ctx context.Context, in *GetComponentLogDataPointRequest, opts ...grpc.CallOption) (*GetComponentLogDataPointResponse, error)
+	ListComponentLogTopComponent(ctx context.Context, in *ListComponentLogTopComponentRequest, opts ...grpc.CallOption) (*ListComponentLogTopComponentResponse, error)
 }
 
 type componentLogServiceClient struct {
@@ -1070,6 +1110,16 @@ func (c *componentLogServiceClient) GetComponentLogDataPoint(ctx context.Context
 	return out, nil
 }
 
+func (c *componentLogServiceClient) ListComponentLogTopComponent(ctx context.Context, in *ListComponentLogTopComponentRequest, opts ...grpc.CallOption) (*ListComponentLogTopComponentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListComponentLogTopComponentResponse)
+	err := c.cc.Invoke(ctx, ComponentLogService_ListComponentLogTopComponent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ComponentLogServiceServer is the server API for ComponentLogService service.
 // All implementations must embed UnimplementedComponentLogServiceServer
 // for forward compatibility.
@@ -1077,6 +1127,7 @@ type ComponentLogServiceServer interface {
 	ListComponentLog(context.Context, *ListComponentLogRequest) (*ListComponentLogResponse, error)
 	GetComponentLogSummary(context.Context, *GetComponentLogSummaryRequest) (*GetComponentLogSummaryResponse, error)
 	GetComponentLogDataPoint(context.Context, *GetComponentLogDataPointRequest) (*GetComponentLogDataPointResponse, error)
+	ListComponentLogTopComponent(context.Context, *ListComponentLogTopComponentRequest) (*ListComponentLogTopComponentResponse, error)
 	mustEmbedUnimplementedComponentLogServiceServer()
 }
 
@@ -1095,6 +1146,9 @@ func (UnimplementedComponentLogServiceServer) GetComponentLogSummary(context.Con
 }
 func (UnimplementedComponentLogServiceServer) GetComponentLogDataPoint(context.Context, *GetComponentLogDataPointRequest) (*GetComponentLogDataPointResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComponentLogDataPoint not implemented")
+}
+func (UnimplementedComponentLogServiceServer) ListComponentLogTopComponent(context.Context, *ListComponentLogTopComponentRequest) (*ListComponentLogTopComponentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListComponentLogTopComponent not implemented")
 }
 func (UnimplementedComponentLogServiceServer) mustEmbedUnimplementedComponentLogServiceServer() {}
 func (UnimplementedComponentLogServiceServer) testEmbeddedByValue()                             {}
@@ -1171,6 +1225,24 @@ func _ComponentLogService_GetComponentLogDataPoint_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ComponentLogService_ListComponentLogTopComponent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListComponentLogTopComponentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComponentLogServiceServer).ListComponentLogTopComponent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComponentLogService_ListComponentLogTopComponent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComponentLogServiceServer).ListComponentLogTopComponent(ctx, req.(*ListComponentLogTopComponentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ComponentLogService_ServiceDesc is the grpc.ServiceDesc for ComponentLogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1189,6 +1261,164 @@ var ComponentLogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetComponentLogDataPoint",
 			Handler:    _ComponentLogService_GetComponentLogDataPoint_Handler,
+		},
+		{
+			MethodName: "ListComponentLogTopComponent",
+			Handler:    _ComponentLogService_ListComponentLogTopComponent_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "visibilityv1.proto",
+}
+
+const (
+	ClusterService_GetClusterSummary_FullMethodName = "/octelium.api.main.visibility.v1.ClusterService/GetClusterSummary"
+	ClusterService_GetClusterHealth_FullMethodName  = "/octelium.api.main.visibility.v1.ClusterService/GetClusterHealth"
+)
+
+// ClusterServiceClient is the client API for ClusterService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ClusterService provides the Cluster-wide, cross-API visibility that backs
+// the Cluster overview pages.
+type ClusterServiceClient interface {
+	// GetClusterSummary returns the summaries of the Cluster's resources across
+	// every API in a single round trip.
+	GetClusterSummary(ctx context.Context, in *GetClusterSummaryRequest, opts ...grpc.CallOption) (*GetClusterSummaryResponse, error)
+	// GetClusterHealth returns the Cluster's operational health as it is
+	// currently observable by the Cluster itself.
+	GetClusterHealth(ctx context.Context, in *GetClusterHealthRequest, opts ...grpc.CallOption) (*GetClusterHealthResponse, error)
+}
+
+type clusterServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewClusterServiceClient(cc grpc.ClientConnInterface) ClusterServiceClient {
+	return &clusterServiceClient{cc}
+}
+
+func (c *clusterServiceClient) GetClusterSummary(ctx context.Context, in *GetClusterSummaryRequest, opts ...grpc.CallOption) (*GetClusterSummaryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetClusterSummaryResponse)
+	err := c.cc.Invoke(ctx, ClusterService_GetClusterSummary_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clusterServiceClient) GetClusterHealth(ctx context.Context, in *GetClusterHealthRequest, opts ...grpc.CallOption) (*GetClusterHealthResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetClusterHealthResponse)
+	err := c.cc.Invoke(ctx, ClusterService_GetClusterHealth_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ClusterServiceServer is the server API for ClusterService service.
+// All implementations must embed UnimplementedClusterServiceServer
+// for forward compatibility.
+//
+// ClusterService provides the Cluster-wide, cross-API visibility that backs
+// the Cluster overview pages.
+type ClusterServiceServer interface {
+	// GetClusterSummary returns the summaries of the Cluster's resources across
+	// every API in a single round trip.
+	GetClusterSummary(context.Context, *GetClusterSummaryRequest) (*GetClusterSummaryResponse, error)
+	// GetClusterHealth returns the Cluster's operational health as it is
+	// currently observable by the Cluster itself.
+	GetClusterHealth(context.Context, *GetClusterHealthRequest) (*GetClusterHealthResponse, error)
+	mustEmbedUnimplementedClusterServiceServer()
+}
+
+// UnimplementedClusterServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedClusterServiceServer struct{}
+
+func (UnimplementedClusterServiceServer) GetClusterSummary(context.Context, *GetClusterSummaryRequest) (*GetClusterSummaryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetClusterSummary not implemented")
+}
+func (UnimplementedClusterServiceServer) GetClusterHealth(context.Context, *GetClusterHealthRequest) (*GetClusterHealthResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetClusterHealth not implemented")
+}
+func (UnimplementedClusterServiceServer) mustEmbedUnimplementedClusterServiceServer() {}
+func (UnimplementedClusterServiceServer) testEmbeddedByValue()                        {}
+
+// UnsafeClusterServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ClusterServiceServer will
+// result in compilation errors.
+type UnsafeClusterServiceServer interface {
+	mustEmbedUnimplementedClusterServiceServer()
+}
+
+func RegisterClusterServiceServer(s grpc.ServiceRegistrar, srv ClusterServiceServer) {
+	// If the following call pancis, it indicates UnimplementedClusterServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&ClusterService_ServiceDesc, srv)
+}
+
+func _ClusterService_GetClusterSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetClusterSummaryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterServiceServer).GetClusterSummary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClusterService_GetClusterSummary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterServiceServer).GetClusterSummary(ctx, req.(*GetClusterSummaryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ClusterService_GetClusterHealth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetClusterHealthRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterServiceServer).GetClusterHealth(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClusterService_GetClusterHealth_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterServiceServer).GetClusterHealth(ctx, req.(*GetClusterHealthRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ClusterService_ServiceDesc is the grpc.ServiceDesc for ClusterService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ClusterService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "octelium.api.main.visibility.v1.ClusterService",
+	HandlerType: (*ClusterServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetClusterSummary",
+			Handler:    _ClusterService_GetClusterSummary_Handler,
+		},
+		{
+			MethodName: "GetClusterHealth",
+			Handler:    _ClusterService_GetClusterHealth_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

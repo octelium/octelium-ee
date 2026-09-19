@@ -23,18 +23,15 @@ export const toPoints = (
     .filter((item) => !!item.timestamp)
     .map((item) => ({ ts: item.timestamp!, value: Number(item.count) }));
 
-export const subtractPoints = (total: Point[], part: Point[]): Point[] => {
-  const lookup = new Map(
-    part.map((point) => [`${point.ts.seconds}:${point.ts.nanos}`, point.value]),
-  );
-  return total.map((point) => ({
-    ts: point.ts,
-    value: Math.max(
-      0,
-      point.value - (lookup.get(`${point.ts.seconds}:${point.ts.nanos}`) ?? 0),
-    ),
-  }));
-};
+export const seriesPoints = (
+  series:
+    | {
+        key: string;
+        datapoints: { timestamp?: Timestamp; count: number | bigint }[];
+      }[]
+    | undefined,
+  key: string,
+): Point[] => toPoints(series?.find((item) => item.key === key)?.datapoints);
 
 export const Panel = (props: {
   icon: LucideIcon;

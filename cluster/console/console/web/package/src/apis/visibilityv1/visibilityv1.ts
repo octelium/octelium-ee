@@ -20,8 +20,37 @@ import { UnknownFieldHandler } from "@protobuf-ts/runtime";
 import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
+import { GetDeviceManagerSummaryResponse } from "./enterprise/venterprisev1";
+import { GetDirectoryProviderGroupSummaryResponse } from "./enterprise/venterprisev1";
+import { GetDirectoryProviderUserSummaryResponse } from "./enterprise/venterprisev1";
+import { GetDirectoryProviderSummaryResponse } from "./enterprise/venterprisev1";
+import { GetDNSProviderSummaryResponse } from "./enterprise/venterprisev1";
+import { GetCertificateIssuerSummaryResponse } from "./enterprise/venterprisev1";
+import { GetCertificateSummaryResponse } from "./enterprise/venterprisev1";
+import { GetSecretStoreSummaryResponse } from "./enterprise/venterprisev1";
+import { GetSecretSummaryResponse as GetSecretSummaryResponse$ } from "./enterprise/venterprisev1";
+import { GetCollectorExporterSummaryResponse } from "./enterprise/venterprisev1";
+import { GetReviewSummaryResponse } from "./access/vaccessv1";
+import { GetRequestSummaryResponse } from "./access/vaccessv1";
+import { GetCatalogSummaryResponse } from "./access/vaccessv1";
+import { GetPolicySummaryResponse as GetPolicySummaryResponse$ } from "./access/vaccessv1";
+import { GetRegionSummaryResponse } from "./core/vcorev1";
+import { GetGatewaySummaryResponse } from "./core/vcorev1";
+import { GetSecretSummaryResponse } from "./core/vcorev1";
+import { GetAuthenticatorSummaryResponse } from "./core/vcorev1";
+import { GetIdentityProviderSummaryResponse } from "./core/vcorev1";
+import { GetCredentialSummaryResponse } from "./core/vcorev1";
+import { GetGroupSummaryResponse } from "./core/vcorev1";
+import { GetPolicySummaryResponse } from "./core/vcorev1";
+import { GetNamespaceSummaryResponse } from "./core/vcorev1";
+import { GetServiceSummaryResponse } from "./core/vcorev1";
+import { GetDeviceSummaryResponse } from "./core/vcorev1";
+import { GetSessionSummaryResponse } from "./core/vcorev1";
+import { GetUserSummaryResponse } from "./core/vcorev1";
+import { CommonSummaryOptions } from "./meta/vmetav1";
 import { IdentityProvider } from "../corev1/corev1";
 import { Credential } from "../corev1/corev1";
+import { AccessLog_Entry_Common_Reason_Type } from "../corev1/corev1";
 import { Policy } from "../corev1/corev1";
 import { Service } from "../corev1/corev1";
 import { Session } from "../corev1/corev1";
@@ -327,6 +356,31 @@ export interface GetAccessLogSummaryRequest {
      * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Status status = 12
      */
     status: AccessLog_Entry_Common_Status;
+    /**
+     * IsPublic only counts the requests served over the public
+     * clientless/BeyondCorp mode.
+     *
+     * @generated from protobuf field: bool isPublic = 13
+     */
+    isPublic: boolean;
+    /**
+     * IsAnonymous only counts the requests that were served anonymously.
+     *
+     * @generated from protobuf field: bool isAnonymous = 14
+     */
+    isAnonymous: boolean;
+    /**
+     * CompareFrom and CompareTo define an additional, usually preceding, window
+     * whose summary is returned in the `previous` field of the response. It lets
+     * the caller obtain a delta with a single request.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp compareFrom = 15
+     */
+    compareFrom?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp compareTo = 16
+     */
+    compareTo?: Timestamp;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAccessLogSummaryResponse
@@ -365,9 +419,86 @@ export interface GetAccessLogSummaryResponse {
      */
     totalNamespace: number;
     /**
-     * @generated from protobuf field: uint32 totalMatchPolicy = 9
+     * @generated from protobuf field: uint64 totalMatchPolicy = 9
      */
     totalMatchPolicy: number;
+    /**
+     * @generated from protobuf field: uint64 totalPublic = 10
+     */
+    totalPublic: number;
+    /**
+     * @generated from protobuf field: uint64 totalAnonymous = 11
+     */
+    totalAnonymous: number;
+    /**
+     * TotalBytesSent is the number of bytes sent to the downstream clients.
+     *
+     * @generated from protobuf field: uint64 totalBytesSent = 12
+     */
+    totalBytesSent: number;
+    /**
+     * TotalBytesReceived is the number of bytes received from the downstream
+     * clients.
+     *
+     * @generated from protobuf field: uint64 totalBytesReceived = 13
+     */
+    totalBytesReceived: number;
+    /**
+     * Latency is the duration distribution of the entries.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.Latency latency = 14
+     */
+    latency?: GetAccessLogSummaryResponse_Latency;
+    /**
+     * TotalByMode is the number of entries keyed by the Service mode (e.g.
+     * "HTTP", "SSH", "TCP").
+     *
+     * @generated from protobuf field: map<string, uint64> totalByMode = 15
+     */
+    totalByMode: {
+        [key: string]: number;
+    };
+    /**
+     * Previous is the summary of the comparison window set by the request's
+     * `compareFrom` and `compareTo` fields.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetAccessLogSummaryResponse previous = 16
+     */
+    previous?: GetAccessLogSummaryResponse;
+}
+/**
+ * Latency is the distribution of the request/connection durations. It is
+ * only calculated over the entries that have both a start and an end time.
+ *
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.Latency
+ */
+export interface GetAccessLogSummaryResponse_Latency {
+    /**
+     * Count is the number of entries that have a measurable duration.
+     *
+     * @generated from protobuf field: uint64 count = 1
+     */
+    count: number;
+    /**
+     * @generated from protobuf field: double p50Milliseconds = 2
+     */
+    p50Milliseconds: number;
+    /**
+     * @generated from protobuf field: double p95Milliseconds = 3
+     */
+    p95Milliseconds: number;
+    /**
+     * @generated from protobuf field: double p99Milliseconds = 4
+     */
+    p99Milliseconds: number;
+    /**
+     * @generated from protobuf field: double maxMilliseconds = 5
+     */
+    maxMilliseconds: number;
+    /**
+     * @generated from protobuf field: double avgMilliseconds = 6
+     */
+    avgMilliseconds: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogRequest
@@ -459,6 +590,17 @@ export interface GetAuthenticationLogSummaryRequest {
      * @generated from protobuf field: google.protobuf.Timestamp to = 5
      */
     to?: Timestamp;
+    /**
+     * CompareFrom and CompareTo define an additional, usually preceding, window
+     * whose summary is returned in the `previous` field of the response.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp compareFrom = 12
+     */
+    compareFrom?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp compareTo = 13
+     */
+    compareTo?: Timestamp;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse
@@ -528,6 +670,13 @@ export interface GetAuthenticationLogSummaryResponse {
      * @generated from protobuf field: uint64 totalReauthentication = 16
      */
     totalReauthentication: number;
+    /**
+     * Previous is the summary of the comparison window set by the request's
+     * `compareFrom` and `compareTo` fields.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse previous = 17
+     */
+    previous?: GetAuthenticationLogSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuditLogRequest
@@ -767,6 +916,12 @@ export interface ListComponentLogRequest {
      * @generated from protobuf field: google.protobuf.Timestamp to = 5
      */
     to?: Timestamp;
+    /**
+     * Component filters the entries by the component that emitted them.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.v1.ComponentSelector component = 6
+     */
+    component?: ComponentSelector;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListComponentLogResponse
@@ -838,15 +993,151 @@ export interface GetAccessLogDataPointRequest {
      * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Status status = 12
      */
     status: AccessLog_Entry_Common_Status;
+    /**
+     * IsPublic only counts the requests served over the public
+     * clientless/BeyondCorp mode.
+     *
+     * @generated from protobuf field: bool isPublic = 14
+     */
+    isPublic: boolean;
+    /**
+     * IsAnonymous only counts the requests that were served anonymously.
+     *
+     * @generated from protobuf field: bool isAnonymous = 15
+     */
+    isAnonymous: boolean;
+    /**
+     * GroupBy splits the entries into a separate series per dimension value.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.GroupBy groupBy = 16
+     */
+    groupBy: GetAccessLogDataPointRequest_GroupBy;
+    /**
+     * LimitSeries caps the number of the returned series to the top ones by
+     * total count. It is only used with `groupBy`. It defaults to 8 and it
+     * cannot exceed 25.
+     *
+     * @generated from protobuf field: uint32 limitSeries = 17
+     */
+    limitSeries: number;
+}
+/**
+ * GroupBy is the dimension by which the entries are split into separate
+ * series. When it is unset, a single, ungrouped series is returned in the
+ * `datapoints` field of the response.
+ *
+ * @generated from protobuf enum octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.GroupBy
+ */
+export enum GetAccessLogDataPointRequest_GroupBy {
+    /**
+     * @generated from protobuf enum value: GROUP_BY_UNSET = 0;
+     */
+    GROUP_BY_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: STATUS = 1;
+     */
+    STATUS = 1,
+    /**
+     * @generated from protobuf enum value: MODE = 2;
+     */
+    MODE = 2,
+    /**
+     * @generated from protobuf enum value: REASON = 3;
+     */
+    REASON = 3,
+    /**
+     * @generated from protobuf enum value: SERVICE = 4;
+     */
+    SERVICE = 4,
+    /**
+     * @generated from protobuf enum value: USER = 5;
+     */
+    USER = 5,
+    /**
+     * @generated from protobuf enum value: SESSION = 6;
+     */
+    SESSION = 6,
+    /**
+     * @generated from protobuf enum value: DEVICE = 7;
+     */
+    DEVICE = 7,
+    /**
+     * @generated from protobuf enum value: NAMESPACE = 8;
+     */
+    NAMESPACE = 8,
+    /**
+     * @generated from protobuf enum value: REGION = 9;
+     */
+    REGION = 9,
+    /**
+     * @generated from protobuf enum value: POLICY = 10;
+     */
+    POLICY = 10
+}
+/**
+ * DataPointSeries is a single series of a grouped datapoint response.
+ *
+ * @generated from protobuf message octelium.api.main.visibility.v1.DataPointSeries
+ */
+export interface DataPointSeries {
+    /**
+     * Key is the raw value of the grouped dimension (e.g. "DENIED" or the UID
+     * of a Service).
+     *
+     * @generated from protobuf field: string key = 1
+     */
+    key: string;
+    /**
+     * DisplayName is a human readable name of the series when the Cluster can
+     * resolve it (e.g. the name of the Service).
+     *
+     * @generated from protobuf field: string displayName = 2
+     */
+    displayName: string;
+    /**
+     * Total is the sum of the counts of the series' datapoints.
+     *
+     * @generated from protobuf field: int64 total = 3
+     */
+    total: number;
+    /**
+     * Datapoints are the series' datapoints.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.DataPointSeries.DataPoint datapoints = 4
+     */
+    datapoints: DataPointSeries_DataPoint[];
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.DataPointSeries.DataPoint
+ */
+export interface DataPointSeries_DataPoint {
+    /**
+     * @generated from protobuf field: int64 count = 1
+     */
+    count: number;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp timestamp = 2
+     */
+    timestamp?: Timestamp;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAccessLogDataPointResponse
  */
 export interface GetAccessLogDataPointResponse {
     /**
+     * Datapoints are the ungrouped datapoints. They are always set regardless of
+     * the request's `groupBy`.
+     *
      * @generated from protobuf field: repeated octelium.api.main.visibility.v1.GetAccessLogDataPointResponse.DataPoint datapoints = 1
      */
     datapoints: GetAccessLogDataPointResponse_DataPoint[];
+    /**
+     * Series are the per-dimension series. They are only set when the request
+     * sets a `groupBy`.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.DataPointSeries series = 2
+     */
+    series: DataPointSeries[];
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAccessLogDataPointResponse.DataPoint
@@ -901,6 +1192,63 @@ export interface GetAuthenticationLogDataPointRequest {
      * @generated from protobuf field: google.protobuf.Timestamp to = 5
      */
     to?: Timestamp;
+    /**
+     * GroupBy splits the entries into a separate series per dimension value.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.GroupBy groupBy = 13
+     */
+    groupBy: GetAuthenticationLogDataPointRequest_GroupBy;
+    /**
+     * LimitSeries caps the number of the returned series to the top ones by
+     * total count. It defaults to 8 and it cannot exceed 25.
+     *
+     * @generated from protobuf field: uint32 limitSeries = 14
+     */
+    limitSeries: number;
+}
+/**
+ * GroupBy is the dimension by which the entries are split into separate
+ * series.
+ *
+ * @generated from protobuf enum octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.GroupBy
+ */
+export enum GetAuthenticationLogDataPointRequest_GroupBy {
+    /**
+     * @generated from protobuf enum value: GROUP_BY_UNSET = 0;
+     */
+    GROUP_BY_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: TYPE = 1;
+     */
+    TYPE = 1,
+    /**
+     * @generated from protobuf enum value: ASSURANCE_LEVEL = 2;
+     */
+    ASSURANCE_LEVEL = 2,
+    /**
+     * @generated from protobuf enum value: USER = 3;
+     */
+    USER = 3,
+    /**
+     * @generated from protobuf enum value: SESSION = 4;
+     */
+    SESSION = 4,
+    /**
+     * @generated from protobuf enum value: DEVICE = 5;
+     */
+    DEVICE = 5,
+    /**
+     * @generated from protobuf enum value: IDENTITY_PROVIDER = 6;
+     */
+    IDENTITY_PROVIDER = 6,
+    /**
+     * @generated from protobuf enum value: CREDENTIAL = 7;
+     */
+    CREDENTIAL = 7,
+    /**
+     * @generated from protobuf enum value: AUTHENTICATOR = 8;
+     */
+    AUTHENTICATOR = 8
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse
@@ -910,6 +1258,13 @@ export interface GetAuthenticationLogDataPointResponse {
      * @generated from protobuf field: repeated octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse.DataPoint datapoints = 1
      */
     datapoints: GetAuthenticationLogDataPointResponse_DataPoint[];
+    /**
+     * Series are the per-dimension series. They are only set when the request
+     * sets a `groupBy`.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.DataPointSeries series = 2
+     */
+    series: DataPointSeries[];
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse.DataPoint
@@ -956,6 +1311,26 @@ export interface ListAccessLogTopUserRequest {
      * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Status status = 12
      */
     status: AccessLog_Entry_Common_Status;
+    /**
+     * IsPublic only counts the requests served over the public
+     * clientless/BeyondCorp mode.
+     *
+     * @generated from protobuf field: bool isPublic = 13
+     */
+    isPublic: boolean;
+    /**
+     * IsAnonymous only counts the requests that were served anonymously.
+     *
+     * @generated from protobuf field: bool isAnonymous = 14
+     */
+    isAnonymous: boolean;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 100.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogTopUserResponse
@@ -965,6 +1340,20 @@ export interface ListAccessLogTopUserResponse {
      * @generated from protobuf field: repeated octelium.api.main.visibility.v1.ListAccessLogTopUserResponse.Item items = 1
      */
     items: ListAccessLogTopUserResponse_Item[];
+    /**
+     * TotalCount is the number of the distinct items that matched, of which only
+     * the top `limit` ones are returned.
+     *
+     * @generated from protobuf field: uint64 totalCount = 100
+     */
+    totalCount: number;
+    /**
+     * TotalOther is the sum of the counts of the matching items that are not
+     * returned.
+     *
+     * @generated from protobuf field: uint64 totalOther = 101
+     */
+    totalOther: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogTopUserResponse.Item
@@ -1019,6 +1408,26 @@ export interface ListAccessLogTopSessionRequest {
      * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Status status = 12
      */
     status: AccessLog_Entry_Common_Status;
+    /**
+     * IsPublic only counts the requests served over the public
+     * clientless/BeyondCorp mode.
+     *
+     * @generated from protobuf field: bool isPublic = 13
+     */
+    isPublic: boolean;
+    /**
+     * IsAnonymous only counts the requests that were served anonymously.
+     *
+     * @generated from protobuf field: bool isAnonymous = 14
+     */
+    isAnonymous: boolean;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 100.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogTopSessionResponse
@@ -1028,6 +1437,20 @@ export interface ListAccessLogTopSessionResponse {
      * @generated from protobuf field: repeated octelium.api.main.visibility.v1.ListAccessLogTopSessionResponse.Item items = 1
      */
     items: ListAccessLogTopSessionResponse_Item[];
+    /**
+     * TotalCount is the number of the distinct items that matched, of which only
+     * the top `limit` ones are returned.
+     *
+     * @generated from protobuf field: uint64 totalCount = 100
+     */
+    totalCount: number;
+    /**
+     * TotalOther is the sum of the counts of the matching items that are not
+     * returned.
+     *
+     * @generated from protobuf field: uint64 totalOther = 101
+     */
+    totalOther: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogTopSessionResponse.Item
@@ -1078,6 +1501,26 @@ export interface ListAccessLogTopServiceRequest {
      * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Status status = 12
      */
     status: AccessLog_Entry_Common_Status;
+    /**
+     * IsPublic only counts the requests served over the public
+     * clientless/BeyondCorp mode.
+     *
+     * @generated from protobuf field: bool isPublic = 13
+     */
+    isPublic: boolean;
+    /**
+     * IsAnonymous only counts the requests that were served anonymously.
+     *
+     * @generated from protobuf field: bool isAnonymous = 14
+     */
+    isAnonymous: boolean;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 100.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogTopServiceResponse
@@ -1087,6 +1530,20 @@ export interface ListAccessLogTopServiceResponse {
      * @generated from protobuf field: repeated octelium.api.main.visibility.v1.ListAccessLogTopServiceResponse.Item items = 1
      */
     items: ListAccessLogTopServiceResponse_Item[];
+    /**
+     * TotalCount is the number of the distinct items that matched, of which only
+     * the top `limit` ones are returned.
+     *
+     * @generated from protobuf field: uint64 totalCount = 100
+     */
+    totalCount: number;
+    /**
+     * TotalOther is the sum of the counts of the matching items that are not
+     * returned.
+     *
+     * @generated from protobuf field: uint64 totalOther = 101
+     */
+    totalOther: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogTopServiceResponse.Item
@@ -1141,6 +1598,26 @@ export interface ListAccessLogTopPolicyRequest {
      * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Status status = 12
      */
     status: AccessLog_Entry_Common_Status;
+    /**
+     * IsPublic only counts the requests served over the public
+     * clientless/BeyondCorp mode.
+     *
+     * @generated from protobuf field: bool isPublic = 13
+     */
+    isPublic: boolean;
+    /**
+     * IsAnonymous only counts the requests that were served anonymously.
+     *
+     * @generated from protobuf field: bool isAnonymous = 14
+     */
+    isAnonymous: boolean;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 100.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogTopPolicyResponse
@@ -1150,6 +1627,20 @@ export interface ListAccessLogTopPolicyResponse {
      * @generated from protobuf field: repeated octelium.api.main.visibility.v1.ListAccessLogTopPolicyResponse.Item items = 1
      */
     items: ListAccessLogTopPolicyResponse_Item[];
+    /**
+     * TotalCount is the number of the distinct items that matched, of which only
+     * the top `limit` ones are returned.
+     *
+     * @generated from protobuf field: uint64 totalCount = 100
+     */
+    totalCount: number;
+    /**
+     * TotalOther is the sum of the counts of the matching items that are not
+     * returned.
+     *
+     * @generated from protobuf field: uint64 totalOther = 101
+     */
+    totalOther: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogTopPolicyResponse.Item
@@ -1163,6 +1654,114 @@ export interface ListAccessLogTopPolicyResponse_Item {
      * @generated from protobuf field: int32 count = 2
      */
     count: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest
+ */
+export interface ListAccessLogTopDenyReasonRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference regionRef = 1
+     */
+    regionRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference sessionRef = 6
+     */
+    sessionRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 7
+     */
+    userRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference deviceRef = 8
+     */
+    deviceRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference serviceRef = 9
+     */
+    serviceRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference namespaceRef = 10
+     */
+    namespaceRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference policyRef = 11
+     */
+    policyRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp from = 4
+     */
+    from?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp to = 5
+     */
+    to?: Timestamp;
+    /**
+     * IsPublic only counts the requests served over the public
+     * clientless/BeyondCorp mode.
+     *
+     * @generated from protobuf field: bool isPublic = 13
+     */
+    isPublic: boolean;
+    /**
+     * IsAnonymous only counts the requests that were served anonymously.
+     *
+     * @generated from protobuf field: bool isAnonymous = 14
+     */
+    isAnonymous: boolean;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 100.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse
+ */
+export interface ListAccessLogTopDenyReasonResponse {
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse.Item items = 1
+     */
+    items: ListAccessLogTopDenyReasonResponse_Item[];
+    /**
+     * TotalCount is the number of the distinct reasons that matched.
+     *
+     * @generated from protobuf field: uint64 totalCount = 100
+     */
+    totalCount: number;
+    /**
+     * TotalOther is the sum of the counts of the matching reasons that are not
+     * returned.
+     *
+     * @generated from protobuf field: uint64 totalOther = 101
+     */
+    totalOther: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse.Item
+ */
+export interface ListAccessLogTopDenyReasonResponse_Item {
+    /**
+     * Reason is the reason of the denial.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 1
+     */
+    reason: AccessLog_Entry_Common_Reason_Type;
+    /**
+     * Count is the number of the denied requests with this reason.
+     *
+     * @generated from protobuf field: uint64 count = 2
+     */
+    count: number;
+    /**
+     * PolicyRef refers the Policy that triggered the denial whenever the
+     * reason is a Policy match and a single Policy is responsible for the
+     * whole count.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference policyRef = 3
+     */
+    policyRef?: ObjectReference;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest
@@ -1188,6 +1787,13 @@ export interface ListAuthenticationLogTopUserRequest {
      * @generated from protobuf field: google.protobuf.Timestamp to = 5
      */
     to?: Timestamp;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 100.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopUserResponse
@@ -1197,6 +1803,20 @@ export interface ListAuthenticationLogTopUserResponse {
      * @generated from protobuf field: repeated octelium.api.main.visibility.v1.ListAuthenticationLogTopUserResponse.Item items = 1
      */
     items: ListAuthenticationLogTopUserResponse_Item[];
+    /**
+     * TotalCount is the number of the distinct items that matched, of which only
+     * the top `limit` ones are returned.
+     *
+     * @generated from protobuf field: uint64 totalCount = 100
+     */
+    totalCount: number;
+    /**
+     * TotalOther is the sum of the counts of the matching items that are not
+     * returned.
+     *
+     * @generated from protobuf field: uint64 totalOther = 101
+     */
+    totalOther: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopUserResponse.Item
@@ -1243,6 +1863,13 @@ export interface ListAuthenticationLogTopCredentialRequest {
      * @generated from protobuf field: google.protobuf.Timestamp to = 5
      */
     to?: Timestamp;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 100.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialResponse
@@ -1252,6 +1879,20 @@ export interface ListAuthenticationLogTopCredentialResponse {
      * @generated from protobuf field: repeated octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialResponse.Item items = 1
      */
     items: ListAuthenticationLogTopCredentialResponse_Item[];
+    /**
+     * TotalCount is the number of the distinct items that matched, of which only
+     * the top `limit` ones are returned.
+     *
+     * @generated from protobuf field: uint64 totalCount = 100
+     */
+    totalCount: number;
+    /**
+     * TotalOther is the sum of the counts of the matching items that are not
+     * returned.
+     *
+     * @generated from protobuf field: uint64 totalOther = 101
+     */
+    totalOther: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialResponse.Item
@@ -1302,6 +1943,13 @@ export interface ListAuthenticationLogTopIdentityProviderRequest {
      * @generated from protobuf field: google.protobuf.Timestamp to = 5
      */
     to?: Timestamp;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 100.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderResponse
@@ -1311,6 +1959,20 @@ export interface ListAuthenticationLogTopIdentityProviderResponse {
      * @generated from protobuf field: repeated octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderResponse.Item items = 1
      */
     items: ListAuthenticationLogTopIdentityProviderResponse_Item[];
+    /**
+     * TotalCount is the number of the distinct items that matched, of which only
+     * the top `limit` ones are returned.
+     *
+     * @generated from protobuf field: uint64 totalCount = 100
+     */
+    totalCount: number;
+    /**
+     * TotalOther is the sum of the counts of the matching items that are not
+     * returned.
+     *
+     * @generated from protobuf field: uint64 totalOther = 101
+     */
+    totalOther: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderResponse.Item
@@ -1326,6 +1988,112 @@ export interface ListAuthenticationLogTopIdentityProviderResponse_Item {
     count: number;
 }
 /**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ComponentSelector
+ */
+export interface ComponentSelector {
+    /**
+     * Namespace is the namespace of the component (e.g. "octelium").
+     *
+     * @generated from protobuf field: string namespace = 1
+     */
+    namespace: string;
+    /**
+     * Type is the type of the component (e.g. "vigil", "apiserver").
+     *
+     * @generated from protobuf field: string type = 2
+     */
+    type: string;
+    /**
+     * UID is the unique identifier of a single component instance.
+     *
+     * @generated from protobuf field: string uid = 3
+     */
+    uid: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest
+ */
+export interface ListComponentLogTopComponentRequest {
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp from = 4
+     */
+    from?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp to = 5
+     */
+    to?: Timestamp;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.ComponentLog.Entry.Level level = 2
+     */
+    level: ComponentLog_Entry_Level;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.v1.ComponentSelector component = 6
+     */
+    component?: ComponentSelector;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 100.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse
+ */
+export interface ListComponentLogTopComponentResponse {
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse.Item items = 1
+     */
+    items: ListComponentLogTopComponentResponse_Item[];
+    /**
+     * TotalCount is the number of the distinct components that matched.
+     *
+     * @generated from protobuf field: uint64 totalCount = 100
+     */
+    totalCount: number;
+    /**
+     * TotalOther is the sum of the counts of the matching components that are
+     * not returned.
+     *
+     * @generated from protobuf field: uint64 totalOther = 101
+     */
+    totalOther: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse.Item
+ */
+export interface ListComponentLogTopComponentResponse_Item {
+    /**
+     * Component identifies the component that emitted the entries.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.v1.ComponentSelector component = 1
+     */
+    component?: ComponentSelector;
+    /**
+     * Count is the number of the matching entries of the component.
+     *
+     * @generated from protobuf field: uint64 count = 2
+     */
+    count: number;
+    /**
+     * @generated from protobuf field: uint64 countWarn = 3
+     */
+    countWarn: number;
+    /**
+     * @generated from protobuf field: uint64 countError = 4
+     */
+    countError: number;
+    /**
+     * @generated from protobuf field: uint64 countPanic = 5
+     */
+    countPanic: number;
+    /**
+     * @generated from protobuf field: uint64 countFatal = 6
+     */
+    countFatal: number;
+}
+/**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetComponentLogSummaryRequest
  */
 export interface GetComponentLogSummaryRequest {
@@ -1337,6 +2105,23 @@ export interface GetComponentLogSummaryRequest {
      * @generated from protobuf field: google.protobuf.Timestamp to = 5
      */
     to?: Timestamp;
+    /**
+     * Component filters the entries by the component that emitted them.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.v1.ComponentSelector component = 6
+     */
+    component?: ComponentSelector;
+    /**
+     * CompareFrom and CompareTo define an additional, usually preceding, window
+     * whose summary is returned in the `previous` field of the response.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp compareFrom = 7
+     */
+    compareFrom?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp compareTo = 8
+     */
+    compareTo?: Timestamp;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetComponentLogSummaryResponse
@@ -1370,6 +2155,20 @@ export interface GetComponentLogSummaryResponse {
      * @generated from protobuf field: uint64 totalFatal = 7
      */
     totalFatal: number;
+    /**
+     * TotalComponent is the number of the distinct components that emitted the
+     * entries.
+     *
+     * @generated from protobuf field: uint64 totalComponent = 8
+     */
+    totalComponent: number;
+    /**
+     * Previous is the summary of the comparison window set by the request's
+     * `compareFrom` and `compareTo` fields.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetComponentLogSummaryResponse previous = 9
+     */
+    previous?: GetComponentLogSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAuditLogSummaryRequest
@@ -1403,6 +2202,17 @@ export interface GetAuditLogSummaryRequest {
      * @generated from protobuf field: google.protobuf.Timestamp to = 5
      */
     to?: Timestamp;
+    /**
+     * CompareFrom and CompareTo define an additional, usually preceding, window
+     * whose summary is returned in the `previous` field of the response.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp compareFrom = 10
+     */
+    compareFrom?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp compareTo = 11
+     */
+    compareTo?: Timestamp;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAuditLogSummaryResponse
@@ -1428,6 +2238,50 @@ export interface GetAuditLogSummaryResponse {
      * @generated from protobuf field: uint64 totalSession = 5
      */
     totalSession: number;
+    /**
+     * TotalCreate is the number of the entries whose API method creates a
+     * resource.
+     *
+     * @generated from protobuf field: uint64 totalCreate = 6
+     */
+    totalCreate: number;
+    /**
+     * TotalUpdate is the number of the entries whose API method updates a
+     * resource.
+     *
+     * @generated from protobuf field: uint64 totalUpdate = 7
+     */
+    totalUpdate: number;
+    /**
+     * TotalDelete is the number of the entries whose API method deletes a
+     * resource.
+     *
+     * @generated from protobuf field: uint64 totalDelete = 8
+     */
+    totalDelete: number;
+    /**
+     * TotalOther is the number of the entries whose API method neither creates,
+     * updates nor deletes a resource.
+     *
+     * @generated from protobuf field: uint64 totalOther = 9
+     */
+    totalOther: number;
+    /**
+     * TotalByResourceKind is the number of the entries keyed by the kind of the
+     * changed resource (e.g. "Service", "User").
+     *
+     * @generated from protobuf field: map<string, uint64> totalByResourceKind = 10
+     */
+    totalByResourceKind: {
+        [key: string]: number;
+    };
+    /**
+     * Previous is the summary of the comparison window set by the request's
+     * `compareFrom` and `compareTo` fields.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetAuditLogSummaryResponse previous = 11
+     */
+    previous?: GetAuditLogSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAuditLogDataPointRequest
@@ -1461,6 +2315,51 @@ export interface GetAuditLogDataPointRequest {
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration interval = 13
      */
     interval?: Duration;
+    /**
+     * GroupBy splits the entries into a separate series per dimension value.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.GroupBy groupBy = 14
+     */
+    groupBy: GetAuditLogDataPointRequest_GroupBy;
+    /**
+     * LimitSeries caps the number of the returned series to the top ones by
+     * total count. It defaults to 8 and it cannot exceed 25.
+     *
+     * @generated from protobuf field: uint32 limitSeries = 15
+     */
+    limitSeries: number;
+}
+/**
+ * GroupBy is the dimension by which the entries are split into separate
+ * series.
+ *
+ * @generated from protobuf enum octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.GroupBy
+ */
+export enum GetAuditLogDataPointRequest_GroupBy {
+    /**
+     * @generated from protobuf enum value: GROUP_BY_UNSET = 0;
+     */
+    GROUP_BY_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: ACTION = 1;
+     */
+    ACTION = 1,
+    /**
+     * @generated from protobuf enum value: RESOURCE_KIND = 2;
+     */
+    RESOURCE_KIND = 2,
+    /**
+     * @generated from protobuf enum value: USER = 3;
+     */
+    USER = 3,
+    /**
+     * @generated from protobuf enum value: SESSION = 4;
+     */
+    SESSION = 4,
+    /**
+     * @generated from protobuf enum value: DEVICE = 5;
+     */
+    DEVICE = 5
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAuditLogDataPointResponse
@@ -1470,6 +2369,13 @@ export interface GetAuditLogDataPointResponse {
      * @generated from protobuf field: repeated octelium.api.main.visibility.v1.GetAuditLogDataPointResponse.DataPoint datapoints = 1
      */
     datapoints: GetAuditLogDataPointResponse_DataPoint[];
+    /**
+     * Series are the per-dimension series. They are only set when the request
+     * sets a `groupBy`.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.DataPointSeries series = 2
+     */
+    series: DataPointSeries[];
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAuditLogDataPointResponse.DataPoint
@@ -1500,6 +2406,13 @@ export interface ListAuditLogTopUserRequest {
      * @generated from protobuf field: google.protobuf.Timestamp to = 5
      */
     to?: Timestamp;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 100.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuditLogTopSessionRequest
@@ -1517,6 +2430,13 @@ export interface ListAuditLogTopSessionRequest {
      * @generated from protobuf field: google.protobuf.Timestamp to = 5
      */
     to?: Timestamp;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 100.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuditLogTopUserResponse
@@ -1526,6 +2446,20 @@ export interface ListAuditLogTopUserResponse {
      * @generated from protobuf field: repeated octelium.api.main.visibility.v1.ListAuditLogTopUserResponse.Item items = 1
      */
     items: ListAuditLogTopUserResponse_Item[];
+    /**
+     * TotalCount is the number of the distinct items that matched, of which only
+     * the top `limit` ones are returned.
+     *
+     * @generated from protobuf field: uint64 totalCount = 100
+     */
+    totalCount: number;
+    /**
+     * TotalOther is the sum of the counts of the matching items that are not
+     * returned.
+     *
+     * @generated from protobuf field: uint64 totalOther = 101
+     */
+    totalOther: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuditLogTopUserResponse.Item
@@ -1548,6 +2482,20 @@ export interface ListAuditLogTopSessionResponse {
      * @generated from protobuf field: repeated octelium.api.main.visibility.v1.ListAuditLogTopSessionResponse.Item items = 1
      */
     items: ListAuditLogTopSessionResponse_Item[];
+    /**
+     * TotalCount is the number of the distinct items that matched, of which only
+     * the top `limit` ones are returned.
+     *
+     * @generated from protobuf field: uint64 totalCount = 100
+     */
+    totalCount: number;
+    /**
+     * TotalOther is the sum of the counts of the matching items that are not
+     * returned.
+     *
+     * @generated from protobuf field: uint64 totalOther = 101
+     */
+    totalOther: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuditLogTopSessionResponse.Item
@@ -1582,6 +2530,49 @@ export interface GetComponentLogDataPointRequest {
      * @generated from protobuf field: octelium.api.main.core.v1.ComponentLog.Entry.Level level = 2
      */
     level: ComponentLog_Entry_Level;
+    /**
+     * Component filters the entries by the component that emitted them.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.v1.ComponentSelector component = 14
+     */
+    component?: ComponentSelector;
+    /**
+     * GroupBy splits the entries into a separate series per dimension value.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.GroupBy groupBy = 15
+     */
+    groupBy: GetComponentLogDataPointRequest_GroupBy;
+    /**
+     * LimitSeries caps the number of the returned series to the top ones by
+     * total count. It defaults to 8 and it cannot exceed 25.
+     *
+     * @generated from protobuf field: uint32 limitSeries = 16
+     */
+    limitSeries: number;
+}
+/**
+ * GroupBy is the dimension by which the entries are split into separate
+ * series.
+ *
+ * @generated from protobuf enum octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.GroupBy
+ */
+export enum GetComponentLogDataPointRequest_GroupBy {
+    /**
+     * @generated from protobuf enum value: GROUP_BY_UNSET = 0;
+     */
+    GROUP_BY_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: LEVEL = 1;
+     */
+    LEVEL = 1,
+    /**
+     * @generated from protobuf enum value: COMPONENT_TYPE = 2;
+     */
+    COMPONENT_TYPE = 2,
+    /**
+     * @generated from protobuf enum value: COMPONENT_NAMESPACE = 3;
+     */
+    COMPONENT_NAMESPACE = 3
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetComponentLogDataPointResponse
@@ -1591,6 +2582,13 @@ export interface GetComponentLogDataPointResponse {
      * @generated from protobuf field: repeated octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.DataPoint datapoints = 1
      */
     datapoints: GetComponentLogDataPointResponse_DataPoint[];
+    /**
+     * Series are the per-dimension series. They are only set when the request
+     * sets a `groupBy`.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.DataPointSeries series = 2
+     */
+    series: DataPointSeries[];
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.DataPoint
@@ -1604,6 +2602,573 @@ export interface GetComponentLogDataPointResponse_DataPoint {
      * @generated from protobuf field: google.protobuf.Timestamp timestamp = 2
      */
     timestamp?: Timestamp;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetClusterSummaryRequest
+ */
+export interface GetClusterSummaryRequest {
+    /**
+     * Common sets the summary options (e.g. the creation window and the
+     * comparison window) that are applied to every requested kind.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
+    /**
+     * Kinds restricts the response to the given kinds. When it is empty, the
+     * summaries of every kind are returned.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.GetClusterSummaryRequest.Kind kinds = 2
+     */
+    kinds: GetClusterSummaryRequest_Kind[];
+}
+/**
+ * Kind identifies a single resource kind whose summary can be requested.
+ *
+ * @generated from protobuf enum octelium.api.main.visibility.v1.GetClusterSummaryRequest.Kind
+ */
+export enum GetClusterSummaryRequest_Kind {
+    /**
+     * @generated from protobuf enum value: KIND_UNSET = 0;
+     */
+    KIND_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: CORE_USER = 1;
+     */
+    CORE_USER = 1,
+    /**
+     * @generated from protobuf enum value: CORE_SESSION = 2;
+     */
+    CORE_SESSION = 2,
+    /**
+     * @generated from protobuf enum value: CORE_DEVICE = 3;
+     */
+    CORE_DEVICE = 3,
+    /**
+     * @generated from protobuf enum value: CORE_SERVICE = 4;
+     */
+    CORE_SERVICE = 4,
+    /**
+     * @generated from protobuf enum value: CORE_NAMESPACE = 5;
+     */
+    CORE_NAMESPACE = 5,
+    /**
+     * @generated from protobuf enum value: CORE_POLICY = 6;
+     */
+    CORE_POLICY = 6,
+    /**
+     * @generated from protobuf enum value: CORE_GROUP = 7;
+     */
+    CORE_GROUP = 7,
+    /**
+     * @generated from protobuf enum value: CORE_CREDENTIAL = 8;
+     */
+    CORE_CREDENTIAL = 8,
+    /**
+     * @generated from protobuf enum value: CORE_IDENTITY_PROVIDER = 9;
+     */
+    CORE_IDENTITY_PROVIDER = 9,
+    /**
+     * @generated from protobuf enum value: CORE_AUTHENTICATOR = 10;
+     */
+    CORE_AUTHENTICATOR = 10,
+    /**
+     * @generated from protobuf enum value: CORE_SECRET = 11;
+     */
+    CORE_SECRET = 11,
+    /**
+     * @generated from protobuf enum value: CORE_GATEWAY = 12;
+     */
+    CORE_GATEWAY = 12,
+    /**
+     * @generated from protobuf enum value: CORE_REGION = 13;
+     */
+    CORE_REGION = 13,
+    /**
+     * @generated from protobuf enum value: ACCESS_POLICY = 14;
+     */
+    ACCESS_POLICY = 14,
+    /**
+     * @generated from protobuf enum value: ACCESS_CATALOG = 15;
+     */
+    ACCESS_CATALOG = 15,
+    /**
+     * @generated from protobuf enum value: ACCESS_REQUEST = 16;
+     */
+    ACCESS_REQUEST = 16,
+    /**
+     * @generated from protobuf enum value: ACCESS_REVIEW = 17;
+     */
+    ACCESS_REVIEW = 17,
+    /**
+     * @generated from protobuf enum value: ENTERPRISE_COLLECTOR_EXPORTER = 18;
+     */
+    ENTERPRISE_COLLECTOR_EXPORTER = 18,
+    /**
+     * @generated from protobuf enum value: ENTERPRISE_SECRET = 19;
+     */
+    ENTERPRISE_SECRET = 19,
+    /**
+     * @generated from protobuf enum value: ENTERPRISE_SECRET_STORE = 20;
+     */
+    ENTERPRISE_SECRET_STORE = 20,
+    /**
+     * @generated from protobuf enum value: ENTERPRISE_CERTIFICATE = 21;
+     */
+    ENTERPRISE_CERTIFICATE = 21,
+    /**
+     * @generated from protobuf enum value: ENTERPRISE_CERTIFICATE_ISSUER = 22;
+     */
+    ENTERPRISE_CERTIFICATE_ISSUER = 22,
+    /**
+     * @generated from protobuf enum value: ENTERPRISE_DNSPROVIDER = 23;
+     */
+    ENTERPRISE_DNSPROVIDER = 23,
+    /**
+     * @generated from protobuf enum value: ENTERPRISE_DIRECTORY_PROVIDER = 24;
+     */
+    ENTERPRISE_DIRECTORY_PROVIDER = 24,
+    /**
+     * @generated from protobuf enum value: ENTERPRISE_DIRECTORY_PROVIDER_USER = 25;
+     */
+    ENTERPRISE_DIRECTORY_PROVIDER_USER = 25,
+    /**
+     * @generated from protobuf enum value: ENTERPRISE_DIRECTORY_PROVIDER_GROUP = 26;
+     */
+    ENTERPRISE_DIRECTORY_PROVIDER_GROUP = 26,
+    /**
+     * @generated from protobuf enum value: ENTERPRISE_DEVICE_MANAGER = 27;
+     */
+    ENTERPRISE_DEVICE_MANAGER = 27
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetClusterSummaryResponse
+ */
+export interface GetClusterSummaryResponse {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core core = 1
+     */
+    core?: GetClusterSummaryResponse_Core;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access access = 2
+     */
+    access?: GetClusterSummaryResponse_Access;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise enterprise = 3
+     */
+    enterprise?: GetClusterSummaryResponse_Enterprise;
+    /**
+     * Unavailables are the kinds whose summaries could not be obtained. The rest
+     * of the response is still valid.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.GetClusterSummaryResponse.Unavailable unavailables = 4
+     */
+    unavailables: GetClusterSummaryResponse_Unavailable[];
+}
+/**
+ * Core holds the summaries of the core API resources.
+ *
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core
+ */
+export interface GetClusterSummaryResponse_Core {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.core.v1.GetUserSummaryResponse user = 1
+     */
+    user?: GetUserSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.core.v1.GetSessionSummaryResponse session = 2
+     */
+    session?: GetSessionSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.core.v1.GetDeviceSummaryResponse device = 3
+     */
+    device?: GetDeviceSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.core.v1.GetServiceSummaryResponse service = 4
+     */
+    service?: GetServiceSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.core.v1.GetNamespaceSummaryResponse namespace = 5
+     */
+    namespace?: GetNamespaceSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.core.v1.GetPolicySummaryResponse policy = 6
+     */
+    policy?: GetPolicySummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.core.v1.GetGroupSummaryResponse group = 7
+     */
+    group?: GetGroupSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.core.v1.GetCredentialSummaryResponse credential = 8
+     */
+    credential?: GetCredentialSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.core.v1.GetIdentityProviderSummaryResponse identityProvider = 9
+     */
+    identityProvider?: GetIdentityProviderSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.core.v1.GetAuthenticatorSummaryResponse authenticator = 10
+     */
+    authenticator?: GetAuthenticatorSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.core.v1.GetSecretSummaryResponse secret = 11
+     */
+    secret?: GetSecretSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.core.v1.GetGatewaySummaryResponse gateway = 12
+     */
+    gateway?: GetGatewaySummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.core.v1.GetRegionSummaryResponse region = 13
+     */
+    region?: GetRegionSummaryResponse;
+}
+/**
+ * Access holds the summaries of the access API resources.
+ *
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access
+ */
+export interface GetClusterSummaryResponse_Access {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetPolicySummaryResponse policy = 1
+     */
+    policy?: GetPolicySummaryResponse$;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetCatalogSummaryResponse catalog = 2
+     */
+    catalog?: GetCatalogSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetRequestSummaryResponse request = 3
+     */
+    request?: GetRequestSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetReviewSummaryResponse review = 4
+     */
+    review?: GetReviewSummaryResponse;
+}
+/**
+ * Enterprise holds the summaries of the enterprise API resources.
+ *
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise
+ */
+export interface GetClusterSummaryResponse_Enterprise {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetCollectorExporterSummaryResponse collectorExporter = 1
+     */
+    collectorExporter?: GetCollectorExporterSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetSecretSummaryResponse secret = 2
+     */
+    secret?: GetSecretSummaryResponse$;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryResponse secretStore = 3
+     */
+    secretStore?: GetSecretStoreSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetCertificateSummaryResponse certificate = 4
+     */
+    certificate?: GetCertificateSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetCertificateIssuerSummaryResponse certificateIssuer = 5
+     */
+    certificateIssuer?: GetCertificateIssuerSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetDNSProviderSummaryResponse dnsProvider = 6
+     */
+    dnsProvider?: GetDNSProviderSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderSummaryResponse directoryProvider = 7
+     */
+    directoryProvider?: GetDirectoryProviderSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderUserSummaryResponse directoryProviderUser = 8
+     */
+    directoryProviderUser?: GetDirectoryProviderUserSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderGroupSummaryResponse directoryProviderGroup = 9
+     */
+    directoryProviderGroup?: GetDirectoryProviderGroupSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse deviceManager = 10
+     */
+    deviceManager?: GetDeviceManagerSummaryResponse;
+}
+/**
+ * Unavailable is a kind whose summary could not be obtained.
+ *
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetClusterSummaryResponse.Unavailable
+ */
+export interface GetClusterSummaryResponse_Unavailable {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetClusterSummaryRequest.Kind kind = 1
+     */
+    kind: GetClusterSummaryRequest_Kind;
+    /**
+     * Message is the reason why the summary could not be obtained.
+     *
+     * @generated from protobuf field: string message = 2
+     */
+    message: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetClusterHealthRequest
+ */
+export interface GetClusterHealthRequest {
+    /**
+     * From and To bound the window over which the log-derived signals (e.g. the
+     * component errors) are evaluated. The window defaults to the last hour.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp from = 1
+     */
+    from?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp to = 2
+     */
+    to?: Timestamp;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetClusterHealthResponse
+ */
+export interface GetClusterHealthResponse {
+    /**
+     * Status is the aggregated health of the Cluster. It is the worst status of
+     * the subsystems.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetClusterHealthResponse.Status status = 1
+     */
+    status: GetClusterHealthResponse_Status;
+    /**
+     * Subsystems are the per-subsystem healths.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem subsystems = 2
+     */
+    subsystems: GetClusterHealthResponse_Subsystem[];
+    /**
+     * Components are the components that emitted a warning or worse within the
+     * window, ordered by severity.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.GetClusterHealthResponse.Component components = 3
+     */
+    components: GetClusterHealthResponse_Component[];
+    /**
+     * Regions are the Regions of the Cluster.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.GetClusterHealthResponse.Region regions = 4
+     */
+    regions: GetClusterHealthResponse_Region[];
+    /**
+     * From and To are the effective bounds of the evaluated window.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp from = 5
+     */
+    from?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp to = 6
+     */
+    to?: Timestamp;
+}
+/**
+ * Subsystem is the health of a single Cluster subsystem.
+ *
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem
+ */
+export interface GetClusterHealthResponse_Subsystem {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem.Type type = 1
+     */
+    type: GetClusterHealthResponse_Subsystem_Type;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetClusterHealthResponse.Status status = 2
+     */
+    status: GetClusterHealthResponse_Status;
+    /**
+     * Message is a human readable summary of the subsystem's state.
+     *
+     * @generated from protobuf field: string message = 3
+     */
+    message: string;
+    /**
+     * Total is the number of the evaluated items of the subsystem.
+     *
+     * @generated from protobuf field: uint64 total = 4
+     */
+    total: number;
+    /**
+     * Unhealthy is the number of the evaluated items that are not healthy.
+     *
+     * @generated from protobuf field: uint64 unhealthy = 5
+     */
+    unhealthy: number;
+}
+/**
+ * Type is the subsystem that the health belongs to.
+ *
+ * @generated from protobuf enum octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem.Type
+ */
+export enum GetClusterHealthResponse_Subsystem_Type {
+    /**
+     * @generated from protobuf enum value: TYPE_UNSET = 0;
+     */
+    TYPE_UNSET = 0,
+    /**
+     * COMPONENTS is the health of the Cluster components as it is derived
+     * from their ComponentLogs.
+     *
+     * @generated from protobuf enum value: COMPONENTS = 1;
+     */
+    COMPONENTS = 1,
+    /**
+     * AUTHORIZATION is the health of the authorization decisions as it is
+     * derived from the AccessLogs.
+     *
+     * @generated from protobuf enum value: AUTHORIZATION = 2;
+     */
+    AUTHORIZATION = 2,
+    /**
+     * CERTIFICATES is the health of the Certificates and their issuers.
+     *
+     * @generated from protobuf enum value: CERTIFICATES = 3;
+     */
+    CERTIFICATES = 3,
+    /**
+     * DIRECTORY_PROVIDERS is the health of the identity directory
+     * synchronization.
+     *
+     * @generated from protobuf enum value: DIRECTORY_PROVIDERS = 4;
+     */
+    DIRECTORY_PROVIDERS = 4,
+    /**
+     * SECRET_STORES is the health of the external Secret stores.
+     *
+     * @generated from protobuf enum value: SECRET_STORES = 5;
+     */
+    SECRET_STORES = 5,
+    /**
+     * DEVICE_MANAGERS is the health of the external device managers.
+     *
+     * @generated from protobuf enum value: DEVICE_MANAGERS = 6;
+     */
+    DEVICE_MANAGERS = 6,
+    /**
+     * ENROLLMENT is the health of the Sessions, Devices and Authenticators
+     * that are waiting for an approval.
+     *
+     * @generated from protobuf enum value: ENROLLMENT = 7;
+     */
+    ENROLLMENT = 7,
+    /**
+     * ACCESS_REQUESTS is the health of the access request queue.
+     *
+     * @generated from protobuf enum value: ACCESS_REQUESTS = 8;
+     */
+    ACCESS_REQUESTS = 8,
+    /**
+     * DATA_PLANE is the health of the Regions and their Gateways.
+     *
+     * @generated from protobuf enum value: DATA_PLANE = 9;
+     */
+    DATA_PLANE = 9
+}
+/**
+ * Component is the health of a single Cluster component as it is derived
+ * from the ComponentLogs of the window.
+ *
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetClusterHealthResponse.Component
+ */
+export interface GetClusterHealthResponse_Component {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.v1.ComponentSelector component = 1
+     */
+    component?: ComponentSelector;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetClusterHealthResponse.Status status = 2
+     */
+    status: GetClusterHealthResponse_Status;
+    /**
+     * @generated from protobuf field: uint64 totalNumber = 3
+     */
+    totalNumber: number;
+    /**
+     * @generated from protobuf field: uint64 totalWarn = 4
+     */
+    totalWarn: number;
+    /**
+     * @generated from protobuf field: uint64 totalError = 5
+     */
+    totalError: number;
+    /**
+     * @generated from protobuf field: uint64 totalPanic = 6
+     */
+    totalPanic: number;
+    /**
+     * @generated from protobuf field: uint64 totalFatal = 7
+     */
+    totalFatal: number;
+}
+/**
+ * Region is the inventory of a single Region of the Cluster.
+ *
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetClusterHealthResponse.Region
+ */
+export interface GetClusterHealthResponse_Region {
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference regionRef = 1
+     */
+    regionRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetClusterHealthResponse.Status status = 2
+     */
+    status: GetClusterHealthResponse_Status;
+    /**
+     * Version is the Region's version.
+     *
+     * @generated from protobuf field: string version = 3
+     */
+    version: string;
+    /**
+     * TotalGateway is the number of the Gateways of the Region.
+     *
+     * @generated from protobuf field: uint64 totalGateway = 4
+     */
+    totalGateway: number;
+}
+/**
+ * Status is the health of the Cluster or of one of its parts.
+ *
+ * @generated from protobuf enum octelium.api.main.visibility.v1.GetClusterHealthResponse.Status
+ */
+export enum GetClusterHealthResponse_Status {
+    /**
+     * @generated from protobuf enum value: STATUS_UNSET = 0;
+     */
+    STATUS_UNSET = 0,
+    /**
+     * OK means that no problem was detected.
+     *
+     * @generated from protobuf enum value: OK = 1;
+     */
+    OK = 1,
+    /**
+     * DEGRADED means that a problem was detected that does not currently
+     * break the Cluster (e.g. certificates that are about to expire).
+     *
+     * @generated from protobuf enum value: DEGRADED = 2;
+     */
+    DEGRADED = 2,
+    /**
+     * CRITICAL means that a problem was detected that breaks, or is about to
+     * break, the Cluster (e.g. an identity directory that cannot synchronize).
+     *
+     * @generated from protobuf enum value: CRITICAL = 3;
+     */
+    CRITICAL = 3,
+    /**
+     * UNKNOWN means that the health could not be evaluated.
+     *
+     * @generated from protobuf enum value: UNKNOWN = 4;
+     */
+    UNKNOWN = 4
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class ListAccessLogRequest$Type extends MessageType<ListAccessLogRequest> {
@@ -2267,12 +3832,18 @@ class GetAccessLogSummaryRequest$Type extends MessageType<GetAccessLogSummaryReq
             { no: 11, name: "policyRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
-            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] }
+            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] },
+            { no: 13, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 15, name: "compareFrom", kind: "message", T: () => Timestamp },
+            { no: 16, name: "compareTo", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<GetAccessLogSummaryRequest>): GetAccessLogSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.status = 0;
+        message.isPublic = false;
+        message.isAnonymous = false;
         if (value !== undefined)
             reflectionMergePartial<GetAccessLogSummaryRequest>(this, message, value);
         return message;
@@ -2311,6 +3882,18 @@ class GetAccessLogSummaryRequest$Type extends MessageType<GetAccessLogSummaryReq
                     break;
                 case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Status status */ 12:
                     message.status = reader.int32();
+                    break;
+                case /* bool isPublic */ 13:
+                    message.isPublic = reader.bool();
+                    break;
+                case /* bool isAnonymous */ 14:
+                    message.isAnonymous = reader.bool();
+                    break;
+                case /* google.protobuf.Timestamp compareFrom */ 15:
+                    message.compareFrom = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.compareFrom);
+                    break;
+                case /* google.protobuf.Timestamp compareTo */ 16:
+                    message.compareTo = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.compareTo);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2354,6 +3937,18 @@ class GetAccessLogSummaryRequest$Type extends MessageType<GetAccessLogSummaryReq
         /* octelium.api.main.core.v1.AccessLog.Entry.Common.Status status = 12; */
         if (message.status !== 0)
             writer.tag(12, WireType.Varint).int32(message.status);
+        /* bool isPublic = 13; */
+        if (message.isPublic !== false)
+            writer.tag(13, WireType.Varint).bool(message.isPublic);
+        /* bool isAnonymous = 14; */
+        if (message.isAnonymous !== false)
+            writer.tag(14, WireType.Varint).bool(message.isAnonymous);
+        /* google.protobuf.Timestamp compareFrom = 15; */
+        if (message.compareFrom)
+            Timestamp.internalBinaryWrite(message.compareFrom, writer.tag(15, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp compareTo = 16; */
+        if (message.compareTo)
+            Timestamp.internalBinaryWrite(message.compareTo, writer.tag(16, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2376,7 +3971,14 @@ class GetAccessLogSummaryResponse$Type extends MessageType<GetAccessLogSummaryRe
             { no: 6, name: "totalDevice", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 7, name: "totalService", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 8, name: "totalNamespace", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 9, name: "totalMatchPolicy", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 9, name: "totalMatchPolicy", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "totalPublic", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 11, name: "totalAnonymous", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 12, name: "totalBytesSent", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 13, name: "totalBytesReceived", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 14, name: "latency", kind: "message", T: () => GetAccessLogSummaryResponse_Latency },
+            { no: 15, name: "totalByMode", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ } },
+            { no: 16, name: "previous", kind: "message", T: () => GetAccessLogSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetAccessLogSummaryResponse>): GetAccessLogSummaryResponse {
@@ -2390,6 +3992,11 @@ class GetAccessLogSummaryResponse$Type extends MessageType<GetAccessLogSummaryRe
         message.totalService = 0;
         message.totalNamespace = 0;
         message.totalMatchPolicy = 0;
+        message.totalPublic = 0;
+        message.totalAnonymous = 0;
+        message.totalBytesSent = 0;
+        message.totalBytesReceived = 0;
+        message.totalByMode = {};
         if (value !== undefined)
             reflectionMergePartial<GetAccessLogSummaryResponse>(this, message, value);
         return message;
@@ -2423,8 +4030,29 @@ class GetAccessLogSummaryResponse$Type extends MessageType<GetAccessLogSummaryRe
                 case /* uint64 totalNamespace */ 8:
                     message.totalNamespace = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalMatchPolicy */ 9:
-                    message.totalMatchPolicy = reader.uint32();
+                case /* uint64 totalMatchPolicy */ 9:
+                    message.totalMatchPolicy = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalPublic */ 10:
+                    message.totalPublic = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalAnonymous */ 11:
+                    message.totalAnonymous = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalBytesSent */ 12:
+                    message.totalBytesSent = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalBytesReceived */ 13:
+                    message.totalBytesReceived = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.Latency latency */ 14:
+                    message.latency = GetAccessLogSummaryResponse_Latency.internalBinaryRead(reader, reader.uint32(), options, message.latency);
+                    break;
+                case /* map<string, uint64> totalByMode */ 15:
+                    this.binaryReadMap15(message.totalByMode, reader, options);
+                    break;
+                case /* octelium.api.main.visibility.v1.GetAccessLogSummaryResponse previous */ 16:
+                    message.previous = GetAccessLogSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2436,6 +4064,22 @@ class GetAccessLogSummaryResponse$Type extends MessageType<GetAccessLogSummaryRe
             }
         }
         return message;
+    }
+    private binaryReadMap15(map: GetAccessLogSummaryResponse["totalByMode"], reader: IBinaryReader, options: BinaryReadOptions): void {
+        let len = reader.uint32(), end = reader.pos + len, key: keyof GetAccessLogSummaryResponse["totalByMode"] | undefined, val: GetAccessLogSummaryResponse["totalByMode"][any] | undefined;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case 1:
+                    key = reader.string();
+                    break;
+                case 2:
+                    val = reader.uint64().toNumber();
+                    break;
+                default: throw new globalThis.Error("unknown map entry field for octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.totalByMode");
+            }
+        }
+        map[key ?? ""] = val ?? 0;
     }
     internalBinaryWrite(message: GetAccessLogSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* uint64 totalNumber = 1; */
@@ -2462,9 +4106,30 @@ class GetAccessLogSummaryResponse$Type extends MessageType<GetAccessLogSummaryRe
         /* uint64 totalNamespace = 8; */
         if (message.totalNamespace !== 0)
             writer.tag(8, WireType.Varint).uint64(message.totalNamespace);
-        /* uint32 totalMatchPolicy = 9; */
+        /* uint64 totalMatchPolicy = 9; */
         if (message.totalMatchPolicy !== 0)
-            writer.tag(9, WireType.Varint).uint32(message.totalMatchPolicy);
+            writer.tag(9, WireType.Varint).uint64(message.totalMatchPolicy);
+        /* uint64 totalPublic = 10; */
+        if (message.totalPublic !== 0)
+            writer.tag(10, WireType.Varint).uint64(message.totalPublic);
+        /* uint64 totalAnonymous = 11; */
+        if (message.totalAnonymous !== 0)
+            writer.tag(11, WireType.Varint).uint64(message.totalAnonymous);
+        /* uint64 totalBytesSent = 12; */
+        if (message.totalBytesSent !== 0)
+            writer.tag(12, WireType.Varint).uint64(message.totalBytesSent);
+        /* uint64 totalBytesReceived = 13; */
+        if (message.totalBytesReceived !== 0)
+            writer.tag(13, WireType.Varint).uint64(message.totalBytesReceived);
+        /* octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.Latency latency = 14; */
+        if (message.latency)
+            GetAccessLogSummaryResponse_Latency.internalBinaryWrite(message.latency, writer.tag(14, WireType.LengthDelimited).fork(), options).join();
+        /* map<string, uint64> totalByMode = 15; */
+        for (let k of globalThis.Object.keys(message.totalByMode))
+            writer.tag(15, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.Varint).uint64(message.totalByMode[k]).join();
+        /* octelium.api.main.visibility.v1.GetAccessLogSummaryResponse previous = 16; */
+        if (message.previous)
+            GetAccessLogSummaryResponse.internalBinaryWrite(message.previous, writer.tag(16, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2475,6 +4140,93 @@ class GetAccessLogSummaryResponse$Type extends MessageType<GetAccessLogSummaryRe
  * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetAccessLogSummaryResponse
  */
 export const GetAccessLogSummaryResponse = new GetAccessLogSummaryResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetAccessLogSummaryResponse_Latency$Type extends MessageType<GetAccessLogSummaryResponse_Latency> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.Latency", [
+            { no: 1, name: "count", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "p50Milliseconds", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ },
+            { no: 3, name: "p95Milliseconds", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ },
+            { no: 4, name: "p99Milliseconds", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ },
+            { no: 5, name: "maxMilliseconds", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ },
+            { no: 6, name: "avgMilliseconds", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ }
+        ]);
+    }
+    create(value?: PartialMessage<GetAccessLogSummaryResponse_Latency>): GetAccessLogSummaryResponse_Latency {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.count = 0;
+        message.p50Milliseconds = 0;
+        message.p95Milliseconds = 0;
+        message.p99Milliseconds = 0;
+        message.maxMilliseconds = 0;
+        message.avgMilliseconds = 0;
+        if (value !== undefined)
+            reflectionMergePartial<GetAccessLogSummaryResponse_Latency>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetAccessLogSummaryResponse_Latency): GetAccessLogSummaryResponse_Latency {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint64 count */ 1:
+                    message.count = reader.uint64().toNumber();
+                    break;
+                case /* double p50Milliseconds */ 2:
+                    message.p50Milliseconds = reader.double();
+                    break;
+                case /* double p95Milliseconds */ 3:
+                    message.p95Milliseconds = reader.double();
+                    break;
+                case /* double p99Milliseconds */ 4:
+                    message.p99Milliseconds = reader.double();
+                    break;
+                case /* double maxMilliseconds */ 5:
+                    message.maxMilliseconds = reader.double();
+                    break;
+                case /* double avgMilliseconds */ 6:
+                    message.avgMilliseconds = reader.double();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetAccessLogSummaryResponse_Latency, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint64 count = 1; */
+        if (message.count !== 0)
+            writer.tag(1, WireType.Varint).uint64(message.count);
+        /* double p50Milliseconds = 2; */
+        if (message.p50Milliseconds !== 0)
+            writer.tag(2, WireType.Bit64).double(message.p50Milliseconds);
+        /* double p95Milliseconds = 3; */
+        if (message.p95Milliseconds !== 0)
+            writer.tag(3, WireType.Bit64).double(message.p95Milliseconds);
+        /* double p99Milliseconds = 4; */
+        if (message.p99Milliseconds !== 0)
+            writer.tag(4, WireType.Bit64).double(message.p99Milliseconds);
+        /* double maxMilliseconds = 5; */
+        if (message.maxMilliseconds !== 0)
+            writer.tag(5, WireType.Bit64).double(message.maxMilliseconds);
+        /* double avgMilliseconds = 6; */
+        if (message.avgMilliseconds !== 0)
+            writer.tag(6, WireType.Bit64).double(message.avgMilliseconds);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.Latency
+ */
+export const GetAccessLogSummaryResponse_Latency = new GetAccessLogSummaryResponse_Latency$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class ListAuthenticationLogRequest$Type extends MessageType<ListAuthenticationLogRequest> {
     constructor() {
@@ -2642,7 +4394,9 @@ class GetAuthenticationLogSummaryRequest$Type extends MessageType<GetAuthenticat
             { no: 10, name: "credentialRef", kind: "message", T: () => ObjectReference },
             { no: 11, name: "authenticatorRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
-            { no: 5, name: "to", kind: "message", T: () => Timestamp }
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 12, name: "compareFrom", kind: "message", T: () => Timestamp },
+            { no: 13, name: "compareTo", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<GetAuthenticationLogSummaryRequest>): GetAuthenticationLogSummaryRequest {
@@ -2680,6 +4434,12 @@ class GetAuthenticationLogSummaryRequest$Type extends MessageType<GetAuthenticat
                 case /* google.protobuf.Timestamp to */ 5:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
                     break;
+                case /* google.protobuf.Timestamp compareFrom */ 12:
+                    message.compareFrom = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.compareFrom);
+                    break;
+                case /* google.protobuf.Timestamp compareTo */ 13:
+                    message.compareTo = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.compareTo);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -2716,6 +4476,12 @@ class GetAuthenticationLogSummaryRequest$Type extends MessageType<GetAuthenticat
         /* octelium.api.main.meta.v1.ObjectReference authenticatorRef = 11; */
         if (message.authenticatorRef)
             ObjectReference.internalBinaryWrite(message.authenticatorRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp compareFrom = 12; */
+        if (message.compareFrom)
+            Timestamp.internalBinaryWrite(message.compareFrom, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp compareTo = 13; */
+        if (message.compareTo)
+            Timestamp.internalBinaryWrite(message.compareTo, writer.tag(13, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2745,7 +4511,8 @@ class GetAuthenticationLogSummaryResponse$Type extends MessageType<GetAuthentica
             { no: 13, name: "totalAAL1", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 14, name: "totalAAL2", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 15, name: "totalAAL3", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 16, name: "totalReauthentication", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+            { no: 16, name: "totalReauthentication", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 17, name: "previous", kind: "message", T: () => GetAuthenticationLogSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetAuthenticationLogSummaryResponse>): GetAuthenticationLogSummaryResponse {
@@ -2823,6 +4590,9 @@ class GetAuthenticationLogSummaryResponse$Type extends MessageType<GetAuthentica
                 case /* uint64 totalReauthentication */ 16:
                     message.totalReauthentication = reader.uint64().toNumber();
                     break;
+                case /* octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse previous */ 17:
+                    message.previous = GetAuthenticationLogSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -2883,6 +4653,9 @@ class GetAuthenticationLogSummaryResponse$Type extends MessageType<GetAuthentica
         /* uint64 totalReauthentication = 16; */
         if (message.totalReauthentication !== 0)
             writer.tag(16, WireType.Varint).uint64(message.totalReauthentication);
+        /* octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse previous = 17; */
+        if (message.previous)
+            GetAuthenticationLogSummaryResponse.internalBinaryWrite(message.previous, writer.tag(17, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3722,7 +5495,8 @@ class ListComponentLogRequest$Type extends MessageType<ListComponentLogRequest> 
             { no: 1, name: "common", kind: "message", T: () => CommonListOptions },
             { no: 2, name: "level", kind: "enum", T: () => ["octelium.api.main.core.v1.ComponentLog.Entry.Level", ComponentLog_Entry_Level] },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
-            { no: 5, name: "to", kind: "message", T: () => Timestamp }
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 6, name: "component", kind: "message", T: () => ComponentSelector }
         ]);
     }
     create(value?: PartialMessage<ListComponentLogRequest>): ListComponentLogRequest {
@@ -3749,6 +5523,9 @@ class ListComponentLogRequest$Type extends MessageType<ListComponentLogRequest> 
                 case /* google.protobuf.Timestamp to */ 5:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
                     break;
+                case /* octelium.api.main.visibility.v1.ComponentSelector component */ 6:
+                    message.component = ComponentSelector.internalBinaryRead(reader, reader.uint32(), options, message.component);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -3773,6 +5550,9 @@ class ListComponentLogRequest$Type extends MessageType<ListComponentLogRequest> 
         /* google.protobuf.Timestamp to = 5; */
         if (message.to)
             Timestamp.internalBinaryWrite(message.to, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.v1.ComponentSelector component = 6; */
+        if (message.component)
+            ComponentSelector.internalBinaryWrite(message.component, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3898,12 +5678,20 @@ class GetAccessLogDataPointRequest$Type extends MessageType<GetAccessLogDataPoin
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
             { no: 13, name: "interval", kind: "message", T: () => Duration },
-            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] }
+            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] },
+            { no: 14, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 15, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 16, name: "groupBy", kind: "enum", T: () => ["octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.GroupBy", GetAccessLogDataPointRequest_GroupBy] },
+            { no: 17, name: "limitSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<GetAccessLogDataPointRequest>): GetAccessLogDataPointRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.status = 0;
+        message.isPublic = false;
+        message.isAnonymous = false;
+        message.groupBy = 0;
+        message.limitSeries = 0;
         if (value !== undefined)
             reflectionMergePartial<GetAccessLogDataPointRequest>(this, message, value);
         return message;
@@ -3945,6 +5733,18 @@ class GetAccessLogDataPointRequest$Type extends MessageType<GetAccessLogDataPoin
                     break;
                 case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Status status */ 12:
                     message.status = reader.int32();
+                    break;
+                case /* bool isPublic */ 14:
+                    message.isPublic = reader.bool();
+                    break;
+                case /* bool isAnonymous */ 15:
+                    message.isAnonymous = reader.bool();
+                    break;
+                case /* octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.GroupBy groupBy */ 16:
+                    message.groupBy = reader.int32();
+                    break;
+                case /* uint32 limitSeries */ 17:
+                    message.limitSeries = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -3991,6 +5791,18 @@ class GetAccessLogDataPointRequest$Type extends MessageType<GetAccessLogDataPoin
         /* octelium.api.main.meta.v1.Duration interval = 13; */
         if (message.interval)
             Duration.internalBinaryWrite(message.interval, writer.tag(13, WireType.LengthDelimited).fork(), options).join();
+        /* bool isPublic = 14; */
+        if (message.isPublic !== false)
+            writer.tag(14, WireType.Varint).bool(message.isPublic);
+        /* bool isAnonymous = 15; */
+        if (message.isAnonymous !== false)
+            writer.tag(15, WireType.Varint).bool(message.isAnonymous);
+        /* octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.GroupBy groupBy = 16; */
+        if (message.groupBy !== 0)
+            writer.tag(16, WireType.Varint).int32(message.groupBy);
+        /* uint32 limitSeries = 17; */
+        if (message.limitSeries !== 0)
+            writer.tag(17, WireType.Varint).uint32(message.limitSeries);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4002,15 +5814,142 @@ class GetAccessLogDataPointRequest$Type extends MessageType<GetAccessLogDataPoin
  */
 export const GetAccessLogDataPointRequest = new GetAccessLogDataPointRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class DataPointSeries$Type extends MessageType<DataPointSeries> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.DataPointSeries", [
+            { no: 1, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "displayName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "total", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "datapoints", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => DataPointSeries_DataPoint }
+        ]);
+    }
+    create(value?: PartialMessage<DataPointSeries>): DataPointSeries {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.key = "";
+        message.displayName = "";
+        message.total = 0;
+        message.datapoints = [];
+        if (value !== undefined)
+            reflectionMergePartial<DataPointSeries>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DataPointSeries): DataPointSeries {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string key */ 1:
+                    message.key = reader.string();
+                    break;
+                case /* string displayName */ 2:
+                    message.displayName = reader.string();
+                    break;
+                case /* int64 total */ 3:
+                    message.total = reader.int64().toNumber();
+                    break;
+                case /* repeated octelium.api.main.visibility.v1.DataPointSeries.DataPoint datapoints */ 4:
+                    message.datapoints.push(DataPointSeries_DataPoint.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DataPointSeries, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string key = 1; */
+        if (message.key !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.key);
+        /* string displayName = 2; */
+        if (message.displayName !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.displayName);
+        /* int64 total = 3; */
+        if (message.total !== 0)
+            writer.tag(3, WireType.Varint).int64(message.total);
+        /* repeated octelium.api.main.visibility.v1.DataPointSeries.DataPoint datapoints = 4; */
+        for (let i = 0; i < message.datapoints.length; i++)
+            DataPointSeries_DataPoint.internalBinaryWrite(message.datapoints[i], writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.DataPointSeries
+ */
+export const DataPointSeries = new DataPointSeries$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DataPointSeries_DataPoint$Type extends MessageType<DataPointSeries_DataPoint> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.DataPointSeries.DataPoint", [
+            { no: 1, name: "count", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "timestamp", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<DataPointSeries_DataPoint>): DataPointSeries_DataPoint {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.count = 0;
+        if (value !== undefined)
+            reflectionMergePartial<DataPointSeries_DataPoint>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DataPointSeries_DataPoint): DataPointSeries_DataPoint {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* int64 count */ 1:
+                    message.count = reader.int64().toNumber();
+                    break;
+                case /* google.protobuf.Timestamp timestamp */ 2:
+                    message.timestamp = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.timestamp);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DataPointSeries_DataPoint, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* int64 count = 1; */
+        if (message.count !== 0)
+            writer.tag(1, WireType.Varint).int64(message.count);
+        /* google.protobuf.Timestamp timestamp = 2; */
+        if (message.timestamp)
+            Timestamp.internalBinaryWrite(message.timestamp, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.DataPointSeries.DataPoint
+ */
+export const DataPointSeries_DataPoint = new DataPointSeries_DataPoint$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class GetAccessLogDataPointResponse$Type extends MessageType<GetAccessLogDataPointResponse> {
     constructor() {
         super("octelium.api.main.visibility.v1.GetAccessLogDataPointResponse", [
-            { no: 1, name: "datapoints", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetAccessLogDataPointResponse_DataPoint }
+            { no: 1, name: "datapoints", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetAccessLogDataPointResponse_DataPoint },
+            { no: 2, name: "series", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => DataPointSeries }
         ]);
     }
     create(value?: PartialMessage<GetAccessLogDataPointResponse>): GetAccessLogDataPointResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.datapoints = [];
+        message.series = [];
         if (value !== undefined)
             reflectionMergePartial<GetAccessLogDataPointResponse>(this, message, value);
         return message;
@@ -4022,6 +5961,9 @@ class GetAccessLogDataPointResponse$Type extends MessageType<GetAccessLogDataPoi
             switch (fieldNo) {
                 case /* repeated octelium.api.main.visibility.v1.GetAccessLogDataPointResponse.DataPoint datapoints */ 1:
                     message.datapoints.push(GetAccessLogDataPointResponse_DataPoint.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated octelium.api.main.visibility.v1.DataPointSeries series */ 2:
+                    message.series.push(DataPointSeries.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4038,6 +5980,9 @@ class GetAccessLogDataPointResponse$Type extends MessageType<GetAccessLogDataPoi
         /* repeated octelium.api.main.visibility.v1.GetAccessLogDataPointResponse.DataPoint datapoints = 1; */
         for (let i = 0; i < message.datapoints.length; i++)
             GetAccessLogDataPointResponse_DataPoint.internalBinaryWrite(message.datapoints[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.visibility.v1.DataPointSeries series = 2; */
+        for (let i = 0; i < message.series.length; i++)
+            DataPointSeries.internalBinaryWrite(message.series[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4114,11 +6059,15 @@ class GetAuthenticationLogDataPointRequest$Type extends MessageType<GetAuthentic
             { no: 11, name: "authenticatorRef", kind: "message", T: () => ObjectReference },
             { no: 12, name: "interval", kind: "message", T: () => Duration },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
-            { no: 5, name: "to", kind: "message", T: () => Timestamp }
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 13, name: "groupBy", kind: "enum", T: () => ["octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.GroupBy", GetAuthenticationLogDataPointRequest_GroupBy] },
+            { no: 14, name: "limitSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<GetAuthenticationLogDataPointRequest>): GetAuthenticationLogDataPointRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.groupBy = 0;
+        message.limitSeries = 0;
         if (value !== undefined)
             reflectionMergePartial<GetAuthenticationLogDataPointRequest>(this, message, value);
         return message;
@@ -4154,6 +6103,12 @@ class GetAuthenticationLogDataPointRequest$Type extends MessageType<GetAuthentic
                     break;
                 case /* google.protobuf.Timestamp to */ 5:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.GroupBy groupBy */ 13:
+                    message.groupBy = reader.int32();
+                    break;
+                case /* uint32 limitSeries */ 14:
+                    message.limitSeries = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4194,6 +6149,12 @@ class GetAuthenticationLogDataPointRequest$Type extends MessageType<GetAuthentic
         /* octelium.api.main.meta.v1.Duration interval = 12; */
         if (message.interval)
             Duration.internalBinaryWrite(message.interval, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.GroupBy groupBy = 13; */
+        if (message.groupBy !== 0)
+            writer.tag(13, WireType.Varint).int32(message.groupBy);
+        /* uint32 limitSeries = 14; */
+        if (message.limitSeries !== 0)
+            writer.tag(14, WireType.Varint).uint32(message.limitSeries);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4208,12 +6169,14 @@ export const GetAuthenticationLogDataPointRequest = new GetAuthenticationLogData
 class GetAuthenticationLogDataPointResponse$Type extends MessageType<GetAuthenticationLogDataPointResponse> {
     constructor() {
         super("octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse", [
-            { no: 1, name: "datapoints", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetAuthenticationLogDataPointResponse_DataPoint }
+            { no: 1, name: "datapoints", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetAuthenticationLogDataPointResponse_DataPoint },
+            { no: 2, name: "series", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => DataPointSeries }
         ]);
     }
     create(value?: PartialMessage<GetAuthenticationLogDataPointResponse>): GetAuthenticationLogDataPointResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.datapoints = [];
+        message.series = [];
         if (value !== undefined)
             reflectionMergePartial<GetAuthenticationLogDataPointResponse>(this, message, value);
         return message;
@@ -4225,6 +6188,9 @@ class GetAuthenticationLogDataPointResponse$Type extends MessageType<GetAuthenti
             switch (fieldNo) {
                 case /* repeated octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse.DataPoint datapoints */ 1:
                     message.datapoints.push(GetAuthenticationLogDataPointResponse_DataPoint.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated octelium.api.main.visibility.v1.DataPointSeries series */ 2:
+                    message.series.push(DataPointSeries.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4241,6 +6207,9 @@ class GetAuthenticationLogDataPointResponse$Type extends MessageType<GetAuthenti
         /* repeated octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse.DataPoint datapoints = 1; */
         for (let i = 0; i < message.datapoints.length; i++)
             GetAuthenticationLogDataPointResponse_DataPoint.internalBinaryWrite(message.datapoints[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.visibility.v1.DataPointSeries series = 2; */
+        for (let i = 0; i < message.series.length; i++)
+            DataPointSeries.internalBinaryWrite(message.series[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4315,12 +6284,18 @@ class ListAccessLogTopUserRequest$Type extends MessageType<ListAccessLogTopUserR
             { no: 11, name: "policyRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
-            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] }
+            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] },
+            { no: 13, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<ListAccessLogTopUserRequest>): ListAccessLogTopUserRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.status = 0;
+        message.isPublic = false;
+        message.isAnonymous = false;
+        message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopUserRequest>(this, message, value);
         return message;
@@ -4350,6 +6325,15 @@ class ListAccessLogTopUserRequest$Type extends MessageType<ListAccessLogTopUserR
                     break;
                 case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Status status */ 12:
                     message.status = reader.int32();
+                    break;
+                case /* bool isPublic */ 13:
+                    message.isPublic = reader.bool();
+                    break;
+                case /* bool isAnonymous */ 14:
+                    message.isAnonymous = reader.bool();
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4384,6 +6368,15 @@ class ListAccessLogTopUserRequest$Type extends MessageType<ListAccessLogTopUserR
         /* octelium.api.main.core.v1.AccessLog.Entry.Common.Status status = 12; */
         if (message.status !== 0)
             writer.tag(12, WireType.Varint).int32(message.status);
+        /* bool isPublic = 13; */
+        if (message.isPublic !== false)
+            writer.tag(13, WireType.Varint).bool(message.isPublic);
+        /* bool isAnonymous = 14; */
+        if (message.isAnonymous !== false)
+            writer.tag(14, WireType.Varint).bool(message.isAnonymous);
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4398,12 +6391,16 @@ export const ListAccessLogTopUserRequest = new ListAccessLogTopUserRequest$Type(
 class ListAccessLogTopUserResponse$Type extends MessageType<ListAccessLogTopUserResponse> {
     constructor() {
         super("octelium.api.main.visibility.v1.ListAccessLogTopUserResponse", [
-            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAccessLogTopUserResponse_Item }
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAccessLogTopUserResponse_Item },
+            { no: 100, name: "totalCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 101, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<ListAccessLogTopUserResponse>): ListAccessLogTopUserResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.items = [];
+        message.totalCount = 0;
+        message.totalOther = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopUserResponse>(this, message, value);
         return message;
@@ -4415,6 +6412,12 @@ class ListAccessLogTopUserResponse$Type extends MessageType<ListAccessLogTopUser
             switch (fieldNo) {
                 case /* repeated octelium.api.main.visibility.v1.ListAccessLogTopUserResponse.Item items */ 1:
                     message.items.push(ListAccessLogTopUserResponse_Item.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 totalCount */ 100:
+                    message.totalCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 101:
+                    message.totalOther = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4431,6 +6434,12 @@ class ListAccessLogTopUserResponse$Type extends MessageType<ListAccessLogTopUser
         /* repeated octelium.api.main.visibility.v1.ListAccessLogTopUserResponse.Item items = 1; */
         for (let i = 0; i < message.items.length; i++)
             ListAccessLogTopUserResponse_Item.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCount = 100; */
+        if (message.totalCount !== 0)
+            writer.tag(100, WireType.Varint).uint64(message.totalCount);
+        /* uint64 totalOther = 101; */
+        if (message.totalOther !== 0)
+            writer.tag(101, WireType.Varint).uint64(message.totalOther);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4507,12 +6516,18 @@ class ListAccessLogTopSessionRequest$Type extends MessageType<ListAccessLogTopSe
             { no: 11, name: "policyRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
-            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] }
+            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] },
+            { no: 13, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<ListAccessLogTopSessionRequest>): ListAccessLogTopSessionRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.status = 0;
+        message.isPublic = false;
+        message.isAnonymous = false;
+        message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopSessionRequest>(this, message, value);
         return message;
@@ -4548,6 +6563,15 @@ class ListAccessLogTopSessionRequest$Type extends MessageType<ListAccessLogTopSe
                     break;
                 case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Status status */ 12:
                     message.status = reader.int32();
+                    break;
+                case /* bool isPublic */ 13:
+                    message.isPublic = reader.bool();
+                    break;
+                case /* bool isAnonymous */ 14:
+                    message.isAnonymous = reader.bool();
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4588,6 +6612,15 @@ class ListAccessLogTopSessionRequest$Type extends MessageType<ListAccessLogTopSe
         /* octelium.api.main.core.v1.AccessLog.Entry.Common.Status status = 12; */
         if (message.status !== 0)
             writer.tag(12, WireType.Varint).int32(message.status);
+        /* bool isPublic = 13; */
+        if (message.isPublic !== false)
+            writer.tag(13, WireType.Varint).bool(message.isPublic);
+        /* bool isAnonymous = 14; */
+        if (message.isAnonymous !== false)
+            writer.tag(14, WireType.Varint).bool(message.isAnonymous);
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4602,12 +6635,16 @@ export const ListAccessLogTopSessionRequest = new ListAccessLogTopSessionRequest
 class ListAccessLogTopSessionResponse$Type extends MessageType<ListAccessLogTopSessionResponse> {
     constructor() {
         super("octelium.api.main.visibility.v1.ListAccessLogTopSessionResponse", [
-            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAccessLogTopSessionResponse_Item }
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAccessLogTopSessionResponse_Item },
+            { no: 100, name: "totalCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 101, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<ListAccessLogTopSessionResponse>): ListAccessLogTopSessionResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.items = [];
+        message.totalCount = 0;
+        message.totalOther = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopSessionResponse>(this, message, value);
         return message;
@@ -4619,6 +6656,12 @@ class ListAccessLogTopSessionResponse$Type extends MessageType<ListAccessLogTopS
             switch (fieldNo) {
                 case /* repeated octelium.api.main.visibility.v1.ListAccessLogTopSessionResponse.Item items */ 1:
                     message.items.push(ListAccessLogTopSessionResponse_Item.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 totalCount */ 100:
+                    message.totalCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 101:
+                    message.totalOther = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4635,6 +6678,12 @@ class ListAccessLogTopSessionResponse$Type extends MessageType<ListAccessLogTopS
         /* repeated octelium.api.main.visibility.v1.ListAccessLogTopSessionResponse.Item items = 1; */
         for (let i = 0; i < message.items.length; i++)
             ListAccessLogTopSessionResponse_Item.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCount = 100; */
+        if (message.totalCount !== 0)
+            writer.tag(100, WireType.Varint).uint64(message.totalCount);
+        /* uint64 totalOther = 101; */
+        if (message.totalOther !== 0)
+            writer.tag(101, WireType.Varint).uint64(message.totalOther);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4710,12 +6759,18 @@ class ListAccessLogTopServiceRequest$Type extends MessageType<ListAccessLogTopSe
             { no: 11, name: "policyRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
-            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] }
+            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] },
+            { no: 13, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<ListAccessLogTopServiceRequest>): ListAccessLogTopServiceRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.status = 0;
+        message.isPublic = false;
+        message.isAnonymous = false;
+        message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopServiceRequest>(this, message, value);
         return message;
@@ -4748,6 +6803,15 @@ class ListAccessLogTopServiceRequest$Type extends MessageType<ListAccessLogTopSe
                     break;
                 case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Status status */ 12:
                     message.status = reader.int32();
+                    break;
+                case /* bool isPublic */ 13:
+                    message.isPublic = reader.bool();
+                    break;
+                case /* bool isAnonymous */ 14:
+                    message.isAnonymous = reader.bool();
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4785,6 +6849,15 @@ class ListAccessLogTopServiceRequest$Type extends MessageType<ListAccessLogTopSe
         /* octelium.api.main.core.v1.AccessLog.Entry.Common.Status status = 12; */
         if (message.status !== 0)
             writer.tag(12, WireType.Varint).int32(message.status);
+        /* bool isPublic = 13; */
+        if (message.isPublic !== false)
+            writer.tag(13, WireType.Varint).bool(message.isPublic);
+        /* bool isAnonymous = 14; */
+        if (message.isAnonymous !== false)
+            writer.tag(14, WireType.Varint).bool(message.isAnonymous);
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4799,12 +6872,16 @@ export const ListAccessLogTopServiceRequest = new ListAccessLogTopServiceRequest
 class ListAccessLogTopServiceResponse$Type extends MessageType<ListAccessLogTopServiceResponse> {
     constructor() {
         super("octelium.api.main.visibility.v1.ListAccessLogTopServiceResponse", [
-            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAccessLogTopServiceResponse_Item }
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAccessLogTopServiceResponse_Item },
+            { no: 100, name: "totalCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 101, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<ListAccessLogTopServiceResponse>): ListAccessLogTopServiceResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.items = [];
+        message.totalCount = 0;
+        message.totalOther = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopServiceResponse>(this, message, value);
         return message;
@@ -4816,6 +6893,12 @@ class ListAccessLogTopServiceResponse$Type extends MessageType<ListAccessLogTopS
             switch (fieldNo) {
                 case /* repeated octelium.api.main.visibility.v1.ListAccessLogTopServiceResponse.Item items */ 1:
                     message.items.push(ListAccessLogTopServiceResponse_Item.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 totalCount */ 100:
+                    message.totalCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 101:
+                    message.totalOther = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4832,6 +6915,12 @@ class ListAccessLogTopServiceResponse$Type extends MessageType<ListAccessLogTopS
         /* repeated octelium.api.main.visibility.v1.ListAccessLogTopServiceResponse.Item items = 1; */
         for (let i = 0; i < message.items.length; i++)
             ListAccessLogTopServiceResponse_Item.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCount = 100; */
+        if (message.totalCount !== 0)
+            writer.tag(100, WireType.Varint).uint64(message.totalCount);
+        /* uint64 totalOther = 101; */
+        if (message.totalOther !== 0)
+            writer.tag(101, WireType.Varint).uint64(message.totalOther);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4908,12 +6997,18 @@ class ListAccessLogTopPolicyRequest$Type extends MessageType<ListAccessLogTopPol
             { no: 10, name: "namespaceRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
-            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] }
+            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] },
+            { no: 13, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<ListAccessLogTopPolicyRequest>): ListAccessLogTopPolicyRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.status = 0;
+        message.isPublic = false;
+        message.isAnonymous = false;
+        message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopPolicyRequest>(this, message, value);
         return message;
@@ -4949,6 +7044,15 @@ class ListAccessLogTopPolicyRequest$Type extends MessageType<ListAccessLogTopPol
                     break;
                 case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Status status */ 12:
                     message.status = reader.int32();
+                    break;
+                case /* bool isPublic */ 13:
+                    message.isPublic = reader.bool();
+                    break;
+                case /* bool isAnonymous */ 14:
+                    message.isAnonymous = reader.bool();
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4989,6 +7093,15 @@ class ListAccessLogTopPolicyRequest$Type extends MessageType<ListAccessLogTopPol
         /* octelium.api.main.core.v1.AccessLog.Entry.Common.Status status = 12; */
         if (message.status !== 0)
             writer.tag(12, WireType.Varint).int32(message.status);
+        /* bool isPublic = 13; */
+        if (message.isPublic !== false)
+            writer.tag(13, WireType.Varint).bool(message.isPublic);
+        /* bool isAnonymous = 14; */
+        if (message.isAnonymous !== false)
+            writer.tag(14, WireType.Varint).bool(message.isAnonymous);
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5003,12 +7116,16 @@ export const ListAccessLogTopPolicyRequest = new ListAccessLogTopPolicyRequest$T
 class ListAccessLogTopPolicyResponse$Type extends MessageType<ListAccessLogTopPolicyResponse> {
     constructor() {
         super("octelium.api.main.visibility.v1.ListAccessLogTopPolicyResponse", [
-            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAccessLogTopPolicyResponse_Item }
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAccessLogTopPolicyResponse_Item },
+            { no: 100, name: "totalCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 101, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<ListAccessLogTopPolicyResponse>): ListAccessLogTopPolicyResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.items = [];
+        message.totalCount = 0;
+        message.totalOther = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopPolicyResponse>(this, message, value);
         return message;
@@ -5020,6 +7137,12 @@ class ListAccessLogTopPolicyResponse$Type extends MessageType<ListAccessLogTopPo
             switch (fieldNo) {
                 case /* repeated octelium.api.main.visibility.v1.ListAccessLogTopPolicyResponse.Item items */ 1:
                     message.items.push(ListAccessLogTopPolicyResponse_Item.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 totalCount */ 100:
+                    message.totalCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 101:
+                    message.totalOther = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5036,6 +7159,12 @@ class ListAccessLogTopPolicyResponse$Type extends MessageType<ListAccessLogTopPo
         /* repeated octelium.api.main.visibility.v1.ListAccessLogTopPolicyResponse.Item items = 1; */
         for (let i = 0; i < message.items.length; i++)
             ListAccessLogTopPolicyResponse_Item.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCount = 100; */
+        if (message.totalCount !== 0)
+            writer.tag(100, WireType.Varint).uint64(message.totalCount);
+        /* uint64 totalOther = 101; */
+        if (message.totalOther !== 0)
+            writer.tag(101, WireType.Varint).uint64(message.totalOther);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5101,6 +7230,257 @@ class ListAccessLogTopPolicyResponse_Item$Type extends MessageType<ListAccessLog
  */
 export const ListAccessLogTopPolicyResponse_Item = new ListAccessLogTopPolicyResponse_Item$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class ListAccessLogTopDenyReasonRequest$Type extends MessageType<ListAccessLogTopDenyReasonRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest", [
+            { no: 1, name: "regionRef", kind: "message", T: () => ObjectReference },
+            { no: 6, name: "sessionRef", kind: "message", T: () => ObjectReference },
+            { no: 7, name: "userRef", kind: "message", T: () => ObjectReference },
+            { no: 8, name: "deviceRef", kind: "message", T: () => ObjectReference },
+            { no: 9, name: "serviceRef", kind: "message", T: () => ObjectReference },
+            { no: 10, name: "namespaceRef", kind: "message", T: () => ObjectReference },
+            { no: 11, name: "policyRef", kind: "message", T: () => ObjectReference },
+            { no: 4, name: "from", kind: "message", T: () => Timestamp },
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 13, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListAccessLogTopDenyReasonRequest>): ListAccessLogTopDenyReasonRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.isPublic = false;
+        message.isAnonymous = false;
+        message.limit = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListAccessLogTopDenyReasonRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListAccessLogTopDenyReasonRequest): ListAccessLogTopDenyReasonRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference regionRef */ 1:
+                    message.regionRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.regionRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference sessionRef */ 6:
+                    message.sessionRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.sessionRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 7:
+                    message.userRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.userRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference deviceRef */ 8:
+                    message.deviceRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.deviceRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference serviceRef */ 9:
+                    message.serviceRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.serviceRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference namespaceRef */ 10:
+                    message.namespaceRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.namespaceRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference policyRef */ 11:
+                    message.policyRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.policyRef);
+                    break;
+                case /* google.protobuf.Timestamp from */ 4:
+                    message.from = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.from);
+                    break;
+                case /* google.protobuf.Timestamp to */ 5:
+                    message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* bool isPublic */ 13:
+                    message.isPublic = reader.bool();
+                    break;
+                case /* bool isAnonymous */ 14:
+                    message.isAnonymous = reader.bool();
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListAccessLogTopDenyReasonRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference regionRef = 1; */
+        if (message.regionRef)
+            ObjectReference.internalBinaryWrite(message.regionRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp from = 4; */
+        if (message.from)
+            Timestamp.internalBinaryWrite(message.from, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp to = 5; */
+        if (message.to)
+            Timestamp.internalBinaryWrite(message.to, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference sessionRef = 6; */
+        if (message.sessionRef)
+            ObjectReference.internalBinaryWrite(message.sessionRef, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 7; */
+        if (message.userRef)
+            ObjectReference.internalBinaryWrite(message.userRef, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference deviceRef = 8; */
+        if (message.deviceRef)
+            ObjectReference.internalBinaryWrite(message.deviceRef, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference serviceRef = 9; */
+        if (message.serviceRef)
+            ObjectReference.internalBinaryWrite(message.serviceRef, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference namespaceRef = 10; */
+        if (message.namespaceRef)
+            ObjectReference.internalBinaryWrite(message.namespaceRef, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference policyRef = 11; */
+        if (message.policyRef)
+            ObjectReference.internalBinaryWrite(message.policyRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* bool isPublic = 13; */
+        if (message.isPublic !== false)
+            writer.tag(13, WireType.Varint).bool(message.isPublic);
+        /* bool isAnonymous = 14; */
+        if (message.isAnonymous !== false)
+            writer.tag(14, WireType.Varint).bool(message.isAnonymous);
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest
+ */
+export const ListAccessLogTopDenyReasonRequest = new ListAccessLogTopDenyReasonRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListAccessLogTopDenyReasonResponse$Type extends MessageType<ListAccessLogTopDenyReasonResponse> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse", [
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAccessLogTopDenyReasonResponse_Item },
+            { no: 100, name: "totalCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 101, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListAccessLogTopDenyReasonResponse>): ListAccessLogTopDenyReasonResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.items = [];
+        message.totalCount = 0;
+        message.totalOther = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListAccessLogTopDenyReasonResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListAccessLogTopDenyReasonResponse): ListAccessLogTopDenyReasonResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse.Item items */ 1:
+                    message.items.push(ListAccessLogTopDenyReasonResponse_Item.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 totalCount */ 100:
+                    message.totalCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 101:
+                    message.totalOther = reader.uint64().toNumber();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListAccessLogTopDenyReasonResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse.Item items = 1; */
+        for (let i = 0; i < message.items.length; i++)
+            ListAccessLogTopDenyReasonResponse_Item.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCount = 100; */
+        if (message.totalCount !== 0)
+            writer.tag(100, WireType.Varint).uint64(message.totalCount);
+        /* uint64 totalOther = 101; */
+        if (message.totalOther !== 0)
+            writer.tag(101, WireType.Varint).uint64(message.totalOther);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse
+ */
+export const ListAccessLogTopDenyReasonResponse = new ListAccessLogTopDenyReasonResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListAccessLogTopDenyReasonResponse_Item$Type extends MessageType<ListAccessLogTopDenyReasonResponse_Item> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse.Item", [
+            { no: 1, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
+            { no: 2, name: "count", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "policyRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<ListAccessLogTopDenyReasonResponse_Item>): ListAccessLogTopDenyReasonResponse_Item {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.reason = 0;
+        message.count = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListAccessLogTopDenyReasonResponse_Item>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListAccessLogTopDenyReasonResponse_Item): ListAccessLogTopDenyReasonResponse_Item {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason */ 1:
+                    message.reason = reader.int32();
+                    break;
+                case /* uint64 count */ 2:
+                    message.count = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference policyRef */ 3:
+                    message.policyRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.policyRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListAccessLogTopDenyReasonResponse_Item, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 1; */
+        if (message.reason !== 0)
+            writer.tag(1, WireType.Varint).int32(message.reason);
+        /* uint64 count = 2; */
+        if (message.count !== 0)
+            writer.tag(2, WireType.Varint).uint64(message.count);
+        /* octelium.api.main.meta.v1.ObjectReference policyRef = 3; */
+        if (message.policyRef)
+            ObjectReference.internalBinaryWrite(message.policyRef, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse.Item
+ */
+export const ListAccessLogTopDenyReasonResponse_Item = new ListAccessLogTopDenyReasonResponse_Item$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class ListAuthenticationLogTopUserRequest$Type extends MessageType<ListAuthenticationLogTopUserRequest> {
     constructor() {
         super("octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest", [
@@ -5108,11 +7488,13 @@ class ListAuthenticationLogTopUserRequest$Type extends MessageType<ListAuthentic
             { no: 10, name: "credentialRef", kind: "message", T: () => ObjectReference },
             { no: 11, name: "authenticatorRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
-            { no: 5, name: "to", kind: "message", T: () => Timestamp }
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<ListAuthenticationLogTopUserRequest>): ListAuthenticationLogTopUserRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuthenticationLogTopUserRequest>(this, message, value);
         return message;
@@ -5136,6 +7518,9 @@ class ListAuthenticationLogTopUserRequest$Type extends MessageType<ListAuthentic
                     break;
                 case /* google.protobuf.Timestamp to */ 5:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5164,6 +7549,9 @@ class ListAuthenticationLogTopUserRequest$Type extends MessageType<ListAuthentic
         /* octelium.api.main.meta.v1.ObjectReference authenticatorRef = 11; */
         if (message.authenticatorRef)
             ObjectReference.internalBinaryWrite(message.authenticatorRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5178,12 +7566,16 @@ export const ListAuthenticationLogTopUserRequest = new ListAuthenticationLogTopU
 class ListAuthenticationLogTopUserResponse$Type extends MessageType<ListAuthenticationLogTopUserResponse> {
     constructor() {
         super("octelium.api.main.visibility.v1.ListAuthenticationLogTopUserResponse", [
-            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAuthenticationLogTopUserResponse_Item }
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAuthenticationLogTopUserResponse_Item },
+            { no: 100, name: "totalCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 101, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<ListAuthenticationLogTopUserResponse>): ListAuthenticationLogTopUserResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.items = [];
+        message.totalCount = 0;
+        message.totalOther = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuthenticationLogTopUserResponse>(this, message, value);
         return message;
@@ -5195,6 +7587,12 @@ class ListAuthenticationLogTopUserResponse$Type extends MessageType<ListAuthenti
             switch (fieldNo) {
                 case /* repeated octelium.api.main.visibility.v1.ListAuthenticationLogTopUserResponse.Item items */ 1:
                     message.items.push(ListAuthenticationLogTopUserResponse_Item.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 totalCount */ 100:
+                    message.totalCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 101:
+                    message.totalOther = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5211,6 +7609,12 @@ class ListAuthenticationLogTopUserResponse$Type extends MessageType<ListAuthenti
         /* repeated octelium.api.main.visibility.v1.ListAuthenticationLogTopUserResponse.Item items = 1; */
         for (let i = 0; i < message.items.length; i++)
             ListAuthenticationLogTopUserResponse_Item.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCount = 100; */
+        if (message.totalCount !== 0)
+            writer.tag(100, WireType.Varint).uint64(message.totalCount);
+        /* uint64 totalOther = 101; */
+        if (message.totalOther !== 0)
+            writer.tag(101, WireType.Varint).uint64(message.totalOther);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5285,11 +7689,13 @@ class ListAuthenticationLogTopCredentialRequest$Type extends MessageType<ListAut
             { no: 9, name: "identityProviderRef", kind: "message", T: () => ObjectReference },
             { no: 11, name: "authenticatorRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
-            { no: 5, name: "to", kind: "message", T: () => Timestamp }
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<ListAuthenticationLogTopCredentialRequest>): ListAuthenticationLogTopCredentialRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuthenticationLogTopCredentialRequest>(this, message, value);
         return message;
@@ -5319,6 +7725,9 @@ class ListAuthenticationLogTopCredentialRequest$Type extends MessageType<ListAut
                     break;
                 case /* google.protobuf.Timestamp to */ 5:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5353,6 +7762,9 @@ class ListAuthenticationLogTopCredentialRequest$Type extends MessageType<ListAut
         /* octelium.api.main.meta.v1.ObjectReference authenticatorRef = 11; */
         if (message.authenticatorRef)
             ObjectReference.internalBinaryWrite(message.authenticatorRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5367,12 +7779,16 @@ export const ListAuthenticationLogTopCredentialRequest = new ListAuthenticationL
 class ListAuthenticationLogTopCredentialResponse$Type extends MessageType<ListAuthenticationLogTopCredentialResponse> {
     constructor() {
         super("octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialResponse", [
-            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAuthenticationLogTopCredentialResponse_Item }
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAuthenticationLogTopCredentialResponse_Item },
+            { no: 100, name: "totalCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 101, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<ListAuthenticationLogTopCredentialResponse>): ListAuthenticationLogTopCredentialResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.items = [];
+        message.totalCount = 0;
+        message.totalOther = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuthenticationLogTopCredentialResponse>(this, message, value);
         return message;
@@ -5384,6 +7800,12 @@ class ListAuthenticationLogTopCredentialResponse$Type extends MessageType<ListAu
             switch (fieldNo) {
                 case /* repeated octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialResponse.Item items */ 1:
                     message.items.push(ListAuthenticationLogTopCredentialResponse_Item.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 totalCount */ 100:
+                    message.totalCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 101:
+                    message.totalOther = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5400,6 +7822,12 @@ class ListAuthenticationLogTopCredentialResponse$Type extends MessageType<ListAu
         /* repeated octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialResponse.Item items = 1; */
         for (let i = 0; i < message.items.length; i++)
             ListAuthenticationLogTopCredentialResponse_Item.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCount = 100; */
+        if (message.totalCount !== 0)
+            writer.tag(100, WireType.Varint).uint64(message.totalCount);
+        /* uint64 totalOther = 101; */
+        if (message.totalOther !== 0)
+            writer.tag(101, WireType.Varint).uint64(message.totalOther);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5475,11 +7903,13 @@ class ListAuthenticationLogTopIdentityProviderRequest$Type extends MessageType<L
             { no: 10, name: "credentialRef", kind: "message", T: () => ObjectReference },
             { no: 11, name: "authenticatorRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
-            { no: 5, name: "to", kind: "message", T: () => Timestamp }
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<ListAuthenticationLogTopIdentityProviderRequest>): ListAuthenticationLogTopIdentityProviderRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuthenticationLogTopIdentityProviderRequest>(this, message, value);
         return message;
@@ -5512,6 +7942,9 @@ class ListAuthenticationLogTopIdentityProviderRequest$Type extends MessageType<L
                     break;
                 case /* google.protobuf.Timestamp to */ 5:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5549,6 +7982,9 @@ class ListAuthenticationLogTopIdentityProviderRequest$Type extends MessageType<L
         /* octelium.api.main.meta.v1.ObjectReference authenticatorRef = 11; */
         if (message.authenticatorRef)
             ObjectReference.internalBinaryWrite(message.authenticatorRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5563,12 +7999,16 @@ export const ListAuthenticationLogTopIdentityProviderRequest = new ListAuthentic
 class ListAuthenticationLogTopIdentityProviderResponse$Type extends MessageType<ListAuthenticationLogTopIdentityProviderResponse> {
     constructor() {
         super("octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderResponse", [
-            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAuthenticationLogTopIdentityProviderResponse_Item }
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAuthenticationLogTopIdentityProviderResponse_Item },
+            { no: 100, name: "totalCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 101, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<ListAuthenticationLogTopIdentityProviderResponse>): ListAuthenticationLogTopIdentityProviderResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.items = [];
+        message.totalCount = 0;
+        message.totalOther = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuthenticationLogTopIdentityProviderResponse>(this, message, value);
         return message;
@@ -5580,6 +8020,12 @@ class ListAuthenticationLogTopIdentityProviderResponse$Type extends MessageType<
             switch (fieldNo) {
                 case /* repeated octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderResponse.Item items */ 1:
                     message.items.push(ListAuthenticationLogTopIdentityProviderResponse_Item.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 totalCount */ 100:
+                    message.totalCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 101:
+                    message.totalOther = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5596,6 +8042,12 @@ class ListAuthenticationLogTopIdentityProviderResponse$Type extends MessageType<
         /* repeated octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderResponse.Item items = 1; */
         for (let i = 0; i < message.items.length; i++)
             ListAuthenticationLogTopIdentityProviderResponse_Item.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCount = 100; */
+        if (message.totalCount !== 0)
+            writer.tag(100, WireType.Varint).uint64(message.totalCount);
+        /* uint64 totalOther = 101; */
+        if (message.totalOther !== 0)
+            writer.tag(101, WireType.Varint).uint64(message.totalOther);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5661,11 +8113,302 @@ class ListAuthenticationLogTopIdentityProviderResponse_Item$Type extends Message
  */
 export const ListAuthenticationLogTopIdentityProviderResponse_Item = new ListAuthenticationLogTopIdentityProviderResponse_Item$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class ComponentSelector$Type extends MessageType<ComponentSelector> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ComponentSelector", [
+            { no: 1, name: "namespace", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "type", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "uid", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ComponentSelector>): ComponentSelector {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.namespace = "";
+        message.type = "";
+        message.uid = "";
+        if (value !== undefined)
+            reflectionMergePartial<ComponentSelector>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ComponentSelector): ComponentSelector {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string namespace */ 1:
+                    message.namespace = reader.string();
+                    break;
+                case /* string type */ 2:
+                    message.type = reader.string();
+                    break;
+                case /* string uid */ 3:
+                    message.uid = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ComponentSelector, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string namespace = 1; */
+        if (message.namespace !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.namespace);
+        /* string type = 2; */
+        if (message.type !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.type);
+        /* string uid = 3; */
+        if (message.uid !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.uid);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ComponentSelector
+ */
+export const ComponentSelector = new ComponentSelector$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListComponentLogTopComponentRequest$Type extends MessageType<ListComponentLogTopComponentRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest", [
+            { no: 4, name: "from", kind: "message", T: () => Timestamp },
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 2, name: "level", kind: "enum", T: () => ["octelium.api.main.core.v1.ComponentLog.Entry.Level", ComponentLog_Entry_Level] },
+            { no: 6, name: "component", kind: "message", T: () => ComponentSelector },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListComponentLogTopComponentRequest>): ListComponentLogTopComponentRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.level = 0;
+        message.limit = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListComponentLogTopComponentRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListComponentLogTopComponentRequest): ListComponentLogTopComponentRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* google.protobuf.Timestamp from */ 4:
+                    message.from = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.from);
+                    break;
+                case /* google.protobuf.Timestamp to */ 5:
+                    message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* octelium.api.main.core.v1.ComponentLog.Entry.Level level */ 2:
+                    message.level = reader.int32();
+                    break;
+                case /* octelium.api.main.visibility.v1.ComponentSelector component */ 6:
+                    message.component = ComponentSelector.internalBinaryRead(reader, reader.uint32(), options, message.component);
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListComponentLogTopComponentRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.ComponentLog.Entry.Level level = 2; */
+        if (message.level !== 0)
+            writer.tag(2, WireType.Varint).int32(message.level);
+        /* google.protobuf.Timestamp from = 4; */
+        if (message.from)
+            Timestamp.internalBinaryWrite(message.from, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp to = 5; */
+        if (message.to)
+            Timestamp.internalBinaryWrite(message.to, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.v1.ComponentSelector component = 6; */
+        if (message.component)
+            ComponentSelector.internalBinaryWrite(message.component, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest
+ */
+export const ListComponentLogTopComponentRequest = new ListComponentLogTopComponentRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListComponentLogTopComponentResponse$Type extends MessageType<ListComponentLogTopComponentResponse> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse", [
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListComponentLogTopComponentResponse_Item },
+            { no: 100, name: "totalCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 101, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListComponentLogTopComponentResponse>): ListComponentLogTopComponentResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.items = [];
+        message.totalCount = 0;
+        message.totalOther = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListComponentLogTopComponentResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListComponentLogTopComponentResponse): ListComponentLogTopComponentResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse.Item items */ 1:
+                    message.items.push(ListComponentLogTopComponentResponse_Item.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 totalCount */ 100:
+                    message.totalCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 101:
+                    message.totalOther = reader.uint64().toNumber();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListComponentLogTopComponentResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse.Item items = 1; */
+        for (let i = 0; i < message.items.length; i++)
+            ListComponentLogTopComponentResponse_Item.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCount = 100; */
+        if (message.totalCount !== 0)
+            writer.tag(100, WireType.Varint).uint64(message.totalCount);
+        /* uint64 totalOther = 101; */
+        if (message.totalOther !== 0)
+            writer.tag(101, WireType.Varint).uint64(message.totalOther);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse
+ */
+export const ListComponentLogTopComponentResponse = new ListComponentLogTopComponentResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListComponentLogTopComponentResponse_Item$Type extends MessageType<ListComponentLogTopComponentResponse_Item> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse.Item", [
+            { no: 1, name: "component", kind: "message", T: () => ComponentSelector },
+            { no: 2, name: "count", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "countWarn", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "countError", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "countPanic", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "countFatal", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListComponentLogTopComponentResponse_Item>): ListComponentLogTopComponentResponse_Item {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.count = 0;
+        message.countWarn = 0;
+        message.countError = 0;
+        message.countPanic = 0;
+        message.countFatal = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListComponentLogTopComponentResponse_Item>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListComponentLogTopComponentResponse_Item): ListComponentLogTopComponentResponse_Item {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.v1.ComponentSelector component */ 1:
+                    message.component = ComponentSelector.internalBinaryRead(reader, reader.uint32(), options, message.component);
+                    break;
+                case /* uint64 count */ 2:
+                    message.count = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countWarn */ 3:
+                    message.countWarn = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countError */ 4:
+                    message.countError = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countPanic */ 5:
+                    message.countPanic = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countFatal */ 6:
+                    message.countFatal = reader.uint64().toNumber();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListComponentLogTopComponentResponse_Item, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.v1.ComponentSelector component = 1; */
+        if (message.component)
+            ComponentSelector.internalBinaryWrite(message.component, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 count = 2; */
+        if (message.count !== 0)
+            writer.tag(2, WireType.Varint).uint64(message.count);
+        /* uint64 countWarn = 3; */
+        if (message.countWarn !== 0)
+            writer.tag(3, WireType.Varint).uint64(message.countWarn);
+        /* uint64 countError = 4; */
+        if (message.countError !== 0)
+            writer.tag(4, WireType.Varint).uint64(message.countError);
+        /* uint64 countPanic = 5; */
+        if (message.countPanic !== 0)
+            writer.tag(5, WireType.Varint).uint64(message.countPanic);
+        /* uint64 countFatal = 6; */
+        if (message.countFatal !== 0)
+            writer.tag(6, WireType.Varint).uint64(message.countFatal);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse.Item
+ */
+export const ListComponentLogTopComponentResponse_Item = new ListComponentLogTopComponentResponse_Item$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class GetComponentLogSummaryRequest$Type extends MessageType<GetComponentLogSummaryRequest> {
     constructor() {
         super("octelium.api.main.visibility.v1.GetComponentLogSummaryRequest", [
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
-            { no: 5, name: "to", kind: "message", T: () => Timestamp }
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 6, name: "component", kind: "message", T: () => ComponentSelector },
+            { no: 7, name: "compareFrom", kind: "message", T: () => Timestamp },
+            { no: 8, name: "compareTo", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<GetComponentLogSummaryRequest>): GetComponentLogSummaryRequest {
@@ -5685,6 +8428,15 @@ class GetComponentLogSummaryRequest$Type extends MessageType<GetComponentLogSumm
                 case /* google.protobuf.Timestamp to */ 5:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
                     break;
+                case /* octelium.api.main.visibility.v1.ComponentSelector component */ 6:
+                    message.component = ComponentSelector.internalBinaryRead(reader, reader.uint32(), options, message.component);
+                    break;
+                case /* google.protobuf.Timestamp compareFrom */ 7:
+                    message.compareFrom = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.compareFrom);
+                    break;
+                case /* google.protobuf.Timestamp compareTo */ 8:
+                    message.compareTo = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.compareTo);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -5703,6 +8455,15 @@ class GetComponentLogSummaryRequest$Type extends MessageType<GetComponentLogSumm
         /* google.protobuf.Timestamp to = 5; */
         if (message.to)
             Timestamp.internalBinaryWrite(message.to, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.v1.ComponentSelector component = 6; */
+        if (message.component)
+            ComponentSelector.internalBinaryWrite(message.component, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp compareFrom = 7; */
+        if (message.compareFrom)
+            Timestamp.internalBinaryWrite(message.compareFrom, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp compareTo = 8; */
+        if (message.compareTo)
+            Timestamp.internalBinaryWrite(message.compareTo, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5723,7 +8484,9 @@ class GetComponentLogSummaryResponse$Type extends MessageType<GetComponentLogSum
             { no: 4, name: "totalWarn", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 5, name: "totalError", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 6, name: "totalPanic", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 7, name: "totalFatal", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+            { no: 7, name: "totalFatal", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "totalComponent", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 9, name: "previous", kind: "message", T: () => GetComponentLogSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetComponentLogSummaryResponse>): GetComponentLogSummaryResponse {
@@ -5735,6 +8498,7 @@ class GetComponentLogSummaryResponse$Type extends MessageType<GetComponentLogSum
         message.totalError = 0;
         message.totalPanic = 0;
         message.totalFatal = 0;
+        message.totalComponent = 0;
         if (value !== undefined)
             reflectionMergePartial<GetComponentLogSummaryResponse>(this, message, value);
         return message;
@@ -5764,6 +8528,12 @@ class GetComponentLogSummaryResponse$Type extends MessageType<GetComponentLogSum
                     break;
                 case /* uint64 totalFatal */ 7:
                     message.totalFatal = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalComponent */ 8:
+                    message.totalComponent = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.v1.GetComponentLogSummaryResponse previous */ 9:
+                    message.previous = GetComponentLogSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5798,6 +8568,12 @@ class GetComponentLogSummaryResponse$Type extends MessageType<GetComponentLogSum
         /* uint64 totalFatal = 7; */
         if (message.totalFatal !== 0)
             writer.tag(7, WireType.Varint).uint64(message.totalFatal);
+        /* uint64 totalComponent = 8; */
+        if (message.totalComponent !== 0)
+            writer.tag(8, WireType.Varint).uint64(message.totalComponent);
+        /* octelium.api.main.visibility.v1.GetComponentLogSummaryResponse previous = 9; */
+        if (message.previous)
+            GetComponentLogSummaryResponse.internalBinaryWrite(message.previous, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5818,7 +8594,9 @@ class GetAuditLogSummaryRequest$Type extends MessageType<GetAuditLogSummaryReque
             { no: 8, name: "deviceRef", kind: "message", T: () => ObjectReference },
             { no: 9, name: "resourceRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
-            { no: 5, name: "to", kind: "message", T: () => Timestamp }
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 10, name: "compareFrom", kind: "message", T: () => Timestamp },
+            { no: 11, name: "compareTo", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<GetAuditLogSummaryRequest>): GetAuditLogSummaryRequest {
@@ -5853,6 +8631,12 @@ class GetAuditLogSummaryRequest$Type extends MessageType<GetAuditLogSummaryReque
                 case /* google.protobuf.Timestamp to */ 5:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
                     break;
+                case /* google.protobuf.Timestamp compareFrom */ 10:
+                    message.compareFrom = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.compareFrom);
+                    break;
+                case /* google.protobuf.Timestamp compareTo */ 11:
+                    message.compareTo = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.compareTo);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -5886,6 +8670,12 @@ class GetAuditLogSummaryRequest$Type extends MessageType<GetAuditLogSummaryReque
         /* octelium.api.main.meta.v1.ObjectReference resourceRef = 9; */
         if (message.resourceRef)
             ObjectReference.internalBinaryWrite(message.resourceRef, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp compareFrom = 10; */
+        if (message.compareFrom)
+            Timestamp.internalBinaryWrite(message.compareFrom, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp compareTo = 11; */
+        if (message.compareTo)
+            Timestamp.internalBinaryWrite(message.compareTo, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5904,7 +8694,13 @@ class GetAuditLogSummaryResponse$Type extends MessageType<GetAuditLogSummaryResp
             { no: 2, name: "totalResource", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 3, name: "totalUser", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 4, name: "totalDevice", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 5, name: "totalSession", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+            { no: 5, name: "totalSession", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "totalCreate", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "totalUpdate", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "totalDelete", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 9, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "totalByResourceKind", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ } },
+            { no: 11, name: "previous", kind: "message", T: () => GetAuditLogSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetAuditLogSummaryResponse>): GetAuditLogSummaryResponse {
@@ -5914,6 +8710,11 @@ class GetAuditLogSummaryResponse$Type extends MessageType<GetAuditLogSummaryResp
         message.totalUser = 0;
         message.totalDevice = 0;
         message.totalSession = 0;
+        message.totalCreate = 0;
+        message.totalUpdate = 0;
+        message.totalDelete = 0;
+        message.totalOther = 0;
+        message.totalByResourceKind = {};
         if (value !== undefined)
             reflectionMergePartial<GetAuditLogSummaryResponse>(this, message, value);
         return message;
@@ -5938,6 +8739,24 @@ class GetAuditLogSummaryResponse$Type extends MessageType<GetAuditLogSummaryResp
                 case /* uint64 totalSession */ 5:
                     message.totalSession = reader.uint64().toNumber();
                     break;
+                case /* uint64 totalCreate */ 6:
+                    message.totalCreate = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalUpdate */ 7:
+                    message.totalUpdate = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalDelete */ 8:
+                    message.totalDelete = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 9:
+                    message.totalOther = reader.uint64().toNumber();
+                    break;
+                case /* map<string, uint64> totalByResourceKind */ 10:
+                    this.binaryReadMap10(message.totalByResourceKind, reader, options);
+                    break;
+                case /* octelium.api.main.visibility.v1.GetAuditLogSummaryResponse previous */ 11:
+                    message.previous = GetAuditLogSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -5948,6 +8767,22 @@ class GetAuditLogSummaryResponse$Type extends MessageType<GetAuditLogSummaryResp
             }
         }
         return message;
+    }
+    private binaryReadMap10(map: GetAuditLogSummaryResponse["totalByResourceKind"], reader: IBinaryReader, options: BinaryReadOptions): void {
+        let len = reader.uint32(), end = reader.pos + len, key: keyof GetAuditLogSummaryResponse["totalByResourceKind"] | undefined, val: GetAuditLogSummaryResponse["totalByResourceKind"][any] | undefined;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case 1:
+                    key = reader.string();
+                    break;
+                case 2:
+                    val = reader.uint64().toNumber();
+                    break;
+                default: throw new globalThis.Error("unknown map entry field for octelium.api.main.visibility.v1.GetAuditLogSummaryResponse.totalByResourceKind");
+            }
+        }
+        map[key ?? ""] = val ?? 0;
     }
     internalBinaryWrite(message: GetAuditLogSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* uint64 totalNumber = 1; */
@@ -5965,6 +8800,24 @@ class GetAuditLogSummaryResponse$Type extends MessageType<GetAuditLogSummaryResp
         /* uint64 totalSession = 5; */
         if (message.totalSession !== 0)
             writer.tag(5, WireType.Varint).uint64(message.totalSession);
+        /* uint64 totalCreate = 6; */
+        if (message.totalCreate !== 0)
+            writer.tag(6, WireType.Varint).uint64(message.totalCreate);
+        /* uint64 totalUpdate = 7; */
+        if (message.totalUpdate !== 0)
+            writer.tag(7, WireType.Varint).uint64(message.totalUpdate);
+        /* uint64 totalDelete = 8; */
+        if (message.totalDelete !== 0)
+            writer.tag(8, WireType.Varint).uint64(message.totalDelete);
+        /* uint64 totalOther = 9; */
+        if (message.totalOther !== 0)
+            writer.tag(9, WireType.Varint).uint64(message.totalOther);
+        /* map<string, uint64> totalByResourceKind = 10; */
+        for (let k of globalThis.Object.keys(message.totalByResourceKind))
+            writer.tag(10, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.Varint).uint64(message.totalByResourceKind[k]).join();
+        /* octelium.api.main.visibility.v1.GetAuditLogSummaryResponse previous = 11; */
+        if (message.previous)
+            GetAuditLogSummaryResponse.internalBinaryWrite(message.previous, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5985,11 +8838,15 @@ class GetAuditLogDataPointRequest$Type extends MessageType<GetAuditLogDataPointR
             { no: 11, name: "resourceRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
-            { no: 13, name: "interval", kind: "message", T: () => Duration }
+            { no: 13, name: "interval", kind: "message", T: () => Duration },
+            { no: 14, name: "groupBy", kind: "enum", T: () => ["octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.GroupBy", GetAuditLogDataPointRequest_GroupBy] },
+            { no: 15, name: "limitSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<GetAuditLogDataPointRequest>): GetAuditLogDataPointRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.groupBy = 0;
+        message.limitSeries = 0;
         if (value !== undefined)
             reflectionMergePartial<GetAuditLogDataPointRequest>(this, message, value);
         return message;
@@ -6019,6 +8876,12 @@ class GetAuditLogDataPointRequest$Type extends MessageType<GetAuditLogDataPointR
                     break;
                 case /* octelium.api.main.meta.v1.Duration interval */ 13:
                     message.interval = Duration.internalBinaryRead(reader, reader.uint32(), options, message.interval);
+                    break;
+                case /* octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.GroupBy groupBy */ 14:
+                    message.groupBy = reader.int32();
+                    break;
+                case /* uint32 limitSeries */ 15:
+                    message.limitSeries = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6053,6 +8916,12 @@ class GetAuditLogDataPointRequest$Type extends MessageType<GetAuditLogDataPointR
         /* octelium.api.main.meta.v1.Duration interval = 13; */
         if (message.interval)
             Duration.internalBinaryWrite(message.interval, writer.tag(13, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.GroupBy groupBy = 14; */
+        if (message.groupBy !== 0)
+            writer.tag(14, WireType.Varint).int32(message.groupBy);
+        /* uint32 limitSeries = 15; */
+        if (message.limitSeries !== 0)
+            writer.tag(15, WireType.Varint).uint32(message.limitSeries);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6067,12 +8936,14 @@ export const GetAuditLogDataPointRequest = new GetAuditLogDataPointRequest$Type(
 class GetAuditLogDataPointResponse$Type extends MessageType<GetAuditLogDataPointResponse> {
     constructor() {
         super("octelium.api.main.visibility.v1.GetAuditLogDataPointResponse", [
-            { no: 1, name: "datapoints", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetAuditLogDataPointResponse_DataPoint }
+            { no: 1, name: "datapoints", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetAuditLogDataPointResponse_DataPoint },
+            { no: 2, name: "series", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => DataPointSeries }
         ]);
     }
     create(value?: PartialMessage<GetAuditLogDataPointResponse>): GetAuditLogDataPointResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.datapoints = [];
+        message.series = [];
         if (value !== undefined)
             reflectionMergePartial<GetAuditLogDataPointResponse>(this, message, value);
         return message;
@@ -6084,6 +8955,9 @@ class GetAuditLogDataPointResponse$Type extends MessageType<GetAuditLogDataPoint
             switch (fieldNo) {
                 case /* repeated octelium.api.main.visibility.v1.GetAuditLogDataPointResponse.DataPoint datapoints */ 1:
                     message.datapoints.push(GetAuditLogDataPointResponse_DataPoint.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated octelium.api.main.visibility.v1.DataPointSeries series */ 2:
+                    message.series.push(DataPointSeries.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6100,6 +8974,9 @@ class GetAuditLogDataPointResponse$Type extends MessageType<GetAuditLogDataPoint
         /* repeated octelium.api.main.visibility.v1.GetAuditLogDataPointResponse.DataPoint datapoints = 1; */
         for (let i = 0; i < message.datapoints.length; i++)
             GetAuditLogDataPointResponse_DataPoint.internalBinaryWrite(message.datapoints[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.visibility.v1.DataPointSeries series = 2; */
+        for (let i = 0; i < message.series.length; i++)
+            DataPointSeries.internalBinaryWrite(message.series[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6170,11 +9047,13 @@ class ListAuditLogTopUserRequest$Type extends MessageType<ListAuditLogTopUserReq
         super("octelium.api.main.visibility.v1.ListAuditLogTopUserRequest", [
             { no: 11, name: "resourceRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
-            { no: 5, name: "to", kind: "message", T: () => Timestamp }
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<ListAuditLogTopUserRequest>): ListAuditLogTopUserRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuditLogTopUserRequest>(this, message, value);
         return message;
@@ -6192,6 +9071,9 @@ class ListAuditLogTopUserRequest$Type extends MessageType<ListAuditLogTopUserReq
                     break;
                 case /* google.protobuf.Timestamp to */ 5:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6214,6 +9096,9 @@ class ListAuditLogTopUserRequest$Type extends MessageType<ListAuditLogTopUserReq
         /* octelium.api.main.meta.v1.ObjectReference resourceRef = 11; */
         if (message.resourceRef)
             ObjectReference.internalBinaryWrite(message.resourceRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6230,11 +9115,13 @@ class ListAuditLogTopSessionRequest$Type extends MessageType<ListAuditLogTopSess
         super("octelium.api.main.visibility.v1.ListAuditLogTopSessionRequest", [
             { no: 11, name: "resourceRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
-            { no: 5, name: "to", kind: "message", T: () => Timestamp }
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<ListAuditLogTopSessionRequest>): ListAuditLogTopSessionRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuditLogTopSessionRequest>(this, message, value);
         return message;
@@ -6252,6 +9139,9 @@ class ListAuditLogTopSessionRequest$Type extends MessageType<ListAuditLogTopSess
                     break;
                 case /* google.protobuf.Timestamp to */ 5:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6274,6 +9164,9 @@ class ListAuditLogTopSessionRequest$Type extends MessageType<ListAuditLogTopSess
         /* octelium.api.main.meta.v1.ObjectReference resourceRef = 11; */
         if (message.resourceRef)
             ObjectReference.internalBinaryWrite(message.resourceRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6288,12 +9181,16 @@ export const ListAuditLogTopSessionRequest = new ListAuditLogTopSessionRequest$T
 class ListAuditLogTopUserResponse$Type extends MessageType<ListAuditLogTopUserResponse> {
     constructor() {
         super("octelium.api.main.visibility.v1.ListAuditLogTopUserResponse", [
-            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAuditLogTopUserResponse_Item }
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAuditLogTopUserResponse_Item },
+            { no: 100, name: "totalCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 101, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<ListAuditLogTopUserResponse>): ListAuditLogTopUserResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.items = [];
+        message.totalCount = 0;
+        message.totalOther = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuditLogTopUserResponse>(this, message, value);
         return message;
@@ -6305,6 +9202,12 @@ class ListAuditLogTopUserResponse$Type extends MessageType<ListAuditLogTopUserRe
             switch (fieldNo) {
                 case /* repeated octelium.api.main.visibility.v1.ListAuditLogTopUserResponse.Item items */ 1:
                     message.items.push(ListAuditLogTopUserResponse_Item.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 totalCount */ 100:
+                    message.totalCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 101:
+                    message.totalOther = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6321,6 +9224,12 @@ class ListAuditLogTopUserResponse$Type extends MessageType<ListAuditLogTopUserRe
         /* repeated octelium.api.main.visibility.v1.ListAuditLogTopUserResponse.Item items = 1; */
         for (let i = 0; i < message.items.length; i++)
             ListAuditLogTopUserResponse_Item.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCount = 100; */
+        if (message.totalCount !== 0)
+            writer.tag(100, WireType.Varint).uint64(message.totalCount);
+        /* uint64 totalOther = 101; */
+        if (message.totalOther !== 0)
+            writer.tag(101, WireType.Varint).uint64(message.totalOther);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6389,12 +9298,16 @@ export const ListAuditLogTopUserResponse_Item = new ListAuditLogTopUserResponse_
 class ListAuditLogTopSessionResponse$Type extends MessageType<ListAuditLogTopSessionResponse> {
     constructor() {
         super("octelium.api.main.visibility.v1.ListAuditLogTopSessionResponse", [
-            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAuditLogTopSessionResponse_Item }
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAuditLogTopSessionResponse_Item },
+            { no: 100, name: "totalCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 101, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<ListAuditLogTopSessionResponse>): ListAuditLogTopSessionResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.items = [];
+        message.totalCount = 0;
+        message.totalOther = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuditLogTopSessionResponse>(this, message, value);
         return message;
@@ -6406,6 +9319,12 @@ class ListAuditLogTopSessionResponse$Type extends MessageType<ListAuditLogTopSes
             switch (fieldNo) {
                 case /* repeated octelium.api.main.visibility.v1.ListAuditLogTopSessionResponse.Item items */ 1:
                     message.items.push(ListAuditLogTopSessionResponse_Item.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 totalCount */ 100:
+                    message.totalCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 101:
+                    message.totalOther = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6422,6 +9341,12 @@ class ListAuditLogTopSessionResponse$Type extends MessageType<ListAuditLogTopSes
         /* repeated octelium.api.main.visibility.v1.ListAuditLogTopSessionResponse.Item items = 1; */
         for (let i = 0; i < message.items.length; i++)
             ListAuditLogTopSessionResponse_Item.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCount = 100; */
+        if (message.totalCount !== 0)
+            writer.tag(100, WireType.Varint).uint64(message.totalCount);
+        /* uint64 totalOther = 101; */
+        if (message.totalOther !== 0)
+            writer.tag(101, WireType.Varint).uint64(message.totalOther);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6493,12 +9418,17 @@ class GetComponentLogDataPointRequest$Type extends MessageType<GetComponentLogDa
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
             { no: 13, name: "interval", kind: "message", T: () => Duration },
-            { no: 2, name: "level", kind: "enum", T: () => ["octelium.api.main.core.v1.ComponentLog.Entry.Level", ComponentLog_Entry_Level] }
+            { no: 2, name: "level", kind: "enum", T: () => ["octelium.api.main.core.v1.ComponentLog.Entry.Level", ComponentLog_Entry_Level] },
+            { no: 14, name: "component", kind: "message", T: () => ComponentSelector },
+            { no: 15, name: "groupBy", kind: "enum", T: () => ["octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.GroupBy", GetComponentLogDataPointRequest_GroupBy] },
+            { no: 16, name: "limitSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<GetComponentLogDataPointRequest>): GetComponentLogDataPointRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.level = 0;
+        message.groupBy = 0;
+        message.limitSeries = 0;
         if (value !== undefined)
             reflectionMergePartial<GetComponentLogDataPointRequest>(this, message, value);
         return message;
@@ -6519,6 +9449,15 @@ class GetComponentLogDataPointRequest$Type extends MessageType<GetComponentLogDa
                     break;
                 case /* octelium.api.main.core.v1.ComponentLog.Entry.Level level */ 2:
                     message.level = reader.int32();
+                    break;
+                case /* octelium.api.main.visibility.v1.ComponentSelector component */ 14:
+                    message.component = ComponentSelector.internalBinaryRead(reader, reader.uint32(), options, message.component);
+                    break;
+                case /* octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.GroupBy groupBy */ 15:
+                    message.groupBy = reader.int32();
+                    break;
+                case /* uint32 limitSeries */ 16:
+                    message.limitSeries = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6544,6 +9483,15 @@ class GetComponentLogDataPointRequest$Type extends MessageType<GetComponentLogDa
         /* octelium.api.main.meta.v1.Duration interval = 13; */
         if (message.interval)
             Duration.internalBinaryWrite(message.interval, writer.tag(13, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.v1.ComponentSelector component = 14; */
+        if (message.component)
+            ComponentSelector.internalBinaryWrite(message.component, writer.tag(14, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.GroupBy groupBy = 15; */
+        if (message.groupBy !== 0)
+            writer.tag(15, WireType.Varint).int32(message.groupBy);
+        /* uint32 limitSeries = 16; */
+        if (message.limitSeries !== 0)
+            writer.tag(16, WireType.Varint).uint32(message.limitSeries);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6558,12 +9506,14 @@ export const GetComponentLogDataPointRequest = new GetComponentLogDataPointReque
 class GetComponentLogDataPointResponse$Type extends MessageType<GetComponentLogDataPointResponse> {
     constructor() {
         super("octelium.api.main.visibility.v1.GetComponentLogDataPointResponse", [
-            { no: 1, name: "datapoints", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetComponentLogDataPointResponse_DataPoint }
+            { no: 1, name: "datapoints", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetComponentLogDataPointResponse_DataPoint },
+            { no: 2, name: "series", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => DataPointSeries }
         ]);
     }
     create(value?: PartialMessage<GetComponentLogDataPointResponse>): GetComponentLogDataPointResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.datapoints = [];
+        message.series = [];
         if (value !== undefined)
             reflectionMergePartial<GetComponentLogDataPointResponse>(this, message, value);
         return message;
@@ -6575,6 +9525,9 @@ class GetComponentLogDataPointResponse$Type extends MessageType<GetComponentLogD
             switch (fieldNo) {
                 case /* repeated octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.DataPoint datapoints */ 1:
                     message.datapoints.push(GetComponentLogDataPointResponse_DataPoint.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated octelium.api.main.visibility.v1.DataPointSeries series */ 2:
+                    message.series.push(DataPointSeries.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6591,6 +9544,9 @@ class GetComponentLogDataPointResponse$Type extends MessageType<GetComponentLogD
         /* repeated octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.DataPoint datapoints = 1; */
         for (let i = 0; i < message.datapoints.length; i++)
             GetComponentLogDataPointResponse_DataPoint.internalBinaryWrite(message.datapoints[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.visibility.v1.DataPointSeries series = 2; */
+        for (let i = 0; i < message.series.length; i++)
+            DataPointSeries.internalBinaryWrite(message.series[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6655,6 +9611,878 @@ class GetComponentLogDataPointResponse_DataPoint$Type extends MessageType<GetCom
  * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.DataPoint
  */
 export const GetComponentLogDataPointResponse_DataPoint = new GetComponentLogDataPointResponse_DataPoint$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterSummaryRequest$Type extends MessageType<GetClusterSummaryRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetClusterSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions },
+            { no: 2, name: "kinds", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.visibility.v1.GetClusterSummaryRequest.Kind", GetClusterSummaryRequest_Kind] }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterSummaryRequest>): GetClusterSummaryRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.kinds = [];
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterSummaryRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterSummaryRequest): GetClusterSummaryRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
+                case /* repeated octelium.api.main.visibility.v1.GetClusterSummaryRequest.Kind kinds */ 2:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.kinds.push(reader.int32());
+                    else
+                        message.kinds.push(reader.int32());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.visibility.v1.GetClusterSummaryRequest.Kind kinds = 2; */
+        if (message.kinds.length) {
+            writer.tag(2, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.kinds.length; i++)
+                writer.int32(message.kinds[i]);
+            writer.join();
+        }
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetClusterSummaryRequest
+ */
+export const GetClusterSummaryRequest = new GetClusterSummaryRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterSummaryResponse$Type extends MessageType<GetClusterSummaryResponse> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetClusterSummaryResponse", [
+            { no: 1, name: "core", kind: "message", T: () => GetClusterSummaryResponse_Core },
+            { no: 2, name: "access", kind: "message", T: () => GetClusterSummaryResponse_Access },
+            { no: 3, name: "enterprise", kind: "message", T: () => GetClusterSummaryResponse_Enterprise },
+            { no: 4, name: "unavailables", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetClusterSummaryResponse_Unavailable }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterSummaryResponse>): GetClusterSummaryResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.unavailables = [];
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterSummaryResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterSummaryResponse): GetClusterSummaryResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core core */ 1:
+                    message.core = GetClusterSummaryResponse_Core.internalBinaryRead(reader, reader.uint32(), options, message.core);
+                    break;
+                case /* octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access access */ 2:
+                    message.access = GetClusterSummaryResponse_Access.internalBinaryRead(reader, reader.uint32(), options, message.access);
+                    break;
+                case /* octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise enterprise */ 3:
+                    message.enterprise = GetClusterSummaryResponse_Enterprise.internalBinaryRead(reader, reader.uint32(), options, message.enterprise);
+                    break;
+                case /* repeated octelium.api.main.visibility.v1.GetClusterSummaryResponse.Unavailable unavailables */ 4:
+                    message.unavailables.push(GetClusterSummaryResponse_Unavailable.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core core = 1; */
+        if (message.core)
+            GetClusterSummaryResponse_Core.internalBinaryWrite(message.core, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access access = 2; */
+        if (message.access)
+            GetClusterSummaryResponse_Access.internalBinaryWrite(message.access, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise enterprise = 3; */
+        if (message.enterprise)
+            GetClusterSummaryResponse_Enterprise.internalBinaryWrite(message.enterprise, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.visibility.v1.GetClusterSummaryResponse.Unavailable unavailables = 4; */
+        for (let i = 0; i < message.unavailables.length; i++)
+            GetClusterSummaryResponse_Unavailable.internalBinaryWrite(message.unavailables[i], writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetClusterSummaryResponse
+ */
+export const GetClusterSummaryResponse = new GetClusterSummaryResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterSummaryResponse_Core$Type extends MessageType<GetClusterSummaryResponse_Core> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core", [
+            { no: 1, name: "user", kind: "message", T: () => GetUserSummaryResponse },
+            { no: 2, name: "session", kind: "message", T: () => GetSessionSummaryResponse },
+            { no: 3, name: "device", kind: "message", T: () => GetDeviceSummaryResponse },
+            { no: 4, name: "service", kind: "message", T: () => GetServiceSummaryResponse },
+            { no: 5, name: "namespace", kind: "message", T: () => GetNamespaceSummaryResponse },
+            { no: 6, name: "policy", kind: "message", T: () => GetPolicySummaryResponse },
+            { no: 7, name: "group", kind: "message", T: () => GetGroupSummaryResponse },
+            { no: 8, name: "credential", kind: "message", T: () => GetCredentialSummaryResponse },
+            { no: 9, name: "identityProvider", kind: "message", T: () => GetIdentityProviderSummaryResponse },
+            { no: 10, name: "authenticator", kind: "message", T: () => GetAuthenticatorSummaryResponse },
+            { no: 11, name: "secret", kind: "message", T: () => GetSecretSummaryResponse },
+            { no: 12, name: "gateway", kind: "message", T: () => GetGatewaySummaryResponse },
+            { no: 13, name: "region", kind: "message", T: () => GetRegionSummaryResponse }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterSummaryResponse_Core>): GetClusterSummaryResponse_Core {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterSummaryResponse_Core>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterSummaryResponse_Core): GetClusterSummaryResponse_Core {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.core.v1.GetUserSummaryResponse user */ 1:
+                    message.user = GetUserSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.user);
+                    break;
+                case /* octelium.api.main.visibility.core.v1.GetSessionSummaryResponse session */ 2:
+                    message.session = GetSessionSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.session);
+                    break;
+                case /* octelium.api.main.visibility.core.v1.GetDeviceSummaryResponse device */ 3:
+                    message.device = GetDeviceSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.device);
+                    break;
+                case /* octelium.api.main.visibility.core.v1.GetServiceSummaryResponse service */ 4:
+                    message.service = GetServiceSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.service);
+                    break;
+                case /* octelium.api.main.visibility.core.v1.GetNamespaceSummaryResponse namespace */ 5:
+                    message.namespace = GetNamespaceSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.namespace);
+                    break;
+                case /* octelium.api.main.visibility.core.v1.GetPolicySummaryResponse policy */ 6:
+                    message.policy = GetPolicySummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.policy);
+                    break;
+                case /* octelium.api.main.visibility.core.v1.GetGroupSummaryResponse group */ 7:
+                    message.group = GetGroupSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.group);
+                    break;
+                case /* octelium.api.main.visibility.core.v1.GetCredentialSummaryResponse credential */ 8:
+                    message.credential = GetCredentialSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.credential);
+                    break;
+                case /* octelium.api.main.visibility.core.v1.GetIdentityProviderSummaryResponse identityProvider */ 9:
+                    message.identityProvider = GetIdentityProviderSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.identityProvider);
+                    break;
+                case /* octelium.api.main.visibility.core.v1.GetAuthenticatorSummaryResponse authenticator */ 10:
+                    message.authenticator = GetAuthenticatorSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.authenticator);
+                    break;
+                case /* octelium.api.main.visibility.core.v1.GetSecretSummaryResponse secret */ 11:
+                    message.secret = GetSecretSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.secret);
+                    break;
+                case /* octelium.api.main.visibility.core.v1.GetGatewaySummaryResponse gateway */ 12:
+                    message.gateway = GetGatewaySummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.gateway);
+                    break;
+                case /* octelium.api.main.visibility.core.v1.GetRegionSummaryResponse region */ 13:
+                    message.region = GetRegionSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.region);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterSummaryResponse_Core, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.core.v1.GetUserSummaryResponse user = 1; */
+        if (message.user)
+            GetUserSummaryResponse.internalBinaryWrite(message.user, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.core.v1.GetSessionSummaryResponse session = 2; */
+        if (message.session)
+            GetSessionSummaryResponse.internalBinaryWrite(message.session, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.core.v1.GetDeviceSummaryResponse device = 3; */
+        if (message.device)
+            GetDeviceSummaryResponse.internalBinaryWrite(message.device, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.core.v1.GetServiceSummaryResponse service = 4; */
+        if (message.service)
+            GetServiceSummaryResponse.internalBinaryWrite(message.service, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.core.v1.GetNamespaceSummaryResponse namespace = 5; */
+        if (message.namespace)
+            GetNamespaceSummaryResponse.internalBinaryWrite(message.namespace, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.core.v1.GetPolicySummaryResponse policy = 6; */
+        if (message.policy)
+            GetPolicySummaryResponse.internalBinaryWrite(message.policy, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.core.v1.GetGroupSummaryResponse group = 7; */
+        if (message.group)
+            GetGroupSummaryResponse.internalBinaryWrite(message.group, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.core.v1.GetCredentialSummaryResponse credential = 8; */
+        if (message.credential)
+            GetCredentialSummaryResponse.internalBinaryWrite(message.credential, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.core.v1.GetIdentityProviderSummaryResponse identityProvider = 9; */
+        if (message.identityProvider)
+            GetIdentityProviderSummaryResponse.internalBinaryWrite(message.identityProvider, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.core.v1.GetAuthenticatorSummaryResponse authenticator = 10; */
+        if (message.authenticator)
+            GetAuthenticatorSummaryResponse.internalBinaryWrite(message.authenticator, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.core.v1.GetSecretSummaryResponse secret = 11; */
+        if (message.secret)
+            GetSecretSummaryResponse.internalBinaryWrite(message.secret, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.core.v1.GetGatewaySummaryResponse gateway = 12; */
+        if (message.gateway)
+            GetGatewaySummaryResponse.internalBinaryWrite(message.gateway, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.core.v1.GetRegionSummaryResponse region = 13; */
+        if (message.region)
+            GetRegionSummaryResponse.internalBinaryWrite(message.region, writer.tag(13, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core
+ */
+export const GetClusterSummaryResponse_Core = new GetClusterSummaryResponse_Core$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterSummaryResponse_Access$Type extends MessageType<GetClusterSummaryResponse_Access> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access", [
+            { no: 1, name: "policy", kind: "message", T: () => GetPolicySummaryResponse$ },
+            { no: 2, name: "catalog", kind: "message", T: () => GetCatalogSummaryResponse },
+            { no: 3, name: "request", kind: "message", T: () => GetRequestSummaryResponse },
+            { no: 4, name: "review", kind: "message", T: () => GetReviewSummaryResponse }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterSummaryResponse_Access>): GetClusterSummaryResponse_Access {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterSummaryResponse_Access>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterSummaryResponse_Access): GetClusterSummaryResponse_Access {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.access.v1.GetPolicySummaryResponse policy */ 1:
+                    message.policy = GetPolicySummaryResponse$.internalBinaryRead(reader, reader.uint32(), options, message.policy);
+                    break;
+                case /* octelium.api.main.visibility.access.v1.GetCatalogSummaryResponse catalog */ 2:
+                    message.catalog = GetCatalogSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.catalog);
+                    break;
+                case /* octelium.api.main.visibility.access.v1.GetRequestSummaryResponse request */ 3:
+                    message.request = GetRequestSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.request);
+                    break;
+                case /* octelium.api.main.visibility.access.v1.GetReviewSummaryResponse review */ 4:
+                    message.review = GetReviewSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.review);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterSummaryResponse_Access, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.access.v1.GetPolicySummaryResponse policy = 1; */
+        if (message.policy)
+            GetPolicySummaryResponse$.internalBinaryWrite(message.policy, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.access.v1.GetCatalogSummaryResponse catalog = 2; */
+        if (message.catalog)
+            GetCatalogSummaryResponse.internalBinaryWrite(message.catalog, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.access.v1.GetRequestSummaryResponse request = 3; */
+        if (message.request)
+            GetRequestSummaryResponse.internalBinaryWrite(message.request, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.access.v1.GetReviewSummaryResponse review = 4; */
+        if (message.review)
+            GetReviewSummaryResponse.internalBinaryWrite(message.review, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access
+ */
+export const GetClusterSummaryResponse_Access = new GetClusterSummaryResponse_Access$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterSummaryResponse_Enterprise$Type extends MessageType<GetClusterSummaryResponse_Enterprise> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise", [
+            { no: 1, name: "collectorExporter", kind: "message", T: () => GetCollectorExporterSummaryResponse },
+            { no: 2, name: "secret", kind: "message", T: () => GetSecretSummaryResponse$ },
+            { no: 3, name: "secretStore", kind: "message", T: () => GetSecretStoreSummaryResponse },
+            { no: 4, name: "certificate", kind: "message", T: () => GetCertificateSummaryResponse },
+            { no: 5, name: "certificateIssuer", kind: "message", T: () => GetCertificateIssuerSummaryResponse },
+            { no: 6, name: "dnsProvider", kind: "message", T: () => GetDNSProviderSummaryResponse },
+            { no: 7, name: "directoryProvider", kind: "message", T: () => GetDirectoryProviderSummaryResponse },
+            { no: 8, name: "directoryProviderUser", kind: "message", T: () => GetDirectoryProviderUserSummaryResponse },
+            { no: 9, name: "directoryProviderGroup", kind: "message", T: () => GetDirectoryProviderGroupSummaryResponse },
+            { no: 10, name: "deviceManager", kind: "message", T: () => GetDeviceManagerSummaryResponse }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterSummaryResponse_Enterprise>): GetClusterSummaryResponse_Enterprise {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterSummaryResponse_Enterprise>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterSummaryResponse_Enterprise): GetClusterSummaryResponse_Enterprise {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.enterprise.v1.GetCollectorExporterSummaryResponse collectorExporter */ 1:
+                    message.collectorExporter = GetCollectorExporterSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.collectorExporter);
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetSecretSummaryResponse secret */ 2:
+                    message.secret = GetSecretSummaryResponse$.internalBinaryRead(reader, reader.uint32(), options, message.secret);
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryResponse secretStore */ 3:
+                    message.secretStore = GetSecretStoreSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.secretStore);
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetCertificateSummaryResponse certificate */ 4:
+                    message.certificate = GetCertificateSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.certificate);
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetCertificateIssuerSummaryResponse certificateIssuer */ 5:
+                    message.certificateIssuer = GetCertificateIssuerSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.certificateIssuer);
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetDNSProviderSummaryResponse dnsProvider */ 6:
+                    message.dnsProvider = GetDNSProviderSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.dnsProvider);
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderSummaryResponse directoryProvider */ 7:
+                    message.directoryProvider = GetDirectoryProviderSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.directoryProvider);
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderUserSummaryResponse directoryProviderUser */ 8:
+                    message.directoryProviderUser = GetDirectoryProviderUserSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.directoryProviderUser);
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderGroupSummaryResponse directoryProviderGroup */ 9:
+                    message.directoryProviderGroup = GetDirectoryProviderGroupSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.directoryProviderGroup);
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse deviceManager */ 10:
+                    message.deviceManager = GetDeviceManagerSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.deviceManager);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterSummaryResponse_Enterprise, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.enterprise.v1.GetCollectorExporterSummaryResponse collectorExporter = 1; */
+        if (message.collectorExporter)
+            GetCollectorExporterSummaryResponse.internalBinaryWrite(message.collectorExporter, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.enterprise.v1.GetSecretSummaryResponse secret = 2; */
+        if (message.secret)
+            GetSecretSummaryResponse$.internalBinaryWrite(message.secret, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryResponse secretStore = 3; */
+        if (message.secretStore)
+            GetSecretStoreSummaryResponse.internalBinaryWrite(message.secretStore, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.enterprise.v1.GetCertificateSummaryResponse certificate = 4; */
+        if (message.certificate)
+            GetCertificateSummaryResponse.internalBinaryWrite(message.certificate, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.enterprise.v1.GetCertificateIssuerSummaryResponse certificateIssuer = 5; */
+        if (message.certificateIssuer)
+            GetCertificateIssuerSummaryResponse.internalBinaryWrite(message.certificateIssuer, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.enterprise.v1.GetDNSProviderSummaryResponse dnsProvider = 6; */
+        if (message.dnsProvider)
+            GetDNSProviderSummaryResponse.internalBinaryWrite(message.dnsProvider, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderSummaryResponse directoryProvider = 7; */
+        if (message.directoryProvider)
+            GetDirectoryProviderSummaryResponse.internalBinaryWrite(message.directoryProvider, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderUserSummaryResponse directoryProviderUser = 8; */
+        if (message.directoryProviderUser)
+            GetDirectoryProviderUserSummaryResponse.internalBinaryWrite(message.directoryProviderUser, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderGroupSummaryResponse directoryProviderGroup = 9; */
+        if (message.directoryProviderGroup)
+            GetDirectoryProviderGroupSummaryResponse.internalBinaryWrite(message.directoryProviderGroup, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse deviceManager = 10; */
+        if (message.deviceManager)
+            GetDeviceManagerSummaryResponse.internalBinaryWrite(message.deviceManager, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise
+ */
+export const GetClusterSummaryResponse_Enterprise = new GetClusterSummaryResponse_Enterprise$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterSummaryResponse_Unavailable$Type extends MessageType<GetClusterSummaryResponse_Unavailable> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetClusterSummaryResponse.Unavailable", [
+            { no: 1, name: "kind", kind: "enum", T: () => ["octelium.api.main.visibility.v1.GetClusterSummaryRequest.Kind", GetClusterSummaryRequest_Kind] },
+            { no: 2, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterSummaryResponse_Unavailable>): GetClusterSummaryResponse_Unavailable {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.kind = 0;
+        message.message = "";
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterSummaryResponse_Unavailable>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterSummaryResponse_Unavailable): GetClusterSummaryResponse_Unavailable {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.v1.GetClusterSummaryRequest.Kind kind */ 1:
+                    message.kind = reader.int32();
+                    break;
+                case /* string message */ 2:
+                    message.message = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterSummaryResponse_Unavailable, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.v1.GetClusterSummaryRequest.Kind kind = 1; */
+        if (message.kind !== 0)
+            writer.tag(1, WireType.Varint).int32(message.kind);
+        /* string message = 2; */
+        if (message.message !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.message);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetClusterSummaryResponse.Unavailable
+ */
+export const GetClusterSummaryResponse_Unavailable = new GetClusterSummaryResponse_Unavailable$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterHealthRequest$Type extends MessageType<GetClusterHealthRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetClusterHealthRequest", [
+            { no: 1, name: "from", kind: "message", T: () => Timestamp },
+            { no: 2, name: "to", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterHealthRequest>): GetClusterHealthRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterHealthRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterHealthRequest): GetClusterHealthRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* google.protobuf.Timestamp from */ 1:
+                    message.from = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.from);
+                    break;
+                case /* google.protobuf.Timestamp to */ 2:
+                    message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterHealthRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* google.protobuf.Timestamp from = 1; */
+        if (message.from)
+            Timestamp.internalBinaryWrite(message.from, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp to = 2; */
+        if (message.to)
+            Timestamp.internalBinaryWrite(message.to, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetClusterHealthRequest
+ */
+export const GetClusterHealthRequest = new GetClusterHealthRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterHealthResponse$Type extends MessageType<GetClusterHealthResponse> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetClusterHealthResponse", [
+            { no: 1, name: "status", kind: "enum", T: () => ["octelium.api.main.visibility.v1.GetClusterHealthResponse.Status", GetClusterHealthResponse_Status] },
+            { no: 2, name: "subsystems", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetClusterHealthResponse_Subsystem },
+            { no: 3, name: "components", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetClusterHealthResponse_Component },
+            { no: 4, name: "regions", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetClusterHealthResponse_Region },
+            { no: 5, name: "from", kind: "message", T: () => Timestamp },
+            { no: 6, name: "to", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterHealthResponse>): GetClusterHealthResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.status = 0;
+        message.subsystems = [];
+        message.components = [];
+        message.regions = [];
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterHealthResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterHealthResponse): GetClusterHealthResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.v1.GetClusterHealthResponse.Status status */ 1:
+                    message.status = reader.int32();
+                    break;
+                case /* repeated octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem subsystems */ 2:
+                    message.subsystems.push(GetClusterHealthResponse_Subsystem.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated octelium.api.main.visibility.v1.GetClusterHealthResponse.Component components */ 3:
+                    message.components.push(GetClusterHealthResponse_Component.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated octelium.api.main.visibility.v1.GetClusterHealthResponse.Region regions */ 4:
+                    message.regions.push(GetClusterHealthResponse_Region.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* google.protobuf.Timestamp from */ 5:
+                    message.from = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.from);
+                    break;
+                case /* google.protobuf.Timestamp to */ 6:
+                    message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterHealthResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.v1.GetClusterHealthResponse.Status status = 1; */
+        if (message.status !== 0)
+            writer.tag(1, WireType.Varint).int32(message.status);
+        /* repeated octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem subsystems = 2; */
+        for (let i = 0; i < message.subsystems.length; i++)
+            GetClusterHealthResponse_Subsystem.internalBinaryWrite(message.subsystems[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.visibility.v1.GetClusterHealthResponse.Component components = 3; */
+        for (let i = 0; i < message.components.length; i++)
+            GetClusterHealthResponse_Component.internalBinaryWrite(message.components[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.visibility.v1.GetClusterHealthResponse.Region regions = 4; */
+        for (let i = 0; i < message.regions.length; i++)
+            GetClusterHealthResponse_Region.internalBinaryWrite(message.regions[i], writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp from = 5; */
+        if (message.from)
+            Timestamp.internalBinaryWrite(message.from, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp to = 6; */
+        if (message.to)
+            Timestamp.internalBinaryWrite(message.to, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetClusterHealthResponse
+ */
+export const GetClusterHealthResponse = new GetClusterHealthResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterHealthResponse_Subsystem$Type extends MessageType<GetClusterHealthResponse_Subsystem> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem", [
+            { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem.Type", GetClusterHealthResponse_Subsystem_Type] },
+            { no: 2, name: "status", kind: "enum", T: () => ["octelium.api.main.visibility.v1.GetClusterHealthResponse.Status", GetClusterHealthResponse_Status] },
+            { no: 3, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "total", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "unhealthy", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterHealthResponse_Subsystem>): GetClusterHealthResponse_Subsystem {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.status = 0;
+        message.message = "";
+        message.total = 0;
+        message.unhealthy = 0;
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterHealthResponse_Subsystem>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterHealthResponse_Subsystem): GetClusterHealthResponse_Subsystem {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem.Type type */ 1:
+                    message.type = reader.int32();
+                    break;
+                case /* octelium.api.main.visibility.v1.GetClusterHealthResponse.Status status */ 2:
+                    message.status = reader.int32();
+                    break;
+                case /* string message */ 3:
+                    message.message = reader.string();
+                    break;
+                case /* uint64 total */ 4:
+                    message.total = reader.uint64().toNumber();
+                    break;
+                case /* uint64 unhealthy */ 5:
+                    message.unhealthy = reader.uint64().toNumber();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterHealthResponse_Subsystem, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem.Type type = 1; */
+        if (message.type !== 0)
+            writer.tag(1, WireType.Varint).int32(message.type);
+        /* octelium.api.main.visibility.v1.GetClusterHealthResponse.Status status = 2; */
+        if (message.status !== 0)
+            writer.tag(2, WireType.Varint).int32(message.status);
+        /* string message = 3; */
+        if (message.message !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.message);
+        /* uint64 total = 4; */
+        if (message.total !== 0)
+            writer.tag(4, WireType.Varint).uint64(message.total);
+        /* uint64 unhealthy = 5; */
+        if (message.unhealthy !== 0)
+            writer.tag(5, WireType.Varint).uint64(message.unhealthy);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem
+ */
+export const GetClusterHealthResponse_Subsystem = new GetClusterHealthResponse_Subsystem$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterHealthResponse_Component$Type extends MessageType<GetClusterHealthResponse_Component> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetClusterHealthResponse.Component", [
+            { no: 1, name: "component", kind: "message", T: () => ComponentSelector },
+            { no: 2, name: "status", kind: "enum", T: () => ["octelium.api.main.visibility.v1.GetClusterHealthResponse.Status", GetClusterHealthResponse_Status] },
+            { no: 3, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "totalWarn", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "totalError", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "totalPanic", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "totalFatal", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterHealthResponse_Component>): GetClusterHealthResponse_Component {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.status = 0;
+        message.totalNumber = 0;
+        message.totalWarn = 0;
+        message.totalError = 0;
+        message.totalPanic = 0;
+        message.totalFatal = 0;
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterHealthResponse_Component>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterHealthResponse_Component): GetClusterHealthResponse_Component {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.v1.ComponentSelector component */ 1:
+                    message.component = ComponentSelector.internalBinaryRead(reader, reader.uint32(), options, message.component);
+                    break;
+                case /* octelium.api.main.visibility.v1.GetClusterHealthResponse.Status status */ 2:
+                    message.status = reader.int32();
+                    break;
+                case /* uint64 totalNumber */ 3:
+                    message.totalNumber = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalWarn */ 4:
+                    message.totalWarn = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalError */ 5:
+                    message.totalError = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalPanic */ 6:
+                    message.totalPanic = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalFatal */ 7:
+                    message.totalFatal = reader.uint64().toNumber();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterHealthResponse_Component, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.v1.ComponentSelector component = 1; */
+        if (message.component)
+            ComponentSelector.internalBinaryWrite(message.component, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.v1.GetClusterHealthResponse.Status status = 2; */
+        if (message.status !== 0)
+            writer.tag(2, WireType.Varint).int32(message.status);
+        /* uint64 totalNumber = 3; */
+        if (message.totalNumber !== 0)
+            writer.tag(3, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalWarn = 4; */
+        if (message.totalWarn !== 0)
+            writer.tag(4, WireType.Varint).uint64(message.totalWarn);
+        /* uint64 totalError = 5; */
+        if (message.totalError !== 0)
+            writer.tag(5, WireType.Varint).uint64(message.totalError);
+        /* uint64 totalPanic = 6; */
+        if (message.totalPanic !== 0)
+            writer.tag(6, WireType.Varint).uint64(message.totalPanic);
+        /* uint64 totalFatal = 7; */
+        if (message.totalFatal !== 0)
+            writer.tag(7, WireType.Varint).uint64(message.totalFatal);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetClusterHealthResponse.Component
+ */
+export const GetClusterHealthResponse_Component = new GetClusterHealthResponse_Component$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterHealthResponse_Region$Type extends MessageType<GetClusterHealthResponse_Region> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetClusterHealthResponse.Region", [
+            { no: 1, name: "regionRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "status", kind: "enum", T: () => ["octelium.api.main.visibility.v1.GetClusterHealthResponse.Status", GetClusterHealthResponse_Status] },
+            { no: 3, name: "version", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "totalGateway", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterHealthResponse_Region>): GetClusterHealthResponse_Region {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.status = 0;
+        message.version = "";
+        message.totalGateway = 0;
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterHealthResponse_Region>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterHealthResponse_Region): GetClusterHealthResponse_Region {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference regionRef */ 1:
+                    message.regionRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.regionRef);
+                    break;
+                case /* octelium.api.main.visibility.v1.GetClusterHealthResponse.Status status */ 2:
+                    message.status = reader.int32();
+                    break;
+                case /* string version */ 3:
+                    message.version = reader.string();
+                    break;
+                case /* uint64 totalGateway */ 4:
+                    message.totalGateway = reader.uint64().toNumber();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterHealthResponse_Region, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference regionRef = 1; */
+        if (message.regionRef)
+            ObjectReference.internalBinaryWrite(message.regionRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.v1.GetClusterHealthResponse.Status status = 2; */
+        if (message.status !== 0)
+            writer.tag(2, WireType.Varint).int32(message.status);
+        /* string version = 3; */
+        if (message.version !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.version);
+        /* uint64 totalGateway = 4; */
+        if (message.totalGateway !== 0)
+            writer.tag(4, WireType.Varint).uint64(message.totalGateway);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetClusterHealthResponse.Region
+ */
+export const GetClusterHealthResponse_Region = new GetClusterHealthResponse_Region$Type();
 /**
  * @generated ServiceType for protobuf service octelium.api.main.visibility.v1.AccessLogService
  */
@@ -6668,7 +10496,8 @@ export const AccessLogService = new ServiceType("octelium.api.main.visibility.v1
     { name: "ListAccessLogTopUser", options: {}, I: ListAccessLogTopUserRequest, O: ListAccessLogTopUserResponse },
     { name: "ListAccessLogTopService", options: {}, I: ListAccessLogTopServiceRequest, O: ListAccessLogTopServiceResponse },
     { name: "ListAccessLogTopSession", options: {}, I: ListAccessLogTopSessionRequest, O: ListAccessLogTopSessionResponse },
-    { name: "ListAccessLogTopPolicy", options: {}, I: ListAccessLogTopPolicyRequest, O: ListAccessLogTopPolicyResponse }
+    { name: "ListAccessLogTopPolicy", options: {}, I: ListAccessLogTopPolicyRequest, O: ListAccessLogTopPolicyResponse },
+    { name: "ListAccessLogTopDenyReason", options: {}, I: ListAccessLogTopDenyReasonRequest, O: ListAccessLogTopDenyReasonResponse }
 ]);
 /**
  * @generated ServiceType for protobuf service octelium.api.main.visibility.v1.AuthenticationLogService
@@ -6697,7 +10526,15 @@ export const AuditLogService = new ServiceType("octelium.api.main.visibility.v1.
 export const ComponentLogService = new ServiceType("octelium.api.main.visibility.v1.ComponentLogService", [
     { name: "ListComponentLog", options: {}, I: ListComponentLogRequest, O: ListComponentLogResponse },
     { name: "GetComponentLogSummary", options: {}, I: GetComponentLogSummaryRequest, O: GetComponentLogSummaryResponse },
-    { name: "GetComponentLogDataPoint", options: {}, I: GetComponentLogDataPointRequest, O: GetComponentLogDataPointResponse }
+    { name: "GetComponentLogDataPoint", options: {}, I: GetComponentLogDataPointRequest, O: GetComponentLogDataPointResponse },
+    { name: "ListComponentLogTopComponent", options: {}, I: ListComponentLogTopComponentRequest, O: ListComponentLogTopComponentResponse }
+]);
+/**
+ * @generated ServiceType for protobuf service octelium.api.main.visibility.v1.ClusterService
+ */
+export const ClusterService = new ServiceType("octelium.api.main.visibility.v1.ClusterService", [
+    { name: "GetClusterSummary", options: {}, I: GetClusterSummaryRequest, O: GetClusterSummaryResponse },
+    { name: "GetClusterHealth", options: {}, I: GetClusterHealthRequest, O: GetClusterHealthResponse }
 ]);
 /**
  * @generated ServiceType for protobuf service octelium.api.main.visibility.v1.MetricsService

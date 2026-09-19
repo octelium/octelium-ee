@@ -111,6 +111,11 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
+	srvVisibilityCluster, err := visibility.NewServerCluster(ctx, octeliumC)
+	if err != nil {
+		return err
+	}
+
 	policyPortalSrv, err := policyportal.NewServer(ctx, octeliumC)
 	if err != nil {
 		return err
@@ -137,6 +142,7 @@ func Run(ctx context.Context) error {
 	vcorev1.RegisterResourceServiceServer(s, srvVisibilityResource)
 	venterprisev1.RegisterResourceServiceServer(s, srvVisibilityResourceEnterprise)
 	vaccessv1.RegisterResourceServiceServer(s, srvVisibilityResourceAccess)
+	visibilityv1.RegisterClusterServiceServer(s, srvVisibilityCluster)
 	enterprisev1.RegisterPolicyPortalServiceServer(s, policyPortalSrv)
 	enterprisev1.RegisterClusterServiceServer(s, clusterSrv)
 

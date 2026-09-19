@@ -1,18 +1,3 @@
-import {
-  GetRequestSummaryResponse,
-  GetReviewSummaryResponse,
-} from "@/apis/visibilityv1/access/vaccessv1";
-import {
-  GetAuthenticatorSummaryResponse,
-  GetDeviceSummaryResponse,
-  GetSessionSummaryResponse,
-} from "@/apis/visibilityv1/core/vcorev1";
-import {
-  GetCertificateIssuerSummaryResponse,
-  GetCertificateSummaryResponse,
-  GetDirectoryProviderSummaryResponse,
-  GetSecretStoreSummaryResponse,
-} from "@/apis/visibilityv1/enterprise/venterprisev1";
 import { n, periodLabel } from "@/utils/visibility";
 import { QUERY_PRIORITY } from "@/utils/visibility/queue";
 import {
@@ -38,7 +23,7 @@ import {
 import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import { Panel } from "./components";
-import { useComponentSummary, useResourceSummary } from "./queries";
+import { useClusterSummary, useComponentSummary } from "./queries";
 import { compact, exact } from "./utils";
 
 type Severity = "critical" | "warning" | "info";
@@ -136,70 +121,27 @@ const Attention = (props: { periodMinutes: number }) => {
   const { periodMinutes } = props;
   const rangeLabel = periodLabel(periodMinutes);
 
-  const requests = useResourceSummary<GetRequestSummaryResponse>({
-    api: "access",
-    kind: "Request",
-    method: "getRequestSummary",
-    priority: QUERY_PRIORITY.high,
-  });
-  const reviews = useResourceSummary<GetReviewSummaryResponse>({
-    api: "access",
-    kind: "Review",
-    method: "getReviewSummary",
-    priority: QUERY_PRIORITY.high,
-  });
-  const sessions = useResourceSummary<GetSessionSummaryResponse>({
-    api: "core",
-    kind: "Session",
-    method: "getSessionSummary",
-    priority: QUERY_PRIORITY.high,
-  });
-  const devices = useResourceSummary<GetDeviceSummaryResponse>({
-    api: "core",
-    kind: "Device",
-    method: "getDeviceSummary",
-    priority: QUERY_PRIORITY.high,
-  });
-  const authenticators = useResourceSummary<GetAuthenticatorSummaryResponse>({
-    api: "core",
-    kind: "Authenticator",
-    method: "getAuthenticatorSummary",
-    priority: QUERY_PRIORITY.normal,
-  });
-  const certificates = useResourceSummary<GetCertificateSummaryResponse>({
-    api: "enterprise",
-    kind: "Certificate",
-    method: "getCertificateSummary",
-    priority: QUERY_PRIORITY.normal,
-  });
-  const issuers = useResourceSummary<GetCertificateIssuerSummaryResponse>({
-    api: "enterprise",
-    kind: "CertificateIssuer",
-    method: "getCertificateIssuerSummary",
-    priority: QUERY_PRIORITY.low,
-  });
-  const directories = useResourceSummary<GetDirectoryProviderSummaryResponse>({
-    api: "enterprise",
-    kind: "DirectoryProvider",
-    method: "getDirectoryProviderSummary",
-    priority: QUERY_PRIORITY.low,
-  });
-  const secretStores = useResourceSummary<GetSecretStoreSummaryResponse>({
-    api: "enterprise",
-    kind: "SecretStore",
-    method: "getSecretStoreSummary",
-    priority: QUERY_PRIORITY.low,
-  });
-  const componentLogs = useComponentSummary(
+  const cluster = useClusterSummary(
+    "total",
     periodMinutes,
-    "current",
-    QUERY_PRIORITY.high,
+    QUERY_PRIORITY.critical,
   );
+  const componentLogs = useComponentSummary(periodMinutes, QUERY_PRIORITY.high);
+
+  const requests = cluster.data?.access?.request;
+  const reviews = cluster.data?.access?.review;
+  const sessions = cluster.data?.core?.session;
+  const devices = cluster.data?.core?.device;
+  const authenticators = cluster.data?.core?.authenticator;
+  const certificates = cluster.data?.enterprise?.certificate;
+  const issuers = cluster.data?.enterprise?.certificateIssuer;
+  const directories = cluster.data?.enterprise?.directoryProvider;
+  const secretStores = cluster.data?.enterprise?.secretStore;
 
   const candidates: Item[] = [
     {
       id: "requestsPending",
-      count: n(requests.data?.totalPending),
+      count: n(requests?.totalPending),
       label: "Access requests awaiting a decision",
       scope: "Access",
       severity: "warning",
@@ -208,7 +150,7 @@ const Attention = (props: { periodMinutes: number }) => {
     },
     {
       id: "requestsDeadline",
-      count: n(requests.data?.totalDeadlinePassed),
+      count: n(requests?.totalDeadlinePassed),
       label: "Access requests past their deadline",
       scope: "Access",
       severity: "critical",
@@ -217,7 +159,7 @@ const Attention = (props: { periodMinutes: number }) => {
     },
     {
       id: "reviewsPending",
-      count: n(reviews.data?.totalPending),
+      count: n(reviews?.totalPending),
       label: "Reviews waiting on a reviewer",
       scope: "Access",
       severity: "warning",
@@ -226,7 +168,7 @@ const Attention = (props: { periodMinutes: number }) => {
     },
     {
       id: "sessionsPending",
-      count: n(sessions.data?.totalPending),
+      count: n(sessions?.totalPending),
       label: "Sessions pending approval",
       scope: "Core",
       severity: "warning",
@@ -235,7 +177,7 @@ const Attention = (props: { periodMinutes: number }) => {
     },
     {
       id: "devicesPending",
-      count: n(devices.data?.totalPending),
+      count: n(devices?.totalPending),
       label: "Devices pending approval",
       scope: "Core",
       severity: "warning",
@@ -244,7 +186,7 @@ const Attention = (props: { periodMinutes: number }) => {
     },
     {
       id: "authenticatorsPending",
-      count: n(authenticators.data?.totalPending),
+      count: n(authenticators?.totalPending),
       label: "Authenticators pending registration",
       scope: "Core",
       severity: "info",
@@ -253,7 +195,7 @@ const Attention = (props: { periodMinutes: number }) => {
     },
     {
       id: "certsExpired",
-      count: n(certificates.data?.totalExpired),
+      count: n(certificates?.totalExpired),
       label: "Certificates already expired",
       scope: "Enterprise",
       severity: "critical",
@@ -262,7 +204,7 @@ const Attention = (props: { periodMinutes: number }) => {
     },
     {
       id: "certsExpiring",
-      count: n(certificates.data?.totalExpiringSoon),
+      count: n(certificates?.totalExpiringSoon),
       label: "Certificates expiring within 30 days",
       scope: "Enterprise",
       severity: "warning",
@@ -271,7 +213,7 @@ const Attention = (props: { periodMinutes: number }) => {
     },
     {
       id: "certsFailed",
-      count: n(certificates.data?.totalIssuanceFailed),
+      count: n(certificates?.totalIssuanceFailed),
       label: "Certificates that failed issuance",
       scope: "Enterprise",
       severity: "critical",
@@ -280,7 +222,7 @@ const Attention = (props: { periodMinutes: number }) => {
     },
     {
       id: "issuersNotReady",
-      count: n(issuers.data?.totalNotReady),
+      count: n(issuers?.totalNotReady),
       label: "Certificate issuers not ready",
       scope: "Enterprise",
       severity: "critical",
@@ -289,7 +231,7 @@ const Attention = (props: { periodMinutes: number }) => {
     },
     {
       id: "directorySync",
-      count: n(directories.data?.totalSynchronizationFailed),
+      count: n(directories?.totalSynchronizationFailed),
       label: "Directory providers failing to sync",
       scope: "Enterprise",
       severity: "critical",
@@ -298,7 +240,7 @@ const Attention = (props: { periodMinutes: number }) => {
     },
     {
       id: "secretStoreSync",
-      count: n(secretStores.data?.totalSynchronizationFailed),
+      count: n(secretStores?.totalSynchronizationFailed),
       label: "Secret stores failing to sync",
       scope: "Enterprise",
       severity: "critical",
@@ -327,20 +269,11 @@ const Attention = (props: { periodMinutes: number }) => {
         b.count - a.count,
     );
 
-  const queries = [
-    requests,
-    reviews,
-    sessions,
-    devices,
-    authenticators,
-    certificates,
-    issuers,
-    directories,
-    secretStores,
-    componentLogs,
-  ];
-  const isLoading = queries.some((query) => query.isLoading);
-  const failed = queries.filter((query) => query.isError).length;
+  const isLoading = cluster.isLoading || componentLogs.isLoading;
+  const failed =
+    (cluster.data?.unavailables.length ?? 0) +
+    (cluster.isError ? 1 : 0) +
+    (componentLogs.isError ? 1 : 0);
 
   const critical = items.filter((item) => item.severity === "critical").length;
 

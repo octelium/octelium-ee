@@ -20,14 +20,15 @@ import (
 	_ "github.com/duckdb/duckdb-go/v2"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
 )
 
-func (s *Server) getSummaryCoreUser(ctx context.Context, req *vcorev1.GetUserSummaryRequest) (*vcorev1.GetUserSummaryResponse, error) {
+func (s *Server) doSummaryCoreUser(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vcorev1.GetUserSummaryResponse, error) {
 
 	ret := &vcorev1.GetUserSummaryResponse{}
-	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindUser, req.GetCommon())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindUser, common)
 	if err != nil {
 		return nil, err
 	}
@@ -66,10 +67,10 @@ func (s *Server) getSummaryCoreUser(ctx context.Context, req *vcorev1.GetUserSum
 			return nil, err
 		}
 
-		ret.TotalNumber = uint32(countTotal)
-		ret.TotalHuman = uint32(countHuman)
-		ret.TotalWorkload = uint32(countWorkload)
-		ret.TotalDisabled = uint32(countDeactivated)
+		ret.TotalNumber = uint64(countTotal)
+		ret.TotalHuman = uint64(countHuman)
+		ret.TotalWorkload = uint64(countWorkload)
+		ret.TotalDisabled = uint64(countDeactivated)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, grpcutils.InternalWithErr(err)
@@ -79,10 +80,10 @@ func (s *Server) getSummaryCoreUser(ctx context.Context, req *vcorev1.GetUserSum
 
 }
 
-func (s *Server) getSummaryCoreSession(ctx context.Context, req *vcorev1.GetSessionSummaryRequest) (*vcorev1.GetSessionSummaryResponse, error) {
+func (s *Server) doSummaryCoreSession(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vcorev1.GetSessionSummaryResponse, error) {
 
 	ret := &vcorev1.GetSessionSummaryResponse{}
-	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindSession, req.GetCommon())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindSession, common)
 	if err != nil {
 		return nil, err
 	}
@@ -134,10 +135,10 @@ func (s *Server) getSummaryCoreSession(ctx context.Context, req *vcorev1.GetSess
 	return ret, nil
 }
 
-func (s *Server) getSummaryCoreService(ctx context.Context, req *vcorev1.GetServiceSummaryRequest) (*vcorev1.GetServiceSummaryResponse, error) {
+func (s *Server) doSummaryCoreService(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vcorev1.GetServiceSummaryResponse, error) {
 
 	ret := &vcorev1.GetServiceSummaryResponse{}
-	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindService, req.GetCommon())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindService, common)
 	if err != nil {
 		return nil, err
 	}
@@ -207,10 +208,10 @@ func (s *Server) getSummaryCoreService(ctx context.Context, req *vcorev1.GetServ
 
 }
 
-func (s *Server) getSummaryCorePolicy(ctx context.Context, req *vcorev1.GetPolicySummaryRequest) (*vcorev1.GetPolicySummaryResponse, error) {
+func (s *Server) doSummaryCorePolicy(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vcorev1.GetPolicySummaryResponse, error) {
 
 	ret := &vcorev1.GetPolicySummaryResponse{}
-	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindPolicy, req.GetCommon())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindPolicy, common)
 	if err != nil {
 		return nil, err
 	}
@@ -265,10 +266,10 @@ func (s *Server) getSummaryCorePolicy(ctx context.Context, req *vcorev1.GetPolic
 	return ret, nil
 }
 
-func (s *Server) getSummaryCoreCredential(ctx context.Context, req *vcorev1.GetCredentialSummaryRequest) (*vcorev1.GetCredentialSummaryResponse, error) {
+func (s *Server) doSummaryCoreCredential(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vcorev1.GetCredentialSummaryResponse, error) {
 
 	ret := &vcorev1.GetCredentialSummaryResponse{}
-	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindCredential, req.GetCommon())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindCredential, common)
 	if err != nil {
 		return nil, err
 	}
@@ -315,10 +316,10 @@ func (s *Server) getSummaryCoreCredential(ctx context.Context, req *vcorev1.GetC
 
 }
 
-func (s *Server) getSummaryCoreIdentityProvider(ctx context.Context, req *vcorev1.GetIdentityProviderSummaryRequest) (*vcorev1.GetIdentityProviderSummaryResponse, error) {
+func (s *Server) doSummaryCoreIdentityProvider(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vcorev1.GetIdentityProviderSummaryResponse, error) {
 
 	ret := &vcorev1.GetIdentityProviderSummaryResponse{}
-	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindIdentityProvider, req.GetCommon())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindIdentityProvider, common)
 	if err != nil {
 		return nil, err
 	}
@@ -365,10 +366,10 @@ func (s *Server) getSummaryCoreIdentityProvider(ctx context.Context, req *vcorev
 
 }
 
-func (s *Server) getSummaryCoreDevice(ctx context.Context, req *vcorev1.GetDeviceSummaryRequest) (*vcorev1.GetDeviceSummaryResponse, error) {
+func (s *Server) doSummaryCoreDevice(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vcorev1.GetDeviceSummaryResponse, error) {
 
 	ret := &vcorev1.GetDeviceSummaryResponse{}
-	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindDevice, req.GetCommon())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindDevice, common)
 	if err != nil {
 		return nil, err
 	}
@@ -421,10 +422,10 @@ func (s *Server) getSummaryCoreDevice(ctx context.Context, req *vcorev1.GetDevic
 	return ret, nil
 }
 
-func (s *Server) getSummaryCoreAuthenticator(ctx context.Context, req *vcorev1.GetAuthenticatorSummaryRequest) (*vcorev1.GetAuthenticatorSummaryResponse, error) {
+func (s *Server) doSummaryCoreAuthenticator(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vcorev1.GetAuthenticatorSummaryResponse, error) {
 
 	ret := &vcorev1.GetAuthenticatorSummaryResponse{}
-	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindAuthenticator, req.GetCommon())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindAuthenticator, common)
 	if err != nil {
 		return nil, err
 	}
@@ -482,10 +483,10 @@ func (s *Server) getSummaryCoreAuthenticator(ctx context.Context, req *vcorev1.G
 
 }
 
-func (s *Server) getSummaryCoreGroup(ctx context.Context, req *vcorev1.GetGroupSummaryRequest) (*vcorev1.GetGroupSummaryResponse, error) {
+func (s *Server) doSummaryCoreGroup(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vcorev1.GetGroupSummaryResponse, error) {
 
 	ret := &vcorev1.GetGroupSummaryResponse{}
-	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindGroup, req.GetCommon())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindGroup, common)
 	if err != nil {
 		return nil, err
 	}
@@ -521,168 +522,220 @@ func (s *Server) getSummaryCoreGroup(ctx context.Context, req *vcorev1.GetGroupS
 	}
 
 	return ret, nil
+}
+
+func (s *Server) doSummaryCoreRegion(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vcorev1.GetRegionSummaryResponse, error) {
+
+	ret := &vcorev1.GetRegionSummaryResponse{}
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindRegion, common)
+	if err != nil {
+		return nil, err
+	}
+
+	ds := goqu.From("resources").Where(filters...).
+		Select(
+			goqu.L(`COUNT(*) AS count_total`),
+		)
+
+	sqln, sqlargs, err := ds.ToSQL()
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	rows, err := s.db.QueryContext(ctx, sqln, sqlargs...)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ret, nil
+		}
+
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err := rows.Scan(&ret.TotalNumber)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	return ret, nil
+}
+
+func (s *Server) doSummaryCoreGateway(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vcorev1.GetGatewaySummaryResponse, error) {
+
+	ret := &vcorev1.GetGatewaySummaryResponse{}
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindGateway, common)
+	if err != nil {
+		return nil, err
+	}
+
+	ds := goqu.From("resources").Where(filters...).
+		Select(
+			goqu.L(`COUNT(*) AS count_total`),
+		)
+
+	sqln, sqlargs, err := ds.ToSQL()
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	rows, err := s.db.QueryContext(ctx, sqln, sqlargs...)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ret, nil
+		}
+
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err := rows.Scan(&ret.TotalNumber)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	return ret, nil
+}
+
+func (s *Server) doSummaryCoreSecret(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vcorev1.GetSecretSummaryResponse, error) {
+
+	ret := &vcorev1.GetSecretSummaryResponse{}
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindSecret, common)
+	if err != nil {
+		return nil, err
+	}
+
+	ds := goqu.From("resources").Where(filters...).
+		Select(
+			goqu.L(`COUNT(*) AS count_total`),
+		)
+
+	sqln, sqlargs, err := ds.ToSQL()
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	rows, err := s.db.QueryContext(ctx, sqln, sqlargs...)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ret, nil
+		}
+
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err := rows.Scan(&ret.TotalNumber)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	return ret, nil
+}
+
+func (s *Server) doSummaryCoreNamespace(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vcorev1.GetNamespaceSummaryResponse, error) {
+
+	ret := &vcorev1.GetNamespaceSummaryResponse{}
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindNamespace, common)
+	if err != nil {
+		return nil, err
+	}
+
+	ds := goqu.From("resources").Where(filters...).
+		Select(
+			goqu.L(`COUNT(*) AS count_total`),
+		)
+
+	sqln, sqlargs, err := ds.ToSQL()
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	rows, err := s.db.QueryContext(ctx, sqln, sqlargs...)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ret, nil
+		}
+
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err := rows.Scan(&ret.TotalNumber)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	return ret, nil
+}
+
+func (s *Server) getSummaryCoreUser(ctx context.Context, req *vcorev1.GetUserSummaryRequest) (*vcorev1.GetUserSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryCoreUser)
+}
+
+func (s *Server) getSummaryCoreSession(ctx context.Context, req *vcorev1.GetSessionSummaryRequest) (*vcorev1.GetSessionSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryCoreSession)
+}
+
+func (s *Server) getSummaryCoreService(ctx context.Context, req *vcorev1.GetServiceSummaryRequest) (*vcorev1.GetServiceSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryCoreService)
+}
+
+func (s *Server) getSummaryCorePolicy(ctx context.Context, req *vcorev1.GetPolicySummaryRequest) (*vcorev1.GetPolicySummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryCorePolicy)
+}
+
+func (s *Server) getSummaryCoreCredential(ctx context.Context, req *vcorev1.GetCredentialSummaryRequest) (*vcorev1.GetCredentialSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryCoreCredential)
+}
+
+func (s *Server) getSummaryCoreIdentityProvider(ctx context.Context, req *vcorev1.GetIdentityProviderSummaryRequest) (*vcorev1.GetIdentityProviderSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryCoreIdentityProvider)
+}
+
+func (s *Server) getSummaryCoreDevice(ctx context.Context, req *vcorev1.GetDeviceSummaryRequest) (*vcorev1.GetDeviceSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryCoreDevice)
+}
+
+func (s *Server) getSummaryCoreAuthenticator(ctx context.Context, req *vcorev1.GetAuthenticatorSummaryRequest) (*vcorev1.GetAuthenticatorSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryCoreAuthenticator)
+}
+
+func (s *Server) getSummaryCoreGroup(ctx context.Context, req *vcorev1.GetGroupSummaryRequest) (*vcorev1.GetGroupSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryCoreGroup)
 }
 
 func (s *Server) getSummaryCoreRegion(ctx context.Context, req *vcorev1.GetRegionSummaryRequest) (*vcorev1.GetRegionSummaryResponse, error) {
-
-	ret := &vcorev1.GetRegionSummaryResponse{}
-	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindRegion, req.GetCommon())
-	if err != nil {
-		return nil, err
-	}
-
-	ds := goqu.From("resources").Where(filters...).
-		Select(
-			goqu.L(`COUNT(*) AS count_total`),
-		)
-
-	sqln, sqlargs, err := ds.ToSQL()
-	if err != nil {
-		return nil, grpcutils.InternalWithErr(err)
-	}
-
-	rows, err := s.db.QueryContext(ctx, sqln, sqlargs...)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ret, nil
-		}
-
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		err := rows.Scan(&ret.TotalNumber)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return nil, grpcutils.InternalWithErr(err)
-	}
-
-	return ret, nil
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryCoreRegion)
 }
 
 func (s *Server) getSummaryCoreGateway(ctx context.Context, req *vcorev1.GetGatewaySummaryRequest) (*vcorev1.GetGatewaySummaryResponse, error) {
-
-	ret := &vcorev1.GetGatewaySummaryResponse{}
-	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindGateway, req.GetCommon())
-	if err != nil {
-		return nil, err
-	}
-
-	ds := goqu.From("resources").Where(filters...).
-		Select(
-			goqu.L(`COUNT(*) AS count_total`),
-		)
-
-	sqln, sqlargs, err := ds.ToSQL()
-	if err != nil {
-		return nil, grpcutils.InternalWithErr(err)
-	}
-
-	rows, err := s.db.QueryContext(ctx, sqln, sqlargs...)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ret, nil
-		}
-
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		err := rows.Scan(&ret.TotalNumber)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return nil, grpcutils.InternalWithErr(err)
-	}
-
-	return ret, nil
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryCoreGateway)
 }
 
 func (s *Server) getSummaryCoreSecret(ctx context.Context, req *vcorev1.GetSecretSummaryRequest) (*vcorev1.GetSecretSummaryResponse, error) {
-
-	ret := &vcorev1.GetSecretSummaryResponse{}
-	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindSecret, req.GetCommon())
-	if err != nil {
-		return nil, err
-	}
-
-	ds := goqu.From("resources").Where(filters...).
-		Select(
-			goqu.L(`COUNT(*) AS count_total`),
-		)
-
-	sqln, sqlargs, err := ds.ToSQL()
-	if err != nil {
-		return nil, grpcutils.InternalWithErr(err)
-	}
-
-	rows, err := s.db.QueryContext(ctx, sqln, sqlargs...)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ret, nil
-		}
-
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		err := rows.Scan(&ret.TotalNumber)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return nil, grpcutils.InternalWithErr(err)
-	}
-
-	return ret, nil
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryCoreSecret)
 }
 
 func (s *Server) getSummaryCoreNamespace(ctx context.Context, req *vcorev1.GetNamespaceSummaryRequest) (*vcorev1.GetNamespaceSummaryResponse, error) {
-
-	ret := &vcorev1.GetNamespaceSummaryResponse{}
-	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindNamespace, req.GetCommon())
-	if err != nil {
-		return nil, err
-	}
-
-	ds := goqu.From("resources").Where(filters...).
-		Select(
-			goqu.L(`COUNT(*) AS count_total`),
-		)
-
-	sqln, sqlargs, err := ds.ToSQL()
-	if err != nil {
-		return nil, grpcutils.InternalWithErr(err)
-	}
-
-	rows, err := s.db.QueryContext(ctx, sqln, sqlargs...)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ret, nil
-		}
-
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		err := rows.Scan(&ret.TotalNumber)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return nil, grpcutils.InternalWithErr(err)
-	}
-
-	return ret, nil
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryCoreNamespace)
 }

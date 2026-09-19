@@ -83,6 +83,11 @@ export const getClientVisibilityComponentLog =
     return new VisibilityC.ComponentLogServiceClient(getTransport());
   };
 
+export const getClientVisibilityCluster =
+  (): VisibilityC.ClusterServiceClient => {
+    return new VisibilityC.ClusterServiceClient(getTransport());
+  };
+
 export const getClientAuth = (): AuthGRPC.MainServiceClient => {
   return new AuthGRPC.MainServiceClient(getTransport());
 };

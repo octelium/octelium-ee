@@ -2,6 +2,7 @@ import { ComponentLog, ComponentLog_Entry_Level } from "@/apis/corev1/corev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { Value } from "@/apis/google/protobuf/struct";
 import {
+  ComponentSelector,
   ListComponentLogRequest,
   ListComponentLogResponse,
 } from "@/apis/visibilityv1/visibilityv1";
@@ -200,7 +201,6 @@ const ComponentLogDetails = ({ log }: { log: ComponentLog }) => {
               </div>
             </div>
           )}
-
       </div>
     </div>
   );
@@ -271,17 +271,17 @@ export const ComponentLogC = ({ log }: { log: ComponentLog }) => {
           <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] font-medium text-slate-500">
             {(entry.function || entry.file) && (
               <>
-              {entry.function && (
-                <span className="max-w-56 truncate font-mono font-semibold text-slate-500">
-                  {entry.function}
-                </span>
-              )}
-              {entry.file && (
-                <span className="max-w-64 truncate font-mono">
-                  {entry.file}
-                  {entry.line ? `:${entry.line}` : ""}
-                </span>
-              )}
+                {entry.function && (
+                  <span className="max-w-56 truncate font-mono font-semibold text-slate-500">
+                    {entry.function}
+                  </span>
+                )}
+                {entry.file && (
+                  <span className="max-w-64 truncate font-mono">
+                    {entry.file}
+                    {entry.line ? `:${entry.line}` : ""}
+                  </span>
+                )}
               </>
             )}
             {(entry.time || x.metadata?.createdAt) && (
@@ -290,16 +290,17 @@ export const ComponentLogC = ({ log }: { log: ComponentLog }) => {
           </span>
         </span>
 
-        {entry.fields?.fields && Object.keys(entry.fields.fields).length > 0 && (
-          <span className="hidden shrink-0 text-right sm:block">
-            <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-              Fields
+        {entry.fields?.fields &&
+          Object.keys(entry.fields.fields).length > 0 && (
+            <span className="hidden shrink-0 text-right sm:block">
+              <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                Fields
+              </span>
+              <span className="block text-xs font-semibold text-slate-700">
+                {Object.keys(entry.fields.fields).length}
+              </span>
             </span>
-            <span className="block text-xs font-semibold text-slate-700">
-              {Object.keys(entry.fields.fields).length}
-            </span>
-          </span>
-        )}
+          )}
 
         <motion.span
           animate={{ rotate: expanded ? 180 : 0 }}
@@ -346,11 +347,12 @@ const ComponentLogViewer = (props: {
   page?: number;
   onPageChange?: (page: number) => void;
   query?: string;
+  component?: ComponentSelector;
 }) => {
   const [page, setPage] = React.useState(props.page ?? 0);
-  const [level, setLevel] = React.useState<ComponentLog_Entry_Level | undefined>(
-    props.level,
-  );
+  const [level, setLevel] = React.useState<
+    ComponentLog_Entry_Level | undefined
+  >(props.level);
   const [from, setFrom] = React.useState<Timestamp>(
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
   );
@@ -371,6 +373,7 @@ const ComponentLogViewer = (props: {
       from ? Timestamp.toDate(from).toISOString() : undefined,
       level,
       props.query,
+      props.component ? ComponentSelector.toJsonString(props.component) : null,
     ],
     queryFn: async () => {
       if (isDev()) {
@@ -391,7 +394,7 @@ const ComponentLogViewer = (props: {
                   type: "nocturne",
                   uid: "abc-123",
                 },
-              level: level ?? ComponentLog_Entry_Level.INFO,
+                level: level ?? ComponentLog_Entry_Level.INFO,
                 message: "Component is starting...",
                 function: "main.Run",
                 file: "cmd/nocturne/main.go",
@@ -412,6 +415,7 @@ const ComponentLogViewer = (props: {
             },
             from,
             level,
+            component: props.component,
           }),
         );
       return response;
@@ -467,7 +471,9 @@ const ComponentLogViewer = (props: {
       <div className="w-full">
         <div className="flex items-center justify-between mb-4">
           <span className="text-xs font-normal text-slate-500 tabular-nums">
-            {totalCount ? `${totalCount.toLocaleString()} entries` : "No entries"}
+            {totalCount
+              ? `${totalCount.toLocaleString()} entries`
+              : "No entries"}
           </span>
           <button
             type="button"

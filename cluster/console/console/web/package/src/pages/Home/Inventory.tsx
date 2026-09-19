@@ -1,3 +1,4 @@
+import { GetClusterSummaryResponse } from "@/apis/visibilityv1/visibilityv1";
 import { n, periodLabel } from "@/utils/visibility";
 import { QUERY_PRIORITY } from "@/utils/visibility/queue";
 import {
@@ -21,17 +22,19 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Panel } from "./components";
-import { useResourceRangeSummary, useResourceSummary } from "./queries";
+import { useClusterSummary } from "./queries";
 import { compact, exact } from "./utils";
 
 type Api = "core" | "access" | "enterprise";
+
+type Summary = { totalNumber?: unknown } | undefined;
 
 type Entry = {
   kind: string;
   label: string;
   to: string;
   icon: LucideIcon;
-  method: string;
+  pick: (summary?: GetClusterSummaryResponse) => Summary;
   withRange?: boolean;
 };
 
@@ -55,7 +58,7 @@ const GROUPS: Group[] = [
         label: "Users",
         to: "/core/users",
         icon: User,
-        method: "getUserSummary",
+        pick: (summary) => summary?.core?.user,
         withRange: true,
       },
       {
@@ -63,7 +66,7 @@ const GROUPS: Group[] = [
         label: "Sessions",
         to: "/core/sessions",
         icon: Terminal,
-        method: "getSessionSummary",
+        pick: (summary) => summary?.core?.session,
         withRange: true,
       },
       {
@@ -71,7 +74,7 @@ const GROUPS: Group[] = [
         label: "Devices",
         to: "/core/devices",
         icon: LaptopMinimal,
-        method: "getDeviceSummary",
+        pick: (summary) => summary?.core?.device,
         withRange: true,
       },
       {
@@ -79,7 +82,7 @@ const GROUPS: Group[] = [
         label: "Services",
         to: "/core/services",
         icon: PanelTop,
-        method: "getServiceSummary",
+        pick: (summary) => summary?.core?.service,
         withRange: true,
       },
       {
@@ -87,14 +90,14 @@ const GROUPS: Group[] = [
         label: "Namespaces",
         to: "/core/namespaces",
         icon: Boxes,
-        method: "getNamespaceSummary",
+        pick: (summary) => summary?.core?.namespace,
       },
       {
         kind: "Policy",
         label: "Policies",
         to: "/core/policies",
         icon: Shield,
-        method: "getPolicySummary",
+        pick: (summary) => summary?.core?.policy,
       },
     ],
   },
@@ -109,7 +112,7 @@ const GROUPS: Group[] = [
         label: "Requests",
         to: "/access/requests",
         icon: Inbox,
-        method: "getRequestSummary",
+        pick: (summary) => summary?.access?.request,
         withRange: true,
       },
       {
@@ -117,7 +120,7 @@ const GROUPS: Group[] = [
         label: "Reviews",
         to: "/access/reviews",
         icon: ClipboardCheck,
-        method: "getReviewSummary",
+        pick: (summary) => summary?.access?.review,
         withRange: true,
       },
       {
@@ -125,14 +128,14 @@ const GROUPS: Group[] = [
         label: "Policies",
         to: "/access/policies",
         icon: Shield,
-        method: "getPolicySummary",
+        pick: (summary) => summary?.access?.policy,
       },
       {
         kind: "Catalog",
         label: "Catalogs",
         to: "/access/catalogs",
         icon: Layers,
-        method: "getCatalogSummary",
+        pick: (summary) => summary?.access?.catalog,
       },
     ],
   },
@@ -147,54 +150,46 @@ const GROUPS: Group[] = [
         label: "Certificates",
         to: "/enterprise/certificates",
         icon: ShieldCheck,
-        method: "getCertificateSummary",
+        pick: (summary) => summary?.enterprise?.certificate,
       },
       {
         kind: "DirectoryProvider",
         label: "Directory Providers",
         to: "/enterprise/directoryproviders",
         icon: Folder,
-        method: "getDirectoryProviderSummary",
+        pick: (summary) => summary?.enterprise?.directoryProvider,
       },
       {
         kind: "SecretStore",
         label: "Secret Stores",
         to: "/enterprise/secretstores",
         icon: BookKey,
-        method: "getSecretStoreSummary",
+        pick: (summary) => summary?.enterprise?.secretStore,
       },
       {
         kind: "CollectorExporter",
         label: "Collector Exporters",
         to: "/enterprise/collectorexporters",
         icon: Telescope,
-        method: "getCollectorExporterSummary",
+        pick: (summary) => summary?.enterprise?.collectorExporter,
       },
     ],
   },
 ];
 
-const Row = (props: { api: Api; entry: Entry; periodMinutes: number }) => {
+const Row = (props: {
+  entry: Entry;
+  total?: GetClusterSummaryResponse;
+  created?: GetClusterSummaryResponse;
+  isLoading: boolean;
+}) => {
   const { entry } = props;
   const Icon = entry.icon;
 
-  const total = useResourceSummary<{ totalNumber?: unknown }>({
-    api: props.api,
-    kind: entry.kind,
-    method: entry.method,
-    priority: QUERY_PRIORITY.low,
-  });
-
-  const created = useResourceRangeSummary<{ totalNumber?: unknown }>({
-    api: props.api,
-    kind: entry.kind,
-    method: entry.method,
-    periodMinutes: props.periodMinutes,
-    priority: QUERY_PRIORITY.low,
-    enabled: !!entry.withRange,
-  });
-
-  const createdCount = n(created.data?.totalNumber);
+  const totalCount = n(entry.pick(props.total)?.totalNumber);
+  const createdCount = entry.withRange
+    ? n(entry.pick(props.created)?.totalNumber)
+    : 0;
 
   return (
     <Link
@@ -209,20 +204,20 @@ const Row = (props: { api: Api; entry: Entry; periodMinutes: number }) => {
         {entry.label}
       </span>
 
-      {entry.withRange && createdCount > 0 && (
+      {createdCount > 0 && (
         <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-px text-micro font-semibold tabular-nums text-emerald-700">
           +{compact(createdCount)}
         </span>
       )}
 
-      {total.isLoading ? (
+      {props.isLoading ? (
         <span className="h-4 w-10 shrink-0 animate-pulse rounded bg-slate-100" />
       ) : (
         <span
           className="shrink-0 text-sm font-bold tabular-nums text-slate-900"
-          title={exact(n(total.data?.totalNumber))}
+          title={exact(totalCount)}
         >
-          {compact(n(total.data?.totalNumber))}
+          {compact(totalCount)}
         </span>
       )}
     </Link>
@@ -230,7 +225,19 @@ const Row = (props: { api: Api; entry: Entry; periodMinutes: number }) => {
 };
 
 const Inventory = (props: { periodMinutes: number }) => {
-  const rangeLabel = periodLabel(props.periodMinutes);
+  const { periodMinutes } = props;
+  const rangeLabel = periodLabel(periodMinutes);
+
+  const cluster = useClusterSummary(
+    "total",
+    periodMinutes,
+    QUERY_PRIORITY.critical,
+  );
+  const clusterRange = useClusterSummary(
+    "range",
+    periodMinutes,
+    QUERY_PRIORITY.high,
+  );
 
   return (
     <Panel
@@ -269,9 +276,10 @@ const Inventory = (props: { periodMinutes: number }) => {
                 {group.entries.map((entry) => (
                   <Row
                     key={`${group.api}-${entry.kind}`}
-                    api={group.api}
                     entry={entry}
-                    periodMinutes={props.periodMinutes}
+                    total={cluster.data}
+                    created={clusterRange.data}
+                    isLoading={cluster.isLoading}
                   />
                 ))}
               </div>

@@ -31,6 +31,35 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const sqlAccessLogStartedAt = `TRY_CAST(json_extract_string(rsc, '$.entry.common.startedAt') AS TIMESTAMP)`
+const sqlAccessLogEndedAt = `TRY_CAST(json_extract_string(rsc, '$.entry.common.endedAt') AS TIMESTAMP)`
+
+// sqlAccessLogDurationMillis is the duration of an entry in milliseconds. It is
+// NULL for the entries that do not carry both a start and an end time.
+var sqlAccessLogDurationMillis = fmt.Sprintf(
+	`CASE WHEN %s IS NOT NULL AND %s IS NOT NULL AND %s >= %s
+		THEN (epoch_ms(%s) - epoch_ms(%s)) END`,
+	sqlAccessLogStartedAt, sqlAccessLogEndedAt, sqlAccessLogEndedAt, sqlAccessLogStartedAt,
+	sqlAccessLogEndedAt, sqlAccessLogStartedAt)
+
+const sqlAccessLogBytesSent = `COALESCE(TRY_CAST(json_extract_string(rsc, '$.entry.info.tcp.sentBytes') AS BIGINT), 0)
+	+ COALESCE(TRY_CAST(json_extract_string(rsc, '$.entry.info.http.response.bodyBytes') AS BIGINT), 0)`
+
+const sqlAccessLogBytesReceived = `COALESCE(TRY_CAST(json_extract_string(rsc, '$.entry.info.tcp.receivedBytes') AS BIGINT), 0)
+	+ COALESCE(TRY_CAST(json_extract_string(rsc, '$.entry.info.http.request.bodyBytes') AS BIGINT), 0)`
+
+// sqlComponentKey identifies a single component within the ComponentLogs.
+var sqlComponentKey = fmt.Sprintf(`CONCAT(COALESCE(%s, ''), '/', COALESCE(%s, ''))`,
+	jsonComponentNamespace, jsonComponentType)
+
+// sqlAuditAction classifies an AuditLog entry by what its API method does to
+// the resource.
+var sqlAuditAction = fmt.Sprintf(`CASE
+	WHEN starts_with(COALESCE(%s, ''), 'Create') THEN 'CREATE'
+	WHEN starts_with(COALESCE(%s, ''), 'Update') THEN 'UPDATE'
+	WHEN starts_with(COALESCE(%s, ''), 'Delete') THEN 'DELETE'
+	ELSE 'OTHER' END`, jsonAuditMethod, jsonAuditMethod, jsonAuditMethod)
+
 func (s *Server) insertLogBatches(ctx context.Context, batches []*pendingLogBatch) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -575,6 +604,14 @@ func (s *Server) listSSHSessionRecording(ctx context.Context, req *visibilityv1.
 }
 
 func (s *Server) getSummaryAccessLog(ctx context.Context, req *visibilityv1.GetAccessLogSummaryRequest) (*visibilityv1.GetAccessLogSummaryResponse, error) {
+	return withLogSummaryComparison(ctx, req.From, req.To, req.CompareFrom, req.CompareTo,
+		func(ctx context.Context, from, to *timestamppb.Timestamp) (*visibilityv1.GetAccessLogSummaryResponse, error) {
+			return s.doSummaryAccessLog(ctx, req, from, to)
+		})
+}
+
+func (s *Server) doSummaryAccessLog(ctx context.Context, req *visibilityv1.GetAccessLogSummaryRequest,
+	from, to *timestamppb.Timestamp) (*visibilityv1.GetAccessLogSummaryResponse, error) {
 	ret := &visibilityv1.GetAccessLogSummaryResponse{}
 
 	var filters []exp.Expression
@@ -649,7 +686,18 @@ func (s *Server) getSummaryAccessLog(ctx context.Context, req *visibilityv1.GetA
 		}
 	*/
 
-	filters = appendTimeFilters(filters, req.From, req.To)
+	if req.Status != corev1.AccessLog_Entry_Common_STATUS_UNSET {
+		switch req.Status {
+		case corev1.AccessLog_Entry_Common_ALLOWED, corev1.AccessLog_Entry_Common_DENIED:
+			filters = append(filters, goqu.L(colStatus).Eq(req.Status.String()))
+		}
+	}
+
+	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
+
+	filters = appendTimeFilters(filters, from, to)
+
+	latency := &visibilityv1.GetAccessLogSummaryResponse_Latency{}
 
 	ds := goqu.From("access_logs").Where(filters...).Select(
 		goqu.L(`COUNT(*) AS count_total`),
@@ -661,6 +709,16 @@ func (s *Server) getSummaryAccessLog(ctx context.Context, req *visibilityv1.GetA
 		goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_service`, colServiceUID)),
 		goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_namespace`, colNamespaceUID)),
 		goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_match_policy`, colPolicyUID)),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'true') AS count_public`, jsonIsPublic)),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'true') AS count_anonymous`, jsonIsAnonymous)),
+		goqu.L(fmt.Sprintf(`COALESCE(SUM(%s), 0) AS bytes_sent`, sqlAccessLogBytesSent)),
+		goqu.L(fmt.Sprintf(`COALESCE(SUM(%s), 0) AS bytes_received`, sqlAccessLogBytesReceived)),
+		goqu.L(fmt.Sprintf(`COUNT(%s) AS latency_count`, sqlAccessLogDurationMillis)),
+		goqu.L(fmt.Sprintf(`COALESCE(quantile_cont(%s, 0.5), 0) AS latency_p50`, sqlAccessLogDurationMillis)),
+		goqu.L(fmt.Sprintf(`COALESCE(quantile_cont(%s, 0.95), 0) AS latency_p95`, sqlAccessLogDurationMillis)),
+		goqu.L(fmt.Sprintf(`COALESCE(quantile_cont(%s, 0.99), 0) AS latency_p99`, sqlAccessLogDurationMillis)),
+		goqu.L(fmt.Sprintf(`COALESCE(MAX(%s), 0) AS latency_max`, sqlAccessLogDurationMillis)),
+		goqu.L(fmt.Sprintf(`COALESCE(AVG(%s), 0) AS latency_avg`, sqlAccessLogDurationMillis)),
 	)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -682,16 +740,40 @@ func (s *Server) getSummaryAccessLog(ctx context.Context, req *visibilityv1.GetA
 		err := rows.Scan(&ret.TotalNumber,
 			&ret.TotalAllowed, &ret.TotalDenied,
 			&ret.TotalUser, &ret.TotalSession, &ret.TotalDevice,
-			&ret.TotalService, &ret.TotalNamespace, &ret.TotalMatchPolicy)
+			&ret.TotalService, &ret.TotalNamespace, &ret.TotalMatchPolicy,
+			&ret.TotalPublic, &ret.TotalAnonymous,
+			&ret.TotalBytesSent, &ret.TotalBytesReceived,
+			&latency.Count, &latency.P50Milliseconds, &latency.P95Milliseconds,
+			&latency.P99Milliseconds, &latency.MaxMilliseconds, &latency.AvgMilliseconds)
 		if err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	if latency.Count > 0 {
+		ret.Latency = latency
+	}
+
+	ret.TotalByMode, err = s.getGroupedCounts(ctx, "access_logs", jsonMode, filters)
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil
 }
 
 func (s *Server) getSummaryAuthenticationLog(ctx context.Context, req *visibilityv1.GetAuthenticationLogSummaryRequest) (*visibilityv1.GetAuthenticationLogSummaryResponse, error) {
+	return withLogSummaryComparison(ctx, req.From, req.To, req.CompareFrom, req.CompareTo,
+		func(ctx context.Context, from, to *timestamppb.Timestamp) (*visibilityv1.GetAuthenticationLogSummaryResponse, error) {
+			return s.doSummaryAuthenticationLog(ctx, req, from, to)
+		})
+}
+
+func (s *Server) doSummaryAuthenticationLog(ctx context.Context, req *visibilityv1.GetAuthenticationLogSummaryRequest,
+	from, to *timestamppb.Timestamp) (*visibilityv1.GetAuthenticationLogSummaryResponse, error) {
 	ret := &visibilityv1.GetAuthenticationLogSummaryResponse{}
 
 	var filters []exp.Expression
@@ -740,7 +822,7 @@ func (s *Server) getSummaryAuthenticationLog(ctx context.Context, req *visibilit
 		}
 	*/
 
-	filters = appendTimeFilters(filters, req.From, req.To)
+	filters = appendTimeFilters(filters, from, to)
 
 	ds := goqu.From("authentication_logs").Where(filters...).Select(
 		goqu.L(`COUNT(*) AS count_total`),
@@ -1109,6 +1191,11 @@ func (s *Server) listComponentLog(ctx context.Context, req *visibilityv1.ListCom
 		filters = append(filters, goqu.L(colLevel).Eq(req.Level.String()))
 	}
 
+	filters, err := appendComponentFilter(filters, req.Component)
+	if err != nil {
+		return nil, err
+	}
+
 	totalCount, err := s.countLogs(ctx, "component_logs", filters)
 	if err != nil {
 		return nil, grpcutils.InternalWithErr(err)
@@ -1313,12 +1400,24 @@ func appendTimeFilters(filters []exp.Expression, from, to *timestamppb.Timestamp
 }
 
 func (s *Server) getSummaryComponentLog(ctx context.Context, req *visibilityv1.GetComponentLogSummaryRequest) (*visibilityv1.GetComponentLogSummaryResponse, error) {
+	return withLogSummaryComparison(ctx, req.From, req.To, req.CompareFrom, req.CompareTo,
+		func(ctx context.Context, from, to *timestamppb.Timestamp) (*visibilityv1.GetComponentLogSummaryResponse, error) {
+			return s.doSummaryComponentLog(ctx, req, from, to)
+		})
+}
+
+func (s *Server) doSummaryComponentLog(ctx context.Context, req *visibilityv1.GetComponentLogSummaryRequest,
+	from, to *timestamppb.Timestamp) (*visibilityv1.GetComponentLogSummaryResponse, error) {
 	ret := &visibilityv1.GetComponentLogSummaryResponse{}
 
 	var filters []exp.Expression
-	var err error
 
-	filters = appendTimeFilters(filters, req.From, req.To)
+	filters, err := appendComponentFilter(filters, req.Component)
+	if err != nil {
+		return nil, err
+	}
+
+	filters = appendTimeFilters(filters, from, to)
 
 	ds := goqu.From("component_logs").Where(filters...).Select(
 		goqu.L(`COUNT(*) AS count_total`),
@@ -1329,6 +1428,7 @@ func (s *Server) getSummaryComponentLog(ctx context.Context, req *visibilityv1.G
 		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'ERROR') AS count_error`, colLevel)),
 		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'PANIC') AS count_panic`, colLevel)),
 		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'FATAL') AS count_fatal`, colLevel)),
+		goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_component`, sqlComponentKey)),
 	)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -1349,17 +1449,28 @@ func (s *Server) getSummaryComponentLog(ctx context.Context, req *visibilityv1.G
 	for rows.Next() {
 		err := rows.Scan(&ret.TotalNumber,
 			&ret.TotalDebug, &ret.TotalInfo, &ret.TotalWarn,
-			&ret.TotalError, &ret.TotalPanic, &ret.TotalFatal)
+			&ret.TotalError, &ret.TotalPanic, &ret.TotalFatal, &ret.TotalComponent)
 		if err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
 
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil
 }
 
 func (s *Server) getSummaryAuditLog(ctx context.Context, req *visibilityv1.GetAuditLogSummaryRequest) (*visibilityv1.GetAuditLogSummaryResponse, error) {
+	return withLogSummaryComparison(ctx, req.From, req.To, req.CompareFrom, req.CompareTo,
+		func(ctx context.Context, from, to *timestamppb.Timestamp) (*visibilityv1.GetAuditLogSummaryResponse, error) {
+			return s.doSummaryAuditLog(ctx, req, from, to)
+		})
+}
+
+func (s *Server) doSummaryAuditLog(ctx context.Context, req *visibilityv1.GetAuditLogSummaryRequest,
+	from, to *timestamppb.Timestamp) (*visibilityv1.GetAuditLogSummaryResponse, error) {
 	ret := &visibilityv1.GetAuditLogSummaryResponse{}
 
 	var filters []exp.Expression
@@ -1378,7 +1489,7 @@ func (s *Server) getSummaryAuditLog(ctx context.Context, req *visibilityv1.GetAu
 		return nil, err
 	}
 
-	filters = appendTimeFilters(filters, req.From, req.To)
+	filters = appendTimeFilters(filters, from, to)
 
 	ds := goqu.From("audit_logs").Where(filters...).Select(
 		goqu.L(`COUNT(*) AS count_total`),
@@ -1386,6 +1497,10 @@ func (s *Server) getSummaryAuditLog(ctx context.Context, req *visibilityv1.GetAu
 		goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.userRef.uid')) AS count_user`),
 		goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.sessionRef.uid')) AS count_session`),
 		goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.deviceRef.uid')) AS count_device`),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'CREATE') AS count_create`, sqlAuditAction)),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'UPDATE') AS count_update`, sqlAuditAction)),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'DELETE') AS count_delete`, sqlAuditAction)),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'OTHER') AS count_other`, sqlAuditAction)),
 	)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -1405,10 +1520,19 @@ func (s *Server) getSummaryAuditLog(ctx context.Context, req *visibilityv1.GetAu
 
 	for rows.Next() {
 		err := rows.Scan(&ret.TotalNumber, &ret.TotalResource,
-			&ret.TotalUser, &ret.TotalSession, &ret.TotalDevice)
+			&ret.TotalUser, &ret.TotalSession, &ret.TotalDevice,
+			&ret.TotalCreate, &ret.TotalUpdate, &ret.TotalDelete, &ret.TotalOther)
 		if err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	ret.TotalByResourceKind, err = s.getGroupedCounts(ctx, "audit_logs", jsonAuditResourceKind, filters)
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil

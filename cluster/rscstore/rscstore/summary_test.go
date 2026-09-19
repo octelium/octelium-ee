@@ -16,6 +16,7 @@ import (
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/cluster/common/vutils"
@@ -68,7 +69,7 @@ func TestSummaryCommonOptions(t *testing.T) {
 	insertUsersAt(nOld, now.Add(-100*time.Minute))
 	insertUsersAt(nRecent, now.Add(-10*time.Minute))
 
-	getTotal := func(common *vmetav1.CommonSummaryOptions) uint32 {
+	getTotal := func(common *vmetav1.CommonSummaryOptions) uint64 {
 		resp, err := srv.getSummaryCoreUser(ctx, &vcorev1.GetUserSummaryRequest{
 			Common: common,
 		})
@@ -76,28 +77,28 @@ func TestSummaryCommonOptions(t *testing.T) {
 		return resp.TotalNumber
 	}
 
-	assert.Equal(t, uint32(nOld+nRecent), getTotal(nil))
-	assert.Equal(t, uint32(nOld+nRecent), getTotal(&vmetav1.CommonSummaryOptions{}))
+	assert.Equal(t, uint64(nOld+nRecent), getTotal(nil))
+	assert.Equal(t, uint64(nOld+nRecent), getTotal(&vmetav1.CommonSummaryOptions{}))
 
-	assert.Equal(t, uint32(nRecent), getTotal(&vmetav1.CommonSummaryOptions{
+	assert.Equal(t, uint64(nRecent), getTotal(&vmetav1.CommonSummaryOptions{
 		From: pbutils.Timestamp(now.Add(-50 * time.Minute)),
 	}))
 
-	assert.Equal(t, uint32(nOld), getTotal(&vmetav1.CommonSummaryOptions{
+	assert.Equal(t, uint64(nOld), getTotal(&vmetav1.CommonSummaryOptions{
 		To: pbutils.Timestamp(now.Add(-50 * time.Minute)),
 	}))
 
-	assert.Equal(t, uint32(nRecent), getTotal(&vmetav1.CommonSummaryOptions{
+	assert.Equal(t, uint64(nRecent), getTotal(&vmetav1.CommonSummaryOptions{
 		From: pbutils.Timestamp(now.Add(-50 * time.Minute)),
 		To:   pbutils.Timestamp(now.Add(-5 * time.Minute)),
 	}))
 
-	assert.Equal(t, uint32(nOld+nRecent), getTotal(&vmetav1.CommonSummaryOptions{
+	assert.Equal(t, uint64(nOld+nRecent), getTotal(&vmetav1.CommonSummaryOptions{
 		From: pbutils.Timestamp(now.Add(-200 * time.Minute)),
 		To:   pbutils.Timestamp(now),
 	}))
 
-	assert.Equal(t, uint32(0), getTotal(&vmetav1.CommonSummaryOptions{
+	assert.Equal(t, uint64(0), getTotal(&vmetav1.CommonSummaryOptions{
 		From: pbutils.Timestamp(now.Add(-5 * time.Minute)),
 		To:   pbutils.Timestamp(now),
 	}))
@@ -151,4 +152,88 @@ func TestValidateCommonSummaryOptions(t *testing.T) {
 	assert.NotNil(t, validateCommonSummaryOptions(&vmetav1.CommonSummaryOptions{
 		To: &timestamppb.Timestamp{Seconds: -100000000000},
 	}))
+}
+
+func TestSummaryComparisonWindow(t *testing.T) {
+	ctx := context.Background()
+	tst, err := otests.Initialize(nil)
+	assert.Nil(t, err, "%+v", err)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
+	fakeC := tst.C
+
+	srv, err := newServer(ctx, fakeC.OcteliumC)
+	assert.Nil(t, err)
+
+	err = srv.initDB(ctx)
+	assert.Nil(t, err)
+
+	now := time.Now().UTC()
+
+	insertUsersAt := func(n int, createdAt time.Time) {
+		for range n {
+			err := srv.insertResource(ctx, &corev1.User{
+				ApiVersion: ucorev1.APIVersion,
+				Kind:       ucorev1.KindUser,
+				Metadata: &metav1.Metadata{
+					Name:            utilrand.GetRandomStringCanonical(8),
+					Uid:             vutils.UUIDv4(),
+					ResourceVersion: vutils.UUIDv7(),
+					CreatedAt:       pbutils.Timestamp(createdAt),
+				},
+				Spec: &corev1.User_Spec{
+					Type: corev1.User_Spec_HUMAN,
+				},
+			})
+			assert.Nil(t, err)
+		}
+	}
+
+	nPrevious := 4
+	nCurrent := 9
+
+	insertUsersAt(nPrevious, now.Add(-90*time.Minute))
+	insertUsersAt(nCurrent, now.Add(-10*time.Minute))
+
+	{
+		resp, err := srv.getSummaryCoreUser(ctx, &vcorev1.GetUserSummaryRequest{
+			Common: &vmetav1.CommonSummaryOptions{
+				From: pbutils.Timestamp(now.Add(-60 * time.Minute)),
+				To:   pbutils.Timestamp(now),
+			},
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint64(nCurrent), resp.TotalNumber)
+		assert.Nil(t, resp.Previous)
+	}
+
+	{
+		resp, err := srv.getSummaryCoreUser(ctx, &vcorev1.GetUserSummaryRequest{
+			Common: &vmetav1.CommonSummaryOptions{
+				From:        pbutils.Timestamp(now.Add(-60 * time.Minute)),
+				To:          pbutils.Timestamp(now),
+				CompareFrom: pbutils.Timestamp(now.Add(-120 * time.Minute)),
+				CompareTo:   pbutils.Timestamp(now.Add(-60 * time.Minute)),
+			},
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint64(nCurrent), resp.TotalNumber)
+		assert.NotNil(t, resp.Previous)
+		assert.Equal(t, uint64(nPrevious), resp.Previous.TotalNumber)
+		assert.Nil(t, resp.Previous.Previous)
+	}
+
+	{
+		resp, err := srv.getSummaryAccessRequest(ctx, &vaccessv1.GetRequestSummaryRequest{
+			Common: &vmetav1.CommonSummaryOptions{
+				From:        pbutils.Timestamp(now.Add(-60 * time.Minute)),
+				To:          pbutils.Timestamp(now),
+				CompareFrom: pbutils.Timestamp(now.Add(-120 * time.Minute)),
+				CompareTo:   pbutils.Timestamp(now.Add(-60 * time.Minute)),
+			},
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.NotNil(t, resp.Previous)
+	}
 }

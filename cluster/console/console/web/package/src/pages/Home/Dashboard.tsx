@@ -21,6 +21,7 @@ import Attention from "./Attention";
 import ClusterCard from "./ClusterCard";
 import { Deferred } from "./components";
 import Governance from "./Governance";
+import Health from "./Health";
 import Identity from "./Identity";
 import Inventory from "./Inventory";
 import Operations from "./Operations";
@@ -131,6 +132,10 @@ const Dashboard = () => {
         <Signals periodMinutes={periodMinutes} />
 
         <Attention periodMinutes={periodMinutes} />
+
+        <Deferred height={420}>
+          <Health periodMinutes={periodMinutes} />
+        </Deferred>
 
         <Deferred height={760}>
           <Activity periodMinutes={periodMinutes} />

@@ -428,10 +428,10 @@ func TestUpgradeFromLegacyResourceSchema(t *testing.T) {
 
 	summary, err := srvCore.GetUserSummary(env.ctx, &vcorev1.GetUserSummaryRequest{})
 	assert.Nil(t, err, "%+v", err)
-	assert.Equal(t, uint32(12), summary.TotalNumber)
-	assert.Equal(t, uint32(8), summary.TotalHuman)
-	assert.Equal(t, uint32(4), summary.TotalWorkload)
-	assert.Equal(t, uint32(1), summary.TotalDisabled)
+	assert.Equal(t, uint64(12), summary.TotalNumber)
+	assert.Equal(t, uint64(8), summary.TotalHuman)
+	assert.Equal(t, uint64(4), summary.TotalWorkload)
+	assert.Equal(t, uint64(1), summary.TotalDisabled)
 
 	user := &corev1.User{
 		ApiVersion: ucorev1.APIVersion,

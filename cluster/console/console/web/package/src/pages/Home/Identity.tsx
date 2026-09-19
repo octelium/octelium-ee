@@ -20,11 +20,7 @@ const Identity = (props: { periodMinutes: number }) => {
   const rangeLabel = periodLabel(periodMinutes);
   useChartColorScheme();
 
-  const summary = useAuthSummary(
-    periodMinutes,
-    "current",
-    QUERY_PRIORITY.critical,
-  );
+  const summary = useAuthSummary(periodMinutes, QUERY_PRIORITY.critical);
   const dataPoints = useAuthDataPoint(periodMinutes, QUERY_PRIORITY.high);
   const topUsers = useAuthTop("user", periodMinutes, QUERY_PRIORITY.normal);
   const topProviders = useAuthTop("identityProvider", periodMinutes);

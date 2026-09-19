@@ -53,3 +53,7 @@ func (s *ServerAccessLog) ListAccessLogTopPolicy(ctx context.Context, req *visib
 func (s *ServerAccessLog) ListAccessLogTopSession(ctx context.Context, req *visibilityv1.ListAccessLogTopSessionRequest) (*visibilityv1.ListAccessLogTopSessionResponse, error) {
 	return s.c.ListAccessLogTopSession(ctx, req)
 }
+
+func (s *ServerAccessLog) ListAccessLogTopDenyReason(ctx context.Context, req *visibilityv1.ListAccessLogTopDenyReasonRequest) (*visibilityv1.ListAccessLogTopDenyReasonResponse, error) {
+	return s.c.ListAccessLogTopDenyReason(ctx, req)
+}

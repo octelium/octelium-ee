@@ -17,7 +17,14 @@ import type { GetGaugeResponse } from "./visibilityv1";
 import type { GetGaugeRequest } from "./visibilityv1";
 import type { GetCounterResponse } from "./visibilityv1";
 import type { GetCounterRequest } from "./visibilityv1";
+import { ClusterService } from "./visibilityv1";
+import type { GetClusterHealthResponse } from "./visibilityv1";
+import type { GetClusterHealthRequest } from "./visibilityv1";
+import type { GetClusterSummaryResponse } from "./visibilityv1";
+import type { GetClusterSummaryRequest } from "./visibilityv1";
 import { ComponentLogService } from "./visibilityv1";
+import type { ListComponentLogTopComponentResponse } from "./visibilityv1";
+import type { ListComponentLogTopComponentRequest } from "./visibilityv1";
 import type { GetComponentLogDataPointResponse } from "./visibilityv1";
 import type { GetComponentLogDataPointRequest } from "./visibilityv1";
 import type { GetComponentLogSummaryResponse } from "./visibilityv1";
@@ -51,6 +58,8 @@ import type { ListAuthenticationLogRequest } from "./visibilityv1";
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { AccessLogService } from "./visibilityv1";
+import type { ListAccessLogTopDenyReasonResponse } from "./visibilityv1";
+import type { ListAccessLogTopDenyReasonRequest } from "./visibilityv1";
 import type { ListAccessLogTopPolicyResponse } from "./visibilityv1";
 import type { ListAccessLogTopPolicyRequest } from "./visibilityv1";
 import type { ListAccessLogTopSessionResponse } from "./visibilityv1";
@@ -118,6 +127,10 @@ export interface IAccessLogServiceClient {
      * @generated from protobuf rpc: ListAccessLogTopPolicy
      */
     listAccessLogTopPolicy(input: ListAccessLogTopPolicyRequest, options?: RpcOptions): UnaryCall<ListAccessLogTopPolicyRequest, ListAccessLogTopPolicyResponse>;
+    /**
+     * @generated from protobuf rpc: ListAccessLogTopDenyReason
+     */
+    listAccessLogTopDenyReason(input: ListAccessLogTopDenyReasonRequest, options?: RpcOptions): UnaryCall<ListAccessLogTopDenyReasonRequest, ListAccessLogTopDenyReasonResponse>;
 }
 /**
  * @generated from protobuf service octelium.api.main.visibility.v1.AccessLogService
@@ -197,6 +210,13 @@ export class AccessLogServiceClient implements IAccessLogServiceClient, ServiceI
     listAccessLogTopPolicy(input: ListAccessLogTopPolicyRequest, options?: RpcOptions): UnaryCall<ListAccessLogTopPolicyRequest, ListAccessLogTopPolicyResponse> {
         const method = this.methods[9], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListAccessLogTopPolicyRequest, ListAccessLogTopPolicyResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: ListAccessLogTopDenyReason
+     */
+    listAccessLogTopDenyReason(input: ListAccessLogTopDenyReasonRequest, options?: RpcOptions): UnaryCall<ListAccessLogTopDenyReasonRequest, ListAccessLogTopDenyReasonResponse> {
+        const method = this.methods[10], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListAccessLogTopDenyReasonRequest, ListAccessLogTopDenyReasonResponse>("unary", this._transport, method, opt, input);
     }
 }
 /**
@@ -366,6 +386,10 @@ export interface IComponentLogServiceClient {
      * @generated from protobuf rpc: GetComponentLogDataPoint
      */
     getComponentLogDataPoint(input: GetComponentLogDataPointRequest, options?: RpcOptions): UnaryCall<GetComponentLogDataPointRequest, GetComponentLogDataPointResponse>;
+    /**
+     * @generated from protobuf rpc: ListComponentLogTopComponent
+     */
+    listComponentLogTopComponent(input: ListComponentLogTopComponentRequest, options?: RpcOptions): UnaryCall<ListComponentLogTopComponentRequest, ListComponentLogTopComponentResponse>;
 }
 /**
  * @generated from protobuf service octelium.api.main.visibility.v1.ComponentLogService
@@ -396,6 +420,68 @@ export class ComponentLogServiceClient implements IComponentLogServiceClient, Se
     getComponentLogDataPoint(input: GetComponentLogDataPointRequest, options?: RpcOptions): UnaryCall<GetComponentLogDataPointRequest, GetComponentLogDataPointResponse> {
         const method = this.methods[2], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetComponentLogDataPointRequest, GetComponentLogDataPointResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: ListComponentLogTopComponent
+     */
+    listComponentLogTopComponent(input: ListComponentLogTopComponentRequest, options?: RpcOptions): UnaryCall<ListComponentLogTopComponentRequest, ListComponentLogTopComponentResponse> {
+        const method = this.methods[3], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListComponentLogTopComponentRequest, ListComponentLogTopComponentResponse>("unary", this._transport, method, opt, input);
+    }
+}
+/**
+ * ClusterService provides the Cluster-wide, cross-API visibility that backs
+ * the Cluster overview pages.
+ *
+ * @generated from protobuf service octelium.api.main.visibility.v1.ClusterService
+ */
+export interface IClusterServiceClient {
+    /**
+     * GetClusterSummary returns the summaries of the Cluster's resources across
+     * every API in a single round trip.
+     *
+     * @generated from protobuf rpc: GetClusterSummary
+     */
+    getClusterSummary(input: GetClusterSummaryRequest, options?: RpcOptions): UnaryCall<GetClusterSummaryRequest, GetClusterSummaryResponse>;
+    /**
+     * GetClusterHealth returns the Cluster's operational health as it is
+     * currently observable by the Cluster itself.
+     *
+     * @generated from protobuf rpc: GetClusterHealth
+     */
+    getClusterHealth(input: GetClusterHealthRequest, options?: RpcOptions): UnaryCall<GetClusterHealthRequest, GetClusterHealthResponse>;
+}
+/**
+ * ClusterService provides the Cluster-wide, cross-API visibility that backs
+ * the Cluster overview pages.
+ *
+ * @generated from protobuf service octelium.api.main.visibility.v1.ClusterService
+ */
+export class ClusterServiceClient implements IClusterServiceClient, ServiceInfo {
+    typeName = ClusterService.typeName;
+    methods = ClusterService.methods;
+    options = ClusterService.options;
+    constructor(private readonly _transport: RpcTransport) {
+    }
+    /**
+     * GetClusterSummary returns the summaries of the Cluster's resources across
+     * every API in a single round trip.
+     *
+     * @generated from protobuf rpc: GetClusterSummary
+     */
+    getClusterSummary(input: GetClusterSummaryRequest, options?: RpcOptions): UnaryCall<GetClusterSummaryRequest, GetClusterSummaryResponse> {
+        const method = this.methods[0], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetClusterSummaryRequest, GetClusterSummaryResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * GetClusterHealth returns the Cluster's operational health as it is
+     * currently observable by the Cluster itself.
+     *
+     * @generated from protobuf rpc: GetClusterHealth
+     */
+    getClusterHealth(input: GetClusterHealthRequest, options?: RpcOptions): UnaryCall<GetClusterHealthRequest, GetClusterHealthResponse> {
+        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetClusterHealthRequest, GetClusterHealthResponse>("unary", this._transport, method, opt, input);
     }
 }
 /**

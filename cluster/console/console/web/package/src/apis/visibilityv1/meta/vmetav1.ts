@@ -113,6 +113,9 @@ export enum CommonListOptions_OrderBy_Mode {
  */
 export interface CommonSummaryOptions {
     /**
+     * From and To restrict the summary to the resources that were created
+     * within the window.
+     *
      * @generated from protobuf field: google.protobuf.Timestamp from = 1
      */
     from?: Timestamp;
@@ -120,6 +123,18 @@ export interface CommonSummaryOptions {
      * @generated from protobuf field: google.protobuf.Timestamp to = 2
      */
     to?: Timestamp;
+    /**
+     * CompareFrom and CompareTo define an additional, usually preceding, window
+     * whose summary is returned in the `previous` field of the response. It lets
+     * the caller obtain a delta with a single request.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp compareFrom = 3
+     */
+    compareFrom?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp compareTo = 4
+     */
+    compareTo?: Timestamp;
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class CommonListOptions$Type extends MessageType<CommonListOptions> {
@@ -273,7 +288,9 @@ class CommonSummaryOptions$Type extends MessageType<CommonSummaryOptions> {
     constructor() {
         super("octelium.api.main.visibility.meta.v1.CommonSummaryOptions", [
             { no: 1, name: "from", kind: "message", T: () => Timestamp },
-            { no: 2, name: "to", kind: "message", T: () => Timestamp }
+            { no: 2, name: "to", kind: "message", T: () => Timestamp },
+            { no: 3, name: "compareFrom", kind: "message", T: () => Timestamp },
+            { no: 4, name: "compareTo", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<CommonSummaryOptions>): CommonSummaryOptions {
@@ -293,6 +310,12 @@ class CommonSummaryOptions$Type extends MessageType<CommonSummaryOptions> {
                 case /* google.protobuf.Timestamp to */ 2:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
                     break;
+                case /* google.protobuf.Timestamp compareFrom */ 3:
+                    message.compareFrom = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.compareFrom);
+                    break;
+                case /* google.protobuf.Timestamp compareTo */ 4:
+                    message.compareTo = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.compareTo);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -311,6 +334,12 @@ class CommonSummaryOptions$Type extends MessageType<CommonSummaryOptions> {
         /* google.protobuf.Timestamp to = 2; */
         if (message.to)
             Timestamp.internalBinaryWrite(message.to, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp compareFrom = 3; */
+        if (message.compareFrom)
+            Timestamp.internalBinaryWrite(message.compareFrom, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp compareTo = 4; */
+        if (message.compareTo)
+            Timestamp.internalBinaryWrite(message.compareTo, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

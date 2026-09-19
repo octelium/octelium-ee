@@ -35,8 +35,13 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import * as React from "react";
+import { Link } from "react-router-dom";
 import { MiniStat, Panel, toPoints } from "./components";
-import { useComponentDataPoint, useComponentSummary } from "./queries";
+import {
+  useComponentDataPoint,
+  useComponentSummary,
+  useTopComponents,
+} from "./queries";
 import { homeKeys, useAutoRefresh, useDashboardQuery } from "./utils";
 
 const OCTOVIGIL = ComponentSelector.create({
@@ -181,7 +186,6 @@ const Runtime = (props: { periodMinutes: number }) => {
 
   const componentSummary = useComponentSummary(
     periodMinutes,
-    "current",
     QUERY_PRIORITY.high,
   );
   const componentPoints = useComponentDataPoint(
@@ -189,6 +193,7 @@ const Runtime = (props: { periodMinutes: number }) => {
     "all",
     QUERY_PRIORITY.low,
   );
+  const topComponents = useTopComponents(periodMinutes, QUERY_PRIORITY.low);
 
   const data = componentSummary.data;
   const levels = [
@@ -323,7 +328,7 @@ const Runtime = (props: { periodMinutes: number }) => {
             </div>
           </div>
 
-          <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
             <SeriesChart
               height={220}
               series={[
@@ -334,6 +339,42 @@ const Runtime = (props: { periodMinutes: number }) => {
               ]}
               emptyLabel={`No component logs in the last ${rangeLabel}`}
             />
+
+            {(topComponents.data?.items ?? []).length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
+                  Busiest components
+                </span>
+
+                {(topComponents.data?.items ?? []).slice(0, 5).map((item) => (
+                  <Link
+                    key={`${item.component?.namespace}/${item.component?.type}`}
+                    to={`/visibility/componentlogs?component.type=${item.component?.type ?? ""}`}
+                    className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-1.5 outline-none transition-colors duration-150 hover:border-slate-300 focus-visible:ring-2 focus-visible:ring-slate-400"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-body font-semibold text-slate-700">
+                      {item.component?.type}
+                      <span className="ml-1.5 text-micro font-normal text-slate-500">
+                        {item.component?.namespace}
+                      </span>
+                    </span>
+                    {n(item.countError) +
+                      n(item.countPanic) +
+                      n(item.countFatal) >
+                      0 && (
+                      <span className="shrink-0 text-micro font-semibold tabular-nums text-red-700">
+                        {n(item.countError) +
+                          n(item.countPanic) +
+                          n(item.countFatal)}
+                      </span>
+                    )}
+                    <span className="shrink-0 text-micro font-semibold tabular-nums text-slate-700">
+                      {n(item.count).toLocaleString()}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -38,6 +38,11 @@ export const useLogListReq = () => {
     policyRef?: objectRef;
     status?: string;
     level?: string;
+    component?: {
+      namespace?: string;
+      type?: string;
+      uid?: string;
+    };
   }>(searchParams.toString());
 
   if (parsedQry.common && parsedQry.common.page && parsedQry.common.page > 0) {

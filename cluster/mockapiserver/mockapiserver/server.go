@@ -264,6 +264,15 @@ func Run(ctx context.Context) error {
 	vaccessv1.RegisterResourceServiceServer(s, visibilityAccessRscSrv)
 
 	{
+		clusterSrv, err := visibility.NewServerCluster(ctx, octeliumC)
+		if err != nil {
+			return err
+		}
+
+		visibilityv1.RegisterClusterServiceServer(s, clusterSrv)
+	}
+
+	{
 		pSrv, err := policyportal.NewServer(ctx, octeliumC)
 		if err != nil {
 			return err

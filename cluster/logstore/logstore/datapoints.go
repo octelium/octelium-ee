@@ -132,7 +132,11 @@ func (s *Server) getAccessLogDataPoint(ctx context.Context, req *visibilityv1.Ge
 		filters = append(filters, goqu.L(`rsc->>'$.entry.common.status'`).Eq(req.Status.String()))
 	}
 
-	dps, err := s.getDataPoints(ctx, "access_logs", from, to, s.getDataPointInterval(req.Interval), filters)
+	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
+
+	interval := s.getDataPointInterval(req.Interval)
+
+	dps, err := s.getDataPoints(ctx, "access_logs", from, to, interval, filters)
 	if err != nil {
 		return nil, grpcutils.InternalWithErr(err)
 	}
@@ -144,6 +148,14 @@ func (s *Server) getAccessLogDataPoint(ctx context.Context, req *visibilityv1.Ge
 			Timestamp: pbutils.Timestamp(utils.MustParseTime(dp.Timestamp)),
 			Count:     dp.Count,
 		})
+	}
+
+	if dimension := getAccessLogGroupBy(req.GroupBy); dimension != nil {
+		ret.Series, err = s.getDataPointSeries(ctx, "access_logs", dimension,
+			from, to, interval, filters, getSeriesLimit(req.LimitSeries))
+		if err != nil {
+			return nil, grpcutils.InternalWithErr(err)
+		}
 	}
 
 	return ret, nil
@@ -199,7 +211,9 @@ func (s *Server) getAuthenticationLogDataPoint(ctx context.Context, req *visibil
 		return nil, err
 	}
 
-	dps, err := s.getDataPoints(ctx, "authentication_logs", from, to, s.getDataPointInterval(req.Interval), filters)
+	interval := s.getDataPointInterval(req.Interval)
+
+	dps, err := s.getDataPoints(ctx, "authentication_logs", from, to, interval, filters)
 	if err != nil {
 		return nil, grpcutils.InternalWithErr(err)
 	}
@@ -211,6 +225,14 @@ func (s *Server) getAuthenticationLogDataPoint(ctx context.Context, req *visibil
 			Timestamp: pbutils.Timestamp(utils.MustParseTime(dp.Timestamp)),
 			Count:     dp.Count,
 		})
+	}
+
+	if dimension := getAuthenticationLogGroupBy(req.GroupBy); dimension != nil {
+		ret.Series, err = s.getDataPointSeries(ctx, "authentication_logs", dimension,
+			from, to, interval, filters, getSeriesLimit(req.LimitSeries))
+		if err != nil {
+			return nil, grpcutils.InternalWithErr(err)
+		}
 	}
 
 	return ret, nil
@@ -258,7 +280,9 @@ func (s *Server) getAuditLogDataPoint(ctx context.Context, req *visibilityv1.Get
 		return nil, err
 	}
 
-	dps, err := s.getDataPoints(ctx, "audit_logs", from, to, s.getDataPointInterval(req.Interval), filters)
+	interval := s.getDataPointInterval(req.Interval)
+
+	dps, err := s.getDataPoints(ctx, "audit_logs", from, to, interval, filters)
 	if err != nil {
 		return nil, grpcutils.InternalWithErr(err)
 	}
@@ -270,6 +294,14 @@ func (s *Server) getAuditLogDataPoint(ctx context.Context, req *visibilityv1.Get
 			Timestamp: pbutils.Timestamp(utils.MustParseTime(dp.Timestamp)),
 			Count:     dp.Count,
 		})
+	}
+
+	if dimension := getAuditLogGroupBy(req.GroupBy); dimension != nil {
+		ret.Series, err = s.getDataPointSeries(ctx, "audit_logs", dimension,
+			from, to, interval, filters, getSeriesLimit(req.LimitSeries))
+		if err != nil {
+			return nil, grpcutils.InternalWithErr(err)
+		}
 	}
 
 	return ret, nil
@@ -304,7 +336,14 @@ func (s *Server) getComponentLogDataPoint(ctx context.Context, req *visibilityv1
 		filters = append(filters, goqu.L(`rsc->>'$.entry.level'`).Eq(req.Level.String()))
 	}
 
-	dps, err := s.getDataPoints(ctx, "component_logs", from, to, s.getDataPointInterval(req.Interval), filters)
+	filters, err = appendComponentFilter(filters, req.Component)
+	if err != nil {
+		return nil, err
+	}
+
+	interval := s.getDataPointInterval(req.Interval)
+
+	dps, err := s.getDataPoints(ctx, "component_logs", from, to, interval, filters)
 	if err != nil {
 		return nil, grpcutils.InternalWithErr(err)
 	}
@@ -316,6 +355,14 @@ func (s *Server) getComponentLogDataPoint(ctx context.Context, req *visibilityv1
 			Timestamp: pbutils.Timestamp(utils.MustParseTime(dp.Timestamp)),
 			Count:     dp.Count,
 		})
+	}
+
+	if dimension := getComponentLogGroupBy(req.GroupBy); dimension != nil {
+		ret.Series, err = s.getDataPointSeries(ctx, "component_logs", dimension,
+			from, to, interval, filters, getSeriesLimit(req.LimitSeries))
+		if err != nil {
+			return nil, grpcutils.InternalWithErr(err)
+		}
 	}
 
 	return ret, nil

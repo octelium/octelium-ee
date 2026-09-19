@@ -4,6 +4,7 @@ import LogPageShell, {
 } from "@/components/LogViewer/LogPageShell";
 import { useLogListReq } from "@/components/AccessLogViewer/listReq";
 import { ComponentLog_Entry_Level } from "@/apis/corev1/corev1";
+import { ComponentSelector } from "@/apis/visibilityv1/visibilityv1";
 import { useSearchParams } from "react-router-dom";
 import { ScrollText } from "lucide-react";
 
@@ -23,6 +24,15 @@ export default () => {
       icon={ScrollText}
     >
       <ComponentLogViewer
+        component={
+          req?.component
+            ? ComponentSelector.create({
+                namespace: req.component.namespace,
+                type: req.component.type,
+                uid: req.component.uid,
+              })
+            : undefined
+        }
         level={typeof level === "number" ? level : undefined}
         onLevelChange={(nextLevel) => {
           const next = new URLSearchParams(searchParams);

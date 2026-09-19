@@ -25,3 +25,7 @@ func (s *ServerComponentLog) GetComponentLogSummary(ctx context.Context, req *vi
 func (s *ServerComponentLog) GetComponentLogDataPoint(ctx context.Context, req *visibilityv1.GetComponentLogDataPointRequest) (*visibilityv1.GetComponentLogDataPointResponse, error) {
 	return s.c.GetComponentLogDataPoint(ctx, req)
 }
+
+func (s *ServerComponentLog) ListComponentLogTopComponent(ctx context.Context, req *visibilityv1.ListComponentLogTopComponentRequest) (*visibilityv1.ListComponentLogTopComponentResponse, error) {
+	return s.c.ListComponentLogTopComponent(ctx, req)
+}

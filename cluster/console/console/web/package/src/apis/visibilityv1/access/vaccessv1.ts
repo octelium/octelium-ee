@@ -72,184 +72,212 @@ export interface GetReviewSummaryRequest {
  */
 export interface GetPolicySummaryResponse {
     /**
-     * @generated from protobuf field: uint32 totalNumber = 1
+     * @generated from protobuf field: uint64 totalNumber = 1
      */
     totalNumber: number;
     /**
-     * @generated from protobuf field: uint32 totalDisabled = 2
+     * @generated from protobuf field: uint64 totalDisabled = 2
      */
     totalDisabled: number;
     /**
-     * @generated from protobuf field: uint32 totalRule = 3
+     * @generated from protobuf field: uint64 totalRule = 3
      */
     totalRule: number;
     /**
-     * @generated from protobuf field: uint32 totalRuleDeny = 4
+     * @generated from protobuf field: uint64 totalRuleDeny = 4
      */
     totalRuleDeny: number;
     /**
-     * @generated from protobuf field: uint32 totalRuleReview = 5
+     * @generated from protobuf field: uint64 totalRuleReview = 5
      */
     totalRuleReview: number;
     /**
-     * @generated from protobuf field: uint32 totalRuleAutoApprove = 6
+     * @generated from protobuf field: uint64 totalRuleAutoApprove = 6
      */
     totalRuleAutoApprove: number;
     /**
-     * @generated from protobuf field: uint32 totalRuleAuthorization = 7
+     * @generated from protobuf field: uint64 totalRuleAuthorization = 7
      */
     totalRuleAuthorization: number;
     /**
-     * @generated from protobuf field: uint32 totalRuleMaxAccessDuration = 8
+     * @generated from protobuf field: uint64 totalRuleMaxAccessDuration = 8
      */
     totalRuleMaxAccessDuration: number;
     /**
-     * @generated from protobuf field: uint32 totalReviewStep = 9
+     * @generated from protobuf field: uint64 totalReviewStep = 9
      */
     totalReviewStep: number;
     /**
-     * @generated from protobuf field: uint32 totalReviewer = 10
+     * @generated from protobuf field: uint64 totalReviewer = 10
      */
     totalReviewer: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetPolicySummaryResponse previous = 11
+     */
+    previous?: GetPolicySummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.GetCatalogSummaryResponse
  */
 export interface GetCatalogSummaryResponse {
     /**
-     * @generated from protobuf field: uint32 totalNumber = 1
+     * @generated from protobuf field: uint64 totalNumber = 1
      */
     totalNumber: number;
     /**
-     * @generated from protobuf field: uint32 totalService = 2
+     * @generated from protobuf field: uint64 totalService = 2
      */
     totalService: number;
     /**
-     * @generated from protobuf field: uint32 totalNamespace = 3
+     * @generated from protobuf field: uint64 totalNamespace = 3
      */
     totalNamespace: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetCatalogSummaryResponse previous = 4
+     */
+    previous?: GetCatalogSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.GetRequestSummaryResponse
  */
 export interface GetRequestSummaryResponse {
     /**
-     * @generated from protobuf field: uint32 totalNumber = 1
+     * @generated from protobuf field: uint64 totalNumber = 1
      */
     totalNumber: number;
     /**
-     * @generated from protobuf field: uint32 totalPending = 2
+     * @generated from protobuf field: uint64 totalPending = 2
      */
     totalPending: number;
     /**
-     * @generated from protobuf field: uint32 totalApproved = 3
+     * @generated from protobuf field: uint64 totalApproved = 3
      */
     totalApproved: number;
     /**
-     * @generated from protobuf field: uint32 totalRejected = 4
+     * @generated from protobuf field: uint64 totalRejected = 4
      */
     totalRejected: number;
     /**
-     * @generated from protobuf field: uint32 totalRevoked = 5
+     * @generated from protobuf field: uint64 totalRevoked = 5
      */
     totalRevoked: number;
     /**
-     * @generated from protobuf field: uint32 totalExpired = 6
+     * @generated from protobuf field: uint64 totalExpired = 6
      */
     totalExpired: number;
     /**
-     * @generated from protobuf field: uint32 totalCancelled = 7
+     * @generated from protobuf field: uint64 totalCancelled = 7
      */
     totalCancelled: number;
     /**
-     * @generated from protobuf field: uint32 totalActive = 8
+     * @generated from protobuf field: uint64 totalActive = 8
      */
     totalActive: number;
     /**
-     * @generated from protobuf field: uint32 totalUser = 9
+     * @generated from protobuf field: uint64 totalUser = 9
      */
     totalUser: number;
     /**
-     * @generated from protobuf field: uint32 totalSubjectUser = 10
+     * @generated from protobuf field: uint64 totalSubjectUser = 10
      */
     totalSubjectUser: number;
     /**
-     * @generated from protobuf field: uint32 totalService = 11
+     * @generated from protobuf field: uint64 totalService = 11
      */
     totalService: number;
     /**
-     * @generated from protobuf field: uint32 totalCatalog = 12
+     * @generated from protobuf field: uint64 totalCatalog = 12
      */
     totalCatalog: number;
     /**
-     * @generated from protobuf field: uint32 totalPolicy = 13
+     * @generated from protobuf field: uint64 totalPolicy = 13
      */
     totalPolicy: number;
     /**
-     * @generated from protobuf field: uint32 totalUrgencyVeryLow = 14
+     * @generated from protobuf field: uint64 totalUrgencyVeryLow = 14
      */
     totalUrgencyVeryLow: number;
     /**
-     * @generated from protobuf field: uint32 totalUrgencyLow = 15
+     * @generated from protobuf field: uint64 totalUrgencyLow = 15
      */
     totalUrgencyLow: number;
     /**
-     * @generated from protobuf field: uint32 totalUrgencyNormal = 16
+     * @generated from protobuf field: uint64 totalUrgencyNormal = 16
      */
     totalUrgencyNormal: number;
     /**
-     * @generated from protobuf field: uint32 totalUrgencyHigh = 17
+     * @generated from protobuf field: uint64 totalUrgencyHigh = 17
      */
     totalUrgencyHigh: number;
     /**
-     * @generated from protobuf field: uint32 totalUrgencyVeryHigh = 18
+     * @generated from protobuf field: uint64 totalUrgencyVeryHigh = 18
      */
     totalUrgencyVeryHigh: number;
     /**
-     * @generated from protobuf field: uint32 totalUrgencyHighest = 19
+     * @generated from protobuf field: uint64 totalUrgencyHighest = 19
      */
     totalUrgencyHighest: number;
     /**
-     * @generated from protobuf field: uint32 totalWithDeadline = 20
+     * @generated from protobuf field: uint64 totalWithDeadline = 20
      */
     totalWithDeadline: number;
     /**
-     * @generated from protobuf field: uint32 totalDeadlinePassed = 21
+     * @generated from protobuf field: uint64 totalDeadlinePassed = 21
      */
     totalDeadlinePassed: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetRequestSummaryResponse previous = 22
+     */
+    previous?: GetRequestSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.GetReviewSummaryResponse
  */
 export interface GetReviewSummaryResponse {
     /**
-     * @generated from protobuf field: uint32 totalNumber = 1
+     * @generated from protobuf field: uint64 totalNumber = 1
      */
     totalNumber: number;
     /**
-     * @generated from protobuf field: uint32 totalPending = 2
+     * @generated from protobuf field: uint64 totalPending = 2
      */
     totalPending: number;
     /**
-     * @generated from protobuf field: uint32 totalApproved = 3
+     * @generated from protobuf field: uint64 totalApproved = 3
      */
     totalApproved: number;
     /**
-     * @generated from protobuf field: uint32 totalRejected = 4
+     * @generated from protobuf field: uint64 totalRejected = 4
      */
     totalRejected: number;
     /**
-     * @generated from protobuf field: uint32 totalRevised = 5
+     * @generated from protobuf field: uint64 totalRevised = 5
      */
     totalRevised: number;
     /**
-     * @generated from protobuf field: uint32 totalUser = 6
+     * @generated from protobuf field: uint64 totalUser = 6
      */
     totalUser: number;
     /**
-     * @generated from protobuf field: uint32 totalRequest = 7
+     * @generated from protobuf field: uint64 totalRequest = 7
      */
     totalRequest: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetReviewSummaryResponse previous = 8
+     */
+    previous?: GetReviewSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.ListPolicyOptions
@@ -349,6 +377,19 @@ export interface ListRequestOptions {
      * @generated from protobuf field: bool isActive = 11
      */
     isActive: boolean;
+    /**
+     * HasDeadline only lists the Requests that have a deadline set.
+     *
+     * @generated from protobuf field: bool hasDeadline = 12
+     */
+    hasDeadline: boolean;
+    /**
+     * IsDeadlinePassed only lists the Requests whose deadline has already
+     * passed.
+     *
+     * @generated from protobuf field: bool isDeadlinePassed = 13
+     */
+    isDeadlinePassed: boolean;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.ListReviewOptions
@@ -563,16 +604,17 @@ export const GetReviewSummaryRequest = new GetReviewSummaryRequest$Type();
 class GetPolicySummaryResponse$Type extends MessageType<GetPolicySummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.access.v1.GetPolicySummaryResponse", [
-            { no: 1, name: "totalNumber", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 2, name: "totalDisabled", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 3, name: "totalRule", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 4, name: "totalRuleDeny", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "totalRuleReview", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 6, name: "totalRuleAutoApprove", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 7, name: "totalRuleAuthorization", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 8, name: "totalRuleMaxAccessDuration", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 9, name: "totalReviewStep", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 10, name: "totalReviewer", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalDisabled", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalRule", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "totalRuleDeny", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "totalRuleReview", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "totalRuleAutoApprove", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "totalRuleAuthorization", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "totalRuleMaxAccessDuration", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 9, name: "totalReviewStep", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "totalReviewer", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 11, name: "previous", kind: "message", T: () => GetPolicySummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetPolicySummaryResponse>): GetPolicySummaryResponse {
@@ -596,35 +638,38 @@ class GetPolicySummaryResponse$Type extends MessageType<GetPolicySummaryResponse
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* uint32 totalNumber */ 1:
-                    message.totalNumber = reader.uint32();
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalDisabled */ 2:
-                    message.totalDisabled = reader.uint32();
+                case /* uint64 totalDisabled */ 2:
+                    message.totalDisabled = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalRule */ 3:
-                    message.totalRule = reader.uint32();
+                case /* uint64 totalRule */ 3:
+                    message.totalRule = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalRuleDeny */ 4:
-                    message.totalRuleDeny = reader.uint32();
+                case /* uint64 totalRuleDeny */ 4:
+                    message.totalRuleDeny = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalRuleReview */ 5:
-                    message.totalRuleReview = reader.uint32();
+                case /* uint64 totalRuleReview */ 5:
+                    message.totalRuleReview = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalRuleAutoApprove */ 6:
-                    message.totalRuleAutoApprove = reader.uint32();
+                case /* uint64 totalRuleAutoApprove */ 6:
+                    message.totalRuleAutoApprove = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalRuleAuthorization */ 7:
-                    message.totalRuleAuthorization = reader.uint32();
+                case /* uint64 totalRuleAuthorization */ 7:
+                    message.totalRuleAuthorization = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalRuleMaxAccessDuration */ 8:
-                    message.totalRuleMaxAccessDuration = reader.uint32();
+                case /* uint64 totalRuleMaxAccessDuration */ 8:
+                    message.totalRuleMaxAccessDuration = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalReviewStep */ 9:
-                    message.totalReviewStep = reader.uint32();
+                case /* uint64 totalReviewStep */ 9:
+                    message.totalReviewStep = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalReviewer */ 10:
-                    message.totalReviewer = reader.uint32();
+                case /* uint64 totalReviewer */ 10:
+                    message.totalReviewer = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.access.v1.GetPolicySummaryResponse previous */ 11:
+                    message.previous = GetPolicySummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -638,36 +683,39 @@ class GetPolicySummaryResponse$Type extends MessageType<GetPolicySummaryResponse
         return message;
     }
     internalBinaryWrite(message: GetPolicySummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* uint32 totalNumber = 1; */
+        /* uint64 totalNumber = 1; */
         if (message.totalNumber !== 0)
-            writer.tag(1, WireType.Varint).uint32(message.totalNumber);
-        /* uint32 totalDisabled = 2; */
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalDisabled = 2; */
         if (message.totalDisabled !== 0)
-            writer.tag(2, WireType.Varint).uint32(message.totalDisabled);
-        /* uint32 totalRule = 3; */
+            writer.tag(2, WireType.Varint).uint64(message.totalDisabled);
+        /* uint64 totalRule = 3; */
         if (message.totalRule !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.totalRule);
-        /* uint32 totalRuleDeny = 4; */
+            writer.tag(3, WireType.Varint).uint64(message.totalRule);
+        /* uint64 totalRuleDeny = 4; */
         if (message.totalRuleDeny !== 0)
-            writer.tag(4, WireType.Varint).uint32(message.totalRuleDeny);
-        /* uint32 totalRuleReview = 5; */
+            writer.tag(4, WireType.Varint).uint64(message.totalRuleDeny);
+        /* uint64 totalRuleReview = 5; */
         if (message.totalRuleReview !== 0)
-            writer.tag(5, WireType.Varint).uint32(message.totalRuleReview);
-        /* uint32 totalRuleAutoApprove = 6; */
+            writer.tag(5, WireType.Varint).uint64(message.totalRuleReview);
+        /* uint64 totalRuleAutoApprove = 6; */
         if (message.totalRuleAutoApprove !== 0)
-            writer.tag(6, WireType.Varint).uint32(message.totalRuleAutoApprove);
-        /* uint32 totalRuleAuthorization = 7; */
+            writer.tag(6, WireType.Varint).uint64(message.totalRuleAutoApprove);
+        /* uint64 totalRuleAuthorization = 7; */
         if (message.totalRuleAuthorization !== 0)
-            writer.tag(7, WireType.Varint).uint32(message.totalRuleAuthorization);
-        /* uint32 totalRuleMaxAccessDuration = 8; */
+            writer.tag(7, WireType.Varint).uint64(message.totalRuleAuthorization);
+        /* uint64 totalRuleMaxAccessDuration = 8; */
         if (message.totalRuleMaxAccessDuration !== 0)
-            writer.tag(8, WireType.Varint).uint32(message.totalRuleMaxAccessDuration);
-        /* uint32 totalReviewStep = 9; */
+            writer.tag(8, WireType.Varint).uint64(message.totalRuleMaxAccessDuration);
+        /* uint64 totalReviewStep = 9; */
         if (message.totalReviewStep !== 0)
-            writer.tag(9, WireType.Varint).uint32(message.totalReviewStep);
-        /* uint32 totalReviewer = 10; */
+            writer.tag(9, WireType.Varint).uint64(message.totalReviewStep);
+        /* uint64 totalReviewer = 10; */
         if (message.totalReviewer !== 0)
-            writer.tag(10, WireType.Varint).uint32(message.totalReviewer);
+            writer.tag(10, WireType.Varint).uint64(message.totalReviewer);
+        /* octelium.api.main.visibility.access.v1.GetPolicySummaryResponse previous = 11; */
+        if (message.previous)
+            GetPolicySummaryResponse.internalBinaryWrite(message.previous, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -682,9 +730,10 @@ export const GetPolicySummaryResponse = new GetPolicySummaryResponse$Type();
 class GetCatalogSummaryResponse$Type extends MessageType<GetCatalogSummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.access.v1.GetCatalogSummaryResponse", [
-            { no: 1, name: "totalNumber", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 2, name: "totalService", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 3, name: "totalNamespace", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalService", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalNamespace", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "previous", kind: "message", T: () => GetCatalogSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetCatalogSummaryResponse>): GetCatalogSummaryResponse {
@@ -701,14 +750,17 @@ class GetCatalogSummaryResponse$Type extends MessageType<GetCatalogSummaryRespon
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* uint32 totalNumber */ 1:
-                    message.totalNumber = reader.uint32();
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalService */ 2:
-                    message.totalService = reader.uint32();
+                case /* uint64 totalService */ 2:
+                    message.totalService = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalNamespace */ 3:
-                    message.totalNamespace = reader.uint32();
+                case /* uint64 totalNamespace */ 3:
+                    message.totalNamespace = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.access.v1.GetCatalogSummaryResponse previous */ 4:
+                    message.previous = GetCatalogSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -722,15 +774,18 @@ class GetCatalogSummaryResponse$Type extends MessageType<GetCatalogSummaryRespon
         return message;
     }
     internalBinaryWrite(message: GetCatalogSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* uint32 totalNumber = 1; */
+        /* uint64 totalNumber = 1; */
         if (message.totalNumber !== 0)
-            writer.tag(1, WireType.Varint).uint32(message.totalNumber);
-        /* uint32 totalService = 2; */
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalService = 2; */
         if (message.totalService !== 0)
-            writer.tag(2, WireType.Varint).uint32(message.totalService);
-        /* uint32 totalNamespace = 3; */
+            writer.tag(2, WireType.Varint).uint64(message.totalService);
+        /* uint64 totalNamespace = 3; */
         if (message.totalNamespace !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.totalNamespace);
+            writer.tag(3, WireType.Varint).uint64(message.totalNamespace);
+        /* octelium.api.main.visibility.access.v1.GetCatalogSummaryResponse previous = 4; */
+        if (message.previous)
+            GetCatalogSummaryResponse.internalBinaryWrite(message.previous, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -745,27 +800,28 @@ export const GetCatalogSummaryResponse = new GetCatalogSummaryResponse$Type();
 class GetRequestSummaryResponse$Type extends MessageType<GetRequestSummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.access.v1.GetRequestSummaryResponse", [
-            { no: 1, name: "totalNumber", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 2, name: "totalPending", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 3, name: "totalApproved", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 4, name: "totalRejected", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "totalRevoked", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 6, name: "totalExpired", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 7, name: "totalCancelled", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 8, name: "totalActive", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 9, name: "totalUser", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 10, name: "totalSubjectUser", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 11, name: "totalService", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 12, name: "totalCatalog", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 13, name: "totalPolicy", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 14, name: "totalUrgencyVeryLow", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 15, name: "totalUrgencyLow", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 16, name: "totalUrgencyNormal", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 17, name: "totalUrgencyHigh", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 18, name: "totalUrgencyVeryHigh", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 19, name: "totalUrgencyHighest", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 20, name: "totalWithDeadline", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 21, name: "totalDeadlinePassed", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalPending", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalApproved", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "totalRejected", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "totalRevoked", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "totalExpired", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "totalCancelled", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "totalActive", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 9, name: "totalUser", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "totalSubjectUser", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 11, name: "totalService", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 12, name: "totalCatalog", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 13, name: "totalPolicy", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 14, name: "totalUrgencyVeryLow", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 15, name: "totalUrgencyLow", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 16, name: "totalUrgencyNormal", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 17, name: "totalUrgencyHigh", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 18, name: "totalUrgencyVeryHigh", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 19, name: "totalUrgencyHighest", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 20, name: "totalWithDeadline", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 21, name: "totalDeadlinePassed", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 22, name: "previous", kind: "message", T: () => GetRequestSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetRequestSummaryResponse>): GetRequestSummaryResponse {
@@ -800,68 +856,71 @@ class GetRequestSummaryResponse$Type extends MessageType<GetRequestSummaryRespon
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* uint32 totalNumber */ 1:
-                    message.totalNumber = reader.uint32();
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalPending */ 2:
-                    message.totalPending = reader.uint32();
+                case /* uint64 totalPending */ 2:
+                    message.totalPending = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalApproved */ 3:
-                    message.totalApproved = reader.uint32();
+                case /* uint64 totalApproved */ 3:
+                    message.totalApproved = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalRejected */ 4:
-                    message.totalRejected = reader.uint32();
+                case /* uint64 totalRejected */ 4:
+                    message.totalRejected = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalRevoked */ 5:
-                    message.totalRevoked = reader.uint32();
+                case /* uint64 totalRevoked */ 5:
+                    message.totalRevoked = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalExpired */ 6:
-                    message.totalExpired = reader.uint32();
+                case /* uint64 totalExpired */ 6:
+                    message.totalExpired = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalCancelled */ 7:
-                    message.totalCancelled = reader.uint32();
+                case /* uint64 totalCancelled */ 7:
+                    message.totalCancelled = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalActive */ 8:
-                    message.totalActive = reader.uint32();
+                case /* uint64 totalActive */ 8:
+                    message.totalActive = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalUser */ 9:
-                    message.totalUser = reader.uint32();
+                case /* uint64 totalUser */ 9:
+                    message.totalUser = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalSubjectUser */ 10:
-                    message.totalSubjectUser = reader.uint32();
+                case /* uint64 totalSubjectUser */ 10:
+                    message.totalSubjectUser = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalService */ 11:
-                    message.totalService = reader.uint32();
+                case /* uint64 totalService */ 11:
+                    message.totalService = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalCatalog */ 12:
-                    message.totalCatalog = reader.uint32();
+                case /* uint64 totalCatalog */ 12:
+                    message.totalCatalog = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalPolicy */ 13:
-                    message.totalPolicy = reader.uint32();
+                case /* uint64 totalPolicy */ 13:
+                    message.totalPolicy = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalUrgencyVeryLow */ 14:
-                    message.totalUrgencyVeryLow = reader.uint32();
+                case /* uint64 totalUrgencyVeryLow */ 14:
+                    message.totalUrgencyVeryLow = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalUrgencyLow */ 15:
-                    message.totalUrgencyLow = reader.uint32();
+                case /* uint64 totalUrgencyLow */ 15:
+                    message.totalUrgencyLow = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalUrgencyNormal */ 16:
-                    message.totalUrgencyNormal = reader.uint32();
+                case /* uint64 totalUrgencyNormal */ 16:
+                    message.totalUrgencyNormal = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalUrgencyHigh */ 17:
-                    message.totalUrgencyHigh = reader.uint32();
+                case /* uint64 totalUrgencyHigh */ 17:
+                    message.totalUrgencyHigh = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalUrgencyVeryHigh */ 18:
-                    message.totalUrgencyVeryHigh = reader.uint32();
+                case /* uint64 totalUrgencyVeryHigh */ 18:
+                    message.totalUrgencyVeryHigh = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalUrgencyHighest */ 19:
-                    message.totalUrgencyHighest = reader.uint32();
+                case /* uint64 totalUrgencyHighest */ 19:
+                    message.totalUrgencyHighest = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalWithDeadline */ 20:
-                    message.totalWithDeadline = reader.uint32();
+                case /* uint64 totalWithDeadline */ 20:
+                    message.totalWithDeadline = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalDeadlinePassed */ 21:
-                    message.totalDeadlinePassed = reader.uint32();
+                case /* uint64 totalDeadlinePassed */ 21:
+                    message.totalDeadlinePassed = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.access.v1.GetRequestSummaryResponse previous */ 22:
+                    message.previous = GetRequestSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -875,69 +934,72 @@ class GetRequestSummaryResponse$Type extends MessageType<GetRequestSummaryRespon
         return message;
     }
     internalBinaryWrite(message: GetRequestSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* uint32 totalNumber = 1; */
+        /* uint64 totalNumber = 1; */
         if (message.totalNumber !== 0)
-            writer.tag(1, WireType.Varint).uint32(message.totalNumber);
-        /* uint32 totalPending = 2; */
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalPending = 2; */
         if (message.totalPending !== 0)
-            writer.tag(2, WireType.Varint).uint32(message.totalPending);
-        /* uint32 totalApproved = 3; */
+            writer.tag(2, WireType.Varint).uint64(message.totalPending);
+        /* uint64 totalApproved = 3; */
         if (message.totalApproved !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.totalApproved);
-        /* uint32 totalRejected = 4; */
+            writer.tag(3, WireType.Varint).uint64(message.totalApproved);
+        /* uint64 totalRejected = 4; */
         if (message.totalRejected !== 0)
-            writer.tag(4, WireType.Varint).uint32(message.totalRejected);
-        /* uint32 totalRevoked = 5; */
+            writer.tag(4, WireType.Varint).uint64(message.totalRejected);
+        /* uint64 totalRevoked = 5; */
         if (message.totalRevoked !== 0)
-            writer.tag(5, WireType.Varint).uint32(message.totalRevoked);
-        /* uint32 totalExpired = 6; */
+            writer.tag(5, WireType.Varint).uint64(message.totalRevoked);
+        /* uint64 totalExpired = 6; */
         if (message.totalExpired !== 0)
-            writer.tag(6, WireType.Varint).uint32(message.totalExpired);
-        /* uint32 totalCancelled = 7; */
+            writer.tag(6, WireType.Varint).uint64(message.totalExpired);
+        /* uint64 totalCancelled = 7; */
         if (message.totalCancelled !== 0)
-            writer.tag(7, WireType.Varint).uint32(message.totalCancelled);
-        /* uint32 totalActive = 8; */
+            writer.tag(7, WireType.Varint).uint64(message.totalCancelled);
+        /* uint64 totalActive = 8; */
         if (message.totalActive !== 0)
-            writer.tag(8, WireType.Varint).uint32(message.totalActive);
-        /* uint32 totalUser = 9; */
+            writer.tag(8, WireType.Varint).uint64(message.totalActive);
+        /* uint64 totalUser = 9; */
         if (message.totalUser !== 0)
-            writer.tag(9, WireType.Varint).uint32(message.totalUser);
-        /* uint32 totalSubjectUser = 10; */
+            writer.tag(9, WireType.Varint).uint64(message.totalUser);
+        /* uint64 totalSubjectUser = 10; */
         if (message.totalSubjectUser !== 0)
-            writer.tag(10, WireType.Varint).uint32(message.totalSubjectUser);
-        /* uint32 totalService = 11; */
+            writer.tag(10, WireType.Varint).uint64(message.totalSubjectUser);
+        /* uint64 totalService = 11; */
         if (message.totalService !== 0)
-            writer.tag(11, WireType.Varint).uint32(message.totalService);
-        /* uint32 totalCatalog = 12; */
+            writer.tag(11, WireType.Varint).uint64(message.totalService);
+        /* uint64 totalCatalog = 12; */
         if (message.totalCatalog !== 0)
-            writer.tag(12, WireType.Varint).uint32(message.totalCatalog);
-        /* uint32 totalPolicy = 13; */
+            writer.tag(12, WireType.Varint).uint64(message.totalCatalog);
+        /* uint64 totalPolicy = 13; */
         if (message.totalPolicy !== 0)
-            writer.tag(13, WireType.Varint).uint32(message.totalPolicy);
-        /* uint32 totalUrgencyVeryLow = 14; */
+            writer.tag(13, WireType.Varint).uint64(message.totalPolicy);
+        /* uint64 totalUrgencyVeryLow = 14; */
         if (message.totalUrgencyVeryLow !== 0)
-            writer.tag(14, WireType.Varint).uint32(message.totalUrgencyVeryLow);
-        /* uint32 totalUrgencyLow = 15; */
+            writer.tag(14, WireType.Varint).uint64(message.totalUrgencyVeryLow);
+        /* uint64 totalUrgencyLow = 15; */
         if (message.totalUrgencyLow !== 0)
-            writer.tag(15, WireType.Varint).uint32(message.totalUrgencyLow);
-        /* uint32 totalUrgencyNormal = 16; */
+            writer.tag(15, WireType.Varint).uint64(message.totalUrgencyLow);
+        /* uint64 totalUrgencyNormal = 16; */
         if (message.totalUrgencyNormal !== 0)
-            writer.tag(16, WireType.Varint).uint32(message.totalUrgencyNormal);
-        /* uint32 totalUrgencyHigh = 17; */
+            writer.tag(16, WireType.Varint).uint64(message.totalUrgencyNormal);
+        /* uint64 totalUrgencyHigh = 17; */
         if (message.totalUrgencyHigh !== 0)
-            writer.tag(17, WireType.Varint).uint32(message.totalUrgencyHigh);
-        /* uint32 totalUrgencyVeryHigh = 18; */
+            writer.tag(17, WireType.Varint).uint64(message.totalUrgencyHigh);
+        /* uint64 totalUrgencyVeryHigh = 18; */
         if (message.totalUrgencyVeryHigh !== 0)
-            writer.tag(18, WireType.Varint).uint32(message.totalUrgencyVeryHigh);
-        /* uint32 totalUrgencyHighest = 19; */
+            writer.tag(18, WireType.Varint).uint64(message.totalUrgencyVeryHigh);
+        /* uint64 totalUrgencyHighest = 19; */
         if (message.totalUrgencyHighest !== 0)
-            writer.tag(19, WireType.Varint).uint32(message.totalUrgencyHighest);
-        /* uint32 totalWithDeadline = 20; */
+            writer.tag(19, WireType.Varint).uint64(message.totalUrgencyHighest);
+        /* uint64 totalWithDeadline = 20; */
         if (message.totalWithDeadline !== 0)
-            writer.tag(20, WireType.Varint).uint32(message.totalWithDeadline);
-        /* uint32 totalDeadlinePassed = 21; */
+            writer.tag(20, WireType.Varint).uint64(message.totalWithDeadline);
+        /* uint64 totalDeadlinePassed = 21; */
         if (message.totalDeadlinePassed !== 0)
-            writer.tag(21, WireType.Varint).uint32(message.totalDeadlinePassed);
+            writer.tag(21, WireType.Varint).uint64(message.totalDeadlinePassed);
+        /* octelium.api.main.visibility.access.v1.GetRequestSummaryResponse previous = 22; */
+        if (message.previous)
+            GetRequestSummaryResponse.internalBinaryWrite(message.previous, writer.tag(22, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -952,13 +1014,14 @@ export const GetRequestSummaryResponse = new GetRequestSummaryResponse$Type();
 class GetReviewSummaryResponse$Type extends MessageType<GetReviewSummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.access.v1.GetReviewSummaryResponse", [
-            { no: 1, name: "totalNumber", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 2, name: "totalPending", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 3, name: "totalApproved", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 4, name: "totalRejected", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "totalRevised", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 6, name: "totalUser", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 7, name: "totalRequest", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalPending", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalApproved", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "totalRejected", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "totalRevised", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "totalUser", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "totalRequest", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "previous", kind: "message", T: () => GetReviewSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetReviewSummaryResponse>): GetReviewSummaryResponse {
@@ -979,26 +1042,29 @@ class GetReviewSummaryResponse$Type extends MessageType<GetReviewSummaryResponse
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* uint32 totalNumber */ 1:
-                    message.totalNumber = reader.uint32();
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalPending */ 2:
-                    message.totalPending = reader.uint32();
+                case /* uint64 totalPending */ 2:
+                    message.totalPending = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalApproved */ 3:
-                    message.totalApproved = reader.uint32();
+                case /* uint64 totalApproved */ 3:
+                    message.totalApproved = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalRejected */ 4:
-                    message.totalRejected = reader.uint32();
+                case /* uint64 totalRejected */ 4:
+                    message.totalRejected = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalRevised */ 5:
-                    message.totalRevised = reader.uint32();
+                case /* uint64 totalRevised */ 5:
+                    message.totalRevised = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalUser */ 6:
-                    message.totalUser = reader.uint32();
+                case /* uint64 totalUser */ 6:
+                    message.totalUser = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalRequest */ 7:
-                    message.totalRequest = reader.uint32();
+                case /* uint64 totalRequest */ 7:
+                    message.totalRequest = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.access.v1.GetReviewSummaryResponse previous */ 8:
+                    message.previous = GetReviewSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1012,27 +1078,30 @@ class GetReviewSummaryResponse$Type extends MessageType<GetReviewSummaryResponse
         return message;
     }
     internalBinaryWrite(message: GetReviewSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* uint32 totalNumber = 1; */
+        /* uint64 totalNumber = 1; */
         if (message.totalNumber !== 0)
-            writer.tag(1, WireType.Varint).uint32(message.totalNumber);
-        /* uint32 totalPending = 2; */
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalPending = 2; */
         if (message.totalPending !== 0)
-            writer.tag(2, WireType.Varint).uint32(message.totalPending);
-        /* uint32 totalApproved = 3; */
+            writer.tag(2, WireType.Varint).uint64(message.totalPending);
+        /* uint64 totalApproved = 3; */
         if (message.totalApproved !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.totalApproved);
-        /* uint32 totalRejected = 4; */
+            writer.tag(3, WireType.Varint).uint64(message.totalApproved);
+        /* uint64 totalRejected = 4; */
         if (message.totalRejected !== 0)
-            writer.tag(4, WireType.Varint).uint32(message.totalRejected);
-        /* uint32 totalRevised = 5; */
+            writer.tag(4, WireType.Varint).uint64(message.totalRejected);
+        /* uint64 totalRevised = 5; */
         if (message.totalRevised !== 0)
-            writer.tag(5, WireType.Varint).uint32(message.totalRevised);
-        /* uint32 totalUser = 6; */
+            writer.tag(5, WireType.Varint).uint64(message.totalRevised);
+        /* uint64 totalUser = 6; */
         if (message.totalUser !== 0)
-            writer.tag(6, WireType.Varint).uint32(message.totalUser);
-        /* uint32 totalRequest = 7; */
+            writer.tag(6, WireType.Varint).uint64(message.totalUser);
+        /* uint64 totalRequest = 7; */
         if (message.totalRequest !== 0)
-            writer.tag(7, WireType.Varint).uint32(message.totalRequest);
+            writer.tag(7, WireType.Varint).uint64(message.totalRequest);
+        /* octelium.api.main.visibility.access.v1.GetReviewSummaryResponse previous = 8; */
+        if (message.previous)
+            GetReviewSummaryResponse.internalBinaryWrite(message.previous, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1207,7 +1276,9 @@ class ListRequestOptions$Type extends MessageType<ListRequestOptions> {
             { no: 8, name: "policyTriggerRef", kind: "message", T: () => ObjectReference },
             { no: 9, name: "state", kind: "enum", T: () => ["octelium.api.main.access.v1.Request.Status.State.Status", Request_Status_State_Status] },
             { no: 10, name: "urgency", kind: "enum", T: () => ["octelium.api.main.access.v1.Request.Spec.Urgency", Request_Spec_Urgency] },
-            { no: 11, name: "isActive", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 11, name: "isActive", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 12, name: "hasDeadline", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 13, name: "isDeadlinePassed", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<ListRequestOptions>): ListRequestOptions {
@@ -1215,6 +1286,8 @@ class ListRequestOptions$Type extends MessageType<ListRequestOptions> {
         message.state = 0;
         message.urgency = 0;
         message.isActive = false;
+        message.hasDeadline = false;
+        message.isDeadlinePassed = false;
         if (value !== undefined)
             reflectionMergePartial<ListRequestOptions>(this, message, value);
         return message;
@@ -1256,6 +1329,12 @@ class ListRequestOptions$Type extends MessageType<ListRequestOptions> {
                     break;
                 case /* bool isActive */ 11:
                     message.isActive = reader.bool();
+                    break;
+                case /* bool hasDeadline */ 12:
+                    message.hasDeadline = reader.bool();
+                    break;
+                case /* bool isDeadlinePassed */ 13:
+                    message.isDeadlinePassed = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1302,6 +1381,12 @@ class ListRequestOptions$Type extends MessageType<ListRequestOptions> {
         /* bool isActive = 11; */
         if (message.isActive !== false)
             writer.tag(11, WireType.Varint).bool(message.isActive);
+        /* bool hasDeadline = 12; */
+        if (message.hasDeadline !== false)
+            writer.tag(12, WireType.Varint).bool(message.hasDeadline);
+        /* bool isDeadlinePassed = 13; */
+        if (message.isDeadlinePassed !== false)
+            writer.tag(13, WireType.Varint).bool(message.isDeadlinePassed);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

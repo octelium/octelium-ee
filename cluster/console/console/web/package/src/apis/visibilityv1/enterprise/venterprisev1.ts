@@ -142,394 +142,464 @@ export interface GetSecretSummaryResponse {
      * @generated from protobuf field: uint64 totalNumber = 1
      */
     totalNumber: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetSecretSummaryResponse previous = 2
+     */
+    previous?: GetSecretSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetCollectorExporterSummaryResponse
  */
 export interface GetCollectorExporterSummaryResponse {
     /**
-     * @generated from protobuf field: uint32 totalNumber = 1
+     * @generated from protobuf field: uint64 totalNumber = 1
      */
     totalNumber: number;
     /**
-     * @generated from protobuf field: uint32 totalDisabled = 2
+     * @generated from protobuf field: uint64 totalDisabled = 2
      */
     totalDisabled: number;
     /**
-     * @generated from protobuf field: uint32 totalOTLP = 3
+     * @generated from protobuf field: uint64 totalOTLP = 3
      */
     totalOTLP: number;
     /**
-     * @generated from protobuf field: uint32 totalOTLPHTTP = 4
+     * @generated from protobuf field: uint64 totalOTLPHTTP = 4
      */
     totalOTLPHTTP: number;
     /**
-     * @generated from protobuf field: uint32 totalClickhouse = 5
+     * @generated from protobuf field: uint64 totalClickhouse = 5
      */
     totalClickhouse: number;
     /**
-     * @generated from protobuf field: uint32 totalElasticsearch = 6
+     * @generated from protobuf field: uint64 totalElasticsearch = 6
      */
     totalElasticsearch: number;
     /**
-     * @generated from protobuf field: uint32 totalLogzio = 7
+     * @generated from protobuf field: uint64 totalLogzio = 7
      */
     totalLogzio: number;
     /**
-     * @generated from protobuf field: uint32 totalInfluxDB = 8
+     * @generated from protobuf field: uint64 totalInfluxDB = 8
      */
     totalInfluxDB: number;
     /**
-     * @generated from protobuf field: uint32 totalKafka = 9
+     * @generated from protobuf field: uint64 totalKafka = 9
      */
     totalKafka: number;
     /**
-     * @generated from protobuf field: uint32 totalDatadog = 10
+     * @generated from protobuf field: uint64 totalDatadog = 10
      */
     totalDatadog: number;
     /**
-     * @generated from protobuf field: uint32 totalSplunk = 11
+     * @generated from protobuf field: uint64 totalSplunk = 11
      */
     totalSplunk: number;
     /**
-     * @generated from protobuf field: uint32 totalAzureMonitor = 12
+     * @generated from protobuf field: uint64 totalAzureMonitor = 12
      */
     totalAzureMonitor: number;
     /**
-     * @generated from protobuf field: uint32 totalAzureDataExplorer = 13
+     * @generated from protobuf field: uint64 totalAzureDataExplorer = 13
      */
     totalAzureDataExplorer: number;
     /**
-     * @generated from protobuf field: uint32 totalPrometheusRemoteWrite = 14
+     * @generated from protobuf field: uint64 totalPrometheusRemoteWrite = 14
      */
     totalPrometheusRemoteWrite: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetCollectorExporterSummaryResponse previous = 15
+     */
+    previous?: GetCollectorExporterSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryResponse
  */
 export interface GetSecretStoreSummaryResponse {
     /**
-     * @generated from protobuf field: uint32 totalNumber = 1
+     * @generated from protobuf field: uint64 totalNumber = 1
      */
     totalNumber: number;
     /**
-     * @generated from protobuf field: uint32 totalAzureKeyVault = 2
+     * @generated from protobuf field: uint64 totalAzureKeyVault = 2
      */
     totalAzureKeyVault: number;
     /**
-     * @generated from protobuf field: uint32 totalHashicorpVault = 3
+     * @generated from protobuf field: uint64 totalHashicorpVault = 3
      */
     totalHashicorpVault: number;
     /**
-     * @generated from protobuf field: uint32 totalGCPKMS = 4
+     * @generated from protobuf field: uint64 totalGCPKMS = 4
      */
     totalGCPKMS: number;
     /**
-     * @generated from protobuf field: uint32 totalAWSKMS = 5
+     * @generated from protobuf field: uint64 totalAWSKMS = 5
      */
     totalAWSKMS: number;
     /**
-     * @generated from protobuf field: uint32 totalKubernetes = 6
+     * @generated from protobuf field: uint64 totalKubernetes = 6
      */
     totalKubernetes: number;
     /**
-     * @generated from protobuf field: uint32 totalOK = 7
+     * @generated from protobuf field: uint64 totalOK = 7
      */
     totalOK: number;
     /**
-     * @generated from protobuf field: uint32 totalLoading = 8
+     * @generated from protobuf field: uint64 totalLoading = 8
      */
     totalLoading: number;
     /**
-     * @generated from protobuf field: uint32 totalSynchronizing = 9
+     * @generated from protobuf field: uint64 totalSynchronizing = 9
      */
     totalSynchronizing: number;
     /**
-     * @generated from protobuf field: uint32 totalSynchronizationSuccess = 10
+     * @generated from protobuf field: uint64 totalSynchronizationSuccess = 10
      */
     totalSynchronizationSuccess: number;
     /**
-     * @generated from protobuf field: uint32 totalSynchronizationFailed = 11
+     * @generated from protobuf field: uint64 totalSynchronizationFailed = 11
      */
     totalSynchronizationFailed: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryResponse previous = 12
+     */
+    previous?: GetSecretStoreSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetCertificateSummaryResponse
  */
 export interface GetCertificateSummaryResponse {
     /**
-     * @generated from protobuf field: uint32 totalNumber = 1
+     * @generated from protobuf field: uint64 totalNumber = 1
      */
     totalNumber: number;
     /**
-     * @generated from protobuf field: uint32 totalManaged = 2
+     * @generated from protobuf field: uint64 totalManaged = 2
      */
     totalManaged: number;
     /**
-     * @generated from protobuf field: uint32 totalManual = 3
+     * @generated from protobuf field: uint64 totalManual = 3
      */
     totalManual: number;
     /**
-     * @generated from protobuf field: uint32 totalIssuanceRequested = 4
+     * @generated from protobuf field: uint64 totalIssuanceRequested = 4
      */
     totalIssuanceRequested: number;
     /**
-     * @generated from protobuf field: uint32 totalIssuing = 5
+     * @generated from protobuf field: uint64 totalIssuing = 5
      */
     totalIssuing: number;
     /**
-     * @generated from protobuf field: uint32 totalIssuanceSuccess = 6
+     * @generated from protobuf field: uint64 totalIssuanceSuccess = 6
      */
     totalIssuanceSuccess: number;
     /**
-     * @generated from protobuf field: uint32 totalIssuanceFailed = 7
+     * @generated from protobuf field: uint64 totalIssuanceFailed = 7
      */
     totalIssuanceFailed: number;
     /**
-     * @generated from protobuf field: uint32 totalExpired = 8
+     * @generated from protobuf field: uint64 totalExpired = 8
      */
     totalExpired: number;
     /**
      * TotalExpiringSoon is the number of Certificates expiring within the next 30
      * days.
      *
-     * @generated from protobuf field: uint32 totalExpiringSoon = 9
+     * @generated from protobuf field: uint64 totalExpiringSoon = 9
      */
     totalExpiringSoon: number;
     /**
-     * @generated from protobuf field: uint32 totalService = 10
+     * @generated from protobuf field: uint64 totalService = 10
      */
     totalService: number;
     /**
-     * @generated from protobuf field: uint32 totalNamespace = 11
+     * @generated from protobuf field: uint64 totalNamespace = 11
      */
     totalNamespace: number;
     /**
-     * @generated from protobuf field: uint32 totalCertificateIssuer = 12
+     * @generated from protobuf field: uint64 totalCertificateIssuer = 12
      */
     totalCertificateIssuer: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetCertificateSummaryResponse previous = 13
+     */
+    previous?: GetCertificateSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetCertificateIssuerSummaryResponse
  */
 export interface GetCertificateIssuerSummaryResponse {
     /**
-     * @generated from protobuf field: uint32 totalNumber = 1
+     * @generated from protobuf field: uint64 totalNumber = 1
      */
     totalNumber: number;
     /**
-     * @generated from protobuf field: uint32 totalACME = 2
+     * @generated from protobuf field: uint64 totalACME = 2
      */
     totalACME: number;
     /**
-     * @generated from protobuf field: uint32 totalPreparing = 3
+     * @generated from protobuf field: uint64 totalPreparing = 3
      */
     totalPreparing: number;
     /**
-     * @generated from protobuf field: uint32 totalReady = 4
+     * @generated from protobuf field: uint64 totalReady = 4
      */
     totalReady: number;
     /**
-     * @generated from protobuf field: uint32 totalNotReady = 5
+     * @generated from protobuf field: uint64 totalNotReady = 5
      */
     totalNotReady: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetCertificateIssuerSummaryResponse previous = 6
+     */
+    previous?: GetCertificateIssuerSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetDNSProviderSummaryResponse
  */
 export interface GetDNSProviderSummaryResponse {
     /**
-     * @generated from protobuf field: uint32 totalNumber = 1
+     * @generated from protobuf field: uint64 totalNumber = 1
      */
     totalNumber: number;
     /**
-     * @generated from protobuf field: uint32 totalCloudflare = 2
+     * @generated from protobuf field: uint64 totalCloudflare = 2
      */
     totalCloudflare: number;
     /**
-     * @generated from protobuf field: uint32 totalAWS = 3
+     * @generated from protobuf field: uint64 totalAWS = 3
      */
     totalAWS: number;
     /**
-     * @generated from protobuf field: uint32 totalDigitalOcean = 4
+     * @generated from protobuf field: uint64 totalDigitalOcean = 4
      */
     totalDigitalOcean: number;
     /**
-     * @generated from protobuf field: uint32 totalGoogle = 5
+     * @generated from protobuf field: uint64 totalGoogle = 5
      */
     totalGoogle: number;
     /**
-     * @generated from protobuf field: uint32 totalAzure = 6
+     * @generated from protobuf field: uint64 totalAzure = 6
      */
     totalAzure: number;
     /**
-     * @generated from protobuf field: uint32 totalLinode = 7
+     * @generated from protobuf field: uint64 totalLinode = 7
      */
     totalLinode: number;
     /**
-     * @generated from protobuf field: uint32 totalOVH = 8
+     * @generated from protobuf field: uint64 totalOVH = 8
      */
     totalOVH: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetDNSProviderSummaryResponse previous = 9
+     */
+    previous?: GetDNSProviderSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderSummaryResponse
  */
 export interface GetDirectoryProviderSummaryResponse {
     /**
-     * @generated from protobuf field: uint32 totalNumber = 1
+     * @generated from protobuf field: uint64 totalNumber = 1
      */
     totalNumber: number;
     /**
-     * @generated from protobuf field: uint32 totalDisabled = 2
+     * @generated from protobuf field: uint64 totalDisabled = 2
      */
     totalDisabled: number;
     /**
-     * @generated from protobuf field: uint32 totalSCIM = 3
+     * @generated from protobuf field: uint64 totalSCIM = 3
      */
     totalSCIM: number;
     /**
-     * @generated from protobuf field: uint32 totalGoogleWorkspace = 4
+     * @generated from protobuf field: uint64 totalGoogleWorkspace = 4
      */
     totalGoogleWorkspace: number;
     /**
-     * @generated from protobuf field: uint32 totalKeycloak = 5
+     * @generated from protobuf field: uint64 totalKeycloak = 5
      */
     totalKeycloak: number;
     /**
-     * @generated from protobuf field: uint32 totalSynchronizing = 6
+     * @generated from protobuf field: uint64 totalSynchronizing = 6
      */
     totalSynchronizing: number;
     /**
-     * @generated from protobuf field: uint32 totalSynchronizationSuccess = 7
+     * @generated from protobuf field: uint64 totalSynchronizationSuccess = 7
      */
     totalSynchronizationSuccess: number;
     /**
-     * @generated from protobuf field: uint32 totalSynchronizationFailed = 8
+     * @generated from protobuf field: uint64 totalSynchronizationFailed = 8
      */
     totalSynchronizationFailed: number;
     /**
-     * @generated from protobuf field: uint32 totalUser = 9
+     * @generated from protobuf field: uint64 totalUser = 9
      */
     totalUser: number;
     /**
-     * @generated from protobuf field: uint32 totalGroup = 10
+     * @generated from protobuf field: uint64 totalGroup = 10
      */
     totalGroup: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderSummaryResponse previous = 11
+     */
+    previous?: GetDirectoryProviderSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderUserSummaryResponse
  */
 export interface GetDirectoryProviderUserSummaryResponse {
     /**
-     * @generated from protobuf field: uint32 totalNumber = 1
+     * @generated from protobuf field: uint64 totalNumber = 1
      */
     totalNumber: number;
     /**
-     * @generated from protobuf field: uint32 totalDirectoryProvider = 2
+     * @generated from protobuf field: uint64 totalDirectoryProvider = 2
      */
     totalDirectoryProvider: number;
     /**
-     * @generated from protobuf field: uint32 totalUser = 3
+     * @generated from protobuf field: uint64 totalUser = 3
      */
     totalUser: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderUserSummaryResponse previous = 4
+     */
+    previous?: GetDirectoryProviderUserSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderGroupSummaryResponse
  */
 export interface GetDirectoryProviderGroupSummaryResponse {
     /**
-     * @generated from protobuf field: uint32 totalNumber = 1
+     * @generated from protobuf field: uint64 totalNumber = 1
      */
     totalNumber: number;
     /**
-     * @generated from protobuf field: uint32 totalDirectoryProvider = 2
+     * @generated from protobuf field: uint64 totalDirectoryProvider = 2
      */
     totalDirectoryProvider: number;
     /**
-     * @generated from protobuf field: uint32 totalGroup = 3
+     * @generated from protobuf field: uint64 totalGroup = 3
      */
     totalGroup: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderGroupSummaryResponse previous = 4
+     */
+    previous?: GetDirectoryProviderGroupSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse
  */
 export interface GetDeviceManagerSummaryResponse {
     /**
-     * @generated from protobuf field: uint32 totalNumber = 1
+     * @generated from protobuf field: uint64 totalNumber = 1
      */
     totalNumber: number;
     /**
-     * @generated from protobuf field: uint32 totalCrowdStrike = 2
+     * @generated from protobuf field: uint64 totalCrowdStrike = 2
      */
     totalCrowdStrike: number;
     /**
-     * @generated from protobuf field: uint32 totalSentinelOne = 3
+     * @generated from protobuf field: uint64 totalSentinelOne = 3
      */
     totalSentinelOne: number;
     /**
-     * @generated from protobuf field: uint32 totalMicrosoftIntune = 4
+     * @generated from protobuf field: uint64 totalMicrosoftIntune = 4
      */
     totalMicrosoftIntune: number;
     /**
-     * @generated from protobuf field: uint32 totalJamfPro = 5
+     * @generated from protobuf field: uint64 totalJamfPro = 5
      */
     totalJamfPro: number;
     /**
-     * @generated from protobuf field: uint32 totalOnePassword = 6
+     * @generated from protobuf field: uint64 totalOnePassword = 6
      */
     totalOnePassword: number;
     /**
-     * @generated from protobuf field: uint32 totalFleetDM = 7
+     * @generated from protobuf field: uint64 totalFleetDM = 7
      */
     totalFleetDM: number;
     /**
-     * @generated from protobuf field: uint32 totalHuntress = 8
+     * @generated from protobuf field: uint64 totalHuntress = 8
      */
     totalHuntress: number;
     /**
-     * @generated from protobuf field: uint32 totalIru = 9
+     * @generated from protobuf field: uint64 totalIru = 9
      */
     totalIru: number;
     /**
-     * @generated from protobuf field: uint32 totalOK = 10
+     * @generated from protobuf field: uint64 totalOK = 10
      */
     totalOK: number;
     /**
-     * @generated from protobuf field: uint32 totalLoading = 11
+     * @generated from protobuf field: uint64 totalLoading = 11
      */
     totalLoading: number;
     /**
-     * @generated from protobuf field: uint32 totalError = 12
+     * @generated from protobuf field: uint64 totalError = 12
      */
     totalError: number;
     /**
-     * @generated from protobuf field: uint32 totalDegraded = 13
+     * @generated from protobuf field: uint64 totalDegraded = 13
      */
     totalDegraded: number;
     /**
-     * @generated from protobuf field: uint32 totalPollingDisabled = 14
+     * @generated from protobuf field: uint64 totalPollingDisabled = 14
      */
     totalPollingDisabled: number;
     /**
-     * @generated from protobuf field: uint32 totalManagedDevices = 15
+     * @generated from protobuf field: uint64 totalManagedDevices = 15
      */
     totalManagedDevices: number;
     /**
-     * @generated from protobuf field: uint32 totalLinkedDevices = 16
+     * @generated from protobuf field: uint64 totalLinkedDevices = 16
      */
     totalLinkedDevices: number;
     /**
-     * @generated from protobuf field: uint32 totalWaitingApproval = 17
+     * @generated from protobuf field: uint64 totalWaitingApproval = 17
      */
     totalWaitingApproval: number;
     /**
-     * @generated from protobuf field: uint32 totalAmbiguous = 18
+     * @generated from protobuf field: uint64 totalAmbiguous = 18
      */
     totalAmbiguous: number;
     /**
-     * @generated from protobuf field: uint32 totalFailedUpdates = 19
+     * @generated from protobuf field: uint64 totalFailedUpdates = 19
      */
     totalFailedUpdates: number;
+    /**
+     * Previous is the summary of the comparison window set by the
+     * request's `compareFrom` and `compareTo` options.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse previous = 20
+     */
+    previous?: GetDeviceManagerSummaryResponse;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.ListCollectorExporterOptions
@@ -1321,7 +1391,8 @@ export const GetDeviceManagerSummaryRequest = new GetDeviceManagerSummaryRequest
 class GetSecretSummaryResponse$Type extends MessageType<GetSecretSummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.enterprise.v1.GetSecretSummaryResponse", [
-            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "previous", kind: "message", T: () => GetSecretSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetSecretSummaryResponse>): GetSecretSummaryResponse {
@@ -1339,6 +1410,9 @@ class GetSecretSummaryResponse$Type extends MessageType<GetSecretSummaryResponse
                 case /* uint64 totalNumber */ 1:
                     message.totalNumber = reader.uint64().toNumber();
                     break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetSecretSummaryResponse previous */ 2:
+                    message.previous = GetSecretSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1354,6 +1428,9 @@ class GetSecretSummaryResponse$Type extends MessageType<GetSecretSummaryResponse
         /* uint64 totalNumber = 1; */
         if (message.totalNumber !== 0)
             writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* octelium.api.main.visibility.enterprise.v1.GetSecretSummaryResponse previous = 2; */
+        if (message.previous)
+            GetSecretSummaryResponse.internalBinaryWrite(message.previous, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1368,20 +1445,21 @@ export const GetSecretSummaryResponse = new GetSecretSummaryResponse$Type();
 class GetCollectorExporterSummaryResponse$Type extends MessageType<GetCollectorExporterSummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.enterprise.v1.GetCollectorExporterSummaryResponse", [
-            { no: 1, name: "totalNumber", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 2, name: "totalDisabled", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 3, name: "totalOTLP", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 4, name: "totalOTLPHTTP", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "totalClickhouse", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 6, name: "totalElasticsearch", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 7, name: "totalLogzio", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 8, name: "totalInfluxDB", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 9, name: "totalKafka", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 10, name: "totalDatadog", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 11, name: "totalSplunk", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 12, name: "totalAzureMonitor", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 13, name: "totalAzureDataExplorer", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 14, name: "totalPrometheusRemoteWrite", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalDisabled", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalOTLP", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "totalOTLPHTTP", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "totalClickhouse", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "totalElasticsearch", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "totalLogzio", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "totalInfluxDB", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 9, name: "totalKafka", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "totalDatadog", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 11, name: "totalSplunk", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 12, name: "totalAzureMonitor", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 13, name: "totalAzureDataExplorer", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 14, name: "totalPrometheusRemoteWrite", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 15, name: "previous", kind: "message", T: () => GetCollectorExporterSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetCollectorExporterSummaryResponse>): GetCollectorExporterSummaryResponse {
@@ -1409,47 +1487,50 @@ class GetCollectorExporterSummaryResponse$Type extends MessageType<GetCollectorE
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* uint32 totalNumber */ 1:
-                    message.totalNumber = reader.uint32();
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalDisabled */ 2:
-                    message.totalDisabled = reader.uint32();
+                case /* uint64 totalDisabled */ 2:
+                    message.totalDisabled = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalOTLP */ 3:
-                    message.totalOTLP = reader.uint32();
+                case /* uint64 totalOTLP */ 3:
+                    message.totalOTLP = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalOTLPHTTP */ 4:
-                    message.totalOTLPHTTP = reader.uint32();
+                case /* uint64 totalOTLPHTTP */ 4:
+                    message.totalOTLPHTTP = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalClickhouse */ 5:
-                    message.totalClickhouse = reader.uint32();
+                case /* uint64 totalClickhouse */ 5:
+                    message.totalClickhouse = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalElasticsearch */ 6:
-                    message.totalElasticsearch = reader.uint32();
+                case /* uint64 totalElasticsearch */ 6:
+                    message.totalElasticsearch = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalLogzio */ 7:
-                    message.totalLogzio = reader.uint32();
+                case /* uint64 totalLogzio */ 7:
+                    message.totalLogzio = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalInfluxDB */ 8:
-                    message.totalInfluxDB = reader.uint32();
+                case /* uint64 totalInfluxDB */ 8:
+                    message.totalInfluxDB = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalKafka */ 9:
-                    message.totalKafka = reader.uint32();
+                case /* uint64 totalKafka */ 9:
+                    message.totalKafka = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalDatadog */ 10:
-                    message.totalDatadog = reader.uint32();
+                case /* uint64 totalDatadog */ 10:
+                    message.totalDatadog = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalSplunk */ 11:
-                    message.totalSplunk = reader.uint32();
+                case /* uint64 totalSplunk */ 11:
+                    message.totalSplunk = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalAzureMonitor */ 12:
-                    message.totalAzureMonitor = reader.uint32();
+                case /* uint64 totalAzureMonitor */ 12:
+                    message.totalAzureMonitor = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalAzureDataExplorer */ 13:
-                    message.totalAzureDataExplorer = reader.uint32();
+                case /* uint64 totalAzureDataExplorer */ 13:
+                    message.totalAzureDataExplorer = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalPrometheusRemoteWrite */ 14:
-                    message.totalPrometheusRemoteWrite = reader.uint32();
+                case /* uint64 totalPrometheusRemoteWrite */ 14:
+                    message.totalPrometheusRemoteWrite = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetCollectorExporterSummaryResponse previous */ 15:
+                    message.previous = GetCollectorExporterSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1463,48 +1544,51 @@ class GetCollectorExporterSummaryResponse$Type extends MessageType<GetCollectorE
         return message;
     }
     internalBinaryWrite(message: GetCollectorExporterSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* uint32 totalNumber = 1; */
+        /* uint64 totalNumber = 1; */
         if (message.totalNumber !== 0)
-            writer.tag(1, WireType.Varint).uint32(message.totalNumber);
-        /* uint32 totalDisabled = 2; */
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalDisabled = 2; */
         if (message.totalDisabled !== 0)
-            writer.tag(2, WireType.Varint).uint32(message.totalDisabled);
-        /* uint32 totalOTLP = 3; */
+            writer.tag(2, WireType.Varint).uint64(message.totalDisabled);
+        /* uint64 totalOTLP = 3; */
         if (message.totalOTLP !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.totalOTLP);
-        /* uint32 totalOTLPHTTP = 4; */
+            writer.tag(3, WireType.Varint).uint64(message.totalOTLP);
+        /* uint64 totalOTLPHTTP = 4; */
         if (message.totalOTLPHTTP !== 0)
-            writer.tag(4, WireType.Varint).uint32(message.totalOTLPHTTP);
-        /* uint32 totalClickhouse = 5; */
+            writer.tag(4, WireType.Varint).uint64(message.totalOTLPHTTP);
+        /* uint64 totalClickhouse = 5; */
         if (message.totalClickhouse !== 0)
-            writer.tag(5, WireType.Varint).uint32(message.totalClickhouse);
-        /* uint32 totalElasticsearch = 6; */
+            writer.tag(5, WireType.Varint).uint64(message.totalClickhouse);
+        /* uint64 totalElasticsearch = 6; */
         if (message.totalElasticsearch !== 0)
-            writer.tag(6, WireType.Varint).uint32(message.totalElasticsearch);
-        /* uint32 totalLogzio = 7; */
+            writer.tag(6, WireType.Varint).uint64(message.totalElasticsearch);
+        /* uint64 totalLogzio = 7; */
         if (message.totalLogzio !== 0)
-            writer.tag(7, WireType.Varint).uint32(message.totalLogzio);
-        /* uint32 totalInfluxDB = 8; */
+            writer.tag(7, WireType.Varint).uint64(message.totalLogzio);
+        /* uint64 totalInfluxDB = 8; */
         if (message.totalInfluxDB !== 0)
-            writer.tag(8, WireType.Varint).uint32(message.totalInfluxDB);
-        /* uint32 totalKafka = 9; */
+            writer.tag(8, WireType.Varint).uint64(message.totalInfluxDB);
+        /* uint64 totalKafka = 9; */
         if (message.totalKafka !== 0)
-            writer.tag(9, WireType.Varint).uint32(message.totalKafka);
-        /* uint32 totalDatadog = 10; */
+            writer.tag(9, WireType.Varint).uint64(message.totalKafka);
+        /* uint64 totalDatadog = 10; */
         if (message.totalDatadog !== 0)
-            writer.tag(10, WireType.Varint).uint32(message.totalDatadog);
-        /* uint32 totalSplunk = 11; */
+            writer.tag(10, WireType.Varint).uint64(message.totalDatadog);
+        /* uint64 totalSplunk = 11; */
         if (message.totalSplunk !== 0)
-            writer.tag(11, WireType.Varint).uint32(message.totalSplunk);
-        /* uint32 totalAzureMonitor = 12; */
+            writer.tag(11, WireType.Varint).uint64(message.totalSplunk);
+        /* uint64 totalAzureMonitor = 12; */
         if (message.totalAzureMonitor !== 0)
-            writer.tag(12, WireType.Varint).uint32(message.totalAzureMonitor);
-        /* uint32 totalAzureDataExplorer = 13; */
+            writer.tag(12, WireType.Varint).uint64(message.totalAzureMonitor);
+        /* uint64 totalAzureDataExplorer = 13; */
         if (message.totalAzureDataExplorer !== 0)
-            writer.tag(13, WireType.Varint).uint32(message.totalAzureDataExplorer);
-        /* uint32 totalPrometheusRemoteWrite = 14; */
+            writer.tag(13, WireType.Varint).uint64(message.totalAzureDataExplorer);
+        /* uint64 totalPrometheusRemoteWrite = 14; */
         if (message.totalPrometheusRemoteWrite !== 0)
-            writer.tag(14, WireType.Varint).uint32(message.totalPrometheusRemoteWrite);
+            writer.tag(14, WireType.Varint).uint64(message.totalPrometheusRemoteWrite);
+        /* octelium.api.main.visibility.enterprise.v1.GetCollectorExporterSummaryResponse previous = 15; */
+        if (message.previous)
+            GetCollectorExporterSummaryResponse.internalBinaryWrite(message.previous, writer.tag(15, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1519,17 +1603,18 @@ export const GetCollectorExporterSummaryResponse = new GetCollectorExporterSumma
 class GetSecretStoreSummaryResponse$Type extends MessageType<GetSecretStoreSummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryResponse", [
-            { no: 1, name: "totalNumber", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 2, name: "totalAzureKeyVault", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 3, name: "totalHashicorpVault", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 4, name: "totalGCPKMS", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "totalAWSKMS", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 6, name: "totalKubernetes", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 7, name: "totalOK", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 8, name: "totalLoading", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 9, name: "totalSynchronizing", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 10, name: "totalSynchronizationSuccess", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 11, name: "totalSynchronizationFailed", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalAzureKeyVault", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalHashicorpVault", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "totalGCPKMS", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "totalAWSKMS", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "totalKubernetes", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "totalOK", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "totalLoading", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 9, name: "totalSynchronizing", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "totalSynchronizationSuccess", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 11, name: "totalSynchronizationFailed", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 12, name: "previous", kind: "message", T: () => GetSecretStoreSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetSecretStoreSummaryResponse>): GetSecretStoreSummaryResponse {
@@ -1554,38 +1639,41 @@ class GetSecretStoreSummaryResponse$Type extends MessageType<GetSecretStoreSumma
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* uint32 totalNumber */ 1:
-                    message.totalNumber = reader.uint32();
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalAzureKeyVault */ 2:
-                    message.totalAzureKeyVault = reader.uint32();
+                case /* uint64 totalAzureKeyVault */ 2:
+                    message.totalAzureKeyVault = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalHashicorpVault */ 3:
-                    message.totalHashicorpVault = reader.uint32();
+                case /* uint64 totalHashicorpVault */ 3:
+                    message.totalHashicorpVault = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalGCPKMS */ 4:
-                    message.totalGCPKMS = reader.uint32();
+                case /* uint64 totalGCPKMS */ 4:
+                    message.totalGCPKMS = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalAWSKMS */ 5:
-                    message.totalAWSKMS = reader.uint32();
+                case /* uint64 totalAWSKMS */ 5:
+                    message.totalAWSKMS = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalKubernetes */ 6:
-                    message.totalKubernetes = reader.uint32();
+                case /* uint64 totalKubernetes */ 6:
+                    message.totalKubernetes = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalOK */ 7:
-                    message.totalOK = reader.uint32();
+                case /* uint64 totalOK */ 7:
+                    message.totalOK = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalLoading */ 8:
-                    message.totalLoading = reader.uint32();
+                case /* uint64 totalLoading */ 8:
+                    message.totalLoading = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalSynchronizing */ 9:
-                    message.totalSynchronizing = reader.uint32();
+                case /* uint64 totalSynchronizing */ 9:
+                    message.totalSynchronizing = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalSynchronizationSuccess */ 10:
-                    message.totalSynchronizationSuccess = reader.uint32();
+                case /* uint64 totalSynchronizationSuccess */ 10:
+                    message.totalSynchronizationSuccess = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalSynchronizationFailed */ 11:
-                    message.totalSynchronizationFailed = reader.uint32();
+                case /* uint64 totalSynchronizationFailed */ 11:
+                    message.totalSynchronizationFailed = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryResponse previous */ 12:
+                    message.previous = GetSecretStoreSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1599,39 +1687,42 @@ class GetSecretStoreSummaryResponse$Type extends MessageType<GetSecretStoreSumma
         return message;
     }
     internalBinaryWrite(message: GetSecretStoreSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* uint32 totalNumber = 1; */
+        /* uint64 totalNumber = 1; */
         if (message.totalNumber !== 0)
-            writer.tag(1, WireType.Varint).uint32(message.totalNumber);
-        /* uint32 totalAzureKeyVault = 2; */
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalAzureKeyVault = 2; */
         if (message.totalAzureKeyVault !== 0)
-            writer.tag(2, WireType.Varint).uint32(message.totalAzureKeyVault);
-        /* uint32 totalHashicorpVault = 3; */
+            writer.tag(2, WireType.Varint).uint64(message.totalAzureKeyVault);
+        /* uint64 totalHashicorpVault = 3; */
         if (message.totalHashicorpVault !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.totalHashicorpVault);
-        /* uint32 totalGCPKMS = 4; */
+            writer.tag(3, WireType.Varint).uint64(message.totalHashicorpVault);
+        /* uint64 totalGCPKMS = 4; */
         if (message.totalGCPKMS !== 0)
-            writer.tag(4, WireType.Varint).uint32(message.totalGCPKMS);
-        /* uint32 totalAWSKMS = 5; */
+            writer.tag(4, WireType.Varint).uint64(message.totalGCPKMS);
+        /* uint64 totalAWSKMS = 5; */
         if (message.totalAWSKMS !== 0)
-            writer.tag(5, WireType.Varint).uint32(message.totalAWSKMS);
-        /* uint32 totalKubernetes = 6; */
+            writer.tag(5, WireType.Varint).uint64(message.totalAWSKMS);
+        /* uint64 totalKubernetes = 6; */
         if (message.totalKubernetes !== 0)
-            writer.tag(6, WireType.Varint).uint32(message.totalKubernetes);
-        /* uint32 totalOK = 7; */
+            writer.tag(6, WireType.Varint).uint64(message.totalKubernetes);
+        /* uint64 totalOK = 7; */
         if (message.totalOK !== 0)
-            writer.tag(7, WireType.Varint).uint32(message.totalOK);
-        /* uint32 totalLoading = 8; */
+            writer.tag(7, WireType.Varint).uint64(message.totalOK);
+        /* uint64 totalLoading = 8; */
         if (message.totalLoading !== 0)
-            writer.tag(8, WireType.Varint).uint32(message.totalLoading);
-        /* uint32 totalSynchronizing = 9; */
+            writer.tag(8, WireType.Varint).uint64(message.totalLoading);
+        /* uint64 totalSynchronizing = 9; */
         if (message.totalSynchronizing !== 0)
-            writer.tag(9, WireType.Varint).uint32(message.totalSynchronizing);
-        /* uint32 totalSynchronizationSuccess = 10; */
+            writer.tag(9, WireType.Varint).uint64(message.totalSynchronizing);
+        /* uint64 totalSynchronizationSuccess = 10; */
         if (message.totalSynchronizationSuccess !== 0)
-            writer.tag(10, WireType.Varint).uint32(message.totalSynchronizationSuccess);
-        /* uint32 totalSynchronizationFailed = 11; */
+            writer.tag(10, WireType.Varint).uint64(message.totalSynchronizationSuccess);
+        /* uint64 totalSynchronizationFailed = 11; */
         if (message.totalSynchronizationFailed !== 0)
-            writer.tag(11, WireType.Varint).uint32(message.totalSynchronizationFailed);
+            writer.tag(11, WireType.Varint).uint64(message.totalSynchronizationFailed);
+        /* octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryResponse previous = 12; */
+        if (message.previous)
+            GetSecretStoreSummaryResponse.internalBinaryWrite(message.previous, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1646,18 +1737,19 @@ export const GetSecretStoreSummaryResponse = new GetSecretStoreSummaryResponse$T
 class GetCertificateSummaryResponse$Type extends MessageType<GetCertificateSummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.enterprise.v1.GetCertificateSummaryResponse", [
-            { no: 1, name: "totalNumber", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 2, name: "totalManaged", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 3, name: "totalManual", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 4, name: "totalIssuanceRequested", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "totalIssuing", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 6, name: "totalIssuanceSuccess", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 7, name: "totalIssuanceFailed", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 8, name: "totalExpired", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 9, name: "totalExpiringSoon", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 10, name: "totalService", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 11, name: "totalNamespace", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 12, name: "totalCertificateIssuer", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalManaged", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalManual", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "totalIssuanceRequested", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "totalIssuing", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "totalIssuanceSuccess", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "totalIssuanceFailed", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "totalExpired", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 9, name: "totalExpiringSoon", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "totalService", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 11, name: "totalNamespace", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 12, name: "totalCertificateIssuer", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 13, name: "previous", kind: "message", T: () => GetCertificateSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetCertificateSummaryResponse>): GetCertificateSummaryResponse {
@@ -1683,41 +1775,44 @@ class GetCertificateSummaryResponse$Type extends MessageType<GetCertificateSumma
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* uint32 totalNumber */ 1:
-                    message.totalNumber = reader.uint32();
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalManaged */ 2:
-                    message.totalManaged = reader.uint32();
+                case /* uint64 totalManaged */ 2:
+                    message.totalManaged = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalManual */ 3:
-                    message.totalManual = reader.uint32();
+                case /* uint64 totalManual */ 3:
+                    message.totalManual = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalIssuanceRequested */ 4:
-                    message.totalIssuanceRequested = reader.uint32();
+                case /* uint64 totalIssuanceRequested */ 4:
+                    message.totalIssuanceRequested = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalIssuing */ 5:
-                    message.totalIssuing = reader.uint32();
+                case /* uint64 totalIssuing */ 5:
+                    message.totalIssuing = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalIssuanceSuccess */ 6:
-                    message.totalIssuanceSuccess = reader.uint32();
+                case /* uint64 totalIssuanceSuccess */ 6:
+                    message.totalIssuanceSuccess = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalIssuanceFailed */ 7:
-                    message.totalIssuanceFailed = reader.uint32();
+                case /* uint64 totalIssuanceFailed */ 7:
+                    message.totalIssuanceFailed = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalExpired */ 8:
-                    message.totalExpired = reader.uint32();
+                case /* uint64 totalExpired */ 8:
+                    message.totalExpired = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalExpiringSoon */ 9:
-                    message.totalExpiringSoon = reader.uint32();
+                case /* uint64 totalExpiringSoon */ 9:
+                    message.totalExpiringSoon = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalService */ 10:
-                    message.totalService = reader.uint32();
+                case /* uint64 totalService */ 10:
+                    message.totalService = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalNamespace */ 11:
-                    message.totalNamespace = reader.uint32();
+                case /* uint64 totalNamespace */ 11:
+                    message.totalNamespace = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalCertificateIssuer */ 12:
-                    message.totalCertificateIssuer = reader.uint32();
+                case /* uint64 totalCertificateIssuer */ 12:
+                    message.totalCertificateIssuer = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetCertificateSummaryResponse previous */ 13:
+                    message.previous = GetCertificateSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1731,42 +1826,45 @@ class GetCertificateSummaryResponse$Type extends MessageType<GetCertificateSumma
         return message;
     }
     internalBinaryWrite(message: GetCertificateSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* uint32 totalNumber = 1; */
+        /* uint64 totalNumber = 1; */
         if (message.totalNumber !== 0)
-            writer.tag(1, WireType.Varint).uint32(message.totalNumber);
-        /* uint32 totalManaged = 2; */
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalManaged = 2; */
         if (message.totalManaged !== 0)
-            writer.tag(2, WireType.Varint).uint32(message.totalManaged);
-        /* uint32 totalManual = 3; */
+            writer.tag(2, WireType.Varint).uint64(message.totalManaged);
+        /* uint64 totalManual = 3; */
         if (message.totalManual !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.totalManual);
-        /* uint32 totalIssuanceRequested = 4; */
+            writer.tag(3, WireType.Varint).uint64(message.totalManual);
+        /* uint64 totalIssuanceRequested = 4; */
         if (message.totalIssuanceRequested !== 0)
-            writer.tag(4, WireType.Varint).uint32(message.totalIssuanceRequested);
-        /* uint32 totalIssuing = 5; */
+            writer.tag(4, WireType.Varint).uint64(message.totalIssuanceRequested);
+        /* uint64 totalIssuing = 5; */
         if (message.totalIssuing !== 0)
-            writer.tag(5, WireType.Varint).uint32(message.totalIssuing);
-        /* uint32 totalIssuanceSuccess = 6; */
+            writer.tag(5, WireType.Varint).uint64(message.totalIssuing);
+        /* uint64 totalIssuanceSuccess = 6; */
         if (message.totalIssuanceSuccess !== 0)
-            writer.tag(6, WireType.Varint).uint32(message.totalIssuanceSuccess);
-        /* uint32 totalIssuanceFailed = 7; */
+            writer.tag(6, WireType.Varint).uint64(message.totalIssuanceSuccess);
+        /* uint64 totalIssuanceFailed = 7; */
         if (message.totalIssuanceFailed !== 0)
-            writer.tag(7, WireType.Varint).uint32(message.totalIssuanceFailed);
-        /* uint32 totalExpired = 8; */
+            writer.tag(7, WireType.Varint).uint64(message.totalIssuanceFailed);
+        /* uint64 totalExpired = 8; */
         if (message.totalExpired !== 0)
-            writer.tag(8, WireType.Varint).uint32(message.totalExpired);
-        /* uint32 totalExpiringSoon = 9; */
+            writer.tag(8, WireType.Varint).uint64(message.totalExpired);
+        /* uint64 totalExpiringSoon = 9; */
         if (message.totalExpiringSoon !== 0)
-            writer.tag(9, WireType.Varint).uint32(message.totalExpiringSoon);
-        /* uint32 totalService = 10; */
+            writer.tag(9, WireType.Varint).uint64(message.totalExpiringSoon);
+        /* uint64 totalService = 10; */
         if (message.totalService !== 0)
-            writer.tag(10, WireType.Varint).uint32(message.totalService);
-        /* uint32 totalNamespace = 11; */
+            writer.tag(10, WireType.Varint).uint64(message.totalService);
+        /* uint64 totalNamespace = 11; */
         if (message.totalNamespace !== 0)
-            writer.tag(11, WireType.Varint).uint32(message.totalNamespace);
-        /* uint32 totalCertificateIssuer = 12; */
+            writer.tag(11, WireType.Varint).uint64(message.totalNamespace);
+        /* uint64 totalCertificateIssuer = 12; */
         if (message.totalCertificateIssuer !== 0)
-            writer.tag(12, WireType.Varint).uint32(message.totalCertificateIssuer);
+            writer.tag(12, WireType.Varint).uint64(message.totalCertificateIssuer);
+        /* octelium.api.main.visibility.enterprise.v1.GetCertificateSummaryResponse previous = 13; */
+        if (message.previous)
+            GetCertificateSummaryResponse.internalBinaryWrite(message.previous, writer.tag(13, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1781,11 +1879,12 @@ export const GetCertificateSummaryResponse = new GetCertificateSummaryResponse$T
 class GetCertificateIssuerSummaryResponse$Type extends MessageType<GetCertificateIssuerSummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.enterprise.v1.GetCertificateIssuerSummaryResponse", [
-            { no: 1, name: "totalNumber", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 2, name: "totalACME", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 3, name: "totalPreparing", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 4, name: "totalReady", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "totalNotReady", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalACME", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalPreparing", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "totalReady", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "totalNotReady", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "previous", kind: "message", T: () => GetCertificateIssuerSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetCertificateIssuerSummaryResponse>): GetCertificateIssuerSummaryResponse {
@@ -1804,20 +1903,23 @@ class GetCertificateIssuerSummaryResponse$Type extends MessageType<GetCertificat
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* uint32 totalNumber */ 1:
-                    message.totalNumber = reader.uint32();
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalACME */ 2:
-                    message.totalACME = reader.uint32();
+                case /* uint64 totalACME */ 2:
+                    message.totalACME = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalPreparing */ 3:
-                    message.totalPreparing = reader.uint32();
+                case /* uint64 totalPreparing */ 3:
+                    message.totalPreparing = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalReady */ 4:
-                    message.totalReady = reader.uint32();
+                case /* uint64 totalReady */ 4:
+                    message.totalReady = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalNotReady */ 5:
-                    message.totalNotReady = reader.uint32();
+                case /* uint64 totalNotReady */ 5:
+                    message.totalNotReady = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetCertificateIssuerSummaryResponse previous */ 6:
+                    message.previous = GetCertificateIssuerSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1831,21 +1933,24 @@ class GetCertificateIssuerSummaryResponse$Type extends MessageType<GetCertificat
         return message;
     }
     internalBinaryWrite(message: GetCertificateIssuerSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* uint32 totalNumber = 1; */
+        /* uint64 totalNumber = 1; */
         if (message.totalNumber !== 0)
-            writer.tag(1, WireType.Varint).uint32(message.totalNumber);
-        /* uint32 totalACME = 2; */
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalACME = 2; */
         if (message.totalACME !== 0)
-            writer.tag(2, WireType.Varint).uint32(message.totalACME);
-        /* uint32 totalPreparing = 3; */
+            writer.tag(2, WireType.Varint).uint64(message.totalACME);
+        /* uint64 totalPreparing = 3; */
         if (message.totalPreparing !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.totalPreparing);
-        /* uint32 totalReady = 4; */
+            writer.tag(3, WireType.Varint).uint64(message.totalPreparing);
+        /* uint64 totalReady = 4; */
         if (message.totalReady !== 0)
-            writer.tag(4, WireType.Varint).uint32(message.totalReady);
-        /* uint32 totalNotReady = 5; */
+            writer.tag(4, WireType.Varint).uint64(message.totalReady);
+        /* uint64 totalNotReady = 5; */
         if (message.totalNotReady !== 0)
-            writer.tag(5, WireType.Varint).uint32(message.totalNotReady);
+            writer.tag(5, WireType.Varint).uint64(message.totalNotReady);
+        /* octelium.api.main.visibility.enterprise.v1.GetCertificateIssuerSummaryResponse previous = 6; */
+        if (message.previous)
+            GetCertificateIssuerSummaryResponse.internalBinaryWrite(message.previous, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1860,14 +1965,15 @@ export const GetCertificateIssuerSummaryResponse = new GetCertificateIssuerSumma
 class GetDNSProviderSummaryResponse$Type extends MessageType<GetDNSProviderSummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.enterprise.v1.GetDNSProviderSummaryResponse", [
-            { no: 1, name: "totalNumber", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 2, name: "totalCloudflare", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 3, name: "totalAWS", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 4, name: "totalDigitalOcean", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "totalGoogle", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 6, name: "totalAzure", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 7, name: "totalLinode", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 8, name: "totalOVH", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalCloudflare", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalAWS", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "totalDigitalOcean", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "totalGoogle", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "totalAzure", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "totalLinode", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "totalOVH", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 9, name: "previous", kind: "message", T: () => GetDNSProviderSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetDNSProviderSummaryResponse>): GetDNSProviderSummaryResponse {
@@ -1889,29 +1995,32 @@ class GetDNSProviderSummaryResponse$Type extends MessageType<GetDNSProviderSumma
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* uint32 totalNumber */ 1:
-                    message.totalNumber = reader.uint32();
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalCloudflare */ 2:
-                    message.totalCloudflare = reader.uint32();
+                case /* uint64 totalCloudflare */ 2:
+                    message.totalCloudflare = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalAWS */ 3:
-                    message.totalAWS = reader.uint32();
+                case /* uint64 totalAWS */ 3:
+                    message.totalAWS = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalDigitalOcean */ 4:
-                    message.totalDigitalOcean = reader.uint32();
+                case /* uint64 totalDigitalOcean */ 4:
+                    message.totalDigitalOcean = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalGoogle */ 5:
-                    message.totalGoogle = reader.uint32();
+                case /* uint64 totalGoogle */ 5:
+                    message.totalGoogle = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalAzure */ 6:
-                    message.totalAzure = reader.uint32();
+                case /* uint64 totalAzure */ 6:
+                    message.totalAzure = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalLinode */ 7:
-                    message.totalLinode = reader.uint32();
+                case /* uint64 totalLinode */ 7:
+                    message.totalLinode = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalOVH */ 8:
-                    message.totalOVH = reader.uint32();
+                case /* uint64 totalOVH */ 8:
+                    message.totalOVH = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetDNSProviderSummaryResponse previous */ 9:
+                    message.previous = GetDNSProviderSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1925,30 +2034,33 @@ class GetDNSProviderSummaryResponse$Type extends MessageType<GetDNSProviderSumma
         return message;
     }
     internalBinaryWrite(message: GetDNSProviderSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* uint32 totalNumber = 1; */
+        /* uint64 totalNumber = 1; */
         if (message.totalNumber !== 0)
-            writer.tag(1, WireType.Varint).uint32(message.totalNumber);
-        /* uint32 totalCloudflare = 2; */
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalCloudflare = 2; */
         if (message.totalCloudflare !== 0)
-            writer.tag(2, WireType.Varint).uint32(message.totalCloudflare);
-        /* uint32 totalAWS = 3; */
+            writer.tag(2, WireType.Varint).uint64(message.totalCloudflare);
+        /* uint64 totalAWS = 3; */
         if (message.totalAWS !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.totalAWS);
-        /* uint32 totalDigitalOcean = 4; */
+            writer.tag(3, WireType.Varint).uint64(message.totalAWS);
+        /* uint64 totalDigitalOcean = 4; */
         if (message.totalDigitalOcean !== 0)
-            writer.tag(4, WireType.Varint).uint32(message.totalDigitalOcean);
-        /* uint32 totalGoogle = 5; */
+            writer.tag(4, WireType.Varint).uint64(message.totalDigitalOcean);
+        /* uint64 totalGoogle = 5; */
         if (message.totalGoogle !== 0)
-            writer.tag(5, WireType.Varint).uint32(message.totalGoogle);
-        /* uint32 totalAzure = 6; */
+            writer.tag(5, WireType.Varint).uint64(message.totalGoogle);
+        /* uint64 totalAzure = 6; */
         if (message.totalAzure !== 0)
-            writer.tag(6, WireType.Varint).uint32(message.totalAzure);
-        /* uint32 totalLinode = 7; */
+            writer.tag(6, WireType.Varint).uint64(message.totalAzure);
+        /* uint64 totalLinode = 7; */
         if (message.totalLinode !== 0)
-            writer.tag(7, WireType.Varint).uint32(message.totalLinode);
-        /* uint32 totalOVH = 8; */
+            writer.tag(7, WireType.Varint).uint64(message.totalLinode);
+        /* uint64 totalOVH = 8; */
         if (message.totalOVH !== 0)
-            writer.tag(8, WireType.Varint).uint32(message.totalOVH);
+            writer.tag(8, WireType.Varint).uint64(message.totalOVH);
+        /* octelium.api.main.visibility.enterprise.v1.GetDNSProviderSummaryResponse previous = 9; */
+        if (message.previous)
+            GetDNSProviderSummaryResponse.internalBinaryWrite(message.previous, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1963,16 +2075,17 @@ export const GetDNSProviderSummaryResponse = new GetDNSProviderSummaryResponse$T
 class GetDirectoryProviderSummaryResponse$Type extends MessageType<GetDirectoryProviderSummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderSummaryResponse", [
-            { no: 1, name: "totalNumber", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 2, name: "totalDisabled", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 3, name: "totalSCIM", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 4, name: "totalGoogleWorkspace", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "totalKeycloak", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 6, name: "totalSynchronizing", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 7, name: "totalSynchronizationSuccess", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 8, name: "totalSynchronizationFailed", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 9, name: "totalUser", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 10, name: "totalGroup", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalDisabled", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalSCIM", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "totalGoogleWorkspace", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "totalKeycloak", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "totalSynchronizing", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "totalSynchronizationSuccess", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "totalSynchronizationFailed", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 9, name: "totalUser", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "totalGroup", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 11, name: "previous", kind: "message", T: () => GetDirectoryProviderSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetDirectoryProviderSummaryResponse>): GetDirectoryProviderSummaryResponse {
@@ -1996,35 +2109,38 @@ class GetDirectoryProviderSummaryResponse$Type extends MessageType<GetDirectoryP
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* uint32 totalNumber */ 1:
-                    message.totalNumber = reader.uint32();
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalDisabled */ 2:
-                    message.totalDisabled = reader.uint32();
+                case /* uint64 totalDisabled */ 2:
+                    message.totalDisabled = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalSCIM */ 3:
-                    message.totalSCIM = reader.uint32();
+                case /* uint64 totalSCIM */ 3:
+                    message.totalSCIM = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalGoogleWorkspace */ 4:
-                    message.totalGoogleWorkspace = reader.uint32();
+                case /* uint64 totalGoogleWorkspace */ 4:
+                    message.totalGoogleWorkspace = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalKeycloak */ 5:
-                    message.totalKeycloak = reader.uint32();
+                case /* uint64 totalKeycloak */ 5:
+                    message.totalKeycloak = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalSynchronizing */ 6:
-                    message.totalSynchronizing = reader.uint32();
+                case /* uint64 totalSynchronizing */ 6:
+                    message.totalSynchronizing = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalSynchronizationSuccess */ 7:
-                    message.totalSynchronizationSuccess = reader.uint32();
+                case /* uint64 totalSynchronizationSuccess */ 7:
+                    message.totalSynchronizationSuccess = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalSynchronizationFailed */ 8:
-                    message.totalSynchronizationFailed = reader.uint32();
+                case /* uint64 totalSynchronizationFailed */ 8:
+                    message.totalSynchronizationFailed = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalUser */ 9:
-                    message.totalUser = reader.uint32();
+                case /* uint64 totalUser */ 9:
+                    message.totalUser = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalGroup */ 10:
-                    message.totalGroup = reader.uint32();
+                case /* uint64 totalGroup */ 10:
+                    message.totalGroup = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderSummaryResponse previous */ 11:
+                    message.previous = GetDirectoryProviderSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2038,36 +2154,39 @@ class GetDirectoryProviderSummaryResponse$Type extends MessageType<GetDirectoryP
         return message;
     }
     internalBinaryWrite(message: GetDirectoryProviderSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* uint32 totalNumber = 1; */
+        /* uint64 totalNumber = 1; */
         if (message.totalNumber !== 0)
-            writer.tag(1, WireType.Varint).uint32(message.totalNumber);
-        /* uint32 totalDisabled = 2; */
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalDisabled = 2; */
         if (message.totalDisabled !== 0)
-            writer.tag(2, WireType.Varint).uint32(message.totalDisabled);
-        /* uint32 totalSCIM = 3; */
+            writer.tag(2, WireType.Varint).uint64(message.totalDisabled);
+        /* uint64 totalSCIM = 3; */
         if (message.totalSCIM !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.totalSCIM);
-        /* uint32 totalGoogleWorkspace = 4; */
+            writer.tag(3, WireType.Varint).uint64(message.totalSCIM);
+        /* uint64 totalGoogleWorkspace = 4; */
         if (message.totalGoogleWorkspace !== 0)
-            writer.tag(4, WireType.Varint).uint32(message.totalGoogleWorkspace);
-        /* uint32 totalKeycloak = 5; */
+            writer.tag(4, WireType.Varint).uint64(message.totalGoogleWorkspace);
+        /* uint64 totalKeycloak = 5; */
         if (message.totalKeycloak !== 0)
-            writer.tag(5, WireType.Varint).uint32(message.totalKeycloak);
-        /* uint32 totalSynchronizing = 6; */
+            writer.tag(5, WireType.Varint).uint64(message.totalKeycloak);
+        /* uint64 totalSynchronizing = 6; */
         if (message.totalSynchronizing !== 0)
-            writer.tag(6, WireType.Varint).uint32(message.totalSynchronizing);
-        /* uint32 totalSynchronizationSuccess = 7; */
+            writer.tag(6, WireType.Varint).uint64(message.totalSynchronizing);
+        /* uint64 totalSynchronizationSuccess = 7; */
         if (message.totalSynchronizationSuccess !== 0)
-            writer.tag(7, WireType.Varint).uint32(message.totalSynchronizationSuccess);
-        /* uint32 totalSynchronizationFailed = 8; */
+            writer.tag(7, WireType.Varint).uint64(message.totalSynchronizationSuccess);
+        /* uint64 totalSynchronizationFailed = 8; */
         if (message.totalSynchronizationFailed !== 0)
-            writer.tag(8, WireType.Varint).uint32(message.totalSynchronizationFailed);
-        /* uint32 totalUser = 9; */
+            writer.tag(8, WireType.Varint).uint64(message.totalSynchronizationFailed);
+        /* uint64 totalUser = 9; */
         if (message.totalUser !== 0)
-            writer.tag(9, WireType.Varint).uint32(message.totalUser);
-        /* uint32 totalGroup = 10; */
+            writer.tag(9, WireType.Varint).uint64(message.totalUser);
+        /* uint64 totalGroup = 10; */
         if (message.totalGroup !== 0)
-            writer.tag(10, WireType.Varint).uint32(message.totalGroup);
+            writer.tag(10, WireType.Varint).uint64(message.totalGroup);
+        /* octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderSummaryResponse previous = 11; */
+        if (message.previous)
+            GetDirectoryProviderSummaryResponse.internalBinaryWrite(message.previous, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2082,9 +2201,10 @@ export const GetDirectoryProviderSummaryResponse = new GetDirectoryProviderSumma
 class GetDirectoryProviderUserSummaryResponse$Type extends MessageType<GetDirectoryProviderUserSummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderUserSummaryResponse", [
-            { no: 1, name: "totalNumber", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 2, name: "totalDirectoryProvider", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 3, name: "totalUser", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalDirectoryProvider", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalUser", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "previous", kind: "message", T: () => GetDirectoryProviderUserSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetDirectoryProviderUserSummaryResponse>): GetDirectoryProviderUserSummaryResponse {
@@ -2101,14 +2221,17 @@ class GetDirectoryProviderUserSummaryResponse$Type extends MessageType<GetDirect
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* uint32 totalNumber */ 1:
-                    message.totalNumber = reader.uint32();
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalDirectoryProvider */ 2:
-                    message.totalDirectoryProvider = reader.uint32();
+                case /* uint64 totalDirectoryProvider */ 2:
+                    message.totalDirectoryProvider = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalUser */ 3:
-                    message.totalUser = reader.uint32();
+                case /* uint64 totalUser */ 3:
+                    message.totalUser = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderUserSummaryResponse previous */ 4:
+                    message.previous = GetDirectoryProviderUserSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2122,15 +2245,18 @@ class GetDirectoryProviderUserSummaryResponse$Type extends MessageType<GetDirect
         return message;
     }
     internalBinaryWrite(message: GetDirectoryProviderUserSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* uint32 totalNumber = 1; */
+        /* uint64 totalNumber = 1; */
         if (message.totalNumber !== 0)
-            writer.tag(1, WireType.Varint).uint32(message.totalNumber);
-        /* uint32 totalDirectoryProvider = 2; */
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalDirectoryProvider = 2; */
         if (message.totalDirectoryProvider !== 0)
-            writer.tag(2, WireType.Varint).uint32(message.totalDirectoryProvider);
-        /* uint32 totalUser = 3; */
+            writer.tag(2, WireType.Varint).uint64(message.totalDirectoryProvider);
+        /* uint64 totalUser = 3; */
         if (message.totalUser !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.totalUser);
+            writer.tag(3, WireType.Varint).uint64(message.totalUser);
+        /* octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderUserSummaryResponse previous = 4; */
+        if (message.previous)
+            GetDirectoryProviderUserSummaryResponse.internalBinaryWrite(message.previous, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2145,9 +2271,10 @@ export const GetDirectoryProviderUserSummaryResponse = new GetDirectoryProviderU
 class GetDirectoryProviderGroupSummaryResponse$Type extends MessageType<GetDirectoryProviderGroupSummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderGroupSummaryResponse", [
-            { no: 1, name: "totalNumber", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 2, name: "totalDirectoryProvider", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 3, name: "totalGroup", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalDirectoryProvider", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalGroup", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "previous", kind: "message", T: () => GetDirectoryProviderGroupSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetDirectoryProviderGroupSummaryResponse>): GetDirectoryProviderGroupSummaryResponse {
@@ -2164,14 +2291,17 @@ class GetDirectoryProviderGroupSummaryResponse$Type extends MessageType<GetDirec
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* uint32 totalNumber */ 1:
-                    message.totalNumber = reader.uint32();
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalDirectoryProvider */ 2:
-                    message.totalDirectoryProvider = reader.uint32();
+                case /* uint64 totalDirectoryProvider */ 2:
+                    message.totalDirectoryProvider = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalGroup */ 3:
-                    message.totalGroup = reader.uint32();
+                case /* uint64 totalGroup */ 3:
+                    message.totalGroup = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderGroupSummaryResponse previous */ 4:
+                    message.previous = GetDirectoryProviderGroupSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2185,15 +2315,18 @@ class GetDirectoryProviderGroupSummaryResponse$Type extends MessageType<GetDirec
         return message;
     }
     internalBinaryWrite(message: GetDirectoryProviderGroupSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* uint32 totalNumber = 1; */
+        /* uint64 totalNumber = 1; */
         if (message.totalNumber !== 0)
-            writer.tag(1, WireType.Varint).uint32(message.totalNumber);
-        /* uint32 totalDirectoryProvider = 2; */
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalDirectoryProvider = 2; */
         if (message.totalDirectoryProvider !== 0)
-            writer.tag(2, WireType.Varint).uint32(message.totalDirectoryProvider);
-        /* uint32 totalGroup = 3; */
+            writer.tag(2, WireType.Varint).uint64(message.totalDirectoryProvider);
+        /* uint64 totalGroup = 3; */
         if (message.totalGroup !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.totalGroup);
+            writer.tag(3, WireType.Varint).uint64(message.totalGroup);
+        /* octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderGroupSummaryResponse previous = 4; */
+        if (message.previous)
+            GetDirectoryProviderGroupSummaryResponse.internalBinaryWrite(message.previous, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2208,25 +2341,26 @@ export const GetDirectoryProviderGroupSummaryResponse = new GetDirectoryProvider
 class GetDeviceManagerSummaryResponse$Type extends MessageType<GetDeviceManagerSummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse", [
-            { no: 1, name: "totalNumber", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 2, name: "totalCrowdStrike", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 3, name: "totalSentinelOne", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 4, name: "totalMicrosoftIntune", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "totalJamfPro", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 6, name: "totalOnePassword", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 7, name: "totalFleetDM", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 8, name: "totalHuntress", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 9, name: "totalIru", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 10, name: "totalOK", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 11, name: "totalLoading", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 12, name: "totalError", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 13, name: "totalDegraded", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 14, name: "totalPollingDisabled", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 15, name: "totalManagedDevices", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 16, name: "totalLinkedDevices", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 17, name: "totalWaitingApproval", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 18, name: "totalAmbiguous", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 19, name: "totalFailedUpdates", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 1, name: "totalNumber", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "totalCrowdStrike", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "totalSentinelOne", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "totalMicrosoftIntune", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "totalJamfPro", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "totalOnePassword", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "totalFleetDM", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "totalHuntress", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 9, name: "totalIru", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "totalOK", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 11, name: "totalLoading", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 12, name: "totalError", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 13, name: "totalDegraded", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 14, name: "totalPollingDisabled", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 15, name: "totalManagedDevices", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 16, name: "totalLinkedDevices", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 17, name: "totalWaitingApproval", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 18, name: "totalAmbiguous", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 19, name: "totalFailedUpdates", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 20, name: "previous", kind: "message", T: () => GetDeviceManagerSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetDeviceManagerSummaryResponse>): GetDeviceManagerSummaryResponse {
@@ -2259,62 +2393,65 @@ class GetDeviceManagerSummaryResponse$Type extends MessageType<GetDeviceManagerS
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* uint32 totalNumber */ 1:
-                    message.totalNumber = reader.uint32();
+                case /* uint64 totalNumber */ 1:
+                    message.totalNumber = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalCrowdStrike */ 2:
-                    message.totalCrowdStrike = reader.uint32();
+                case /* uint64 totalCrowdStrike */ 2:
+                    message.totalCrowdStrike = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalSentinelOne */ 3:
-                    message.totalSentinelOne = reader.uint32();
+                case /* uint64 totalSentinelOne */ 3:
+                    message.totalSentinelOne = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalMicrosoftIntune */ 4:
-                    message.totalMicrosoftIntune = reader.uint32();
+                case /* uint64 totalMicrosoftIntune */ 4:
+                    message.totalMicrosoftIntune = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalJamfPro */ 5:
-                    message.totalJamfPro = reader.uint32();
+                case /* uint64 totalJamfPro */ 5:
+                    message.totalJamfPro = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalOnePassword */ 6:
-                    message.totalOnePassword = reader.uint32();
+                case /* uint64 totalOnePassword */ 6:
+                    message.totalOnePassword = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalFleetDM */ 7:
-                    message.totalFleetDM = reader.uint32();
+                case /* uint64 totalFleetDM */ 7:
+                    message.totalFleetDM = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalHuntress */ 8:
-                    message.totalHuntress = reader.uint32();
+                case /* uint64 totalHuntress */ 8:
+                    message.totalHuntress = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalIru */ 9:
-                    message.totalIru = reader.uint32();
+                case /* uint64 totalIru */ 9:
+                    message.totalIru = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalOK */ 10:
-                    message.totalOK = reader.uint32();
+                case /* uint64 totalOK */ 10:
+                    message.totalOK = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalLoading */ 11:
-                    message.totalLoading = reader.uint32();
+                case /* uint64 totalLoading */ 11:
+                    message.totalLoading = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalError */ 12:
-                    message.totalError = reader.uint32();
+                case /* uint64 totalError */ 12:
+                    message.totalError = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalDegraded */ 13:
-                    message.totalDegraded = reader.uint32();
+                case /* uint64 totalDegraded */ 13:
+                    message.totalDegraded = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalPollingDisabled */ 14:
-                    message.totalPollingDisabled = reader.uint32();
+                case /* uint64 totalPollingDisabled */ 14:
+                    message.totalPollingDisabled = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalManagedDevices */ 15:
-                    message.totalManagedDevices = reader.uint32();
+                case /* uint64 totalManagedDevices */ 15:
+                    message.totalManagedDevices = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalLinkedDevices */ 16:
-                    message.totalLinkedDevices = reader.uint32();
+                case /* uint64 totalLinkedDevices */ 16:
+                    message.totalLinkedDevices = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalWaitingApproval */ 17:
-                    message.totalWaitingApproval = reader.uint32();
+                case /* uint64 totalWaitingApproval */ 17:
+                    message.totalWaitingApproval = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalAmbiguous */ 18:
-                    message.totalAmbiguous = reader.uint32();
+                case /* uint64 totalAmbiguous */ 18:
+                    message.totalAmbiguous = reader.uint64().toNumber();
                     break;
-                case /* uint32 totalFailedUpdates */ 19:
-                    message.totalFailedUpdates = reader.uint32();
+                case /* uint64 totalFailedUpdates */ 19:
+                    message.totalFailedUpdates = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse previous */ 20:
+                    message.previous = GetDeviceManagerSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2328,63 +2465,66 @@ class GetDeviceManagerSummaryResponse$Type extends MessageType<GetDeviceManagerS
         return message;
     }
     internalBinaryWrite(message: GetDeviceManagerSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* uint32 totalNumber = 1; */
+        /* uint64 totalNumber = 1; */
         if (message.totalNumber !== 0)
-            writer.tag(1, WireType.Varint).uint32(message.totalNumber);
-        /* uint32 totalCrowdStrike = 2; */
+            writer.tag(1, WireType.Varint).uint64(message.totalNumber);
+        /* uint64 totalCrowdStrike = 2; */
         if (message.totalCrowdStrike !== 0)
-            writer.tag(2, WireType.Varint).uint32(message.totalCrowdStrike);
-        /* uint32 totalSentinelOne = 3; */
+            writer.tag(2, WireType.Varint).uint64(message.totalCrowdStrike);
+        /* uint64 totalSentinelOne = 3; */
         if (message.totalSentinelOne !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.totalSentinelOne);
-        /* uint32 totalMicrosoftIntune = 4; */
+            writer.tag(3, WireType.Varint).uint64(message.totalSentinelOne);
+        /* uint64 totalMicrosoftIntune = 4; */
         if (message.totalMicrosoftIntune !== 0)
-            writer.tag(4, WireType.Varint).uint32(message.totalMicrosoftIntune);
-        /* uint32 totalJamfPro = 5; */
+            writer.tag(4, WireType.Varint).uint64(message.totalMicrosoftIntune);
+        /* uint64 totalJamfPro = 5; */
         if (message.totalJamfPro !== 0)
-            writer.tag(5, WireType.Varint).uint32(message.totalJamfPro);
-        /* uint32 totalOnePassword = 6; */
+            writer.tag(5, WireType.Varint).uint64(message.totalJamfPro);
+        /* uint64 totalOnePassword = 6; */
         if (message.totalOnePassword !== 0)
-            writer.tag(6, WireType.Varint).uint32(message.totalOnePassword);
-        /* uint32 totalFleetDM = 7; */
+            writer.tag(6, WireType.Varint).uint64(message.totalOnePassword);
+        /* uint64 totalFleetDM = 7; */
         if (message.totalFleetDM !== 0)
-            writer.tag(7, WireType.Varint).uint32(message.totalFleetDM);
-        /* uint32 totalHuntress = 8; */
+            writer.tag(7, WireType.Varint).uint64(message.totalFleetDM);
+        /* uint64 totalHuntress = 8; */
         if (message.totalHuntress !== 0)
-            writer.tag(8, WireType.Varint).uint32(message.totalHuntress);
-        /* uint32 totalIru = 9; */
+            writer.tag(8, WireType.Varint).uint64(message.totalHuntress);
+        /* uint64 totalIru = 9; */
         if (message.totalIru !== 0)
-            writer.tag(9, WireType.Varint).uint32(message.totalIru);
-        /* uint32 totalOK = 10; */
+            writer.tag(9, WireType.Varint).uint64(message.totalIru);
+        /* uint64 totalOK = 10; */
         if (message.totalOK !== 0)
-            writer.tag(10, WireType.Varint).uint32(message.totalOK);
-        /* uint32 totalLoading = 11; */
+            writer.tag(10, WireType.Varint).uint64(message.totalOK);
+        /* uint64 totalLoading = 11; */
         if (message.totalLoading !== 0)
-            writer.tag(11, WireType.Varint).uint32(message.totalLoading);
-        /* uint32 totalError = 12; */
+            writer.tag(11, WireType.Varint).uint64(message.totalLoading);
+        /* uint64 totalError = 12; */
         if (message.totalError !== 0)
-            writer.tag(12, WireType.Varint).uint32(message.totalError);
-        /* uint32 totalDegraded = 13; */
+            writer.tag(12, WireType.Varint).uint64(message.totalError);
+        /* uint64 totalDegraded = 13; */
         if (message.totalDegraded !== 0)
-            writer.tag(13, WireType.Varint).uint32(message.totalDegraded);
-        /* uint32 totalPollingDisabled = 14; */
+            writer.tag(13, WireType.Varint).uint64(message.totalDegraded);
+        /* uint64 totalPollingDisabled = 14; */
         if (message.totalPollingDisabled !== 0)
-            writer.tag(14, WireType.Varint).uint32(message.totalPollingDisabled);
-        /* uint32 totalManagedDevices = 15; */
+            writer.tag(14, WireType.Varint).uint64(message.totalPollingDisabled);
+        /* uint64 totalManagedDevices = 15; */
         if (message.totalManagedDevices !== 0)
-            writer.tag(15, WireType.Varint).uint32(message.totalManagedDevices);
-        /* uint32 totalLinkedDevices = 16; */
+            writer.tag(15, WireType.Varint).uint64(message.totalManagedDevices);
+        /* uint64 totalLinkedDevices = 16; */
         if (message.totalLinkedDevices !== 0)
-            writer.tag(16, WireType.Varint).uint32(message.totalLinkedDevices);
-        /* uint32 totalWaitingApproval = 17; */
+            writer.tag(16, WireType.Varint).uint64(message.totalLinkedDevices);
+        /* uint64 totalWaitingApproval = 17; */
         if (message.totalWaitingApproval !== 0)
-            writer.tag(17, WireType.Varint).uint32(message.totalWaitingApproval);
-        /* uint32 totalAmbiguous = 18; */
+            writer.tag(17, WireType.Varint).uint64(message.totalWaitingApproval);
+        /* uint64 totalAmbiguous = 18; */
         if (message.totalAmbiguous !== 0)
-            writer.tag(18, WireType.Varint).uint32(message.totalAmbiguous);
-        /* uint32 totalFailedUpdates = 19; */
+            writer.tag(18, WireType.Varint).uint64(message.totalAmbiguous);
+        /* uint64 totalFailedUpdates = 19; */
         if (message.totalFailedUpdates !== 0)
-            writer.tag(19, WireType.Varint).uint32(message.totalFailedUpdates);
+            writer.tag(19, WireType.Varint).uint64(message.totalFailedUpdates);
+        /* octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse previous = 20; */
+        if (message.previous)
+            GetDeviceManagerSummaryResponse.internalBinaryWrite(message.previous, writer.tag(20, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

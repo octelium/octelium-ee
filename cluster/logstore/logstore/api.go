@@ -60,6 +60,10 @@ func (s *srvAccessLog) ListAccessLogTopSession(ctx context.Context, req *visibil
 	return s.s.listAccessLogTopSession(ctx, req)
 }
 
+func (s *srvAccessLog) ListAccessLogTopDenyReason(ctx context.Context, req *visibilityv1.ListAccessLogTopDenyReasonRequest) (*visibilityv1.ListAccessLogTopDenyReasonResponse, error) {
+	return s.s.listAccessLogTopDenyReason(ctx, req)
+}
+
 type srvLLM struct {
 	s *Server
 	vllmv1.UnimplementedLLMServiceServer
@@ -174,4 +178,8 @@ func (s *srvComponentLog) GetComponentLogSummary(ctx context.Context, req *visib
 
 func (s *srvComponentLog) GetComponentLogDataPoint(ctx context.Context, req *visibilityv1.GetComponentLogDataPointRequest) (*visibilityv1.GetComponentLogDataPointResponse, error) {
 	return s.s.getComponentLogDataPoint(ctx, req)
+}
+
+func (s *srvComponentLog) ListComponentLogTopComponent(ctx context.Context, req *visibilityv1.ListComponentLogTopComponentRequest) (*visibilityv1.ListComponentLogTopComponentResponse, error) {
+	return s.s.listComponentLogTopComponent(ctx, req)
 }

@@ -1,5 +1,4 @@
-import { GetRequestSummaryResponse } from "@/apis/visibilityv1/access/vaccessv1";
-import { GetSessionSummaryResponse } from "@/apis/visibilityv1/core/vcorev1";
+import { AccessLog_Entry_Common_Status } from "@/apis/corev1/corev1";
 import {
   seriesColor,
   STATUS_COLORS,
@@ -7,16 +6,15 @@ import {
 } from "@/utils/charts/palette";
 import { n, pct, periodLabel } from "@/utils/visibility";
 import { QUERY_PRIORITY } from "@/utils/visibility/queue";
-import { StatTile, toPoints } from "./components";
+import { seriesPoints, StatTile, toPoints } from "./components";
 import {
   useAccessDataPoint,
   useAccessSummary,
   useAuthDataPoint,
   useAuthSummary,
+  useClusterSummary,
   useComponentDataPoint,
   useComponentSummary,
-  useResourceRangeSummary,
-  useResourceSummary,
 } from "./queries";
 import { compact } from "./utils";
 
@@ -25,92 +23,46 @@ const Signals = (props: { periodMinutes: number }) => {
   const rangeLabel = periodLabel(periodMinutes);
   useChartColorScheme();
 
-  const accessCur = useAccessSummary(
-    periodMinutes,
-    "current",
-    QUERY_PRIORITY.critical,
-  );
-  const accessPrev = useAccessSummary(
-    periodMinutes,
-    "previous",
-    QUERY_PRIORITY.high,
-  );
+  const access = useAccessSummary(periodMinutes, QUERY_PRIORITY.critical);
   const accessPoints = useAccessDataPoint(
     periodMinutes,
-    "all",
     QUERY_PRIORITY.critical,
   );
-  const deniedPoints = useAccessDataPoint(
-    periodMinutes,
-    "denied",
-    QUERY_PRIORITY.high,
-  );
-
-  const authCur = useAuthSummary(
-    periodMinutes,
-    "current",
-    QUERY_PRIORITY.critical,
-  );
-  const authPrev = useAuthSummary(
-    periodMinutes,
-    "previous",
-    QUERY_PRIORITY.high,
-  );
+  const auth = useAuthSummary(periodMinutes, QUERY_PRIORITY.critical);
   const authPoints = useAuthDataPoint(periodMinutes, QUERY_PRIORITY.high);
 
-  const sessions = useResourceSummary<GetSessionSummaryResponse>({
-    api: "core",
-    kind: "Session",
-    method: "getSessionSummary",
-    priority: QUERY_PRIORITY.critical,
-  });
-  const newSessions = useResourceRangeSummary<GetSessionSummaryResponse>({
-    api: "core",
-    kind: "Session",
-    method: "getSessionSummary",
+  const cluster = useClusterSummary(
+    "total",
     periodMinutes,
-    priority: QUERY_PRIORITY.high,
-  });
-
-  const requests = useResourceSummary<GetRequestSummaryResponse>({
-    api: "access",
-    kind: "Request",
-    method: "getRequestSummary",
-    priority: QUERY_PRIORITY.high,
-  });
-  const newRequests = useResourceRangeSummary<GetRequestSummaryResponse>({
-    api: "access",
-    kind: "Request",
-    method: "getRequestSummary",
+    QUERY_PRIORITY.critical,
+  );
+  const clusterRange = useClusterSummary(
+    "range",
     periodMinutes,
-    priority: QUERY_PRIORITY.normal,
-  });
-
-  const componentCur = useComponentSummary(
-    periodMinutes,
-    "current",
     QUERY_PRIORITY.high,
   );
-  const componentPrev = useComponentSummary(
-    periodMinutes,
-    "previous",
-    QUERY_PRIORITY.normal,
-  );
+
+  const component = useComponentSummary(periodMinutes, QUERY_PRIORITY.high);
   const componentErrorPoints = useComponentDataPoint(
     periodMinutes,
     "error",
     QUERY_PRIORITY.normal,
   );
 
-  const totalRequests = n(accessCur.data?.totalNumber);
-  const totalRequestsPrev = n(accessPrev.data?.totalNumber);
-  const denied = n(accessCur.data?.totalDenied);
-  const deniedPrev = n(accessPrev.data?.totalDenied);
-  const logins = n(authCur.data?.totalNumber);
-  const loginsPrev = n(authPrev.data?.totalNumber);
-  const connected = n(sessions.data?.totalConnected);
-  const pendingRequests = n(requests.data?.totalPending);
-  const createdRequests = n(newRequests.data?.totalNumber);
+  const totalRequests = n(access.data?.totalNumber);
+  const totalRequestsPrev = n(access.data?.previous?.totalNumber);
+  const denied = n(access.data?.totalDenied);
+  const deniedPrev = n(access.data?.previous?.totalDenied);
+  const logins = n(auth.data?.totalNumber);
+  const loginsPrev = n(auth.data?.previous?.totalNumber);
+
+  const sessions = cluster.data?.core?.session;
+  const requests = cluster.data?.access?.request;
+  const connected = n(sessions?.totalConnected);
+  const pendingRequests = n(requests?.totalPending);
+
+  const newSessions = n(clusterRange.data?.core?.session?.totalNumber);
+  const createdRequests = n(clusterRange.data?.access?.request?.totalNumber);
 
   const errorsOf = (summary?: {
     totalError?: unknown;
@@ -118,8 +70,8 @@ const Signals = (props: { periodMinutes: number }) => {
     totalFatal?: unknown;
   }) =>
     n(summary?.totalError) + n(summary?.totalPanic) + n(summary?.totalFatal);
-  const errors = errorsOf(componentCur.data);
-  const errorsPrev = errorsOf(componentPrev.data);
+  const errors = errorsOf(component.data);
+  const errorsPrev = errorsOf(component.data?.previous);
 
   return (
     <section
@@ -129,7 +81,7 @@ const Signals = (props: { periodMinutes: number }) => {
       <StatTile
         label="Requests"
         value={totalRequests}
-        footer={`${compact(n(accessCur.data?.totalUser))} users · ${compact(n(accessCur.data?.totalService))} services`}
+        footer={`${compact(n(access.data?.totalUser))} users · ${compact(n(access.data?.totalService))} services`}
         trend={{
           cur: totalRequests,
           prev: totalRequestsPrev,
@@ -139,87 +91,90 @@ const Signals = (props: { periodMinutes: number }) => {
         points={toPoints(accessPoints.data?.datapoints)}
         color={seriesColor(0)}
         to="/visibility/accesslogs"
-        isLoading={accessCur.isLoading}
-        isError={accessCur.isError}
-        hasData={accessCur.data !== undefined}
+        isLoading={access.isLoading}
+        isError={access.isError}
+        hasData={access.data !== undefined}
       />
 
       <StatTile
         label="Denied"
         value={denied}
         badge={`${pct(denied, totalRequests)}%`}
-        footer={`${compact(n(accessCur.data?.totalAllowed))} allowed in the last ${rangeLabel}`}
+        footer={`${compact(n(access.data?.totalAllowed))} allowed in the last ${rangeLabel}`}
         trend={{ cur: denied, prev: deniedPrev, upIsGood: false, rangeLabel }}
-        points={toPoints(deniedPoints.data?.datapoints)}
+        points={seriesPoints(
+          accessPoints.data?.series,
+          AccessLog_Entry_Common_Status[AccessLog_Entry_Common_Status.DENIED],
+        )}
         color={STATUS_COLORS.critical}
         to="/visibility/accesslogs?status=DENIED"
-        isLoading={accessCur.isLoading}
-        isError={accessCur.isError}
-        hasData={accessCur.data !== undefined}
+        isLoading={access.isLoading}
+        isError={access.isError}
+        hasData={access.data !== undefined}
       />
 
       <StatTile
         label="Logins"
         value={logins}
-        footer={`${compact(n(authCur.data?.totalUser))} users · ${compact(n(authCur.data?.totalReauthentication))} re-auths`}
+        footer={`${compact(n(auth.data?.totalUser))} users · ${compact(n(auth.data?.totalReauthentication))} re-auths`}
         trend={{ cur: logins, prev: loginsPrev, upIsGood: true, rangeLabel }}
         points={toPoints(authPoints.data?.datapoints)}
         color={seriesColor(1)}
         to="/visibility/authenticationlogs"
-        isLoading={authCur.isLoading}
-        isError={authCur.isError}
-        hasData={authCur.data !== undefined}
+        isLoading={auth.isLoading}
+        isError={auth.isError}
+        hasData={auth.data !== undefined}
       />
 
       <StatTile
         label="Connected"
         value={connected}
-        badge={`${compact(n(sessions.data?.totalNumber))} total`}
+        badge={`${compact(n(sessions?.totalNumber))} total`}
         footer={
-          newSessions.data
-            ? `${compact(n(newSessions.data.totalNumber))} new sessions in the last ${rangeLabel}`
+          clusterRange.data
+            ? `${compact(newSessions)} new sessions in the last ${rangeLabel}`
             : "Sessions currently connected"
         }
         bar={{
           value: connected,
-          total: n(sessions.data?.totalNumber),
+          total: n(sessions?.totalNumber),
           label: "connected",
         }}
         color={seriesColor(2)}
         to="/core/sessions?isConnected=true"
-        isLoading={sessions.isLoading}
-        isError={sessions.isError}
-        hasData={sessions.data !== undefined}
+        isLoading={cluster.isLoading}
+        isError={cluster.isError}
+        hasData={cluster.data !== undefined}
       />
 
       <StatTile
         label="Access requests"
         value={createdRequests}
         badge={pendingRequests > 0 ? `${pendingRequests} pending` : undefined}
-        footer={`${compact(n(requests.data?.totalActive))} active grants · ${compact(n(requests.data?.totalNumber))} all time`}
+        footer={`${compact(n(requests?.totalActive))} active grants · ${compact(n(requests?.totalNumber))} all time`}
         bar={{
           value: pendingRequests,
-          total: n(requests.data?.totalNumber),
+          total: n(requests?.totalNumber),
           label: "awaiting review",
         }}
         color={seriesColor(4)}
         to="/access/requests"
-        isLoading={newRequests.isLoading}
-        isError={newRequests.isError}
-        hasData={newRequests.data !== undefined}
+        isLoading={clusterRange.isLoading}
+        isError={clusterRange.isError}
+        hasData={clusterRange.data !== undefined}
       />
 
       <StatTile
         label="Errors"
         value={errors}
-        footer={`${compact(n(componentCur.data?.totalWarn))} warnings in the last ${rangeLabel}`}
+        footer={`${compact(n(component.data?.totalWarn))} warnings across ${compact(n(component.data?.totalComponent))} components`}
         trend={{ cur: errors, prev: errorsPrev, upIsGood: false, rangeLabel }}
         points={toPoints(componentErrorPoints.data?.datapoints)}
         color={STATUS_COLORS.critical}
-        to="/visibility/componentlogs"
-        isLoading={componentCur.isLoading}
-        isError={componentCur.isError}
-        hasData={componentCur.data !== undefined}
+        to="/visibility/componentlogs?level=ERROR"
+        isLoading={component.isLoading}
+        isError={component.isError}
+        hasData={component.data !== undefined}
       />
     </section>
   );

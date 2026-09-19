@@ -1258,6 +1258,16 @@ func (s *srvAccess) ListRequest(ctx context.Context, req *vaccessv1.ListRequestO
 				accessv1.Request_Status_State_APPROVED.String(), time.Now().UTC()))
 	}
 
+	if req.HasDeadline {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`list_contains(%s, 'deadline')`, colSpecKeys)))
+	}
+
+	if req.IsDeadlinePassed {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`%s < ?`, colSpecDeadline), time.Now().UTC()))
+	}
+
 	ret, err := s.s.doList(ctx, doListReq)
 	if err != nil {
 		return nil, err

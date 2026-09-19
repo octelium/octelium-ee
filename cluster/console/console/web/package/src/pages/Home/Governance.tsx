@@ -1,10 +1,4 @@
 import { Request_Spec_Urgency } from "@/apis/accessv1/accessv1";
-import {
-  GetCatalogSummaryResponse,
-  GetPolicySummaryResponse,
-  GetRequestSummaryResponse,
-  GetReviewSummaryResponse,
-} from "@/apis/visibilityv1/access/vaccessv1";
 import { CompositionBar } from "@/components/ResourceInventory/InventoryTable";
 import { getUrgencyColor } from "@/pages/access/Request/utils";
 import { n, periodLabel } from "@/utils/visibility";
@@ -22,7 +16,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { MiniStat, MiniStatGrid, Panel } from "./components";
-import { useResourceRangeSummary, useResourceSummary } from "./queries";
+import { useClusterSummary } from "./queries";
 import { compact } from "./utils";
 
 const STATE_COLORS = {
@@ -38,39 +32,24 @@ const Governance = (props: { periodMinutes: number }) => {
   const { periodMinutes } = props;
   const rangeLabel = periodLabel(periodMinutes);
 
-  const requests = useResourceSummary<GetRequestSummaryResponse>({
-    api: "access",
-    kind: "Request",
-    method: "getRequestSummary",
-    priority: QUERY_PRIORITY.high,
-  });
-  const newRequests = useResourceRangeSummary<GetRequestSummaryResponse>({
-    api: "access",
-    kind: "Request",
-    method: "getRequestSummary",
+  const cluster = useClusterSummary(
+    "total",
     periodMinutes,
-    priority: QUERY_PRIORITY.normal,
-  });
-  const reviews = useResourceSummary<GetReviewSummaryResponse>({
-    api: "access",
-    kind: "Review",
-    method: "getReviewSummary",
-    priority: QUERY_PRIORITY.high,
-  });
-  const policies = useResourceSummary<GetPolicySummaryResponse>({
-    api: "access",
-    kind: "Policy",
-    method: "getPolicySummary",
-    priority: QUERY_PRIORITY.low,
-  });
-  const catalogs = useResourceSummary<GetCatalogSummaryResponse>({
-    api: "access",
-    kind: "Catalog",
-    method: "getCatalogSummary",
-    priority: QUERY_PRIORITY.low,
-  });
+    QUERY_PRIORITY.critical,
+  );
+  const clusterRange = useClusterSummary(
+    "range",
+    periodMinutes,
+    QUERY_PRIORITY.high,
+  );
 
-  const data = requests.data;
+  const requests = cluster.data?.access?.request;
+  const reviews = cluster.data?.access?.review;
+  const policies = cluster.data?.access?.policy;
+  const catalogs = cluster.data?.access?.catalog;
+  const newRequests = clusterRange.data?.access?.request;
+
+  const data = requests;
   const states = [
     {
       label: "Approved",
@@ -136,7 +115,7 @@ const Governance = (props: { periodMinutes: number }) => {
     <Panel
       icon={UserCheck}
       title="Access governance"
-      description={`${compact(n(newRequests.data?.totalNumber))} requests raised in the last ${rangeLabel}`}
+      description={`${compact(n(newRequests?.totalNumber))} requests raised in the last ${rangeLabel}`}
       to="/access"
       toLabel="Access API"
     >
@@ -158,8 +137,8 @@ const Governance = (props: { periodMinutes: number }) => {
           />
           <MiniStat
             label="Reviews open"
-            value={n(reviews.data?.totalPending)}
-            tone={n(reviews.data?.totalPending) > 0 ? "warning" : "default"}
+            value={n(reviews?.totalPending)}
+            tone={n(reviews?.totalPending) > 0 ? "warning" : "default"}
             icon={ClipboardCheck}
             to="/access/reviews?isDecided=false"
           />
@@ -171,13 +150,13 @@ const Governance = (props: { periodMinutes: number }) => {
           />
           <MiniStat
             label="Policies"
-            value={n(policies.data?.totalNumber)}
+            value={n(policies?.totalNumber)}
             icon={Shield}
             to="/access/policies"
           />
           <MiniStat
             label="Catalogs"
-            value={n(catalogs.data?.totalNumber)}
+            value={n(catalogs?.totalNumber)}
             icon={Layers}
             to="/access/catalogs"
           />
@@ -212,39 +191,37 @@ const Governance = (props: { periodMinutes: number }) => {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           <MiniStat
             label={`New · ${rangeLabel}`}
-            value={n(newRequests.data?.totalNumber)}
+            value={n(newRequests?.totalNumber)}
             icon={Inbox}
             to="/access/requests"
           />
           <MiniStat
             label={`Approved · ${rangeLabel}`}
-            value={n(newRequests.data?.totalApproved)}
+            value={n(newRequests?.totalApproved)}
             tone="positive"
             icon={CircleCheck}
             to="/access/requests?state=APPROVED"
           />
           <MiniStat
             label={`Rejected · ${rangeLabel}`}
-            value={n(newRequests.data?.totalRejected)}
-            tone={
-              n(newRequests.data?.totalRejected) > 0 ? "critical" : "default"
-            }
+            value={n(newRequests?.totalRejected)}
+            tone={n(newRequests?.totalRejected) > 0 ? "critical" : "default"}
             icon={CircleX}
             to="/access/requests?state=REJECTED"
           />
           <MiniStat
             label="Review steps"
-            value={n(policies.data?.totalReviewStep)}
+            value={n(policies?.totalReviewStep)}
             icon={ClipboardCheck}
           />
           <MiniStat
             label="Reviewers"
-            value={n(policies.data?.totalReviewer)}
+            value={n(policies?.totalReviewer)}
             icon={UserCheck}
           />
           <MiniStat
             label="Auto-approve rules"
-            value={n(policies.data?.totalRuleAutoApprove)}
+            value={n(policies?.totalRuleAutoApprove)}
             icon={CircleCheck}
             to="/access/policies?effect=AUTO_APPROVE"
           />

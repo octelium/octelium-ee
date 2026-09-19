@@ -18,13 +18,14 @@ import (
 	"github.com/doug-martin/goqu/v9"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uaccessv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 )
 
-func (s *Server) getSummaryAccessPolicy(ctx context.Context, req *vaccessv1.GetPolicySummaryRequest) (*vaccessv1.GetPolicySummaryResponse, error) {
+func (s *Server) doSummaryAccessPolicy(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vaccessv1.GetPolicySummaryResponse, error) {
 
 	ret := &vaccessv1.GetPolicySummaryResponse{}
-	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindPolicy, req.GetCommon())
+	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindPolicy, common)
 	if err != nil {
 		return nil, err
 	}
@@ -114,10 +115,10 @@ func (s *Server) getSummaryAccessPolicy(ctx context.Context, req *vaccessv1.GetP
 	return ret, nil
 }
 
-func (s *Server) getSummaryAccessCatalog(ctx context.Context, req *vaccessv1.GetCatalogSummaryRequest) (*vaccessv1.GetCatalogSummaryResponse, error) {
+func (s *Server) doSummaryAccessCatalog(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vaccessv1.GetCatalogSummaryResponse, error) {
 
 	ret := &vaccessv1.GetCatalogSummaryResponse{}
-	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindCatalog, req.GetCommon())
+	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindCatalog, common)
 	if err != nil {
 		return nil, err
 	}
@@ -157,10 +158,10 @@ func (s *Server) getSummaryAccessCatalog(ctx context.Context, req *vaccessv1.Get
 	return ret, nil
 }
 
-func (s *Server) getSummaryAccessRequest(ctx context.Context, req *vaccessv1.GetRequestSummaryRequest) (*vaccessv1.GetRequestSummaryResponse, error) {
+func (s *Server) doSummaryAccessRequest(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vaccessv1.GetRequestSummaryResponse, error) {
 
 	ret := &vaccessv1.GetRequestSummaryResponse{}
-	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindRequest, req.GetCommon())
+	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindRequest, common)
 	if err != nil {
 		return nil, err
 	}
@@ -227,10 +228,10 @@ func (s *Server) getSummaryAccessRequest(ctx context.Context, req *vaccessv1.Get
 	return ret, nil
 }
 
-func (s *Server) getSummaryAccessReview(ctx context.Context, req *vaccessv1.GetReviewSummaryRequest) (*vaccessv1.GetReviewSummaryResponse, error) {
+func (s *Server) doSummaryAccessReview(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vaccessv1.GetReviewSummaryResponse, error) {
 
 	ret := &vaccessv1.GetReviewSummaryResponse{}
-	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindReview, req.GetCommon())
+	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindReview, common)
 	if err != nil {
 		return nil, err
 	}
@@ -274,4 +275,20 @@ func (s *Server) getSummaryAccessReview(ctx context.Context, req *vaccessv1.GetR
 	}
 
 	return ret, nil
+}
+
+func (s *Server) getSummaryAccessPolicy(ctx context.Context, req *vaccessv1.GetPolicySummaryRequest) (*vaccessv1.GetPolicySummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryAccessPolicy)
+}
+
+func (s *Server) getSummaryAccessCatalog(ctx context.Context, req *vaccessv1.GetCatalogSummaryRequest) (*vaccessv1.GetCatalogSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryAccessCatalog)
+}
+
+func (s *Server) getSummaryAccessRequest(ctx context.Context, req *vaccessv1.GetRequestSummaryRequest) (*vaccessv1.GetRequestSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryAccessRequest)
+}
+
+func (s *Server) getSummaryAccessReview(ctx context.Context, req *vaccessv1.GetReviewSummaryRequest) (*vaccessv1.GetReviewSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryAccessReview)
 }

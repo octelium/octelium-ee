@@ -19,13 +19,14 @@ import (
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 )
 
-func (s *Server) getSummaryEnterpriseCollectorExporter(ctx context.Context, req *venterprisev1.GetCollectorExporterSummaryRequest) (*venterprisev1.GetCollectorExporterSummaryResponse, error) {
+func (s *Server) doSummaryEnterpriseCollectorExporter(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*venterprisev1.GetCollectorExporterSummaryResponse, error) {
 
 	ret := &venterprisev1.GetCollectorExporterSummaryResponse{}
-	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindCollectorExporter, req.GetCommon())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindCollectorExporter, common)
 	if err != nil {
 		return nil, err
 	}
@@ -80,10 +81,10 @@ func (s *Server) getSummaryEnterpriseCollectorExporter(ctx context.Context, req 
 	return ret, nil
 }
 
-func (s *Server) getSummaryEnterpriseSecret(ctx context.Context, req *venterprisev1.GetSecretSummaryRequest) (*venterprisev1.GetSecretSummaryResponse, error) {
+func (s *Server) doSummaryEnterpriseSecret(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*venterprisev1.GetSecretSummaryResponse, error) {
 
 	ret := &venterprisev1.GetSecretSummaryResponse{}
-	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindSecret, req.GetCommon())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindSecret, common)
 	if err != nil {
 		return nil, err
 	}
@@ -121,10 +122,10 @@ func (s *Server) getSummaryEnterpriseSecret(ctx context.Context, req *venterpris
 	return ret, nil
 }
 
-func (s *Server) getSummaryEnterpriseSecretStore(ctx context.Context, req *venterprisev1.GetSecretStoreSummaryRequest) (*venterprisev1.GetSecretStoreSummaryResponse, error) {
+func (s *Server) doSummaryEnterpriseSecretStore(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*venterprisev1.GetSecretStoreSummaryResponse, error) {
 
 	ret := &venterprisev1.GetSecretStoreSummaryResponse{}
-	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindSecretStore, req.GetCommon())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindSecretStore, common)
 	if err != nil {
 		return nil, err
 	}
@@ -175,10 +176,10 @@ func (s *Server) getSummaryEnterpriseSecretStore(ctx context.Context, req *vente
 	return ret, nil
 }
 
-func (s *Server) getSummaryEnterpriseCertificate(ctx context.Context, req *venterprisev1.GetCertificateSummaryRequest) (*venterprisev1.GetCertificateSummaryResponse, error) {
+func (s *Server) doSummaryEnterpriseCertificate(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*venterprisev1.GetCertificateSummaryResponse, error) {
 
 	ret := &venterprisev1.GetCertificateSummaryResponse{}
-	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindCertificate, req.GetCommon())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindCertificate, common)
 	if err != nil {
 		return nil, err
 	}
@@ -235,10 +236,10 @@ func (s *Server) getSummaryEnterpriseCertificate(ctx context.Context, req *vente
 	return ret, nil
 }
 
-func (s *Server) getSummaryEnterpriseCertificateIssuer(ctx context.Context, req *venterprisev1.GetCertificateIssuerSummaryRequest) (*venterprisev1.GetCertificateIssuerSummaryResponse, error) {
+func (s *Server) doSummaryEnterpriseCertificateIssuer(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*venterprisev1.GetCertificateIssuerSummaryResponse, error) {
 
 	ret := &venterprisev1.GetCertificateIssuerSummaryResponse{}
-	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindCertificateIssuer, req.GetCommon())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindCertificateIssuer, common)
 	if err != nil {
 		return nil, err
 	}
@@ -281,10 +282,10 @@ func (s *Server) getSummaryEnterpriseCertificateIssuer(ctx context.Context, req 
 	return ret, nil
 }
 
-func (s *Server) getSummaryEnterpriseDNSProvider(ctx context.Context, req *venterprisev1.GetDNSProviderSummaryRequest) (*venterprisev1.GetDNSProviderSummaryResponse, error) {
+func (s *Server) doSummaryEnterpriseDNSProvider(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*venterprisev1.GetDNSProviderSummaryResponse, error) {
 
 	ret := &venterprisev1.GetDNSProviderSummaryResponse{}
-	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindDNSProvider, req.GetCommon())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindDNSProvider, common)
 	if err != nil {
 		return nil, err
 	}
@@ -331,10 +332,10 @@ func (s *Server) getSummaryEnterpriseDNSProvider(ctx context.Context, req *vente
 	return ret, nil
 }
 
-func (s *Server) getSummaryEnterpriseDirectoryProvider(ctx context.Context, req *venterprisev1.GetDirectoryProviderSummaryRequest) (*venterprisev1.GetDirectoryProviderSummaryResponse, error) {
+func (s *Server) doSummaryEnterpriseDirectoryProvider(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*venterprisev1.GetDirectoryProviderSummaryResponse, error) {
 
 	ret := &venterprisev1.GetDirectoryProviderSummaryResponse{}
-	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindDirectoryProvider, req.GetCommon())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindDirectoryProvider, common)
 	if err != nil {
 		return nil, err
 	}
@@ -442,10 +443,10 @@ func (s *Server) getSummaryEnterpriseDirectoryProvider(ctx context.Context, req 
 	return ret, nil
 }
 
-func (s *Server) getSummaryEnterpriseDirectoryProviderUser(ctx context.Context, req *venterprisev1.GetDirectoryProviderUserSummaryRequest) (*venterprisev1.GetDirectoryProviderUserSummaryResponse, error) {
+func (s *Server) doSummaryEnterpriseDirectoryProviderUser(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*venterprisev1.GetDirectoryProviderUserSummaryResponse, error) {
 
 	ret := &venterprisev1.GetDirectoryProviderUserSummaryResponse{}
-	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindDirectoryProviderUser, req.GetCommon())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindDirectoryProviderUser, common)
 	if err != nil {
 		return nil, err
 	}
@@ -485,10 +486,10 @@ func (s *Server) getSummaryEnterpriseDirectoryProviderUser(ctx context.Context, 
 	return ret, nil
 }
 
-func (s *Server) getSummaryEnterpriseDirectoryProviderGroup(ctx context.Context, req *venterprisev1.GetDirectoryProviderGroupSummaryRequest) (*venterprisev1.GetDirectoryProviderGroupSummaryResponse, error) {
+func (s *Server) doSummaryEnterpriseDirectoryProviderGroup(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*venterprisev1.GetDirectoryProviderGroupSummaryResponse, error) {
 
 	ret := &venterprisev1.GetDirectoryProviderGroupSummaryResponse{}
-	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindDirectoryProviderGroup, req.GetCommon())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindDirectoryProviderGroup, common)
 	if err != nil {
 		return nil, err
 	}
@@ -528,10 +529,10 @@ func (s *Server) getSummaryEnterpriseDirectoryProviderGroup(ctx context.Context,
 	return ret, nil
 }
 
-func (s *Server) getSummaryEnterpriseDeviceManager(ctx context.Context, req *venterprisev1.GetDeviceManagerSummaryRequest) (*venterprisev1.GetDeviceManagerSummaryResponse, error) {
+func (s *Server) doSummaryEnterpriseDeviceManager(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*venterprisev1.GetDeviceManagerSummaryResponse, error) {
 
 	ret := &venterprisev1.GetDeviceManagerSummaryResponse{}
-	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindDeviceManager, req.GetCommon())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindDeviceManager, common)
 	if err != nil {
 		return nil, err
 	}
@@ -591,4 +592,44 @@ func (s *Server) getSummaryEnterpriseDeviceManager(ctx context.Context, req *ven
 	}
 
 	return ret, nil
+}
+
+func (s *Server) getSummaryEnterpriseCollectorExporter(ctx context.Context, req *venterprisev1.GetCollectorExporterSummaryRequest) (*venterprisev1.GetCollectorExporterSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryEnterpriseCollectorExporter)
+}
+
+func (s *Server) getSummaryEnterpriseSecret(ctx context.Context, req *venterprisev1.GetSecretSummaryRequest) (*venterprisev1.GetSecretSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryEnterpriseSecret)
+}
+
+func (s *Server) getSummaryEnterpriseSecretStore(ctx context.Context, req *venterprisev1.GetSecretStoreSummaryRequest) (*venterprisev1.GetSecretStoreSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryEnterpriseSecretStore)
+}
+
+func (s *Server) getSummaryEnterpriseCertificate(ctx context.Context, req *venterprisev1.GetCertificateSummaryRequest) (*venterprisev1.GetCertificateSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryEnterpriseCertificate)
+}
+
+func (s *Server) getSummaryEnterpriseCertificateIssuer(ctx context.Context, req *venterprisev1.GetCertificateIssuerSummaryRequest) (*venterprisev1.GetCertificateIssuerSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryEnterpriseCertificateIssuer)
+}
+
+func (s *Server) getSummaryEnterpriseDNSProvider(ctx context.Context, req *venterprisev1.GetDNSProviderSummaryRequest) (*venterprisev1.GetDNSProviderSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryEnterpriseDNSProvider)
+}
+
+func (s *Server) getSummaryEnterpriseDirectoryProvider(ctx context.Context, req *venterprisev1.GetDirectoryProviderSummaryRequest) (*venterprisev1.GetDirectoryProviderSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryEnterpriseDirectoryProvider)
+}
+
+func (s *Server) getSummaryEnterpriseDirectoryProviderUser(ctx context.Context, req *venterprisev1.GetDirectoryProviderUserSummaryRequest) (*venterprisev1.GetDirectoryProviderUserSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryEnterpriseDirectoryProviderUser)
+}
+
+func (s *Server) getSummaryEnterpriseDirectoryProviderGroup(ctx context.Context, req *venterprisev1.GetDirectoryProviderGroupSummaryRequest) (*venterprisev1.GetDirectoryProviderGroupSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryEnterpriseDirectoryProviderGroup)
+}
+
+func (s *Server) getSummaryEnterpriseDeviceManager(ctx context.Context, req *venterprisev1.GetDeviceManagerSummaryRequest) (*venterprisev1.GetDeviceManagerSummaryResponse, error) {
+	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryEnterpriseDeviceManager)
 }
