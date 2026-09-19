@@ -472,7 +472,7 @@ const MetricChart = (props: MetricChartProps) => {
   }, [durationKey(props.step)]);
 
   const colorScheme = useChartColorScheme();
-  const supportsStep = !isRawCounterOperation(operation);
+  const supportsResolution = !isRawCounterOperation(operation);
   const explicitRange =
     tsToMillis(props.from) !== undefined && tsToMillis(props.to) !== undefined
       ? tsToMillis(props.to)! - tsToMillis(props.from)!
@@ -483,10 +483,10 @@ const MetricChart = (props: MetricChartProps) => {
   );
   const effectiveStep = useMemo(
     () =>
-      supportsStep
+      supportsResolution
         ? normalizeMetricStep(step ?? DEFAULT_STEP, rangeMillis)
         : undefined,
-    [supportsStep, step, rangeMillis],
+    [supportsResolution, step, rangeMillis],
   );
 
   const queryKey = useMemo(
@@ -801,7 +801,8 @@ const MetricChart = (props: MetricChartProps) => {
       series: series.map((s, i) => ({
         name: s.name,
         type: "line",
-        step: supportsStep ? "start" : false,
+        smooth: 0.26,
+        smoothMonotone: "x",
         showSymbol: s.data.length <= 12,
         symbol: "circle",
         symbolSize: 6,
@@ -847,7 +848,6 @@ const MetricChart = (props: MetricChartProps) => {
     colorScheme,
     effectiveUnit,
     statistics.pointCount,
-    supportsStep,
   ]);
 
   const headerStatistics =
@@ -912,7 +912,7 @@ const MetricChart = (props: MetricChartProps) => {
           </div>
         </div>
 
-        {supportsStep && !hideResolution && (
+        {supportsResolution && !hideResolution && (
           <div className="w-36 shrink-0">
             <span className="mb-1 block text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
               Resolution
