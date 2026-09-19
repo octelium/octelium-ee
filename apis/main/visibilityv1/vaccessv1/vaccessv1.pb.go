@@ -32,7 +32,8 @@ const (
 )
 
 type GetPolicySummaryRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	Common        *vmetav1.CommonSummaryOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -67,8 +68,16 @@ func (*GetPolicySummaryRequest) Descriptor() ([]byte, []int) {
 	return file_vaccessv1_proto_rawDescGZIP(), []int{0}
 }
 
+func (x *GetPolicySummaryRequest) GetCommon() *vmetav1.CommonSummaryOptions {
+	if x != nil {
+		return x.Common
+	}
+	return nil
+}
+
 type GetCatalogSummaryRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	Common        *vmetav1.CommonSummaryOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -103,8 +112,16 @@ func (*GetCatalogSummaryRequest) Descriptor() ([]byte, []int) {
 	return file_vaccessv1_proto_rawDescGZIP(), []int{1}
 }
 
+func (x *GetCatalogSummaryRequest) GetCommon() *vmetav1.CommonSummaryOptions {
+	if x != nil {
+		return x.Common
+	}
+	return nil
+}
+
 type GetRequestSummaryRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	Common        *vmetav1.CommonSummaryOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -139,8 +156,16 @@ func (*GetRequestSummaryRequest) Descriptor() ([]byte, []int) {
 	return file_vaccessv1_proto_rawDescGZIP(), []int{2}
 }
 
+func (x *GetRequestSummaryRequest) GetCommon() *vmetav1.CommonSummaryOptions {
+	if x != nil {
+		return x.Common
+	}
+	return nil
+}
+
 type GetReviewSummaryRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	Common        *vmetav1.CommonSummaryOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -173,6 +198,13 @@ func (x *GetReviewSummaryRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetReviewSummaryRequest.ProtoReflect.Descriptor instead.
 func (*GetReviewSummaryRequest) Descriptor() ([]byte, []int) {
 	return file_vaccessv1_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetReviewSummaryRequest) GetCommon() *vmetav1.CommonSummaryOptions {
+	if x != nil {
+		return x.Common
+	}
+	return nil
 }
 
 type GetPolicySummaryResponse struct {
@@ -1014,13 +1046,34 @@ var file_vaccessv1_proto_rawDesc = []byte{
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x2a, 0x61, 0x70, 0x69, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x62, 0x75, 0x66, 0x2f, 0x6d, 0x61, 0x69, 0x6e, 0x2f, 0x61, 0x63, 0x63, 0x65, 0x73, 0x73,
 	0x76, 0x31, 0x2f, 0x61, 0x63, 0x63, 0x65, 0x73, 0x73, 0x76, 0x31, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x22, 0x19, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x53, 0x75,
-	0x6d, 0x6d, 0x61, 0x72, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x1a, 0x0a, 0x18,
-	0x47, 0x65, 0x74, 0x43, 0x61, 0x74, 0x61, 0x6c, 0x6f, 0x67, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72,
-	0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x1a, 0x0a, 0x18, 0x47, 0x65, 0x74, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x79, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x22, 0x19, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x52, 0x65, 0x76, 0x69, 0x65,
-	0x77, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22,
+	0x6f, 0x22, 0x6d, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x53, 0x75,
+	0x6d, 0x6d, 0x61, 0x72, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x52, 0x0a, 0x06,
+	0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x3a, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x76, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x2e, 0x6d, 0x65, 0x74, 0x61,
+	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72,
+	0x79, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x06, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e,
+	0x22, 0x6e, 0x0a, 0x18, 0x47, 0x65, 0x74, 0x43, 0x61, 0x74, 0x61, 0x6c, 0x6f, 0x67, 0x53, 0x75,
+	0x6d, 0x6d, 0x61, 0x72, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x52, 0x0a, 0x06,
+	0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x3a, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x76, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x2e, 0x6d, 0x65, 0x74, 0x61,
+	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72,
+	0x79, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x06, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e,
+	0x22, 0x6e, 0x0a, 0x18, 0x47, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x53, 0x75,
+	0x6d, 0x6d, 0x61, 0x72, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x52, 0x0a, 0x06,
+	0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x3a, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x76, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x2e, 0x6d, 0x65, 0x74, 0x61,
+	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72,
+	0x79, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x06, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e,
+	0x22, 0x6d, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x52, 0x65, 0x76, 0x69, 0x65, 0x77, 0x53, 0x75, 0x6d,
+	0x6d, 0x61, 0x72, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x52, 0x0a, 0x06, 0x63,
+	0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x3a, 0x2e, 0x6f, 0x63,
+	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
+	0x76, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e,
+	0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x79,
+	0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x06, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x22,
 	0xcc, 0x03, 0x0a, 0x18, 0x47, 0x65, 0x74, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x53, 0x75, 0x6d,
 	0x6d, 0x61, 0x72, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x20, 0x0a, 0x0b,
 	0x74, 0x6f, 0x74, 0x61, 0x6c, 0x4e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28,
@@ -1356,62 +1409,67 @@ var file_vaccessv1_proto_goTypes = []any{
 	(*ListCatalogOptions)(nil),                // 9: octelium.api.main.visibility.access.v1.ListCatalogOptions
 	(*ListRequestOptions)(nil),                // 10: octelium.api.main.visibility.access.v1.ListRequestOptions
 	(*ListReviewOptions)(nil),                 // 11: octelium.api.main.visibility.access.v1.ListReviewOptions
-	(*vmetav1.CommonListOptions)(nil),         // 12: octelium.api.main.visibility.meta.v1.CommonListOptions
-	(accessv1.Policy_Spec_Rule_Effect)(0),     // 13: octelium.api.main.access.v1.Policy.Spec.Rule.Effect
-	(*metav1.ObjectReference)(nil),            // 14: octelium.api.main.meta.v1.ObjectReference
-	(accessv1.Request_Status_State_Status)(0), // 15: octelium.api.main.access.v1.Request.Status.State.Status
-	(accessv1.Request_Spec_Urgency)(0),        // 16: octelium.api.main.access.v1.Request.Spec.Urgency
-	(accessv1.Review_Spec_Decision)(0),        // 17: octelium.api.main.access.v1.Review.Spec.Decision
-	(*accessv1.PolicyList)(nil),               // 18: octelium.api.main.access.v1.PolicyList
-	(*accessv1.CatalogList)(nil),              // 19: octelium.api.main.access.v1.CatalogList
-	(*accessv1.RequestList)(nil),              // 20: octelium.api.main.access.v1.RequestList
-	(*accessv1.ReviewList)(nil),               // 21: octelium.api.main.access.v1.ReviewList
+	(*vmetav1.CommonSummaryOptions)(nil),      // 12: octelium.api.main.visibility.meta.v1.CommonSummaryOptions
+	(*vmetav1.CommonListOptions)(nil),         // 13: octelium.api.main.visibility.meta.v1.CommonListOptions
+	(accessv1.Policy_Spec_Rule_Effect)(0),     // 14: octelium.api.main.access.v1.Policy.Spec.Rule.Effect
+	(*metav1.ObjectReference)(nil),            // 15: octelium.api.main.meta.v1.ObjectReference
+	(accessv1.Request_Status_State_Status)(0), // 16: octelium.api.main.access.v1.Request.Status.State.Status
+	(accessv1.Request_Spec_Urgency)(0),        // 17: octelium.api.main.access.v1.Request.Spec.Urgency
+	(accessv1.Review_Spec_Decision)(0),        // 18: octelium.api.main.access.v1.Review.Spec.Decision
+	(*accessv1.PolicyList)(nil),               // 19: octelium.api.main.access.v1.PolicyList
+	(*accessv1.CatalogList)(nil),              // 20: octelium.api.main.access.v1.CatalogList
+	(*accessv1.RequestList)(nil),              // 21: octelium.api.main.access.v1.RequestList
+	(*accessv1.ReviewList)(nil),               // 22: octelium.api.main.access.v1.ReviewList
 }
 var file_vaccessv1_proto_depIdxs = []int32{
-	12, // 0: octelium.api.main.visibility.access.v1.ListPolicyOptions.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
-	13, // 1: octelium.api.main.visibility.access.v1.ListPolicyOptions.effect:type_name -> octelium.api.main.access.v1.Policy.Spec.Rule.Effect
-	14, // 2: octelium.api.main.visibility.access.v1.ListPolicyOptions.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	14, // 3: octelium.api.main.visibility.access.v1.ListPolicyOptions.groupRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	14, // 4: octelium.api.main.visibility.access.v1.ListPolicyOptions.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	14, // 5: octelium.api.main.visibility.access.v1.ListPolicyOptions.catalogRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	12, // 6: octelium.api.main.visibility.access.v1.ListCatalogOptions.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
-	14, // 7: octelium.api.main.visibility.access.v1.ListCatalogOptions.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	14, // 8: octelium.api.main.visibility.access.v1.ListCatalogOptions.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	12, // 9: octelium.api.main.visibility.access.v1.ListRequestOptions.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
-	14, // 10: octelium.api.main.visibility.access.v1.ListRequestOptions.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	14, // 11: octelium.api.main.visibility.access.v1.ListRequestOptions.subjectUserRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	14, // 12: octelium.api.main.visibility.access.v1.ListRequestOptions.reviewerRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	14, // 13: octelium.api.main.visibility.access.v1.ListRequestOptions.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	14, // 14: octelium.api.main.visibility.access.v1.ListRequestOptions.catalogRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	14, // 15: octelium.api.main.visibility.access.v1.ListRequestOptions.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	14, // 16: octelium.api.main.visibility.access.v1.ListRequestOptions.policyTriggerRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	15, // 17: octelium.api.main.visibility.access.v1.ListRequestOptions.state:type_name -> octelium.api.main.access.v1.Request.Status.State.Status
-	16, // 18: octelium.api.main.visibility.access.v1.ListRequestOptions.urgency:type_name -> octelium.api.main.access.v1.Request.Spec.Urgency
-	12, // 19: octelium.api.main.visibility.access.v1.ListReviewOptions.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
-	14, // 20: octelium.api.main.visibility.access.v1.ListReviewOptions.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	14, // 21: octelium.api.main.visibility.access.v1.ListReviewOptions.requestRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	17, // 22: octelium.api.main.visibility.access.v1.ListReviewOptions.decision:type_name -> octelium.api.main.access.v1.Review.Spec.Decision
-	0,  // 23: octelium.api.main.visibility.access.v1.ResourceService.GetPolicySummary:input_type -> octelium.api.main.visibility.access.v1.GetPolicySummaryRequest
-	1,  // 24: octelium.api.main.visibility.access.v1.ResourceService.GetCatalogSummary:input_type -> octelium.api.main.visibility.access.v1.GetCatalogSummaryRequest
-	2,  // 25: octelium.api.main.visibility.access.v1.ResourceService.GetRequestSummary:input_type -> octelium.api.main.visibility.access.v1.GetRequestSummaryRequest
-	3,  // 26: octelium.api.main.visibility.access.v1.ResourceService.GetReviewSummary:input_type -> octelium.api.main.visibility.access.v1.GetReviewSummaryRequest
-	8,  // 27: octelium.api.main.visibility.access.v1.ResourceService.ListPolicy:input_type -> octelium.api.main.visibility.access.v1.ListPolicyOptions
-	9,  // 28: octelium.api.main.visibility.access.v1.ResourceService.ListCatalog:input_type -> octelium.api.main.visibility.access.v1.ListCatalogOptions
-	10, // 29: octelium.api.main.visibility.access.v1.ResourceService.ListRequest:input_type -> octelium.api.main.visibility.access.v1.ListRequestOptions
-	11, // 30: octelium.api.main.visibility.access.v1.ResourceService.ListReview:input_type -> octelium.api.main.visibility.access.v1.ListReviewOptions
-	4,  // 31: octelium.api.main.visibility.access.v1.ResourceService.GetPolicySummary:output_type -> octelium.api.main.visibility.access.v1.GetPolicySummaryResponse
-	5,  // 32: octelium.api.main.visibility.access.v1.ResourceService.GetCatalogSummary:output_type -> octelium.api.main.visibility.access.v1.GetCatalogSummaryResponse
-	6,  // 33: octelium.api.main.visibility.access.v1.ResourceService.GetRequestSummary:output_type -> octelium.api.main.visibility.access.v1.GetRequestSummaryResponse
-	7,  // 34: octelium.api.main.visibility.access.v1.ResourceService.GetReviewSummary:output_type -> octelium.api.main.visibility.access.v1.GetReviewSummaryResponse
-	18, // 35: octelium.api.main.visibility.access.v1.ResourceService.ListPolicy:output_type -> octelium.api.main.access.v1.PolicyList
-	19, // 36: octelium.api.main.visibility.access.v1.ResourceService.ListCatalog:output_type -> octelium.api.main.access.v1.CatalogList
-	20, // 37: octelium.api.main.visibility.access.v1.ResourceService.ListRequest:output_type -> octelium.api.main.access.v1.RequestList
-	21, // 38: octelium.api.main.visibility.access.v1.ResourceService.ListReview:output_type -> octelium.api.main.access.v1.ReviewList
-	31, // [31:39] is the sub-list for method output_type
-	23, // [23:31] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	12, // 0: octelium.api.main.visibility.access.v1.GetPolicySummaryRequest.common:type_name -> octelium.api.main.visibility.meta.v1.CommonSummaryOptions
+	12, // 1: octelium.api.main.visibility.access.v1.GetCatalogSummaryRequest.common:type_name -> octelium.api.main.visibility.meta.v1.CommonSummaryOptions
+	12, // 2: octelium.api.main.visibility.access.v1.GetRequestSummaryRequest.common:type_name -> octelium.api.main.visibility.meta.v1.CommonSummaryOptions
+	12, // 3: octelium.api.main.visibility.access.v1.GetReviewSummaryRequest.common:type_name -> octelium.api.main.visibility.meta.v1.CommonSummaryOptions
+	13, // 4: octelium.api.main.visibility.access.v1.ListPolicyOptions.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
+	14, // 5: octelium.api.main.visibility.access.v1.ListPolicyOptions.effect:type_name -> octelium.api.main.access.v1.Policy.Spec.Rule.Effect
+	15, // 6: octelium.api.main.visibility.access.v1.ListPolicyOptions.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	15, // 7: octelium.api.main.visibility.access.v1.ListPolicyOptions.groupRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	15, // 8: octelium.api.main.visibility.access.v1.ListPolicyOptions.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	15, // 9: octelium.api.main.visibility.access.v1.ListPolicyOptions.catalogRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	13, // 10: octelium.api.main.visibility.access.v1.ListCatalogOptions.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
+	15, // 11: octelium.api.main.visibility.access.v1.ListCatalogOptions.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	15, // 12: octelium.api.main.visibility.access.v1.ListCatalogOptions.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	13, // 13: octelium.api.main.visibility.access.v1.ListRequestOptions.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
+	15, // 14: octelium.api.main.visibility.access.v1.ListRequestOptions.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	15, // 15: octelium.api.main.visibility.access.v1.ListRequestOptions.subjectUserRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	15, // 16: octelium.api.main.visibility.access.v1.ListRequestOptions.reviewerRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	15, // 17: octelium.api.main.visibility.access.v1.ListRequestOptions.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	15, // 18: octelium.api.main.visibility.access.v1.ListRequestOptions.catalogRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	15, // 19: octelium.api.main.visibility.access.v1.ListRequestOptions.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	15, // 20: octelium.api.main.visibility.access.v1.ListRequestOptions.policyTriggerRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	16, // 21: octelium.api.main.visibility.access.v1.ListRequestOptions.state:type_name -> octelium.api.main.access.v1.Request.Status.State.Status
+	17, // 22: octelium.api.main.visibility.access.v1.ListRequestOptions.urgency:type_name -> octelium.api.main.access.v1.Request.Spec.Urgency
+	13, // 23: octelium.api.main.visibility.access.v1.ListReviewOptions.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
+	15, // 24: octelium.api.main.visibility.access.v1.ListReviewOptions.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	15, // 25: octelium.api.main.visibility.access.v1.ListReviewOptions.requestRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	18, // 26: octelium.api.main.visibility.access.v1.ListReviewOptions.decision:type_name -> octelium.api.main.access.v1.Review.Spec.Decision
+	0,  // 27: octelium.api.main.visibility.access.v1.ResourceService.GetPolicySummary:input_type -> octelium.api.main.visibility.access.v1.GetPolicySummaryRequest
+	1,  // 28: octelium.api.main.visibility.access.v1.ResourceService.GetCatalogSummary:input_type -> octelium.api.main.visibility.access.v1.GetCatalogSummaryRequest
+	2,  // 29: octelium.api.main.visibility.access.v1.ResourceService.GetRequestSummary:input_type -> octelium.api.main.visibility.access.v1.GetRequestSummaryRequest
+	3,  // 30: octelium.api.main.visibility.access.v1.ResourceService.GetReviewSummary:input_type -> octelium.api.main.visibility.access.v1.GetReviewSummaryRequest
+	8,  // 31: octelium.api.main.visibility.access.v1.ResourceService.ListPolicy:input_type -> octelium.api.main.visibility.access.v1.ListPolicyOptions
+	9,  // 32: octelium.api.main.visibility.access.v1.ResourceService.ListCatalog:input_type -> octelium.api.main.visibility.access.v1.ListCatalogOptions
+	10, // 33: octelium.api.main.visibility.access.v1.ResourceService.ListRequest:input_type -> octelium.api.main.visibility.access.v1.ListRequestOptions
+	11, // 34: octelium.api.main.visibility.access.v1.ResourceService.ListReview:input_type -> octelium.api.main.visibility.access.v1.ListReviewOptions
+	4,  // 35: octelium.api.main.visibility.access.v1.ResourceService.GetPolicySummary:output_type -> octelium.api.main.visibility.access.v1.GetPolicySummaryResponse
+	5,  // 36: octelium.api.main.visibility.access.v1.ResourceService.GetCatalogSummary:output_type -> octelium.api.main.visibility.access.v1.GetCatalogSummaryResponse
+	6,  // 37: octelium.api.main.visibility.access.v1.ResourceService.GetRequestSummary:output_type -> octelium.api.main.visibility.access.v1.GetRequestSummaryResponse
+	7,  // 38: octelium.api.main.visibility.access.v1.ResourceService.GetReviewSummary:output_type -> octelium.api.main.visibility.access.v1.GetReviewSummaryResponse
+	19, // 39: octelium.api.main.visibility.access.v1.ResourceService.ListPolicy:output_type -> octelium.api.main.access.v1.PolicyList
+	20, // 40: octelium.api.main.visibility.access.v1.ResourceService.ListCatalog:output_type -> octelium.api.main.access.v1.CatalogList
+	21, // 41: octelium.api.main.visibility.access.v1.ResourceService.ListRequest:output_type -> octelium.api.main.access.v1.RequestList
+	22, // 42: octelium.api.main.visibility.access.v1.ResourceService.ListReview:output_type -> octelium.api.main.access.v1.ReviewList
+	35, // [35:43] is the sub-list for method output_type
+	27, // [27:35] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_vaccessv1_proto_init() }

@@ -108,6 +108,19 @@ export enum CommonListOptions_OrderBy_Mode {
      */
     DESC = 2
 }
+/**
+ * @generated from protobuf message octelium.api.main.visibility.meta.v1.CommonSummaryOptions
+ */
+export interface CommonSummaryOptions {
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp from = 1
+     */
+    from?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp to = 2
+     */
+    to?: Timestamp;
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class CommonListOptions$Type extends MessageType<CommonListOptions> {
     constructor() {
@@ -255,3 +268,56 @@ class CommonListOptions_OrderBy$Type extends MessageType<CommonListOptions_Order
  * @generated MessageType for protobuf message octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy
  */
 export const CommonListOptions_OrderBy = new CommonListOptions_OrderBy$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CommonSummaryOptions$Type extends MessageType<CommonSummaryOptions> {
+    constructor() {
+        super("octelium.api.main.visibility.meta.v1.CommonSummaryOptions", [
+            { no: 1, name: "from", kind: "message", T: () => Timestamp },
+            { no: 2, name: "to", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<CommonSummaryOptions>): CommonSummaryOptions {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<CommonSummaryOptions>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CommonSummaryOptions): CommonSummaryOptions {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* google.protobuf.Timestamp from */ 1:
+                    message.from = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.from);
+                    break;
+                case /* google.protobuf.Timestamp to */ 2:
+                    message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CommonSummaryOptions, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* google.protobuf.Timestamp from = 1; */
+        if (message.from)
+            Timestamp.internalBinaryWrite(message.from, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp to = 2; */
+        if (message.to)
+            Timestamp.internalBinaryWrite(message.to, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.meta.v1.CommonSummaryOptions
+ */
+export const CommonSummaryOptions = new CommonSummaryOptions$Type();

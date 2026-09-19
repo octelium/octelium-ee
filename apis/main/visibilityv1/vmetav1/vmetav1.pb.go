@@ -223,6 +223,58 @@ func (x *CommonListOptions) GetTo() *timestamppb.Timestamp {
 	return nil
 }
 
+type CommonSummaryOptions struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	From          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	To            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CommonSummaryOptions) Reset() {
+	*x = CommonSummaryOptions{}
+	mi := &file_vmetav1_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CommonSummaryOptions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CommonSummaryOptions) ProtoMessage() {}
+
+func (x *CommonSummaryOptions) ProtoReflect() protoreflect.Message {
+	mi := &file_vmetav1_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CommonSummaryOptions.ProtoReflect.Descriptor instead.
+func (*CommonSummaryOptions) Descriptor() ([]byte, []int) {
+	return file_vmetav1_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *CommonSummaryOptions) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *CommonSummaryOptions) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
 type CommonListOptions_OrderBy struct {
 	state         protoimpl.MessageState         `protogen:"open.v1"`
 	Type          CommonListOptions_OrderBy_Type `protobuf:"varint,1,opt,name=type,proto3,enum=octelium.api.main.visibility.meta.v1.CommonListOptions_OrderBy_Type" json:"type,omitempty"`
@@ -233,7 +285,7 @@ type CommonListOptions_OrderBy struct {
 
 func (x *CommonListOptions_OrderBy) Reset() {
 	*x = CommonListOptions_OrderBy{}
-	mi := &file_vmetav1_proto_msgTypes[1]
+	mi := &file_vmetav1_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -245,7 +297,7 @@ func (x *CommonListOptions_OrderBy) String() string {
 func (*CommonListOptions_OrderBy) ProtoMessage() {}
 
 func (x *CommonListOptions_OrderBy) ProtoReflect() protoreflect.Message {
-	mi := &file_vmetav1_proto_msgTypes[1]
+	mi := &file_vmetav1_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -320,11 +372,18 @@ var file_vmetav1_proto_rawDesc = []byte{
 	0x5f, 0x41, 0x54, 0x10, 0x02, 0x22, 0x29, 0x0a, 0x04, 0x4d, 0x6f, 0x64, 0x65, 0x12, 0x0e, 0x0a,
 	0x0a, 0x4d, 0x4f, 0x44, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x45, 0x54, 0x10, 0x00, 0x12, 0x07, 0x0a,
 	0x03, 0x41, 0x53, 0x43, 0x10, 0x01, 0x12, 0x08, 0x0a, 0x04, 0x44, 0x45, 0x53, 0x43, 0x10, 0x02,
-	0x42, 0x3d, 0x5a, 0x3b, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f,
-	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2f, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2f, 0x61, 0x70, 0x69, 0x73, 0x2f, 0x6d, 0x61, 0x69, 0x6e, 0x2f, 0x76, 0x69, 0x73, 0x69, 0x62,
-	0x69, 0x6c, 0x69, 0x74, 0x79, 0x76, 0x31, 0x2f, 0x76, 0x6d, 0x65, 0x74, 0x61, 0x76, 0x31, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x22, 0x72, 0x0a, 0x14, 0x43, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72,
+	0x79, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x2e, 0x0a, 0x04, 0x66, 0x72, 0x6f, 0x6d,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61,
+	0x6d, 0x70, 0x52, 0x04, 0x66, 0x72, 0x6f, 0x6d, 0x12, 0x2a, 0x0a, 0x02, 0x74, 0x6f, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70,
+	0x52, 0x02, 0x74, 0x6f, 0x42, 0x3d, 0x5a, 0x3b, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63,
+	0x6f, 0x6d, 0x2f, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2f, 0x6f, 0x63, 0x74, 0x65,
+	0x6c, 0x69, 0x75, 0x6d, 0x2f, 0x61, 0x70, 0x69, 0x73, 0x2f, 0x6d, 0x61, 0x69, 0x6e, 0x2f, 0x76,
+	0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x76, 0x31, 0x2f, 0x76, 0x6d, 0x65, 0x74,
+	0x61, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -340,25 +399,28 @@ func file_vmetav1_proto_rawDescGZIP() []byte {
 }
 
 var file_vmetav1_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_vmetav1_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_vmetav1_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_vmetav1_proto_goTypes = []any{
 	(CommonListOptions_OrderBy_Type)(0), // 0: octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.Type
 	(CommonListOptions_OrderBy_Mode)(0), // 1: octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.Mode
 	(*CommonListOptions)(nil),           // 2: octelium.api.main.visibility.meta.v1.CommonListOptions
-	(*CommonListOptions_OrderBy)(nil),   // 3: octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy
-	(*timestamppb.Timestamp)(nil),       // 4: google.protobuf.Timestamp
+	(*CommonSummaryOptions)(nil),        // 3: octelium.api.main.visibility.meta.v1.CommonSummaryOptions
+	(*CommonListOptions_OrderBy)(nil),   // 4: octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy
+	(*timestamppb.Timestamp)(nil),       // 5: google.protobuf.Timestamp
 }
 var file_vmetav1_proto_depIdxs = []int32{
-	3, // 0: octelium.api.main.visibility.meta.v1.CommonListOptions.orderBy:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy
-	4, // 1: octelium.api.main.visibility.meta.v1.CommonListOptions.from:type_name -> google.protobuf.Timestamp
-	4, // 2: octelium.api.main.visibility.meta.v1.CommonListOptions.to:type_name -> google.protobuf.Timestamp
-	0, // 3: octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.type:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.Type
-	1, // 4: octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.mode:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.Mode
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	4, // 0: octelium.api.main.visibility.meta.v1.CommonListOptions.orderBy:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy
+	5, // 1: octelium.api.main.visibility.meta.v1.CommonListOptions.from:type_name -> google.protobuf.Timestamp
+	5, // 2: octelium.api.main.visibility.meta.v1.CommonListOptions.to:type_name -> google.protobuf.Timestamp
+	5, // 3: octelium.api.main.visibility.meta.v1.CommonSummaryOptions.from:type_name -> google.protobuf.Timestamp
+	5, // 4: octelium.api.main.visibility.meta.v1.CommonSummaryOptions.to:type_name -> google.protobuf.Timestamp
+	0, // 5: octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.type:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.Type
+	1, // 6: octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.mode:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.Mode
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_vmetav1_proto_init() }
@@ -372,7 +434,7 @@ func file_vmetav1_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_vmetav1_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

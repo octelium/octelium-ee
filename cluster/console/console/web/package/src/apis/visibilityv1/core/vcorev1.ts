@@ -24,9 +24,9 @@ import { NamespaceList } from "../../corev1/corev1";
 import { UserList } from "../../corev1/corev1";
 import { ServiceList } from "../../corev1/corev1";
 import { ServiceType } from "@protobuf-ts/runtime-rpc";
-import { WireType } from "@protobuf-ts/runtime";
 import type { BinaryWriteOptions } from "@protobuf-ts/runtime";
 import type { IBinaryWriter } from "@protobuf-ts/runtime";
+import { WireType } from "@protobuf-ts/runtime";
 import type { BinaryReadOptions } from "@protobuf-ts/runtime";
 import type { IBinaryReader } from "@protobuf-ts/runtime";
 import { UnknownFieldHandler } from "@protobuf-ts/runtime";
@@ -46,65 +46,114 @@ import { Service_Spec_Mode } from "../../corev1/corev1";
 import { CommonListOptions } from "../meta/vmetav1";
 import { Timestamp } from "../../google/protobuf/timestamp";
 import { ObjectReference } from "../../metav1/metav1";
+import { CommonSummaryOptions } from "../meta/vmetav1";
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetUserSummaryRequest
  */
 export interface GetUserSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetSessionSummaryRequest
  */
 export interface GetSessionSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetDeviceSummaryRequest
  */
 export interface GetDeviceSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetCredentialSummaryRequest
  */
 export interface GetCredentialSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetPolicySummaryRequest
  */
 export interface GetPolicySummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetIdentityProviderSummaryRequest
  */
 export interface GetIdentityProviderSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetAuthenticatorSummaryRequest
  */
 export interface GetAuthenticatorSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetGroupSummaryRequest
  */
 export interface GetGroupSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetGatewaySummaryRequest
  */
 export interface GetGatewaySummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetRegionSummaryRequest
  */
 export interface GetRegionSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetSecretSummaryRequest
  */
 export interface GetSecretSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetNamespaceSummaryRequest
  */
 export interface GetNamespaceSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetGroupSummaryResponse
@@ -491,6 +540,10 @@ export interface GetAuthenticatorSummaryResponse {
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetServiceSummaryRequest
  */
 export interface GetServiceSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.ListSSHSessionRequest
@@ -914,7 +967,9 @@ export interface ListAuthenticatorOptions {
 // @generated message type with reflection information, may provide speed optimized methods
 class GetUserSummaryRequest$Type extends MessageType<GetUserSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.core.v1.GetUserSummaryRequest", []);
+        super("octelium.api.main.visibility.core.v1.GetUserSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetUserSummaryRequest>): GetUserSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -927,6 +982,9 @@ class GetUserSummaryRequest$Type extends MessageType<GetUserSummaryRequest> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -939,6 +997,9 @@ class GetUserSummaryRequest$Type extends MessageType<GetUserSummaryRequest> {
         return message;
     }
     internalBinaryWrite(message: GetUserSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -952,7 +1013,9 @@ export const GetUserSummaryRequest = new GetUserSummaryRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class GetSessionSummaryRequest$Type extends MessageType<GetSessionSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.core.v1.GetSessionSummaryRequest", []);
+        super("octelium.api.main.visibility.core.v1.GetSessionSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetSessionSummaryRequest>): GetSessionSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -965,6 +1028,9 @@ class GetSessionSummaryRequest$Type extends MessageType<GetSessionSummaryRequest
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -977,6 +1043,9 @@ class GetSessionSummaryRequest$Type extends MessageType<GetSessionSummaryRequest
         return message;
     }
     internalBinaryWrite(message: GetSessionSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -990,7 +1059,9 @@ export const GetSessionSummaryRequest = new GetSessionSummaryRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class GetDeviceSummaryRequest$Type extends MessageType<GetDeviceSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.core.v1.GetDeviceSummaryRequest", []);
+        super("octelium.api.main.visibility.core.v1.GetDeviceSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetDeviceSummaryRequest>): GetDeviceSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1003,6 +1074,9 @@ class GetDeviceSummaryRequest$Type extends MessageType<GetDeviceSummaryRequest> 
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1015,6 +1089,9 @@ class GetDeviceSummaryRequest$Type extends MessageType<GetDeviceSummaryRequest> 
         return message;
     }
     internalBinaryWrite(message: GetDeviceSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1028,7 +1105,9 @@ export const GetDeviceSummaryRequest = new GetDeviceSummaryRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class GetCredentialSummaryRequest$Type extends MessageType<GetCredentialSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.core.v1.GetCredentialSummaryRequest", []);
+        super("octelium.api.main.visibility.core.v1.GetCredentialSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetCredentialSummaryRequest>): GetCredentialSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1041,6 +1120,9 @@ class GetCredentialSummaryRequest$Type extends MessageType<GetCredentialSummaryR
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1053,6 +1135,9 @@ class GetCredentialSummaryRequest$Type extends MessageType<GetCredentialSummaryR
         return message;
     }
     internalBinaryWrite(message: GetCredentialSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1066,7 +1151,9 @@ export const GetCredentialSummaryRequest = new GetCredentialSummaryRequest$Type(
 // @generated message type with reflection information, may provide speed optimized methods
 class GetPolicySummaryRequest$Type extends MessageType<GetPolicySummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.core.v1.GetPolicySummaryRequest", []);
+        super("octelium.api.main.visibility.core.v1.GetPolicySummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetPolicySummaryRequest>): GetPolicySummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1079,6 +1166,9 @@ class GetPolicySummaryRequest$Type extends MessageType<GetPolicySummaryRequest> 
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1091,6 +1181,9 @@ class GetPolicySummaryRequest$Type extends MessageType<GetPolicySummaryRequest> 
         return message;
     }
     internalBinaryWrite(message: GetPolicySummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1104,7 +1197,9 @@ export const GetPolicySummaryRequest = new GetPolicySummaryRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class GetIdentityProviderSummaryRequest$Type extends MessageType<GetIdentityProviderSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.core.v1.GetIdentityProviderSummaryRequest", []);
+        super("octelium.api.main.visibility.core.v1.GetIdentityProviderSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetIdentityProviderSummaryRequest>): GetIdentityProviderSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1117,6 +1212,9 @@ class GetIdentityProviderSummaryRequest$Type extends MessageType<GetIdentityProv
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1129,6 +1227,9 @@ class GetIdentityProviderSummaryRequest$Type extends MessageType<GetIdentityProv
         return message;
     }
     internalBinaryWrite(message: GetIdentityProviderSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1142,7 +1243,9 @@ export const GetIdentityProviderSummaryRequest = new GetIdentityProviderSummaryR
 // @generated message type with reflection information, may provide speed optimized methods
 class GetAuthenticatorSummaryRequest$Type extends MessageType<GetAuthenticatorSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.core.v1.GetAuthenticatorSummaryRequest", []);
+        super("octelium.api.main.visibility.core.v1.GetAuthenticatorSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetAuthenticatorSummaryRequest>): GetAuthenticatorSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1155,6 +1258,9 @@ class GetAuthenticatorSummaryRequest$Type extends MessageType<GetAuthenticatorSu
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1167,6 +1273,9 @@ class GetAuthenticatorSummaryRequest$Type extends MessageType<GetAuthenticatorSu
         return message;
     }
     internalBinaryWrite(message: GetAuthenticatorSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1180,7 +1289,9 @@ export const GetAuthenticatorSummaryRequest = new GetAuthenticatorSummaryRequest
 // @generated message type with reflection information, may provide speed optimized methods
 class GetGroupSummaryRequest$Type extends MessageType<GetGroupSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.core.v1.GetGroupSummaryRequest", []);
+        super("octelium.api.main.visibility.core.v1.GetGroupSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetGroupSummaryRequest>): GetGroupSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1193,6 +1304,9 @@ class GetGroupSummaryRequest$Type extends MessageType<GetGroupSummaryRequest> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1205,6 +1319,9 @@ class GetGroupSummaryRequest$Type extends MessageType<GetGroupSummaryRequest> {
         return message;
     }
     internalBinaryWrite(message: GetGroupSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1218,7 +1335,9 @@ export const GetGroupSummaryRequest = new GetGroupSummaryRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class GetGatewaySummaryRequest$Type extends MessageType<GetGatewaySummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.core.v1.GetGatewaySummaryRequest", []);
+        super("octelium.api.main.visibility.core.v1.GetGatewaySummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetGatewaySummaryRequest>): GetGatewaySummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1231,6 +1350,9 @@ class GetGatewaySummaryRequest$Type extends MessageType<GetGatewaySummaryRequest
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1243,6 +1365,9 @@ class GetGatewaySummaryRequest$Type extends MessageType<GetGatewaySummaryRequest
         return message;
     }
     internalBinaryWrite(message: GetGatewaySummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1256,7 +1381,9 @@ export const GetGatewaySummaryRequest = new GetGatewaySummaryRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class GetRegionSummaryRequest$Type extends MessageType<GetRegionSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.core.v1.GetRegionSummaryRequest", []);
+        super("octelium.api.main.visibility.core.v1.GetRegionSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetRegionSummaryRequest>): GetRegionSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1269,6 +1396,9 @@ class GetRegionSummaryRequest$Type extends MessageType<GetRegionSummaryRequest> 
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1281,6 +1411,9 @@ class GetRegionSummaryRequest$Type extends MessageType<GetRegionSummaryRequest> 
         return message;
     }
     internalBinaryWrite(message: GetRegionSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1294,7 +1427,9 @@ export const GetRegionSummaryRequest = new GetRegionSummaryRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class GetSecretSummaryRequest$Type extends MessageType<GetSecretSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.core.v1.GetSecretSummaryRequest", []);
+        super("octelium.api.main.visibility.core.v1.GetSecretSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetSecretSummaryRequest>): GetSecretSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1307,6 +1442,9 @@ class GetSecretSummaryRequest$Type extends MessageType<GetSecretSummaryRequest> 
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1319,6 +1457,9 @@ class GetSecretSummaryRequest$Type extends MessageType<GetSecretSummaryRequest> 
         return message;
     }
     internalBinaryWrite(message: GetSecretSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1332,7 +1473,9 @@ export const GetSecretSummaryRequest = new GetSecretSummaryRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class GetNamespaceSummaryRequest$Type extends MessageType<GetNamespaceSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.core.v1.GetNamespaceSummaryRequest", []);
+        super("octelium.api.main.visibility.core.v1.GetNamespaceSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetNamespaceSummaryRequest>): GetNamespaceSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1345,6 +1488,9 @@ class GetNamespaceSummaryRequest$Type extends MessageType<GetNamespaceSummaryReq
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1357,6 +1503,9 @@ class GetNamespaceSummaryRequest$Type extends MessageType<GetNamespaceSummaryReq
         return message;
     }
     internalBinaryWrite(message: GetNamespaceSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2509,7 +2658,9 @@ export const GetAuthenticatorSummaryResponse = new GetAuthenticatorSummaryRespon
 // @generated message type with reflection information, may provide speed optimized methods
 class GetServiceSummaryRequest$Type extends MessageType<GetServiceSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.core.v1.GetServiceSummaryRequest", []);
+        super("octelium.api.main.visibility.core.v1.GetServiceSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetServiceSummaryRequest>): GetServiceSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -2522,6 +2673,9 @@ class GetServiceSummaryRequest$Type extends MessageType<GetServiceSummaryRequest
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -2534,6 +2688,9 @@ class GetServiceSummaryRequest$Type extends MessageType<GetServiceSummaryRequest
         return message;
     }
     internalBinaryWrite(message: GetServiceSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

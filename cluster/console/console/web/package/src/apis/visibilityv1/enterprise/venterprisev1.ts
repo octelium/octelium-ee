@@ -21,9 +21,9 @@ import { SecretStoreList } from "../../enterprisev1/enterprisev1";
 import { SecretList } from "../../enterprisev1/enterprisev1";
 import { CollectorExporterList } from "../../enterprisev1/enterprisev1";
 import { ServiceType } from "@protobuf-ts/runtime-rpc";
-import { WireType } from "@protobuf-ts/runtime";
 import type { BinaryWriteOptions } from "@protobuf-ts/runtime";
 import type { IBinaryWriter } from "@protobuf-ts/runtime";
+import { WireType } from "@protobuf-ts/runtime";
 import type { BinaryReadOptions } from "@protobuf-ts/runtime";
 import type { IBinaryReader } from "@protobuf-ts/runtime";
 import { UnknownFieldHandler } from "@protobuf-ts/runtime";
@@ -43,55 +43,96 @@ import { SecretStore_Status_Synchronization_State } from "../../enterprisev1/ent
 import { SecretStore_Status_State } from "../../enterprisev1/enterprisev1";
 import { SecretStore_Status_Type } from "../../enterprisev1/enterprisev1";
 import { CommonListOptions } from "../meta/vmetav1";
+import { CommonSummaryOptions } from "../meta/vmetav1";
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetCollectorExporterSummaryRequest
  */
 export interface GetCollectorExporterSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetSecretSummaryRequest
  */
 export interface GetSecretSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryRequest
  */
 export interface GetSecretStoreSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetCertificateSummaryRequest
  */
 export interface GetCertificateSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetCertificateIssuerSummaryRequest
  */
 export interface GetCertificateIssuerSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetDNSProviderSummaryRequest
  */
 export interface GetDNSProviderSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderSummaryRequest
  */
 export interface GetDirectoryProviderSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderUserSummaryRequest
  */
 export interface GetDirectoryProviderUserSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderGroupSummaryRequest
  */
 export interface GetDirectoryProviderGroupSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryRequest
  */
 export interface GetDeviceManagerSummaryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
+     */
+    common?: CommonSummaryOptions;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.GetSecretSummaryResponse
@@ -819,7 +860,9 @@ export interface ListDeviceManagerOptions {
 // @generated message type with reflection information, may provide speed optimized methods
 class GetCollectorExporterSummaryRequest$Type extends MessageType<GetCollectorExporterSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.enterprise.v1.GetCollectorExporterSummaryRequest", []);
+        super("octelium.api.main.visibility.enterprise.v1.GetCollectorExporterSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetCollectorExporterSummaryRequest>): GetCollectorExporterSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -832,6 +875,9 @@ class GetCollectorExporterSummaryRequest$Type extends MessageType<GetCollectorEx
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -844,6 +890,9 @@ class GetCollectorExporterSummaryRequest$Type extends MessageType<GetCollectorEx
         return message;
     }
     internalBinaryWrite(message: GetCollectorExporterSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -857,7 +906,9 @@ export const GetCollectorExporterSummaryRequest = new GetCollectorExporterSummar
 // @generated message type with reflection information, may provide speed optimized methods
 class GetSecretSummaryRequest$Type extends MessageType<GetSecretSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.enterprise.v1.GetSecretSummaryRequest", []);
+        super("octelium.api.main.visibility.enterprise.v1.GetSecretSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetSecretSummaryRequest>): GetSecretSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -870,6 +921,9 @@ class GetSecretSummaryRequest$Type extends MessageType<GetSecretSummaryRequest> 
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -882,6 +936,9 @@ class GetSecretSummaryRequest$Type extends MessageType<GetSecretSummaryRequest> 
         return message;
     }
     internalBinaryWrite(message: GetSecretSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -895,7 +952,9 @@ export const GetSecretSummaryRequest = new GetSecretSummaryRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class GetSecretStoreSummaryRequest$Type extends MessageType<GetSecretStoreSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryRequest", []);
+        super("octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetSecretStoreSummaryRequest>): GetSecretStoreSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -908,6 +967,9 @@ class GetSecretStoreSummaryRequest$Type extends MessageType<GetSecretStoreSummar
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -920,6 +982,9 @@ class GetSecretStoreSummaryRequest$Type extends MessageType<GetSecretStoreSummar
         return message;
     }
     internalBinaryWrite(message: GetSecretStoreSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -933,7 +998,9 @@ export const GetSecretStoreSummaryRequest = new GetSecretStoreSummaryRequest$Typ
 // @generated message type with reflection information, may provide speed optimized methods
 class GetCertificateSummaryRequest$Type extends MessageType<GetCertificateSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.enterprise.v1.GetCertificateSummaryRequest", []);
+        super("octelium.api.main.visibility.enterprise.v1.GetCertificateSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetCertificateSummaryRequest>): GetCertificateSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -946,6 +1013,9 @@ class GetCertificateSummaryRequest$Type extends MessageType<GetCertificateSummar
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -958,6 +1028,9 @@ class GetCertificateSummaryRequest$Type extends MessageType<GetCertificateSummar
         return message;
     }
     internalBinaryWrite(message: GetCertificateSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -971,7 +1044,9 @@ export const GetCertificateSummaryRequest = new GetCertificateSummaryRequest$Typ
 // @generated message type with reflection information, may provide speed optimized methods
 class GetCertificateIssuerSummaryRequest$Type extends MessageType<GetCertificateIssuerSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.enterprise.v1.GetCertificateIssuerSummaryRequest", []);
+        super("octelium.api.main.visibility.enterprise.v1.GetCertificateIssuerSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetCertificateIssuerSummaryRequest>): GetCertificateIssuerSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -984,6 +1059,9 @@ class GetCertificateIssuerSummaryRequest$Type extends MessageType<GetCertificate
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -996,6 +1074,9 @@ class GetCertificateIssuerSummaryRequest$Type extends MessageType<GetCertificate
         return message;
     }
     internalBinaryWrite(message: GetCertificateIssuerSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1009,7 +1090,9 @@ export const GetCertificateIssuerSummaryRequest = new GetCertificateIssuerSummar
 // @generated message type with reflection information, may provide speed optimized methods
 class GetDNSProviderSummaryRequest$Type extends MessageType<GetDNSProviderSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.enterprise.v1.GetDNSProviderSummaryRequest", []);
+        super("octelium.api.main.visibility.enterprise.v1.GetDNSProviderSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetDNSProviderSummaryRequest>): GetDNSProviderSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1022,6 +1105,9 @@ class GetDNSProviderSummaryRequest$Type extends MessageType<GetDNSProviderSummar
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1034,6 +1120,9 @@ class GetDNSProviderSummaryRequest$Type extends MessageType<GetDNSProviderSummar
         return message;
     }
     internalBinaryWrite(message: GetDNSProviderSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1047,7 +1136,9 @@ export const GetDNSProviderSummaryRequest = new GetDNSProviderSummaryRequest$Typ
 // @generated message type with reflection information, may provide speed optimized methods
 class GetDirectoryProviderSummaryRequest$Type extends MessageType<GetDirectoryProviderSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderSummaryRequest", []);
+        super("octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetDirectoryProviderSummaryRequest>): GetDirectoryProviderSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1060,6 +1151,9 @@ class GetDirectoryProviderSummaryRequest$Type extends MessageType<GetDirectoryPr
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1072,6 +1166,9 @@ class GetDirectoryProviderSummaryRequest$Type extends MessageType<GetDirectoryPr
         return message;
     }
     internalBinaryWrite(message: GetDirectoryProviderSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1085,7 +1182,9 @@ export const GetDirectoryProviderSummaryRequest = new GetDirectoryProviderSummar
 // @generated message type with reflection information, may provide speed optimized methods
 class GetDirectoryProviderUserSummaryRequest$Type extends MessageType<GetDirectoryProviderUserSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderUserSummaryRequest", []);
+        super("octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderUserSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetDirectoryProviderUserSummaryRequest>): GetDirectoryProviderUserSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1098,6 +1197,9 @@ class GetDirectoryProviderUserSummaryRequest$Type extends MessageType<GetDirecto
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1110,6 +1212,9 @@ class GetDirectoryProviderUserSummaryRequest$Type extends MessageType<GetDirecto
         return message;
     }
     internalBinaryWrite(message: GetDirectoryProviderUserSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1123,7 +1228,9 @@ export const GetDirectoryProviderUserSummaryRequest = new GetDirectoryProviderUs
 // @generated message type with reflection information, may provide speed optimized methods
 class GetDirectoryProviderGroupSummaryRequest$Type extends MessageType<GetDirectoryProviderGroupSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderGroupSummaryRequest", []);
+        super("octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderGroupSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetDirectoryProviderGroupSummaryRequest>): GetDirectoryProviderGroupSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1136,6 +1243,9 @@ class GetDirectoryProviderGroupSummaryRequest$Type extends MessageType<GetDirect
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1148,6 +1258,9 @@ class GetDirectoryProviderGroupSummaryRequest$Type extends MessageType<GetDirect
         return message;
     }
     internalBinaryWrite(message: GetDirectoryProviderGroupSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1161,7 +1274,9 @@ export const GetDirectoryProviderGroupSummaryRequest = new GetDirectoryProviderG
 // @generated message type with reflection information, may provide speed optimized methods
 class GetDeviceManagerSummaryRequest$Type extends MessageType<GetDeviceManagerSummaryRequest> {
     constructor() {
-        super("octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryRequest", []);
+        super("octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryRequest", [
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+        ]);
     }
     create(value?: PartialMessage<GetDeviceManagerSummaryRequest>): GetDeviceManagerSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
@@ -1174,6 +1289,9 @@ class GetDeviceManagerSummaryRequest$Type extends MessageType<GetDeviceManagerSu
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
+                    message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1186,6 +1304,9 @@ class GetDeviceManagerSummaryRequest$Type extends MessageType<GetDeviceManagerSu
         return message;
     }
     internalBinaryWrite(message: GetDeviceManagerSummaryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
+        if (message.common)
+            CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
-	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uaccessv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
@@ -25,13 +24,9 @@ import (
 func (s *Server) getSummaryAccessPolicy(ctx context.Context, req *vaccessv1.GetPolicySummaryRequest) (*vaccessv1.GetPolicySummaryResponse, error) {
 
 	ret := &vaccessv1.GetPolicySummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(uaccessv1.KindPolicy))
-		filters = append(filters, goqu.L(`api`).Eq(uaccessv1.API))
-		filters = append(filters, goqu.L(`version`).Eq(uaccessv1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindPolicy, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -122,13 +117,9 @@ func (s *Server) getSummaryAccessPolicy(ctx context.Context, req *vaccessv1.GetP
 func (s *Server) getSummaryAccessCatalog(ctx context.Context, req *vaccessv1.GetCatalogSummaryRequest) (*vaccessv1.GetCatalogSummaryResponse, error) {
 
 	ret := &vaccessv1.GetCatalogSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(uaccessv1.KindCatalog))
-		filters = append(filters, goqu.L(`api`).Eq(uaccessv1.API))
-		filters = append(filters, goqu.L(`version`).Eq(uaccessv1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindCatalog, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -169,13 +160,9 @@ func (s *Server) getSummaryAccessCatalog(ctx context.Context, req *vaccessv1.Get
 func (s *Server) getSummaryAccessRequest(ctx context.Context, req *vaccessv1.GetRequestSummaryRequest) (*vaccessv1.GetRequestSummaryResponse, error) {
 
 	ret := &vaccessv1.GetRequestSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(uaccessv1.KindRequest))
-		filters = append(filters, goqu.L(`api`).Eq(uaccessv1.API))
-		filters = append(filters, goqu.L(`version`).Eq(uaccessv1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindRequest, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	now := time.Now().UTC()
@@ -243,13 +230,9 @@ func (s *Server) getSummaryAccessRequest(ctx context.Context, req *vaccessv1.Get
 func (s *Server) getSummaryAccessReview(ctx context.Context, req *vaccessv1.GetReviewSummaryRequest) (*vaccessv1.GetReviewSummaryResponse, error) {
 
 	ret := &vaccessv1.GetReviewSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(uaccessv1.KindReview))
-		filters = append(filters, goqu.L(`api`).Eq(uaccessv1.API))
-		filters = append(filters, goqu.L(`version`).Eq(uaccessv1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindReview, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).

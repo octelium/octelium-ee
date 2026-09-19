@@ -27,13 +27,9 @@ import (
 func (s *Server) getSummaryCoreUser(ctx context.Context, req *vcorev1.GetUserSummaryRequest) (*vcorev1.GetUserSummaryResponse, error) {
 
 	ret := &vcorev1.GetUserSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindUser))
-		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindUser, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -86,13 +82,9 @@ func (s *Server) getSummaryCoreUser(ctx context.Context, req *vcorev1.GetUserSum
 func (s *Server) getSummaryCoreSession(ctx context.Context, req *vcorev1.GetSessionSummaryRequest) (*vcorev1.GetSessionSummaryResponse, error) {
 
 	ret := &vcorev1.GetSessionSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindSession))
-		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindSession, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -145,13 +137,9 @@ func (s *Server) getSummaryCoreSession(ctx context.Context, req *vcorev1.GetSess
 func (s *Server) getSummaryCoreService(ctx context.Context, req *vcorev1.GetServiceSummaryRequest) (*vcorev1.GetServiceSummaryResponse, error) {
 
 	ret := &vcorev1.GetServiceSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindService))
-		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindService, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	getModeCount := func(mode corev1.Service_Spec_Mode) exp.LiteralExpression {
@@ -222,13 +210,9 @@ func (s *Server) getSummaryCoreService(ctx context.Context, req *vcorev1.GetServ
 func (s *Server) getSummaryCorePolicy(ctx context.Context, req *vcorev1.GetPolicySummaryRequest) (*vcorev1.GetPolicySummaryResponse, error) {
 
 	ret := &vcorev1.GetPolicySummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindPolicy))
-		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindPolicy, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -284,13 +268,9 @@ func (s *Server) getSummaryCorePolicy(ctx context.Context, req *vcorev1.GetPolic
 func (s *Server) getSummaryCoreCredential(ctx context.Context, req *vcorev1.GetCredentialSummaryRequest) (*vcorev1.GetCredentialSummaryResponse, error) {
 
 	ret := &vcorev1.GetCredentialSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindCredential))
-		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindCredential, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -338,13 +318,9 @@ func (s *Server) getSummaryCoreCredential(ctx context.Context, req *vcorev1.GetC
 func (s *Server) getSummaryCoreIdentityProvider(ctx context.Context, req *vcorev1.GetIdentityProviderSummaryRequest) (*vcorev1.GetIdentityProviderSummaryResponse, error) {
 
 	ret := &vcorev1.GetIdentityProviderSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindIdentityProvider))
-		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindIdentityProvider, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -392,13 +368,9 @@ func (s *Server) getSummaryCoreIdentityProvider(ctx context.Context, req *vcorev
 func (s *Server) getSummaryCoreDevice(ctx context.Context, req *vcorev1.GetDeviceSummaryRequest) (*vcorev1.GetDeviceSummaryResponse, error) {
 
 	ret := &vcorev1.GetDeviceSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindDevice))
-		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindDevice, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -452,13 +424,9 @@ func (s *Server) getSummaryCoreDevice(ctx context.Context, req *vcorev1.GetDevic
 func (s *Server) getSummaryCoreAuthenticator(ctx context.Context, req *vcorev1.GetAuthenticatorSummaryRequest) (*vcorev1.GetAuthenticatorSummaryResponse, error) {
 
 	ret := &vcorev1.GetAuthenticatorSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindAuthenticator))
-		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindAuthenticator, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -517,13 +485,9 @@ func (s *Server) getSummaryCoreAuthenticator(ctx context.Context, req *vcorev1.G
 func (s *Server) getSummaryCoreGroup(ctx context.Context, req *vcorev1.GetGroupSummaryRequest) (*vcorev1.GetGroupSummaryResponse, error) {
 
 	ret := &vcorev1.GetGroupSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindGroup))
-		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindGroup, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -562,13 +526,9 @@ func (s *Server) getSummaryCoreGroup(ctx context.Context, req *vcorev1.GetGroupS
 func (s *Server) getSummaryCoreRegion(ctx context.Context, req *vcorev1.GetRegionSummaryRequest) (*vcorev1.GetRegionSummaryResponse, error) {
 
 	ret := &vcorev1.GetRegionSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindRegion))
-		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindRegion, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -607,13 +567,9 @@ func (s *Server) getSummaryCoreRegion(ctx context.Context, req *vcorev1.GetRegio
 func (s *Server) getSummaryCoreGateway(ctx context.Context, req *vcorev1.GetGatewaySummaryRequest) (*vcorev1.GetGatewaySummaryResponse, error) {
 
 	ret := &vcorev1.GetGatewaySummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindGateway))
-		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindGateway, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -652,13 +608,9 @@ func (s *Server) getSummaryCoreGateway(ctx context.Context, req *vcorev1.GetGate
 func (s *Server) getSummaryCoreSecret(ctx context.Context, req *vcorev1.GetSecretSummaryRequest) (*vcorev1.GetSecretSummaryResponse, error) {
 
 	ret := &vcorev1.GetSecretSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindSecret))
-		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindSecret, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -697,13 +649,9 @@ func (s *Server) getSummaryCoreSecret(ctx context.Context, req *vcorev1.GetSecre
 func (s *Server) getSummaryCoreNamespace(ctx context.Context, req *vcorev1.GetNamespaceSummaryRequest) (*vcorev1.GetNamespaceSummaryResponse, error) {
 
 	ret := &vcorev1.GetNamespaceSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(ucorev1.KindNamespace))
-		filters = append(filters, goqu.L(`api`).Eq(ucorev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(ucorev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(ucorev1.API, ucorev1.Version, ucorev1.KindNamespace, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).

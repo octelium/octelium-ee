@@ -25,13 +25,9 @@ import (
 func (s *Server) getSummaryEnterpriseCollectorExporter(ctx context.Context, req *venterprisev1.GetCollectorExporterSummaryRequest) (*venterprisev1.GetCollectorExporterSummaryResponse, error) {
 
 	ret := &venterprisev1.GetCollectorExporterSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindCollectorExporter))
-		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindCollectorExporter, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -87,13 +83,9 @@ func (s *Server) getSummaryEnterpriseCollectorExporter(ctx context.Context, req 
 func (s *Server) getSummaryEnterpriseSecret(ctx context.Context, req *venterprisev1.GetSecretSummaryRequest) (*venterprisev1.GetSecretSummaryResponse, error) {
 
 	ret := &venterprisev1.GetSecretSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindSecret))
-		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindSecret, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -132,13 +124,9 @@ func (s *Server) getSummaryEnterpriseSecret(ctx context.Context, req *venterpris
 func (s *Server) getSummaryEnterpriseSecretStore(ctx context.Context, req *venterprisev1.GetSecretStoreSummaryRequest) (*venterprisev1.GetSecretStoreSummaryResponse, error) {
 
 	ret := &venterprisev1.GetSecretStoreSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindSecretStore))
-		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindSecretStore, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -190,13 +178,9 @@ func (s *Server) getSummaryEnterpriseSecretStore(ctx context.Context, req *vente
 func (s *Server) getSummaryEnterpriseCertificate(ctx context.Context, req *venterprisev1.GetCertificateSummaryRequest) (*venterprisev1.GetCertificateSummaryResponse, error) {
 
 	ret := &venterprisev1.GetCertificateSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindCertificate))
-		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindCertificate, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	now := time.Now().UTC()
@@ -254,13 +238,9 @@ func (s *Server) getSummaryEnterpriseCertificate(ctx context.Context, req *vente
 func (s *Server) getSummaryEnterpriseCertificateIssuer(ctx context.Context, req *venterprisev1.GetCertificateIssuerSummaryRequest) (*venterprisev1.GetCertificateIssuerSummaryResponse, error) {
 
 	ret := &venterprisev1.GetCertificateIssuerSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindCertificateIssuer))
-		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindCertificateIssuer, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -304,13 +284,9 @@ func (s *Server) getSummaryEnterpriseCertificateIssuer(ctx context.Context, req 
 func (s *Server) getSummaryEnterpriseDNSProvider(ctx context.Context, req *venterprisev1.GetDNSProviderSummaryRequest) (*venterprisev1.GetDNSProviderSummaryResponse, error) {
 
 	ret := &venterprisev1.GetDNSProviderSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindDNSProvider))
-		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindDNSProvider, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -358,13 +334,9 @@ func (s *Server) getSummaryEnterpriseDNSProvider(ctx context.Context, req *vente
 func (s *Server) getSummaryEnterpriseDirectoryProvider(ctx context.Context, req *venterprisev1.GetDirectoryProviderSummaryRequest) (*venterprisev1.GetDirectoryProviderSummaryResponse, error) {
 
 	ret := &venterprisev1.GetDirectoryProviderSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindDirectoryProvider))
-		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindDirectoryProvider, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -473,13 +445,9 @@ func (s *Server) getSummaryEnterpriseDirectoryProvider(ctx context.Context, req 
 func (s *Server) getSummaryEnterpriseDirectoryProviderUser(ctx context.Context, req *venterprisev1.GetDirectoryProviderUserSummaryRequest) (*venterprisev1.GetDirectoryProviderUserSummaryResponse, error) {
 
 	ret := &venterprisev1.GetDirectoryProviderUserSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindDirectoryProviderUser))
-		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindDirectoryProviderUser, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -520,13 +488,9 @@ func (s *Server) getSummaryEnterpriseDirectoryProviderUser(ctx context.Context, 
 func (s *Server) getSummaryEnterpriseDirectoryProviderGroup(ctx context.Context, req *venterprisev1.GetDirectoryProviderGroupSummaryRequest) (*venterprisev1.GetDirectoryProviderGroupSummaryResponse, error) {
 
 	ret := &venterprisev1.GetDirectoryProviderGroupSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindDirectoryProviderGroup))
-		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindDirectoryProviderGroup, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
@@ -567,13 +531,9 @@ func (s *Server) getSummaryEnterpriseDirectoryProviderGroup(ctx context.Context,
 func (s *Server) getSummaryEnterpriseDeviceManager(ctx context.Context, req *venterprisev1.GetDeviceManagerSummaryRequest) (*venterprisev1.GetDeviceManagerSummaryResponse, error) {
 
 	ret := &venterprisev1.GetDeviceManagerSummaryResponse{}
-	var filters []exp.Expression
-
-	{
-		filters = append(filters, goqu.L(`kind`).Eq(uenterprisev1.KindDeviceManager))
-		filters = append(filters, goqu.L(`api`).Eq(uenterprisev1.API))
-		filters = append(filters, goqu.L(`version`).Eq(uenterprisev1.Version))
-		filters = append(filters, goqu.L(colIsSystemHidden).IsNotTrue())
+	filters, err := getSummaryFilters(uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindDeviceManager, req.GetCommon())
+	if err != nil {
+		return nil, err
 	}
 
 	ds := goqu.From("resources").Where(filters...).
