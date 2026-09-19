@@ -1,6 +1,6 @@
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import TimeAgo from "@/components/TimeAgo";
-import { useClusterVersionInfo } from "@/pages/clusterman/ClusterVersionInfo";
+import { useClusterVersionInfo } from "@/pages/clusterman/queries";
 import { getDomain } from "@/utils";
 import { CheckCircle2, PackageCheck, ServerCog, Sparkles } from "lucide-react";
 import { Panel } from "@/components/Dashboard/components";

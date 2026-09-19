@@ -1,9 +1,6 @@
 import { Outlet, RouteObject } from "react-router-dom";
 
-import Main from "./Main";
-
-import { getResourcePathFromAPIKind } from "@/utils/pb";
-import { ResourceComponentInfo } from "../utils/types";
+import Main from "./index";
 
 export default (): RouteObject => {
   const ret = {
@@ -22,22 +19,4 @@ export default (): RouteObject => {
   };
 
   return ret;
-};
-
-const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
-  return {
-    path: getResourcePathFromAPIKind({ api: arg.API, kind: arg.Kind }),
-    element: (
-      <>
-        <Main />
-      </>
-    ),
-
-    children: [
-      {
-        path: "",
-        element: <Main />,
-      },
-    ],
-  };
 };
