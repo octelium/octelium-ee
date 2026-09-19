@@ -392,6 +392,15 @@ export const getResourceListPath = (arg: ResourceList): string => {
 export const getResourceListPathFromResource = (arg: Resource): string =>
   `/${getAPI(arg)}/${getResourcePathFromAPIKind({ api: getAPI(arg) as API, kind: arg.kind as ResourceName })}`;
 
+const invalidateSummaries = (arg: Resource) => {
+  queryClient.invalidateQueries({
+    queryKey: ["visibility", getAPI(arg), "summary", arg.kind],
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["visibility", "cluster", "summary"],
+  });
+};
+
 export const invalidateResource = (arg: Resource) => {
   queryClient.invalidateQueries({
     queryKey: [getGetKey(arg), arg.metadata?.uid],
@@ -399,9 +408,7 @@ export const invalidateResource = (arg: Resource) => {
   queryClient.invalidateQueries({
     queryKey: [getGetKey(arg), arg.metadata?.name],
   });
-  queryClient.invalidateQueries({
-    queryKey: ["visibility", getAPI(arg), "summary", arg.kind],
-  });
+  invalidateSummaries(arg);
 };
 
 export const invalidateResourceList = (arg: Resource) => {
@@ -409,9 +416,7 @@ export const invalidateResourceList = (arg: Resource) => {
   queryClient.invalidateQueries({
     queryKey: ["listSelectComponent", getAPI(arg), arg.kind],
   });
-  queryClient.invalidateQueries({
-    queryKey: ["visibility", getAPI(arg), "summary", arg.kind],
-  });
+  invalidateSummaries(arg);
 };
 
 export const getKindFromResourceList = (arg: ResourceList): ResourceName =>

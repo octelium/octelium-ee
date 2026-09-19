@@ -22,9 +22,12 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
-import { Panel } from "./components";
-import { useClusterSummary, useComponentSummary } from "./queries";
-import { compact, exact } from "./utils";
+import { Panel } from "@/components/Dashboard/components";
+import {
+  useClusterSummary,
+  useComponentSummary,
+} from "@/components/Dashboard/queries";
+import { compact, exact } from "@/components/Dashboard/utils";
 
 type Severity = "critical" | "warning" | "info";
 

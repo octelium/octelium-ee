@@ -21,9 +21,9 @@ import {
   UserCheck,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Panel } from "./components";
-import { useClusterSummary } from "./queries";
-import { compact, exact } from "./utils";
+import { Panel } from "@/components/Dashboard/components";
+import { useClusterSummary } from "@/components/Dashboard/queries";
+import { compact, exact } from "@/components/Dashboard/utils";
 
 type Api = "core" | "access" | "enterprise";
 

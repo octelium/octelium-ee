@@ -6,7 +6,11 @@ import {
 } from "@/utils/charts/palette";
 import { n, pct, periodLabel } from "@/utils/visibility";
 import { QUERY_PRIORITY } from "@/utils/visibility/queue";
-import { seriesPoints, StatTile, toPoints } from "./components";
+import {
+  seriesPoints,
+  StatTile,
+  toPoints,
+} from "@/components/Dashboard/components";
 import {
   useAccessDataPoint,
   useAccessSummary,
@@ -15,8 +19,8 @@ import {
   useClusterSummary,
   useComponentDataPoint,
   useComponentSummary,
-} from "./queries";
-import { compact } from "./utils";
+} from "@/components/Dashboard/queries";
+import { compact } from "@/components/Dashboard/utils";
 
 const Signals = (props: { periodMinutes: number }) => {
   const { periodMinutes } = props;

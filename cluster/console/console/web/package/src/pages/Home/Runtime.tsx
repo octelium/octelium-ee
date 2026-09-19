@@ -36,13 +36,17 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { MiniStat, Panel, toPoints } from "./components";
+import { MiniStat, Panel, toPoints } from "@/components/Dashboard/components";
 import {
   useComponentDataPoint,
   useComponentSummary,
   useTopComponents,
-} from "./queries";
-import { homeKeys, useAutoRefresh, useDashboardQuery } from "./utils";
+} from "@/components/Dashboard/queries";
+import {
+  dashboardKeys,
+  useAutoRefresh,
+  useDashboardQuery,
+} from "@/components/Dashboard/utils";
 
 const OCTOVIGIL = ComponentSelector.create({
   type: "octovigil",
@@ -95,7 +99,11 @@ const MetricStat = (props: {
 
   const query = useDashboardQuery({
     queryKey: [
-      ...homeKeys.metricStat(props.metric, props.periodMinutes, props.unit),
+      ...dashboardKeys.metricStat(
+        props.metric,
+        props.periodMinutes,
+        props.unit,
+      ),
     ],
     priority: QUERY_PRIORITY.low,
     retry: retryMetricQuery,

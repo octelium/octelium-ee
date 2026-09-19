@@ -3,7 +3,7 @@ import TimeAgo from "@/components/TimeAgo";
 import { useClusterVersionInfo } from "@/pages/clusterman/ClusterVersionInfo";
 import { getDomain } from "@/utils";
 import { CheckCircle2, PackageCheck, ServerCog, Sparkles } from "lucide-react";
-import { Panel } from "./components";
+import { Panel } from "@/components/Dashboard/components";
 
 type PackageVersion = {
   currentVersion: string;

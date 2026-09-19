@@ -12,8 +12,17 @@ import {
   Terminal,
   User,
 } from "lucide-react";
-import { MiniStat, MiniStatGrid, Panel, toPoints } from "./components";
-import { useAuthDataPoint, useAuthSummary, useAuthTop } from "./queries";
+import {
+  MiniStat,
+  MiniStatGrid,
+  Panel,
+  toPoints,
+} from "@/components/Dashboard/components";
+import {
+  useAuthDataPoint,
+  useAuthSummary,
+  useAuthTop,
+} from "@/components/Dashboard/queries";
 
 const Identity = (props: { periodMinutes: number }) => {
   const { periodMinutes } = props;

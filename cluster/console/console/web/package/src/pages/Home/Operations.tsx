@@ -13,9 +13,12 @@ import {
   Terminal,
   User,
 } from "lucide-react";
-import { MiniStat, Panel, toPoints } from "./components";
-import { useAuditDataPoint, useAuditSummary } from "./queries";
-import { compact } from "./utils";
+import { MiniStat, Panel, toPoints } from "@/components/Dashboard/components";
+import {
+  useAuditDataPoint,
+  useAuditSummary,
+} from "@/components/Dashboard/queries";
+import { compact } from "@/components/Dashboard/utils";
 
 const Operations = (props: { periodMinutes: number }) => {
   const { periodMinutes } = props;

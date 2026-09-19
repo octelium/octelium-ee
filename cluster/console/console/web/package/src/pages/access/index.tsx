@@ -1,25 +1,10 @@
-import AccessResourceInventory from "@/components/AccessResourceInventory";
-import Item from "@/components/SummaryCard";
-import { motion } from "framer-motion";
-import { Summary as CatalogSummary } from "./Catalog/List";
-import { Summary as PolicySummary } from "./Policy/List";
-import { Summary as RequestSummary } from "./Request/List";
-import { Summary as ReviewSummary } from "./Review/List";
+import { PageLoading } from "@/components/Loading";
+import * as React from "react";
+
+const Dashboard = React.lazy(() => import("./Overview/Dashboard"));
 
 export default () => (
-  <motion.div
-    initial={{ opacity: 0, y: 6 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.2, ease: "easeOut" }}
-    className="flex flex-col gap-4 py-4"
-  >
-    <AccessResourceInventory />
-
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <Item title="Access Requests" link="/access/requests"><RequestSummary showNoItems /></Item>
-      <Item title="Reviews" link="/access/reviews"><ReviewSummary showNoItems /></Item>
-      <Item title="Access Policies" link="/access/policies"><PolicySummary showNoItems /></Item>
-      <Item title="Catalogs" link="/access/catalogs"><CatalogSummary showNoItems /></Item>
-    </div>
-  </motion.div>
+  <React.Suspense fallback={<PageLoading />}>
+    <Dashboard />
+  </React.Suspense>
 );

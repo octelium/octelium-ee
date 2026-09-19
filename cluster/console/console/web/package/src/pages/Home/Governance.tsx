@@ -15,9 +15,13 @@ import {
   Timer,
   UserCheck,
 } from "lucide-react";
-import { MiniStat, MiniStatGrid, Panel } from "./components";
-import { useClusterSummary } from "./queries";
-import { compact } from "./utils";
+import {
+  MiniStat,
+  MiniStatGrid,
+  Panel,
+} from "@/components/Dashboard/components";
+import { useClusterSummary } from "@/components/Dashboard/queries";
+import { compact } from "@/components/Dashboard/utils";
 
 const STATE_COLORS = {
   approved: "var(--color-emerald-600)",

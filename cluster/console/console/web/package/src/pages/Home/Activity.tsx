@@ -25,14 +25,14 @@ import {
   MiniStatGrid,
   Panel,
   seriesPoints,
-} from "./components";
+} from "@/components/Dashboard/components";
 import {
   useAccessDataPoint,
   useAccessDenyReasons,
   useAccessSummary,
   useAccessTop,
-} from "./queries";
-import { compact, exact } from "./utils";
+} from "@/components/Dashboard/queries";
+import { compact, exact } from "@/components/Dashboard/utils";
 
 const formatMillis = (value?: number) => {
   if (value === undefined || !Number.isFinite(value)) return "—";

@@ -24,7 +24,6 @@ import sessionRouter from "./Session/router";
 import userRouter from "./User/router";
 
 import MainPage from "./index";
-import Summary from "./Summary";
 
 import ResourceItemActionsPage from "@/components/ResourceLayout/ResourceActions";
 import ResourceCreateRoute from "@/components/ResourceLayout/ResourceCreateRoute";
@@ -81,10 +80,7 @@ export default (): RouteObject => {
       .map((x) => {
         return getResourceChildrenRouter(x);
       })
-      .concat([clusterConfigRouter()], {
-        path: "summary",
-        element: <Summary />,
-      })
+      .concat([clusterConfigRouter()])
       .concat({
         path: "",
         element: <MainPage />,

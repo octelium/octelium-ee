@@ -29,13 +29,15 @@ export const rangeSummaryKey = (
   periodMinutes: number,
 ): unknown[] => ["visibility", api, "summary", kind, "range", periodMinutes];
 
-export const homeKeys = {
+export const dashboardKeys = {
   accessTop: (resource: string, periodMinutes: number) =>
     ["accessLogTop", resource, periodMinutes, "all", null] as const,
   authTop: (resource: string, periodMinutes: number) =>
     ["authLogTop", resource, periodMinutes, null] as const,
   metricStat: (metric: string, periodMinutes: number, variant: string) =>
     ["visibility", "metricStat", metric, variant, periodMinutes] as const,
+  queue: (api: string, name: string) =>
+    ["visibility", api, "queue", name] as const,
 };
 
 export const useDashboardQuery = <T>(args: {
