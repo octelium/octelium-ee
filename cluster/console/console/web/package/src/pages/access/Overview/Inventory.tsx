@@ -9,8 +9,12 @@ import { QUERY_PRIORITY } from "@/utils/visibility/queue";
 import {
   ClipboardCheck,
   Inbox,
+  KeyRound,
   Layers,
+  Link2,
   LucideIcon,
+  Plug,
+  Send,
   Shield,
 } from "lucide-react";
 import { useAccessCreated, useAccessTotals } from "./queries";
@@ -68,6 +72,54 @@ const ROWS: Row[] = [
     to: "/access/catalogs",
     icon: Layers,
     pick: (access) => access?.catalog,
+  },
+  {
+    kind: "Integration",
+    label: "Integrations",
+    to: "/access/integrations",
+    icon: Plug,
+    pick: (access) => access?.integration,
+    attention: (access) => [
+      { label: "disabled ", value: n(access?.integration?.totalDisabled) },
+      {
+        label: "failing ",
+        value: n(access?.integration?.totalError),
+        tone: "critical",
+      },
+    ],
+  },
+  {
+    kind: "IntegrationIdentity",
+    label: "Integration Identities",
+    to: "/access/integrationidentities",
+    icon: Link2,
+    pick: (access) => access?.integrationIdentity,
+  },
+  {
+    kind: "IntegrationBinding",
+    label: "Integration Bindings",
+    to: "/access/integrationbindings",
+    icon: Send,
+    pick: (access) => access?.integrationBinding,
+    attention: (access) => [
+      {
+        label: "out of date ",
+        value: n(access?.integrationBinding?.totalOutOfDate),
+        tone: "warning",
+      },
+      {
+        label: "failing ",
+        value: n(access?.integrationBinding?.totalFailing),
+        tone: "critical",
+      },
+    ],
+  },
+  {
+    kind: "Secret",
+    label: "Secrets",
+    to: "/access/secrets",
+    icon: KeyRound,
+    pick: (access) => access?.secret,
   },
 ];
 

@@ -8,9 +8,13 @@ import { getResourcePathFromAPIKind } from "@/utils/pb";
 import { ResourceComponentInfo } from "../utils/types";
 
 import catalogRouter from "./Catalog/router";
+import integrationRouter from "./Integration/router";
+import integrationBindingRouter from "./IntegrationBinding/router";
+import integrationIdentityRouter from "./IntegrationIdentity/router";
 import policyRouter from "./Policy/router";
 import requestRouter from "./Request/router";
 import reviewRouter from "./Review/router";
+import secretRouter from "./Secret/router";
 
 import ResourceItemActionsPage from "@/components/ResourceLayout/ResourceActions";
 import ResourceCreateRoute from "@/components/ResourceLayout/ResourceCreateRoute";
@@ -31,6 +35,10 @@ export const resourceList = [
   requestRouter,
   reviewRouter,
   catalogRouter,
+  integrationRouter,
+  integrationIdentityRouter,
+  integrationBindingRouter,
+  secretRouter,
 ];
 
 export default (): RouteObject => {

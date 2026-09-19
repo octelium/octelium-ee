@@ -8,6 +8,7 @@ import { getClientAccess } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
+import { OriginValue, hasOrigin } from "../Origin";
 import { getUrgencyLabel } from "../Request/utils";
 import { getDecisionMeta } from "./utils";
 
@@ -252,10 +253,13 @@ export const MainInfo = (props: { item: AccessC.Review }): ResourceMainInfo => {
         : []),
 
       {
-        label: "Step index",
+        label: "Review step",
         value: (
           <span className="text-sm font-semibold text-slate-700">
-            {status?.stepIndex ?? 0}
+            {status?.stepName || `Step ${status?.stepIndex ?? 0}`}
+            <span className="ml-1.5 text-xs font-normal text-slate-500">
+              index {status?.stepIndex ?? 0}
+            </span>
           </span>
         ),
       },
@@ -268,6 +272,60 @@ export const MainInfo = (props: { item: AccessC.Review }): ResourceMainInfo => {
                 <span className="text-sm font-semibold text-slate-700">
                   <TimeAgo rfc3339={status.setAt} />
                 </span>
+              ),
+            },
+          ]
+        : []),
+
+      ...(hasOrigin(status?.origin)
+        ? [
+            {
+              label: "Decided from",
+              span: "full" as const,
+              value: <OriginValue origin={status!.origin!} />,
+              hint: "Where the current decision was set from. It is entirely set by the Cluster from the authenticated transport of the decision itself.",
+            },
+          ]
+        : []),
+
+      ...((status?.lastRevisions ?? []).length > 0
+        ? [
+            {
+              label: "Decision history",
+              span: "full" as const,
+              value: (
+                <div className="w-full overflow-hidden rounded-lg border border-slate-200">
+                  {status!.lastRevisions.map((revision, index) => {
+                    const revisionMeta = getDecisionMeta(
+                      revision.spec?.decision,
+                    );
+                    return (
+                      <div
+                        key={`${revision.setAt?.seconds ?? 0}-${index}`}
+                        className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-white px-3 py-2 last:border-0"
+                      >
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                          <span
+                            className={twMerge(
+                              "text-xs font-semibold",
+                              revisionMeta.className,
+                            )}
+                          >
+                            {revisionMeta.label}
+                          </span>
+                          {hasOrigin(revision.origin) && (
+                            <OriginValue origin={revision.origin!} />
+                          )}
+                        </div>
+                        {revision.setAt && (
+                          <span className="text-xs font-normal text-slate-500">
+                            <TimeAgo rfc3339={revision.setAt} />
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               ),
             },
           ]

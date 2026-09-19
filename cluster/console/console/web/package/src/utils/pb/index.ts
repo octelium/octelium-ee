@@ -62,7 +62,11 @@ export type ResourceAccess =
   | AccessP.Catalog
   | AccessP.Policy
   | AccessP.Request
-  | AccessP.Review;
+  | AccessP.Review
+  | AccessP.Secret
+  | AccessP.Integration
+  | AccessP.IntegrationIdentity
+  | AccessP.IntegrationBinding;
 
 export type ResourceCoreList =
   | CoreP.ServiceList
@@ -92,7 +96,11 @@ export type ResourceAccessList =
   | AccessP.CatalogList
   | AccessP.PolicyList
   | AccessP.RequestList
-  | AccessP.ReviewList;
+  | AccessP.ReviewList
+  | AccessP.SecretList
+  | AccessP.IntegrationList
+  | AccessP.IntegrationIdentityList
+  | AccessP.IntegrationBindingList;
 
 export type ResourceCoreName =
   | "Service"
@@ -121,7 +129,15 @@ export type ResourceEnterpriseName =
   | "SecretStore"
   | "DirectoryProvider";
 
-export type ResourceAccessName = "Catalog" | "Policy" | "Request" | "Review";
+export type ResourceAccessName =
+  | "Catalog"
+  | "Policy"
+  | "Request"
+  | "Review"
+  | "Secret"
+  | "Integration"
+  | "IntegrationIdentity"
+  | "IntegrationBinding";
 
 const coreResourcePathMap = new Map<string, ResourceCoreName>([
   ["services", "Service"],
@@ -157,6 +173,10 @@ const accessResourcePathMap = new Map<string, ResourceAccessName>([
   ["policies", "Policy"],
   ["requests", "Request"],
   ["reviews", "Review"],
+  ["secrets", "Secret"],
+  ["integrations", "Integration"],
+  ["integrationidentities", "IntegrationIdentity"],
+  ["integrationbindings", "IntegrationBinding"],
 ]);
 
 const coreKindToPathMap = new Map<ResourceCoreName, string>(

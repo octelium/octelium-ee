@@ -22,9 +22,12 @@ import {
   Layers,
   LayoutDashboard,
   Library,
+  Link2,
   LockKeyhole,
   LockOpen,
   PanelTop,
+  Plug,
+  Send,
   Scroll,
   Settings2,
   Shield,
@@ -94,6 +97,18 @@ const itemsAccess = [
   { title: "Requests", url: "/access/requests", icon: Inbox },
   { title: "Reviews", url: "/access/reviews", icon: ClipboardCheck },
   { title: "Policies", url: "/access/policies", icon: Shield },
+  { title: "Integrations", url: "/access/integrations", icon: Plug },
+  {
+    title: "Integration Identities",
+    url: "/access/integrationidentities",
+    icon: Link2,
+  },
+  {
+    title: "Integration Bindings",
+    url: "/access/integrationbindings",
+    icon: Send,
+  },
+  { title: "Secrets", url: "/access/secrets", icon: KeyRound },
 ];
 
 const itemsVisibility = [

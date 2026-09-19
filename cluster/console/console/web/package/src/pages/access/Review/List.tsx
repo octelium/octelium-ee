@@ -22,6 +22,7 @@ import {
   RotateCcw,
   Users,
 } from "lucide-react";
+import { getOriginLabel, hasOrigin } from "../Origin";
 import { getDecisionMeta } from "./utils";
 
 export const LabelComponent = (props: { item: Review }) => {
@@ -38,6 +39,16 @@ export const LabelComponent = (props: { item: Review }) => {
       )}
       {item.status?.userRef && (
         <ResourceListLabel itemRef={item.status.userRef}></ResourceListLabel>
+      )}
+      {item.status?.stepName && (
+        <ResourceListLabel label="Step">
+          {item.status.stepName}
+        </ResourceListLabel>
+      )}
+      {hasOrigin(item.status?.origin) && (
+        <ResourceListLabel label="Decided from">
+          {getOriginLabel(item.status!.origin!.type)}
+        </ResourceListLabel>
       )}
     </ResourceListLabelWrap>
   );

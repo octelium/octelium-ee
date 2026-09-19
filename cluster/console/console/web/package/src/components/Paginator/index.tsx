@@ -17,6 +17,12 @@ const REF_PARAM_LABELS: Record<string, string> = {
   "authenticatorRef.name": "Authenticator",
   "resourceRef.name": "Resource",
   "clusterRef.name": "Cluster",
+  "catalogRef.name": "Catalog",
+  "requestRef.name": "Request",
+  "reviewerRef.name": "Reviewer",
+  "subjectUserRef.name": "Subject User",
+  "policyTriggerRef.name": "Policy Trigger",
+  "integrationRef.name": "Integration",
 };
 
 const TYPE_LABEL_MAP: Record<string, string> = {
@@ -37,6 +43,31 @@ const TYPE_LABEL_MAP: Record<string, string> = {
   SOCKS5: "SOCKS5",
   RDP_WEB: "RDP Web",
   RDP: "RDP",
+  SLACK: "Slack",
+  JIRA: "Jira",
+  WEBHOOK: "Webhook",
+  READY: "Ready",
+  DEGRADED: "Degraded",
+  ERROR: "Error",
+  CLOSED: "Closed",
+  SYNC_REQUESTED: "Sync requested",
+  SYNCING: "Synchronizing",
+  SUCCESS: "Successful",
+  FAILED: "Failed",
+  NOTIFICATION: "Notification",
+  DIRECT_USER_DELIVERY: "Direct user delivery",
+  INTERACTIVE_REVIEW: "Interactive review",
+  REQUEST_CREATION: "Request creation",
+  IDENTITY_RESOLUTION: "Identity resolution",
+  PRESENTATION_UPDATE: "Presentation update",
+  EMAIL_DISCOVERY: "Email discovery",
+  REVIEW_SURFACE: "Review surface",
+  SHARED: "Shared",
+  REVIEWERS: "Reviewers",
+  REQUESTER: "Requester",
+  SUBJECT: "Subject",
+  DEEP_LINK_ONLY: "Deep link only",
+  INTERACTIVE: "Interactive",
 };
 
 const BOOLEAN_PARAM_LABELS: Record<string, string> = {
@@ -46,6 +77,12 @@ const BOOLEAN_PARAM_LABELS: Record<string, string> = {
   isAnonymous: "Anonymous",
   isSystem: "System",
   isUserHidden: "Hidden",
+  isActive: "Active",
+  isDecided: "Decided",
+  isOutOfDate: "Out of date",
+  isFailing: "Failing",
+  hasDeadline: "With deadline",
+  isDeadlinePassed: "Past deadline",
 };
 
 export interface FilterChip {

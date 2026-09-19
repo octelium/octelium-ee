@@ -33,6 +33,8 @@ const nonCreatableResourceKeys = new Set([
   "enterprise/SecretStore",
   "access/Request",
   "access/Review",
+  "access/IntegrationIdentity",
+  "access/IntegrationBinding",
 ]);
 
 const SelectResource = (props: {

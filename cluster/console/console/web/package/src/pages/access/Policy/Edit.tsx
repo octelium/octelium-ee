@@ -4,6 +4,7 @@ import * as React from "react";
 
 import { CELEditor } from "@/components/Condition/Editor";
 import DurationPicker from "@/components/DurationPicker";
+import { Alert } from "@mantine/core";
 import EditItem from "@/components/EditItem";
 import ItemMessage from "@/components/ItemMessage";
 import PriorityPicker from "@/components/PriorityPicker";
@@ -22,12 +23,14 @@ import {
   TextInput,
 } from "@mantine/core";
 import {
+  AlertTriangle,
   Braces,
   Check,
   Combine,
   Hash,
   Library,
   ListChecks,
+  Megaphone,
   PanelTop,
   User,
   UserRoundSearch,
@@ -50,6 +53,14 @@ const newCondition = (): AccessP.Policy_Spec_Rule_Condition =>
         },
       }),
     },
+  });
+
+const newSurface = (audience: AudienceChoice) =>
+  AccessP.Policy_Spec_Rule_Surface.create({
+    destination: AccessP.Policy_Spec_Rule_Surface_Destination.create({
+      integrationRef: MetaP.ObjectReference.create(),
+      audience: AccessP.Policy_Spec_Rule_Surface_Destination_Audience[audience],
+    }),
   });
 
 const newReviewStep = () =>
@@ -563,6 +574,231 @@ const ChoiceButtonGrid = <T extends string,>(props: {
   </div>
 );
 
+type AudienceChoice = "SHARED" | "REVIEWERS" | "REQUESTER" | "SUBJECT";
+
+const AUDIENCE_SHARED = {
+  value: "SHARED" as const,
+  label: "Shared destination",
+  description: "Deliver to the Integration's own channel",
+  icon: Megaphone,
+};
+
+const REVIEW_AUDIENCES: Array<{
+  value: AudienceChoice;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+}> = [
+  AUDIENCE_SHARED,
+  {
+    value: "REVIEWERS",
+    label: "Reviewers",
+    description: "Deliver to every eligible reviewer",
+    icon: Users,
+  },
+];
+
+const NOTIFICATION_AUDIENCES: Array<{
+  value: AudienceChoice;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+}> = [
+  AUDIENCE_SHARED,
+  {
+    value: "REQUESTER",
+    label: "Requester",
+    description: "Deliver to the User who created the request",
+    icon: UserRoundSearch,
+  },
+  {
+    value: "SUBJECT",
+    label: "Subject",
+    description: "Deliver to the User the access is for",
+    icon: User,
+  },
+];
+
+const SurfaceEdit = (props: {
+  surface: AccessP.Policy_Spec_Rule_Surface;
+  isReviewSurface: boolean;
+  onUpdate: () => void;
+}) => {
+  const { surface, isReviewSurface, onUpdate } = props;
+
+  const destination = () => {
+    if (!surface.destination) {
+      surface.destination =
+        AccessP.Policy_Spec_Rule_Surface_Destination.create({
+          integrationRef: MetaP.ObjectReference.create(),
+        });
+    }
+    return surface.destination;
+  };
+
+  const audience = surface.destination?.audience;
+
+  return (
+    <div className="w-full">
+      <SelectResource
+        api="access"
+        kind="Integration"
+        required
+        label="Integration"
+        description="Integration that delivers this surface."
+        defaultValue={surface.destination?.integrationRef?.name}
+        onChange={(v) => {
+          destination().integrationRef = v
+            ? getResourceRef(v)
+            : MetaP.ObjectReference.create();
+          onUpdate();
+        }}
+      />
+
+      <div className="mt-4">
+        <ChoiceButtonGrid
+          label="Audience"
+          description={
+            isReviewSurface
+              ? "Choose who the request is presented to at this step"
+              : "Choose who the outcome of the request is delivered to"
+          }
+          columns={isReviewSurface ? 2 : 3}
+          value={
+            audience !== undefined && audience !== 0
+              ? (AccessP.Policy_Spec_Rule_Surface_Destination_Audience[
+                  audience
+                ] as AudienceChoice)
+              : undefined
+          }
+          options={isReviewSurface ? REVIEW_AUDIENCES : NOTIFICATION_AUDIENCES}
+          onChange={(value) => {
+            destination().audience =
+              AccessP.Policy_Spec_Rule_Surface_Destination_Audience[value];
+            onUpdate();
+          }}
+        />
+      </div>
+
+      {audience ===
+        AccessP.Policy_Spec_Rule_Surface_Destination_Audience.SHARED && (
+        <p className="mt-2 text-micro font-normal leading-4 text-slate-500">
+          The Integration must have a shared destination set (i.e. its Slack
+          channel, its Jira project or its webhook URL).
+        </p>
+      )}
+      {(audience ===
+        AccessP.Policy_Spec_Rule_Surface_Destination_Audience.REVIEWERS ||
+        audience ===
+          AccessP.Policy_Spec_Rule_Surface_Destination_Audience.REQUESTER ||
+        audience ===
+          AccessP.Policy_Spec_Rule_Surface_Destination_Audience.SUBJECT) && (
+        <p className="mt-2 text-micro font-normal leading-4 text-slate-500">
+          Each targeted User is only delivered to once the Cluster resolves it
+          to an external actor of the Integration.
+        </p>
+      )}
+
+      {isReviewSurface && (
+        <div className="mt-4">
+          <Input.Wrapper
+            label="Interaction mode"
+            description="How much the external provider is trusted to act on the presented request."
+          >
+            <SegmentedControl
+              fullWidth
+              value={
+                AccessP.Policy_Spec_Rule_Surface_InteractionMode[
+                  surface.interactionMode
+                ] === "INTERACTION_MODE_UNSET"
+                  ? "DEEP_LINK_ONLY"
+                  : AccessP.Policy_Spec_Rule_Surface_InteractionMode[
+                      surface.interactionMode
+                    ]
+              }
+              data={[
+                { label: "Deep link only", value: "DEEP_LINK_ONLY" },
+                { label: "Interactive", value: "INTERACTIVE" },
+              ]}
+              onChange={(value) => {
+                surface.interactionMode =
+                  value === "INTERACTIVE"
+                    ? AccessP.Policy_Spec_Rule_Surface_InteractionMode
+                        .INTERACTIVE
+                    : AccessP.Policy_Spec_Rule_Surface_InteractionMode
+                        .DEEP_LINK_ONLY;
+                onUpdate();
+              }}
+            />
+          </Input.Wrapper>
+
+          {surface.interactionMode ===
+            AccessP.Policy_Spec_Rule_Surface_InteractionMode.INTERACTIVE && (
+            <Alert
+              className="mt-3"
+              color="amber"
+              icon={<AlertTriangle size={15} />}
+              title="The provider may submit decisions"
+            >
+              Every decision is still authenticated by the Integration and
+              authorized by the Cluster exactly like one submitted through the
+              access portal. The Integration must support interactive reviews.
+            </Alert>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SurfacesEdit = (props: {
+  title: string;
+  description: string;
+  surfaces: AccessP.Policy_Spec_Rule_Surface[];
+  isReviewSurface: boolean;
+  listKey: string;
+  rows: ReturnType<typeof useListKeys>;
+  onSet: (surfaces: AccessP.Policy_Spec_Rule_Surface[]) => void;
+  onUpdate: () => void;
+}) => {
+  const { surfaces, rows, listKey } = props;
+
+  return (
+    <ItemMessage
+      title={props.title}
+      description={props.description}
+      obj={surfaces}
+      isList
+      onSet={() => {
+        props.onSet([newSurface("SHARED")]);
+        props.onUpdate();
+      }}
+      onAddListItem={() => {
+        surfaces.push(newSurface("SHARED"));
+        props.onUpdate();
+      }}
+    >
+      {surfaces.map((surface, idx) => (
+        <EditItem
+          key={rows.keyAt(listKey, idx)}
+          obj={surface}
+          onUnset={() => {
+            rows.removeAt(listKey, idx);
+            surfaces.splice(idx, 1);
+            props.onUpdate();
+          }}
+        >
+          <SurfaceEdit
+            surface={surface}
+            isReviewSurface={props.isReviewSurface}
+            onUpdate={props.onUpdate}
+          />
+        </EditItem>
+      ))}
+    </ItemMessage>
+  );
+};
+
 const ReviewStepEdit = (props: {
   step: AccessP.Policy_Spec_Rule_Action_Review_Step;
   onUpdate: () => void;
@@ -795,6 +1031,57 @@ const ReviewStepEdit = (props: {
         </div>
       </div>
 
+      <SurfacesEdit
+        title="Review surfaces"
+        description="External Integration surfaces on which the requests reaching this step are presented to their reviewers. The Cluster's own access portal is always available regardless of this list."
+        surfaces={step.surfaces}
+        isReviewSurface
+        listKey="surfaces"
+        rows={rows}
+        onSet={(surfaces) => {
+          step.surfaces = surfaces;
+        }}
+        onUpdate={onUpdate}
+      />
+
+      <EditItem
+        title="Separation of duties"
+        description="Whether the Users involved in a request may review it themselves. Both are denied by default."
+        obj={step.separationOfDuties}
+        onUnset={() => {
+          step.separationOfDuties = undefined;
+          onUpdate();
+        }}
+        onSet={() => {
+          step.separationOfDuties =
+            AccessP.Policy_Spec_Rule_SeparationOfDuties.create();
+          onUpdate();
+        }}
+      >
+        {step.separationOfDuties && (
+          <div className="flex flex-col gap-3">
+            <Switch
+              label="Allow the requester to review"
+              description="Let the User who created the request review it at this step."
+              checked={step.separationOfDuties.allowRequesterReview}
+              onChange={(v) => {
+                step.separationOfDuties!.allowRequesterReview =
+                  v.target.checked;
+                onUpdate();
+              }}
+            />
+            <Switch
+              label="Allow the subject to review"
+              description="Let the User the access is requested for review it at this step."
+              checked={step.separationOfDuties.allowSubjectReview}
+              onChange={(v) => {
+                step.separationOfDuties!.allowSubjectReview = v.target.checked;
+                onUpdate();
+              }}
+            />
+          </div>
+        )}
+      </EditItem>
     </div>
   );
 };
@@ -966,6 +1253,19 @@ const RuleEdit = (props: {
               .otherwise(() => null)}
         </EditItem>
       )}
+
+      <SurfacesEdit
+        title="Outcome notifications"
+        description="External Integration surfaces on which the outcome of the matched requests is delivered. Unlike the review surfaces of a step, these are purely informational and they never carry any action."
+        surfaces={rule.notifications}
+        isReviewSurface={false}
+        listKey="notifications"
+        rows={rows}
+        onSet={(surfaces) => {
+          rule.notifications = surfaces;
+        }}
+        onUpdate={onUpdate}
+      />
 
       {(rule.effect === AccessP.Policy_Spec_Rule_Effect.REVIEW ||
         rule.effect === AccessP.Policy_Spec_Rule_Effect.AUTO_APPROVE) && (

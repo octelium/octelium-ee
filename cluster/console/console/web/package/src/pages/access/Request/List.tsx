@@ -30,6 +30,7 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
+import { getOriginLabel, hasOrigin } from "../Origin";
 import { getStatusMeta, getUrgencyLabel } from "./utils";
 
 export const LabelComponent = (props: { item: Request }) => {
@@ -103,6 +104,11 @@ export const LabelComponent = (props: { item: Request }) => {
       )}
       {(policyRef?.name || policyRef?.uid) && (
         <ResourceListLabel itemRef={policyRef} />
+      )}
+      {hasOrigin(item.status?.origin) && (
+        <ResourceListLabel label="Created from">
+          {getOriginLabel(item.status!.origin!.type)}
+        </ResourceListLabel>
       )}
     </ResourceListLabelWrap>
   );

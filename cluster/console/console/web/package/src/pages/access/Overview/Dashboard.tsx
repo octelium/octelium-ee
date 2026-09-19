@@ -11,11 +11,14 @@ import {
   ClipboardCheck,
   Inbox,
   Layers,
+  Plug,
+  Send,
   Shield,
   Timer,
 } from "lucide-react";
 import * as React from "react";
 import Grants from "./Grants";
+import Integrations from "./Integrations";
 import Inventory from "./Inventory";
 import Queue from "./Queue";
 import Requests from "./Requests";
@@ -27,11 +30,17 @@ const SHORTCUTS = [
   { label: "Reviews", to: "/access/reviews", icon: ClipboardCheck },
   { label: "Policies", to: "/access/policies", icon: Shield },
   { label: "Catalogs", to: "/access/catalogs", icon: Layers },
+  { label: "Integrations", to: "/access/integrations", icon: Plug },
   { label: "Pending", to: "/access/requests?state=PENDING", icon: Timer },
   {
     label: "Past deadline",
     to: "/access/requests?isDeadlinePassed=true",
     icon: CalendarClock,
+  },
+  {
+    label: "Failing presentations",
+    to: "/access/integrationbindings?isFailing=true",
+    icon: Send,
   },
 ];
 
@@ -71,6 +80,10 @@ const Dashboard = () => {
 
         <Deferred height={620}>
           <Workflow periodMinutes={periodMinutes} />
+        </Deferred>
+
+        <Deferred height={620}>
+          <Integrations periodMinutes={periodMinutes} />
         </Deferred>
 
         <Deferred height={420}>

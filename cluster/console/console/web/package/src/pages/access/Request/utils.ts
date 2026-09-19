@@ -1,5 +1,22 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
+import { Duration } from "@/apis/metav1/metav1";
 import { match } from "ts-pattern";
+
+export const formatDuration = (duration?: Duration): string => {
+  const type = duration?.type;
+  if (type?.oneofKind === "milliseconds")
+    return `${type.milliseconds.toLocaleString()} milliseconds`;
+  if (type?.oneofKind === "seconds")
+    return `${type.seconds.toLocaleString()} seconds`;
+  if (type?.oneofKind === "minutes")
+    return `${type.minutes.toLocaleString()} minutes`;
+  if (type?.oneofKind === "hours") return `${type.hours.toLocaleString()} hours`;
+  if (type?.oneofKind === "days") return `${type.days.toLocaleString()} days`;
+  if (type?.oneofKind === "weeks") return `${type.weeks.toLocaleString()} weeks`;
+  if (type?.oneofKind === "months")
+    return `${type.months.toLocaleString()} months`;
+  return "Not set";
+};
 
 export const getStatusMeta = (
   status?: AccessP.Request_Status_State_Status,

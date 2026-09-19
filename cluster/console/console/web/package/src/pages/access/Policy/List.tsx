@@ -31,8 +31,23 @@ const ItemDetails = (props: { item: Policy; domain: string }) => {
   return <div></div>;
 };
 
+const surfaceCount = (item: Policy): number =>
+  (item.spec?.rules ?? []).reduce(
+    (total, rule) =>
+      total +
+      rule.notifications.length +
+      (rule.action?.type.oneofKind === "review"
+        ? rule.action.type.review.steps.reduce(
+            (steps, step) => steps + step.surfaces.length,
+            0,
+          )
+        : 0),
+    0,
+  );
+
 export const LabelComponent = (props: { item: Policy }) => {
   const { item } = props;
+  const surfaces = surfaceCount(item);
 
   return (
     <ResourceListLabelWrap>
@@ -43,6 +58,11 @@ export const LabelComponent = (props: { item: Policy }) => {
       )}
       {!!item.spec?.rules?.length && (
         <ResourceListLabel>{item.spec.rules.length} Rules</ResourceListLabel>
+      )}
+      {surfaces > 0 && (
+        <ResourceListLabel label="Integration surfaces">
+          {surfaces}
+        </ResourceListLabel>
       )}
     </ResourceListLabelWrap>
   );

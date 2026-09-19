@@ -1,5 +1,8 @@
 import { Request_Status_State_Status } from "@/apis/accessv1/accessv1";
-import { ListRequestOptions } from "@/apis/visibilityv1/access/vaccessv1";
+import {
+  ListIntegrationBindingOptions,
+  ListRequestOptions,
+} from "@/apis/visibilityv1/access/vaccessv1";
 import {
   CommonListOptions_OrderBy_Mode,
   CommonListOptions_OrderBy_Type,
@@ -22,6 +25,10 @@ export const ACCESS_SCOPE: ClusterScope = {
     GetClusterSummaryRequest_Kind.ACCESS_REVIEW,
     GetClusterSummaryRequest_Kind.ACCESS_POLICY,
     GetClusterSummaryRequest_Kind.ACCESS_CATALOG,
+    GetClusterSummaryRequest_Kind.ACCESS_INTEGRATION,
+    GetClusterSummaryRequest_Kind.ACCESS_INTEGRATION_IDENTITY,
+    GetClusterSummaryRequest_Kind.ACCESS_INTEGRATION_BINDING,
+    GetClusterSummaryRequest_Kind.ACCESS_SECRET,
   ],
 };
 
@@ -69,6 +76,28 @@ export const useActiveGrants = (priority: number = QUERY_PRIORITY.low) =>
               },
             },
             isActive: true,
+          }),
+          { abort: signal },
+        )
+      ).response,
+  });
+
+export const useFailingBindings = (priority: number = QUERY_PRIORITY.low) =>
+  useDashboardQuery({
+    queryKey: [...dashboardKeys.queue("access", "failingBindings")],
+    priority,
+    fetch: async (signal) =>
+      (
+        await getClientVisibilityAccess().listIntegrationBinding(
+          ListIntegrationBindingOptions.create({
+            common: {
+              itemsPerPage: QUEUE_ITEMS,
+              orderBy: {
+                type: CommonListOptions_OrderBy_Type.CREATED_AT,
+                mode: CommonListOptions_OrderBy_Mode.DESC,
+              },
+            },
+            isFailing: true,
           }),
           { abort: signal },
         )
