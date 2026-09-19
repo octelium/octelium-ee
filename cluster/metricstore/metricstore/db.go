@@ -281,6 +281,58 @@ func createMetricStoreTables(ctx context.Context, tx *sql.Tx) error {
 		)`,
 		`CREATE TABLE IF NOT EXISTS metric_number_staging AS SELECT * FROM metric_number_points WHERE false`,
 
+		`CREATE TABLE IF NOT EXISTS metric_descriptors_staging (
+			id VARCHAR NOT NULL,
+			name VARCHAR NOT NULL,
+			kind VARCHAR NOT NULL,
+			number_value_type VARCHAR NOT NULL,
+			unit VARCHAR NOT NULL,
+			description VARCHAR NOT NULL,
+			temporality VARCHAR NOT NULL,
+			scope_name VARCHAR NOT NULL,
+			scope_version VARCHAR NOT NULL,
+			scope_schema_url VARCHAR NOT NULL,
+			explicit_bounds VARCHAR,
+			exp_min_scale INTEGER,
+			exp_max_scale INTEGER,
+			exp_zero_threshold_min DOUBLE,
+			exp_zero_threshold_max DOUBLE,
+			created_at BIGINT NOT NULL,
+			updated_at BIGINT NOT NULL
+		)`,
+		`CREATE TABLE IF NOT EXISTS metric_series_staging (
+			id VARCHAR NOT NULL,
+			descriptor_id VARCHAR NOT NULL,
+			labels VARCHAR NOT NULL,
+			labels_key VARCHAR NOT NULL,
+			component_type VARCHAR NOT NULL,
+			component_namespace VARCHAR NOT NULL,
+			component_name VARCHAR NOT NULL,
+			created_at BIGINT NOT NULL,
+			updated_at BIGINT NOT NULL
+		)`,
+		`CREATE TABLE IF NOT EXISTS metric_series_attributes_staging (
+			series_id VARCHAR NOT NULL,
+			descriptor_id VARCHAR NOT NULL,
+			key VARCHAR NOT NULL,
+			value_kind VARCHAR NOT NULL,
+			value_key VARCHAR NOT NULL,
+			value_string VARCHAR,
+			value_bool BOOLEAN,
+			value_int BIGINT,
+			value_double DOUBLE,
+			source_mask INTEGER NOT NULL,
+			updated_at BIGINT NOT NULL
+		)`,
+		`CREATE TABLE IF NOT EXISTS metric_attribute_keys_staging (
+			descriptor_id VARCHAR NOT NULL,
+			key VARCHAR NOT NULL,
+			value_kind VARCHAR NOT NULL,
+			source_mask INTEGER NOT NULL,
+			first_seen_at BIGINT NOT NULL,
+			last_seen_at BIGINT NOT NULL
+		)`,
+
 		`CREATE TABLE IF NOT EXISTS metric_histogram_staging (
 			point_id VARCHAR NOT NULL,
 			timestamp BIGINT NOT NULL,

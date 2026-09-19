@@ -1058,37 +1058,69 @@ func (s *srvMetric) storeMetricWriteBatch(ctx context.Context, batch *metricWrit
 }
 
 func upsertMetricMetadata(ctx context.Context, conn *sql.Conn, batch *metricWriteBatch) error {
-	now := time.Now().UTC()
+	now := metricTimeToDB(time.Now().UTC())
 
-	for _, descriptor := range batch.descriptors {
-		var explicitBounds any
-		if descriptor.kind == vmetricsv1.MetricDescriptor_HISTOGRAM {
-			explicitBounds = marshalFloat64Slice(descriptor.explicitBounds)
-		}
-		var expMinimumScale any
-		if descriptor.expMinimumScale != nil {
-			expMinimumScale = *descriptor.expMinimumScale
-		}
-		var expMaximumScale any
-		if descriptor.expMaximumScale != nil {
-			expMaximumScale = *descriptor.expMaximumScale
-		}
-		var expMinimumThreshold any
-		if descriptor.expMinimumThreshold != nil {
-			expMinimumThreshold = *descriptor.expMinimumThreshold
-		}
-		var expMaximumThreshold any
-		if descriptor.expMaximumThreshold != nil {
-			expMaximumThreshold = *descriptor.expMaximumThreshold
-		}
+	if err := upsertMetricDescriptors(ctx, conn, batch, now); err != nil {
+		return err
+	}
+	if err := upsertMetricSeries(ctx, conn, batch, now); err != nil {
+		return err
+	}
+	if err := upsertMetricSeriesAttributes(ctx, conn, batch, now); err != nil {
+		return err
+	}
 
-		_, err := conn.ExecContext(ctx, `
+	return upsertMetricAttributeKeys(ctx, conn, batch, now)
+}
+
+func stageRows(ctx context.Context, conn *sql.Conn, table string, fn func(*duckdb.Appender) error) error {
+	if _, err := conn.ExecContext(ctx, fmt.Sprintf(`DELETE FROM %s`, table)); err != nil {
+		return err
+	}
+
+	return appendRows(conn, table, fn)
+}
+
+func upsertMetricDescriptors(ctx context.Context, conn *sql.Conn, batch *metricWriteBatch, now int64) error {
+	if len(batch.descriptors) == 0 {
+		return nil
+	}
+
+	if err := stageRows(ctx, conn, "metric_descriptors_staging", func(appender *duckdb.Appender) error {
+		for _, descriptor := range batch.descriptors {
+			var explicitBounds any
+			if descriptor.kind == vmetricsv1.MetricDescriptor_HISTOGRAM {
+				explicitBounds = marshalFloat64Slice(descriptor.explicitBounds)
+			}
+
+			if err := appender.AppendRow(descriptor.id, descriptor.name, kindToString(descriptor.kind),
+				numberValueTypeToString(descriptor.numberValueType), descriptor.unit, descriptor.description,
+				temporalityToString(descriptor.temporality), descriptor.scopeName, descriptor.scopeVersion,
+				descriptor.scopeSchemaURL, explicitBounds,
+				nullableInt32(descriptor.expMinimumScale), nullableInt32(descriptor.expMaximumScale),
+				nullableFloat64(descriptor.expMinimumThreshold), nullableFloat64(descriptor.expMaximumThreshold),
+				now, now); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	if _, err := conn.ExecContext(ctx, `
 INSERT INTO metric_descriptors (
 	id, name, kind, number_value_type, unit, description, temporality,
 	scope_name, scope_version, scope_schema_url, explicit_bounds,
 	exp_min_scale, exp_max_scale, exp_zero_threshold_min, exp_zero_threshold_max,
 	created_at, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+)
+SELECT
+	id, name, kind, number_value_type, unit, description, temporality,
+	scope_name, scope_version, scope_schema_url, CAST(explicit_bounds AS JSON),
+	exp_min_scale, exp_max_scale, exp_zero_threshold_min, exp_zero_threshold_max,
+	created_at, updated_at
+FROM metric_descriptors_staging
 ON CONFLICT (id) DO UPDATE SET
 	description = CASE
 		WHEN EXCLUDED.description = '' THEN metric_descriptors.description
@@ -1115,97 +1147,163 @@ ON CONFLICT (id) DO UPDATE SET
 		ELSE GREATEST(metric_descriptors.exp_zero_threshold_max, EXCLUDED.exp_zero_threshold_max)
 	END,
 	updated_at = EXCLUDED.updated_at
-`, descriptor.id, descriptor.name, kindToString(descriptor.kind), numberValueTypeToString(descriptor.numberValueType),
-			descriptor.unit, descriptor.description, temporalityToString(descriptor.temporality), descriptor.scopeName,
-			descriptor.scopeVersion, descriptor.scopeSchemaURL, explicitBounds, expMinimumScale, expMaximumScale,
-			expMinimumThreshold, expMaximumThreshold, metricTimeToDB(now), metricTimeToDB(now))
-		if err != nil {
-			return err
-		}
+`); err != nil {
+		return err
 	}
 
-	for _, series := range batch.series {
-		_, err := conn.ExecContext(ctx, `
+	_, err := conn.ExecContext(ctx, `DELETE FROM metric_descriptors_staging`)
+	return err
+}
+
+func upsertMetricSeries(ctx context.Context, conn *sql.Conn, batch *metricWriteBatch, now int64) error {
+	if len(batch.series) == 0 {
+		return nil
+	}
+
+	if err := stageRows(ctx, conn, "metric_series_staging", func(appender *duckdb.Appender) error {
+		for _, series := range batch.series {
+			if err := appender.AppendRow(series.id, series.descriptorID, series.labelsJSON, series.labelsKey,
+				series.componentType, series.componentNamespace, series.componentName, now, now); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	if _, err := conn.ExecContext(ctx, `
 INSERT INTO metric_series (
 	id, descriptor_id, labels, labels_key,
 	component_type, component_namespace, component_name,
 	created_at, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+)
+SELECT
+	id, descriptor_id, CAST(labels AS JSON), labels_key,
+	component_type, component_namespace, component_name,
+	created_at, updated_at
+FROM metric_series_staging
 ON CONFLICT (id) DO UPDATE SET updated_at = EXCLUDED.updated_at
-`, series.id, series.descriptorID, series.labelsJSON, series.labelsKey, series.componentType, series.componentNamespace,
-			series.componentName, metricTimeToDB(now), metricTimeToDB(now))
-		if err != nil {
-			return err
-		}
+`); err != nil {
+		return err
+	}
 
-		for _, attr := range series.labels {
-			var stringValue any
-			var boolValue any
-			var intValue any
-			var doubleValue any
-			switch attr.Kind {
-			case "STRING":
-				stringValue = attr.StringValue
-			case "BOOL":
-				if attr.BoolValue != nil {
-					boolValue = *attr.BoolValue
+	_, err := conn.ExecContext(ctx, `DELETE FROM metric_series_staging`)
+	return err
+}
+
+func upsertMetricSeriesAttributes(ctx context.Context, conn *sql.Conn, batch *metricWriteBatch, now int64) error {
+	total := 0
+	for _, series := range batch.series {
+		total += len(series.labels)
+	}
+	if total == 0 {
+		return nil
+	}
+
+	if err := stageRows(ctx, conn, "metric_series_attributes_staging", func(appender *duckdb.Appender) error {
+		for _, series := range batch.series {
+			for _, attr := range series.labels {
+				var stringValue any
+				var boolValue any
+				var intValue any
+				var doubleValue any
+				switch attr.Kind {
+				case "STRING":
+					stringValue = attr.StringValue
+				case "BOOL":
+					boolValue = nullableBool(attr.BoolValue)
+				case "INT64":
+					intValue = nullableInt64(attr.IntValue)
+				case "DOUBLE":
+					doubleValue = nullableFloat64(attr.DoubleValue)
 				}
-			case "INT64":
-				if attr.IntValue != nil {
-					intValue = *attr.IntValue
-				}
-			case "DOUBLE":
-				if attr.DoubleValue != nil {
-					doubleValue = *attr.DoubleValue
+
+				if err := appender.AppendRow(series.id, series.descriptorID, attr.Key, attr.Kind, attr.valueKey(),
+					stringValue, boolValue, intValue, doubleValue, int32(attr.SourceMask), now); err != nil {
+					return err
 				}
 			}
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
 
-			_, err := conn.ExecContext(ctx, `
+	if _, err := conn.ExecContext(ctx, `
 INSERT INTO metric_series_attributes (
 	series_id, descriptor_id, key, value_kind, value_key,
 	value_string, value_bool, value_int, value_double,
 	source_mask, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+)
+SELECT
+	series_id, descriptor_id, key, value_kind, value_key,
+	value_string, value_bool, value_int, value_double,
+	source_mask, updated_at
+FROM metric_series_attributes_staging
 ON CONFLICT (series_id, key) DO UPDATE SET
 	source_mask = metric_series_attributes.source_mask | EXCLUDED.source_mask,
 	updated_at = EXCLUDED.updated_at
-`, series.id, series.descriptorID, attr.Key, attr.Kind, attr.valueKey(), stringValue, boolValue, intValue,
-				doubleValue, attr.SourceMask, metricTimeToDB(now))
-			if err != nil {
+`); err != nil {
+		return err
+	}
+
+	_, err := conn.ExecContext(ctx, `DELETE FROM metric_series_attributes_staging`)
+	return err
+}
+
+func upsertMetricAttributeKeys(ctx context.Context, conn *sql.Conn, batch *metricWriteBatch, now int64) error {
+	if len(batch.attributes) == 0 {
+		return nil
+	}
+
+	if err := stageRows(ctx, conn, "metric_attribute_keys_staging", func(appender *duckdb.Appender) error {
+		for _, attr := range batch.attributes {
+			if err := appender.AppendRow(attr.descriptorID, attr.key, attr.valueKind,
+				int32(attr.sourceMask), now, now); err != nil {
 				return err
 			}
 		}
+		return nil
+	}); err != nil {
+		return err
 	}
 
-	for _, attr := range batch.attributes {
-		var existingValueKind string
-		err := conn.QueryRowContext(ctx, `
-SELECT value_kind
-FROM metric_attribute_keys
-WHERE descriptor_id = ? AND key = ?
-`, attr.descriptorID, attr.key).Scan(&existingValueKind)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			return err
-		}
-		if err == nil && existingValueKind != attr.valueKind {
-			return status.Errorf(codes.InvalidArgument,
-				"metric attribute %s changed value kind from %s to %s", attr.key, existingValueKind, attr.valueKind)
-		}
+	var conflictKey string
+	var storedKind string
+	var stagedKind string
+	err := conn.QueryRowContext(ctx, `
+SELECT s.key, k.value_kind, s.value_kind
+FROM metric_attribute_keys_staging s
+JOIN metric_attribute_keys k ON k.descriptor_id = s.descriptor_id AND k.key = s.key
+WHERE k.value_kind <> s.value_kind
+LIMIT 1
+`).Scan(&conflictKey, &storedKind, &stagedKind)
+	switch {
+	case err == nil:
+		_, _ = conn.ExecContext(ctx, `DELETE FROM metric_attribute_keys_staging`)
+		return status.Errorf(codes.InvalidArgument,
+			"metric attribute %s changed value kind from %s to %s", conflictKey, storedKind, stagedKind)
+	case !errors.Is(err, sql.ErrNoRows):
+		return err
+	}
 
-		_, err = conn.ExecContext(ctx, `
+	if _, err := conn.ExecContext(ctx, `
 INSERT INTO metric_attribute_keys (
 	descriptor_id, key, value_kind, source_mask, first_seen_at, last_seen_at
-) VALUES (?, ?, ?, ?, ?, ?)
+)
+SELECT
+	descriptor_id, key, value_kind, source_mask, first_seen_at, last_seen_at
+FROM metric_attribute_keys_staging
 ON CONFLICT (descriptor_id, key) DO UPDATE SET
 	source_mask = metric_attribute_keys.source_mask | EXCLUDED.source_mask,
 	last_seen_at = EXCLUDED.last_seen_at
-`, attr.descriptorID, attr.key, attr.valueKind, attr.sourceMask, metricTimeToDB(now), metricTimeToDB(now))
-		if err != nil {
-			return err
-		}
+`); err != nil {
+		return err
 	}
 
-	return nil
+	_, err = conn.ExecContext(ctx, `DELETE FROM metric_attribute_keys_staging`)
+	return err
 }
 
 func replaceNumberPoints(ctx context.Context, conn *sql.Conn, points []numberPointRecord) error {
@@ -1341,6 +1439,20 @@ func appendRows(conn *sql.Conn, table string, fn func(*duckdb.Appender) error) e
 }
 
 func nullableInt64(value *int64) any {
+	if value == nil {
+		return nil
+	}
+	return *value
+}
+
+func nullableInt32(value *int32) any {
+	if value == nil {
+		return nil
+	}
+	return *value
+}
+
+func nullableBool(value *bool) any {
 	if value == nil {
 		return nil
 	}
