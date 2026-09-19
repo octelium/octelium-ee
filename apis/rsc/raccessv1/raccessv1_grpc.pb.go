@@ -53,18 +53,18 @@ const (
 	ResourceService_ListReview_FullMethodName                = "/octelium.api.rsc.access.v1.ResourceService/ListReview"
 	ResourceService_DeleteReview_FullMethodName              = "/octelium.api.rsc.access.v1.ResourceService/DeleteReview"
 	ResourceService_WatchReview_FullMethodName               = "/octelium.api.rsc.access.v1.ResourceService/WatchReview"
+	ResourceService_CreateSecret_FullMethodName              = "/octelium.api.rsc.access.v1.ResourceService/CreateSecret"
+	ResourceService_UpdateSecret_FullMethodName              = "/octelium.api.rsc.access.v1.ResourceService/UpdateSecret"
+	ResourceService_GetSecret_FullMethodName                 = "/octelium.api.rsc.access.v1.ResourceService/GetSecret"
+	ResourceService_ListSecret_FullMethodName                = "/octelium.api.rsc.access.v1.ResourceService/ListSecret"
+	ResourceService_DeleteSecret_FullMethodName              = "/octelium.api.rsc.access.v1.ResourceService/DeleteSecret"
+	ResourceService_WatchSecret_FullMethodName               = "/octelium.api.rsc.access.v1.ResourceService/WatchSecret"
 	ResourceService_CreateIntegration_FullMethodName         = "/octelium.api.rsc.access.v1.ResourceService/CreateIntegration"
 	ResourceService_UpdateIntegration_FullMethodName         = "/octelium.api.rsc.access.v1.ResourceService/UpdateIntegration"
 	ResourceService_GetIntegration_FullMethodName            = "/octelium.api.rsc.access.v1.ResourceService/GetIntegration"
 	ResourceService_ListIntegration_FullMethodName           = "/octelium.api.rsc.access.v1.ResourceService/ListIntegration"
 	ResourceService_DeleteIntegration_FullMethodName         = "/octelium.api.rsc.access.v1.ResourceService/DeleteIntegration"
 	ResourceService_WatchIntegration_FullMethodName          = "/octelium.api.rsc.access.v1.ResourceService/WatchIntegration"
-	ResourceService_CreateIntegrationTarget_FullMethodName   = "/octelium.api.rsc.access.v1.ResourceService/CreateIntegrationTarget"
-	ResourceService_UpdateIntegrationTarget_FullMethodName   = "/octelium.api.rsc.access.v1.ResourceService/UpdateIntegrationTarget"
-	ResourceService_GetIntegrationTarget_FullMethodName      = "/octelium.api.rsc.access.v1.ResourceService/GetIntegrationTarget"
-	ResourceService_ListIntegrationTarget_FullMethodName     = "/octelium.api.rsc.access.v1.ResourceService/ListIntegrationTarget"
-	ResourceService_DeleteIntegrationTarget_FullMethodName   = "/octelium.api.rsc.access.v1.ResourceService/DeleteIntegrationTarget"
-	ResourceService_WatchIntegrationTarget_FullMethodName    = "/octelium.api.rsc.access.v1.ResourceService/WatchIntegrationTarget"
 	ResourceService_CreateIntegrationIdentity_FullMethodName = "/octelium.api.rsc.access.v1.ResourceService/CreateIntegrationIdentity"
 	ResourceService_UpdateIntegrationIdentity_FullMethodName = "/octelium.api.rsc.access.v1.ResourceService/UpdateIntegrationIdentity"
 	ResourceService_GetIntegrationIdentity_FullMethodName    = "/octelium.api.rsc.access.v1.ResourceService/GetIntegrationIdentity"
@@ -107,18 +107,18 @@ type ResourceServiceClient interface {
 	ListReview(ctx context.Context, in *rmetav1.ListOptions, opts ...grpc.CallOption) (*accessv1.ReviewList, error)
 	DeleteReview(ctx context.Context, in *rmetav1.DeleteOptions, opts ...grpc.CallOption) (*rmetav1.OperationResult, error)
 	WatchReview(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error)
+	CreateSecret(ctx context.Context, in *accessv1.Secret, opts ...grpc.CallOption) (*accessv1.Secret, error)
+	UpdateSecret(ctx context.Context, in *accessv1.Secret, opts ...grpc.CallOption) (*accessv1.Secret, error)
+	GetSecret(ctx context.Context, in *rmetav1.GetOptions, opts ...grpc.CallOption) (*accessv1.Secret, error)
+	ListSecret(ctx context.Context, in *rmetav1.ListOptions, opts ...grpc.CallOption) (*accessv1.SecretList, error)
+	DeleteSecret(ctx context.Context, in *rmetav1.DeleteOptions, opts ...grpc.CallOption) (*rmetav1.OperationResult, error)
+	WatchSecret(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error)
 	CreateIntegration(ctx context.Context, in *accessv1.Integration, opts ...grpc.CallOption) (*accessv1.Integration, error)
 	UpdateIntegration(ctx context.Context, in *accessv1.Integration, opts ...grpc.CallOption) (*accessv1.Integration, error)
 	GetIntegration(ctx context.Context, in *rmetav1.GetOptions, opts ...grpc.CallOption) (*accessv1.Integration, error)
 	ListIntegration(ctx context.Context, in *rmetav1.ListOptions, opts ...grpc.CallOption) (*accessv1.IntegrationList, error)
 	DeleteIntegration(ctx context.Context, in *rmetav1.DeleteOptions, opts ...grpc.CallOption) (*rmetav1.OperationResult, error)
 	WatchIntegration(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error)
-	CreateIntegrationTarget(ctx context.Context, in *accessv1.IntegrationTarget, opts ...grpc.CallOption) (*accessv1.IntegrationTarget, error)
-	UpdateIntegrationTarget(ctx context.Context, in *accessv1.IntegrationTarget, opts ...grpc.CallOption) (*accessv1.IntegrationTarget, error)
-	GetIntegrationTarget(ctx context.Context, in *rmetav1.GetOptions, opts ...grpc.CallOption) (*accessv1.IntegrationTarget, error)
-	ListIntegrationTarget(ctx context.Context, in *rmetav1.ListOptions, opts ...grpc.CallOption) (*accessv1.IntegrationTargetList, error)
-	DeleteIntegrationTarget(ctx context.Context, in *rmetav1.DeleteOptions, opts ...grpc.CallOption) (*rmetav1.OperationResult, error)
-	WatchIntegrationTarget(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error)
 	CreateIntegrationIdentity(ctx context.Context, in *accessv1.IntegrationIdentity, opts ...grpc.CallOption) (*accessv1.IntegrationIdentity, error)
 	UpdateIntegrationIdentity(ctx context.Context, in *accessv1.IntegrationIdentity, opts ...grpc.CallOption) (*accessv1.IntegrationIdentity, error)
 	GetIntegrationIdentity(ctx context.Context, in *rmetav1.GetOptions, opts ...grpc.CallOption) (*accessv1.IntegrationIdentity, error)
@@ -417,6 +417,75 @@ func (c *resourceServiceClient) WatchReview(ctx context.Context, in *rmetav1.Wat
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ResourceService_WatchReviewClient = grpc.ServerStreamingClient[rmetav1.WatchEvent]
 
+func (c *resourceServiceClient) CreateSecret(ctx context.Context, in *accessv1.Secret, opts ...grpc.CallOption) (*accessv1.Secret, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(accessv1.Secret)
+	err := c.cc.Invoke(ctx, ResourceService_CreateSecret_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) UpdateSecret(ctx context.Context, in *accessv1.Secret, opts ...grpc.CallOption) (*accessv1.Secret, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(accessv1.Secret)
+	err := c.cc.Invoke(ctx, ResourceService_UpdateSecret_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) GetSecret(ctx context.Context, in *rmetav1.GetOptions, opts ...grpc.CallOption) (*accessv1.Secret, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(accessv1.Secret)
+	err := c.cc.Invoke(ctx, ResourceService_GetSecret_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) ListSecret(ctx context.Context, in *rmetav1.ListOptions, opts ...grpc.CallOption) (*accessv1.SecretList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(accessv1.SecretList)
+	err := c.cc.Invoke(ctx, ResourceService_ListSecret_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) DeleteSecret(ctx context.Context, in *rmetav1.DeleteOptions, opts ...grpc.CallOption) (*rmetav1.OperationResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(rmetav1.OperationResult)
+	err := c.cc.Invoke(ctx, ResourceService_DeleteSecret_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) WatchSecret(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[4], ResourceService_WatchSecret_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[rmetav1.WatchOptions, rmetav1.WatchEvent]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ResourceService_WatchSecretClient = grpc.ServerStreamingClient[rmetav1.WatchEvent]
+
 func (c *resourceServiceClient) CreateIntegration(ctx context.Context, in *accessv1.Integration, opts ...grpc.CallOption) (*accessv1.Integration, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(accessv1.Integration)
@@ -469,7 +538,7 @@ func (c *resourceServiceClient) DeleteIntegration(ctx context.Context, in *rmeta
 
 func (c *resourceServiceClient) WatchIntegration(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[4], ResourceService_WatchIntegration_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[5], ResourceService_WatchIntegration_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -485,75 +554,6 @@ func (c *resourceServiceClient) WatchIntegration(ctx context.Context, in *rmetav
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ResourceService_WatchIntegrationClient = grpc.ServerStreamingClient[rmetav1.WatchEvent]
-
-func (c *resourceServiceClient) CreateIntegrationTarget(ctx context.Context, in *accessv1.IntegrationTarget, opts ...grpc.CallOption) (*accessv1.IntegrationTarget, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(accessv1.IntegrationTarget)
-	err := c.cc.Invoke(ctx, ResourceService_CreateIntegrationTarget_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *resourceServiceClient) UpdateIntegrationTarget(ctx context.Context, in *accessv1.IntegrationTarget, opts ...grpc.CallOption) (*accessv1.IntegrationTarget, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(accessv1.IntegrationTarget)
-	err := c.cc.Invoke(ctx, ResourceService_UpdateIntegrationTarget_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *resourceServiceClient) GetIntegrationTarget(ctx context.Context, in *rmetav1.GetOptions, opts ...grpc.CallOption) (*accessv1.IntegrationTarget, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(accessv1.IntegrationTarget)
-	err := c.cc.Invoke(ctx, ResourceService_GetIntegrationTarget_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *resourceServiceClient) ListIntegrationTarget(ctx context.Context, in *rmetav1.ListOptions, opts ...grpc.CallOption) (*accessv1.IntegrationTargetList, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(accessv1.IntegrationTargetList)
-	err := c.cc.Invoke(ctx, ResourceService_ListIntegrationTarget_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *resourceServiceClient) DeleteIntegrationTarget(ctx context.Context, in *rmetav1.DeleteOptions, opts ...grpc.CallOption) (*rmetav1.OperationResult, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(rmetav1.OperationResult)
-	err := c.cc.Invoke(ctx, ResourceService_DeleteIntegrationTarget_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *resourceServiceClient) WatchIntegrationTarget(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[5], ResourceService_WatchIntegrationTarget_FullMethodName, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &grpc.GenericClientStream[rmetav1.WatchOptions, rmetav1.WatchEvent]{ClientStream: stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type ResourceService_WatchIntegrationTargetClient = grpc.ServerStreamingClient[rmetav1.WatchEvent]
 
 func (c *resourceServiceClient) CreateIntegrationIdentity(ctx context.Context, in *accessv1.IntegrationIdentity, opts ...grpc.CallOption) (*accessv1.IntegrationIdentity, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -721,18 +721,18 @@ type ResourceServiceServer interface {
 	ListReview(context.Context, *rmetav1.ListOptions) (*accessv1.ReviewList, error)
 	DeleteReview(context.Context, *rmetav1.DeleteOptions) (*rmetav1.OperationResult, error)
 	WatchReview(*rmetav1.WatchOptions, grpc.ServerStreamingServer[rmetav1.WatchEvent]) error
+	CreateSecret(context.Context, *accessv1.Secret) (*accessv1.Secret, error)
+	UpdateSecret(context.Context, *accessv1.Secret) (*accessv1.Secret, error)
+	GetSecret(context.Context, *rmetav1.GetOptions) (*accessv1.Secret, error)
+	ListSecret(context.Context, *rmetav1.ListOptions) (*accessv1.SecretList, error)
+	DeleteSecret(context.Context, *rmetav1.DeleteOptions) (*rmetav1.OperationResult, error)
+	WatchSecret(*rmetav1.WatchOptions, grpc.ServerStreamingServer[rmetav1.WatchEvent]) error
 	CreateIntegration(context.Context, *accessv1.Integration) (*accessv1.Integration, error)
 	UpdateIntegration(context.Context, *accessv1.Integration) (*accessv1.Integration, error)
 	GetIntegration(context.Context, *rmetav1.GetOptions) (*accessv1.Integration, error)
 	ListIntegration(context.Context, *rmetav1.ListOptions) (*accessv1.IntegrationList, error)
 	DeleteIntegration(context.Context, *rmetav1.DeleteOptions) (*rmetav1.OperationResult, error)
 	WatchIntegration(*rmetav1.WatchOptions, grpc.ServerStreamingServer[rmetav1.WatchEvent]) error
-	CreateIntegrationTarget(context.Context, *accessv1.IntegrationTarget) (*accessv1.IntegrationTarget, error)
-	UpdateIntegrationTarget(context.Context, *accessv1.IntegrationTarget) (*accessv1.IntegrationTarget, error)
-	GetIntegrationTarget(context.Context, *rmetav1.GetOptions) (*accessv1.IntegrationTarget, error)
-	ListIntegrationTarget(context.Context, *rmetav1.ListOptions) (*accessv1.IntegrationTargetList, error)
-	DeleteIntegrationTarget(context.Context, *rmetav1.DeleteOptions) (*rmetav1.OperationResult, error)
-	WatchIntegrationTarget(*rmetav1.WatchOptions, grpc.ServerStreamingServer[rmetav1.WatchEvent]) error
 	CreateIntegrationIdentity(context.Context, *accessv1.IntegrationIdentity) (*accessv1.IntegrationIdentity, error)
 	UpdateIntegrationIdentity(context.Context, *accessv1.IntegrationIdentity) (*accessv1.IntegrationIdentity, error)
 	GetIntegrationIdentity(context.Context, *rmetav1.GetOptions) (*accessv1.IntegrationIdentity, error)
@@ -827,6 +827,24 @@ func (UnimplementedResourceServiceServer) DeleteReview(context.Context, *rmetav1
 func (UnimplementedResourceServiceServer) WatchReview(*rmetav1.WatchOptions, grpc.ServerStreamingServer[rmetav1.WatchEvent]) error {
 	return status.Errorf(codes.Unimplemented, "method WatchReview not implemented")
 }
+func (UnimplementedResourceServiceServer) CreateSecret(context.Context, *accessv1.Secret) (*accessv1.Secret, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateSecret not implemented")
+}
+func (UnimplementedResourceServiceServer) UpdateSecret(context.Context, *accessv1.Secret) (*accessv1.Secret, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateSecret not implemented")
+}
+func (UnimplementedResourceServiceServer) GetSecret(context.Context, *rmetav1.GetOptions) (*accessv1.Secret, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSecret not implemented")
+}
+func (UnimplementedResourceServiceServer) ListSecret(context.Context, *rmetav1.ListOptions) (*accessv1.SecretList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListSecret not implemented")
+}
+func (UnimplementedResourceServiceServer) DeleteSecret(context.Context, *rmetav1.DeleteOptions) (*rmetav1.OperationResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteSecret not implemented")
+}
+func (UnimplementedResourceServiceServer) WatchSecret(*rmetav1.WatchOptions, grpc.ServerStreamingServer[rmetav1.WatchEvent]) error {
+	return status.Errorf(codes.Unimplemented, "method WatchSecret not implemented")
+}
 func (UnimplementedResourceServiceServer) CreateIntegration(context.Context, *accessv1.Integration) (*accessv1.Integration, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateIntegration not implemented")
 }
@@ -844,24 +862,6 @@ func (UnimplementedResourceServiceServer) DeleteIntegration(context.Context, *rm
 }
 func (UnimplementedResourceServiceServer) WatchIntegration(*rmetav1.WatchOptions, grpc.ServerStreamingServer[rmetav1.WatchEvent]) error {
 	return status.Errorf(codes.Unimplemented, "method WatchIntegration not implemented")
-}
-func (UnimplementedResourceServiceServer) CreateIntegrationTarget(context.Context, *accessv1.IntegrationTarget) (*accessv1.IntegrationTarget, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateIntegrationTarget not implemented")
-}
-func (UnimplementedResourceServiceServer) UpdateIntegrationTarget(context.Context, *accessv1.IntegrationTarget) (*accessv1.IntegrationTarget, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateIntegrationTarget not implemented")
-}
-func (UnimplementedResourceServiceServer) GetIntegrationTarget(context.Context, *rmetav1.GetOptions) (*accessv1.IntegrationTarget, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetIntegrationTarget not implemented")
-}
-func (UnimplementedResourceServiceServer) ListIntegrationTarget(context.Context, *rmetav1.ListOptions) (*accessv1.IntegrationTargetList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListIntegrationTarget not implemented")
-}
-func (UnimplementedResourceServiceServer) DeleteIntegrationTarget(context.Context, *rmetav1.DeleteOptions) (*rmetav1.OperationResult, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteIntegrationTarget not implemented")
-}
-func (UnimplementedResourceServiceServer) WatchIntegrationTarget(*rmetav1.WatchOptions, grpc.ServerStreamingServer[rmetav1.WatchEvent]) error {
-	return status.Errorf(codes.Unimplemented, "method WatchIntegrationTarget not implemented")
 }
 func (UnimplementedResourceServiceServer) CreateIntegrationIdentity(context.Context, *accessv1.IntegrationIdentity) (*accessv1.IntegrationIdentity, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateIntegrationIdentity not implemented")
@@ -1324,6 +1324,107 @@ func _ResourceService_WatchReview_Handler(srv interface{}, stream grpc.ServerStr
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ResourceService_WatchReviewServer = grpc.ServerStreamingServer[rmetav1.WatchEvent]
 
+func _ResourceService_CreateSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(accessv1.Secret)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).CreateSecret(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_CreateSecret_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).CreateSecret(ctx, req.(*accessv1.Secret))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_UpdateSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(accessv1.Secret)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).UpdateSecret(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_UpdateSecret_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).UpdateSecret(ctx, req.(*accessv1.Secret))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_GetSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(rmetav1.GetOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).GetSecret(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_GetSecret_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).GetSecret(ctx, req.(*rmetav1.GetOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_ListSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(rmetav1.ListOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).ListSecret(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_ListSecret_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).ListSecret(ctx, req.(*rmetav1.ListOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_DeleteSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(rmetav1.DeleteOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).DeleteSecret(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_DeleteSecret_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).DeleteSecret(ctx, req.(*rmetav1.DeleteOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_WatchSecret_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(rmetav1.WatchOptions)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ResourceServiceServer).WatchSecret(m, &grpc.GenericServerStream[rmetav1.WatchOptions, rmetav1.WatchEvent]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ResourceService_WatchSecretServer = grpc.ServerStreamingServer[rmetav1.WatchEvent]
+
 func _ResourceService_CreateIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(accessv1.Integration)
 	if err := dec(in); err != nil {
@@ -1424,107 +1525,6 @@ func _ResourceService_WatchIntegration_Handler(srv interface{}, stream grpc.Serv
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ResourceService_WatchIntegrationServer = grpc.ServerStreamingServer[rmetav1.WatchEvent]
-
-func _ResourceService_CreateIntegrationTarget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(accessv1.IntegrationTarget)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ResourceServiceServer).CreateIntegrationTarget(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ResourceService_CreateIntegrationTarget_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResourceServiceServer).CreateIntegrationTarget(ctx, req.(*accessv1.IntegrationTarget))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ResourceService_UpdateIntegrationTarget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(accessv1.IntegrationTarget)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ResourceServiceServer).UpdateIntegrationTarget(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ResourceService_UpdateIntegrationTarget_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResourceServiceServer).UpdateIntegrationTarget(ctx, req.(*accessv1.IntegrationTarget))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ResourceService_GetIntegrationTarget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(rmetav1.GetOptions)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ResourceServiceServer).GetIntegrationTarget(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ResourceService_GetIntegrationTarget_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResourceServiceServer).GetIntegrationTarget(ctx, req.(*rmetav1.GetOptions))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ResourceService_ListIntegrationTarget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(rmetav1.ListOptions)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ResourceServiceServer).ListIntegrationTarget(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ResourceService_ListIntegrationTarget_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResourceServiceServer).ListIntegrationTarget(ctx, req.(*rmetav1.ListOptions))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ResourceService_DeleteIntegrationTarget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(rmetav1.DeleteOptions)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ResourceServiceServer).DeleteIntegrationTarget(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ResourceService_DeleteIntegrationTarget_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResourceServiceServer).DeleteIntegrationTarget(ctx, req.(*rmetav1.DeleteOptions))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ResourceService_WatchIntegrationTarget_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(rmetav1.WatchOptions)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(ResourceServiceServer).WatchIntegrationTarget(m, &grpc.GenericServerStream[rmetav1.WatchOptions, rmetav1.WatchEvent]{ServerStream: stream})
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type ResourceService_WatchIntegrationTargetServer = grpc.ServerStreamingServer[rmetav1.WatchEvent]
 
 func _ResourceService_CreateIntegrationIdentity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(accessv1.IntegrationIdentity)
@@ -1816,6 +1816,26 @@ var ResourceService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ResourceService_DeleteReview_Handler,
 		},
 		{
+			MethodName: "CreateSecret",
+			Handler:    _ResourceService_CreateSecret_Handler,
+		},
+		{
+			MethodName: "UpdateSecret",
+			Handler:    _ResourceService_UpdateSecret_Handler,
+		},
+		{
+			MethodName: "GetSecret",
+			Handler:    _ResourceService_GetSecret_Handler,
+		},
+		{
+			MethodName: "ListSecret",
+			Handler:    _ResourceService_ListSecret_Handler,
+		},
+		{
+			MethodName: "DeleteSecret",
+			Handler:    _ResourceService_DeleteSecret_Handler,
+		},
+		{
 			MethodName: "CreateIntegration",
 			Handler:    _ResourceService_CreateIntegration_Handler,
 		},
@@ -1834,26 +1854,6 @@ var ResourceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteIntegration",
 			Handler:    _ResourceService_DeleteIntegration_Handler,
-		},
-		{
-			MethodName: "CreateIntegrationTarget",
-			Handler:    _ResourceService_CreateIntegrationTarget_Handler,
-		},
-		{
-			MethodName: "UpdateIntegrationTarget",
-			Handler:    _ResourceService_UpdateIntegrationTarget_Handler,
-		},
-		{
-			MethodName: "GetIntegrationTarget",
-			Handler:    _ResourceService_GetIntegrationTarget_Handler,
-		},
-		{
-			MethodName: "ListIntegrationTarget",
-			Handler:    _ResourceService_ListIntegrationTarget_Handler,
-		},
-		{
-			MethodName: "DeleteIntegrationTarget",
-			Handler:    _ResourceService_DeleteIntegrationTarget_Handler,
 		},
 		{
 			MethodName: "CreateIntegrationIdentity",
@@ -1918,13 +1918,13 @@ var ResourceService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "WatchIntegration",
-			Handler:       _ResourceService_WatchIntegration_Handler,
+			StreamName:    "WatchSecret",
+			Handler:       _ResourceService_WatchSecret_Handler,
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "WatchIntegrationTarget",
-			Handler:       _ResourceService_WatchIntegrationTarget_Handler,
+			StreamName:    "WatchIntegration",
+			Handler:       _ResourceService_WatchIntegration_Handler,
 			ServerStreams: true,
 		},
 		{

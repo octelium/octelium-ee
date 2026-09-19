@@ -16,7 +16,6 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
-	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
@@ -38,13 +37,13 @@ func newIntegrationTest(t *testing.T) (context.Context, *ServerMain, octeliumc.C
 }
 
 func tstCreateSecret(ctx context.Context, t *testing.T, octeliumC octeliumc.ClientInterface) string {
-	sec, err := octeliumC.EnterpriseC().CreateSecret(ctx, &enterprisev1.Secret{
+	sec, err := octeliumC.AccessC().CreateSecret(ctx, &accessv1.Secret{
 		Metadata: &metav1.Metadata{
 			Name: utilrand.GetRandomStringCanonical(8),
 		},
-		Spec: &enterprisev1.Secret_Spec{},
-		Data: &enterprisev1.Secret_Data{
-			Type: &enterprisev1.Secret_Data_Value{
+		Spec: &accessv1.Secret_Spec{},
+		Data: &accessv1.Secret_Data{
+			Type: &accessv1.Secret_Data_Value{
 				Value: utilrand.GetRandomString(32),
 			},
 		},
@@ -68,48 +67,59 @@ func tstSlackIntegrationSpec(botToken, signingSecret string) *accessv1.Integrati
 						FromSecret: signingSecret,
 					},
 				},
+				ChannelID: "C12345678",
 			},
 		},
 	}
 }
 
-func tstCreateSlackIntegration(ctx context.Context, t *testing.T,
-	srv *ServerMain, octeliumC octeliumc.ClientInterface) *accessv1.Integration {
+func tstCreateSlackIntegrationOf(ctx context.Context, t *testing.T,
+	srv *ServerMain, octeliumC octeliumc.ClientInterface,
+	channelID string) *accessv1.Integration {
+	spec := tstSlackIntegrationSpec(
+		tstCreateSecret(ctx, t, octeliumC), tstCreateSecret(ctx, t, octeliumC))
+	spec.GetSlack().ChannelID = channelID
+
 	item, err := srv.CreateIntegration(ctx, &accessv1.Integration{
 		Metadata: &metav1.Metadata{
 			Name: utilrand.GetRandomStringCanonical(8),
 		},
-		Spec: tstSlackIntegrationSpec(
-			tstCreateSecret(ctx, t, octeliumC), tstCreateSecret(ctx, t, octeliumC)),
+		Spec: spec,
 	})
 	assert.Nil(t, err, "%+v", err)
 
 	return item
 }
 
+func tstCreateSlackIntegration(ctx context.Context, t *testing.T,
+	srv *ServerMain, octeliumC octeliumc.ClientInterface) *accessv1.Integration {
+	return tstCreateSlackIntegrationOf(ctx, t, srv, octeliumC, "C12345678")
+}
+
+func tstJiraIntegrationSpec(apiToken string) *accessv1.Integration_Spec {
+	return &accessv1.Integration_Spec{
+		Type: &accessv1.Integration_Spec_Jira_{
+			Jira: &accessv1.Integration_Spec_Jira{
+				Url:   "https://example.atlassian.net",
+				Email: "admin@octelium.com",
+				ApiToken: &accessv1.Integration_Spec_Jira_APIToken{
+					Type: &accessv1.Integration_Spec_Jira_APIToken_FromSecret{
+						FromSecret: apiToken,
+					},
+				},
+				ProjectKey: "OPS",
+			},
+		},
+	}
+}
+
 func tstCreateJiraIntegration(ctx context.Context, t *testing.T,
-	octeliumC octeliumc.ClientInterface) *accessv1.Integration {
-	item, err := octeliumC.AccessC().CreateIntegration(ctx, &accessv1.Integration{
+	srv *ServerMain, octeliumC octeliumc.ClientInterface) *accessv1.Integration {
+	item, err := srv.CreateIntegration(ctx, &accessv1.Integration{
 		Metadata: &metav1.Metadata{
 			Name: utilrand.GetRandomStringCanonical(8),
 		},
-		Spec: &accessv1.Integration_Spec{
-			Type: &accessv1.Integration_Spec_Jira_{
-				Jira: &accessv1.Integration_Spec_Jira{
-					Url:   "https://example.atlassian.net",
-					Email: "admin@octelium.com",
-					ApiToken: &accessv1.Integration_Spec_Jira_APIToken{
-						Type: &accessv1.Integration_Spec_Jira_APIToken_FromSecret{
-							FromSecret: tstCreateSecret(ctx, t, octeliumC),
-						},
-					},
-				},
-			},
-		},
-		Status: &accessv1.Integration_Status{
-			Id:   utilrand.GetRandomStringCanonical(24),
-			Type: accessv1.Integration_Status_JIRA,
-		},
+		Spec: tstJiraIntegrationSpec(tstCreateSecret(ctx, t, octeliumC)),
 	})
 	assert.Nil(t, err, "%+v", err)
 
@@ -219,126 +229,166 @@ func TestIntegration(t *testing.T) {
 	}
 }
 
-func TestIntegrationTarget(t *testing.T) {
+func TestIntegrationSlackChannel(t *testing.T) {
 	ctx, srv, octeliumC := newIntegrationTest(t)
 
-	integration := tstCreateSlackIntegration(ctx, t, srv, octeliumC)
+	item := tstCreateSlackIntegration(ctx, t, srv, octeliumC)
+	assert.Equal(t, "C12345678", item.Spec.GetSlack().ChannelID)
 
-	item, err := srv.CreateIntegrationTarget(ctx, &accessv1.IntegrationTarget{
+	{
+		item := tstCreateSlackIntegrationOf(ctx, t, srv, octeliumC, "")
+		assert.Empty(t, item.Spec.GetSlack().ChannelID)
+	}
+
+	{
+		spec := tstSlackIntegrationSpec(
+			tstCreateSecret(ctx, t, octeliumC), tstCreateSecret(ctx, t, octeliumC))
+		spec.GetSlack().ChannelID = "C\u00e91234"
+
+		_, err := srv.CreateIntegration(ctx, &accessv1.Integration{
+			Metadata: &metav1.Metadata{
+				Name: utilrand.GetRandomStringCanonical(8),
+			},
+			Spec: spec,
+		})
+		assert.NotNil(t, err)
+		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+	}
+
+	{
+		next := pbutils.Clone(item).(*accessv1.Integration)
+		next.Spec.GetSlack().ChannelID = "C87654321"
+		next.Spec.GetSlack().MentionUserGroupID = "S12345678"
+
+		ret, err := srv.UpdateIntegration(ctx, next)
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, "C87654321", ret.Spec.GetSlack().ChannelID)
+		assert.Equal(t, "S12345678", ret.Spec.GetSlack().MentionUserGroupID)
+	}
+}
+
+func TestIntegrationJiraStatuses(t *testing.T) {
+	ctx, srv, octeliumC := newIntegrationTest(t)
+
+	newIntegration := func(approveStatus, rejectStatus string) *accessv1.Integration {
+		spec := tstJiraIntegrationSpec(tstCreateSecret(ctx, t, octeliumC))
+		spec.GetJira().ApproveStatus = approveStatus
+		spec.GetJira().RejectStatus = rejectStatus
+
+		return &accessv1.Integration{
+			Metadata: &metav1.Metadata{
+				Name: utilrand.GetRandomStringCanonical(8),
+			},
+			Spec: spec,
+		}
+	}
+
+	{
+		_, err := srv.CreateIntegration(ctx, newIntegration("Approved", "approved"))
+		assert.NotNil(t, err)
+		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+	}
+
+	{
+		item, err := srv.CreateIntegration(ctx, newIntegration("Approved", "Rejected"))
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, "OPS", item.Spec.GetJira().ProjectKey)
+		assert.Equal(t, accessv1.Integration_Status_JIRA, item.Status.Type)
+		assert.Contains(t, item.Status.Capabilities, accessv1.Integration_Status_NOTIFICATION)
+		assert.NotContains(t, item.Status.Capabilities,
+			accessv1.Integration_Status_INTERACTIVE_REVIEW)
+	}
+}
+
+func TestIntegrationWebhookName(t *testing.T) {
+	ctx, srv, octeliumC := newIntegrationTest(t)
+
+	item, err := srv.CreateIntegration(ctx, &accessv1.Integration{
 		Metadata: &metav1.Metadata{
 			Name: utilrand.GetRandomStringCanonical(8),
 		},
-		Spec: &accessv1.IntegrationTarget_Spec{
-			IntegrationRef: umetav1.GetObjectReference(integration),
-			Type: &accessv1.IntegrationTarget_Spec_Slack_{
-				Slack: &accessv1.IntegrationTarget_Spec_Slack{
-					ChannelID: "C12345678",
+		Spec: &accessv1.Integration_Spec{
+			Type: &accessv1.Integration_Spec_Webhook_{
+				Webhook: &accessv1.Integration_Spec_Webhook{
+					Url: "https://example.com/hook",
+					SigningSecret: &accessv1.Integration_Spec_Webhook_SigningSecret{
+						Type: &accessv1.Integration_Spec_Webhook_SigningSecret_FromSecret{
+							FromSecret: tstCreateSecret(ctx, t, octeliumC),
+						},
+					},
+					Name: "ops",
 				},
 			},
 		},
 	})
 	assert.Nil(t, err, "%+v", err)
-	assert.Equal(t, accessv1.Integration_Status_SLACK, item.Status.Type)
+	assert.Equal(t, "ops", item.Spec.GetWebhook().Name)
+	assert.Equal(t, accessv1.Integration_Status_WEBHOOK, item.Status.Type)
+	assert.NotContains(t, item.Status.Capabilities,
+		accessv1.Integration_Status_INTERACTIVE_REVIEW)
+}
+
+func TestIntegrationIdentityIsReadOnly(t *testing.T) {
+	ctx, srv, octeliumC := newIntegrationTest(t)
+
+	integration := tstCreateSlackIntegration(ctx, t, srv, octeliumC)
+	usr := tstCreateUser(ctx, t, octeliumC, "")
+
+	externalID := "U12345678"
+
+	item, err := octeliumC.AccessC().CreateIntegrationIdentity(ctx,
+		&accessv1.IntegrationIdentity{
+			Metadata: &metav1.Metadata{
+				Name: utilrand.GetRandomStringCanonical(8),
+			},
+			Spec: &accessv1.IntegrationIdentity_Spec{},
+			Status: &accessv1.IntegrationIdentity_Status{
+				IntegrationRef: umetav1.GetObjectReference(integration),
+				UserRef:        umetav1.GetObjectReference(usr),
+				ExternalID:     externalID,
+				Source:         accessv1.IntegrationIdentity_Status_EMAIL_DISCOVERY,
+			},
+		})
+	assert.Nil(t, err, "%+v", err)
 
 	{
-		itemList, err := srv.ListIntegrationTarget(ctx, &accessv1.ListIntegrationTargetOptions{
-			IntegrationRef: umetav1.GetObjectReference(integration),
+		ret, err := srv.GetIntegrationIdentity(ctx, &metav1.GetOptions{
+			Uid: item.Metadata.Uid,
 		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, externalID, ret.Status.ExternalID)
+		assert.Equal(t, usr.Metadata.Uid, ret.Status.UserRef.Uid)
+	}
+
+	{
+		itemList, err := srv.ListIntegrationIdentity(ctx,
+			&accessv1.ListIntegrationIdentityOptions{
+				UserRef: umetav1.GetObjectReference(usr),
+			})
 		assert.Nil(t, err, "%+v", err)
 		assert.Equal(t, 1, len(itemList.Items))
 	}
 
 	{
-		_, err := srv.CreateIntegrationTarget(ctx, &accessv1.IntegrationTarget{
-			Metadata: &metav1.Metadata{
-				Name: utilrand.GetRandomStringCanonical(8),
-			},
-			Spec: &accessv1.IntegrationTarget_Spec{
+		itemList, err := srv.ListIntegrationIdentity(ctx,
+			&accessv1.ListIntegrationIdentityOptions{
 				IntegrationRef: umetav1.GetObjectReference(integration),
-				Type: &accessv1.IntegrationTarget_Spec_Jira_{
-					Jira: &accessv1.IntegrationTarget_Spec_Jira{
-						ProjectKey: "OPS",
-					},
-				},
-			},
-		})
-		assert.NotNil(t, err)
-		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
-	}
-
-	{
-		_, err := srv.CreateIntegrationTarget(ctx, &accessv1.IntegrationTarget{
-			Metadata: &metav1.Metadata{
-				Name: utilrand.GetRandomStringCanonical(8),
-			},
-			Spec: &accessv1.IntegrationTarget_Spec{
-				IntegrationRef: umetav1.GetObjectReference(integration),
-				Type: &accessv1.IntegrationTarget_Spec_Slack_{
-					Slack: &accessv1.IntegrationTarget_Spec_Slack{},
-				},
-			},
-		})
-		assert.NotNil(t, err)
-		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
-	}
-
-	{
-		other := tstCreateSlackIntegration(ctx, t, srv, octeliumC)
-
-		next := pbutils.Clone(item).(*accessv1.IntegrationTarget)
-		next.Spec.IntegrationRef = umetav1.GetObjectReference(other)
-
-		_, err := srv.UpdateIntegrationTarget(ctx, next)
-		assert.NotNil(t, err)
-		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
-
-		itemG, err := srv.GetIntegrationTarget(ctx, &metav1.GetOptions{Uid: item.Metadata.Uid})
+			})
 		assert.Nil(t, err, "%+v", err)
-		assert.Equal(t, integration.Metadata.Uid, itemG.Spec.IntegrationRef.Uid)
+		assert.Equal(t, 1, len(itemList.Items))
 	}
 
 	{
-		_, err := srv.DeleteIntegrationTarget(ctx, &metav1.DeleteOptions{Uid: item.Metadata.Uid})
+		itemList, err := srv.ListIntegrationIdentity(ctx,
+			&accessv1.ListIntegrationIdentityOptions{
+				UserRef: umetav1.GetObjectReference(tstCreateUser(ctx, t, octeliumC, "")),
+			})
 		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, 0, len(itemList.Items))
 	}
 }
 
-func TestIntegrationTargetJiraStatuses(t *testing.T) {
-	ctx, srv, octeliumC := newIntegrationTest(t)
-
-	integration := tstCreateJiraIntegration(ctx, t, octeliumC)
-
-	newTarget := func(approveStatus, rejectStatus string) *accessv1.IntegrationTarget {
-		return &accessv1.IntegrationTarget{
-			Metadata: &metav1.Metadata{
-				Name: utilrand.GetRandomStringCanonical(8),
-			},
-			Spec: &accessv1.IntegrationTarget_Spec{
-				IntegrationRef: umetav1.GetObjectReference(integration),
-				Type: &accessv1.IntegrationTarget_Spec_Jira_{
-					Jira: &accessv1.IntegrationTarget_Spec_Jira{
-						ProjectKey:    "OPS",
-						ApproveStatus: approveStatus,
-						RejectStatus:  rejectStatus,
-					},
-				},
-			},
-		}
-	}
-
-	{
-		_, err := srv.CreateIntegrationTarget(ctx, newTarget("Approved", "approved"))
-		assert.NotNil(t, err)
-		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
-	}
-
-	{
-		_, err := srv.CreateIntegrationTarget(ctx, newTarget("Approved", "Rejected"))
-		assert.Nil(t, err, "%+v", err)
-	}
-}
-
-func TestIntegrationIdentity(t *testing.T) {
+func TestResolveIntegrationIdentity(t *testing.T) {
 	ctx, srv, octeliumC := newIntegrationTest(t)
 
 	integration := tstCreateSlackIntegration(ctx, t, srv, octeliumC)
@@ -347,56 +397,20 @@ func TestIntegrationIdentity(t *testing.T) {
 
 	externalID := "U12345678"
 
-	item, err := srv.CreateIntegrationIdentity(ctx, &accessv1.IntegrationIdentity{
-		Metadata: &metav1.Metadata{
-			Name: utilrand.GetRandomStringCanonical(8),
-		},
-		Spec: &accessv1.IntegrationIdentity_Spec{
-			IntegrationRef: umetav1.GetObjectReference(integration),
-			UserRef:        umetav1.GetObjectReference(usr),
-			ExternalID:     externalID,
-		},
-	})
-	assert.Nil(t, err, "%+v", err)
-	assert.Equal(t, accessv1.IntegrationIdentity_Status_MANUAL, item.Status.Source)
-
-	{
-		_, err := srv.CreateIntegrationIdentity(ctx, &accessv1.IntegrationIdentity{
+	_, err := octeliumC.AccessC().CreateIntegrationIdentity(ctx,
+		&accessv1.IntegrationIdentity{
 			Metadata: &metav1.Metadata{
 				Name: utilrand.GetRandomStringCanonical(8),
 			},
-			Spec: &accessv1.IntegrationIdentity_Spec{
-				IntegrationRef: umetav1.GetObjectReference(integration),
-				UserRef:        umetav1.GetObjectReference(other),
-				ExternalID:     externalID,
-			},
-		})
-		assert.NotNil(t, err)
-		assert.True(t, grpcerr.AlreadyExists(err), "%+v", err)
-	}
-
-	{
-		_, err := srv.CreateIntegrationIdentity(ctx, &accessv1.IntegrationIdentity{
-			Metadata: &metav1.Metadata{
-				Name: utilrand.GetRandomStringCanonical(8),
-			},
-			Spec: &accessv1.IntegrationIdentity_Spec{
+			Spec: &accessv1.IntegrationIdentity_Spec{},
+			Status: &accessv1.IntegrationIdentity_Status{
 				IntegrationRef: umetav1.GetObjectReference(integration),
 				UserRef:        umetav1.GetObjectReference(usr),
-				ExternalID:     "U87654321",
+				ExternalID:     externalID,
+				Source:         accessv1.IntegrationIdentity_Status_EMAIL_DISCOVERY,
 			},
 		})
-		assert.NotNil(t, err)
-		assert.True(t, grpcerr.AlreadyExists(err), "%+v", err)
-	}
-
-	{
-		itemList, err := srv.ListIntegrationIdentity(ctx, &accessv1.ListIntegrationIdentityOptions{
-			UserRef: umetav1.GetObjectReference(usr),
-		})
-		assert.Nil(t, err, "%+v", err)
-		assert.Equal(t, 1, len(itemList.Items))
-	}
+	assert.Nil(t, err, "%+v", err)
 
 	{
 		ret, err := srv.ResolveIntegrationIdentity(ctx,
@@ -409,7 +423,7 @@ func TestIntegrationIdentity(t *testing.T) {
 		assert.Nil(t, err, "%+v", err)
 		assert.True(t, ret.IsResolved)
 		assert.Equal(t, usr.Metadata.Uid, ret.UserRef.Uid)
-		assert.Equal(t, accessv1.IntegrationIdentity_Status_MANUAL, ret.Source)
+		assert.Equal(t, accessv1.IntegrationIdentity_Status_EMAIL_DISCOVERY, ret.Source)
 	}
 
 	{
@@ -426,10 +440,12 @@ func TestIntegrationIdentity(t *testing.T) {
 	}
 
 	{
-		_, err := srv.DeleteIntegrationIdentity(ctx, &metav1.DeleteOptions{
-			Uid: item.Metadata.Uid,
-		})
-		assert.Nil(t, err, "%+v", err)
+		_, err := srv.ResolveIntegrationIdentity(ctx,
+			&accessv1.ResolveIntegrationIdentityRequest{
+				IntegrationRef: umetav1.GetObjectReference(integration),
+			})
+		assert.NotNil(t, err)
+		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
 	}
 }
 

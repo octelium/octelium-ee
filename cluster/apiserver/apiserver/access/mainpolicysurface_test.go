@@ -9,10 +9,8 @@
 package access
 
 import (
-	"context"
 	"testing"
 
-	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
@@ -69,43 +67,73 @@ func tstPolicyStep(name string, reviewer *corev1.User,
 	}
 }
 
-func tstCreateSlackTarget(ctx context.Context, t *testing.T, srv *ServerMain,
-	octeliumC octeliumc.ClientInterface) *accessv1.IntegrationTarget {
-	integration := tstCreateSlackIntegration(ctx, t, srv, octeliumC)
-
-	target, err := srv.CreateIntegrationTarget(ctx, &accessv1.IntegrationTarget{
-		Metadata: &metav1.Metadata{
-			Name: utilrand.GetRandomStringCanonical(8),
-		},
-		Spec: &accessv1.IntegrationTarget_Spec{
+func tstPolicySurface(integration *accessv1.Integration,
+	audience accessv1.Policy_Spec_Rule_Surface_Destination_Audience,
+	mode accessv1.Policy_Spec_Rule_Surface_InteractionMode) *accessv1.Policy_Spec_Rule_Surface {
+	return &accessv1.Policy_Spec_Rule_Surface{
+		InteractionMode: mode,
+		Destination: &accessv1.Policy_Spec_Rule_Surface_Destination{
 			IntegrationRef: umetav1.GetObjectReference(integration),
-			Type: &accessv1.IntegrationTarget_Spec_Slack_{
-				Slack: &accessv1.IntegrationTarget_Spec_Slack{
-					ChannelID: "C12345678",
-				},
-			},
+			Audience:       audience,
 		},
-	})
-	assert.Nil(t, err, "%+v", err)
-
-	return target
+	}
 }
 
 func TestPolicySurface(t *testing.T) {
 	ctx, srv, octeliumC := newIntegrationTest(t)
 
 	reviewer := tstCreateUser(ctx, t, octeliumC, "")
-	target := tstCreateSlackTarget(ctx, t, srv, octeliumC)
+	integration := tstCreateSlackIntegration(ctx, t, srv, octeliumC)
 
 	_, err := srv.CreatePolicy(ctx, tstReviewPolicy(reviewer,
-		tstPolicyStep("first", reviewer, &accessv1.Policy_Spec_Rule_Surface{
-			InteractionMode: accessv1.Policy_Spec_Rule_Surface_INTERACTIVE,
-			Destination: &accessv1.Policy_Spec_Rule_Surface_Destination{
-				Type: &accessv1.Policy_Spec_Rule_Surface_Destination_TargetRef{
-					TargetRef: umetav1.GetObjectReference(target),
-				},
-			},
-		})))
+		tstPolicyStep("first", reviewer,
+			tstPolicySurface(integration,
+				accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
+				accessv1.Policy_Spec_Rule_Surface_INTERACTIVE))))
+	assert.Nil(t, err, "%+v", err)
+}
+
+func TestPolicySurfaceSharedWithoutAnyDestination(t *testing.T) {
+	ctx, srv, octeliumC := newIntegrationTest(t)
+
+	reviewer := tstCreateUser(ctx, t, octeliumC, "")
+	integration := tstCreateSlackIntegrationOf(ctx, t, srv, octeliumC, "")
+
+	_, err := srv.CreatePolicy(ctx, tstReviewPolicy(reviewer,
+		tstPolicyStep("first", reviewer,
+			tstPolicySurface(integration,
+				accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
+				accessv1.Policy_Spec_Rule_Surface_INTERACTIVE))))
+	assert.NotNil(t, err)
+	assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+}
+
+func TestPolicySurfaceWithoutAnyAudience(t *testing.T) {
+	ctx, srv, octeliumC := newIntegrationTest(t)
+
+	reviewer := tstCreateUser(ctx, t, octeliumC, "")
+	integration := tstCreateSlackIntegration(ctx, t, srv, octeliumC)
+
+	_, err := srv.CreatePolicy(ctx, tstReviewPolicy(reviewer,
+		tstPolicyStep("first", reviewer,
+			tstPolicySurface(integration,
+				accessv1.Policy_Spec_Rule_Surface_Destination_AUDIENCE_UNSET,
+				accessv1.Policy_Spec_Rule_Surface_INTERACTIVE))))
+	assert.NotNil(t, err)
+	assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+}
+
+func TestPolicySurfaceReviewers(t *testing.T) {
+	ctx, srv, octeliumC := newIntegrationTest(t)
+
+	reviewer := tstCreateUser(ctx, t, octeliumC, "")
+	integration := tstCreateSlackIntegration(ctx, t, srv, octeliumC)
+
+	_, err := srv.CreatePolicy(ctx, tstReviewPolicy(reviewer,
+		tstPolicyStep("first", reviewer,
+			tstPolicySurface(integration,
+				accessv1.Policy_Spec_Rule_Surface_Destination_REVIEWERS,
+				accessv1.Policy_Spec_Rule_Surface_INTERACTIVE))))
 	assert.Nil(t, err, "%+v", err)
 }
 
@@ -130,7 +158,7 @@ func TestPolicyStepNameMustBeUnique(t *testing.T) {
 	assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
 }
 
-func TestPolicySurfaceUnknownTarget(t *testing.T) {
+func TestPolicySurfaceUnknownIntegration(t *testing.T) {
 	ctx, srv, octeliumC := newIntegrationTest(t)
 
 	reviewer := tstCreateUser(ctx, t, octeliumC, "")
@@ -138,11 +166,10 @@ func TestPolicySurfaceUnknownTarget(t *testing.T) {
 	_, err := srv.CreatePolicy(ctx, tstReviewPolicy(reviewer,
 		tstPolicyStep("first", reviewer, &accessv1.Policy_Spec_Rule_Surface{
 			Destination: &accessv1.Policy_Spec_Rule_Surface_Destination{
-				Type: &accessv1.Policy_Spec_Rule_Surface_Destination_TargetRef{
-					TargetRef: &metav1.ObjectReference{
-						Name: utilrand.GetRandomStringCanonical(8),
-					},
+				IntegrationRef: &metav1.ObjectReference{
+					Name: utilrand.GetRandomStringCanonical(8),
 				},
+				Audience: accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
 			},
 		})))
 	assert.NotNil(t, err)
@@ -156,15 +183,10 @@ func TestPolicyReviewSurfaceRejectsRequesterDestination(t *testing.T) {
 	integration := tstCreateSlackIntegration(ctx, t, srv, octeliumC)
 
 	_, err := srv.CreatePolicy(ctx, tstReviewPolicy(reviewer,
-		tstPolicyStep("first", reviewer, &accessv1.Policy_Spec_Rule_Surface{
-			Destination: &accessv1.Policy_Spec_Rule_Surface_Destination{
-				Type: &accessv1.Policy_Spec_Rule_Surface_Destination_Requester_{
-					Requester: &accessv1.Policy_Spec_Rule_Surface_Destination_Requester{
-						IntegrationRef: umetav1.GetObjectReference(integration),
-					},
-				},
-			},
-		})))
+		tstPolicyStep("first", reviewer,
+			tstPolicySurface(integration,
+				accessv1.Policy_Spec_Rule_Surface_Destination_REQUESTER,
+				accessv1.Policy_Spec_Rule_Surface_INTERACTION_MODE_UNSET))))
 	assert.NotNil(t, err)
 	assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
 }
@@ -177,15 +199,9 @@ func TestPolicyNotificationSurfaceRejectsReviewersDestination(t *testing.T) {
 
 	pol := tstReviewPolicy(reviewer, tstPolicyStep("first", reviewer))
 	pol.Spec.Rules[0].Notifications = []*accessv1.Policy_Spec_Rule_Surface{
-		{
-			Destination: &accessv1.Policy_Spec_Rule_Surface_Destination{
-				Type: &accessv1.Policy_Spec_Rule_Surface_Destination_Reviewers_{
-					Reviewers: &accessv1.Policy_Spec_Rule_Surface_Destination_Reviewers{
-						IntegrationRef: umetav1.GetObjectReference(integration),
-					},
-				},
-			},
-		},
+		tstPolicySurface(integration,
+			accessv1.Policy_Spec_Rule_Surface_Destination_REVIEWERS,
+			accessv1.Policy_Spec_Rule_Surface_INTERACTION_MODE_UNSET),
 	}
 
 	_, err := srv.CreatePolicy(ctx, pol)
@@ -201,15 +217,9 @@ func TestPolicyNotificationSurface(t *testing.T) {
 
 	pol := tstReviewPolicy(reviewer, tstPolicyStep("first", reviewer))
 	pol.Spec.Rules[0].Notifications = []*accessv1.Policy_Spec_Rule_Surface{
-		{
-			Destination: &accessv1.Policy_Spec_Rule_Surface_Destination{
-				Type: &accessv1.Policy_Spec_Rule_Surface_Destination_Requester_{
-					Requester: &accessv1.Policy_Spec_Rule_Surface_Destination_Requester{
-						IntegrationRef: umetav1.GetObjectReference(integration),
-					},
-				},
-			},
-		},
+		tstPolicySurface(integration,
+			accessv1.Policy_Spec_Rule_Surface_Destination_REQUESTER,
+			accessv1.Policy_Spec_Rule_Surface_INTERACTION_MODE_UNSET),
 	}
 
 	_, err := srv.CreatePolicy(ctx, pol)

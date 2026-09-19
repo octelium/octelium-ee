@@ -544,23 +544,23 @@ func (s *Server) setResources(ctx context.Context) error {
 		return err
 	}
 
+	if err := wa.Secret(ctx, nil,
+		func(ctx context.Context, item *accessv1.Secret) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *accessv1.Secret) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *accessv1.Secret) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
 	if err := wa.Integration(ctx, nil,
 		func(ctx context.Context, item *accessv1.Integration) error {
 			return s.insertResource(ctx, item)
 		}, func(ctx context.Context, new, old *accessv1.Integration) error {
 			return s.insertResource(ctx, new)
 		}, func(ctx context.Context, item *accessv1.Integration) error {
-			return s.removeResource(ctx, item)
-		}); err != nil {
-		return err
-	}
-
-	if err := wa.IntegrationTarget(ctx, nil,
-		func(ctx context.Context, item *accessv1.IntegrationTarget) error {
-			return s.insertResource(ctx, item)
-		}, func(ctx context.Context, new, old *accessv1.IntegrationTarget) error {
-			return s.insertResource(ctx, new)
-		}, func(ctx context.Context, item *accessv1.IntegrationTarget) error {
 			return s.removeResource(ctx, item)
 		}); err != nil {
 		return err

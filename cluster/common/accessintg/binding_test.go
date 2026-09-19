@@ -44,36 +44,15 @@ func tstCreateIntegration(ctx context.Context, t *testing.T,
 		},
 		Spec: &accessv1.Integration_Spec{
 			Type: &accessv1.Integration_Spec_Slack_{
-				Slack: &accessv1.Integration_Spec_Slack{},
+				Slack: &accessv1.Integration_Spec_Slack{
+					ChannelID: "C12345678",
+				},
 			},
 		},
 		Status: &accessv1.Integration_Status{
 			Id:           utilrand.GetRandomStringCanonical(24),
 			Type:         accessv1.Integration_Status_SLACK,
 			Capabilities: capabilities,
-		},
-	})
-	assert.Nil(t, err, "%+v", err)
-
-	return item
-}
-
-func tstCreateTarget(ctx context.Context, t *testing.T, octeliumC octeliumc.ClientInterface,
-	integration *accessv1.Integration) *accessv1.IntegrationTarget {
-	item, err := octeliumC.AccessC().CreateIntegrationTarget(ctx, &accessv1.IntegrationTarget{
-		Metadata: &metav1.Metadata{
-			Name: utilrand.GetRandomStringCanonical(8),
-		},
-		Spec: &accessv1.IntegrationTarget_Spec{
-			IntegrationRef: umetav1.GetObjectReference(integration),
-			Type: &accessv1.IntegrationTarget_Spec_Slack_{
-				Slack: &accessv1.IntegrationTarget_Spec_Slack{
-					ChannelID: "C12345678",
-				},
-			},
-		},
-		Status: &accessv1.IntegrationTarget_Status{
-			Type: accessv1.Integration_Status_SLACK,
 		},
 	})
 	assert.Nil(t, err, "%+v", err)
@@ -160,58 +139,81 @@ func tstStep(name string, reviewer *corev1.User,
 	}
 }
 
-func tstTargetSurface(target *accessv1.IntegrationTarget,
+func tstSurface(integration *accessv1.Integration,
+	audience accessv1.Policy_Spec_Rule_Surface_Destination_Audience,
 	mode accessv1.Policy_Spec_Rule_Surface_InteractionMode) *accessv1.Policy_Spec_Rule_Surface {
 	return &accessv1.Policy_Spec_Rule_Surface{
 		InteractionMode: mode,
 		Destination: &accessv1.Policy_Spec_Rule_Surface_Destination{
-			Type: &accessv1.Policy_Spec_Rule_Surface_Destination_TargetRef{
-				TargetRef: umetav1.GetObjectReference(target),
-			},
+			IntegrationRef: umetav1.GetObjectReference(integration),
+			Audience:       audience,
 		},
 	}
+}
+
+func tstSharedSurface(integration *accessv1.Integration,
+	mode accessv1.Policy_Spec_Rule_Surface_InteractionMode) *accessv1.Policy_Spec_Rule_Surface {
+	return tstSurface(integration, accessv1.Policy_Spec_Rule_Surface_Destination_SHARED, mode)
 }
 
 func tstReviewersSurface(integration *accessv1.Integration,
 	mode accessv1.Policy_Spec_Rule_Surface_InteractionMode) *accessv1.Policy_Spec_Rule_Surface {
-	return &accessv1.Policy_Spec_Rule_Surface{
-		InteractionMode: mode,
-		Destination: &accessv1.Policy_Spec_Rule_Surface_Destination{
-			Type: &accessv1.Policy_Spec_Rule_Surface_Destination_Reviewers_{
-				Reviewers: &accessv1.Policy_Spec_Rule_Surface_Destination_Reviewers{
-					IntegrationRef: umetav1.GetObjectReference(integration),
-				},
-			},
-		},
-	}
+	return tstSurface(integration, accessv1.Policy_Spec_Rule_Surface_Destination_REVIEWERS, mode)
 }
 
-func TestDesiredBindingsTarget(t *testing.T) {
+func TestDesiredBindingsShared(t *testing.T) {
 	ctx, octeliumC := newBindingTest(t)
 
 	integration := tstCreateIntegration(ctx, t, octeliumC,
 		accessv1.Integration_Status_NOTIFICATION)
-	target := tstCreateTarget(ctx, t, octeliumC, integration)
 
 	reviewer := tstCreateUser(ctx, t, octeliumC)
 	requester := tstCreateUser(ctx, t, octeliumC)
 
 	req := tstCreateRequest(ctx, t, octeliumC, requester, tstReviewRule(
 		tstStep("first", reviewer,
-			tstTargetSurface(target, accessv1.Policy_Spec_Rule_Surface_INTERACTIVE))))
+			tstSharedSurface(integration, accessv1.Policy_Spec_Rule_Surface_INTERACTIVE))))
 
 	items, err := DesiredBindings(ctx, octeliumC, req)
 	assert.Nil(t, err, "%+v", err)
 	assert.Equal(t, 1, len(items))
 
 	item := items[0]
-	assert.Equal(t, accessv1.IntegrationBinding_Spec_REVIEW_SURFACE, item.Spec.Purpose)
-	assert.Equal(t, "first", item.Spec.StepName)
-	assert.Equal(t, target.Metadata.Uid, item.Spec.TargetRef.Uid)
-	assert.Equal(t, integration.Metadata.Uid, item.Spec.IntegrationRef.Uid)
-	assert.Equal(t, accessv1.Policy_Spec_Rule_Surface_INTERACTIVE, item.Spec.InteractionMode)
+	assert.Equal(t, accessv1.IntegrationBinding_Status_REVIEW_SURFACE, item.Status.Purpose)
+	assert.Equal(t, "first", item.Status.StepName)
+	assert.Nil(t, item.Status.UserRef)
+	assert.Equal(t, accessv1.Policy_Spec_Rule_Surface_Destination_SHARED, item.Status.Audience)
+	assert.Equal(t, integration.Metadata.Uid, item.Status.IntegrationRef.Uid)
+	assert.Equal(t, req.Metadata.Uid, item.Status.RequestRef.Uid)
+	assert.Equal(t, accessv1.Policy_Spec_Rule_Surface_INTERACTIVE, item.Status.InteractionMode)
+	assert.Equal(t, accessv1.IntegrationBinding_Status_PENDING, item.Status.State)
 	assert.Equal(t, BindingName(req.Metadata.Uid,
-		accessv1.IntegrationBinding_Spec_REVIEW_SURFACE, 0, 0, target.Metadata.Uid), item.Name)
+		accessv1.IntegrationBinding_Status_REVIEW_SURFACE, 0, 0, ""), item.Name)
+}
+
+func TestDesiredBindingsSharedPerIntegration(t *testing.T) {
+	ctx, octeliumC := newBindingTest(t)
+
+	first := tstCreateIntegration(ctx, t, octeliumC,
+		accessv1.Integration_Status_NOTIFICATION)
+	second := tstCreateIntegration(ctx, t, octeliumC,
+		accessv1.Integration_Status_NOTIFICATION)
+
+	reviewer := tstCreateUser(ctx, t, octeliumC)
+	requester := tstCreateUser(ctx, t, octeliumC)
+
+	req := tstCreateRequest(ctx, t, octeliumC, requester, tstReviewRule(
+		tstStep("first", reviewer,
+			tstSharedSurface(first, accessv1.Policy_Spec_Rule_Surface_INTERACTIVE),
+			tstSharedSurface(second, accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY))))
+
+	items, err := DesiredBindings(ctx, octeliumC, req)
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, 2, len(items))
+
+	assert.Equal(t, first.Metadata.Uid, items[0].Status.IntegrationRef.Uid)
+	assert.Equal(t, second.Metadata.Uid, items[1].Status.IntegrationRef.Uid)
+	assert.NotEqual(t, items[0].Name, items[1].Name)
 }
 
 func TestDesiredBindingsReviewers(t *testing.T) {
@@ -230,8 +232,9 @@ func TestDesiredBindingsReviewers(t *testing.T) {
 	items, err := DesiredBindings(ctx, octeliumC, req)
 	assert.Nil(t, err, "%+v", err)
 	assert.Equal(t, 1, len(items))
-	assert.Equal(t, reviewer.Metadata.Uid, items[0].Spec.UserRef.Uid)
-	assert.Nil(t, items[0].Spec.TargetRef)
+	assert.Equal(t, reviewer.Metadata.Uid, items[0].Status.UserRef.Uid)
+	assert.Equal(t, accessv1.Policy_Spec_Rule_Surface_Destination_REVIEWERS,
+		items[0].Status.Audience)
 }
 
 func TestDesiredBindingsSkipRequesterReviewer(t *testing.T) {
@@ -274,7 +277,6 @@ func TestDesiredBindingsSkipDisabledIntegration(t *testing.T) {
 
 	integration := tstCreateIntegration(ctx, t, octeliumC,
 		accessv1.Integration_Status_NOTIFICATION)
-	target := tstCreateTarget(ctx, t, octeliumC, integration)
 
 	integration.Spec.IsDisabled = true
 	_, err := octeliumC.AccessC().UpdateIntegration(ctx, integration)
@@ -285,7 +287,7 @@ func TestDesiredBindingsSkipDisabledIntegration(t *testing.T) {
 
 	req := tstCreateRequest(ctx, t, octeliumC, requester, tstReviewRule(
 		tstStep("first", reviewer,
-			tstTargetSurface(target, accessv1.Policy_Spec_Rule_Surface_INTERACTIVE))))
+			tstSharedSurface(integration, accessv1.Policy_Spec_Rule_Surface_INTERACTIVE))))
 
 	items, err := DesiredBindings(ctx, octeliumC, req)
 	assert.Nil(t, err, "%+v", err)
@@ -303,16 +305,8 @@ func TestDesiredBindingsNotification(t *testing.T) {
 
 	rule := tstReviewRule(tstStep("first", reviewer))
 	rule.Notifications = []*accessv1.Policy_Spec_Rule_Surface{
-		{
-			InteractionMode: accessv1.Policy_Spec_Rule_Surface_INTERACTIVE,
-			Destination: &accessv1.Policy_Spec_Rule_Surface_Destination{
-				Type: &accessv1.Policy_Spec_Rule_Surface_Destination_Requester_{
-					Requester: &accessv1.Policy_Spec_Rule_Surface_Destination_Requester{
-						IntegrationRef: umetav1.GetObjectReference(integration),
-					},
-				},
-			},
-		},
+		tstSurface(integration, accessv1.Policy_Spec_Rule_Surface_Destination_REQUESTER,
+			accessv1.Policy_Spec_Rule_Surface_INTERACTIVE),
 	}
 
 	req := tstCreateRequest(ctx, t, octeliumC, requester, rule)
@@ -320,10 +314,56 @@ func TestDesiredBindingsNotification(t *testing.T) {
 	items, err := DesiredBindings(ctx, octeliumC, req)
 	assert.Nil(t, err, "%+v", err)
 	assert.Equal(t, 1, len(items))
-	assert.Equal(t, accessv1.IntegrationBinding_Spec_NOTIFICATION, items[0].Spec.Purpose)
-	assert.Equal(t, requester.Metadata.Uid, items[0].Spec.UserRef.Uid)
+	assert.Equal(t, accessv1.IntegrationBinding_Status_NOTIFICATION, items[0].Status.Purpose)
+	assert.Equal(t, requester.Metadata.Uid, items[0].Status.UserRef.Uid)
 	assert.Equal(t, accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY,
-		items[0].Spec.InteractionMode)
+		items[0].Status.InteractionMode)
+}
+
+func TestDesiredBindingsSubject(t *testing.T) {
+	ctx, octeliumC := newBindingTest(t)
+
+	integration := tstCreateIntegration(ctx, t, octeliumC,
+		accessv1.Integration_Status_DIRECT_USER_DELIVERY)
+
+	reviewer := tstCreateUser(ctx, t, octeliumC)
+	requester := tstCreateUser(ctx, t, octeliumC)
+
+	rule := tstReviewRule(tstStep("first", reviewer))
+	rule.Notifications = []*accessv1.Policy_Spec_Rule_Surface{
+		tstSurface(integration, accessv1.Policy_Spec_Rule_Surface_Destination_SUBJECT,
+			accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY),
+	}
+
+	req := tstCreateRequest(ctx, t, octeliumC, requester, rule)
+
+	items, err := DesiredBindings(ctx, octeliumC, req)
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, 1, len(items))
+	assert.Equal(t, requester.Metadata.Uid, items[0].Status.UserRef.Uid)
+	assert.Equal(t, accessv1.Policy_Spec_Rule_Surface_Destination_SUBJECT,
+		items[0].Status.Audience)
+}
+
+func TestDesiredBindingsSkipUnknownIntegration(t *testing.T) {
+	ctx, octeliumC := newBindingTest(t)
+
+	reviewer := tstCreateUser(ctx, t, octeliumC)
+	requester := tstCreateUser(ctx, t, octeliumC)
+
+	req := tstCreateRequest(ctx, t, octeliumC, requester, tstReviewRule(
+		tstStep("first", reviewer, &accessv1.Policy_Spec_Rule_Surface{
+			Destination: &accessv1.Policy_Spec_Rule_Surface_Destination{
+				IntegrationRef: &metav1.ObjectReference{
+					Name: utilrand.GetRandomStringCanonical(8),
+				},
+				Audience: accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
+			},
+		})))
+
+	items, err := DesiredBindings(ctx, octeliumC, req)
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, 0, len(items))
 }
 
 func TestPresentationRevision(t *testing.T) {
@@ -331,14 +371,13 @@ func TestPresentationRevision(t *testing.T) {
 
 	integration := tstCreateIntegration(ctx, t, octeliumC,
 		accessv1.Integration_Status_NOTIFICATION)
-	target := tstCreateTarget(ctx, t, octeliumC, integration)
 
 	reviewer := tstCreateUser(ctx, t, octeliumC)
 	requester := tstCreateUser(ctx, t, octeliumC)
 
 	req := tstCreateRequest(ctx, t, octeliumC, requester, tstReviewRule(
 		tstStep("first", reviewer,
-			tstTargetSurface(target, accessv1.Policy_Spec_Rule_Surface_INTERACTIVE))))
+			tstSharedSurface(integration, accessv1.Policy_Spec_Rule_Surface_INTERACTIVE))))
 
 	desired, err := DesiredBindings(ctx, octeliumC, req)
 	assert.Nil(t, err, "%+v", err)
@@ -347,8 +386,8 @@ func TestPresentationRevision(t *testing.T) {
 		Metadata: &metav1.Metadata{
 			Name: desired[0].Name,
 		},
-		Spec:   desired[0].Spec,
-		Status: &accessv1.IntegrationBinding_Status{},
+		Spec:   &accessv1.IntegrationBinding_Spec{},
+		Status: desired[0].Status,
 	}
 
 	opts := &BuildPresentationOpts{

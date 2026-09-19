@@ -20,7 +20,6 @@
                 "source": {
                     "enum": [
                         "SOURCE_UNSET",
-                        "MANUAL",
                         "EMAIL_DISCOVERY"
                     ],
                     "type": "string",

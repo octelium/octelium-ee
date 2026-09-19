@@ -89,7 +89,7 @@ func BuildPresentation(ctx context.Context, opts *BuildPresentationOpts) (*Prese
 	binding := opts.Binding
 
 	ret := &Presentation{
-		Purpose:       binding.Spec.Purpose.String(),
+		Purpose:       binding.Status.Purpose.String(),
 		RequestName:   req.Metadata.Name,
 		RequestUID:    req.Metadata.Uid,
 		State:         requestState(req),
@@ -124,8 +124,8 @@ func BuildPresentation(ctx context.Context, opts *BuildPresentationOpts) (*Prese
 		ret.RuleName = req.Status.Rule.Name
 	}
 
-	switch binding.Spec.Purpose {
-	case accessv1.IntegrationBinding_Spec_REVIEW_SURFACE:
+	switch binding.Status.Purpose {
+	case accessv1.IntegrationBinding_Status_REVIEW_SURFACE:
 		ret.PortalURL = fmt.Sprintf("https://access.octelium.%s/reviewer/requests/%s",
 			opts.ClusterDomain, req.Metadata.Name)
 	default:
@@ -138,7 +138,7 @@ func BuildPresentation(ctx context.Context, opts *BuildPresentationOpts) (*Prese
 
 	ret.IsClosed = !isPending
 
-	if binding.Spec.Purpose == accessv1.IntegrationBinding_Spec_REVIEW_SURFACE {
+	if binding.Status.Purpose == accessv1.IntegrationBinding_Status_REVIEW_SURFACE {
 		steps := []*accessv1.Policy_Spec_Rule_Action_Review_Step{}
 		if req.Status.Rule != nil && req.Status.Rule.Action != nil &&
 			req.Status.Rule.Action.GetReview() != nil {
@@ -146,13 +146,13 @@ func BuildPresentation(ctx context.Context, opts *BuildPresentationOpts) (*Prese
 		}
 
 		ret.StepCount = len(steps)
-		ret.StepIndex = int(binding.Spec.StepIndex) + 1
-		ret.StepName = binding.Spec.StepName
+		ret.StepIndex = int(binding.Status.StepIndex) + 1
+		ret.StepName = binding.Status.StepName
 
-		if int(binding.Spec.StepIndex) < len(steps) {
-			step := steps[binding.Spec.StepIndex]
+		if int(binding.Status.StepIndex) < len(steps) {
+			step := steps[binding.Status.StepIndex]
 
-			decisions, err := stepDecisions(ctx, opts.OcteliumC, req, binding.Spec.StepIndex)
+			decisions, err := stepDecisions(ctx, opts.OcteliumC, req, binding.Status.StepIndex)
 			if err != nil {
 				return nil, err
 			}
@@ -165,8 +165,8 @@ func BuildPresentation(ctx context.Context, opts *BuildPresentationOpts) (*Prese
 		}
 
 		ret.IsActionable = isPending &&
-			accesscmd.CurrentStepIndex(req) == binding.Spec.StepIndex &&
-			binding.Spec.InteractionMode == accessv1.Policy_Spec_Rule_Surface_INTERACTIVE
+			accesscmd.CurrentStepIndex(req) == binding.Status.StepIndex &&
+			binding.Status.InteractionMode == accessv1.Policy_Spec_Rule_Surface_INTERACTIVE
 	}
 
 	return ret, nil

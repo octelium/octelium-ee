@@ -20,7 +20,6 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
-	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
@@ -73,13 +72,13 @@ func newIntegrationTest(t *testing.T) *integrationTest {
 }
 
 func (i *integrationTest) createSecret(t *testing.T) string {
-	sec, err := i.octeliumC.EnterpriseC().CreateSecret(i.ctx, &enterprisev1.Secret{
+	sec, err := i.octeliumC.AccessC().CreateSecret(i.ctx, &accessv1.Secret{
 		Metadata: &metav1.Metadata{
 			Name: utilrand.GetRandomStringCanonical(8),
 		},
-		Spec: &enterprisev1.Secret_Spec{},
-		Data: &enterprisev1.Secret_Data{
-			Type: &enterprisev1.Secret_Data_Value{
+		Spec: &accessv1.Secret_Spec{},
+		Data: &accessv1.Secret_Data{
+			Type: &accessv1.Secret_Data_Value{
 				Value: utilrand.GetRandomString(24),
 			},
 		},
@@ -204,29 +203,28 @@ func TestIntegrationOnDeleteRemovesChildren(t *testing.T) {
 			Metadata: &metav1.Metadata{
 				Name: utilrand.GetRandomStringCanonical(8),
 			},
-			Spec: &accessv1.IntegrationIdentity_Spec{
+			Spec: &accessv1.IntegrationIdentity_Spec{},
+			Status: &accessv1.IntegrationIdentity_Status{
 				IntegrationRef: umetav1.GetObjectReference(item),
 				UserRef:        umetav1.GetObjectReference(usr),
 				ExternalID:     "U00000001",
+				Source:         accessv1.IntegrationIdentity_Status_EMAIL_DISCOVERY,
 			},
-			Status: &accessv1.IntegrationIdentity_Status{},
 		})
 	assert.Nil(t, err, "%+v", err)
 
-	target, err := i.octeliumC.AccessC().CreateIntegrationTarget(i.ctx,
-		&accessv1.IntegrationTarget{
+	other, err := i.octeliumC.AccessC().CreateIntegrationIdentity(i.ctx,
+		&accessv1.IntegrationIdentity{
 			Metadata: &metav1.Metadata{
 				Name: utilrand.GetRandomStringCanonical(8),
 			},
-			Spec: &accessv1.IntegrationTarget_Spec{
-				IntegrationRef: umetav1.GetObjectReference(item),
-				Type: &accessv1.IntegrationTarget_Spec_Slack_{
-					Slack: &accessv1.IntegrationTarget_Spec_Slack{
-						ChannelID: "C12345678",
-					},
-				},
+			Spec: &accessv1.IntegrationIdentity_Spec{},
+			Status: &accessv1.IntegrationIdentity_Status{
+				IntegrationRef: umetav1.GetObjectReference(i.createIntegration(t)),
+				UserRef:        umetav1.GetObjectReference(usr),
+				ExternalID:     "U00000002",
+				Source:         accessv1.IntegrationIdentity_Status_EMAIL_DISCOVERY,
 			},
-			Status: &accessv1.IntegrationTarget_Status{},
 		})
 	assert.Nil(t, err, "%+v", err)
 
@@ -237,8 +235,8 @@ func TestIntegrationOnDeleteRemovesChildren(t *testing.T) {
 	})
 	assert.NotNil(t, err)
 
-	_, err = i.octeliumC.AccessC().GetIntegrationTarget(i.ctx, &rmetav1.GetOptions{
-		Uid: target.Metadata.Uid,
+	_, err = i.octeliumC.AccessC().GetIntegrationIdentity(i.ctx, &rmetav1.GetOptions{
+		Uid: other.Metadata.Uid,
 	})
-	assert.NotNil(t, err)
+	assert.Nil(t, err, "%+v", err)
 }

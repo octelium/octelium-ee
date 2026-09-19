@@ -26,7 +26,6 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
-	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
@@ -47,6 +46,7 @@ type ingressTest struct {
 	srv       *Server
 	octeliumC octeliumc.ClientInterface
 
+	slackURL    string
 	integration *accessv1.Integration
 }
 
@@ -68,6 +68,7 @@ func newIngressTest(t *testing.T) *ingressTest {
 		ctx:       ctx,
 		srv:       NewServer(octeliumC, "example.com"),
 		octeliumC: octeliumC,
+		slackURL:  slackSrv.URL,
 	}
 	t.Cleanup(ret.srv.Close)
 
@@ -90,13 +91,13 @@ func tstSlackHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (i *ingressTest) createSecret(t *testing.T, value string) string {
-	sec, err := i.octeliumC.EnterpriseC().CreateSecret(i.ctx, &enterprisev1.Secret{
+	sec, err := i.octeliumC.AccessC().CreateSecret(i.ctx, &accessv1.Secret{
 		Metadata: &metav1.Metadata{
 			Name: utilrand.GetRandomStringCanonical(8),
 		},
-		Spec: &enterprisev1.Secret_Spec{},
-		Data: &enterprisev1.Secret_Data{
-			Type: &enterprisev1.Secret_Data_Value{
+		Spec: &accessv1.Secret_Spec{},
+		Data: &accessv1.Secret_Data{
+			Type: &accessv1.Secret_Data_Value{
 				Value: value,
 			},
 		},
@@ -164,17 +165,21 @@ func (i *ingressTest) createUser(t *testing.T) *corev1.User {
 }
 
 func (i *ingressTest) createIdentity(t *testing.T, usr *corev1.User, externalID string) {
+	i.createIdentityOf(t, i.integration, usr, externalID)
+}
+
+func (i *ingressTest) createIdentityOf(t *testing.T, integration *accessv1.Integration,
+	usr *corev1.User, externalID string) {
 	_, err := i.octeliumC.AccessC().CreateIntegrationIdentity(i.ctx, &accessv1.IntegrationIdentity{
 		Metadata: &metav1.Metadata{
 			Name: utilrand.GetRandomStringCanonical(8),
 		},
-		Spec: &accessv1.IntegrationIdentity_Spec{
-			IntegrationRef: umetav1.GetObjectReference(i.integration),
+		Spec: &accessv1.IntegrationIdentity_Spec{},
+		Status: &accessv1.IntegrationIdentity_Status{
+			IntegrationRef: umetav1.GetObjectReference(integration),
 			UserRef:        umetav1.GetObjectReference(usr),
 			ExternalID:     externalID,
-		},
-		Status: &accessv1.IntegrationIdentity_Status{
-			Source: accessv1.IntegrationIdentity_Status_MANUAL,
+			Source:         accessv1.IntegrationIdentity_Status_EMAIL_DISCOVERY,
 		},
 	})
 	assert.Nil(t, err, "%+v", err)
@@ -238,21 +243,26 @@ func (i *ingressTest) createRequest(t *testing.T, reviewer *corev1.User) *access
 
 func (i *ingressTest) createBinding(t *testing.T, req *accessv1.Request,
 	interactionMode accessv1.Policy_Spec_Rule_Surface_InteractionMode) *accessv1.IntegrationBinding {
+	return i.createBindingOf(t, i.integration, req, interactionMode)
+}
+
+func (i *ingressTest) createBindingOf(t *testing.T, integration *accessv1.Integration,
+	req *accessv1.Request,
+	interactionMode accessv1.Policy_Spec_Rule_Surface_InteractionMode) *accessv1.IntegrationBinding {
 	item, err := i.octeliumC.AccessC().CreateIntegrationBinding(i.ctx, &accessv1.IntegrationBinding{
 		Metadata: &metav1.Metadata{
 			Name: fmt.Sprintf("b%s", utilrand.GetRandomStringCanonical(16)),
 		},
-		Spec: &accessv1.IntegrationBinding_Spec{
-			IntegrationRef:  umetav1.GetObjectReference(i.integration),
+		Spec: &accessv1.IntegrationBinding_Spec{},
+		Status: &accessv1.IntegrationBinding_Status{
+			IntegrationRef:  umetav1.GetObjectReference(integration),
 			RequestRef:      umetav1.GetObjectReference(req),
 			StepIndex:       0,
 			StepName:        "first",
-			Purpose:         accessv1.IntegrationBinding_Spec_REVIEW_SURFACE,
+			Purpose:         accessv1.IntegrationBinding_Status_REVIEW_SURFACE,
 			InteractionMode: interactionMode,
-		},
-		Status: &accessv1.IntegrationBinding_Status{
-			State:      accessv1.IntegrationBinding_Status_READY,
-			ExternalID: utilrand.GetRandomStringCanonical(10),
+			State:           accessv1.IntegrationBinding_Status_READY,
+			ExternalID:      utilrand.GetRandomStringCanonical(10),
 		},
 	})
 	assert.Nil(t, err, "%+v", err)
@@ -419,6 +429,73 @@ func TestInboundUnknownBinding(t *testing.T) {
 			fmt.Sprintf("b%s", utilrand.GetRandomStringCanonical(16)), "trig-1"))
 	assert.Nil(t, err, "%+v", err)
 	assert.Contains(t, tstResponseText(t, resp), "no longer presented")
+
+	assert.Equal(t, 0, len(i.listReviews(t, req)))
+}
+
+func TestInboundDecisionOfAnotherIntegrationOfTheSameTenant(t *testing.T) {
+	i := newIngressTest(t)
+
+	other := i.createIntegration(t, i.slackURL)
+
+	reviewer := i.createUser(t)
+	i.createIdentity(t, reviewer, tstSlackUserID)
+
+	req := i.createRequest(t, reviewer)
+	binding := i.createBindingOf(t, other, req,
+		accessv1.Policy_Spec_Rule_Surface_INTERACTIVE)
+
+	resp, err := i.srv.Handle(i.ctx, i.integration.Status.Id,
+		i.interaction(t, "octelium-access-approve", binding.Metadata.Name, "trig-1"))
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	reviews := i.listReviews(t, req)
+	assert.Equal(t, 1, len(reviews))
+	assert.Equal(t, accessv1.Review_Spec_DECISION_APPROVE, reviews[0].Spec.Decision)
+	assert.Equal(t, i.integration.Metadata.Uid, reviews[0].Status.Origin.IntegrationRef.Uid)
+}
+
+func TestInboundDecisionOfAnotherTenantIsRefused(t *testing.T) {
+	i := newIngressTest(t)
+
+	other := i.createIntegration(t, i.slackURL)
+	other.Status.ExternalTenantID = "T00000002"
+	other, err := i.octeliumC.AccessC().UpdateIntegration(i.ctx, other)
+	assert.Nil(t, err, "%+v", err)
+
+	reviewer := i.createUser(t)
+	i.createIdentity(t, reviewer, tstSlackUserID)
+
+	req := i.createRequest(t, reviewer)
+	binding := i.createBindingOf(t, other, req,
+		accessv1.Policy_Spec_Rule_Surface_INTERACTIVE)
+
+	_, err = i.srv.Handle(i.ctx, i.integration.Status.Id,
+		i.interaction(t, "octelium-access-approve", binding.Metadata.Name, "trig-1"))
+	assert.NotNil(t, err)
+
+	assert.Equal(t, 0, len(i.listReviews(t, req)))
+}
+
+func TestInboundDecisionOfADisabledIntegrationOfTheSameTenant(t *testing.T) {
+	i := newIngressTest(t)
+
+	other := i.createIntegration(t, i.slackURL)
+	other.Spec.IsDisabled = true
+	other, err := i.octeliumC.AccessC().UpdateIntegration(i.ctx, other)
+	assert.Nil(t, err, "%+v", err)
+
+	reviewer := i.createUser(t)
+	i.createIdentity(t, reviewer, tstSlackUserID)
+
+	req := i.createRequest(t, reviewer)
+	binding := i.createBindingOf(t, other, req,
+		accessv1.Policy_Spec_Rule_Surface_INTERACTIVE)
+
+	_, err = i.srv.Handle(i.ctx, i.integration.Status.Id,
+		i.interaction(t, "octelium-access-approve", binding.Metadata.Name, "trig-1"))
+	assert.NotNil(t, err)
 
 	assert.Equal(t, 0, len(i.listReviews(t, req)))
 }

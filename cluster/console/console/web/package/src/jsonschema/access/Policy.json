@@ -613,126 +613,32 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Surface",
-            "description": "Surface is an external Integration destination on which the Cluster presents a Request. The access Policy only describes the audience and how much the external provider is trusted. The provider-specific configuration itself belongs to the Integration and to the IntegrationTarget resources."
+            "description": "Surface is an external Integration destination on which the Cluster presents a Request. The access Policy only describes the audience and how much the external provider is trusted. The provider-specific configuration itself belongs to the Integration."
         },
         "octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination": {
             "properties": {
-                "reviewers": {
-                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Reviewers",
-                    "additionalProperties": false,
-                    "description": "Reviewers delivers to the current reviewers of the Request."
-                },
-                "requester": {
-                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Requester",
-                    "additionalProperties": false,
-                    "description": "Requester delivers to the requester of the Request."
-                },
-                "subject": {
-                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Subject",
-                    "additionalProperties": false,
-                    "description": "Subject delivers to the subject of the Request."
-                },
-                "targetRef": {
+                "integrationRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
-                    "description": "TargetRef is the reference of a shared IntegrationTarget (e.g. a chat channel or a service desk project)."
+                    "description": "IntegrationRef is the reference of the Integration that delivers the Surface. Required."
+                },
+                "audience": {
+                    "enum": [
+                        "AUDIENCE_UNSET",
+                        "SHARED",
+                        "REVIEWERS",
+                        "REQUESTER",
+                        "SUBJECT"
+                    ],
+                    "type": "string",
+                    "title": "Audience",
+                    "description": "Audience is who the Surface is presented to"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "allOf": [
-                {
-                    "oneOf": [
-                        {
-                            "not": {
-                                "anyOf": [
-                                    {
-                                        "required": [
-                                            "reviewers"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "requester"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "subject"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "targetRef"
-                                        ]
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            "required": [
-                                "reviewers"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "requester"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "subject"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "targetRef"
-                            ]
-                        }
-                    ]
-                }
-            ],
             "title": "Destination",
             "description": "Destination is the audience of the Surface"
-        },
-        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Requester": {
-            "properties": {
-                "integrationRef": {
-                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false,
-                    "description": "IntegrationRef is the reference of the Integration whose external User the requester is resolved to."
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "Requester",
-            "description": "Requester delivers directly to the User that created the Request"
-        },
-        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Reviewers": {
-            "properties": {
-                "integrationRef": {
-                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false,
-                    "description": "IntegrationRef is the reference of the Integration whose external Users the reviewers are resolved to."
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "Reviewers",
-            "description": "Reviewers delivers directly to every User that can currently review the Request at its current Step"
-        },
-        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Subject": {
-            "properties": {
-                "integrationRef": {
-                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false,
-                    "description": "IntegrationRef is the reference of the Integration whose external User the subject is resolved to."
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "Subject",
-            "description": "Subject delivers directly to the User that the access is requested for"
         },
         "octelium.api.main.access.v1.Policy.Status": {
             "additionalProperties": false,

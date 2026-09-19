@@ -32,6 +32,7 @@ const maxRespBytes = 1 << 20
 
 type Provider struct {
 	url           string
+	name          string
 	signingSecret []byte
 	inboundSecret []byte
 	hc            *http.Client
@@ -44,7 +45,7 @@ var _ accessintg.InboundHandler = (*Provider)(nil)
 type deliveryPayload struct {
 	Type         string                   `json:"type"`
 	BindingName  string                   `json:"bindingName"`
-	TargetName   string                   `json:"targetName,omitempty"`
+	Name         string                   `json:"name,omitempty"`
 	ExternalID   string                   `json:"externalID,omitempty"`
 	Presentation *accessintg.Presentation `json:"presentation"`
 	SentAt       string                   `json:"sentAt"`
@@ -65,6 +66,7 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface,
 
 	ret := &Provider{
 		url:           strings.TrimSpace(spec.Url),
+		name:          spec.Name,
 		signingSecret: []byte(signingSecret),
 		hc: &http.Client{
 			Timeout: 30 * time.Second,
@@ -161,25 +163,15 @@ func (p *Provider) ClosePresentation(ctx context.Context,
 
 func (p *Provider) deliver(ctx context.Context, typ string,
 	in *accessintg.PresentationDelivery) (*accessintg.DeliveryResult, error) {
-	u := p.url
-	targetName := ""
-
-	if in.Target != nil {
-		targetName = in.Target.Metadata.Name
-		if spec := in.Target.Spec.GetWebhook(); spec != nil {
-			if spec.Url != "" {
-				u = spec.Url
-			}
-			if spec.Name != "" {
-				targetName = spec.Name
-			}
-		}
+	name := p.name
+	if name == "" {
+		name = in.Integration.Metadata.Name
 	}
 
 	payload := &deliveryPayload{
 		Type:         typ,
 		BindingName:  in.Binding.Metadata.Name,
-		TargetName:   targetName,
+		Name:         name,
 		ExternalID:   in.Binding.Status.ExternalID,
 		Presentation: in.Presentation,
 		SentAt:       time.Now().UTC().Format(time.RFC3339),
@@ -190,7 +182,7 @@ func (p *Provider) deliver(ctx context.Context, typ string,
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.url, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +215,7 @@ func (p *Provider) deliver(ctx context.Context, typ string,
 	return &accessintg.DeliveryResult{
 		ExternalID:          externalID,
 		ExternalURL:         in.Binding.Status.ExternalURL,
-		ExternalRecipientID: targetName,
+		ExternalRecipientID: name,
 	}, nil
 }
 

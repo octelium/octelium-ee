@@ -45,7 +45,7 @@ type IdentityResolver interface {
 
 type PresentationDelivery struct {
 	Binding      *accessv1.IntegrationBinding
-	Target       *accessv1.IntegrationTarget
+	Integration  *accessv1.Integration
 	RecipientID  string
 	Presentation *Presentation
 }
@@ -117,7 +117,7 @@ type ActionResult struct {
 
 type DecisionResolver interface {
 	ResolveDecision(ctx context.Context, action *Action,
-		target *accessv1.IntegrationTarget) (accessv1.Review_Spec_Decision, error)
+		integration *accessv1.Integration) (accessv1.Review_Spec_Decision, error)
 }
 
 type InboundHandler interface {

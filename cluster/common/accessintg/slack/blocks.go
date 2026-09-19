@@ -25,7 +25,7 @@ const (
 const maxTextLen = 2800
 
 func buildText(p *accessintg.Presentation) string {
-	if p.Purpose == accessv1.IntegrationBinding_Spec_REVIEW_SURFACE.String() {
+	if p.Purpose == accessv1.IntegrationBinding_Status_REVIEW_SURFACE.String() {
 		return fmt.Sprintf("Access Request %s by %s for %s",
 			p.RequestName, p.Requester, p.Resource)
 	}
@@ -33,7 +33,7 @@ func buildText(p *accessintg.Presentation) string {
 	return fmt.Sprintf("Access Request %s is %s", p.RequestName, p.State)
 }
 
-func buildBlocks(p *accessintg.Presentation, target *accessv1.IntegrationTarget,
+func buildBlocks(p *accessintg.Presentation, mentionUserGroupID string,
 	bindingName string) []any {
 	ret := []any{
 		map[string]any{
@@ -112,7 +112,7 @@ func buildBlocks(p *accessintg.Presentation, target *accessv1.IntegrationTarget,
 				button(actionIDReject, "Reject", "danger", bindingName),
 			},
 		})
-	} else if p.Purpose == accessv1.IntegrationBinding_Spec_REVIEW_SURFACE.String() {
+	} else if p.Purpose == accessv1.IntegrationBinding_Status_REVIEW_SURFACE.String() {
 		ret = append(ret, map[string]any{
 			"type": "context",
 			"elements": []any{
@@ -122,7 +122,7 @@ func buildBlocks(p *accessintg.Presentation, target *accessv1.IntegrationTarget,
 	}
 
 	contextText := fmt.Sprintf("<%s|Open in the Octelium access portal>", escapeURL(p.PortalURL))
-	if mention := targetMention(target); mention != "" {
+	if mention := userGroupMention(mentionUserGroupID); mention != "" {
 		contextText = fmt.Sprintf("%s  %s", mention, contextText)
 	}
 
@@ -180,12 +180,7 @@ func chunkFields(fields []any, size int) [][]any {
 	return ret
 }
 
-func targetMention(target *accessv1.IntegrationTarget) string {
-	if target == nil || target.Spec.GetSlack() == nil {
-		return ""
-	}
-
-	groupID := target.Spec.GetSlack().MentionUserGroupID
+func userGroupMention(groupID string) string {
 	if groupID == "" {
 		return ""
 	}

@@ -68,6 +68,16 @@ func (c *AccessV1Watcher) Review(
 	return runWatcherAccessV1(ctx, c.octeliumC, opts, uaccessv1.KindReview, onCreate, onUpdate, onDelete)
 }
 
+func (c *AccessV1Watcher) Secret(
+	ctx context.Context,
+	opts *watchers.Opts,
+	onCreate func(ctx context.Context, item *accessv1.Secret) error,
+	onUpdate func(ctx context.Context, new, old *accessv1.Secret) error,
+	onDelete func(ctx context.Context, item *accessv1.Secret) error,
+) error {
+	return runWatcherAccessV1(ctx, c.octeliumC, opts, uaccessv1.KindSecret, onCreate, onUpdate, onDelete)
+}
+
 func (c *AccessV1Watcher) Integration(
 	ctx context.Context,
 	opts *watchers.Opts,
@@ -76,16 +86,6 @@ func (c *AccessV1Watcher) Integration(
 	onDelete func(ctx context.Context, item *accessv1.Integration) error,
 ) error {
 	return runWatcherAccessV1(ctx, c.octeliumC, opts, uaccessv1.KindIntegration, onCreate, onUpdate, onDelete)
-}
-
-func (c *AccessV1Watcher) IntegrationTarget(
-	ctx context.Context,
-	opts *watchers.Opts,
-	onCreate func(ctx context.Context, item *accessv1.IntegrationTarget) error,
-	onUpdate func(ctx context.Context, new, old *accessv1.IntegrationTarget) error,
-	onDelete func(ctx context.Context, item *accessv1.IntegrationTarget) error,
-) error {
-	return runWatcherAccessV1(ctx, c.octeliumC, opts, uaccessv1.KindIntegrationTarget, onCreate, onUpdate, onDelete)
 }
 
 func (c *AccessV1Watcher) IntegrationIdentity(

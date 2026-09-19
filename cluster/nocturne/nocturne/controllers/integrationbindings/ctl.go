@@ -87,7 +87,7 @@ func (c *Controller) Reconcile(ctx context.Context, itm *accessv1.IntegrationBin
 		return nil
 	}
 
-	integration, err := accessintg.GetIntegration(ctx, c.octeliumC, itm.Spec.IntegrationRef)
+	integration, err := accessintg.GetIntegration(ctx, c.octeliumC, itm.Status.IntegrationRef)
 	if err != nil {
 		return err
 	}
@@ -192,22 +192,6 @@ func (c *Controller) deliver(ctx context.Context, integration *accessv1.Integrat
 			integration.Metadata.Name)
 	}
 
-	target, err := accessintg.GetIntegrationTarget(ctx, c.octeliumC, itm.Spec.TargetRef)
-	if err != nil {
-		return nil, err
-	}
-	if itm.Spec.TargetRef != nil && target == nil {
-		return nil, errors.Errorf("The IntegrationTarget of the IntegrationBinding %s no longer exists",
-			itm.Metadata.Name)
-	}
-
-	if target != nil && (target.Spec.IntegrationRef == nil ||
-		target.Spec.IntegrationRef.Uid != integration.Metadata.Uid) {
-		return nil, errors.Errorf(
-			"The IntegrationTarget %s no longer belongs to the Integration %s",
-			target.Metadata.Name, integration.Metadata.Name)
-	}
-
 	recipientID, err := c.getRecipientID(ctx, integration, provider, itm)
 	if err != nil {
 		return nil, err
@@ -215,7 +199,7 @@ func (c *Controller) deliver(ctx context.Context, integration *accessv1.Integrat
 
 	in := &accessintg.PresentationDelivery{
 		Binding:      itm,
-		Target:       target,
+		Integration:  integration,
 		RecipientID:  recipientID,
 		Presentation: presentation,
 	}
@@ -224,7 +208,7 @@ func (c *Controller) deliver(ctx context.Context, integration *accessv1.Integrat
 
 	switch {
 	case itm.Status.ExternalID == "" && isClosing &&
-		itm.Spec.Purpose == accessv1.IntegrationBinding_Spec_REVIEW_SURFACE:
+		itm.Status.Purpose == accessv1.IntegrationBinding_Status_REVIEW_SURFACE:
 		return &accessintg.DeliveryResult{}, nil
 
 	case itm.Status.ExternalID == "":
@@ -240,7 +224,7 @@ func (c *Controller) deliver(ctx context.Context, integration *accessv1.Integrat
 
 func (c *Controller) getRecipientID(ctx context.Context, integration *accessv1.Integration,
 	provider accessintg.Provider, itm *accessv1.IntegrationBinding) (string, error) {
-	if itm.Spec.UserRef == nil {
+	if itm.Status.UserRef == nil {
 		return "", nil
 	}
 
@@ -248,7 +232,7 @@ func (c *Controller) getRecipientID(ctx context.Context, integration *accessv1.I
 		return itm.Status.ExternalRecipientID, nil
 	}
 
-	usr, err := accesscmd.GetUser(ctx, c.octeliumC, itm.Spec.UserRef)
+	usr, err := accesscmd.GetUser(ctx, c.octeliumC, itm.Status.UserRef)
 	if err != nil {
 		return "", err
 	}
@@ -301,12 +285,12 @@ func (c *Controller) setDesiredRevision(ctx context.Context,
 
 func (c *Controller) getRequest(ctx context.Context,
 	itm *accessv1.IntegrationBinding) (*accessv1.Request, error) {
-	if itm.Spec.RequestRef == nil {
+	if itm.Status.RequestRef == nil {
 		return nil, nil
 	}
 
 	req, err := c.octeliumC.AccessC().GetRequest(ctx,
-		apivalidation.ObjectReferenceToRGetOptions(itm.Spec.RequestRef))
+		apivalidation.ObjectReferenceToRGetOptions(itm.Status.RequestRef))
 	if err != nil {
 		if grpcerr.IsNotFound(err) {
 			return nil, nil
@@ -385,7 +369,7 @@ func (c *Controller) listBindingsOf(ctx context.Context,
 	req *accessv1.Request) ([]*accessv1.IntegrationBinding, error) {
 	itemList, err := c.octeliumC.AccessC().ListIntegrationBinding(ctx, &rmetav1.ListOptions{
 		Filters: []*rmetav1.ListOptions_Filter{
-			urscsrv.FilterFieldEQValStr("spec.requestRef.uid", req.Metadata.Uid),
+			urscsrv.FilterFieldEQValStr("status.requestRef.uid", req.Metadata.Uid),
 		},
 	})
 	if err != nil {
@@ -401,11 +385,11 @@ func isClosed(itm *accessv1.IntegrationBinding, req *accessv1.Request) bool {
 		return true
 	}
 
-	if itm.Spec.Purpose != accessv1.IntegrationBinding_Spec_REVIEW_SURFACE {
+	if itm.Status.Purpose != accessv1.IntegrationBinding_Status_REVIEW_SURFACE {
 		return false
 	}
 
-	return accesscmd.CurrentStepIndex(req) != itm.Spec.StepIndex
+	return accesscmd.CurrentStepIndex(req) != itm.Status.StepIndex
 }
 
 func backoff(attempts uint32) time.Duration {

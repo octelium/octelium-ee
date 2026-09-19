@@ -50,10 +50,8 @@ func (c *Controller) ensureIntegrationBindings(ctx context.Context, itm *accessv
 				Name:     itm.Name,
 				IsSystem: true,
 			},
-			Spec: itm.Spec,
-			Status: &accessv1.IntegrationBinding_Status{
-				State: accessv1.IntegrationBinding_Status_PENDING,
-			},
+			Spec:   &accessv1.IntegrationBinding_Spec{},
+			Status: itm.Status,
 		}
 
 		revision, err := c.bindingRevision(ctx, binding, req)
@@ -115,7 +113,7 @@ func (c *Controller) listIntegrationBindings(ctx context.Context,
 	req *accessv1.Request) (map[string]*accessv1.IntegrationBinding, error) {
 	itemList, err := c.octeliumC.AccessC().ListIntegrationBinding(ctx, &rmetav1.ListOptions{
 		Filters: []*rmetav1.ListOptions_Filter{
-			urscsrv.FilterFieldEQValStr("spec.requestRef.uid", req.Metadata.Uid),
+			urscsrv.FilterFieldEQValStr("status.requestRef.uid", req.Metadata.Uid),
 		},
 	})
 	if err != nil {

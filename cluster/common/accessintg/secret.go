@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
-	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
+	"github.com/octelium/octelium-ee/pkg/apiutils/uaccessv1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/pkg/errors"
 )
@@ -24,14 +24,14 @@ func GetSecretValue(ctx context.Context, octeliumC octeliumc.ClientInterface,
 		return "", errors.Errorf("Empty Secret name")
 	}
 
-	sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+	sec, err := octeliumC.AccessC().GetSecret(ctx, &rmetav1.GetOptions{
 		Name: name,
 	})
 	if err != nil {
 		return "", err
 	}
 
-	val := strings.TrimSpace(uenterprisev1.ToSecret(sec).GetValueStr())
+	val := strings.TrimSpace(uaccessv1.ToSecret(sec).GetValueStr())
 	if val == "" {
 		return "", errors.Errorf("The Secret %s is empty", name)
 	}

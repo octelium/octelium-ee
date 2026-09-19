@@ -59,7 +59,7 @@ func ResolveUserFromExternalID(ctx context.Context, opts *ResolveOpts,
 	}
 
 	if identity != nil {
-		usr, err := accesscmd.GetUser(ctx, opts.OcteliumC, identity.Spec.UserRef)
+		usr, err := accesscmd.GetUser(ctx, opts.OcteliumC, identity.Status.UserRef)
 		if err != nil {
 			return nil, err
 		}
@@ -144,7 +144,7 @@ func ResolveExternalIDFromUser(ctx context.Context, opts *ResolveOpts,
 		return &Resolution{
 			IsResolved: true,
 			User:       usr,
-			ExternalID: identity.Spec.ExternalID,
+			ExternalID: identity.Status.ExternalID,
 			Identity:   identity,
 			Source:     identity.Status.Source,
 		}, nil
@@ -197,8 +197,8 @@ func getIdentityByExternalID(ctx context.Context, octeliumC octeliumc.ClientInte
 	integration *accessv1.Integration, externalID string) (*accessv1.IntegrationIdentity, error) {
 	itemList, err := octeliumC.AccessC().ListIntegrationIdentity(ctx, &rmetav1.ListOptions{
 		Filters: []*rmetav1.ListOptions_Filter{
-			urscsrv.FilterFieldEQValStr("spec.integrationRef.uid", integration.Metadata.Uid),
-			urscsrv.FilterFieldEQValStr("spec.externalID", externalID),
+			urscsrv.FilterFieldEQValStr("status.integrationRef.uid", integration.Metadata.Uid),
+			urscsrv.FilterFieldEQValStr("status.externalID", externalID),
 		},
 	})
 	if err != nil {
@@ -216,8 +216,8 @@ func getIdentityByUserUID(ctx context.Context, octeliumC octeliumc.ClientInterfa
 	integration *accessv1.Integration, userUID string) (*accessv1.IntegrationIdentity, error) {
 	itemList, err := octeliumC.AccessC().ListIntegrationIdentity(ctx, &rmetav1.ListOptions{
 		Filters: []*rmetav1.ListOptions_Filter{
-			urscsrv.FilterFieldEQValStr("spec.integrationRef.uid", integration.Metadata.Uid),
-			urscsrv.FilterFieldEQValStr("spec.userRef.uid", userUID),
+			urscsrv.FilterFieldEQValStr("status.integrationRef.uid", integration.Metadata.Uid),
+			urscsrv.FilterFieldEQValStr("status.userRef.uid", userUID),
 		},
 	})
 	if err != nil {
@@ -257,12 +257,11 @@ func setDiscoveredIdentity(ctx context.Context, octeliumC octeliumc.ClientInterf
 			Name:     GenerateIdentityName(integration, externalUsr.ID),
 			IsSystem: true,
 		},
-		Spec: &accessv1.IntegrationIdentity_Spec{
-			IntegrationRef: umetav1.GetObjectReference(integration),
-			UserRef:        umetav1.GetObjectReference(usr),
-			ExternalID:     externalUsr.ID,
-		},
+		Spec: &accessv1.IntegrationIdentity_Spec{},
 		Status: &accessv1.IntegrationIdentity_Status{
+			IntegrationRef:   umetav1.GetObjectReference(integration),
+			UserRef:          umetav1.GetObjectReference(usr),
+			ExternalID:       externalUsr.ID,
 			Source:           accessv1.IntegrationIdentity_Status_EMAIL_DISCOVERY,
 			VerifiedAt:       pbutils.Now(),
 			ExternalUsername: externalUsr.Username,

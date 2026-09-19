@@ -142,37 +142,48 @@ func TestResolveDecisionFromTheEventStatus(t *testing.T) {
 	ctx := context.Background()
 	p := tstProvider()
 
-	target := &accessv1.IntegrationTarget{
-		Metadata: &metav1.Metadata{Name: "tgt"},
-		Spec: &accessv1.IntegrationTarget_Spec{
-			Type: &accessv1.IntegrationTarget_Spec_Jira_{
-				Jira: &accessv1.IntegrationTarget_Spec_Jira{
-					ProjectKey:    "OPS",
-					ApproveStatus: "Approved",
-					RejectStatus:  "Rejected",
-				},
-			},
-		},
+	p.projectKey = "OPS"
+	p.approveStatus = "Approved"
+	p.rejectStatus = "Rejected"
+
+	integration := &accessv1.Integration{
+		Metadata: &metav1.Metadata{Name: "jira"},
 	}
 
 	decision, err := p.ResolveDecision(ctx, &accessintg.Action{
 		ExternalObjectID: "OPS-12",
 		ExternalStatus:   "approved",
-	}, target)
+	}, integration)
 	assert.Nil(t, err, "%+v", err)
 	assert.Equal(t, accessv1.Review_Spec_DECISION_APPROVE, decision)
 
 	decision, err = p.ResolveDecision(ctx, &accessintg.Action{
 		ExternalObjectID: "OPS-12",
 		ExternalStatus:   "Rejected",
-	}, target)
+	}, integration)
 	assert.Nil(t, err, "%+v", err)
 	assert.Equal(t, accessv1.Review_Spec_DECISION_REJECT, decision)
 
 	decision, err = p.ResolveDecision(ctx, &accessintg.Action{
 		ExternalObjectID: "OPS-12",
 		ExternalStatus:   "In Progress",
-	}, target)
+	}, integration)
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, accessv1.Review_Spec_DECISION_UNSET, decision)
+}
+
+func TestResolveDecisionWithoutAnyStatus(t *testing.T) {
+	ctx := context.Background()
+	p := tstProvider()
+
+	integration := &accessv1.Integration{
+		Metadata: &metav1.Metadata{Name: "jira"},
+	}
+
+	decision, err := p.ResolveDecision(ctx, &accessintg.Action{
+		ExternalObjectID: "OPS-12",
+		ExternalStatus:   "Approved",
+	}, integration)
 	assert.Nil(t, err, "%+v", err)
 	assert.Equal(t, accessv1.Review_Spec_DECISION_UNSET, decision)
 }

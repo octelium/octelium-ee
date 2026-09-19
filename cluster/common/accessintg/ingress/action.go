@@ -34,12 +34,12 @@ const maxActionDurationSeconds = 60 * 60 * 24 * 30 * 12 * 100
 func (s *Server) setReviewDecision(ctx context.Context, integration *accessv1.Integration,
 	provider accessintg.Provider,
 	action *accessintg.Action) (*accessintg.ActionResult, error) {
-	if !accessintg.HasCapability(integration, accessv1.Integration_Status_INTERACTIVE_REVIEW) {
-		return nil, errors.Errorf("The Integration %s cannot submit the decisions of its actors",
-			integration.Metadata.Name)
+	tenant, err := s.tenantIntegrations(ctx, integration)
+	if err != nil {
+		return nil, err
 	}
 
-	binding, err := s.getActionBinding(ctx, integration, action)
+	binding, err := s.getActionBinding(ctx, tenant, action)
 	if err != nil {
 		return nil, err
 	}
@@ -49,8 +49,16 @@ func (s *Server) setReviewDecision(ctx context.Context, integration *accessv1.In
 		}, nil
 	}
 
-	if binding.Spec.Purpose != accessv1.IntegrationBinding_Spec_REVIEW_SURFACE ||
-		binding.Spec.InteractionMode != accessv1.Policy_Spec_Rule_Surface_INTERACTIVE {
+	bindingIntegration := tenant[binding.Status.GetIntegrationRef().GetUid()]
+
+	if !accessintg.HasCapability(bindingIntegration,
+		accessv1.Integration_Status_INTERACTIVE_REVIEW) {
+		return nil, errors.Errorf("The Integration %s cannot submit the decisions of its actors",
+			bindingIntegration.Metadata.Name)
+	}
+
+	if binding.Status.Purpose != accessv1.IntegrationBinding_Status_REVIEW_SURFACE ||
+		binding.Status.InteractionMode != accessv1.Policy_Spec_Rule_Surface_INTERACTIVE {
 		return nil, errors.Errorf("The IntegrationBinding %s does not accept any decision",
 			binding.Metadata.Name)
 	}
@@ -62,7 +70,7 @@ func (s *Server) setReviewDecision(ctx context.Context, integration *accessv1.In
 		}, nil
 	}
 
-	req, err := s.getRequest(ctx, binding.Spec.RequestRef)
+	req, err := s.getRequest(ctx, binding.Status.RequestRef)
 	if err != nil {
 		return nil, err
 	}
@@ -85,13 +93,13 @@ func (s *Server) setReviewDecision(ctx context.Context, integration *accessv1.In
 
 	decision := action.Decision
 
-	if resolver, ok := provider.(accessintg.DecisionResolver); ok {
-		target, err := accessintg.GetIntegrationTarget(ctx, s.octeliumC, binding.Spec.TargetRef)
-		if err != nil {
-			return nil, err
-		}
+	bindingProvider, err := s.getProvider(ctx, bindingIntegration)
+	if err != nil {
+		return nil, err
+	}
 
-		decision, err = resolver.ResolveDecision(ctx, action, target)
+	if resolver, ok := bindingProvider.(accessintg.DecisionResolver); ok {
+		decision, err = resolver.ResolveDecision(ctx, action, bindingIntegration)
 		if err != nil {
 			return nil, err
 		}
@@ -109,7 +117,7 @@ func (s *Server) setReviewDecision(ctx context.Context, integration *accessv1.In
 		Request:          req,
 		Decision:         decision,
 		Justification:    action.Justification,
-		ExpectedStepName: binding.Spec.StepName,
+		ExpectedStepName: binding.Status.StepName,
 		Origin: &accessv1.Origin{
 			Type:            accessv1.Origin_INTEGRATION,
 			IntegrationRef:  umetav1.GetObjectReference(integration),
@@ -230,7 +238,39 @@ func (s *Server) resolveActor(ctx context.Context, integration *accessv1.Integra
 	return accessintg.ResolveUserFromExternalID(ctx, opts, externalActorID)
 }
 
-func (s *Server) getActionBinding(ctx context.Context, integration *accessv1.Integration,
+func (s *Server) tenantIntegrations(ctx context.Context,
+	integration *accessv1.Integration) (map[string]*accessv1.Integration, error) {
+	ret := map[string]*accessv1.Integration{
+		integration.Metadata.Uid: integration,
+	}
+
+	if integration.Status.ExternalTenantID == "" {
+		return ret, nil
+	}
+
+	itemList, err := s.octeliumC.AccessC().ListIntegration(ctx, &rmetav1.ListOptions{
+		Filters: []*rmetav1.ListOptions_Filter{
+			urscsrv.FilterFieldEQValStr("status.externalTenantID",
+				integration.Status.ExternalTenantID),
+		},
+	})
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	for _, itm := range itemList.Items {
+		if itm.Status.Type != integration.Status.Type || itm.Spec.IsDisabled {
+			continue
+		}
+
+		ret[itm.Metadata.Uid] = itm
+	}
+
+	return ret, nil
+}
+
+func (s *Server) getActionBinding(ctx context.Context,
+	tenant map[string]*accessv1.Integration,
 	action *accessintg.Action) (*accessv1.IntegrationBinding, error) {
 	var binding *accessv1.IntegrationBinding
 
@@ -250,7 +290,6 @@ func (s *Server) getActionBinding(ctx context.Context, integration *accessv1.Int
 	case action.ExternalObjectID != "":
 		itemList, err := s.octeliumC.AccessC().ListIntegrationBinding(ctx, &rmetav1.ListOptions{
 			Filters: []*rmetav1.ListOptions_Filter{
-				urscsrv.FilterFieldEQValStr("spec.integrationRef.uid", integration.Metadata.Uid),
 				urscsrv.FilterFieldEQValStr("status.externalID", action.ExternalObjectID),
 			},
 		})
@@ -258,18 +297,25 @@ func (s *Server) getActionBinding(ctx context.Context, integration *accessv1.Int
 			return nil, grpcutils.InternalWithErr(err)
 		}
 
-		if len(itemList.Items) != 1 {
+		items := []*accessv1.IntegrationBinding{}
+		for _, itm := range itemList.Items {
+			if _, ok := tenant[itm.Status.GetIntegrationRef().GetUid()]; ok {
+				items = append(items, itm)
+			}
+		}
+
+		if len(items) != 1 {
 			return nil, nil
 		}
-		binding = itemList.Items[0]
+		binding = items[0]
 
 	default:
 		return nil, errors.Errorf("The inbound action refers to no external object")
 	}
 
-	if binding.Spec.IntegrationRef == nil ||
-		binding.Spec.IntegrationRef.Uid != integration.Metadata.Uid {
-		return nil, errors.Errorf("The IntegrationBinding %s belongs to another Integration",
+	if _, ok := tenant[binding.Status.GetIntegrationRef().GetUid()]; !ok {
+		return nil, errors.Errorf(
+			"The IntegrationBinding %s does not belong to this provider tenant",
 			binding.Metadata.Name)
 	}
 

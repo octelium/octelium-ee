@@ -25,11 +25,11 @@ import (
 const MaxBindingEventIDs = 64
 
 type DesiredBinding struct {
-	Name string
-	Spec *accessv1.IntegrationBinding_Spec
+	Name   string
+	Status *accessv1.IntegrationBinding_Status
 }
 
-func BindingName(requestUID string, purpose accessv1.IntegrationBinding_Spec_Purpose,
+func BindingName(requestUID string, purpose accessv1.IntegrationBinding_Status_Purpose,
 	stepIndex int32, surfaceIndex int, recipientUID string) string {
 	return resourceNameFromKey("b", requestUID, purpose.String(),
 		fmt.Sprintf("%d", stepIndex), fmt.Sprintf("%d", surfaceIndex), recipientUID)
@@ -45,7 +45,7 @@ func DesiredBindings(ctx context.Context, octeliumC octeliumc.ClientInterface,
 
 	for idx, surface := range req.Status.Rule.Notifications {
 		items, err := desiredBindingsOf(ctx, octeliumC, req, surface,
-			accessv1.IntegrationBinding_Spec_NOTIFICATION, nil, 0, idx)
+			accessv1.IntegrationBinding_Status_NOTIFICATION, nil, 0, idx)
 		if err != nil {
 			return nil, err
 		}
@@ -59,7 +59,7 @@ func DesiredBindings(ctx context.Context, octeliumC octeliumc.ClientInterface,
 
 	for idx, surface := range step.Surfaces {
 		items, err := desiredBindingsOf(ctx, octeliumC, req, surface,
-			accessv1.IntegrationBinding_Spec_REVIEW_SURFACE, step, stepIndex, idx)
+			accessv1.IntegrationBinding_Status_REVIEW_SURFACE, step, stepIndex, idx)
 		if err != nil {
 			return nil, err
 		}
@@ -72,7 +72,7 @@ func DesiredBindings(ctx context.Context, octeliumC octeliumc.ClientInterface,
 func desiredBindingsOf(ctx context.Context, octeliumC octeliumc.ClientInterface,
 	req *accessv1.Request,
 	surface *accessv1.Policy_Spec_Rule_Surface,
-	purpose accessv1.IntegrationBinding_Spec_Purpose,
+	purpose accessv1.IntegrationBinding_Status_Purpose,
 	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
 	stepIndex int32, surfaceIndex int) ([]*DesiredBinding, error) {
 	if surface == nil || surface.Destination == nil {
@@ -80,7 +80,7 @@ func desiredBindingsOf(ctx context.Context, octeliumC octeliumc.ClientInterface,
 	}
 
 	interactionMode := surface.InteractionMode
-	if purpose == accessv1.IntegrationBinding_Spec_NOTIFICATION {
+	if purpose == accessv1.IntegrationBinding_Status_NOTIFICATION {
 		interactionMode = accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY
 	}
 
@@ -89,23 +89,25 @@ func desiredBindingsOf(ctx context.Context, octeliumC octeliumc.ClientInterface,
 		stepName = accesscmd.StepName(step, stepIndex)
 	}
 
-	newBinding := func(integration *accessv1.Integration,
-		targetRef *metav1.ObjectReference, userRef *metav1.ObjectReference) *DesiredBinding {
+	integration, err := GetIntegration(ctx, octeliumC, surface.Destination.IntegrationRef)
+	if err != nil {
+		return nil, err
+	}
+
+	newBinding := func(userRef *metav1.ObjectReference) *DesiredBinding {
 		recipientUID := ""
-		switch {
-		case targetRef != nil:
-			recipientUID = targetRef.Uid
-		case userRef != nil:
+		if userRef != nil {
 			recipientUID = userRef.Uid
 		}
 
 		return &DesiredBinding{
 			Name: BindingName(req.Metadata.Uid, purpose, stepIndex, surfaceIndex, recipientUID),
-			Spec: &accessv1.IntegrationBinding_Spec{
+			Status: &accessv1.IntegrationBinding_Status{
+				State:           accessv1.IntegrationBinding_Status_PENDING,
 				IntegrationRef:  umetav1.GetObjectReference(integration),
 				RequestRef:      umetav1.GetObjectReference(req),
-				TargetRef:       targetRef,
 				UserRef:         userRef,
+				Audience:        surface.Destination.Audience,
 				StepIndex:       stepIndex,
 				StepName:        stepName,
 				Purpose:         purpose,
@@ -114,34 +116,31 @@ func desiredBindingsOf(ctx context.Context, octeliumC octeliumc.ClientInterface,
 		}
 	}
 
-	directBinding := func(integrationRef *metav1.ObjectReference,
-		userRef *metav1.ObjectReference) ([]*DesiredBinding, error) {
+	directBinding := func(userRef *metav1.ObjectReference) ([]*DesiredBinding, error) {
 		if userRef == nil {
 			return nil, nil
 		}
 
-		integration, err := GetIntegration(ctx, octeliumC, integrationRef)
-		if err != nil {
-			return nil, err
-		}
 		if !isIntegrationUsable(integration, accessv1.Integration_Status_DIRECT_USER_DELIVERY) {
 			return nil, nil
 		}
 
-		return []*DesiredBinding{newBinding(integration, nil, userRef)}, nil
+		return []*DesiredBinding{newBinding(userRef)}, nil
 	}
 
-	switch surface.Destination.Type.(type) {
-	case *accessv1.Policy_Spec_Rule_Surface_Destination_Reviewers_:
-		if purpose != accessv1.IntegrationBinding_Spec_REVIEW_SURFACE || step == nil {
+	switch surface.Destination.Audience {
+	case accessv1.Policy_Spec_Rule_Surface_Destination_SHARED:
+		if !isIntegrationUsable(integration, accessv1.Integration_Status_NOTIFICATION) {
 			return nil, nil
 		}
 
-		integration, err := GetIntegration(ctx, octeliumC,
-			surface.Destination.GetReviewers().GetIntegrationRef())
-		if err != nil {
-			return nil, err
+		return []*DesiredBinding{newBinding(nil)}, nil
+
+	case accessv1.Policy_Spec_Rule_Surface_Destination_REVIEWERS:
+		if purpose != accessv1.IntegrationBinding_Status_REVIEW_SURFACE || step == nil {
+			return nil, nil
 		}
+
 		if !isIntegrationUsable(integration, accessv1.Integration_Status_DIRECT_USER_DELIVERY) {
 			return nil, nil
 		}
@@ -153,39 +152,16 @@ func desiredBindingsOf(ctx context.Context, octeliumC octeliumc.ClientInterface,
 
 		ret := []*DesiredBinding{}
 		for _, usr := range usrs {
-			ret = append(ret, newBinding(integration, nil, umetav1.GetObjectReference(usr)))
+			ret = append(ret, newBinding(umetav1.GetObjectReference(usr)))
 		}
 
 		return ret, nil
 
-	case *accessv1.Policy_Spec_Rule_Surface_Destination_Requester_:
-		return directBinding(surface.Destination.GetRequester().GetIntegrationRef(),
-			cloneRef(req.Status.UserRef))
+	case accessv1.Policy_Spec_Rule_Surface_Destination_REQUESTER:
+		return directBinding(cloneRef(req.Status.UserRef))
 
-	case *accessv1.Policy_Spec_Rule_Surface_Destination_Subject_:
-		return directBinding(surface.Destination.GetSubject().GetIntegrationRef(),
-			cloneRef(accesscmd.GetSubjectUserRef(req)))
-
-	case *accessv1.Policy_Spec_Rule_Surface_Destination_TargetRef:
-		target, err := GetIntegrationTarget(ctx, octeliumC, surface.Destination.GetTargetRef())
-		if err != nil {
-			return nil, err
-		}
-		if target == nil {
-			return nil, nil
-		}
-
-		integration, err := GetIntegration(ctx, octeliumC, target.Spec.IntegrationRef)
-		if err != nil {
-			return nil, err
-		}
-		if !isIntegrationUsable(integration, accessv1.Integration_Status_NOTIFICATION) {
-			return nil, nil
-		}
-
-		return []*DesiredBinding{
-			newBinding(integration, umetav1.GetObjectReference(target), nil),
-		}, nil
+	case accessv1.Policy_Spec_Rule_Surface_Destination_SUBJECT:
+		return directBinding(cloneRef(accesscmd.GetSubjectUserRef(req)))
 
 	default:
 		return nil, nil
@@ -199,24 +175,6 @@ func GetIntegration(ctx context.Context, octeliumC octeliumc.ClientInterface,
 	}
 
 	item, err := octeliumC.AccessC().GetIntegration(ctx,
-		apivalidation.ObjectReferenceToRGetOptions(ref))
-	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, grpcutils.InternalWithErr(err)
-	}
-
-	return item, nil
-}
-
-func GetIntegrationTarget(ctx context.Context, octeliumC octeliumc.ClientInterface,
-	ref *metav1.ObjectReference) (*accessv1.IntegrationTarget, error) {
-	if ref == nil {
-		return nil, nil
-	}
-
-	item, err := octeliumC.AccessC().GetIntegrationTarget(ctx,
 		apivalidation.ObjectReferenceToRGetOptions(ref))
 	if err != nil {
 		if grpcerr.IsNotFound(err) {

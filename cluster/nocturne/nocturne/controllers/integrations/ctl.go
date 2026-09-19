@@ -47,11 +47,7 @@ func (c *Controller) OnUpdate(ctx context.Context, new, old *accessv1.Integratio
 }
 
 func (c *Controller) OnDelete(ctx context.Context, itm *accessv1.Integration) error {
-	if err := c.deleteIdentities(ctx, itm); err != nil {
-		return err
-	}
-
-	return c.deleteTargets(ctx, itm)
+	return c.deleteIdentities(ctx, itm)
 }
 
 func (c *Controller) reconcile(ctx context.Context, itm *accessv1.Integration) error {
@@ -146,7 +142,7 @@ func (c *Controller) needsSynchronization(itm *accessv1.Integration) bool {
 func (c *Controller) deleteIdentities(ctx context.Context, itm *accessv1.Integration) error {
 	itemList, err := c.octeliumC.AccessC().ListIntegrationIdentity(ctx, &rmetav1.ListOptions{
 		Filters: []*rmetav1.ListOptions_Filter{
-			urscsrv.FilterFieldEQValStr("spec.integrationRef.uid", itm.Metadata.Uid),
+			urscsrv.FilterFieldEQValStr("status.integrationRef.uid", itm.Metadata.Uid),
 		},
 	})
 	if err != nil {
@@ -158,27 +154,6 @@ func (c *Controller) deleteIdentities(ctx context.Context, itm *accessv1.Integra
 			Uid: identity.Metadata.Uid,
 		}); err != nil && !grpcerr.IsNotFound(err) {
 			zap.L().Warn("Could not delete an IntegrationIdentity", zap.Error(err))
-		}
-	}
-
-	return nil
-}
-
-func (c *Controller) deleteTargets(ctx context.Context, itm *accessv1.Integration) error {
-	itemList, err := c.octeliumC.AccessC().ListIntegrationTarget(ctx, &rmetav1.ListOptions{
-		Filters: []*rmetav1.ListOptions_Filter{
-			urscsrv.FilterFieldEQValStr("spec.integrationRef.uid", itm.Metadata.Uid),
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	for _, target := range itemList.Items {
-		if _, err := c.octeliumC.AccessC().DeleteIntegrationTarget(ctx, &rmetav1.DeleteOptions{
-			Uid: target.Metadata.Uid,
-		}); err != nil && !grpcerr.IsNotFound(err) {
-			zap.L().Warn("Could not delete an IntegrationTarget", zap.Error(err))
 		}
 	}
 

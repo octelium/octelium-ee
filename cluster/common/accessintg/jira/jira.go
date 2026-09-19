@@ -26,6 +26,10 @@ type Provider struct {
 	api           *apiClient
 	webhookSecret []byte
 	siteURL       string
+	projectKey    string
+	issueTypeName string
+	approveStatus string
+	rejectStatus  string
 }
 
 var _ accessintg.Provider = (*Provider)(nil)
@@ -47,8 +51,12 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface,
 	}
 
 	ret := &Provider{
-		api:     newAPIClient(spec.Url, spec.Email, apiToken),
-		siteURL: strings.TrimRight(strings.TrimSpace(spec.Url), "/"),
+		api:           newAPIClient(spec.Url, spec.Email, apiToken),
+		siteURL:       strings.TrimRight(strings.TrimSpace(spec.Url), "/"),
+		projectKey:    spec.ProjectKey,
+		issueTypeName: spec.IssueTypeName,
+		approveStatus: spec.ApproveStatus,
+		rejectStatus:  spec.RejectStatus,
 	}
 
 	if name := spec.GetWebhookSecret().GetFromSecret(); name != "" {
@@ -152,19 +160,19 @@ func (p *Provider) GetExternalUserByEmail(ctx context.Context,
 
 func (p *Provider) CreatePresentation(ctx context.Context,
 	in *accessintg.PresentationDelivery) (*accessintg.DeliveryResult, error) {
-	spec, err := targetSpec(in.Target)
-	if err != nil {
-		return nil, err
+	if p.projectKey == "" {
+		return nil, errors.Errorf("The Integration %s has no Jira project key",
+			in.Integration.Metadata.Name)
 	}
 
-	issueTypeName := spec.IssueTypeName
+	issueTypeName := p.issueTypeName
 	if issueTypeName == "" {
 		issueTypeName = defaultIssueTypeName
 	}
 
 	issue, err := p.api.createIssue(ctx, map[string]any{
 		"project": map[string]any{
-			"key": spec.ProjectKey,
+			"key": p.projectKey,
 		},
 		"issuetype": map[string]any{
 			"name": issueTypeName,
@@ -183,7 +191,7 @@ func (p *Provider) CreatePresentation(ctx context.Context,
 	return &accessintg.DeliveryResult{
 		ExternalID:          issue.Key,
 		ExternalURL:         fmt.Sprintf("%s/browse/%s", p.siteURL, issue.Key),
-		ExternalRecipientID: spec.ProjectKey,
+		ExternalRecipientID: p.projectKey,
 	}, nil
 }
 
@@ -229,39 +237,20 @@ func (p *Provider) ClosePresentation(ctx context.Context,
 }
 
 func (p *Provider) ResolveDecision(ctx context.Context, action *accessintg.Action,
-	target *accessv1.IntegrationTarget) (accessv1.Review_Spec_Decision, error) {
-	spec, err := targetSpec(target)
-	if err != nil {
-		return accessv1.Review_Spec_DECISION_UNSET, err
-	}
-
+	integration *accessv1.Integration) (accessv1.Review_Spec_Decision, error) {
 	status := strings.TrimSpace(action.ExternalStatus)
 	if status == "" {
 		return accessv1.Review_Spec_DECISION_UNSET, nil
 	}
 
 	switch {
-	case spec.ApproveStatus != "" && strings.EqualFold(status, spec.ApproveStatus):
+	case p.approveStatus != "" && strings.EqualFold(status, p.approveStatus):
 		return accessv1.Review_Spec_DECISION_APPROVE, nil
-	case spec.RejectStatus != "" && strings.EqualFold(status, spec.RejectStatus):
+	case p.rejectStatus != "" && strings.EqualFold(status, p.rejectStatus):
 		return accessv1.Review_Spec_DECISION_REJECT, nil
 	default:
 		return accessv1.Review_Spec_DECISION_UNSET, nil
 	}
-}
-
-func targetSpec(target *accessv1.IntegrationTarget) (*accessv1.IntegrationTarget_Spec_Jira, error) {
-	if target == nil || target.Spec.GetJira() == nil {
-		return nil, errors.Errorf("The IntegrationBinding has no Jira IntegrationTarget")
-	}
-
-	spec := target.Spec.GetJira()
-	if spec.ProjectKey == "" {
-		return nil, errors.Errorf("The IntegrationTarget %s has no Jira project key",
-			target.Metadata.Name)
-	}
-
-	return spec, nil
 }
 
 func toExternalUser(usr *jiraUser) *accessintg.ExternalUser {

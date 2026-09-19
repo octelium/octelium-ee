@@ -19,9 +19,11 @@ import (
 )
 
 type Provider struct {
-	api           *apiClient
-	signingSecret []byte
-	teamID        string
+	api                *apiClient
+	signingSecret      []byte
+	teamID             string
+	channelID          string
+	mentionUserGroupID string
 }
 
 var _ accessintg.Provider = (*Provider)(nil)
@@ -53,9 +55,11 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface,
 	}
 
 	return &Provider{
-		api:           newAPIClient(spec.BaseURL, botToken),
-		signingSecret: []byte(signingSecret),
-		teamID:        teamID,
+		api:                newAPIClient(spec.BaseURL, botToken),
+		signingSecret:      []byte(signingSecret),
+		teamID:             teamID,
+		channelID:          spec.ChannelID,
+		mentionUserGroupID: spec.MentionUserGroupID,
 	}, nil
 }
 
@@ -130,7 +134,7 @@ func (p *Provider) CreatePresentation(ctx context.Context,
 
 	resp, err := p.api.chatPostMessage(ctx, channel,
 		buildText(in.Presentation),
-		buildBlocks(in.Presentation, in.Target, in.Binding.Metadata.Name))
+		buildBlocks(in.Presentation, p.mentionUserGroupID, in.Binding.Metadata.Name))
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +164,8 @@ func (p *Provider) UpdatePresentation(ctx context.Context,
 	if _, err := p.api.chatUpdate(ctx,
 		in.Binding.Status.ExternalRecipientID, in.Binding.Status.ExternalID,
 		buildText(in.Presentation),
-		buildBlocks(in.Presentation, in.Target, in.Binding.Metadata.Name)); err != nil {
+		buildBlocks(in.Presentation, p.mentionUserGroupID,
+			in.Binding.Metadata.Name)); err != nil {
 		return nil, err
 	}
 
@@ -186,14 +191,13 @@ func (p *Provider) resolveChannel(ctx context.Context,
 		return in.Binding.Status.ExternalRecipientID, nil
 	}
 
-	if in.Target != nil {
-		slack := in.Target.Spec.GetSlack()
-		if slack == nil || slack.ChannelID == "" {
-			return "", errors.Errorf("The IntegrationTarget %s has no Slack channel",
-				in.Target.Metadata.Name)
+	if in.Binding.Status.UserRef == nil {
+		if p.channelID == "" {
+			return "", errors.Errorf("The Integration %s has no Slack channel",
+				in.Integration.Metadata.Name)
 		}
 
-		return slack.ChannelID, nil
+		return p.channelID, nil
 	}
 
 	if in.RecipientID == "" {

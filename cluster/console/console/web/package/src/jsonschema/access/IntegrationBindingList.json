@@ -63,6 +63,12 @@
             "description": "IntegrationBinding is the Cluster-managed link between an access Request and one external object that represents it inside an Integration (e.g. a Slack message or a Jira issue). It is the durable desired state of that external object: the access workflow only declares that a Request has to be presented somewhere while the Cluster reconciles the external object itself, retries the failed deliveries and closes the outstanding presentations once the Request reaches a final state. A provider outage therefore never blocks, and never silently decides, an access Request."
         },
         "octelium.api.main.access.v1.IntegrationBinding.Spec": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Spec",
+            "description": "Spec is the IntegrationBinding specification. It is empty since the IntegrationBinding is entirely managed by the Cluster."
+        },
+        "octelium.api.main.access.v1.IntegrationBinding.Status": {
             "properties": {
                 "integrationRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
@@ -74,23 +80,22 @@
                     "additionalProperties": false,
                     "description": "RequestRef is the reference of the presented Request."
                 },
-                "targetRef": {
-                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false,
-                    "description": "TargetRef is the reference of the IntegrationTarget that the external object is delivered to. It is unset for the direct deliveries."
-                },
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
-                    "description": "UserRef is the reference of the Cluster User that the external object is directly delivered to. It is unset for the IntegrationTarget deliveries."
+                    "description": "UserRef is the reference of the Cluster User that the external object is directly delivered to. It is unset for the external objects that are delivered to the Integration's own shared destination."
                 },
-                "stepIndex": {
-                    "type": "integer",
-                    "description": "StepIndex is the zero-based index of the review Step that the external object presents. It is only set for the REVIEW_SURFACE purpose."
-                },
-                "stepName": {
+                "audience": {
+                    "enum": [
+                        "AUDIENCE_UNSET",
+                        "SHARED",
+                        "REVIEWERS",
+                        "REQUESTER",
+                        "SUBJECT"
+                    ],
                     "type": "string",
-                    "description": "StepName is the name of the review Step that the external object presents. It is only set for the REVIEW_SURFACE purpose."
+                    "title": "Audience",
+                    "description": "Audience is who the Surface is presented to"
                 },
                 "purpose": {
                     "enum": [
@@ -102,6 +107,14 @@
                     "title": "Purpose",
                     "description": "Purpose is what the external object represents"
                 },
+                "stepIndex": {
+                    "type": "integer",
+                    "description": "StepIndex is the zero-based index of the review Step that the external object presents. It is only set for the REVIEW_SURFACE purpose."
+                },
+                "stepName": {
+                    "type": "string",
+                    "description": "StepName is the name of the review Step that the external object presents. It is only set for the REVIEW_SURFACE purpose."
+                },
                 "interactionMode": {
                     "enum": [
                         "INTERACTION_MODE_UNSET",
@@ -111,15 +124,7 @@
                     "type": "string",
                     "title": "Interaction Mode",
                     "description": "InteractionMode is how much the external provider is trusted to act on the presented Request"
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "Spec",
-            "description": "Spec is the IntegrationBinding specification"
-        },
-        "octelium.api.main.access.v1.IntegrationBinding.Status": {
-            "properties": {
+                },
                 "state": {
                     "enum": [
                         "STATE_UNSET",

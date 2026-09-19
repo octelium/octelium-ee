@@ -20,16 +20,16 @@ const (
 	KindPolicy  = "Policy"
 	KindRequest = "Request"
 	KindReview  = "Review"
+	KindSecret  = "Secret"
 
 	KindIntegration         = "Integration"
-	KindIntegrationTarget   = "IntegrationTarget"
 	KindIntegrationIdentity = "IntegrationIdentity"
 	KindIntegrationBinding  = "IntegrationBinding"
 )
 
 type ResourceObjectRefG interface {
 	*accessv1.Catalog | *accessv1.Policy | *accessv1.Request | *accessv1.Review |
-		*accessv1.Integration | *accessv1.IntegrationTarget |
+		*accessv1.Secret | *accessv1.Integration |
 		*accessv1.IntegrationIdentity | *accessv1.IntegrationBinding
 }
 
@@ -69,20 +69,20 @@ type ReviewList struct {
 	*accessv1.ReviewList
 }
 
+type Secret struct {
+	*accessv1.Secret
+}
+
+type SecretList struct {
+	*accessv1.SecretList
+}
+
 type Integration struct {
 	*accessv1.Integration
 }
 
 type IntegrationList struct {
 	*accessv1.IntegrationList
-}
-
-type IntegrationTarget struct {
-	*accessv1.IntegrationTarget
-}
-
-type IntegrationTargetList struct {
-	*accessv1.IntegrationTargetList
 }
 
 type IntegrationIdentity struct {
@@ -112,10 +112,10 @@ func NewObjectList(kind string) (umetav1.ObjectI, error) {
 		return &accessv1.RequestList{}, nil
 	case KindReview:
 		return &accessv1.ReviewList{}, nil
+	case KindSecret:
+		return &accessv1.SecretList{}, nil
 	case KindIntegration:
 		return &accessv1.IntegrationList{}, nil
-	case KindIntegrationTarget:
-		return &accessv1.IntegrationTargetList{}, nil
 	case KindIntegrationIdentity:
 		return &accessv1.IntegrationIdentityList{}, nil
 	case KindIntegrationBinding:
@@ -136,10 +136,10 @@ func NewObjectListOptions(kind string) (proto.Message, error) {
 		return &accessv1.ListRequestOptions{}, nil
 	case KindReview:
 		return &accessv1.ListReviewOptions{}, nil
+	case KindSecret:
+		return &accessv1.ListSecretOptions{}, nil
 	case KindIntegration:
 		return &accessv1.ListIntegrationOptions{}, nil
-	case KindIntegrationTarget:
-		return &accessv1.ListIntegrationTargetOptions{}, nil
 	case KindIntegrationIdentity:
 		return &accessv1.ListIntegrationIdentityOptions{}, nil
 	case KindIntegrationBinding:
@@ -160,10 +160,10 @@ func NewObject(kind string) (umetav1.ResourceObjectI, error) {
 		return &accessv1.Request{}, nil
 	case KindReview:
 		return &accessv1.Review{}, nil
+	case KindSecret:
+		return &accessv1.Secret{}, nil
 	case KindIntegration:
 		return &accessv1.Integration{}, nil
-	case KindIntegrationTarget:
-		return &accessv1.IntegrationTarget{}, nil
 	case KindIntegrationIdentity:
 		return &accessv1.IntegrationIdentity{}, nil
 	case KindIntegrationBinding:
@@ -221,6 +221,18 @@ func ToReviewList(a *accessv1.ReviewList) *ReviewList {
 	}
 }
 
+func ToSecret(a *accessv1.Secret) *Secret {
+	return &Secret{
+		Secret: a,
+	}
+}
+
+func ToSecretList(a *accessv1.SecretList) *SecretList {
+	return &SecretList{
+		SecretList: a,
+	}
+}
+
 func ToIntegration(a *accessv1.Integration) *Integration {
 	return &Integration{
 		Integration: a,
@@ -230,18 +242,6 @@ func ToIntegration(a *accessv1.Integration) *Integration {
 func ToIntegrationList(a *accessv1.IntegrationList) *IntegrationList {
 	return &IntegrationList{
 		IntegrationList: a,
-	}
-}
-
-func ToIntegrationTarget(a *accessv1.IntegrationTarget) *IntegrationTarget {
-	return &IntegrationTarget{
-		IntegrationTarget: a,
-	}
-}
-
-func ToIntegrationTargetList(a *accessv1.IntegrationTargetList) *IntegrationTargetList {
-	return &IntegrationTargetList{
-		IntegrationTargetList: a,
 	}
 }
 
@@ -267,4 +267,31 @@ func ToIntegrationBindingList(a *accessv1.IntegrationBindingList) *IntegrationBi
 	return &IntegrationBindingList{
 		IntegrationBindingList: a,
 	}
+}
+
+func (s *Secret) GetValueStr() string {
+	if s.Data == nil {
+		return ""
+	}
+	switch s.Data.Type.(type) {
+	case *accessv1.Secret_Data_Value:
+		return s.Data.GetValue()
+	case *accessv1.Secret_Data_ValueBytes:
+		return string(s.Data.GetValueBytes())
+	default:
+		return ""
+	}
+}
+
+func (s *Secret) GetValueBytes() []byte {
+	return []byte(s.GetValueStr())
+}
+
+func (s *SecretList) GetByName(name string) (*accessv1.Secret, error) {
+	for _, itm := range s.Items {
+		if itm.Metadata.Name == name {
+			return itm, nil
+		}
+	}
+	return nil, errors.Errorf("No Secret exists with name: %s", name)
 }

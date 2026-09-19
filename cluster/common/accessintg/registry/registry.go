@@ -71,3 +71,20 @@ func CapabilitiesOf(itm *accessv1.Integration) []accessintg.Capability {
 		return nil
 	}
 }
+
+func HasSharedDestination(itm *accessv1.Integration) bool {
+	if itm == nil || itm.Spec == nil {
+		return false
+	}
+
+	switch itm.Spec.Type.(type) {
+	case *accessv1.Integration_Spec_Slack_:
+		return itm.Spec.GetSlack().GetChannelID() != ""
+	case *accessv1.Integration_Spec_Jira_:
+		return itm.Spec.GetJira().GetProjectKey() != ""
+	case *accessv1.Integration_Spec_Webhook_:
+		return itm.Spec.GetWebhook().GetUrl() != ""
+	default:
+		return false
+	}
+}

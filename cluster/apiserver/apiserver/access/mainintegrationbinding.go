@@ -48,7 +48,7 @@ func (s *ServerMain) ListIntegrationBinding(ctx context.Context,
 			return nil, err
 		}
 		filters = append(filters,
-			urscsrv.FilterFieldEQValStr("spec.integrationRef.uid", integration.Metadata.Uid))
+			urscsrv.FilterFieldEQValStr("status.integrationRef.uid", integration.Metadata.Uid))
 	}
 
 	if req.RequestRef != nil {
@@ -64,7 +64,7 @@ func (s *ServerMain) ListIntegrationBinding(ctx context.Context,
 		}
 
 		filters = append(filters,
-			urscsrv.FilterFieldEQValStr("spec.requestRef.uid", item.Metadata.Uid))
+			urscsrv.FilterFieldEQValStr("status.requestRef.uid", item.Metadata.Uid))
 	}
 
 	itemList, err := s.octeliumC.AccessC().ListIntegrationBinding(ctx,

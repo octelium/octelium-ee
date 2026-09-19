@@ -10,6 +10,7 @@ package integrationbindings
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -21,7 +22,6 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
-	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
@@ -34,6 +34,7 @@ type slackFake struct {
 	postMessages atomic.Int64
 	updates      atomic.Int64
 	fail         atomic.Bool
+	lastChannel  atomic.Value
 }
 
 func (f *slackFake) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -49,6 +50,7 @@ func (f *slackFake) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{"ok":true,"team_id":"T00000001","team":"Example"}`)
 	case "/chat.postMessage":
 		f.postMessages.Add(1)
+		f.lastChannel.Store(tstRequestChannel(r))
 		fmt.Fprint(w, `{"ok":true,"ts":"1700000000.000100","channel":"C12345678"}`)
 	case "/chat.update":
 		f.updates.Add(1)
@@ -60,6 +62,16 @@ func (f *slackFake) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func tstRequestChannel(r *http.Request) string {
+	body := map[string]any{}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return ""
+	}
+
+	channel, _ := body["channel"].(string)
+	return channel
+}
+
 type bindingTest struct {
 	ctx       context.Context
 	ctrl      *Controller
@@ -67,7 +79,6 @@ type bindingTest struct {
 	slack     *slackFake
 
 	integration *accessv1.Integration
-	target      *accessv1.IntegrationTarget
 }
 
 func newBindingTest(t *testing.T) *bindingTest {
@@ -94,19 +105,18 @@ func newBindingTest(t *testing.T) *bindingTest {
 	}
 
 	ret.integration = ret.createIntegration(t, slackSrv.URL)
-	ret.target = ret.createTarget(t)
 
 	return ret
 }
 
 func (b *bindingTest) createSecret(t *testing.T) string {
-	sec, err := b.octeliumC.EnterpriseC().CreateSecret(b.ctx, &enterprisev1.Secret{
+	sec, err := b.octeliumC.AccessC().CreateSecret(b.ctx, &accessv1.Secret{
 		Metadata: &metav1.Metadata{
 			Name: utilrand.GetRandomStringCanonical(8),
 		},
-		Spec: &enterprisev1.Secret_Spec{},
-		Data: &enterprisev1.Secret_Data{
-			Type: &enterprisev1.Secret_Data_Value{
+		Spec: &accessv1.Secret_Spec{},
+		Data: &accessv1.Secret_Data{
+			Type: &accessv1.Secret_Data_Value{
 				Value: utilrand.GetRandomString(24),
 			},
 		},
@@ -134,7 +144,8 @@ func (b *bindingTest) createIntegration(t *testing.T, baseURL string) *accessv1.
 							FromSecret: b.createSecret(t),
 						},
 					},
-					BaseURL: baseURL,
+					BaseURL:   baseURL,
+					ChannelID: "C12345678",
 				},
 			},
 		},
@@ -145,28 +156,6 @@ func (b *bindingTest) createIntegration(t *testing.T, baseURL string) *accessv1.
 				accessv1.Integration_Status_NOTIFICATION,
 				accessv1.Integration_Status_PRESENTATION_UPDATE,
 			},
-		},
-	})
-	assert.Nil(t, err, "%+v", err)
-
-	return item
-}
-
-func (b *bindingTest) createTarget(t *testing.T) *accessv1.IntegrationTarget {
-	item, err := b.octeliumC.AccessC().CreateIntegrationTarget(b.ctx, &accessv1.IntegrationTarget{
-		Metadata: &metav1.Metadata{
-			Name: utilrand.GetRandomStringCanonical(8),
-		},
-		Spec: &accessv1.IntegrationTarget_Spec{
-			IntegrationRef: umetav1.GetObjectReference(b.integration),
-			Type: &accessv1.IntegrationTarget_Spec_Slack_{
-				Slack: &accessv1.IntegrationTarget_Spec_Slack{
-					ChannelID: "C12345678",
-				},
-			},
-		},
-		Status: &accessv1.IntegrationTarget_Status{
-			Type: accessv1.Integration_Status_SLACK,
 		},
 	})
 	assert.Nil(t, err, "%+v", err)
@@ -252,17 +241,16 @@ func (b *bindingTest) createNotificationBinding(t *testing.T,
 		&accessv1.IntegrationBinding{
 			Metadata: &metav1.Metadata{
 				Name: accessintg.BindingName(req.Metadata.Uid,
-					accessv1.IntegrationBinding_Spec_NOTIFICATION, 0, 0, b.target.Metadata.Uid),
+					accessv1.IntegrationBinding_Status_NOTIFICATION, 0, 0, ""),
 				IsSystem: true,
 			},
-			Spec: &accessv1.IntegrationBinding_Spec{
+			Spec: &accessv1.IntegrationBinding_Spec{},
+			Status: &accessv1.IntegrationBinding_Status{
 				IntegrationRef: umetav1.GetObjectReference(b.integration),
 				RequestRef:     umetav1.GetObjectReference(req),
-				TargetRef:      umetav1.GetObjectReference(b.target),
-				Purpose:        accessv1.IntegrationBinding_Spec_NOTIFICATION,
-			},
-			Status: &accessv1.IntegrationBinding_Status{
-				State: accessv1.IntegrationBinding_Status_PENDING,
+				Audience:       accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
+				Purpose:        accessv1.IntegrationBinding_Status_NOTIFICATION,
+				State:          accessv1.IntegrationBinding_Status_PENDING,
 			},
 		})
 	assert.Nil(t, err, "%+v", err)
@@ -276,20 +264,19 @@ func (b *bindingTest) createBinding(t *testing.T,
 		&accessv1.IntegrationBinding{
 			Metadata: &metav1.Metadata{
 				Name: accessintg.BindingName(req.Metadata.Uid,
-					accessv1.IntegrationBinding_Spec_REVIEW_SURFACE, 0, 0, b.target.Metadata.Uid),
+					accessv1.IntegrationBinding_Status_REVIEW_SURFACE, 0, 0, ""),
 				IsSystem: true,
 			},
-			Spec: &accessv1.IntegrationBinding_Spec{
+			Spec: &accessv1.IntegrationBinding_Spec{},
+			Status: &accessv1.IntegrationBinding_Status{
 				IntegrationRef:  umetav1.GetObjectReference(b.integration),
 				RequestRef:      umetav1.GetObjectReference(req),
-				TargetRef:       umetav1.GetObjectReference(b.target),
+				Audience:        accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
 				StepIndex:       0,
 				StepName:        "first",
-				Purpose:         accessv1.IntegrationBinding_Spec_REVIEW_SURFACE,
+				Purpose:         accessv1.IntegrationBinding_Status_REVIEW_SURFACE,
 				InteractionMode: accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY,
-			},
-			Status: &accessv1.IntegrationBinding_Status{
-				State: accessv1.IntegrationBinding_Status_PENDING,
+				State:           accessv1.IntegrationBinding_Status_PENDING,
 			},
 		})
 	assert.Nil(t, err, "%+v", err)
@@ -468,23 +455,14 @@ func TestBindingReviewSurfaceIsNotDeliveredForTerminalRequest(t *testing.T) {
 	assert.Equal(t, int64(0), b.slack.postMessages.Load())
 }
 
-func TestBindingIsNotDeliveredToARetargetedIntegrationTarget(t *testing.T) {
+func TestBindingIsNotDeliveredWithoutAnySharedDestination(t *testing.T) {
 	b := newBindingTest(t)
 
 	req := b.createRequest(t)
 	binding := b.createBinding(t, req)
 
-	other, err := b.octeliumC.AccessC().CreateIntegration(b.ctx, &accessv1.Integration{
-		Metadata: &metav1.Metadata{
-			Name: utilrand.GetRandomStringCanonical(8),
-		},
-		Spec:   pbutils.Clone(b.integration.Spec).(*accessv1.Integration_Spec),
-		Status: pbutils.Clone(b.integration.Status).(*accessv1.Integration_Status),
-	})
-	assert.Nil(t, err, "%+v", err)
-
-	b.target.Spec.IntegrationRef = umetav1.GetObjectReference(other)
-	_, err = b.octeliumC.AccessC().UpdateIntegrationTarget(b.ctx, b.target)
+	b.integration.Spec.GetSlack().ChannelID = ""
+	_, err := b.octeliumC.AccessC().UpdateIntegration(b.ctx, b.integration)
 	assert.Nil(t, err, "%+v", err)
 
 	assert.Nil(t, b.ctrl.Reconcile(b.ctx, binding))
@@ -493,4 +471,20 @@ func TestBindingIsNotDeliveredToARetargetedIntegrationTarget(t *testing.T) {
 	itemG := b.getBinding(t, binding.Metadata.Uid)
 	assert.Equal(t, accessv1.IntegrationBinding_Status_PENDING, itemG.Status.State)
 	assert.NotEmpty(t, itemG.Status.LastError)
+}
+
+func TestBindingIsDeliveredToTheIntegrationChannel(t *testing.T) {
+	b := newBindingTest(t)
+
+	b.integration.Spec.GetSlack().ChannelID = "C87654321"
+	_, err := b.octeliumC.AccessC().UpdateIntegration(b.ctx, b.integration)
+	assert.Nil(t, err, "%+v", err)
+
+	req := b.createRequest(t)
+	binding := b.createBinding(t, req)
+
+	assert.Nil(t, b.ctrl.Reconcile(b.ctx, binding))
+
+	assert.Equal(t, int64(1), b.slack.postMessages.Load())
+	assert.Equal(t, "C87654321", b.slack.lastChannel.Load())
 }

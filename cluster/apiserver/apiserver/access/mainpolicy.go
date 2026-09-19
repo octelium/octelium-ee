@@ -12,6 +12,7 @@ import (
 	"context"
 
 	"github.com/octelium/octelium-ee/cluster/common/accessintg"
+	"github.com/octelium/octelium-ee/cluster/common/accessintg/registry"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
@@ -496,82 +497,81 @@ func (s *ServerMain) validatePolicySurface(ctx context.Context, ruleName string,
 		return grpcutils.InvalidArg("Rule %s has a Surface with an invalid interactionMode", ruleName)
 	}
 
-	switch surface.Destination.Type.(type) {
-	case *accessv1.Policy_Spec_Rule_Surface_Destination_Reviewers_:
+	switch surface.Destination.Audience {
+	case accessv1.Policy_Spec_Rule_Surface_Destination_SHARED:
+		integration, err := s.getSurfaceIntegration(ctx, ruleName,
+			surface.Destination.IntegrationRef, accessv1.Integration_Status_NOTIFICATION)
+		if err != nil {
+			return err
+		}
+
+		if !registry.HasSharedDestination(integration) {
+			return grpcutils.InvalidArg(
+				"Rule %s uses the Integration %s which has no shared destination",
+				ruleName, integration.Metadata.Name)
+		}
+
+		return nil
+
+	case accessv1.Policy_Spec_Rule_Surface_Destination_REVIEWERS:
 		if !isReviewSurface {
 			return grpcutils.InvalidArg(
 				"Rule %s cannot notify the reviewers outside of a review Step", ruleName)
 		}
 
-		return s.validateSurfaceIntegration(ctx, ruleName,
-			surface.Destination.GetReviewers().GetIntegrationRef(),
+		_, err := s.getSurfaceIntegration(ctx, ruleName, surface.Destination.IntegrationRef,
 			accessv1.Integration_Status_DIRECT_USER_DELIVERY)
+		return err
 
-	case *accessv1.Policy_Spec_Rule_Surface_Destination_Requester_:
+	case accessv1.Policy_Spec_Rule_Surface_Destination_REQUESTER:
 		if isReviewSurface {
 			return grpcutils.InvalidArg(
 				"Rule %s cannot present a review Step to the requester", ruleName)
 		}
 
-		return s.validateSurfaceIntegration(ctx, ruleName,
-			surface.Destination.GetRequester().GetIntegrationRef(),
+		_, err := s.getSurfaceIntegration(ctx, ruleName, surface.Destination.IntegrationRef,
 			accessv1.Integration_Status_DIRECT_USER_DELIVERY)
+		return err
 
-	case *accessv1.Policy_Spec_Rule_Surface_Destination_Subject_:
+	case accessv1.Policy_Spec_Rule_Surface_Destination_SUBJECT:
 		if isReviewSurface {
 			return grpcutils.InvalidArg(
 				"Rule %s cannot present a review Step to the subject", ruleName)
 		}
 
-		return s.validateSurfaceIntegration(ctx, ruleName,
-			surface.Destination.GetSubject().GetIntegrationRef(),
+		_, err := s.getSurfaceIntegration(ctx, ruleName, surface.Destination.IntegrationRef,
 			accessv1.Integration_Status_DIRECT_USER_DELIVERY)
-
-	case *accessv1.Policy_Spec_Rule_Surface_Destination_TargetRef:
-		if err := apivalidation.CheckObjectRef(surface.Destination.GetTargetRef(),
-			&apivalidation.CheckGetOptionsOpts{}); err != nil {
-			return err
-		}
-
-		target, err := s.octeliumC.AccessC().GetIntegrationTarget(ctx,
-			apivalidation.ObjectReferenceToRGetOptions(surface.Destination.GetTargetRef()))
-		if err != nil {
-			if grpcerr.IsNotFound(err) {
-				return grpcutils.InvalidArg("The IntegrationTarget does not exist")
-			}
-			return grpcutils.InternalWithErr(err)
-		}
-
-		return s.validateSurfaceIntegration(ctx, ruleName, target.Spec.IntegrationRef,
-			accessv1.Integration_Status_NOTIFICATION)
+		return err
 
 	default:
-		return grpcutils.InvalidArg("Rule %s has a Surface without a destination type", ruleName)
+		return grpcutils.InvalidArg(
+			"Rule %s has a Surface without a destination audience", ruleName)
 	}
 }
 
-func (s *ServerMain) validateSurfaceIntegration(ctx context.Context, ruleName string,
-	ref *metav1.ObjectReference, capability accessv1.Integration_Status_Capability) error {
+func (s *ServerMain) getSurfaceIntegration(ctx context.Context, ruleName string,
+	ref *metav1.ObjectReference,
+	capability accessv1.Integration_Status_Capability) (*accessv1.Integration, error) {
 	if err := apivalidation.CheckObjectRef(ref, &apivalidation.CheckGetOptionsOpts{}); err != nil {
-		return err
+		return nil, err
 	}
 
 	integration, err := s.octeliumC.AccessC().GetIntegration(ctx,
 		apivalidation.ObjectReferenceToRGetOptions(ref))
 	if err != nil {
 		if grpcerr.IsNotFound(err) {
-			return grpcutils.InvalidArg("The Integration does not exist")
+			return nil, grpcutils.InvalidArg("The Integration does not exist")
 		}
-		return grpcutils.InternalWithErr(err)
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	if !accessintg.HasCapability(integration, capability) {
-		return grpcutils.InvalidArg(
+		return nil, grpcutils.InvalidArg(
 			"Rule %s uses the Integration %s which does not support %s",
 			ruleName, integration.Metadata.Name, capability.String())
 	}
 
-	return nil
+	return integration, nil
 }
 
 func (s *ServerMain) validatePolicyAuthorization(ctx context.Context,

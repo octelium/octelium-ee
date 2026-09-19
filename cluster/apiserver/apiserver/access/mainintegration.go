@@ -233,6 +233,14 @@ func (s *ServerMain) validateIntegration(ctx context.Context, req *accessv1.Inte
 				return err
 			}
 		}
+		if err := validateIntegrationStr(typ.GetChannelID(), false,
+			"The Slack channelID"); err != nil {
+			return err
+		}
+		if err := validateIntegrationStr(typ.GetMentionUserGroupID(), false,
+			"The Slack mentionUserGroupID"); err != nil {
+			return err
+		}
 
 	case *accessv1.Integration_Spec_Jira_:
 		typ := req.Spec.GetJira()
@@ -254,6 +262,28 @@ func (s *ServerMain) validateIntegration(ctx context.Context, req *accessv1.Inte
 				return err
 			}
 		}
+		if err := validateIntegrationStr(typ.GetProjectKey(), false,
+			"The Jira projectKey"); err != nil {
+			return err
+		}
+		if err := validateIntegrationStr(typ.GetIssueTypeName(), false,
+			"The Jira issueTypeName"); err != nil {
+			return err
+		}
+		if err := validateIntegrationStr(typ.GetApproveStatus(), false,
+			"The Jira approveStatus"); err != nil {
+			return err
+		}
+		if err := validateIntegrationStr(typ.GetRejectStatus(), false,
+			"The Jira rejectStatus"); err != nil {
+			return err
+		}
+		if typ.GetApproveStatus() != "" &&
+			strings.EqualFold(strings.TrimSpace(typ.GetApproveStatus()),
+				strings.TrimSpace(typ.GetRejectStatus())) {
+			return grpcutils.InvalidArg(
+				"The Jira approveStatus and rejectStatus must be different")
+		}
 
 	case *accessv1.Integration_Spec_Webhook_:
 		typ := req.Spec.GetWebhook()
@@ -268,6 +298,9 @@ func (s *ServerMain) validateIntegration(ctx context.Context, req *accessv1.Inte
 			if err := s.validateSecretOwner(ctx, typ.GetInboundSecret()); err != nil {
 				return err
 			}
+		}
+		if err := validateIntegrationStr(typ.GetName(), false, "The webhook name"); err != nil {
+			return err
 		}
 
 	default:
@@ -288,7 +321,7 @@ func (s *ServerMain) validateSecretOwner(ctx context.Context, secOwner secretOwn
 		return grpcutils.InvalidArg("Invalid Secret name: %s", secOwner.GetFromSecret())
 	}
 
-	if _, err := s.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+	if _, err := s.octeliumC.AccessC().GetSecret(ctx, &rmetav1.GetOptions{
 		Name: secOwner.GetFromSecret(),
 	}); err != nil {
 		if grpcerr.IsNotFound(err) {
@@ -369,4 +402,34 @@ func validateIntegrationURL(arg string) error {
 	}
 
 	return nil
+}
+
+func integrationSecretNames(req *accessv1.Integration) []string {
+	var ret []string
+
+	add := func(secOwner secretOwner) {
+		if secOwner == nil || secOwner.GetFromSecret() == "" {
+			return
+		}
+		ret = append(ret, secOwner.GetFromSecret())
+	}
+
+	switch req.Spec.GetType().(type) {
+	case *accessv1.Integration_Spec_Slack_:
+		typ := req.Spec.GetSlack()
+		add(typ.GetBotToken())
+		add(typ.GetSigningSecret())
+
+	case *accessv1.Integration_Spec_Jira_:
+		typ := req.Spec.GetJira()
+		add(typ.GetApiToken())
+		add(typ.GetWebhookSecret())
+
+	case *accessv1.Integration_Spec_Webhook_:
+		typ := req.Spec.GetWebhook()
+		add(typ.GetSigningSecret())
+		add(typ.GetInboundSecret())
+	}
+
+	return ret
 }

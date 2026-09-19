@@ -11,63 +11,19 @@ package access
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/octelium/octelium-ee/cluster/common/accessintg"
 	"github.com/octelium/octelium-ee/cluster/common/accessintg/registry"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
-	apisrvcommon "github.com/octelium/octelium/cluster/apiserver/apiserver/common"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/serr"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
-	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
 )
-
-func (s *ServerMain) CreateIntegrationIdentity(ctx context.Context,
-	req *accessv1.IntegrationIdentity) (*accessv1.IntegrationIdentity, error) {
-	if err := apivalidation.ValidateCommon(req, &apivalidation.ValidateCommonOpts{
-		ValidateMetadataOpts: apivalidation.ValidateMetadataOpts{
-			RequireName: true,
-		},
-	}); err != nil {
-		return nil, err
-	}
-
-	_, err := s.octeliumC.AccessC().GetIntegrationIdentity(ctx,
-		apivalidation.ObjectToRGetOptions(req))
-	if err == nil {
-		return nil, grpcutils.AlreadyExists("The IntegrationIdentity %s already exists",
-			req.Metadata.Name)
-	}
-	if !grpcerr.IsNotFound(err) {
-		return nil, grpcutils.InternalWithErr(err)
-	}
-
-	if err := s.validateIntegrationIdentity(ctx, req, ""); err != nil {
-		return nil, err
-	}
-
-	item := &accessv1.IntegrationIdentity{
-		Metadata: apisrvcommon.MetadataFrom(req.Metadata),
-		Spec:     req.Spec,
-		Status: &accessv1.IntegrationIdentity_Status{
-			Source:     accessv1.IntegrationIdentity_Status_MANUAL,
-			VerifiedAt: pbutils.Now(),
-		},
-	}
-
-	item, err = s.octeliumC.AccessC().CreateIntegrationIdentity(ctx, item)
-	if err != nil {
-		return nil, serr.InternalWithErr(err)
-	}
-
-	return item, nil
-}
 
 func (s *ServerMain) GetIntegrationIdentity(ctx context.Context,
 	req *metav1.GetOptions) (*accessv1.IntegrationIdentity, error) {
@@ -98,7 +54,7 @@ func (s *ServerMain) ListIntegrationIdentity(ctx context.Context,
 			return nil, err
 		}
 		filters = append(filters,
-			urscsrv.FilterFieldEQValStr("spec.integrationRef.uid", integration.Metadata.Uid))
+			urscsrv.FilterFieldEQValStr("status.integrationRef.uid", integration.Metadata.Uid))
 	}
 
 	if req.UserRef != nil {
@@ -114,7 +70,7 @@ func (s *ServerMain) ListIntegrationIdentity(ctx context.Context,
 		}
 
 		filters = append(filters,
-			urscsrv.FilterFieldEQValStr("spec.userRef.uid", usr.Metadata.Uid))
+			urscsrv.FilterFieldEQValStr("status.userRef.uid", usr.Metadata.Uid))
 	}
 
 	itemList, err := s.octeliumC.AccessC().ListIntegrationIdentity(ctx,
@@ -124,58 +80,6 @@ func (s *ServerMain) ListIntegrationIdentity(ctx context.Context,
 	}
 
 	return itemList, nil
-}
-
-func (s *ServerMain) UpdateIntegrationIdentity(ctx context.Context,
-	req *accessv1.IntegrationIdentity) (*accessv1.IntegrationIdentity, error) {
-	if err := apivalidation.ValidateCommon(req, &apivalidation.ValidateCommonOpts{
-		ValidateMetadataOpts: apivalidation.ValidateMetadataOpts{
-			RequireName: true,
-		},
-	}); err != nil {
-		return nil, err
-	}
-
-	item, err := s.octeliumC.AccessC().GetIntegrationIdentity(ctx,
-		apivalidation.ObjectToRGetOptions(req))
-	if err != nil {
-		return nil, serr.K8sNotFoundOrInternalWithErr(err)
-	}
-
-	if err := s.validateIntegrationIdentity(ctx, req, item.Metadata.Uid); err != nil {
-		return nil, err
-	}
-
-	apisrvcommon.MetadataUpdate(item.Metadata, req.Metadata)
-
-	if !pbutils.IsEqual(item.Spec, req.Spec) {
-		item.Spec = req.Spec
-		item.Status.Source = accessv1.IntegrationIdentity_Status_MANUAL
-		item.Status.VerifiedAt = pbutils.Now()
-	}
-
-	item, err = s.octeliumC.AccessC().UpdateIntegrationIdentity(ctx, item)
-	if err != nil {
-		return nil, serr.K8sInternal(err)
-	}
-
-	return item, nil
-}
-
-func (s *ServerMain) DeleteIntegrationIdentity(ctx context.Context,
-	req *metav1.DeleteOptions) (*metav1.OperationResult, error) {
-	item, err := s.octeliumC.AccessC().GetIntegrationIdentity(ctx,
-		apivalidation.DeleteOptionsToRGetOptions(req))
-	if err != nil {
-		return nil, serr.K8sNotFoundOrInternalWithErr(err)
-	}
-
-	if _, err := s.octeliumC.AccessC().DeleteIntegrationIdentity(ctx,
-		apivalidation.ObjectToRDeleteOptions(item)); err != nil {
-		return nil, serr.K8sInternal(err)
-	}
-
-	return &metav1.OperationResult{}, nil
 }
 
 func (s *ServerMain) ResolveIntegrationIdentity(ctx context.Context,
@@ -256,70 +160,20 @@ func (s *ServerMain) ResolveIntegrationIdentity(ctx context.Context,
 	return ret, nil
 }
 
-func (s *ServerMain) validateIntegrationIdentity(ctx context.Context,
-	req *accessv1.IntegrationIdentity, selfUID string) error {
-	if req.Spec == nil {
-		return grpcutils.InvalidArg("Nil Spec")
+func (s *ServerMain) getIntegrationRef(ctx context.Context,
+	ref *metav1.ObjectReference) (*accessv1.Integration, error) {
+	if err := apivalidation.CheckObjectRef(ref, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+		return nil, err
 	}
 
-	integration, err := s.getIntegrationRef(ctx, req.Spec.IntegrationRef)
-	if err != nil {
-		return err
-	}
-
-	if err := apivalidation.CheckObjectRef(req.Spec.UserRef,
-		&apivalidation.CheckGetOptionsOpts{}); err != nil {
-		return err
-	}
-
-	usr, err := s.octeliumC.CoreC().GetUser(ctx,
-		apivalidation.ObjectReferenceToRGetOptions(req.Spec.UserRef))
+	item, err := s.octeliumC.AccessC().GetIntegration(ctx,
+		apivalidation.ObjectReferenceToRGetOptions(ref))
 	if err != nil {
 		if grpcerr.IsNotFound(err) {
-			return grpcutils.InvalidArg("The User does not exist")
+			return nil, grpcutils.InvalidArg("The Integration does not exist")
 		}
-		return grpcutils.InternalWithErr(err)
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
-	req.Spec.ExternalID = strings.TrimSpace(req.Spec.ExternalID)
-
-	if err := validateIntegrationStr(req.Spec.ExternalID, true, "The externalID"); err != nil {
-		return err
-	}
-
-	if err := s.checkIntegrationIdentityUnique(ctx, selfUID,
-		urscsrv.FilterFieldEQValStr("spec.integrationRef.uid", integration.Metadata.Uid),
-		urscsrv.FilterFieldEQValStr("spec.externalID", req.Spec.ExternalID)); err != nil {
-		return grpcutils.AlreadyExists(
-			"The external actor %s is already linked within the Integration %s",
-			req.Spec.ExternalID, integration.Metadata.Name)
-	}
-
-	if err := s.checkIntegrationIdentityUnique(ctx, selfUID,
-		urscsrv.FilterFieldEQValStr("spec.integrationRef.uid", integration.Metadata.Uid),
-		urscsrv.FilterFieldEQValStr("spec.userRef.uid", usr.Metadata.Uid)); err != nil {
-		return grpcutils.AlreadyExists(
-			"The User %s is already linked within the Integration %s",
-			usr.Metadata.Name, integration.Metadata.Name)
-	}
-
-	return nil
-}
-
-func (s *ServerMain) checkIntegrationIdentityUnique(ctx context.Context, selfUID string,
-	filters ...*rmetav1.ListOptions_Filter) error {
-	itemList, err := s.octeliumC.AccessC().ListIntegrationIdentity(ctx, &rmetav1.ListOptions{
-		Filters: filters,
-	})
-	if err != nil {
-		return grpcutils.InternalWithErr(err)
-	}
-
-	for _, item := range itemList.Items {
-		if item.Metadata.Uid != selfUID {
-			return grpcutils.AlreadyExists("Duplicate IntegrationIdentity")
-		}
-	}
-
-	return nil
+	return item, nil
 }

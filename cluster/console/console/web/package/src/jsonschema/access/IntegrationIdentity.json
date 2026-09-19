@@ -31,36 +31,33 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Integration Identity",
-            "description": "IntegrationIdentity is the link between an external actor of an Integration and the Cluster User that it acts as. It is the only trust boundary of the inbound integration requests: the Cluster never takes the identity of an actor from the payloads of the provider itself."
+            "description": "IntegrationIdentity is the link between an external actor of an Integration and the Cluster User that it acts as. It is the only trust boundary of the inbound integration requests: the Cluster never takes the identity of an actor from the payloads of the provider itself. It is entirely managed by the Cluster which discovers it by matching the email that the provider reports for an external actor against the `spec.email` of the Cluster's Users. It is therefore never set by the Cluster's managers and it carries no specification of its own."
         },
         "octelium.api.main.access.v1.IntegrationIdentity.Spec": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Spec",
+            "description": "Spec is the IntegrationIdentity specification. It is empty since the IntegrationIdentity is entirely managed by the Cluster."
+        },
+        "octelium.api.main.access.v1.IntegrationIdentity.Status": {
             "properties": {
                 "integrationRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
-                    "description": "IntegrationRef is the reference of the Integration that the external actor belongs to. Required."
+                    "description": "IntegrationRef is the reference of the Integration that the external actor belongs to."
                 },
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
-                    "description": "UserRef is the reference of the Cluster User that the external actor acts as. Required."
+                    "description": "UserRef is the reference of the Cluster User that the external actor acts as."
                 },
                 "externalID": {
                     "type": "string",
-                    "description": "ExternalID is the stable identifier of the external actor within the provider (e.g. a Slack user ID or an Atlassian account ID). It must be unique within the Integration. Required."
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "Spec",
-            "description": "Spec is the IntegrationIdentity specification"
-        },
-        "octelium.api.main.access.v1.IntegrationIdentity.Status": {
-            "properties": {
+                    "description": "ExternalID is the stable identifier of the external actor within the provider (e.g. a Slack user ID or an Atlassian account ID). It is unique within the Integration."
+                },
                 "source": {
                     "enum": [
                         "SOURCE_UNSET",
-                        "MANUAL",
                         "EMAIL_DISCOVERY"
                     ],
                     "type": "string",
