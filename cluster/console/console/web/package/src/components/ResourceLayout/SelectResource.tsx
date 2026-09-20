@@ -1,41 +1,7 @@
-import {
-  API,
-  getResourcePathFromAPIKind,
-  printResourceNameWithDisplay,
-  Resource,
-  ResourceName,
-} from "@/utils/pb";
-import {
-  ActionIcon,
-  Alert,
-  Button,
-  Loader,
-  Select,
-  Tooltip,
-} from "@mantine/core";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { FileText, Plus, Search } from "lucide-react";
-import * as React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import TimeAgo from "../TimeAgo";
-import ResourceYAML from "../ResourceYAML";
-import { listResourcesForSelect } from "./listResourcesForSelect";
-
-const nonCreatableResourceKeys = new Set([
-  "core/Region",
-  "core/Session",
-  "core/Gateway",
-  "core/Authenticator",
-  "core/Device",
-  "enterprise/Certificate",
-  "enterprise/CertificateIssuer",
-  "enterprise/DNSProvider",
-  "enterprise/SecretStore",
-  "access/Request",
-  "access/Review",
-  "access/IntegrationIdentity",
-  "access/IntegrationBinding",
-]);
+import { Resource } from "@/utils/pb";
+import ResourcePicker from "./resourcePicker/ResourcePicker";
+import TriggerField, { SelectedChip } from "./resourcePicker/TriggerField";
+import { useResourcePicker } from "./resourcePicker/useResourcePicker";
 
 const SelectResource = (props: {
   api: string;
@@ -49,283 +15,67 @@ const SelectResource = (props: {
   onChange: (item?: Resource) => void;
 }) => {
   const { api, kind } = props;
-  const [yamlItem, setYamlItem] = React.useState<Resource>();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const handledCreatedName = React.useRef<string | undefined>(undefined);
-  const resourcePath = getResourcePathFromAPIKind({
-    api: api as API,
-    kind: kind as ResourceName,
-  });
-  const canCreate =
-    resourcePath.length > 0 && !nonCreatableResourceKeys.has(`${api}/${kind}`);
 
-  const [search, setSearch] = React.useState("");
-  const [debouncedSearch, setDebouncedSearch] = React.useState("");
-
-  React.useEffect(() => {
-    const timeout = window.setTimeout(() => setDebouncedSearch(search), 250);
-    return () => window.clearTimeout(timeout);
-  }, [search]);
-
-  const { isLoading, isError, error, data, refetch } = useQuery({
-    queryKey: ["listSelectComponent", api, kind, debouncedSearch],
-    queryFn: () => listResourcesForSelect(api, kind, debouncedSearch),
-    placeholderData: keepPreviousData,
+  const picker = useResourcePicker({
+    api,
+    kind,
+    onCreated: (item) => props.onChange(item),
   });
 
   const label = props.labelDefault ? `Select ${kind}` : props.label;
-  const rscList = React.useMemo(() => {
-    const options = (data ?? []).map((item) => ({
-      value: item.metadata!.name,
-      label: printResourceNameWithDisplay(item),
-    }));
-    const selected = props.defaultValue;
-    if (selected && !options.some((option) => option.value === selected)) {
-      options.unshift({ value: selected, label: selected });
-    }
-    return options;
-  }, [data, props.defaultValue]);
-  const resourcesByName = React.useMemo(
-    () =>
-      new Map((data ?? []).map((item) => [item.metadata!.name, item])),
-    [data],
-  );
-
-  const openCreate = React.useCallback(() => {
-    const returnState =
-      location.state && typeof location.state === "object"
-        ? location.state
-        : undefined;
-    navigate(
-      `/${api}/${getResourcePathFromAPIKind({
-        api: api as API,
-        kind: kind as ResourceName,
-      })}/create`,
-      {
-        state: {
-          createInDrawer: true,
-          returnTo: location.pathname,
-          returnState,
-        },
-      },
-    );
-  }, [api, kind, location.pathname, location.state, navigate]);
-
-  const createButton = (
-    <div className="flex justify-end">
-      <Button
-        type="button"
-        size="compact-sm"
-        variant="subtle"
-        color="ink"
-        leftSection={<Plus size={14} strokeWidth={2.2} />}
-        onClick={openCreate}
-      >
-        Create a {kind}
-      </Button>
-    </div>
-  );
-
-  const createdResourceName =
-    location.state && typeof location.state === "object"
-      ? (location.state as { createdResourceName?: string })
-          .createdResourceName
-      : undefined;
-
-  React.useEffect(() => {
-    if (
-      !createdResourceName ||
-      handledCreatedName.current === createdResourceName
-    ) {
-      return;
-    }
-    const created = resourcesByName.get(createdResourceName);
-    if (!created) return;
-
-    handledCreatedName.current = createdResourceName;
-    props.onChange(created);
-    const nextState =
-      location.state && typeof location.state === "object"
-        ? { ...(location.state as Record<string, unknown>) }
-        : {};
-    delete nextState.createdResourceName;
-    navigate(location.pathname, {
-      replace: true,
-      preventScrollReset: true,
-      state: Object.keys(nextState).length > 0 ? nextState : undefined,
-    });
-  }, [createdResourceName, location.pathname, location.state, navigate, props.onChange, resourcesByName]);
-
-  if (isLoading && !data) {
-    return (
-      <div className="space-y-1.5">
-        <Select
-          label={label}
-          required={props.required}
-          description={props.description}
-          data={[]}
-          disabled
-          placeholder="Loading…"
-          rightSection={<Loader size={15} color="gray" />}
-        />
-        {canCreate && createButton}
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="space-y-1.5">
-        <Alert color="red" title={`Could not load ${kind}s`}>
-          <div className="flex flex-col gap-2">
-            <span className="text-xs">{error.message}</span>
-            <Button size="compact-xs" variant="outline" onClick={() => refetch()}>
-              Retry
-            </Button>
-          </div>
-        </Alert>
-        {canCreate && createButton}
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="space-y-1.5">
-        <Alert color="red" title={`Could not load ${kind}s`}>
-          <Button size="compact-xs" variant="outline" onClick={() => refetch()}>
-            Retry
-          </Button>
-        </Alert>
-        {canCreate && createButton}
-      </div>
-    );
-  }
+  const selected = props.defaultValue;
+  const selectedItem = picker.resolve(selected);
 
   return (
-    <div className="space-y-1.5">
-      <Select
+    <div className="w-full">
+      <TriggerField
         label={label}
-        required={props.required}
         description={props.description}
-        clearable={props.clearable}
-        searchable
-        searchValue={search}
-        onSearchChange={setSearch}
-        filter={({ options }) => options}
-        data={rscList}
-        value={props.defaultValue ?? null}
-        disabled={rscList.length === 0 && debouncedSearch.length === 0}
-        leftSection={<Search size={14} strokeWidth={2.1} />}
-        maxDropdownHeight={390}
-        placeholder={
-          rscList.length === 0
-            ? `No ${kind} resources found`
-            : `Search and select ${kind}…`
+        required={props.required}
+        placeholder={`Select a ${kind}…`}
+        empty={!selected}
+        onOpen={picker.open}
+        onClear={
+          props.clearable && selected ? () => props.onChange() : undefined
         }
-        nothingFoundMessage={`No ${kind} resources match your search`}
-        comboboxProps={{
-          shadow: "md",
-          transitionProps: { transition: "pop", duration: 180 },
-        }}
-        styles={{
-          dropdown: {
-            padding: 6,
-            borderColor: "var(--color-slate-200)",
-            borderRadius: 12,
-          },
-          option: {
-            padding: 6,
-            borderRadius: 9,
-          },
-        }}
-        renderOption={({ option }) => {
-          const item = resourcesByName.get(option.value);
-          if (!item) {
-            return (
-              <span className="text-body font-normal text-slate-700">
-                {option.label}
-              </span>
-            );
-          }
-          const metadata = item.metadata!;
+      >
+        {selected && (
+          <SelectedChip
+            name={selected}
+            item={selectedItem}
+            api={api}
+            kind={kind}
+          />
+        )}
+      </TriggerField>
 
-          return (
-            <div className="flex h-[58px] min-w-0 flex-1 items-center gap-2.5">
-              {metadata.picURL ? (
-                <img
-                  src={metadata.picURL}
-                  alt={metadata.displayName || metadata.name}
-                  loading="lazy"
-                  className="h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white object-cover shadow-sm"
-                />
-              ) : null}
-
-              <div className="flex min-w-0 flex-1 flex-col justify-center">
-                <div className="flex min-w-0 items-baseline gap-2">
-                  <span className="truncate text-body font-semibold text-slate-800">
-                    {metadata.name}
-                  </span>
-                  {metadata.displayName && (
-                    <span className="truncate text-xs font-normal text-slate-500">
-                      {metadata.displayName}
-                    </span>
-                  )}
-                </div>
-                {metadata.description && (
-                  <span className="mt-0.5 truncate text-xs font-medium text-slate-500">
-                    {metadata.description}
-                  </span>
-                )}
-                <span className="mt-1 text-micro font-normal text-slate-500">
-                  Created <TimeAgo rfc3339={metadata.createdAt} />
-                </span>
-              </div>
-
-              <Tooltip label="View YAML" withArrow>
-                <ActionIcon
-                  type="button"
-                  variant="subtle"
-                  color="gray"
-                  size="sm"
-                  aria-label={`View YAML for ${metadata.name}`}
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                  }}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    setYamlItem(item);
-                  }}
-                >
-                  <FileText size={14} strokeWidth={2.1} />
-                </ActionIcon>
-              </Tooltip>
-            </div>
-          );
+      <ResourcePicker
+        opened={picker.opened}
+        onClose={picker.close}
+        api={api}
+        kind={kind}
+        selected={selected ? [selected] : []}
+        items={picker.items}
+        isLoading={picker.isLoading}
+        isError={picker.isError}
+        errorMessage={picker.errorMessage}
+        onRetry={picker.refetch}
+        search={picker.search}
+        onSearchChange={picker.setSearch}
+        onPick={(item) => {
+          props.onChange(item);
+          picker.close();
         }}
-        onChange={(value) => {
-          if (!value) {
-            props.onChange();
-            return;
-          }
-          props.onChange(resourcesByName.get(value));
-        }}
+        onClear={
+          props.clearable && selected
+            ? () => {
+                props.onChange();
+                picker.close();
+              }
+            : undefined
+        }
+        onCreate={picker.canCreate ? picker.openCreate : undefined}
       />
-
-      {canCreate && createButton}
-
-      {yamlItem && (
-        <ResourceYAML
-          item={yamlItem}
-          readOnly
-          hideTrigger
-          opened
-          onClose={() => setYamlItem(undefined)}
-        />
-      )}
     </div>
   );
 };

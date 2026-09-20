@@ -1,0 +1,15 @@
+export const NON_CREATABLE = new Set([
+  "core/Region",
+  "core/Session",
+  "core/Gateway",
+  "core/Authenticator",
+  "core/Device",
+  "enterprise/Certificate",
+  "enterprise/CertificateIssuer",
+  "enterprise/DNSProvider",
+  "enterprise/SecretStore",
+  "access/Request",
+  "access/Review",
+  "access/IntegrationIdentity",
+  "access/IntegrationBinding",
+]);
