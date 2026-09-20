@@ -286,7 +286,7 @@ func doSetOIDCSecret(ctx context.Context, octeliumC octeliumc.ClientInterface, k
 
 		_, err = octeliumC.EnterpriseC().CreateSecret(ctx, &enterprisev1.Secret{
 			Metadata: &metav1.Metadata{
-				Name:           ovutils.GetOIDCConfigSecretName(vutils.GetMyRegionName()),
+				Name:           ovutils.GetOIDC_JWKSSecretName(vutils.GetMyRegionName()),
 				IsSystem:       true,
 				IsSystemHidden: true,
 			},

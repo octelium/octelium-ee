@@ -234,6 +234,18 @@ func accessLogCount(ctx context.Context, h *eeharness.H) (uint32, error) {
 	return res.ListResponseMeta.TotalCount, nil
 }
 
+func componentLogCount(ctx context.Context, h *eeharness.H) (uint32, error) {
+	res, err := h.ComponentLogC().ListComponentLog(ctx, &visibilityv1.ListComponentLogRequest{})
+	if err != nil {
+		return 0, err
+	}
+	if res.ListResponseMeta == nil {
+		return 0, errors.Errorf("the list response has no metadata")
+	}
+
+	return res.ListResponseMeta.TotalCount, nil
+}
+
 func waitAccessLogGrows(t *testing.T, d *trafficDriver, by uint32) {
 	t.Helper()
 
@@ -241,8 +253,10 @@ func waitAccessLogGrows(t *testing.T, d *trafficDriver, by uint32) {
 
 	ctx, cancel := h.Ctx(t)
 	before, err := accessLogCount(ctx, h)
+	componentBefore, componentErr := componentLogCount(ctx, h)
 	cancel()
 	require.Nil(t, err)
+	require.Nil(t, componentErr)
 
 	var attempts int
 	var driven int
@@ -269,8 +283,16 @@ func waitAccessLogGrows(t *testing.T, d *trafficDriver, by uint32) {
 			}
 			attempts++
 
+			componentCur, err := componentLogCount(ctx, h)
+			if err != nil {
+				return errors.Wrapf(err,
+					"the access log count is %d, want at least %d after %d driven requests",
+					cur, before+by, driven)
+			}
+
 			return errors.Errorf(
-				"the access log count is %d, want at least %d after %d driven requests",
-				cur, before+by, driven)
+				"the access log count is %d, want at least %d after %d driven requests, "+
+					"while the component log count is %d, was %d",
+				cur, before+by, driven, componentCur, componentBefore)
 		})
 }

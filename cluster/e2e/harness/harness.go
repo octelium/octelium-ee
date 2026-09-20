@@ -59,6 +59,10 @@ func (h *H) AccessLogC() visibilityv1.AccessLogServiceClient {
 	return visibilityv1.NewAccessLogServiceClient(h.Conn())
 }
 
+func (h *H) VisibilityClusterC() visibilityv1.ClusterServiceClient {
+	return visibilityv1.NewClusterServiceClient(h.Conn())
+}
+
 func (h *H) AuditLogC() visibilityv1.AuditLogServiceClient {
 	return visibilityv1.NewAuditLogServiceClient(h.Conn())
 }

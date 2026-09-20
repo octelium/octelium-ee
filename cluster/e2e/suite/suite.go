@@ -68,12 +68,22 @@ func Phases() []suite.Phase {
 
 		{Name: "LogStoreQueryPath", Run: testLogStoreQueryPath},
 		{Name: "AccessLogLifecycle", Run: testAccessLogLifecycle},
+		{Name: "AccessLogAggregations", Run: testAccessLogAggregations},
+		{Name: "AuthenticationLogTrail", Run: testAuthenticationLogTrail},
+		{Name: "ComponentLogAggregations", Run: testComponentLogAggregations},
 		{Name: "LogStoreIngestionRecovery", Run: testLogStoreIngestionRecovery},
 		{Name: "MetricStoreQueryPath", Run: testMetricStoreQueryPath},
+		{Name: "MetricStoreLimits", Run: testMetricStoreLimits},
 		{Name: "RscStoreReconciliation", Run: testRscStoreReconciliation},
 		{Name: "RscStoreAccessResources", Run: testRscStoreAccessResources},
 		{Name: "RscStoreSecretRedaction", Run: testRscStoreSecretRedaction},
 		{Name: "VisibilityScoping", Run: testVisibilityScoping},
+
+		{Name: "ClusterSummaryFanOut", Run: testClusterSummaryFanOut},
+		{Name: "ClusterHealthSubsystems", Run: testClusterHealthSubsystems},
+
+		{Name: "EnterpriseConditionCompiler", Run: testEnterpriseConditionCompiler},
+		{Name: "PublicServerOIDC", Run: testPublicServerOIDC},
 
 		{Name: "Certificate", Run: testCertificateSetAndServe},
 		{Name: "License", Run: testLicenseLifecycle},
