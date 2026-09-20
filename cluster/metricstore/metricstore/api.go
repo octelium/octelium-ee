@@ -108,7 +108,7 @@ LIMIT ?
 `
 	args = append(args, maxDescriptorResults+1)
 
-	rows, err := s.s.db.QueryContext(ctx, query, args...)
+	rows, err := s.s.database().QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +284,7 @@ GROUP BY a.descriptor_id, a.key
 ORDER BY a.descriptor_id, a.key
 `
 
-	rows, err := s.s.db.QueryContext(ctx, query, args...)
+	rows, err := s.s.database().QueryContext(ctx, query, args...)
 	if err != nil {
 		return err
 	}
@@ -406,7 +406,7 @@ LIMIT ?
 `
 	args = append(args, maxDescriptorCandidates)
 
-	rows, err := s.s.db.QueryContext(ctx, query, args...)
+	rows, err := s.s.database().QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

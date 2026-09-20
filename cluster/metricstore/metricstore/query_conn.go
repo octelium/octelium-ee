@@ -26,7 +26,7 @@ type querySeriesMapping struct {
 
 func (s *srvMetric) withSeriesMapping(ctx context.Context, mappings []querySeriesMapping,
 	fn func(*sql.Conn) error) error {
-	conn, err := s.s.db.Conn(ctx)
+	conn, err := s.s.database().Conn(ctx)
 	if err != nil {
 		return err
 	}

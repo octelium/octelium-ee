@@ -127,6 +127,10 @@ func IsBlockedCheckpointErr(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "Cannot CHECKPOINT")
 }
 
+func IsInvalidatedDatabaseErr(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "database has been invalidated")
+}
+
 func GetDuckDBDatabasePath(dsn string) string {
 	path, _, _ := strings.Cut(dsn, "?")
 	return path

@@ -261,7 +261,7 @@ LIMIT ?
 `
 	args = append(args, maximumSourceSeries+1)
 
-	rows, err := s.s.db.QueryContext(ctx, querySQL, args...)
+	rows, err := s.s.database().QueryContext(ctx, querySQL, args...)
 	if err != nil {
 		return nil, err
 	}

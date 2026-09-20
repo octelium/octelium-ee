@@ -10,7 +10,6 @@ package metricstore
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/url"
 	"path/filepath"
@@ -36,11 +35,19 @@ func newTestMemoryLimitedServer(t *testing.T, memoryLimit string) *srvMetric {
 	values.Set("preserve_insertion_order", "false")
 	values.Set("threads", "2")
 
-	db, err := sql.Open("duckdb", database+"?"+values.Encode())
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = db.Close() })
+	s := &Server{
+		dbConfig: &metricStoreDBConfig{dsn: database + "?" + values.Encode(), database: database},
+	}
 
-	s := &Server{db: db, dbConfig: &metricStoreDBConfig{database: database}}
+	db, err := openMetricStoreDB(s.dbConfig)
+	require.NoError(t, err)
+	s.setDatabase(db)
+	t.Cleanup(func() {
+		if db := s.database(); db != nil {
+			_ = db.Close()
+		}
+	})
+
 	require.NoError(t, s.initDB(context.Background()))
 
 	return &srvMetric{s: s}
@@ -112,17 +119,17 @@ func TestUpsertMetricMetadataStoresEveryTable(t *testing.T) {
 	assert.Equal(t, int64(12), testTableCount(t, srv.s, "metric_number_points"))
 
 	var seriesAttributes int
-	require.NoError(t, srv.s.db.QueryRowContext(context.Background(),
+	require.NoError(t, srv.s.database().QueryRowContext(context.Background(),
 		`SELECT COUNT(*) FROM metric_series_attributes WHERE key = 'service'`).Scan(&seriesAttributes))
 	assert.Equal(t, 12, seriesAttributes)
 
 	var attributeKeys int
-	require.NoError(t, srv.s.db.QueryRowContext(context.Background(),
+	require.NoError(t, srv.s.database().QueryRowContext(context.Background(),
 		`SELECT COUNT(DISTINCT key) FROM metric_attribute_keys`).Scan(&attributeKeys))
 	assert.Equal(t, 6, attributeKeys)
 
 	var labels string
-	require.NoError(t, srv.s.db.QueryRowContext(context.Background(),
+	require.NoError(t, srv.s.database().QueryRowContext(context.Background(),
 		`SELECT CAST(labels AS VARCHAR) FROM metric_series LIMIT 1`).Scan(&labels))
 	assert.Contains(t, labels, "service")
 
@@ -141,11 +148,11 @@ func TestUpsertMetricMetadataIsIdempotent(t *testing.T) {
 	require.NoError(t, storeTestMetricsErr(t, srv, newTestMetadataMetrics(2, 3, nil)))
 
 	var createdAt int64
-	require.NoError(t, srv.s.db.QueryRowContext(ctx,
+	require.NoError(t, srv.s.database().QueryRowContext(ctx,
 		`SELECT min(created_at) FROM metric_series`).Scan(&createdAt))
 
 	var firstSeenAt int64
-	require.NoError(t, srv.s.db.QueryRowContext(ctx,
+	require.NoError(t, srv.s.database().QueryRowContext(ctx,
 		`SELECT min(first_seen_at) FROM metric_attribute_keys`).Scan(&firstSeenAt))
 
 	descriptors := testTableCount(t, srv.s, "metric_descriptors")
@@ -162,17 +169,17 @@ func TestUpsertMetricMetadataIsIdempotent(t *testing.T) {
 	assert.Equal(t, attributeKeys, testTableCount(t, srv.s, "metric_attribute_keys"))
 
 	var createdAtAfter int64
-	require.NoError(t, srv.s.db.QueryRowContext(ctx,
+	require.NoError(t, srv.s.database().QueryRowContext(ctx,
 		`SELECT min(created_at) FROM metric_series`).Scan(&createdAtAfter))
 	assert.Equal(t, createdAt, createdAtAfter)
 
 	var firstSeenAtAfter int64
-	require.NoError(t, srv.s.db.QueryRowContext(ctx,
+	require.NoError(t, srv.s.database().QueryRowContext(ctx,
 		`SELECT min(first_seen_at) FROM metric_attribute_keys`).Scan(&firstSeenAtAfter))
 	assert.Equal(t, firstSeenAt, firstSeenAtAfter)
 
 	var updatedAt int64
-	require.NoError(t, srv.s.db.QueryRowContext(ctx,
+	require.NoError(t, srv.s.database().QueryRowContext(ctx,
 		`SELECT min(updated_at) FROM metric_series`).Scan(&updatedAt))
 	assert.Greater(t, updatedAt, createdAt)
 }
@@ -187,19 +194,19 @@ func TestUpsertMetricMetadataMergesTheAttributeSourceMask(t *testing.T) {
 	require.NoError(t, storeTestMetricsErr(t, srv, resourceOnly))
 
 	var mask int
-	require.NoError(t, srv.s.db.QueryRowContext(ctx,
+	require.NoError(t, srv.s.database().QueryRowContext(ctx,
 		`SELECT source_mask FROM metric_attribute_keys WHERE key = 'shared'`).Scan(&mask))
 	assert.Equal(t, attributeSourceResource, mask)
 
 	pointOnly := newTestMetadataMetrics(1, 1, map[string]any{"shared": "value"})
 	require.NoError(t, storeTestMetricsErr(t, srv, pointOnly))
 
-	require.NoError(t, srv.s.db.QueryRowContext(ctx,
+	require.NoError(t, srv.s.database().QueryRowContext(ctx,
 		`SELECT source_mask FROM metric_attribute_keys WHERE key = 'shared'`).Scan(&mask))
 	assert.Equal(t, attributeSourceResource|attributeSourceDataPoint, mask)
 
 	var seriesMask int
-	require.NoError(t, srv.s.db.QueryRowContext(ctx, `
+	require.NoError(t, srv.s.database().QueryRowContext(ctx, `
 SELECT max(source_mask) FROM metric_series_attributes WHERE key = 'shared'`).Scan(&seriesMask))
 	assert.NotZero(t, seriesMask)
 }
@@ -219,7 +226,7 @@ func TestUpsertMetricMetadataRejectsChangedAttributeValueKind(t *testing.T) {
 	assert.Zero(t, testTableCount(t, srv.s, "metric_attribute_keys_staging"))
 
 	var kind string
-	require.NoError(t, srv.s.db.QueryRowContext(context.Background(),
+	require.NoError(t, srv.s.database().QueryRowContext(context.Background(),
 		`SELECT value_kind FROM metric_attribute_keys WHERE key = 'mixed'`).Scan(&kind))
 	assert.Equal(t, "STRING", kind)
 }
@@ -236,7 +243,7 @@ func TestUpsertMetricMetadataKeepsTheDescriptorDescription(t *testing.T) {
 	require.NoError(t, storeTestMetricsErr(t, srv, newTestMetadataMetrics(1, 1, nil)))
 
 	var description string
-	require.NoError(t, srv.s.db.QueryRowContext(ctx,
+	require.NoError(t, srv.s.database().QueryRowContext(ctx,
 		`SELECT description FROM metric_descriptors`).Scan(&description))
 	assert.Equal(t, "the original description", description)
 
@@ -245,7 +252,7 @@ func TestUpsertMetricMetadataKeepsTheDescriptorDescription(t *testing.T) {
 		SetDescription("a newer description")
 	require.NoError(t, storeTestMetricsErr(t, srv, updated))
 
-	require.NoError(t, srv.s.db.QueryRowContext(ctx,
+	require.NoError(t, srv.s.database().QueryRowContext(ctx,
 		`SELECT description FROM metric_descriptors`).Scan(&description))
 	assert.Equal(t, "a newer description", description)
 }

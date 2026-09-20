@@ -30,7 +30,7 @@ func (s *Server) readStorageUsage(ctx context.Context) (*ovutils.StorageUsage, e
 		database = s.dbConfig.database
 	}
 
-	return ovutils.ReadStorageUsage(ctx, s.db, database, s.statfsFn)
+	return ovutils.ReadStorageUsage(ctx, s.database(), database, s.statfsFn)
 }
 
 func (s *Server) runStoragePressureLoop(ctx context.Context) {
@@ -45,6 +45,7 @@ func (s *Server) runStoragePressureLoop(ctx context.Context) {
 		case <-ticker.C:
 			if err := s.applyStoragePressureRetention(ctx); err != nil {
 				zap.L().Warn("Could not apply metricstore storage pressure retention", zap.Error(err))
+				s.requestDatabaseRecovery(err)
 			}
 		}
 	}
@@ -113,5 +114,5 @@ func (s *Server) applyStoragePressureRetention(ctx context.Context) error {
 }
 
 func (s *Server) checkpointStorage(ctx context.Context) error {
-	return ovutils.CheckpointDuckDB(ctx, s.db, forceCheckpointTimeout)
+	return ovutils.CheckpointDuckDB(ctx, s.database(), forceCheckpointTimeout)
 }

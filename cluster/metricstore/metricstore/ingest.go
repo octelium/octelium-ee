@@ -496,6 +496,7 @@ func (s *srvMetric) processPendingExports(items []*pendingMetricExport) {
 			zap.Int("descriptors", len(batch.descriptors)),
 			zap.Int("series", len(batch.series)),
 			zap.Error(err))
+		s.s.requestDatabaseRecovery(err)
 	}
 
 	for _, item := range valid {
@@ -1019,7 +1020,7 @@ func optionalFloat(ok bool, value float64) *float64 {
 }
 
 func (s *srvMetric) storeMetricWriteBatch(ctx context.Context, batch *metricWriteBatch) error {
-	conn, err := s.s.db.Conn(ctx)
+	conn, err := s.s.database().Conn(ctx)
 	if err != nil {
 		return err
 	}

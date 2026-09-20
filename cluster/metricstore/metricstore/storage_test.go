@@ -26,14 +26,20 @@ func newTestStorageServer(t *testing.T) *Server {
 	dir := t.TempDir()
 	database := filepath.Join(dir, "metricstore.db")
 
-	db, err := sql.Open("duckdb", database)
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = db.Close() })
-
 	ret := &Server{
-		db:       db,
-		dbConfig: &metricStoreDBConfig{database: database},
+		dbConfig:    &metricStoreDBConfig{dsn: database, database: database},
+		dbRecoverCh: make(chan struct{}, 1),
 	}
+
+	db, err := openMetricStoreDB(ret.dbConfig)
+	require.NoError(t, err)
+	ret.setDatabase(db)
+	t.Cleanup(func() {
+		if db := ret.database(); db != nil {
+			_ = db.Close()
+		}
+	})
+
 	require.NoError(t, ret.initDB(context.Background()))
 
 	return ret
@@ -49,7 +55,7 @@ func seedTestMetricPoints(t *testing.T, s *Server, seriesID string, ages ...time
 	t.Helper()
 	ctx := context.Background()
 
-	conn, err := s.db.Conn(ctx)
+	conn, err := s.database().Conn(ctx)
 	require.NoError(t, err)
 	defer conn.Close()
 
@@ -75,7 +81,7 @@ func seedTestMetricMetadata(t *testing.T, s *Server, descriptorID, seriesID stri
 	ctx := context.Background()
 	at := metricTimeToDB(updatedAt)
 
-	_, err := s.db.ExecContext(ctx, `
+	_, err := s.database().ExecContext(ctx, `
 INSERT INTO metric_descriptors (
 	id, name, kind, number_value_type, unit, description, temporality,
 	scope_name, scope_version, scope_schema_url, created_at, updated_at
@@ -83,7 +89,7 @@ INSERT INTO metric_descriptors (
 `, descriptorID, at, at)
 	require.NoError(t, err)
 
-	_, err = s.db.ExecContext(ctx, `
+	_, err = s.database().ExecContext(ctx, `
 INSERT INTO metric_series (
 	id, descriptor_id, labels, labels_key,
 	component_type, component_namespace, component_name, created_at, updated_at
@@ -91,14 +97,14 @@ INSERT INTO metric_series (
 `, seriesID, descriptorID, at, at)
 	require.NoError(t, err)
 
-	_, err = s.db.ExecContext(ctx, `
+	_, err = s.database().ExecContext(ctx, `
 INSERT INTO metric_series_attributes (
 	series_id, descriptor_id, key, value_kind, value_key, value_string, source_mask, updated_at
 ) VALUES (?, ?, 'state', 'STRING', 'STRING:ok', 'ok', 1, ?)
 `, seriesID, descriptorID, at)
 	require.NoError(t, err)
 
-	_, err = s.db.ExecContext(ctx, `
+	_, err = s.database().ExecContext(ctx, `
 INSERT INTO metric_attribute_keys (
 	descriptor_id, key, value_kind, source_mask, first_seen_at, last_seen_at
 ) VALUES (?, 'state', 'STRING', 1, ?, ?)
@@ -109,7 +115,7 @@ INSERT INTO metric_attribute_keys (
 func testMetricPointIDs(t *testing.T, s *Server) []string {
 	t.Helper()
 
-	rows, err := s.db.QueryContext(context.Background(), `SELECT point_id FROM metric_number_points`)
+	rows, err := s.database().QueryContext(context.Background(), `SELECT point_id FROM metric_number_points`)
 	require.NoError(t, err)
 	defer rows.Close()
 
@@ -125,11 +131,24 @@ func testMetricPointIDs(t *testing.T, s *Server) []string {
 	return ret
 }
 
+func testSetSchemaVersion(t *testing.T, s *Server, version int) {
+	t.Helper()
+
+	_, err := s.database().ExecContext(context.Background(),
+		`DELETE FROM metricstore_schema`)
+	require.NoError(t, err)
+
+	_, err = s.database().ExecContext(context.Background(),
+		`INSERT INTO metricstore_schema (version, applied_at) VALUES (?, ?)`,
+		version, metricTimeToDB(time.Now().UTC()))
+	require.NoError(t, err)
+}
+
 func testTableCount(t *testing.T, s *Server, table string) int64 {
 	t.Helper()
 
 	var count int64
-	require.NoError(t, s.db.QueryRowContext(context.Background(),
+	require.NoError(t, s.database().QueryRowContext(context.Background(),
 		`SELECT COUNT(*) FROM `+table).Scan(&count))
 
 	return count
@@ -139,7 +158,7 @@ func beginBlockingMetadataTx(t *testing.T, s *Server) *sql.Conn {
 	t.Helper()
 	ctx := context.Background()
 
-	conn, err := s.db.Conn(ctx)
+	conn, err := s.database().Conn(ctx)
 	require.NoError(t, err)
 
 	_, err = conn.ExecContext(ctx, `BEGIN TRANSACTION`)
@@ -169,13 +188,13 @@ func TestReadStorageUsage(t *testing.T) {
 	assert.Equal(t, uint64(400), usage.AvailableBytes)
 	assert.Zero(t, usage.ReusableBytes)
 
-	_, err = s.db.ExecContext(ctx,
+	_, err = s.database().ExecContext(ctx,
 		`INSERT INTO metric_number_points SELECT md5(i::VARCHAR), i, i, NULL, md5((i*7)::VARCHAR), i, NULL
 FROM range(150000) tbl(i)`)
 	require.NoError(t, err)
 	require.NoError(t, s.checkpointStorage(ctx))
 
-	_, err = s.db.ExecContext(ctx, `DELETE FROM metric_number_points WHERE timestamp < 120000`)
+	_, err = s.database().ExecContext(ctx, `DELETE FROM metric_number_points WHERE timestamp < 120000`)
 	require.NoError(t, err)
 	require.NoError(t, s.checkpointStorage(ctx))
 
@@ -203,7 +222,7 @@ func TestCheckpointStorageWithActiveWriteTransaction(t *testing.T) {
 	conn := beginBlockingMetadataTx(t, s)
 	defer conn.Close()
 
-	_, err := s.db.ExecContext(ctx, `CHECKPOINT`)
+	_, err := s.database().ExecContext(ctx, `CHECKPOINT`)
 	require.NotNil(t, err)
 	assert.True(t, ovutils.IsBlockedCheckpointErr(err))
 
@@ -388,6 +407,42 @@ func TestDeleteMetricPointsBefore(t *testing.T) {
 	assert.Equal(t, []string{"series-1-1m0s"}, testMetricPointIDs(t, s))
 }
 
+func TestDeleteMetricPointsBeforeDeletesLargeBacklogInChunks(t *testing.T) {
+	s := newTestStorageServer(t)
+	ctx := context.Background()
+
+	cutoff := time.Now().UTC().Add(-time.Hour)
+	rows := int64(retentionDeleteChunkSize)*2 + 1
+	_, err := s.database().ExecContext(ctx, fmt.Sprintf(
+		`INSERT INTO metric_number_points
+SELECT md5(i::VARCHAR), %[1]d - i, %[1]d - i, NULL, 'series-1', i, NULL
+FROM range(%[2]d) tbl(i)`, metricTimeToDB(cutoff)-1, rows))
+	require.NoError(t, err)
+
+	deleted, err := s.deleteMetricPointsBefore(ctx, cutoff)
+	require.NoError(t, err)
+	assert.Equal(t, rows, deleted)
+	assert.Zero(t, testTableCount(t, s, "metric_number_points"))
+}
+
+func TestDeleteMetricPointsBeforeKeepsPointsAtTheChunkBoundary(t *testing.T) {
+	s := newTestStorageServer(t)
+	ctx := context.Background()
+
+	cutoff := time.Now().UTC().Add(-time.Hour)
+	seedTestMetricPoints(t, s, "series-1", time.Minute)
+	_, err := s.database().ExecContext(ctx, fmt.Sprintf(
+		`INSERT INTO metric_number_points
+SELECT md5(i::VARCHAR), %[1]d - i, %[1]d - i, NULL, 'series-2', i, NULL
+FROM range(%[2]d) tbl(i)`, metricTimeToDB(cutoff)-1, retentionDeleteChunkSize))
+	require.NoError(t, err)
+
+	deleted, err := s.deleteMetricPointsBefore(ctx, cutoff)
+	require.NoError(t, err)
+	assert.Equal(t, int64(retentionDeleteChunkSize), deleted)
+	assert.Equal(t, []string{"series-1-1m0s"}, testMetricPointIDs(t, s))
+}
+
 func TestRunStoragePressureLoopExitsOnContextCancellation(t *testing.T) {
 	s := newTestStorageServer(t)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -463,7 +518,7 @@ func TestDeleteOrphanedMetricMetadataKeepsConcurrentlyUpsertedSeries(t *testing.
 	now := time.Now().UTC()
 	seedTestMetricMetadata(t, s, "descriptor-1", "series-1", now.Add(-5*time.Minute))
 
-	conn, err := s.db.Conn(ctx)
+	conn, err := s.database().Conn(ctx)
 	require.NoError(t, err)
 	defer conn.Close()
 
@@ -489,7 +544,7 @@ ON CONFLICT (id) DO UPDATE SET updated_at = EXCLUDED.updated_at
 	assert.Equal(t, int64(1), testTableCount(t, s, "metric_series_attributes"))
 
 	var updatedAt int64
-	require.NoError(t, s.db.QueryRowContext(ctx,
+	require.NoError(t, s.database().QueryRowContext(ctx,
 		`SELECT updated_at FROM metric_series WHERE id = 'series-1'`).Scan(&updatedAt))
 	assert.Equal(t, metricTimeToDB(now), updatedAt)
 }

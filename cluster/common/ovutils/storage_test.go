@@ -61,6 +61,15 @@ func TestIsBlockedCheckpointErr(t *testing.T) {
 		"TransactionContext Error: Cannot CHECKPOINT: there are other write transactions active")))
 }
 
+func TestIsInvalidatedDatabaseErr(t *testing.T) {
+	assert.False(t, IsInvalidatedDatabaseErr(nil))
+	assert.False(t, IsInvalidatedDatabaseErr(errors.New(
+		"Out of Memory Error: could not allocate block of size 256.0 KiB (572.0 MiB/572.2 MiB used)")))
+	assert.True(t, IsInvalidatedDatabaseErr(errors.New(
+		"FATAL Error: Failed: database has been invalidated because of a previous fatal error. "+
+			"The database must be restarted prior to being used again.")))
+}
+
 func TestDetectTempDirectoryLimitBytes(t *testing.T) {
 	assert.Equal(t, defaultMaxTempDirectoryBytes, DetectTempDirectoryLimitBytes(0, 0))
 	assert.Equal(t, defaultMaxTempDirectoryBytes, DetectTempDirectoryLimitBytes(1<<60, 0))

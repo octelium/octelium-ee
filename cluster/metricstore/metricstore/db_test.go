@@ -12,7 +12,10 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -179,6 +182,215 @@ func TestExponentialHistogramIngestQueryRoundTrip(t *testing.T) {
 	assert.Equal(t, map[int32]uint64{0: 1}, raw.negative)
 }
 
+func TestInitDBSetsTheCurrentSchemaVersion(t *testing.T) {
+	s := newTestStorageServer(t)
+
+	version, err := s.getSchemaVersion(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, metricStoreSchemaVersion, version)
+}
+
+func TestInitDBDoesNotResetAFreshDatabase(t *testing.T) {
+	database := filepath.Join(t.TempDir(), "metricstore.db")
+
+	s := &Server{dbConfig: &metricStoreDBConfig{dsn: database, database: database}}
+	db, err := openMetricStoreDB(s.dbConfig)
+	require.NoError(t, err)
+	s.setDatabase(db)
+	t.Cleanup(func() { _ = s.database().Close() })
+
+	require.NoError(t, s.initDB(context.Background()))
+
+	assert.Same(t, db, s.database())
+}
+
+func TestInitDBKeepsTheStorageOfAnUpToDateDatabase(t *testing.T) {
+	s := newTestStorageServer(t)
+	ctx := context.Background()
+
+	seedTestMetricMetadata(t, s, "descriptor-1", "series-1", time.Now().UTC())
+	seedTestMetricPoints(t, s, "series-1", time.Minute)
+
+	for i := 0; i < 3; i++ {
+		require.NoError(t, s.initDB(ctx))
+	}
+
+	assert.Equal(t, []string{"series-1-1m0s"}, testMetricPointIDs(t, s))
+	assert.Equal(t, int64(1), testTableCount(t, s, "metric_series"))
+}
+
+func TestInitDBResetsTheStorageOfAnOutdatedDatabase(t *testing.T) {
+	s := newTestStorageServer(t)
+	ctx := context.Background()
+
+	seedTestMetricMetadata(t, s, "descriptor-1", "series-1", time.Now().UTC())
+	seedTestMetricPoints(t, s, "series-1", time.Minute)
+	testSetSchemaVersion(t, s, metricStoreSchemaVersion-1)
+
+	previous := s.database()
+	require.NoError(t, s.initDB(ctx))
+
+	assert.NotSame(t, previous, s.database())
+	assert.Empty(t, testMetricPointIDs(t, s))
+	assert.Zero(t, testTableCount(t, s, "metric_series"))
+	assert.Zero(t, testTableCount(t, s, "metric_descriptors"))
+
+	version, err := s.getSchemaVersion(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, metricStoreSchemaVersion, version)
+}
+
+func TestInitDBResetsTheStorageOfANewerDatabase(t *testing.T) {
+	s := newTestStorageServer(t)
+	ctx := context.Background()
+
+	seedTestMetricPoints(t, s, "series-1", time.Minute)
+	testSetSchemaVersion(t, s, metricStoreSchemaVersion+1)
+
+	require.NoError(t, s.initDB(ctx))
+
+	assert.Empty(t, testMetricPointIDs(t, s))
+
+	version, err := s.getSchemaVersion(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, metricStoreSchemaVersion, version)
+}
+
+func TestInitDBResetsTheStorageOfALegacyDatabase(t *testing.T) {
+	s := newTestStorageServer(t)
+	ctx := context.Background()
+
+	_, err := s.database().ExecContext(ctx, `DROP TABLE metricstore_schema`)
+	require.NoError(t, err)
+	_, err = s.database().ExecContext(ctx, `CREATE TABLE metrics (id VARCHAR PRIMARY KEY)`)
+	require.NoError(t, err)
+	_, err = s.database().ExecContext(ctx, `INSERT INTO metrics VALUES ('legacy')`)
+	require.NoError(t, err)
+
+	require.NoError(t, s.initDB(ctx))
+
+	var count int
+	require.NoError(t, s.database().QueryRowContext(ctx, `
+SELECT COUNT(*)
+FROM information_schema.tables
+WHERE table_schema = 'main' AND table_name = 'metrics'
+`).Scan(&count))
+	assert.Zero(t, count)
+
+	version, err := s.getSchemaVersion(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, metricStoreSchemaVersion, version)
+}
+
+func TestInitDBRemovesTheDatabaseFilesOnAReset(t *testing.T) {
+	s := newTestStorageServer(t)
+	ctx := context.Background()
+
+	_, err := s.database().ExecContext(ctx, fmt.Sprintf(
+		`INSERT INTO metric_number_points
+SELECT md5(i::VARCHAR), i, i, NULL, 'series-1', i, NULL FROM range(%d) tbl(i)`, 200000))
+	require.NoError(t, err)
+	require.NoError(t, s.checkpointStorage(ctx))
+	testSetSchemaVersion(t, s, metricStoreSchemaVersion-1)
+
+	before := testDatabaseSize(t, s)
+	require.NoError(t, s.initDB(ctx))
+
+	assert.Less(t, testDatabaseSize(t, s), before)
+	assert.Zero(t, testTableCount(t, s, "metric_number_points"))
+}
+
+func testDatabaseSize(t *testing.T, s *Server) int64 {
+	t.Helper()
+
+	info, err := os.Stat(s.dbConfig.database)
+	require.NoError(t, err)
+
+	return info.Size()
+}
+
+func TestRemoveMetricStoreDatabaseRemovesEveryDatabaseFile(t *testing.T) {
+	database := filepath.Join(t.TempDir(), "metricstore.db")
+
+	require.NoError(t, os.WriteFile(database, []byte("db"), 0o600))
+	require.NoError(t, os.WriteFile(database+".wal", []byte("wal"), 0o600))
+	require.NoError(t, os.MkdirAll(database+".tmp", 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(database+".tmp", "spill"), []byte("tmp"), 0o600))
+
+	require.NoError(t, removeMetricStoreDatabase(database))
+
+	assert.NoFileExists(t, database)
+	assert.NoFileExists(t, database+".wal")
+	assert.NoDirExists(t, database+".tmp")
+}
+
+func TestRemoveMetricStoreDatabaseWithoutAPath(t *testing.T) {
+	assert.Nil(t, removeMetricStoreDatabase(""))
+	assert.Nil(t, removeMetricStoreDatabase(filepath.Join(t.TempDir(), "does-not-exist.db")))
+}
+
+func TestReopenDatabaseReplacesTheDatabaseHandle(t *testing.T) {
+	s := newTestStorageServer(t)
+	ctx := context.Background()
+
+	seedTestMetricPoints(t, s, "series-1", time.Minute)
+	previous := s.database()
+
+	s.reopenDatabase(ctx)
+
+	assert.NotSame(t, previous, s.database())
+	assert.NotNil(t, previous.PingContext(ctx))
+	assert.Nil(t, s.database().PingContext(ctx))
+	assert.Equal(t, []string{"series-1-1m0s"}, testMetricPointIDs(t, s))
+
+	version, err := s.getSchemaVersion(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, metricStoreSchemaVersion, version)
+}
+
+func TestRecoverDatabaseKeepsAHealthyDatabase(t *testing.T) {
+	s := newTestStorageServer(t)
+	previous := s.database()
+
+	s.recoverDatabase(context.Background())
+
+	assert.Same(t, previous, s.database())
+	assert.Nil(t, s.database().PingContext(context.Background()))
+}
+
+func TestRequestDatabaseRecoverySignalsOnlyInvalidatedErrors(t *testing.T) {
+	s := newTestStorageServer(t)
+
+	s.requestDatabaseRecovery(nil)
+	s.requestDatabaseRecovery(errors.New("Out of Memory Error: could not allocate block of size 256.0 KiB"))
+	assert.Empty(t, s.dbRecoverCh)
+
+	invalidated := errors.New(
+		"FATAL Error: Failed: database has been invalidated because of a previous fatal error")
+	s.requestDatabaseRecovery(invalidated)
+	s.requestDatabaseRecovery(invalidated)
+	assert.Len(t, s.dbRecoverCh, 1)
+}
+
+func TestRunDatabaseRecoveryLoopExitsOnContextCancellation(t *testing.T) {
+	s := newTestStorageServer(t)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		s.runDatabaseRecoveryLoop(ctx)
+	}()
+
+	cancel()
+
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the metricstore database recovery loop did not exit")
+	}
+}
+
 func TestCreateMetricStoreTablesIsIdempotent(t *testing.T) {
 	db := newTestDuckDB(t)
 
@@ -189,16 +401,15 @@ func TestCreateMetricStoreTablesIsIdempotent(t *testing.T) {
 		require.NoError(t, tx.Commit())
 	}
 
-	for _, name := range []string{
-		"metric_number_points_series_timestamp",
-		"metric_histogram_points_series_timestamp",
-		"metric_exponential_histogram_points_series_timestamp",
-		"metric_number_points_point_id",
-		"metric_series_descriptor_id",
-	} {
-		var count int
+	var count int
+	require.NoError(t, db.QueryRowContext(context.Background(),
+		`SELECT COUNT(*) FROM duckdb_indexes() WHERE index_name = ?`,
+		"metric_series_descriptor_id").Scan(&count))
+	assert.Equal(t, 1, count)
+
+	for _, table := range metricPointTables {
 		require.NoError(t, db.QueryRowContext(context.Background(),
-			`SELECT COUNT(*) FROM duckdb_indexes() WHERE index_name = ?`, name).Scan(&count))
-		assert.Equal(t, 1, count, name)
+			`SELECT COUNT(*) FROM duckdb_indexes() WHERE table_name = ?`, table).Scan(&count))
+		assert.Zero(t, count, table)
 	}
 }

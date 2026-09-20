@@ -13,15 +13,19 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"go.uber.org/zap"
 )
 
 const (
-	metricStoreSchemaVersion = 3
+	metricStoreSchemaVersion = 4
 	rawMetricRetention       = 48 * time.Hour
 	retentionInterval        = 30 * time.Minute
+	retentionDeleteChunkSize = 50000
+	databaseRecoveryInterval = 5 * time.Second
 )
 
 var metricPointTables = []string{
@@ -31,56 +35,32 @@ var metricPointTables = []string{
 }
 
 func (s *Server) initDB(ctx context.Context) error {
-	if err := s.rejectLegacySchema(ctx); err != nil {
-		return err
-	}
-
-	if _, err := s.db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS metricstore_schema (
-		version INTEGER PRIMARY KEY,
-		applied_at BIGINT NOT NULL
-	)`); err != nil {
-		return err
-	}
-
 	version, err := s.getSchemaVersion(ctx)
 	if err != nil {
 		return err
 	}
-	if version > metricStoreSchemaVersion {
-		return fmt.Errorf("unsupported metricstore schema version: %d", version)
+
+	if version != metricStoreSchemaVersion {
+		if err := s.resetOutdatedStorage(ctx, version); err != nil {
+			return err
+		}
 	}
 
-	tx, err := s.db.BeginTx(ctx, nil)
+	return s.createSchema(ctx)
+}
+
+func (s *Server) createSchema(ctx context.Context) error {
+	tx, err := s.database().BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	switch version {
-	case 0:
-		if err := createMetricStoreTables(ctx, tx); err != nil {
-			return err
-		}
-		if err := setMetricStoreSchemaVersion(ctx, tx, metricStoreSchemaVersion); err != nil {
-			return err
-		}
-
-	case 2:
-		if err := migrateMetricStoreV2ToV3(ctx, tx); err != nil {
-			return fmt.Errorf("could not migrate metricstore schema from version 2 to 3: %w", err)
-		}
-		if err := setMetricStoreSchemaVersion(ctx, tx, 3); err != nil {
-			return err
-		}
-
-	case metricStoreSchemaVersion:
-		if err := createMetricStoreTables(ctx, tx); err != nil {
-			return err
-		}
-
-	default:
-		return fmt.Errorf("unsupported in-place metricstore schema migration from version %d to %d",
-			version, metricStoreSchemaVersion)
+	if err := createMetricStoreTables(ctx, tx); err != nil {
+		return err
+	}
+	if err := setMetricStoreSchemaVersion(ctx, tx, metricStoreSchemaVersion); err != nil {
+		return err
 	}
 
 	return tx.Commit()
@@ -94,97 +74,92 @@ ON CONFLICT (version) DO UPDATE SET applied_at = EXCLUDED.applied_at
 	return err
 }
 
-func migrateMetricStoreV2ToV3(ctx context.Context, tx *sql.Tx) error {
-	statements := []string{
-		`UPDATE metric_histogram_points
-SET bucket_counts = CAST(json_extract_string(bucket_counts, '$') AS JSON)
-WHERE json_type(bucket_counts) = 'VARCHAR'`,
-		`UPDATE metric_exponential_histogram_points
-SET
-	positive_counts = CASE
-		WHEN json_type(positive_counts) = 'VARCHAR'
-		THEN CAST(json_extract_string(positive_counts, '$') AS JSON)
-		ELSE positive_counts
-	END,
-	negative_counts = CASE
-		WHEN json_type(negative_counts) = 'VARCHAR'
-		THEN CAST(json_extract_string(negative_counts, '$') AS JSON)
-		ELSE negative_counts
-	END
-WHERE json_type(positive_counts) = 'VARCHAR' OR json_type(negative_counts) = 'VARCHAR'`,
-		`UPDATE metric_descriptors
-SET explicit_bounds = CAST(json_extract_string(explicit_bounds, '$') AS JSON)
-WHERE explicit_bounds IS NOT NULL AND json_type(explicit_bounds) = 'VARCHAR'`,
-		`DROP TABLE IF EXISTS metric_histogram_staging`,
-		`DROP TABLE IF EXISTS metric_exponential_histogram_staging`,
+func (s *Server) resetOutdatedStorage(ctx context.Context, version int) error {
+	tables, err := s.countStoredTables(ctx)
+	if err != nil {
+		return err
+	}
+	if tables == 0 {
+		return nil
 	}
 
-	for _, statement := range statements {
-		if _, err := tx.ExecContext(ctx, statement); err != nil {
+	zap.L().Warn("The metricstore database does not use the current schema. Resetting its storage",
+		zap.Int("databaseSchemaVersion", version),
+		zap.Int("schemaVersion", metricStoreSchemaVersion))
+
+	if db := s.database(); db != nil {
+		if err := db.Close(); err != nil {
+			return err
+		}
+		s.setDatabase(nil)
+	}
+
+	if err := removeMetricStoreDatabase(s.dbConfig.database); err != nil {
+		return err
+	}
+
+	db, err := openMetricStoreDB(s.dbConfig)
+	if err != nil {
+		return err
+	}
+	s.setDatabase(db)
+
+	return db.PingContext(ctx)
+}
+
+func removeMetricStoreDatabase(database string) error {
+	if database == "" {
+		return nil
+	}
+
+	for _, path := range []string{database, database + ".wal"} {
+		if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
 	}
 
-	if err := verifyMetricStoreV3JSONColumns(ctx, tx); err != nil {
-		return err
-	}
-
-	return createMetricStoreTables(ctx, tx)
+	return os.RemoveAll(database + ".tmp")
 }
 
-func verifyMetricStoreV3JSONColumns(ctx context.Context, tx *sql.Tx) error {
-	checks := []struct {
-		name  string
-		query string
-	}{
-		{
-			name:  "histogram bucket counts",
-			query: `SELECT COUNT(*) FROM metric_histogram_points WHERE json_type(bucket_counts) != 'ARRAY'`,
-		},
-		{
-			name: "exponential histogram positive counts",
-			query: `SELECT COUNT(*) FROM metric_exponential_histogram_points
-WHERE json_type(positive_counts) != 'ARRAY'`,
-		},
-		{
-			name: "exponential histogram negative counts",
-			query: `SELECT COUNT(*) FROM metric_exponential_histogram_points
-WHERE json_type(negative_counts) != 'ARRAY'`,
-		},
-		{
-			name: "histogram descriptor bounds",
-			query: `SELECT COUNT(*) FROM metric_descriptors
-WHERE explicit_bounds IS NOT NULL AND json_type(explicit_bounds) != 'ARRAY'`,
-		},
-	}
-
-	for _, check := range checks {
-		var count int64
-		if err := tx.QueryRowContext(ctx, check.query).Scan(&count); err != nil {
-			return fmt.Errorf("could not verify %s: %w", check.name, err)
-		}
-		if count != 0 {
-			return fmt.Errorf("metricstore migration left %d invalid %s rows", count, check.name)
-		}
-	}
-
-	return nil
+func (s *Server) countStoredTables(ctx context.Context) (int, error) {
+	var count int
+	err := s.database().QueryRowContext(ctx, `
+SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'main'
+`).Scan(&count)
+	return count, err
 }
 
 func (s *Server) getSchemaVersion(ctx context.Context) (int, error) {
+	var stored int
+	if err := s.database().QueryRowContext(ctx, `
+SELECT COUNT(*)
+FROM information_schema.tables
+WHERE table_schema = 'main' AND table_name = 'metricstore_schema'
+`).Scan(&stored); err != nil {
+		return 0, err
+	}
+	if stored == 0 {
+		return 0, nil
+	}
+
 	var version sql.NullInt64
-	err := s.db.QueryRowContext(ctx, `SELECT MAX(version) FROM metricstore_schema`).Scan(&version)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err := s.database().QueryRowContext(ctx,
+		`SELECT MAX(version) FROM metricstore_schema`).Scan(&version); err != nil {
 		return 0, err
 	}
 	if !version.Valid {
 		return 0, nil
 	}
+
 	return int(version.Int64), nil
 }
 
 func createMetricStoreTables(ctx context.Context, tx *sql.Tx) error {
 	statements := []string{
+		`CREATE TABLE IF NOT EXISTS metricstore_schema (
+			version INTEGER PRIMARY KEY,
+			applied_at BIGINT NOT NULL
+		)`,
 		`CREATE TABLE IF NOT EXISTS metric_descriptors (
 			id VARCHAR PRIMARY KEY,
 			name VARCHAR NOT NULL,
@@ -279,8 +254,15 @@ func createMetricStoreTables(ctx context.Context, tx *sql.Tx) error {
 			negative_offset INTEGER NOT NULL,
 			negative_counts JSON NOT NULL
 		)`,
-		`CREATE TABLE IF NOT EXISTS metric_number_staging AS SELECT * FROM metric_number_points WHERE false`,
-
+		`CREATE TABLE IF NOT EXISTS metric_number_staging (
+			point_id VARCHAR NOT NULL,
+			timestamp BIGINT NOT NULL,
+			ingested_at BIGINT NOT NULL,
+			start_timestamp BIGINT,
+			series_id VARCHAR NOT NULL,
+			number_int BIGINT,
+			number_double DOUBLE
+		)`,
 		`CREATE TABLE IF NOT EXISTS metric_descriptors_staging (
 			id VARCHAR NOT NULL,
 			name VARCHAR NOT NULL,
@@ -366,18 +348,6 @@ func createMetricStoreTables(ctx context.Context, tx *sql.Tx) error {
 			negative_counts VARCHAR NOT NULL
 		)`,
 
-		`CREATE INDEX IF NOT EXISTS metric_number_points_series_timestamp
-			ON metric_number_points (series_id, timestamp)`,
-		`CREATE INDEX IF NOT EXISTS metric_histogram_points_series_timestamp
-			ON metric_histogram_points (series_id, timestamp)`,
-		`CREATE INDEX IF NOT EXISTS metric_exponential_histogram_points_series_timestamp
-			ON metric_exponential_histogram_points (series_id, timestamp)`,
-		`CREATE INDEX IF NOT EXISTS metric_number_points_point_id
-			ON metric_number_points (point_id)`,
-		`CREATE INDEX IF NOT EXISTS metric_histogram_points_point_id
-			ON metric_histogram_points (point_id)`,
-		`CREATE INDEX IF NOT EXISTS metric_exponential_histogram_points_point_id
-			ON metric_exponential_histogram_points (point_id)`,
 		`CREATE INDEX IF NOT EXISTS metric_series_descriptor_id
 			ON metric_series (descriptor_id)`,
 	}
@@ -387,24 +357,6 @@ func createMetricStoreTables(ctx context.Context, tx *sql.Tx) error {
 			return err
 		}
 	}
-	return nil
-}
-
-func (s *Server) rejectLegacySchema(ctx context.Context) error {
-	var count int
-	if err := s.db.QueryRowContext(ctx, `
-SELECT COUNT(*)
-FROM information_schema.tables
-WHERE table_schema = 'main' AND table_name = 'metrics'
-`).Scan(&count); err != nil {
-		return err
-	}
-
-	if count > 0 {
-		return fmt.Errorf(
-			"legacy metricstore schema detected; use a new metricstore v2 database or remove the experimental v1 database")
-	}
-
 	return nil
 }
 
@@ -420,7 +372,68 @@ func (s *Server) runRetentionLoop(ctx context.Context) {
 		case <-ticker.C:
 			if err := s.applyRetention(ctx); err != nil {
 				zap.L().Warn("Could not apply metricstore retention", zap.Error(err))
+				s.requestDatabaseRecovery(err)
 			}
+		}
+	}
+}
+
+func (s *Server) requestDatabaseRecovery(err error) {
+	if !ovutils.IsInvalidatedDatabaseErr(err) {
+		return
+	}
+
+	select {
+	case s.dbRecoverCh <- struct{}{}:
+	default:
+	}
+}
+
+func (s *Server) runDatabaseRecoveryLoop(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+
+		case <-s.dbRecoverCh:
+			s.recoverDatabase(ctx)
+		}
+	}
+}
+
+func (s *Server) recoverDatabase(ctx context.Context) {
+	db := s.database()
+	if db == nil || !ovutils.IsInvalidatedDatabaseErr(db.PingContext(ctx)) {
+		return
+	}
+
+	zap.L().Warn("The metricstore database has been invalidated by a fatal error. Reopening it")
+
+	s.reopenDatabase(ctx)
+}
+
+func (s *Server) reopenDatabase(ctx context.Context) {
+	if db := s.database(); db != nil {
+		_ = db.Close()
+	}
+
+	for {
+		db, err := openMetricStoreDB(s.dbConfig)
+		if err == nil {
+			if err = db.PingContext(ctx); err == nil {
+				s.setDatabase(db)
+				zap.L().Info("Reopened the metricstore database")
+				return
+			}
+			_ = db.Close()
+		}
+
+		zap.L().Warn("Could not reopen the metricstore database", zap.Error(err))
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(databaseRecoveryInterval):
 		}
 	}
 }
@@ -450,16 +463,44 @@ func (s *Server) deleteMetricPointsBefore(ctx context.Context, cutoff time.Time)
 	deleted := int64(0)
 
 	for _, table := range metricPointTables {
-		result, err := s.db.ExecContext(ctx, `DELETE FROM `+table+` WHERE ingested_at < ?`, metricTimeToDB(cutoff))
+		count, err := s.deleteMetricPointsBeforeFromTable(ctx, table, cutoff)
+		deleted += count
 		if err != nil {
 			return deleted, err
-		}
-		if count, err := result.RowsAffected(); err == nil {
-			deleted += count
 		}
 	}
 
 	return deleted, nil
+}
+
+func (s *Server) deleteMetricPointsBeforeFromTable(ctx context.Context,
+	table string, cutoff time.Time) (int64, error) {
+	statement := fmt.Sprintf(`DELETE FROM %[1]s WHERE rowid IN (
+	SELECT rowid FROM %[1]s WHERE ingested_at < ? LIMIT %[2]d
+)`, table, retentionDeleteChunkSize)
+
+	deleted := int64(0)
+
+	for {
+		if err := ctx.Err(); err != nil {
+			return deleted, err
+		}
+
+		result, err := s.database().ExecContext(ctx, statement, metricTimeToDB(cutoff))
+		if err != nil {
+			return deleted, err
+		}
+
+		count, err := result.RowsAffected()
+		if err != nil {
+			return deleted, err
+		}
+
+		deleted += count
+		if count < retentionDeleteChunkSize {
+			return deleted, nil
+		}
+	}
 }
 
 func (s *Server) deleteOrphanedMetricMetadata(ctx context.Context, cutoff time.Time) error {
@@ -485,7 +526,7 @@ func (s *Server) deleteOrphanedMetricMetadata(ctx context.Context, cutoff time.T
 	}
 
 	for _, statement := range cleanupStatements {
-		if _, err := s.db.ExecContext(ctx, statement, metricTimeToDB(cutoff)); err != nil {
+		if _, err := s.database().ExecContext(ctx, statement, metricTimeToDB(cutoff)); err != nil {
 			return err
 		}
 	}

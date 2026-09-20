@@ -36,7 +36,9 @@ type Server struct {
 
 	clusterDomain string
 	db            *sql.DB
+	dbMu          sync.RWMutex
 	dbConfig      *metricStoreDBConfig
+	dbRecoverCh   chan struct{}
 
 	grpcSrv   *grpc.Server
 	listener  net.Listener
@@ -64,17 +66,13 @@ func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 		return nil, err
 	}
 
-	db, err := sql.Open("duckdb", dbConfig.dsn)
+	db, err := openMetricStoreDB(dbConfig)
 	if err != nil {
 		if dbConfig.cleanupFn != nil {
 			dbConfig.cleanupFn()
 		}
 		return nil, err
 	}
-
-	db.SetMaxOpenConns(4)
-	db.SetMaxIdleConns(4)
-	db.SetConnMaxLifetime(0)
 
 	workerCtx, workerCancel := context.WithCancel(context.Background())
 
@@ -83,12 +81,40 @@ func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 		clusterDomain: cc.Status.Domain,
 		db:            db,
 		dbConfig:      dbConfig,
+		dbRecoverCh:   make(chan struct{}, 1),
 		workerCtx:     workerCtx,
 		workerCancel:  workerCancel,
 		shutdownDone:  make(chan struct{}),
 	}
 
 	return ret, nil
+}
+
+func openMetricStoreDB(dbConfig *metricStoreDBConfig) (*sql.DB, error) {
+	db, err := sql.Open("duckdb", dbConfig.dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	db.SetMaxOpenConns(4)
+	db.SetMaxIdleConns(4)
+	db.SetConnMaxLifetime(0)
+
+	return db, nil
+}
+
+func (s *Server) database() *sql.DB {
+	s.dbMu.RLock()
+	defer s.dbMu.RUnlock()
+
+	return s.db
+}
+
+func (s *Server) setDatabase(db *sql.DB) {
+	s.dbMu.Lock()
+	defer s.dbMu.Unlock()
+
+	s.db = db
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -133,6 +159,12 @@ func (s *Server) Run(ctx context.Context) error {
 	go func() {
 		defer s.workerWG.Done()
 		s.runDiagnosticsLoop(s.workerCtx)
+	}()
+
+	s.workerWG.Add(1)
+	go func() {
+		defer s.workerWG.Done()
+		s.runDatabaseRecoveryLoop(s.workerCtx)
 	}()
 
 	go func() {
@@ -198,9 +230,9 @@ func (s *Server) initGRPC(ctx context.Context) error {
 }
 
 func (s *Server) closeStorage() {
-	if s.db != nil {
-		_ = s.db.Close()
-		s.db = nil
+	if db := s.database(); db != nil {
+		_ = db.Close()
+		s.setDatabase(nil)
 	}
 	if s.dbConfig != nil && s.dbConfig.cleanupFn != nil {
 		s.dbConfig.cleanupFn()
