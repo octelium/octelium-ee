@@ -1,3 +1,4 @@
+import { AppErrorBoundary } from "@/components/ErrorBoundary";
 import Footer from "@/components/Footer";
 import SideBar from "@/components/SideBar";
 import TopBar from "@/components/TopBar";
@@ -71,17 +72,15 @@ export default () => {
           </div>
         </AppShell.Header>
 
-        <AppShell.Navbar
-          p="md"
-          className="!bg-canvas"
-          style={{ zIndex: 10 }}
-        >
+        <AppShell.Navbar p="md" className="!bg-canvas" style={{ zIndex: 10 }}>
           <SideBar />
         </AppShell.Navbar>
 
         <AppShell.Main className="!bg-transparent">
           <div className="mx-auto w-full max-w-[var(--page-max-width)]">
-            <Outlet />
+            <AppErrorBoundary>
+              <Outlet />
+            </AppErrorBoundary>
             <Footer />
           </div>
         </AppShell.Main>

@@ -384,6 +384,11 @@ const authTopMethod = {
   credential: "listAuthenticationLogTopCredential",
 } as const;
 
+const auditTopMethod = {
+  user: "listAuditLogTopUser",
+  session: "listAuditLogTopSession",
+} as const;
+
 type TopResponse = {
   items: { count: number }[];
   totalCount: number;
@@ -427,6 +432,26 @@ export const useAuthTop = (
         await (getClientVisibilityAuthenticationLog() as any)[
           authTopMethod[resource]
         ](
+          { from: toTs(curFrom), to: toTs(curTo), limit: TOP_LIMIT },
+          { abort: signal },
+        )
+      ).response,
+  });
+};
+
+export const useAuditTop = (
+  resource: keyof typeof auditTopMethod,
+  periodMinutes: number,
+  priority: number = QUERY_PRIORITY.low,
+) => {
+  const { curFrom, curTo } = buildTimestamps(periodMinutes);
+
+  return useDashboardQuery<TopResponse>({
+    queryKey: [...dashboardKeys.auditTop(resource, periodMinutes)],
+    priority,
+    fetch: async (signal) =>
+      (
+        await (getClientVisibilityAuditLog() as any)[auditTopMethod[resource]](
           { from: toTs(curFrom), to: toTs(curTo), limit: TOP_LIMIT },
           { abort: signal },
         )

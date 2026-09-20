@@ -1,5 +1,6 @@
 import { RouteObject, useRoutes } from "react-router-dom";
 import { PageLoading } from "@/components/Loading";
+import { RouteErrorBoundary } from "@/components/ErrorBoundary";
 import routerClusterMan from "./clusterman/router";
 import Home from "./Home";
 import routerSettings from "./Settings/router";
@@ -76,6 +77,7 @@ export default (): RouteObject => {
   return {
     path: "/",
     element: <Root />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       {
         path: "",

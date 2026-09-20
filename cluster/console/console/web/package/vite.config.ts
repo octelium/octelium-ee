@@ -32,6 +32,7 @@ export default defineConfig({
 
   build: {
     manifest: true,
+    sourcemap: process.env.OCTELIUM_CONSOLE_SOURCEMAP === "true",
     commonjsOptions: {
       defaultIsModuleExports(id) {
         try {

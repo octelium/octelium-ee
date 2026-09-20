@@ -2,8 +2,6 @@ import { createBrowserRouter } from "react-router-dom";
 
 import routerRoot from "@/pages/router";
 
-const router = () => {
-  return createBrowserRouter([routerRoot()]);
-};
+const router = createBrowserRouter([routerRoot()]);
 
 export default router;

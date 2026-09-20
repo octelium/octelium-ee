@@ -34,6 +34,8 @@ export const dashboardKeys = {
     ["accessLogTop", resource, periodMinutes, "all", null] as const,
   authTop: (resource: string, periodMinutes: number) =>
     ["authLogTop", resource, periodMinutes, null] as const,
+  auditTop: (resource: string, periodMinutes: number) =>
+    ["auditLogTop", resource, periodMinutes, null] as const,
   metricStat: (metric: string, periodMinutes: number, variant: string) =>
     ["visibility", "metricStat", metric, variant, periodMinutes] as const,
   queue: (api: string, name: string) =>

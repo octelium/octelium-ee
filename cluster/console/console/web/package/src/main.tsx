@@ -15,6 +15,7 @@ import store from "@/store";
 
 import router from "@/router";
 import { queryClient } from "@/utils";
+import { installGlobalErrorLogging } from "@/utils/errors";
 import {
   colorSchemeManager,
   DEFAULT_COLOR_SCHEME,
@@ -22,6 +23,8 @@ import {
 import cssVariablesResolver from "@/utils/theme/cssVariables";
 import themeMantine from "@/utils/theme/mantine";
 import { QueryClientProvider } from "@tanstack/react-query";
+
+installGlobalErrorLogging();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -33,7 +36,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         cssVariablesResolver={cssVariablesResolver}
       >
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router()} />
+          <RouterProvider router={router} />
         </QueryClientProvider>
       </MantineProvider>
     </Provider>
