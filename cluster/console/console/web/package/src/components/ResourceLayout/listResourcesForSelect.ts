@@ -1,7 +1,7 @@
 import {
   CommonListOptions,
   CommonListOptions_OrderBy_Type,
-} from "@/apis/metav1/metav1";
+} from "@/apis/visibilityv1/meta/vmetav1";
 import {
   API,
   getListOptionsPB,
@@ -27,7 +27,7 @@ export const listResourcesForSelect = async (
       page: 0,
       itemsPerPage: SELECT_PAGE_SIZE,
       orderBy: { type: CommonListOptions_OrderBy_Type.NAME },
-      ...(query && query.trim().length > 0 ? { query: query.trim() } : {}),
+      query: query?.trim() ?? "",
     }),
   });
 

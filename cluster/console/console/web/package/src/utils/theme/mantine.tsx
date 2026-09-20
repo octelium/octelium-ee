@@ -341,12 +341,15 @@ const theme = createTheme({
     }),
 
     Badge: Badge.extend({
+      defaultProps: { size: "sm" },
       styles: {
         root: {
           fontFamily: FONT,
           fontWeight: 600,
           fontSize: SIZE_MICRO,
           letterSpacing: "0.02em",
+          height: rem(18),
+          paddingInline: rem(7),
         },
         label: { fontFamily: FONT, fontWeight: 600 },
       },

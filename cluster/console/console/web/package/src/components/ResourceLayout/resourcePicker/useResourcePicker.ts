@@ -133,7 +133,10 @@ export const useResourcePicker = (args: {
   return {
     opened,
     open: () => setOpened(true),
-    close: () => setOpened(false),
+    close: () => {
+      setOpened(false);
+      setSearch("");
+    },
     search,
     setSearch,
     items,

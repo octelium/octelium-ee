@@ -1,3 +1,4 @@
+import { PILL } from "@/components/Dashboard/components";
 import Meta from "@/components/Meta";
 import { getDomain } from "@/utils";
 import { ActionIcon, Alert, Button, Tooltip } from "@mantine/core";
@@ -13,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import * as React from "react";
+import { twMerge } from "tailwind-merge";
 import License from "./License";
 import Packages from "./Packages";
 import {
@@ -28,8 +30,10 @@ import UpgradeDrawer from "./UpgradeDrawer";
 const StatusPill = (props: { active: boolean; updates: number }) => {
   if (props.active) {
     return (
-      <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-micro font-semibold text-blue-700">
-        <Loader2 size={10} className="animate-spin" />
+      <span
+        className={twMerge(PILL, "border-blue-200 bg-blue-50 text-blue-700")}
+      >
+        <Loader2 size={9} className="animate-spin" />
         Upgrading
       </span>
     );
@@ -37,16 +41,23 @@ const StatusPill = (props: { active: boolean; updates: number }) => {
 
   if (props.updates > 0) {
     return (
-      <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-micro font-semibold text-blue-700">
-        <Sparkles size={10} strokeWidth={2.5} />
+      <span
+        className={twMerge(PILL, "border-blue-200 bg-blue-50 text-blue-700")}
+      >
+        <Sparkles size={9} strokeWidth={2.5} />
         {props.updates} update{props.updates === 1 ? "" : "s"} available
       </span>
     );
   }
 
   return (
-    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-micro font-semibold text-emerald-700">
-      <CheckCircle2 size={10} strokeWidth={2.5} />
+    <span
+      className={twMerge(
+        PILL,
+        "border-emerald-200 bg-emerald-50 text-emerald-700",
+      )}
+    >
+      <CheckCircle2 size={9} strokeWidth={2.5} />
       Up to date
     </span>
   );

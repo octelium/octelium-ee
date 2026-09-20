@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
+import { PILL } from "./components";
 
 export const STATUS_STYLE: Record<number, string> = {
   [GetClusterHealthResponse_Status.OK]:
@@ -100,13 +101,13 @@ export const StatusBadge = (props: { status: number; className?: string }) => {
   return (
     <span
       className={twMerge(
-        "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-micro font-semibold",
+        PILL,
         STATUS_STYLE[props.status] ??
           STATUS_STYLE[GetClusterHealthResponse_Status.UNKNOWN],
         props.className,
       )}
     >
-      <Icon size={10} strokeWidth={2.5} />
+      <Icon size={9} strokeWidth={2.5} />
       {STATUS_LABEL[props.status] ?? "Unknown"}
     </span>
   );

@@ -1,82 +1,62 @@
-import {
-  ALL_PERIODS,
-  EXTENDED_PERIODS,
-  PRIMARY_PERIODS,
-} from "@/utils/visibility";
-import { Menu } from "@mantine/core";
+import { EXTENDED_PERIODS, PRIMARY_PERIODS } from "@/utils/visibility";
+import { Menu, SegmentedControl } from "@mantine/core";
 import { ChevronDown } from "lucide-react";
 import { twMerge } from "tailwind-merge";
-
-const CELL =
-  "h-[26px] cursor-pointer px-2.5 text-micro font-semibold transition-colors duration-150";
 
 const PeriodSelector = (props: {
   value: number;
   onChange: (value: number) => void;
 }) => {
-  const isExtended = EXTENDED_PERIODS.some((p) => p.minutes === props.value);
-  const extendedLabel = isExtended
-    ? ALL_PERIODS.find((p) => p.minutes === props.value)?.label
-    : undefined;
+  const extended = EXTENDED_PERIODS.find(
+    (option) => option.minutes === props.value,
+  );
+
+  const data = [
+    ...PRIMARY_PERIODS.map((option) => ({
+      value: String(option.minutes),
+      label: option.label,
+    })),
+    ...(extended
+      ? [{ value: String(extended.minutes), label: extended.label }]
+      : []),
+  ];
 
   return (
-    <div
-      role="group"
-      aria-label="Time range"
-      className="flex overflow-hidden rounded-md border border-slate-200 shadow-card"
-    >
-      {PRIMARY_PERIODS.map((option) => {
-        const active = option.minutes === props.value;
-        return (
-          <button
-            type="button"
-            key={option.minutes}
-            aria-pressed={active}
-            onClick={() => props.onChange(option.minutes)}
-            className={twMerge(
-              CELL,
-              active
-                ? "bg-slate-900 text-white hover:bg-slate-800"
-                : "bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-            )}
-          >
-            {option.label}
-          </button>
-        );
-      })}
+    <div className="flex items-stretch gap-1.5">
+      <SegmentedControl
+        size="xs"
+        aria-label="Time range"
+        value={String(props.value)}
+        onChange={(value) => props.onChange(Number(value))}
+        data={data}
+      />
 
       <Menu position="bottom-end" offset={4} withArrow={false}>
         <Menu.Target>
           <button
             type="button"
             aria-label="More time ranges"
-            className={twMerge(
-              CELL,
-              "flex items-center gap-1 border-l border-slate-200 px-2",
-              isExtended
-                ? "bg-slate-900 text-white hover:bg-slate-800"
-                : "bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-            )}
+            className="flex shrink-0 cursor-pointer items-center gap-1 rounded-[10px] border border-slate-200 bg-slate-100 px-2 text-body font-semibold text-slate-500 outline-none transition-colors duration-150 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400"
           >
-            {extendedLabel ?? "More"}
-            <ChevronDown size={10} strokeWidth={2.5} />
+            <ChevronDown size={12} strokeWidth={2.5} />
           </button>
         </Menu.Target>
+
         <Menu.Dropdown>
-          <div className="flex min-w-[100px] flex-col py-1">
+          <div className="flex min-w-[104px] flex-col py-1">
             {EXTENDED_PERIODS.map((option) => (
               <button
                 type="button"
                 key={option.minutes}
                 onClick={() => props.onChange(option.minutes)}
                 className={twMerge(
-                  "flex h-8 cursor-pointer items-center px-3 text-left text-body font-normal transition-colors duration-150",
+                  "flex h-8 cursor-pointer items-center rounded-md px-3 text-left text-body font-semibold transition-colors duration-150",
                   option.minutes === props.value
                     ? "bg-slate-900 text-white"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
                 )}
               >
-                {option.label}
+                Last {option.label}
               </button>
             ))}
           </div>

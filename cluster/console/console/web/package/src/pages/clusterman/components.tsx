@@ -15,11 +15,11 @@ import {
   TriangleAlert,
   XCircle,
 } from "lucide-react";
+import { PILL } from "@/components/Dashboard/components";
 import { match } from "ts-pattern";
 import { twMerge } from "tailwind-merge";
 
-const BADGE =
-  "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-micro font-semibold";
+const BADGE = PILL;
 
 export const UpgradeStateBadge = (props: {
   state: ClusterConfig_Status_UpgradeRequest_State;
@@ -32,13 +32,13 @@ export const UpgradeStateBadge = (props: {
           "border-emerald-200 bg-emerald-50 text-emerald-700",
         )}
       >
-        <CheckCircle2 size={10} strokeWidth={2.5} />
+        <CheckCircle2 size={9} strokeWidth={2.5} />
         Succeeded
       </span>
     ))
     .with(ClusterConfig_Status_UpgradeRequest_State.FAILED, () => (
       <span className={twMerge(BADGE, "border-red-200 bg-red-50 text-red-700")}>
-        <XCircle size={10} strokeWidth={2.5} />
+        <XCircle size={9} strokeWidth={2.5} />
         Failed
       </span>
     ))
@@ -46,7 +46,7 @@ export const UpgradeStateBadge = (props: {
       <span
         className={twMerge(BADGE, "border-blue-200 bg-blue-50 text-blue-700")}
       >
-        <Loader2 size={10} strokeWidth={2.5} className="animate-spin" />
+        <Loader2 size={9} strokeWidth={2.5} className="animate-spin" />
         Upgrading
       </span>
     ))
@@ -57,7 +57,7 @@ export const UpgradeStateBadge = (props: {
           "border-amber-200 bg-amber-50 text-amber-700",
         )}
       >
-        <Clock size={10} strokeWidth={2.5} />
+        <Clock size={9} strokeWidth={2.5} />
         Requested
       </span>
     ))
@@ -107,7 +107,7 @@ export const LicenseStateBadge = (props: { state: number }) => {
           ],
       )}
     >
-      <Icon size={10} strokeWidth={2.5} />
+      <Icon size={9} strokeWidth={2.5} />
       {LICENSE_STATE_LABEL[props.state] ?? "Unknown"}
     </span>
   );

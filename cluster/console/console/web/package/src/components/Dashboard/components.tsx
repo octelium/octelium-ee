@@ -18,6 +18,9 @@ import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import { compact, exact } from "./utils";
 
+export const PILL =
+  "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-px text-micro font-semibold leading-[1.45]";
+
 export type Point = { ts: Timestamp; value: number };
 
 export const toPoints = (
