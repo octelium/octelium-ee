@@ -10,12 +10,13 @@ package suite
 
 import (
 	"context"
-	"net/http"
 	"testing"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	eeharness "github.com/octelium/octelium-ee/cluster/e2e/harness"
 	eescenario "github.com/octelium/octelium-ee/cluster/e2e/scenario"
+	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/cluster/e2e/harness"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
@@ -46,7 +47,8 @@ func testCollectorExportOTLP(t *testing.T, ch *harness.H) {
 
 	restartsBefore := h.EnterpriseRestarts(t, "collector")
 
-	driveTraffic(t, h)
+	driver := newTrafficDriver(t, h)
+	driver.drive(t)
 
 	t.Run("LogsReachTheSink", func(t *testing.T) {
 		sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
@@ -57,7 +59,7 @@ func testCollectorExportOTLP(t *testing.T, ch *harness.H) {
 	})
 
 	t.Run("InternalPipelineIsUnaffected", func(t *testing.T) {
-		waitAccessLogGrows(t, h, 1)
+		waitAccessLogGrows(t, driver, 1)
 	})
 
 	t.Run("DisablingStopsTheExport", func(t *testing.T) {
@@ -67,10 +69,10 @@ func testCollectorExportOTLP(t *testing.T, ch *harness.H) {
 		time.Sleep(eeharness.PropagationBudget)
 		sink.Truncate(t)
 
-		driveTraffic(t, h)
+		driver.drive(t)
 		sink.MustStayEmpty(t, "logs.json", settleWindow)
 
-		waitAccessLogGrows(t, h, 1)
+		waitAccessLogGrows(t, driver, 1)
 	})
 
 	t.Run("TheCollectorHasNotRestarted", func(t *testing.T) {
@@ -91,7 +93,7 @@ func testCollectorExportOTLPHTTP(t *testing.T, ch *harness.H) {
 
 	h.SetCollectorPipelines(t, logsPipeline(h.Name(), exp.Metadata.Name))
 
-	driveTraffic(t, h)
+	newTrafficDriver(t, h).drive(t)
 
 	sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
 }
@@ -112,14 +114,15 @@ func testCollectorExportUnreachable(t *testing.T, ch *harness.H) {
 
 	restartsBefore := h.EnterpriseRestarts(t, "collector")
 
-	driveTraffic(t, h)
+	driver := newTrafficDriver(t, h)
+	driver.drive(t)
 
 	t.Run("TheHealthyExporterStillDelivers", func(t *testing.T) {
 		sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
 	})
 
 	t.Run("TheInternalPipelineStillDelivers", func(t *testing.T) {
-		waitAccessLogGrows(t, h, 1)
+		waitAccessLogGrows(t, driver, 1)
 	})
 
 	t.Run("TheCollectorDoesNotCrashLoop", func(t *testing.T) {
@@ -139,12 +142,13 @@ func testCollectorLiveUpdate(t *testing.T, ch *harness.H) {
 	h.SetCollectorPipelines(t, logsPipeline(h.Name(), exp.Metadata.Name))
 
 	restartsBefore := h.EnterpriseRestarts(t, "collector")
-	driveTraffic(t, h)
+	driver := newTrafficDriver(t, h)
+	driver.drive(t)
 	sink.MustStayEmpty(t, "logs.json", settleWindow)
 
 	exp.Spec.GetOtlp().Endpoint = sink.GRPCEndpoint
 	h.UpdateCollectorExporter(t, exp)
-	driveTraffic(t, h)
+	driver.drive(t)
 	sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
 
 	assert.Equal(t, restartsBefore, h.EnterpriseRestarts(t, "collector"))
@@ -159,13 +163,14 @@ func testCollectorOutageRecovery(t *testing.T, ch *harness.H) {
 
 	exp := h.CreateCollectorExporter(t, otlpExporter(sink.GRPCEndpoint, ""))
 	h.SetCollectorPipelines(t, logsPipeline(h.Name(), exp.Metadata.Name))
-	driveTraffic(t, h)
+	driver := newTrafficDriver(t, h)
+	driver.drive(t)
 	sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
 	sink.Truncate(t)
 
 	restartsBefore := h.EnterpriseRestarts(t, "collector")
 	restore := sink.Stop(t)
-	driveTraffic(t, h)
+	driver.drive(t)
 	restore()
 
 	sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
@@ -181,20 +186,39 @@ func testCollectorSignalRouting(t *testing.T, ch *harness.H) {
 
 	exp := h.CreateCollectorExporter(t, otlpExporter(sink.GRPCEndpoint, ""))
 	h.SetCollectorPipelines(t, logsPipeline(h.Name(), exp.Metadata.Name))
-	driveTraffic(t, h)
+	driver := newTrafficDriver(t, h)
+	driver.drive(t)
 	sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
 
 	sink.Truncate(t)
-	driveTraffic(t, h)
+	driver.drive(t)
 	sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
 	sink.MustStayEmpty(t, "metrics.json", settleWindow)
 }
 
-func driveTraffic(t *testing.T, h *eeharness.H) {
+type trafficDriver struct {
+	h *eeharness.H
+	c *resty.Client
+}
+
+func newTrafficDriver(t *testing.T, h *eeharness.H) *trafficDriver {
+	t.Helper()
+
+	usr := h.CreateWorkloadUser(t, &corev1.User_Spec_Authorization{
+		InlinePolicies: harness.InlineAllowAny("allow"),
+	})
+
+	return &trafficDriver{
+		h: h,
+		c: h.HTTPPublicToken("demo-nginx", h.AccessToken(t, usr)),
+	}
+}
+
+func (d *trafficDriver) drive(t *testing.T) {
 	t.Helper()
 
 	for range driveBatch {
-		h.GetStatus(t, h.HTTPPublic("demo-nginx"), "/", http.StatusUnauthorized)
+		d.h.WaitAllowed(t, d.c)
 	}
 }
 
@@ -210,8 +234,10 @@ func accessLogCount(ctx context.Context, h *eeharness.H) (uint32, error) {
 	return res.ListResponseMeta.TotalCount, nil
 }
 
-func waitAccessLogGrows(t *testing.T, h *eeharness.H, by uint32) {
+func waitAccessLogGrows(t *testing.T, d *trafficDriver, by uint32) {
 	t.Helper()
+
+	h := d.h
 
 	ctx, cancel := h.Ctx(t)
 	before, err := accessLogCount(ctx, h)
@@ -238,7 +264,7 @@ func waitAccessLogGrows(t *testing.T, h *eeharness.H, by uint32) {
 			}
 
 			if attempts%driveEvery == 0 {
-				driveTraffic(t, h)
+				d.drive(t)
 				driven += driveBatch
 			}
 			attempts++

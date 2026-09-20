@@ -171,8 +171,9 @@ func testRscServerFailover(t *testing.T, ch *harness.H) {
 func testStorePersistence(t *testing.T, ch *harness.H) {
 	h := eeharness.Wrap(ch)
 
-	driveTraffic(t, h)
-	waitAccessLogGrows(t, h, 1)
+	driver := newTrafficDriver(t, h)
+	driver.drive(t)
+	waitAccessLogGrows(t, driver, 1)
 
 	ctx, cancel := h.Ctx(t)
 	before, err := accessLogCount(ctx, h)
@@ -195,7 +196,7 @@ func testStorePersistence(t *testing.T, ch *harness.H) {
 			return nil
 		})
 
-	waitAccessLogGrows(t, h, 1)
+	waitAccessLogGrows(t, driver, 1)
 }
 
 func enterpriseSmoke(t *testing.T, h *eeharness.H) {

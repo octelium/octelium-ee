@@ -10,7 +10,6 @@ package suite
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	eeharness "github.com/octelium/octelium-ee/cluster/e2e/harness"
@@ -312,11 +311,13 @@ func testSecretConsumersAfterRotation(t *testing.T, ch *harness.H) {
 	h.WaitSecretStoreSynchronized(t, "default",
 		enterprisev1.SecretStore_Status_TYPE_HASHICORP_VAULT, eeharness.SyncBudget)
 
+	driver := newTrafficDriver(t, h)
+
 	t.Run("ExporterStillAuthenticates", func(t *testing.T) {
 		sink.Truncate(t)
 		h.RestartEnterprise(t, "collector")
 
-		h.GetStatus(t, h.HTTPPublic("demo-nginx"), "/", http.StatusUnauthorized)
+		driver.drive(t)
 		sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
 	})
 
@@ -328,7 +329,7 @@ func testSecretConsumersAfterRotation(t *testing.T, ch *harness.H) {
 		sink.Truncate(t)
 		sec = h.UpdateEnterpriseSecret(t, sec, next)
 
-		driveTraffic(t, h)
+		driver.drive(t)
 		sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
 		assert.Equal(t, restartsBefore, h.EnterpriseRestarts(t, "collector"))
 	})

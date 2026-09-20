@@ -151,6 +151,6 @@ func testClusterUpgrade(t *testing.T, ch *harness.H) {
 		_, err := h.EnterpriseC().ListSecret(ctx, &enterprisev1.ListSecretOptions{})
 		assert.Nil(t, err)
 
-		waitAccessLogGrows(t, h, 1)
+		waitAccessLogGrows(t, newTrafficDriver(t, h), 1)
 	})
 }

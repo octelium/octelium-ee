@@ -305,7 +305,7 @@ func testMetricStoreQueryPath(t *testing.T, ch *harness.H) {
 	ctx := t.Context()
 	var descriptor *vmetricsv1.MetricDescriptor
 
-	driveTraffic(t, h)
+	newTrafficDriver(t, h).drive(t)
 
 	t.Run("Capabilities", func(t *testing.T) {
 		res, err := h.MetricsC().GetMetricsCapabilities(ctx,
