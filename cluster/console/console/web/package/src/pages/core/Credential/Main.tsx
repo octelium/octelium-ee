@@ -7,7 +7,15 @@ import {
   invalidateResource,
   invalidateResourceList,
 } from "@/utils/pb";
-import { Button, Modal, Select, Switch } from "@mantine/core";
+import {
+  Alert,
+  Button,
+  CopyButton,
+  Modal,
+  PasswordInput,
+  Select,
+  Switch,
+} from "@mantine/core";
 import { useMutation } from "@tanstack/react-query";
 
 import * as CoreP from "@/apis/corev1/corev1";
@@ -19,108 +27,94 @@ import TimeAgo from "@/components/TimeAgo";
 import { useUpdateResource } from "@/pages/utils/resource";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { useDisclosure } from "@mantine/hooks";
-import { RefreshCcw, RefreshCw, Shield } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  Copy,
+  KeyRound,
+  RefreshCw,
+  Shield,
+  X,
+} from "lucide-react";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 
-const GenerateC = (props: {
-  item: CoreC.Credential;
-  onGenerated?: () => void;
-}) => {
-  const { item, onGenerated } = props;
-  const [tkn, setTkn] = React.useState<CoreC.CredentialToken | undefined>(
-    undefined,
-  );
+const TokenField = (props: { label: string; value: string }) => (
+  <div className="flex items-end gap-2">
+    <PasswordInput className="flex-1" label={props.label} value={props.value} readOnly />
+    <CopyButton value={props.value}>
+      {({ copied, copy }) => (
+        <Button type="button" variant="default" leftSection={copied ? <Check size={13} /> : <Copy size={13} />} onClick={copy}>
+          {copied ? "Copied" : "Copy"}
+        </Button>
+      )}
+    </CopyButton>
+  </div>
+);
 
-  const [enabled, setEnabled] = React.useState(false);
+const GenerateC = (props: { item: CoreC.Credential; onClose: () => void }) => {
+  const { item, onClose } = props;
+  const [tkn, setTkn] = React.useState<CoreC.CredentialToken | undefined>();
+  const [confirmed, setConfirmed] = React.useState(false);
 
   const mutationGenerate = useMutation({
     mutationFn: async () => {
       const { response } = await getClientCore().generateCredentialToken(
-        CoreC.GenerateCredentialTokenRequest.create({
-          credentialRef: getResourceRef(item),
-        }),
+        CoreC.GenerateCredentialTokenRequest.create({ credentialRef: getResourceRef(item) }),
       );
       return response;
     },
-
     onSuccess: (response) => {
       setTkn(response);
-      setEnabled(false);
-      onGenerated?.();
+      setConfirmed(false);
+      invalidateResource(item);
+      invalidateResourceList(item);
     },
     onError,
   });
 
+  const tokenFields = (() => {
+    if (tkn?.type.oneofKind === "authenticationToken") return [{ label: "Authentication token", value: tkn.type.authenticationToken.authenticationToken }];
+    if (tkn?.type.oneofKind === "accessToken") return [{ label: "Access token", value: tkn.type.accessToken.accessToken }];
+    if (tkn?.type.oneofKind === "oauth2Credentials") return [
+      { label: "Client ID", value: tkn.type.oauth2Credentials.clientID },
+      { label: "Client secret", value: tkn.type.oauth2Credentials.clientSecret },
+    ];
+    return [];
+  })();
+
   return (
-    <div className="w-full">
-      <div className="flex flex-col items-center justify-center my-8 w-full">
-        <div className="w-full flex items-center justify-center">
-          <Button
-            onClick={() => {
-              mutationGenerate.mutate();
-            }}
-            loading={mutationGenerate.isPending}
-            leftSection={<RefreshCcw />}
-            disabled={!enabled}
-          >
-            Generate Token
-          </Button>
-        </div>
-
-        <div className="w-full flex items-center my-4 justify-center">
-          <Switch
-            checked={enabled}
-            label={
-              <div className="font-bold text-sm text-center text-slate-600">
-                Generating a new token immediately invalidates the previous one
-              </div>
-            }
-            onChange={(event) => setEnabled(event.currentTarget.checked)}
-          />
-        </div>
-      </div>
-      <div className="w-full min-h-[100px]">
-        {tkn && (
-          <div className="w-full flex items-center justify-center">
-            {tkn.type.oneofKind === `authenticationToken` && (
-              <div className="w-full flex items-center justify-center">
-                <InfoItem title="Authentication Token">
-                  <CopyText
-                    value={tkn.type.authenticationToken.authenticationToken}
-                    truncate={20}
-                  />
-                </InfoItem>
-              </div>
-            )}
-            {tkn.type.oneofKind === `accessToken` && (
-              <div className="w-full flex items-center justify-center">
-                <InfoItem title="Access Token">
-                  <CopyText
-                    value={tkn.type.accessToken.accessToken}
-                    truncate={20}
-                  />
-                </InfoItem>
-              </div>
-            )}
-            {tkn.type.oneofKind === `oauth2Credentials` && (
-              <div className="w-full">
-                <InfoItem title="Client ID">
-                  <CopyText value={tkn.type.oauth2Credentials.clientID} />
-                </InfoItem>
-
-                <InfoItem title="Client Secret">
-                  <CopyText
-                    value={tkn.type.oauth2Credentials.clientSecret}
-                    truncate={20}
-                  />
-                </InfoItem>
-              </div>
-            )}
+    <div className="bg-white">
+      <header className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white"><KeyRound size={15} /></span>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Credential token</h2>
+            <p className="text-xs font-normal text-slate-500">{item.metadata?.displayName || item.metadata?.name}</p>
           </div>
+        </div>
+        <Button type="button" variant="subtle" color="gray" size="compact-xs" disabled={mutationGenerate.isPending} onClick={onClose}><X size={14} /></Button>
+      </header>
+      <div className="space-y-4 px-5 py-5">
+        {tkn ? (
+          <>
+            <Alert color="green" title="Copy these values now">These values are shown only in this dialog. Store them securely before closing.</Alert>
+            {tokenFields.map((field) => <TokenField key={field.label} {...field} />)}
+          </>
+        ) : (
+          <>
+            <Alert color="amber" icon={<AlertTriangle size={15} />} title="The current token will stop working">
+              Generating a new token immediately invalidates the credential's current token.
+            </Alert>
+            <Switch checked={confirmed} label="I understand that the current token will be invalidated" onChange={(event) => setConfirmed(event.currentTarget.checked)} />
+          </>
         )}
       </div>
+      <footer className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50/60 px-5 py-3.5">
+        <Button type="button" variant="default" size="sm" disabled={mutationGenerate.isPending} onClick={onClose}>{tkn ? "Done" : "Cancel"}</Button>
+        {!tkn && <Button type="button" color="ink" size="sm" disabled={!confirmed} loading={mutationGenerate.isPending} leftSection={<KeyRound size={13} />} onClick={() => mutationGenerate.mutate()}>Generate token</Button>}
+      </footer>
     </div>
   );
 };
@@ -131,27 +125,10 @@ const GenerateTokenModal = (props: {
   onClose: () => void;
 }) => {
   const { item, opened, onClose } = props;
-  const generatedRef = React.useRef(false);
-
-  const handleClose = () => {
-    onClose();
-    if (generatedRef.current) {
-      generatedRef.current = false;
-      invalidateResource(item);
-      invalidateResourceList(item);
-    }
-  };
 
   return (
-    <Modal opened={opened} onClose={handleClose} size="xl" centered>
-      {opened && (
-        <GenerateC
-          item={item}
-          onGenerated={() => {
-            generatedRef.current = true;
-          }}
-        />
-      )}
+    <Modal opened={opened} onClose={onClose} centered size="lg" withCloseButton={false} padding={0} styles={{ content: { borderRadius: 14, overflow: "hidden" } }}>
+      {opened && <GenerateC key={item.metadata?.uid || item.metadata?.name} item={item} onClose={onClose} />}
     </Modal>
   );
 };
