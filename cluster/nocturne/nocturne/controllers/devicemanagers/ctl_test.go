@@ -11,6 +11,7 @@ package devicemanagers
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -23,8 +24,43 @@ import (
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
+
+type tstNudger struct {
+	count atomic.Int32
+}
+
+func (n *tstNudger) Nudge() {
+	n.count.Add(1)
+}
+
+type tstManager struct {
+	fleet *devicemgrcommon.Fleet
+	err   error
+}
+
+func (m *tstManager) Type() devicemgrcommon.ProviderType {
+	return enterprisev1.DeviceManager_Status_FLEETDM
+}
+
+func (m *tstManager) IdentityProbes() []*devicemgrcommon.Probe {
+	return nil
+}
+
+func (m *tstManager) ParseExternalID(osType corev1.Device_Status_OSType,
+	results []*devicemgrcommon.ProbeResult) (string, error) {
+	return "", nil
+}
+
+func (m *tstManager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
+	return m.fleet, m.err
+}
+
+func (m *tstManager) Close() error {
+	return nil
+}
 
 type tstResetter struct {
 	mu   sync.Mutex
@@ -49,6 +85,7 @@ type tstEnv struct {
 	ctrl      *Controller
 	registry  *devicemgrcommon.Registry
 	resetter  *tstResetter
+	nudger    *tstNudger
 	octeliumC octeliumc.ClientInterface
 }
 
@@ -60,8 +97,9 @@ func newTstEnv(t *testing.T) *tstEnv {
 
 	registry := devicemgrcommon.NewRegistry()
 	resetter := &tstResetter{}
+	nudger := &tstNudger{}
 
-	ctrl, err := NewController(ctx, tst.C.OcteliumC, registry, nil, resetter)
+	ctrl, err := NewController(ctx, tst.C.OcteliumC, registry, nudger, resetter)
 	assert.Nil(t, err)
 
 	t.Cleanup(func() {
@@ -77,6 +115,7 @@ func newTstEnv(t *testing.T) *tstEnv {
 		ctrl:      ctrl,
 		registry:  registry,
 		resetter:  resetter,
+		nudger:    nudger,
 		octeliumC: tst.C.OcteliumC,
 	}
 }
@@ -213,13 +252,19 @@ func TestDeviceManagerLifecycle(t *testing.T) {
 		assert.Nil(t, env.ctrl.OnUpdate(env.ctx, updated, old))
 
 		assert.Nil(t, env.ctrl.getWorker(uid))
-		_, ok := env.registry.GetOwner(uid)
-		assert.False(t, ok)
+		owner, ok := env.registry.GetOwner(uid)
+		assert.True(t, ok)
+		assert.True(t, devicemgrcommon.IsDisabled(owner.DM))
+		assert.Nil(t, owner.Manager)
 		assert.Empty(t, env.getProbeIDs(t))
+		assert.Equal(t, int32(1), env.nudger.count.Load())
 
 		dm := env.getDeviceManager(t, dm)
 		assert.Equal(t, enterprisev1.DeviceManager_Status_DISABLED, dm.Status.State)
 		assert.Equal(t, enterprisev1.DeviceManager_Status_FLEETDM, dm.Status.Type)
+
+		assert.Nil(t, env.ctrl.Resync(env.ctx))
+		assert.Equal(t, int32(1), env.nudger.count.Load())
 	}
 
 	{
@@ -229,6 +274,10 @@ func TestDeviceManagerLifecycle(t *testing.T) {
 		assert.Nil(t, env.ctrl.OnUpdate(env.ctx, updated, old))
 		assert.NotNil(t, env.ctrl.getWorker(uid))
 		assert.Len(t, env.getProbeIDs(t), 2)
+
+		owner, ok := env.registry.GetOwner(uid)
+		assert.True(t, ok)
+		assert.False(t, devicemgrcommon.IsDisabled(owner.DM))
 	}
 
 	{
@@ -287,6 +336,136 @@ func TestDeviceManagerBuildFailure(t *testing.T) {
 
 	{
 		assert.NotNil(t, env.ctrl.OnAdd(env.ctx, &enterprisev1.DeviceManager{}))
+	}
+}
+
+func TestDeviceManagerSecretRotation(t *testing.T) {
+	env := newTstEnv(t)
+
+	secretName := utilrand.GetRandomStringCanonical(8)
+	env.createSecret(t, secretName)
+
+	dm := env.createDeviceManager(t, secretName)
+	uid := dm.Metadata.Uid
+
+	assert.Nil(t, env.ctrl.OnAdd(env.ctx, dm))
+	w := env.ctrl.getWorker(uid)
+	assert.NotNil(t, w)
+	assert.NotEmpty(t, w.secretVersion)
+
+	{
+		assert.Nil(t, env.ctrl.Resync(env.ctx))
+		assert.True(t, w == env.ctrl.getWorker(uid))
+	}
+
+	{
+		sec, err := env.octeliumC.EnterpriseC().GetSecret(env.ctx, &rmetav1.GetOptions{Name: secretName})
+		assert.Nil(t, err)
+		sec.Data = &enterprisev1.Secret_Data{
+			Type: &enterprisev1.Secret_Data_Value{
+				Value: utilrand.GetRandomString(32),
+			},
+		}
+		_, err = env.octeliumC.EnterpriseC().UpdateSecret(env.ctx, sec)
+		assert.Nil(t, err)
+
+		assert.Nil(t, env.ctrl.Resync(env.ctx))
+
+		replacement := env.ctrl.getWorker(uid)
+		assert.NotNil(t, replacement)
+		assert.False(t, w == replacement)
+		assert.NotEqual(t, w.secretVersion, replacement.secretVersion)
+		assert.NotNil(t, w.ctx.Err())
+
+		assert.Nil(t, env.ctrl.Resync(env.ctx))
+		assert.True(t, replacement == env.ctrl.getWorker(uid))
+	}
+
+	{
+		_, err := env.octeliumC.EnterpriseC().DeleteSecret(env.ctx, &rmetav1.DeleteOptions{Name: secretName})
+		assert.Nil(t, err)
+
+		assert.Nil(t, env.ctrl.Resync(env.ctx))
+		assert.Nil(t, env.ctrl.getWorker(uid))
+
+		owner, ok := env.registry.GetOwner(uid)
+		assert.True(t, ok)
+		assert.Nil(t, owner.Manager)
+
+		dm := env.getDeviceManager(t, dm)
+		assert.Equal(t, enterprisev1.DeviceManager_Status_ERROR, dm.Status.State)
+		assert.NotEmpty(t, dm.Status.Collection.LastError)
+	}
+
+	{
+		env.createSecret(t, secretName)
+		assert.Nil(t, env.ctrl.Resync(env.ctx))
+		assert.NotNil(t, env.ctrl.getWorker(uid))
+	}
+}
+
+func TestWorkerPoll(t *testing.T) {
+	env := newTstEnv(t)
+
+	dm := env.createDeviceManager(t, utilrand.GetRandomStringCanonical(8))
+	uid := dm.Metadata.Uid
+
+	fleet := devicemgrcommon.NewFleet([]*devicemgrcommon.Entry{
+		{ExternalID: "id-1"},
+		{ExternalID: "id-2"},
+	})
+	mgr := &tstManager{fleet: fleet}
+	w := newWorker(env.ctx, env.octeliumC, env.registry, env.nudger, dm, mgr, "")
+
+	{
+		w.poll()
+
+		dm := env.getDeviceManager(t, dm)
+		assert.Equal(t, enterprisev1.DeviceManager_Status_OK, dm.Status.State)
+		assert.Equal(t, enterprisev1.DeviceManager_Status_FLEETDM, dm.Status.Type)
+		assert.Empty(t, dm.Status.Collection.LastError)
+		assert.Equal(t, uint32(2), dm.Status.Collection.ManagedDevices)
+		assert.True(t, dm.Status.Collection.LastSuccessAt.IsValid())
+		assert.True(t, dm.Status.Collection.LastAttemptAt.IsValid())
+
+		owner, ok := env.registry.GetOwner(uid)
+		assert.True(t, ok)
+		assert.True(t, owner.Fresh(time.Now()))
+		assert.Equal(t, 2, owner.Fleet.Len())
+		assert.Equal(t, int32(1), env.nudger.count.Load())
+	}
+
+	{
+		fleet.SetDegraded("partial collection")
+		w.poll()
+
+		dm := env.getDeviceManager(t, dm)
+		assert.Equal(t, enterprisev1.DeviceManager_Status_DEGRADED, dm.Status.State)
+		assert.Equal(t, "partial collection", dm.Status.Collection.LastError)
+		assert.Equal(t, uint32(2), dm.Status.Collection.ManagedDevices)
+		assert.Equal(t, int32(2), env.nudger.count.Load())
+	}
+
+	{
+		mgr.err = errors.New("collection error")
+		w.poll()
+
+		dm := env.getDeviceManager(t, dm)
+		assert.Equal(t, enterprisev1.DeviceManager_Status_ERROR, dm.Status.State)
+		assert.Equal(t, "collection error", dm.Status.Collection.LastError)
+		assert.Equal(t, uint32(2), dm.Status.Collection.ManagedDevices)
+		assert.Equal(t, int32(2), env.nudger.count.Load())
+
+		owner, ok := env.registry.GetOwner(uid)
+		assert.True(t, ok)
+		assert.Equal(t, 2, owner.Fleet.Len())
+	}
+
+	{
+		w.cancel()
+		mgr.err = nil
+		w.poll()
+		assert.Equal(t, int32(2), env.nudger.count.Load())
 	}
 }
 

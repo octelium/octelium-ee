@@ -38,7 +38,7 @@ func TestToEntry(t *testing.T) {
 			"id": 42,
 			"platform": "windows",
 			"serial_number": "SERIAL-1",
-			"mac_addresses": ["aa:bb:cc:dd:ee:01"],
+			"mac_addresses": ["a4:bb:cc:dd:ee:01"],
 			"last_callback_at": %q,
 			"defender_status": "Protected",
 			"firewall_status": "Enabled",
@@ -48,7 +48,7 @@ func TestToEntry(t *testing.T) {
 
 		assert.Equal(t, "42", entry.ExternalID)
 		assert.Equal(t, "SERIAL-1", entry.Serial)
-		assert.Equal(t, []string{"aa:bb:cc:dd:ee:01"}, entry.MACs)
+		assert.Equal(t, []string{"a4:bb:cc:dd:ee:01"}, entry.MACs)
 
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.AgentHealthy)
@@ -167,4 +167,31 @@ func TestListAgents(t *testing.T) {
 	mu.Lock()
 	defer mu.Unlock()
 	assert.Equal(t, []string{"1", "1", "2", "", ""}, orgs)
+}
+
+func TestInvalidResponse(t *testing.T) {
+	for _, tc := range []struct {
+		contentType string
+		body        string
+	}{
+		{"text/html; charset=utf-8", `<html><body>Sign in</body></html>`},
+		{"", `{"agents": [], "pagination": {}}`},
+		{"application/json", `{"pagination": {}}`},
+		{"application/json", `{"agents": null}`},
+	} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if tc.contentType != "" {
+				w.Header().Set("Content-Type", tc.contentType)
+			}
+			fmt.Fprint(w, tc.body)
+		}))
+
+		m := &Manager{
+			api: &apiClient{rc: resty.New().SetBaseURL(srv.URL)},
+		}
+		_, err := m.Collect(context.Background())
+		assert.NotNil(t, err, tc.body)
+
+		srv.Close()
+	}
 }

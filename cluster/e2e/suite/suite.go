@@ -31,6 +31,10 @@ func Phases() []suite.Phase {
 		{Name: "DirectoryProviderIsolation", Run: testDirectoryProviderIsolation},
 		{Name: "DirectoryLocalUserOwnership", Run: testDirectoryLocalUserOwnership},
 
+		{Name: "DeviceManagerAPI", Run: testDeviceManagerAPI},
+		{Name: "DeviceManagerProbePlan", Run: testDeviceManagerProbePlan},
+		{Name: "DeviceManagerSecretRotation", Run: testDeviceManagerSecretRotation},
+
 		{Name: "AccessAutoApprove", Run: testAccessAutoApprove},
 		{Name: "AccessSingleStepReview", Run: testAccessSingleStepReview},
 		{Name: "AccessMultiStepQuorum", Run: testAccessMultiStepQuorum},

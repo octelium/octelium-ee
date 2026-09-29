@@ -35,7 +35,7 @@ import (
 
 const (
 	csScrollLimit  int64 = 5000
-	csDetailsBatch       = 100
+	csDetailsBatch       = 5000
 	csZTABatch           = 100
 
 	probeTimeoutSeconds = 15
@@ -141,21 +141,15 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 }
 
 func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []*devicemgrcommon.ProbeResult) (string, error) {
-	for _, r := range results {
-		if r == nil {
-			continue
-		}
+	return devicemgrcommon.ParseAgreedID(results, func(r *devicemgrcommon.ProbeResult) string {
 		if len(r.Data) > 0 {
 			if aid := hex.EncodeToString(r.Data); aidAnchored.MatchString(aid) {
-				return aid, nil
+				return aid
 			}
-			continue
+			return ""
 		}
-		if aid := extractAID(r.Text); aid != "" {
-			return aid, nil
-		}
-	}
-	return "", nil
+		return extractAID(r.Text)
+	})
 }
 
 func extractAID(s string) string {
@@ -182,9 +176,14 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 		return devicemgrcommon.NewFleet(nil), nil
 	}
 
-	details, err := m.getDetails(ctx, ids)
+	details, warning, err := m.getDetails(ctx, ids)
 	if err != nil {
 		return nil, err
+	}
+
+	var degraded []string
+	if warning != "" {
+		degraded = append(degraded, warning)
 	}
 
 	var zta map[string]*models.DomainSignalProperties
@@ -194,6 +193,7 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 		} else {
 			zap.L().Warn("Could not get CrowdStrike ZTA (Zero Trust Assessment Read scope required)",
 				zap.Error(zErr))
+			degraded = append(degraded, zErr.Error())
 		}
 	}
 
@@ -202,7 +202,10 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 	for aid, d := range details {
 		entries = append(entries, toEntry(d, zta[aid], now))
 	}
-	return devicemgrcommon.NewFleet(entries), nil
+
+	fleet := devicemgrcommon.NewFleet(entries)
+	fleet.SetDegraded(strings.Join(degraded, "; "))
+	return fleet, nil
 }
 
 func (m *Manager) listHostIDs(ctx context.Context) ([]string, error) {
@@ -228,7 +231,10 @@ func (m *Manager) listHostIDs(ctx context.Context) ([]string, error) {
 			return nil, errors.Wrap(err, "CrowdStrike list hosts")
 		}
 		if resp.Payload == nil {
-			break
+			return nil, errors.New("CrowdStrike list hosts: empty response")
+		}
+		if err := getPayloadError(resp.Payload.Errors); err != nil {
+			return nil, errors.Wrap(err, "CrowdStrike list hosts")
 		}
 		out = append(out, resp.Payload.Resources...)
 
@@ -247,18 +253,26 @@ func (m *Manager) listHostIDs(ctx context.Context) ([]string, error) {
 	return out, nil
 }
 
-func (m *Manager) getDetails(ctx context.Context, ids []string) (map[string]*models.DeviceapiDeviceSwagger, error) {
+func (m *Manager) getDetails(ctx context.Context,
+	ids []string) (map[string]*models.DeviceapiDeviceSwagger, string, error) {
 	out := make(map[string]*models.DeviceapiDeviceSwagger, len(ids))
+	warning := ""
 	for _, batch := range chunk(ids, csDetailsBatch) {
 		if err := ctx.Err(); err != nil {
-			return nil, err
+			return nil, "", err
 		}
-		resp, err := m.c.Hosts.GetDeviceDetailsV2(&hosts.GetDeviceDetailsV2Params{Context: ctx, Ids: batch})
+		resp, err := m.c.Hosts.PostDeviceDetailsV2(&hosts.PostDeviceDetailsV2Params{
+			Context: ctx,
+			Body:    &models.MsaIdsRequest{Ids: batch},
+		})
 		if err != nil {
-			return nil, errors.Wrap(err, "CrowdStrike get device details")
+			return nil, "", errors.Wrap(err, "CrowdStrike get device details")
 		}
 		if resp.Payload == nil {
-			continue
+			return nil, "", errors.New("CrowdStrike get device details: empty response")
+		}
+		if err := getPayloadError(resp.Payload.Errors); err != nil && warning == "" {
+			warning = errors.Wrap(err, "CrowdStrike get device details").Error()
 		}
 		for _, d := range resp.Payload.Resources {
 			if d == nil || d.DeviceID == nil {
@@ -267,7 +281,32 @@ func (m *Manager) getDetails(ctx context.Context, ids []string) (map[string]*mod
 			out[strings.ToLower(*d.DeviceID)] = d
 		}
 	}
-	return out, nil
+	return out, warning, nil
+}
+
+func getPayloadError(errs []*models.MsaAPIError) error {
+	for _, e := range errs {
+		if e == nil {
+			continue
+		}
+
+		var code int32
+		if e.Code != nil {
+			code = *e.Code
+		}
+
+		message := ""
+		if e.Message != nil {
+			message = *e.Message
+		}
+
+		if len(errs) > 1 {
+			return errors.Errorf("%d errors, first: code %d: %s", len(errs), code, message)
+		}
+		return errors.Errorf("code %d: %s", code, message)
+	}
+
+	return nil
 }
 
 func (m *Manager) getZTA(ctx context.Context, ids []string) (map[string]*models.DomainSignalProperties, error) {

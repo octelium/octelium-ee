@@ -188,14 +188,27 @@ func (c *Controller) sync(ctx context.Context, uid string) error {
 		return errors.Wrap(err, "Could not get DeviceManager")
 	}
 
-	if dm.Spec.GetPolling().GetIsDisabled() {
+	if devicemgrcommon.IsDisabled(dm) {
 		c.stopWorker(uid)
-		c.registry.DeleteOwner(uid)
+
+		owner, ok := c.registry.GetOwner(uid)
+		wasDisabled := ok && devicemgrcommon.IsDisabled(owner.DM)
+
+		c.registry.SetOwner(devicemgrcommon.NewPendingOwner(dm))
 		c.setStatus(ctx, dm, enterprisev1.DeviceManager_Status_DISABLED, "")
+		if !wasDisabled && c.nudger != nil {
+			c.nudger.Nudge()
+		}
 		return c.publishProbeConfig(ctx)
 	}
 
-	if w := c.getWorker(uid); w != nil && pbutils.IsEqual(w.dm.GetSpec(), dm.GetSpec()) {
+	secretVersion, err := c.getSecretVersion(ctx, dm)
+	if err != nil {
+		return err
+	}
+
+	if w := c.getWorker(uid); w != nil &&
+		pbutils.IsEqual(w.dm.GetSpec(), dm.GetSpec()) && w.secretVersion == secretVersion {
 		return nil
 	}
 
@@ -217,6 +230,7 @@ func (c *Controller) sync(ctx context.Context, uid string) error {
 		c.nudger,
 		dm,
 		mgr,
+		secretVersion,
 	)
 
 	c.storeWorker(replacement)
@@ -228,6 +242,23 @@ func (c *Controller) sync(ctx context.Context, uid string) error {
 		zap.Duration("interval", replacement.interval))
 
 	return c.publishProbeConfig(ctx)
+}
+
+func (c *Controller) getSecretVersion(ctx context.Context, dm *enterprisev1.DeviceManager) (string, error) {
+	name := devicemgrcommon.GetSecretRef(dm).GetFromSecret()
+	if name == "" {
+		return "", nil
+	}
+
+	sec, err := c.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{Name: name})
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return "", nil
+		}
+		return "", errors.Wrap(err, "Could not get DeviceManager Secret")
+	}
+
+	return fmt.Sprintf("%s.%s", sec.GetMetadata().GetUid(), sec.GetMetadata().GetResourceVersion()), nil
 }
 
 func (c *Controller) doRemove(ctx context.Context, uid string) error {
@@ -533,10 +564,11 @@ type worker struct {
 	registry  *devicemgrcommon.Registry
 	nudger    Nudger
 
-	uid  string
-	name string
-	dm   *enterprisev1.DeviceManager
-	mgr  devicemgrcommon.Manager
+	uid           string
+	name          string
+	dm            *enterprisev1.DeviceManager
+	mgr           devicemgrcommon.Manager
+	secretVersion string
 
 	interval time.Duration
 	timeout  time.Duration
@@ -549,23 +581,25 @@ func newWorker(
 	nudger Nudger,
 	dm *enterprisev1.DeviceManager,
 	mgr devicemgrcommon.Manager,
+	secretVersion string,
 ) *worker {
 	workerCtx, cancel := context.WithCancel(ctx)
 	clonedDM := pbutils.Clone(dm).(*enterprisev1.DeviceManager)
 
 	return &worker{
-		ctx:       workerCtx,
-		cancel:    cancel,
-		done:      make(chan struct{}),
-		octeliumC: octeliumC,
-		registry:  registry,
-		nudger:    nudger,
-		uid:       clonedDM.GetMetadata().GetUid(),
-		name:      clonedDM.GetMetadata().GetName(),
-		dm:        clonedDM,
-		mgr:       mgr,
-		interval:  pollInterval(clonedDM),
-		timeout:   pollTimeout(clonedDM),
+		ctx:           workerCtx,
+		cancel:        cancel,
+		done:          make(chan struct{}),
+		octeliumC:     octeliumC,
+		registry:      registry,
+		nudger:        nudger,
+		uid:           clonedDM.GetMetadata().GetUid(),
+		name:          clonedDM.GetMetadata().GetName(),
+		dm:            clonedDM,
+		mgr:           mgr,
+		secretVersion: secretVersion,
+		interval:      pollInterval(clonedDM),
+		timeout:       pollTimeout(clonedDM),
 	}
 }
 
@@ -645,12 +679,20 @@ func (w *worker) poll() {
 		w.nudger.Nudge()
 	}
 
+	state := enterprisev1.DeviceManager_Status_OK
+	if fleet.DegradedReason() != "" {
+		state = enterprisev1.DeviceManager_Status_DEGRADED
+		zap.L().Warn("DeviceManager collection is degraded",
+			zap.String("name", w.name),
+			zap.String("reason", fleet.DegradedReason()))
+	}
+
 	w.setStatus(
-		enterprisev1.DeviceManager_Status_OK,
+		state,
 		attemptAt,
 		pbutils.Timestamp(collectedAt),
 		uint32(fleet.Len()),
-		"",
+		fleet.DegradedReason(),
 	)
 }
 

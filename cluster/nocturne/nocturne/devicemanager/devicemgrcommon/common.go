@@ -10,7 +10,10 @@ package devicemgrcommon
 
 import (
 	"context"
+	"encoding/hex"
+	"mime"
 	"net/url"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -163,6 +166,57 @@ func (i *uniqueIndex) get(key string) MatchResult {
 	}
 }
 
+func newIdentityIndex(candidates map[string][]*Entry) uniqueIndex {
+	ret := newUniqueIndex()
+
+	for key, entries := range candidates {
+		if entry := getLatestEntry(entries); entry != nil {
+			ret.values[key] = entry
+		} else {
+			ret.ambiguous[key] = struct{}{}
+		}
+	}
+
+	return ret
+}
+
+func getLatestEntry(entries []*Entry) *Entry {
+	if len(entries) == 1 {
+		return entries[0]
+	}
+
+	var latest *Entry
+	for _, entry := range entries {
+		if !entry.Posture.GetLastSeenAt().IsValid() {
+			return nil
+		}
+		if latest == nil || entry.Posture.LastSeenAt.AsTime().After(latest.Posture.LastSeenAt.AsTime()) {
+			latest = entry
+		}
+	}
+
+	if latest == nil {
+		return nil
+	}
+
+	latestSeenAt := latest.Posture.LastSeenAt.AsTime()
+	for _, entry := range entries {
+		if entry != latest && latestSeenAt.Sub(entry.Posture.LastSeenAt.AsTime()) < AgentOfflineAfter {
+			return nil
+		}
+	}
+
+	return latest
+}
+
+func addCandidate(candidates map[string][]*Entry, key string, entry *Entry) {
+	if key == "" || slices.Contains(candidates[key], entry) {
+		return
+	}
+
+	candidates[key] = append(candidates[key], entry)
+}
+
 type Fleet struct {
 	entries []*Entry
 
@@ -170,6 +224,8 @@ type Fleet struct {
 	byProbeID    uniqueIndex
 	bySerial     uniqueIndex
 	byMAC        uniqueIndex
+
+	degradedReason string
 }
 
 func NewFleet(entries []*Entry) *Fleet {
@@ -177,9 +233,10 @@ func NewFleet(entries []*Entry) *Fleet {
 		entries:      make([]*Entry, 0, len(entries)),
 		byExternalID: newUniqueIndex(),
 		byProbeID:    newUniqueIndex(),
-		bySerial:     newUniqueIndex(),
-		byMAC:        newUniqueIndex(),
 	}
+
+	serials := map[string][]*Entry{}
+	macs := map[string][]*Entry{}
 
 	for _, raw := range entries {
 		entry := cloneEntry(raw)
@@ -199,18 +256,31 @@ func NewFleet(entries []*Entry) *Fleet {
 			}
 		}
 
-		if serial := NormalizeSerial(entry.Serial); serial != "" {
-			f.bySerial.add(serial, entry)
-		}
+		addCandidate(serials, NormalizeSerial(entry.Serial), entry)
 
 		for _, mac := range entry.MACs {
-			if normalized := NormalizeMAC(mac); normalized != "" {
-				f.byMAC.add(normalized, entry)
-			}
+			addCandidate(macs, NormalizeMAC(mac), entry)
 		}
 	}
 
+	f.bySerial = newIdentityIndex(serials)
+	f.byMAC = newIdentityIndex(macs)
+
 	return f
+}
+
+func (f *Fleet) SetDegraded(reason string) {
+	if f == nil {
+		return
+	}
+	f.degradedReason = reason
+}
+
+func (f *Fleet) DegradedReason() string {
+	if f == nil {
+		return ""
+	}
+	return f.degradedReason
 }
 
 func (f *Fleet) Len() int {
@@ -521,6 +591,35 @@ func UsesIdentity(dm *enterprisev1.DeviceManager) bool {
 	return LinkingStrategy(dm) != enterprisev1.DeviceManager_Spec_Linking_PROBE_ONLY
 }
 
+func IsDisabled(dm *enterprisev1.DeviceManager) bool {
+	return dm != nil && dm.Spec.GetPolling().GetIsDisabled()
+}
+
+func GetSecretRef(dm *enterprisev1.DeviceManager) *enterprisev1.DeviceManager_Spec_SecretRef {
+	spec := dm.GetSpec()
+
+	switch {
+	case spec.GetCrowdStrike() != nil:
+		return spec.GetCrowdStrike().ClientSecret
+	case spec.GetSentinelOne() != nil:
+		return spec.GetSentinelOne().ApiToken
+	case spec.GetMicrosoftIntune() != nil:
+		return spec.GetMicrosoftIntune().ClientSecret
+	case spec.GetJamf() != nil:
+		return spec.GetJamf().ClientSecret
+	case spec.GetOnePassword() != nil:
+		return spec.GetOnePassword().ApiToken
+	case spec.GetFleetDM() != nil:
+		return spec.GetFleetDM().ApiToken
+	case spec.GetHuntress() != nil:
+		return spec.GetHuntress().ApiSecret
+	case spec.GetIru() != nil:
+		return spec.GetIru().ApiToken
+	default:
+		return nil
+	}
+}
+
 func StaleAfter(dm *enterprisev1.DeviceManager) time.Duration {
 	if dm != nil {
 		if polling := dm.Spec.GetPolling(); polling != nil && polling.GetStaleAfter() != nil {
@@ -563,6 +662,43 @@ func NormalizeID(value string) string {
 	}
 
 	return value
+}
+
+func ParseAgreedID(results []*ProbeResult, parse func(result *ProbeResult) string) (string, error) {
+	ret := ""
+
+	for _, result := range results {
+		if result == nil {
+			continue
+		}
+
+		id := parse(result)
+		if id == "" {
+			continue
+		}
+
+		if ret != "" && id != ret {
+			return "", errors.Errorf("The probe results resolve to different IDs: %s, %s", ret, id)
+		}
+
+		ret = id
+	}
+
+	return ret, nil
+}
+
+func CheckJSONContentType(contentType string) error {
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return errors.Errorf("Invalid response Content-Type: %q", contentType)
+	}
+
+	switch {
+	case mediaType == "application/json", mediaType == "text/json", strings.HasSuffix(mediaType, "+json"):
+		return nil
+	default:
+		return errors.Errorf("Unexpected response Content-Type: %q", contentType)
+	}
 }
 
 func SignalFromBool(value *bool) corev1.Device_Status_Posture_SignalState {
@@ -628,14 +764,32 @@ func NormalizeSerial(value string) string {
 
 	switch value {
 	case "",
-		"0",
 		"none",
+		"null",
+		"n/a",
+		"na",
+		"default",
 		"default string",
 		"system serial number",
+		"chassis serial number",
+		"serial number",
 		"to be filled by o.e.m.",
+		"to be filled by oem",
+		"oem",
+		"o.e.m.",
 		"not specified",
 		"not applicable",
-		"unknown":
+		"not available",
+		"invalid",
+		"unknown",
+		"0123456789",
+		"123456789",
+		"1234567890",
+		"12345678":
+		return ""
+	}
+
+	if strings.Trim(value, "0") == "" {
 		return ""
 	}
 
@@ -653,7 +807,12 @@ func NormalizeMAC(value string) string {
 	}
 
 	normalized := builder.String()
-	if len(normalized) != 12 || normalized == "000000000000" {
+	if len(normalized) != 12 {
+		return ""
+	}
+
+	firstOctet, err := hex.DecodeString(normalized[:2])
+	if err != nil || firstOctet[0]&0x03 != 0 || strings.Trim(normalized, "0") == "" {
 		return ""
 	}
 

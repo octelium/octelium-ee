@@ -35,7 +35,7 @@ import (
 const (
 	inventoryPath    = "/api/v1/computers-inventory"
 	tokenPath        = "/api/oauth/token"
-	jamfPageSize     = 100
+	jamfPageSize     = 500
 	jamfHTTPTimeout  = 60 * time.Second
 	tokenHTTPTimeout = 30 * time.Second
 	jamfMaxRetries   = 4
@@ -134,15 +134,12 @@ func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []
 	if osType != corev1.Device_Status_MAC {
 		return "", nil
 	}
-	for _, r := range results {
-		if r == nil {
-			continue
-		}
+	return devicemgrcommon.ParseAgreedID(results, func(r *devicemgrcommon.ProbeResult) string {
 		if id := strings.ToLower(strings.TrimSpace(r.Text)); uuidRe.MatchString(id) {
-			return id, nil
+			return id
 		}
-	}
-	return "", nil
+		return ""
+	})
 }
 
 func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
@@ -192,6 +189,9 @@ func (c *jamfClient) listComputers(ctx context.Context, filter string) ([]*compu
 		if err := c.get(ctx, inventoryPath+"?"+q.Encode(), &resp); err != nil {
 			return nil, err
 		}
+		if resp.Results == nil {
+			return nil, errors.New("Invalid Jamf response: missing results")
+		}
 		out = append(out, resp.Results...)
 		if len(resp.Results) == 0 || len(out) >= resp.TotalCount {
 			break
@@ -212,6 +212,9 @@ func (c *jamfClient) get(ctx context.Context, u string, out any) error {
 				resp.StatusCode(), snippet(resp.Body()))
 		}
 		return errors.Errorf("Jamf status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+	}
+	if err := devicemgrcommon.CheckJSONContentType(resp.Header().Get("Content-Type")); err != nil {
+		return errors.Wrap(err, "Jamf response")
 	}
 	return nil
 }

@@ -92,15 +92,15 @@ func TestToEntry(t *testing.T) {
 			"networkStatus": "connected",
 			"lastActiveDate": %q,
 			"networkInterfaces": [
-				{"name": "en0", "physical": "aa:bb:cc:dd:ee:01"},
-				{"name": "en1", "physical": "AA:BB:CC:DD:EE:01"},
+				{"name": "en0", "physical": "a4:bb:cc:dd:ee:01"},
+				{"name": "en1", "physical": "A4:BB:CC:DD:EE:01"},
 				{"name": "lo", "physical": "00:00:00:00:00:00"}
 			]
 		}`, now.Add(-time.Hour).UTC().Format(time.RFC3339))), now)
 
 		assert.Equal(t, "0a1b2c3d4e5f", entry.ExternalID)
 		assert.Equal(t, "SERIAL-1", entry.Serial)
-		assert.Equal(t, []string{"aa:bb:cc:dd:ee:01"}, entry.MACs)
+		assert.Equal(t, []string{"a4:bb:cc:dd:ee:01"}, entry.MACs)
 
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.ThreatFree)
@@ -227,5 +227,55 @@ func TestListAgentsError(t *testing.T) {
 
 	m.agentFilters = map[string]string{"cursor": "x"}
 	_, err = m.Collect(context.Background())
+	assert.NotNil(t, err)
+}
+
+func TestInvalidResponse(t *testing.T) {
+	for _, tc := range []struct {
+		contentType string
+		body        string
+	}{
+		{"text/html; charset=utf-8", `<html><body>Sign in</body></html>`},
+		{"", `{"data": [], "pagination": {}}`},
+		{"application/json", `{"pagination": {}}`},
+		{"application/json", `{"data": null}`},
+	} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if tc.contentType != "" {
+				w.Header().Set("Content-Type", tc.contentType)
+			}
+			fmt.Fprint(w, tc.body)
+		}))
+
+		m := &Manager{
+			api: &apiClient{rc: resty.New().SetBaseURL(srv.URL)},
+		}
+		_, err := m.Collect(context.Background())
+		assert.NotNil(t, err, tc.body)
+
+		srv.Close()
+	}
+}
+
+func TestExtractAgentID(t *testing.T) {
+	for _, tc := range []struct {
+		arg  string
+		want string
+	}{
+		{" 0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D\r\n", "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"},
+		{"0123456789abcdef0123456789abcdef", "0123456789abcdef0123456789abcdef"},
+		{"Agent ID: 0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d\nAgent ID: 0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d\n", "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"},
+		{"Agent ID: 0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d\nSite ID: 1a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d\n", ""},
+		{"Agent ID: 0123456789abcdef0123456789abcdef", ""},
+		{"", ""},
+	} {
+		assert.Equal(t, tc.want, extractAgentID(tc.arg), tc.arg)
+	}
+
+	m := &Manager{}
+	_, err := m.ParseExternalID(corev1.Device_Status_MAC, []*devicemgrcommon.ProbeResult{
+		{Text: "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"},
+		{Text: "1a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"},
+	})
 	assert.NotNil(t, err)
 }

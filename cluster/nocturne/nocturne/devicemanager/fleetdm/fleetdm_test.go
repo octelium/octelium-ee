@@ -59,7 +59,7 @@ func TestToEntry(t *testing.T) {
 			"id": 10,
 			"uuid": "0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D",
 			"hardware_serial": "C02XYZ",
-			"primary_mac": "aa:bb:cc:dd:ee:01",
+			"primary_mac": "a4:bb:cc:dd:ee:01",
 			"status": "online",
 			"seen_time": "2026-09-28T10:00:00Z",
 			"disk_encryption_enabled": true,
@@ -69,7 +69,7 @@ func TestToEntry(t *testing.T) {
 
 		assert.Equal(t, "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d", entry.ExternalID)
 		assert.Equal(t, "C02XYZ", entry.Serial)
-		assert.Equal(t, []string{"aa:bb:cc:dd:ee:01"}, entry.MACs)
+		assert.Equal(t, []string{"a4:bb:cc:dd:ee:01"}, entry.MACs)
 
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Compliant)
@@ -139,4 +139,48 @@ func TestListHosts(t *testing.T) {
 	fleet, err := m.Collect(context.Background())
 	assert.Nil(t, err)
 	assert.Equal(t, fleetPageSize+1, fleet.Len())
+}
+
+func TestInvalidResponse(t *testing.T) {
+	for _, tc := range []struct {
+		contentType string
+		body        string
+	}{
+		{"text/html; charset=utf-8", `<html><body>Sign in</body></html>`},
+		{"", `{"hosts": []}`},
+		{"application/json", `{}`},
+		{"application/json", `{"hosts": null}`},
+	} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if tc.contentType != "" {
+				w.Header().Set("Content-Type", tc.contentType)
+			}
+			fmt.Fprint(w, tc.body)
+		}))
+
+		m := &Manager{
+			api: &apiClient{rc: resty.New().SetBaseURL(srv.URL)},
+		}
+		_, err := m.Collect(context.Background())
+		assert.NotNil(t, err, tc.body)
+
+		srv.Close()
+	}
+}
+
+func TestParseExternalIDDisagreement(t *testing.T) {
+	m := &Manager{}
+
+	ret, err := m.ParseExternalID(corev1.Device_Status_LINUX, []*devicemgrcommon.ProbeResult{
+		{Text: "0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D"},
+		{Text: "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"},
+	})
+	assert.Nil(t, err)
+	assert.Equal(t, "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d", ret)
+
+	_, err = m.ParseExternalID(corev1.Device_Status_LINUX, []*devicemgrcommon.ProbeResult{
+		{Text: "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"},
+		{Text: "1a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"},
+	})
+	assert.NotNil(t, err)
 }

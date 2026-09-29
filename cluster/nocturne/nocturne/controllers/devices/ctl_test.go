@@ -144,7 +144,7 @@ func (e *tstEnv) createDevice(t *testing.T, serial, email string) *corev1.Device
 			UserRef:      umetav1.GetObjectReference(usr),
 			OsType:       corev1.Device_Status_LINUX,
 			SerialNumber: serial,
-			MacAddresses: []string{"aa:bb:cc:dd:ee:ff"},
+			MacAddresses: []string{"a4:bb:cc:dd:ee:ff"},
 		},
 	})
 	assert.Nil(t, err)
@@ -484,7 +484,64 @@ func TestReconcileDeviceProbe(t *testing.T) {
 				tstResult(owner, corev1.Device_Status_ProbeAttempt_Result_OK, "invalid"))
 		})
 		dev = env.reconcile(t, dev)
-		assert.Nil(t, dev.Status.Binding)
+		assert.Equal(t, corev1.Device_Status_Binding_AMBIGUOUS, dev.Status.Binding.State)
+		assert.Equal(t, reasonSourcesDisagree, dev.Status.Binding.Reason)
+		assert.Contains(t, dev.Status.Binding.Message, "invalid output")
+		assert.Equal(t, corev1.Device_Status_ProbeAttempt_PROCESSED, dev.Status.ProbeAttempt.State)
+	}
+}
+
+func TestReconcileDeviceDisabled(t *testing.T) {
+	env := newTstEnv(t)
+
+	disabledSpec := func() *enterprisev1.DeviceManager_Spec {
+		return &enterprisev1.DeviceManager_Spec{
+			Polling: &enterprisev1.DeviceManager_Spec_Polling{
+				IsDisabled: true,
+			},
+		}
+	}
+
+	env.setOwner("dm-a", nil, tstEntry("a-1", "serial-1"), tstEntry("a-2", "serial-2"))
+	ownerB := env.setOwner("dm-b", nil, tstEntry("b-2", "serial-2"))
+	env.setDeviceManagers(t, "dm-a", "dm-b")
+
+	dev := env.reconcile(t, env.createDevice(t, "SERIAL-1", "user@example.com"))
+	bindingUID := dev.Status.Binding.Uid
+	assert.Equal(t, corev1.Device_Status_Binding_VALID, dev.Status.Binding.Validity)
+	assert.NotNil(t, dev.Status.Posture)
+
+	env.registry.SetOwner(devicemgrcommon.NewPendingOwner(tstDeviceManager("dm-a", disabledSpec())))
+
+	{
+		dev := env.reconcile(t, dev)
+		binding := dev.Status.Binding
+		assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, binding.State)
+		assert.Equal(t, corev1.Device_Status_Binding_SUSPENDED, binding.Validity)
+		assert.Equal(t, reasonDisabled, binding.Reason)
+		assert.Equal(t, bindingUID, binding.Uid)
+		assert.Nil(t, dev.Status.Posture)
+
+		resourceVersion := dev.Metadata.ResourceVersion
+		assert.Equal(t, resourceVersion, env.reconcile(t, dev).Metadata.ResourceVersion)
+	}
+
+	{
+		dev := env.reconcile(t, env.createDevice(t, "SERIAL-2", "user@example.com"))
+		assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, dev.Status.Binding.State)
+		assert.Equal(t, ownerB.UID(), dev.Status.Binding.OwnerRef.Uid)
+		assert.Equal(t, "b-2", dev.Status.Binding.ExternalID)
+	}
+
+	env.setOwner("dm-a", nil, tstEntry("a-1", "serial-1"), tstEntry("a-2", "serial-2"))
+
+	{
+		dev := env.reconcile(t, dev)
+		binding := dev.Status.Binding
+		assert.Equal(t, corev1.Device_Status_Binding_VALID, binding.Validity)
+		assert.Empty(t, binding.Reason)
+		assert.Equal(t, bindingUID, binding.Uid)
+		assert.Equal(t, corev1.Device_Status_Posture_PASS, dev.Status.Posture.Compliant)
 	}
 }
 
@@ -742,6 +799,145 @@ func TestReconcileDeviceVerification(t *testing.T) {
 		})
 		assert.Equal(t, corev1.Device_Status_Binding_VALID, env.reconcile(t, dev).Status.Binding.Validity)
 	}
+}
+
+func TestReconcileDeviceLastSeen(t *testing.T) {
+	env := newTstEnv(t)
+	now := time.Now()
+
+	getEntry := func(lastSeenAt time.Time) *devicemgrcommon.Entry {
+		ret := tstEntry("a-1", "serial-1")
+		ret.Posture.LastSeenAt = pbutils.Timestamp(lastSeenAt)
+		return ret
+	}
+
+	env.setOwner("dm-a", nil, getEntry(now.Add(-time.Hour)))
+
+	dev := env.reconcile(t, env.createDevice(t, "SERIAL-1", "user@example.com"))
+	assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, dev.Status.Binding.State)
+	assert.Equal(t, now.Add(-time.Hour).Unix(), dev.Status.Posture.LastSeenAt.AsTime().Unix())
+
+	{
+		env.setOwner("dm-a", nil, getEntry(now.Add(-time.Hour+time.Minute)))
+		resourceVersion := dev.Metadata.ResourceVersion
+		dev := env.reconcile(t, dev)
+		assert.Equal(t, resourceVersion, dev.Metadata.ResourceVersion)
+		assert.Equal(t, now.Add(-time.Hour).Unix(), dev.Status.Posture.LastSeenAt.AsTime().Unix())
+	}
+
+	{
+		env.setOwner("dm-a", nil, getEntry(now.Add(-time.Minute)))
+		dev := env.reconcile(t, dev)
+		assert.Equal(t, now.Add(-time.Minute).Unix(), dev.Status.Posture.LastSeenAt.AsTime().Unix())
+	}
+
+	{
+		env.setOwner("dm-a", nil, tstEntry("a-1", "serial-1"))
+		dev := env.reconcile(t, dev)
+		assert.Nil(t, dev.Status.Posture.LastSeenAt)
+	}
+}
+
+func TestIsLastSeenRefreshDue(t *testing.T) {
+	now := time.Now()
+
+	getPosture := func(lastSeenAt time.Time) *corev1.Device_Status_Posture {
+		return &corev1.Device_Status_Posture{
+			LastSeenAt: pbutils.Timestamp(lastSeenAt),
+		}
+	}
+
+	assert.False(t, isLastSeenRefreshDue(nil, &corev1.Device_Status_Posture{}))
+	assert.False(t, isLastSeenRefreshDue(getPosture(now), getPosture(now)))
+	assert.False(t, isLastSeenRefreshDue(getPosture(now), getPosture(now.Add(5*time.Minute))))
+	assert.True(t, isLastSeenRefreshDue(getPosture(now), getPosture(now.Add(lastSeenRefreshThreshold))))
+	assert.True(t, isLastSeenRefreshDue(getPosture(now), getPosture(now.Add(-time.Hour))))
+	assert.True(t, isLastSeenRefreshDue(&corev1.Device_Status_Posture{}, getPosture(now)))
+	assert.True(t, isLastSeenRefreshDue(getPosture(now), &corev1.Device_Status_Posture{}))
+}
+
+func TestIsReconcileRequired(t *testing.T) {
+	getDevice := func(fn func(dev *corev1.Device)) *corev1.Device {
+		ret := &corev1.Device{
+			Status: &corev1.Device_Status{
+				UserRef:      &metav1.ObjectReference{Uid: "user-1"},
+				OsType:       corev1.Device_Status_LINUX,
+				SerialNumber: "serial-1",
+				MacAddresses: []string{"a4:bb:cc:dd:ee:01"},
+				Binding: &corev1.Device_Status_Binding{
+					Uid:   "binding-1",
+					State: corev1.Device_Status_Binding_ACCEPTED,
+				},
+				ProbeAttempt: &corev1.Device_Status_ProbeAttempt{
+					Uid:   "attempt-1",
+					State: corev1.Device_Status_ProbeAttempt_PROCESSED,
+				},
+			},
+		}
+		if fn != nil {
+			fn(ret)
+		}
+		return ret
+	}
+
+	old := getDevice(nil)
+
+	assert.True(t, isReconcileRequired(getDevice(nil), nil))
+	assert.True(t, isReconcileRequired(getDevice(nil), &corev1.Device{}))
+	assert.False(t, isReconcileRequired(getDevice(nil), old))
+
+	for _, fn := range []func(dev *corev1.Device){
+		func(dev *corev1.Device) {
+			dev.Status.Posture = &corev1.Device_Status_Posture{Compliant: corev1.Device_Status_Posture_PASS}
+		},
+		func(dev *corev1.Device) {
+			dev.Status.Binding.Validity = corev1.Device_Status_Binding_SUSPENDED
+		},
+		func(dev *corev1.Device) {
+			dev.Status.ProbeAttempt.Uid = "attempt-2"
+			dev.Status.ProbeAttempt.State = corev1.Device_Status_ProbeAttempt_ISSUED
+		},
+		func(dev *corev1.Device) {
+			dev.Status.Hostname = "host"
+		},
+	} {
+		assert.False(t, isReconcileRequired(getDevice(fn), old))
+	}
+
+	for _, fn := range []func(dev *corev1.Device){
+		func(dev *corev1.Device) {
+			dev.Status.ProbeAttempt.Uid = "attempt-2"
+			dev.Status.ProbeAttempt.State = corev1.Device_Status_ProbeAttempt_SUBMITTED
+		},
+		func(dev *corev1.Device) {
+			dev.Status.ProbeAttempt.State = corev1.Device_Status_ProbeAttempt_SUBMITTED
+		},
+		func(dev *corev1.Device) {
+			dev.Status.Binding = nil
+		},
+		func(dev *corev1.Device) {
+			dev.Status.SerialNumber = "serial-2"
+		},
+		func(dev *corev1.Device) {
+			dev.Status.MacAddresses = nil
+		},
+		func(dev *corev1.Device) {
+			dev.Status.OsType = corev1.Device_Status_MAC
+		},
+		func(dev *corev1.Device) {
+			dev.Status.UserRef = &metav1.ObjectReference{Uid: "user-2"}
+		},
+	} {
+		assert.True(t, isReconcileRequired(getDevice(fn), old))
+	}
+
+	submitted := getDevice(func(dev *corev1.Device) {
+		dev.Status.ProbeAttempt.State = corev1.Device_Status_ProbeAttempt_SUBMITTED
+	})
+	assert.False(t, isReconcileRequired(getDevice(func(dev *corev1.Device) {
+		dev.Status.ProbeAttempt.State = corev1.Device_Status_ProbeAttempt_SUBMITTED
+		dev.Status.Posture = &corev1.Device_Status_Posture{}
+	}), submitted))
 }
 
 func TestResetBindingsForOwner(t *testing.T) {

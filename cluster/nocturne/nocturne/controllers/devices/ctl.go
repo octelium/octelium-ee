@@ -33,10 +33,11 @@ import (
 )
 
 const (
-	itemsPerPage            = 500
-	verificationGracePeriod = 10 * time.Minute
-	claimLockTTLSeconds     = 30
-	claimLockWaitSeconds    = 10
+	itemsPerPage             = 500
+	verificationGracePeriod  = 10 * time.Minute
+	lastSeenRefreshThreshold = 10 * time.Minute
+	claimLockTTLSeconds      = 30
+	claimLockWaitSeconds     = 10
 )
 
 const (
@@ -49,6 +50,7 @@ const (
 	reasonOwnerMismatch       = "OwnerMismatch"
 	reasonVerificationFailed  = "VerificationFailed"
 	reasonVerificationOverdue = "VerificationOverdue"
+	reasonDisabled            = "Disabled"
 )
 
 type Resolver interface {
@@ -85,7 +87,35 @@ func (c *Controller) OnAdd(ctx context.Context, dev *corev1.Device) error {
 }
 
 func (c *Controller) OnUpdate(ctx context.Context, new, old *corev1.Device) error {
+	if !isReconcileRequired(new, old) {
+		return nil
+	}
 	return c.ReconcileDevice(ctx, new)
+}
+
+func isReconcileRequired(new, old *corev1.Device) bool {
+	if old == nil || old.Status == nil || new.GetStatus() == nil {
+		return true
+	}
+
+	newStatus := new.Status
+	oldStatus := old.Status
+
+	newAttempt := newStatus.ProbeAttempt
+	if newAttempt.GetState() == corev1.Device_Status_ProbeAttempt_SUBMITTED &&
+		(newAttempt.Uid != oldStatus.ProbeAttempt.GetUid() ||
+			oldStatus.ProbeAttempt.GetState() != corev1.Device_Status_ProbeAttempt_SUBMITTED) {
+		return true
+	}
+
+	if oldStatus.Binding != nil && newStatus.Binding == nil {
+		return true
+	}
+
+	return newStatus.OsType != oldStatus.OsType ||
+		newStatus.SerialNumber != oldStatus.SerialNumber ||
+		!slices.Equal(newStatus.MacAddresses, oldStatus.MacAddresses) ||
+		newStatus.UserRef.GetUid() != oldStatus.UserRef.GetUid()
 }
 
 func (c *Controller) OnDelete(ctx context.Context, dev *corev1.Device) error {
@@ -223,6 +253,10 @@ func (c *Controller) evaluateOwner(
 	results map[string][]*devicemgrcommon.ProbeResult,
 	now time.Time,
 ) *decision {
+	if devicemgrcommon.IsDisabled(owner.DM) {
+		return &decision{kind: decisionSkip}
+	}
+
 	if owner.Manager == nil || !owner.Fresh(now) {
 		return &decision{kind: decisionWait}
 	}
@@ -244,11 +278,14 @@ func (c *Controller) evaluateOwner(
 		if ownerResults := results[owner.UID()]; len(ownerResults) > 0 {
 			externalID, err := owner.Manager.ParseExternalID(dev.Status.OsType, ownerResults)
 			if err != nil {
-				zap.L().Warn("Could not parse Device probe results",
-					zap.String("device", dev.Metadata.Name),
-					zap.String("deviceManager", owner.Name()),
-					zap.Error(err))
-			} else if externalID != "" {
+				return &decision{
+					kind:   decisionAmbiguous,
+					reason: reasonSourcesDisagree,
+					message: fmt.Sprintf("The probe results of the DeviceManager %s are inconsistent: %s",
+						owner.Name(), err.Error()),
+				}
+			}
+			if externalID != "" {
 				probeMatch = owner.Fleet.MatchProbeID(externalID)
 			}
 		}
@@ -384,11 +421,24 @@ func (c *Controller) reconcileAccepted(ctx context.Context, dev *corev1.Device, 
 	binding := dev.Status.Binding
 
 	owner, ok := c.resolver.GetOwner(binding.OwnerRef.GetUid())
-	if !ok || owner.Manager == nil || !owner.Fresh(now) {
+	if !ok {
 		return false
 	}
 
 	orig := pbutils.Clone(dev.Status).(*corev1.Device_Status)
+
+	if devicemgrcommon.IsDisabled(owner.DM) {
+		binding.Validity = corev1.Device_Status_Binding_SUSPENDED
+		binding.Reason = reasonDisabled
+		binding.Message = "The DeviceManager is disabled"
+		dev.Status.Posture = nil
+		markAttemptProcessed(dev)
+		return !pbutils.IsEqual(orig, dev.Status)
+	}
+
+	if owner.Manager == nil || !owner.Fresh(now) {
+		return false
+	}
 
 	entry, validity, reason, message, ok := c.checkBinding(ctx, dev, owner)
 	if !ok {
@@ -543,11 +593,28 @@ func refreshPosture(
 	desired := devicemgrcommon.MaterializePosture(owner, entry)
 	current := dev.Status.Posture
 
-	if posturesEqualIgnoringTimestamps(current, desired) && !isPostureRefreshDue(current, desired, now) {
+	if posturesEqualIgnoringTimestamps(current, desired) &&
+		!isPostureRefreshDue(current, desired, now) &&
+		!isLastSeenRefreshDue(current, desired) {
 		return
 	}
 
 	dev.Status.Posture = desired
+}
+
+func isLastSeenRefreshDue(current, desired *corev1.Device_Status_Posture) bool {
+	currentAt := current.GetLastSeenAt()
+	desiredAt := desired.GetLastSeenAt()
+
+	if currentAt.IsValid() != desiredAt.IsValid() {
+		return true
+	}
+	if !desiredAt.IsValid() {
+		return false
+	}
+
+	diff := desiredAt.AsTime().Sub(currentAt.AsTime())
+	return diff >= lastSeenRefreshThreshold || diff <= -lastSeenRefreshThreshold
 }
 
 func posturesEqualIgnoringTimestamps(a, b *corev1.Device_Status_Posture) bool {

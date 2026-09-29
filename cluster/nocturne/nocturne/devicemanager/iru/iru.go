@@ -132,6 +132,9 @@ func (c *apiClient) listDevices(ctx context.Context) ([]*iruDevice, error) {
 		if err := c.get(ctx, devicesPath+"?"+q.Encode(), &page); err != nil {
 			return nil, err
 		}
+		if page == nil {
+			return nil, errors.New("Invalid Iru response: missing devices")
+		}
 		out = append(out, page...)
 		if len(page) < iruPageSize {
 			break
@@ -152,6 +155,9 @@ func (c *apiClient) get(ctx context.Context, u string, out any) error {
 				resp.StatusCode(), snippet(resp.Body()))
 		}
 		return errors.Errorf("Iru status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+	}
+	if err := devicemgrcommon.CheckJSONContentType(resp.Header().Get("Content-Type")); err != nil {
+		return errors.Wrap(err, "Iru response")
 	}
 	return nil
 }

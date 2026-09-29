@@ -36,7 +36,7 @@ func TestToEntry(t *testing.T) {
 		entry := toEntry(getDevice(fmt.Sprintf(`{
 			"device_id": "0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D",
 			"serial_number": "C02XYZ",
-			"mac_address": "aa:bb:cc:dd:ee:01",
+			"mac_address": "a4:bb:cc:dd:ee:01",
 			"last_check_in": %q,
 			"is_missing": false,
 			"mdm_enabled": true,
@@ -46,7 +46,7 @@ func TestToEntry(t *testing.T) {
 
 		assert.Equal(t, "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d", entry.ExternalID)
 		assert.Equal(t, "C02XYZ", entry.Serial)
-		assert.Equal(t, []string{"aa:bb:cc:dd:ee:01"}, entry.MACs)
+		assert.Equal(t, []string{"a4:bb:cc:dd:ee:01"}, entry.MACs)
 		assert.Equal(t, []string{"user@example.com"}, entry.OwnerEmails)
 
 		p := entry.Posture
@@ -113,4 +113,31 @@ func TestListDevices(t *testing.T) {
 	assert.Equal(t, 2, fleet.Len())
 	assert.Equal(t, devicemgrcommon.MatchStateNone, fleet.MatchExternalID("b").State)
 	assert.Equal(t, []string{"user@example.com"}, fleet.MatchExternalID("c").Entry.OwnerEmails)
+}
+
+func TestInvalidResponse(t *testing.T) {
+	for _, tc := range []struct {
+		contentType string
+		body        string
+	}{
+		{"text/html; charset=utf-8", `<html><body>Sign in</body></html>`},
+		{"", `[]`},
+		{"application/json", `{}`},
+		{"application/json", `null`},
+	} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if tc.contentType != "" {
+				w.Header().Set("Content-Type", tc.contentType)
+			}
+			fmt.Fprint(w, tc.body)
+		}))
+
+		m := &Manager{
+			api: &apiClient{rc: resty.New().SetBaseURL(srv.URL)},
+		}
+		_, err := m.Collect(context.Background())
+		assert.NotNil(t, err, tc.body)
+
+		srv.Close()
+	}
 }

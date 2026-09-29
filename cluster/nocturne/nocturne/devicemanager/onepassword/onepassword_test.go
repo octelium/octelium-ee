@@ -193,3 +193,47 @@ func TestCollectError(t *testing.T) {
 	_, err := m.Collect(context.Background())
 	assert.NotNil(t, err)
 }
+
+func TestInvalidResponse(t *testing.T) {
+	for _, tc := range []struct {
+		contentType string
+		body        string
+	}{
+		{"text/html; charset=utf-8", `<html><body>Sign in</body></html>`},
+		{"", `{"data": [], "pagination": {}}`},
+		{"application/json", `{"pagination": {}}`},
+		{"application/json", `{"data": null}`},
+	} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if tc.contentType != "" {
+				w.Header().Set("Content-Type", tc.contentType)
+			}
+			fmt.Fprint(w, tc.body)
+		}))
+
+		m := &Manager{
+			api: &apiClient{rc: resty.New().SetBaseURL(srv.URL)},
+		}
+		_, err := m.Collect(context.Background())
+		assert.NotNil(t, err, tc.body)
+
+		srv.Close()
+	}
+}
+
+func TestParseExternalIDDisagreement(t *testing.T) {
+	m := &Manager{}
+
+	ret, err := m.ParseExternalID(corev1.Device_Status_LINUX, []*devicemgrcommon.ProbeResult{
+		{Text: "0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D"},
+		{Text: "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"},
+	})
+	assert.Nil(t, err)
+	assert.Equal(t, "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d", ret)
+
+	_, err = m.ParseExternalID(corev1.Device_Status_LINUX, []*devicemgrcommon.ProbeResult{
+		{Text: "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"},
+		{Text: "1a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"},
+	})
+	assert.NotNil(t, err)
+}

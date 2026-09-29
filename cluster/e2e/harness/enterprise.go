@@ -173,6 +173,52 @@ func (h *H) CreateDirectoryProvider(t *testing.T,
 	return ret
 }
 
+func (h *H) CreateDeviceManager(t *testing.T,
+	dm *enterprisev1.DeviceManager) *enterprisev1.DeviceManager {
+	t.Helper()
+
+	if dm.Metadata == nil {
+		dm.Metadata = &metav1.Metadata{}
+	}
+	if dm.Metadata.Name == "" {
+		dm.Metadata.Name = h.Name()
+	}
+
+	ctx, cancel := h.Ctx(t)
+	defer cancel()
+
+	ret, err := h.EnterpriseC().CreateDeviceManager(ctx, dm)
+	if err != nil {
+		t.Fatalf("Could not create the DeviceManager %s: %+v", dm.Metadata.Name, err)
+	}
+
+	t.Cleanup(func() {
+		h.deleteQuietly(t, "DeviceManager", ret.Metadata.Name,
+			func(ctx context.Context) error {
+				_, err := h.EnterpriseC().DeleteDeviceManager(ctx,
+					&metav1.DeleteOptions{Uid: ret.Metadata.Uid})
+				return err
+			})
+	})
+
+	return ret
+}
+
+func (h *H) UpdateDeviceManager(t *testing.T,
+	dm *enterprisev1.DeviceManager) *enterprisev1.DeviceManager {
+	t.Helper()
+
+	ctx, cancel := h.Ctx(t)
+	defer cancel()
+
+	ret, err := h.EnterpriseC().UpdateDeviceManager(ctx, dm)
+	if err != nil {
+		t.Fatalf("Could not update the DeviceManager %s: %+v", dm.Metadata.Name, err)
+	}
+
+	return ret
+}
+
 func (h *H) UpdateGroup(t *testing.T, grp *corev1.Group) *corev1.Group {
 	t.Helper()
 

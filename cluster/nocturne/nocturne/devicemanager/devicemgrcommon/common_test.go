@@ -25,18 +25,18 @@ func TestFleet(t *testing.T) {
 			ExternalID: "id-1",
 			Aliases:    []string{"ALIAS-1", "00000000-0000-0000-0000-000000000000"},
 			Serial:     "SERIAL-1",
-			MACs:       []string{"AA:BB:CC:DD:EE:01"},
+			MACs:       []string{"A4:BB:CC:DD:EE:01"},
 		},
 		{
 			ExternalID: "id-2",
 			Aliases:    []string{"00000000-0000-0000-0000-000000000000"},
 			Serial:     "serial-dup",
-			MACs:       []string{"aa-bb-cc-dd-ee-02", "aa:bb:cc:dd:ee:ff"},
+			MACs:       []string{"a4-bb-cc-dd-ee-02", "a4:bb:cc:dd:ee:ff"},
 		},
 		{
 			ExternalID: "id-3",
 			Serial:     "SERIAL-DUP",
-			MACs:       []string{"aabb.ccdd.ee03", "aa:bb:cc:dd:ee:ff"},
+			MACs:       []string{"a4bb.ccdd.ee03", "a4:bb:cc:dd:ee:ff"},
 		},
 		{
 			ExternalID: "id-4",
@@ -84,22 +84,22 @@ func TestFleet(t *testing.T) {
 		assert.Equal(t, "id-1", res.Entry.ExternalID)
 
 		assert.Equal(t, MatchStateAmbiguous, fleet.MatchIdentity("serial-dup", nil).State)
-		assert.Equal(t, MatchStateAmbiguous, fleet.MatchIdentity("serial-dup", []string{"aa:bb:cc:dd:ee:01"}).State)
+		assert.Equal(t, MatchStateAmbiguous, fleet.MatchIdentity("serial-dup", []string{"a4:bb:cc:dd:ee:01"}).State)
 	}
 
 	{
-		res := fleet.MatchIdentity("", []string{"AA-BB-CC-DD-EE-02"})
+		res := fleet.MatchIdentity("", []string{"A4-BB-CC-DD-EE-02"})
 		assert.Equal(t, MatchStateUnique, res.State)
 		assert.Equal(t, MatchMethodMAC, res.Method)
 		assert.Equal(t, "id-2", res.Entry.ExternalID)
 
-		res = fleet.MatchIdentity("unknown", []string{"aa:bb:cc:dd:ee:03", "invalid"})
+		res = fleet.MatchIdentity("unknown", []string{"a4:bb:cc:dd:ee:03", "invalid"})
 		assert.Equal(t, MatchStateUnique, res.State)
 		assert.Equal(t, "id-3", res.Entry.ExternalID)
 
-		assert.Equal(t, MatchStateAmbiguous, fleet.MatchIdentity("", []string{"aa:bb:cc:dd:ee:ff"}).State)
+		assert.Equal(t, MatchStateAmbiguous, fleet.MatchIdentity("", []string{"a4:bb:cc:dd:ee:ff"}).State)
 		assert.Equal(t, MatchStateAmbiguous,
-			fleet.MatchIdentity("", []string{"aa:bb:cc:dd:ee:01", "aa:bb:cc:dd:ee:02"}).State)
+			fleet.MatchIdentity("", []string{"a4:bb:cc:dd:ee:01", "a4:bb:cc:dd:ee:02"}).State)
 		assert.Equal(t, MatchStateNone, fleet.MatchIdentity("", []string{"00:00:00:00:00:00"}).State)
 		assert.Equal(t, MatchStateNone, fleet.MatchIdentity("", nil).State)
 	}
@@ -120,6 +120,176 @@ func TestFleet(t *testing.T) {
 	}
 }
 
+func TestFleetRecency(t *testing.T) {
+	now := time.Now()
+
+	getEntry := func(externalID, serial, mac string, lastSeenAt time.Time) *Entry {
+		ret := &Entry{
+			ExternalID: externalID,
+			Serial:     serial,
+			MACs:       []string{mac},
+			Posture:    &corev1.Device_Status_Posture{},
+		}
+		if !lastSeenAt.IsZero() {
+			ret.Posture.LastSeenAt = pbutils.Timestamp(lastSeenAt)
+		}
+		return ret
+	}
+
+	fleet := NewFleet([]*Entry{
+		getEntry("reinstalled-old", "serial-1", "a4:bb:cc:dd:ee:01", now.Add(-72*time.Hour)),
+		getEntry("reinstalled-new", "serial-1", "a4:bb:cc:dd:ee:01", now.Add(-time.Hour)),
+		getEntry("reimaged-1", "serial-2", "a4:bb:cc:dd:ee:02", now.Add(-50*time.Hour)),
+		getEntry("reimaged-2", "serial-2", "a4:bb:cc:dd:ee:02", now.Add(-30*time.Hour)),
+		getEntry("reimaged-3", "serial-2", "a4:bb:cc:dd:ee:02", now.Add(-time.Minute)),
+		getEntry("active-1", "serial-3", "a4:bb:cc:dd:ee:03", now.Add(-2*time.Hour)),
+		getEntry("active-2", "serial-3", "a4:bb:cc:dd:ee:03", now.Add(-time.Hour)),
+		getEntry("unknown-1", "serial-4", "a4:bb:cc:dd:ee:04", time.Time{}),
+		getEntry("unknown-2", "serial-4", "a4:bb:cc:dd:ee:04", now),
+		getEntry("same-1", "serial-5", "a4:bb:cc:dd:ee:05", now),
+		getEntry("same-2", "serial-5", "a4:bb:cc:dd:ee:05", now),
+	})
+
+	for _, tc := range []struct {
+		serial     string
+		mac        string
+		state      MatchState
+		externalID string
+	}{
+		{"serial-1", "a4:bb:cc:dd:ee:01", MatchStateUnique, "reinstalled-new"},
+		{"serial-2", "a4:bb:cc:dd:ee:02", MatchStateUnique, "reimaged-3"},
+		{"serial-3", "a4:bb:cc:dd:ee:03", MatchStateAmbiguous, ""},
+		{"serial-4", "a4:bb:cc:dd:ee:04", MatchStateAmbiguous, ""},
+		{"serial-5", "a4:bb:cc:dd:ee:05", MatchStateAmbiguous, ""},
+	} {
+		for _, res := range []MatchResult{
+			fleet.MatchIdentity(tc.serial, nil),
+			fleet.MatchIdentity("", []string{tc.mac}),
+		} {
+			assert.Equal(t, tc.state, res.State, tc.serial)
+			if tc.externalID != "" {
+				assert.Equal(t, tc.externalID, res.Entry.ExternalID)
+			}
+		}
+	}
+
+	assert.Equal(t, MatchStateUnique, fleet.MatchExternalID("reinstalled-old").State)
+
+	{
+		entry := getEntry("single", "serial-1", "a4:bb:cc:dd:ee:01", time.Time{})
+		entry.MACs = append(entry.MACs, "A4-BB-CC-DD-EE-01")
+		res := NewFleet([]*Entry{entry}).MatchIdentity("", []string{"a4:bb:cc:dd:ee:01"})
+		assert.Equal(t, MatchStateUnique, res.State)
+		assert.Equal(t, "single", res.Entry.ExternalID)
+	}
+}
+
+func TestFleetDegraded(t *testing.T) {
+	var nilFleet *Fleet
+	nilFleet.SetDegraded("reason")
+	assert.Empty(t, nilFleet.DegradedReason())
+
+	fleet := NewFleet(nil)
+	assert.Empty(t, fleet.DegradedReason())
+	fleet.SetDegraded("reason")
+	assert.Equal(t, "reason", fleet.DegradedReason())
+}
+
+func TestParseAgreedID(t *testing.T) {
+	parse := func(r *ProbeResult) string {
+		return NormalizeID(r.Text)
+	}
+
+	{
+		id, err := ParseAgreedID(nil, parse)
+		assert.Nil(t, err)
+		assert.Empty(t, id)
+	}
+
+	{
+		id, err := ParseAgreedID([]*ProbeResult{nil, {Text: ""}, {Text: " ID-1 "}, {Text: "id-1"}}, parse)
+		assert.Nil(t, err)
+		assert.Equal(t, "id-1", id)
+	}
+
+	{
+		_, err := ParseAgreedID([]*ProbeResult{{Text: "id-1"}, {Text: "id-2"}}, parse)
+		assert.NotNil(t, err)
+	}
+}
+
+func TestCheckJSONContentType(t *testing.T) {
+	for _, arg := range []string{
+		"application/json",
+		"application/json; charset=utf-8",
+		"Application/JSON",
+		"application/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8",
+		"application/vnd.api+json",
+		"application/problem+json",
+		"text/json",
+	} {
+		assert.Nil(t, CheckJSONContentType(arg), arg)
+	}
+
+	for _, arg := range []string{
+		"",
+		"text/html",
+		"text/html; charset=utf-8",
+		"application/xml",
+		"text/plain",
+		"application/jsonx",
+		";;",
+	} {
+		assert.NotNil(t, CheckJSONContentType(arg), arg)
+	}
+}
+
+func TestDeviceManagerSpecHelpers(t *testing.T) {
+	assert.False(t, IsDisabled(nil))
+	assert.Nil(t, GetSecretRef(nil))
+	assert.Nil(t, GetSecretRef(&enterprisev1.DeviceManager{Spec: &enterprisev1.DeviceManager_Spec{}}))
+
+	ref := &enterprisev1.DeviceManager_Spec_SecretRef{
+		Type: &enterprisev1.DeviceManager_Spec_SecretRef_FromSecret{
+			FromSecret: "secret",
+		},
+	}
+
+	for _, spec := range []*enterprisev1.DeviceManager_Spec{
+		{Type: &enterprisev1.DeviceManager_Spec_CrowdStrike_{
+			CrowdStrike: &enterprisev1.DeviceManager_Spec_CrowdStrike{ClientSecret: ref},
+		}},
+		{Type: &enterprisev1.DeviceManager_Spec_SentinelOne_{
+			SentinelOne: &enterprisev1.DeviceManager_Spec_SentinelOne{ApiToken: ref},
+		}},
+		{Type: &enterprisev1.DeviceManager_Spec_MicrosoftIntune_{
+			MicrosoftIntune: &enterprisev1.DeviceManager_Spec_MicrosoftIntune{ClientSecret: ref},
+		}},
+		{Type: &enterprisev1.DeviceManager_Spec_Jamf_{
+			Jamf: &enterprisev1.DeviceManager_Spec_Jamf{ClientSecret: ref},
+		}},
+		{Type: &enterprisev1.DeviceManager_Spec_OnePassword_{
+			OnePassword: &enterprisev1.DeviceManager_Spec_OnePassword{ApiToken: ref},
+		}},
+		{Type: &enterprisev1.DeviceManager_Spec_FleetDM_{
+			FleetDM: &enterprisev1.DeviceManager_Spec_FleetDM{ApiToken: ref},
+		}},
+		{Type: &enterprisev1.DeviceManager_Spec_Huntress_{
+			Huntress: &enterprisev1.DeviceManager_Spec_Huntress{ApiSecret: ref},
+		}},
+		{Type: &enterprisev1.DeviceManager_Spec_Iru_{
+			Iru: &enterprisev1.DeviceManager_Spec_Iru{ApiToken: ref},
+		}},
+	} {
+		dm := &enterprisev1.DeviceManager{Spec: spec}
+		assert.Equal(t, "secret", GetSecretRef(dm).GetFromSecret())
+		assert.False(t, IsDisabled(dm))
+
+		spec.Polling = &enterprisev1.DeviceManager_Spec_Polling{IsDisabled: true}
+		assert.True(t, IsDisabled(dm))
+	}
+}
+
 func TestNormalize(t *testing.T) {
 	assert.Equal(t, "abc-def", NormalizeID(" ABC-DEF "))
 	assert.Equal(t, "", NormalizeID("00000000-0000-0000-0000-000000000000"))
@@ -127,14 +297,29 @@ func TestNormalize(t *testing.T) {
 	assert.Equal(t, "", NormalizeID(" "))
 
 	assert.Equal(t, "c02abc", NormalizeSerial(" C02ABC "))
-	for _, arg := range []string{"", "0", "None", "Default String", "To Be Filled By O.E.M.", "unknown"} {
+	assert.Equal(t, "0a1b2c", NormalizeSerial("0A1B2C"))
+	for _, arg := range []string{"", "0", "0000000000", "None", "Default String", "To Be Filled By O.E.M.",
+		"unknown", "N/A", "Chassis Serial Number", "System Serial Number", "0123456789", "Invalid",
+		"Not Available", "OEM"} {
 		assert.Equal(t, "", NormalizeSerial(arg), arg)
 	}
 
-	assert.Equal(t, "aabbccddeeff", NormalizeMAC("AA:BB:CC:DD:EE:FF"))
-	assert.Equal(t, "aabbccddeeff", NormalizeMAC("aabb.ccdd.eeff"))
-	assert.Equal(t, "", NormalizeMAC("00:00:00:00:00:00"))
-	assert.Equal(t, "", NormalizeMAC("aa:bb:cc"))
+	assert.Equal(t, "a4bbccddeeff", NormalizeMAC("A4:BB:CC:DD:EE:FF"))
+	assert.Equal(t, "a4bbccddeeff", NormalizeMAC("a4bb.ccdd.eeff"))
+	assert.Equal(t, "001b638445e6", NormalizeMAC("00-1B-63-84-45-E6"))
+	for _, arg := range []string{
+		"00:00:00:00:00:00",
+		"a4:bb:cc",
+		"ff:ff:ff:ff:ff:ff",
+		"01:00:5e:00:00:fb",
+		"33:33:00:00:00:01",
+		"02:42:ac:11:00:02",
+		"aa:bb:cc:dd:ee:ff",
+		"de:ad:be:ef:00:01",
+		"invalid",
+	} {
+		assert.Equal(t, "", NormalizeMAC(arg), arg)
+	}
 
 	assert.Equal(t, "user@example.com", NormalizeEmail(" User@Example.com "))
 	assert.True(t, OwnerEmailMatches("USER@example.com", []string{"other@example.com", "user@EXAMPLE.com"}))

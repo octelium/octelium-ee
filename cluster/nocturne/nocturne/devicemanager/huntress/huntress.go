@@ -164,6 +164,9 @@ func (c *apiClient) listAgents(ctx context.Context, organizationID int64) ([]*hu
 		if err := c.get(ctx, agentsPath+"?"+q.Encode(), &resp); err != nil {
 			return nil, err
 		}
+		if resp.Agents == nil {
+			return nil, errors.New("Invalid Huntress response: missing agents")
+		}
 		out = append(out, resp.Agents...)
 		if resp.Pagination.NextPageToken == "" ||
 			resp.Pagination.NextPageToken == pageToken ||
@@ -186,6 +189,9 @@ func (c *apiClient) get(ctx context.Context, u string, out any) error {
 				resp.StatusCode(), snippet(resp.Body()))
 		}
 		return errors.Errorf("Huntress status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+	}
+	if err := devicemgrcommon.CheckJSONContentType(resp.Header().Get("Content-Type")); err != nil {
+		return errors.Wrap(err, "Huntress response")
 	}
 	return nil
 }

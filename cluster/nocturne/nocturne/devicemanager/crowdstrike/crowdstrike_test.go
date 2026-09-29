@@ -9,12 +9,17 @@
 package crowdstrike
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/crowdstrike/gofalcon/falcon"
 	"github.com/crowdstrike/gofalcon/falcon/models"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/devicemanager/devicemgrcommon"
 	"github.com/octelium/octelium/apis/main/corev1"
@@ -74,8 +79,8 @@ func TestToEntry(t *testing.T) {
 		err := json.Unmarshal([]byte(fmt.Sprintf(`{
 			"device_id": "0123456789ABCDEF0123456789ABCDEF",
 			"serial_number": "C02XYZ",
-			"mac_address": "aa-bb-cc-dd-ee-01",
-			"connection_mac_address": "AA-BB-CC-DD-EE-01",
+			"mac_address": "a4-bb-cc-dd-ee-01",
+			"connection_mac_address": "A4-BB-CC-DD-EE-01",
 			"status": %q,
 			"reduced_functionality_mode": %q,
 			"last_seen": %q,
@@ -90,7 +95,7 @@ func TestToEntry(t *testing.T) {
 		entry := toEntry(getDevice("normal", "no", now.Add(-time.Hour)), nil, now)
 		assert.Equal(t, "0123456789abcdef0123456789abcdef", entry.ExternalID)
 		assert.Equal(t, "C02XYZ", entry.Serial)
-		assert.Equal(t, []string{"aa-bb-cc-dd-ee-01"}, entry.MACs)
+		assert.Equal(t, []string{"a4-bb-cc-dd-ee-01"}, entry.MACs)
 
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.NotContained)
@@ -169,4 +174,167 @@ func TestChunk(t *testing.T) {
 	assert.Nil(t, chunk(nil, 2))
 	assert.Equal(t, [][]string{{"a", "b"}, {"c"}}, chunk([]string{"a", "b", "c"}, 2))
 	assert.Equal(t, [][]string{{"a"}}, chunk([]string{"a"}, 0))
+}
+
+func TestParseExternalIDDisagreement(t *testing.T) {
+	m := &Manager{}
+
+	_, err := m.ParseExternalID(corev1.Device_Status_LINUX, []*devicemgrcommon.ProbeResult{
+		{Text: `aid="0123456789abcdef0123456789abcdef"`},
+		{Text: `aid="ffffffffffffffffffffffffffffffff"`},
+	})
+	assert.NotNil(t, err)
+}
+
+func TestGetPayloadError(t *testing.T) {
+	code := int32(404)
+	message := "not found"
+
+	assert.Nil(t, getPayloadError(nil))
+	assert.Nil(t, getPayloadError([]*models.MsaAPIError{nil}))
+
+	{
+		err := getPayloadError([]*models.MsaAPIError{{Code: &code, Message: &message}})
+		assert.NotNil(t, err)
+		assert.Contains(t, err.Error(), "404")
+		assert.Contains(t, err.Error(), message)
+	}
+
+	{
+		err := getPayloadError([]*models.MsaAPIError{{Code: &code, Message: &message}, {}})
+		assert.NotNil(t, err)
+		assert.Contains(t, err.Error(), "2 errors")
+	}
+
+	{
+		err := getPayloadError([]*models.MsaAPIError{{}})
+		assert.NotNil(t, err)
+	}
+}
+
+type tstTransport struct{}
+
+func (tstTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req = req.Clone(req.Context())
+	req.URL.Scheme = "http"
+	return http.DefaultTransport.RoundTrip(req)
+}
+
+func TestCollect(t *testing.T) {
+	aid1 := "0123456789abcdef0123456789abcdef"
+	aid2 := "fedcba9876543210fedcba9876543210"
+
+	mode := ""
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		switch r.URL.Path {
+		case "/devices/queries/devices-scroll/v1":
+			switch mode {
+			case "scrollError":
+				fmt.Fprint(w, `{"meta": {}, "resources": [], "errors": [{"code": 500, "message": "internal"}]}`)
+			case "empty":
+				fmt.Fprint(w, `{"meta": {"pagination": {"offset": "", "total": 0}}, "resources": [], "errors": []}`)
+			default:
+				fmt.Fprintf(w, `{"meta": {"pagination": {"offset": "", "total": 2}}, "resources": [%q, %q], "errors": []}`,
+					strings.ToUpper(aid1), aid2)
+			}
+		case "/devices/entities/devices/v2":
+			assert.Equal(t, http.MethodPost, r.Method)
+
+			req := &models.MsaIdsRequest{}
+			assert.Nil(t, json.NewDecoder(r.Body).Decode(req))
+			assert.Equal(t, []string{strings.ToUpper(aid1), aid2}, req.Ids)
+
+			errs := `[]`
+			if mode == "detailsError" {
+				errs = `[{"code": 404, "message": "not found"}]`
+			}
+			fmt.Fprintf(w, `{"meta": {}, "resources": [
+				{"device_id": %q, "status": "normal", "serial_number": "SERIAL-1"},
+				{"device_id": %q, "status": "contained"}
+			], "errors": %s}`, strings.ToUpper(aid1), aid2, errs)
+		case "/zero-trust-assessment/entities/assessments/v1":
+			if mode == "ztaError" {
+				w.WriteHeader(http.StatusForbidden)
+				fmt.Fprint(w, `{"meta": {}, "errors": [{"code": 403, "message": "access denied"}]}`)
+				return
+			}
+			fmt.Fprintf(w, `{"meta": {}, "resources": [{"aid": %q, "assessment": {"overall": 95}}],
+				"errors": [{"code": 404, "message": "no assessment"}]}`, aid1)
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c, err := falcon.NewClient(&falcon.ApiConfig{
+		Context:      context.Background(),
+		AccessToken:  "token",
+		HostOverride: strings.TrimPrefix(srv.URL, "http://"),
+		TransportDecorator: func(http.RoundTripper) http.RoundTripper {
+			return tstTransport{}
+		},
+	})
+	assert.Nil(t, err)
+
+	m := &Manager{c: c, ztaEnabled: true}
+
+	{
+		fleet, err := m.Collect(context.Background())
+		assert.Nil(t, err)
+		assert.Equal(t, 2, fleet.Len())
+		assert.Empty(t, fleet.DegradedReason())
+
+		res := fleet.MatchExternalID(aid1)
+		assert.Equal(t, devicemgrcommon.MatchStateUnique, res.State)
+		assert.Equal(t, corev1.Device_Status_Posture_LOW, res.Entry.Posture.RiskLevel)
+		assert.Equal(t, corev1.Device_Status_Posture_PASS, res.Entry.Posture.NotContained)
+
+		res = fleet.MatchExternalID(aid2)
+		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN, res.Entry.Posture.RiskLevel)
+		assert.Equal(t, corev1.Device_Status_Posture_FAIL, res.Entry.Posture.NotContained)
+	}
+
+	{
+		mode = "ztaError"
+		fleet, err := m.Collect(context.Background())
+		assert.Nil(t, err)
+		assert.Equal(t, 2, fleet.Len())
+		assert.NotEmpty(t, fleet.DegradedReason())
+		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN,
+			fleet.MatchExternalID(aid1).Entry.Posture.RiskLevel)
+	}
+
+	{
+		mode = "detailsError"
+		fleet, err := m.Collect(context.Background())
+		assert.Nil(t, err)
+		assert.Equal(t, 2, fleet.Len())
+		assert.Contains(t, fleet.DegradedReason(), "not found")
+	}
+
+	{
+		mode = "scrollError"
+		_, err := m.Collect(context.Background())
+		assert.NotNil(t, err)
+	}
+
+	{
+		mode = "empty"
+		fleet, err := m.Collect(context.Background())
+		assert.Nil(t, err)
+		assert.Equal(t, 0, fleet.Len())
+	}
+
+	{
+		mode = ""
+		m.ztaEnabled = false
+		fleet, err := m.Collect(context.Background())
+		assert.Nil(t, err)
+		assert.Empty(t, fleet.DegradedReason())
+		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN,
+			fleet.MatchExternalID(aid1).Entry.Posture.RiskLevel)
+	}
 }

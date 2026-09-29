@@ -120,15 +120,12 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 }
 
 func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []*devicemgrcommon.ProbeResult) (string, error) {
-	for _, r := range results {
-		if r == nil {
-			continue
-		}
+	return devicemgrcommon.ParseAgreedID(results, func(r *devicemgrcommon.ProbeResult) string {
 		if id := strings.ToLower(strings.TrimSpace(r.Text)); uuidRe.MatchString(id) {
-			return id, nil
+			return id
 		}
-	}
-	return "", nil
+		return ""
+	})
 }
 
 func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
@@ -186,6 +183,9 @@ func (c *apiClient) listDevices(ctx context.Context) ([]*kolideDevice, error) {
 		if err := c.getPage(ctx, devicesPath, cursor, &page); err != nil {
 			return nil, err
 		}
+		if page.Data == nil {
+			return nil, errors.New("Invalid OnePassword devices response: missing data")
+		}
 		out = append(out, page.Data...)
 		if page.Pagination.NextCursor == "" || page.Pagination.NextCursor == cursor || len(page.Data) == 0 {
 			break
@@ -202,6 +202,9 @@ func (c *apiClient) listPeople(ctx context.Context) ([]*kolidePerson, error) {
 		var page peopleResponse
 		if err := c.getPage(ctx, peoplePath, cursor, &page); err != nil {
 			return nil, err
+		}
+		if page.Data == nil {
+			return nil, errors.New("Invalid OnePassword people response: missing data")
 		}
 		out = append(out, page.Data...)
 		if page.Pagination.NextCursor == "" || page.Pagination.NextCursor == cursor || len(page.Data) == 0 {
@@ -235,6 +238,9 @@ func (c *apiClient) get(ctx context.Context, u string, out any) error {
 				resp.StatusCode(), snippet(resp.Body()))
 		}
 		return errors.Errorf("OnePassword status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+	}
+	if err := devicemgrcommon.CheckJSONContentType(resp.Header().Get("Content-Type")); err != nil {
+		return errors.Wrap(err, "OnePassword response")
 	}
 	return nil
 }

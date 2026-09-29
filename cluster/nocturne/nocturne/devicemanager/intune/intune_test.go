@@ -70,7 +70,7 @@ func TestToEntry(t *testing.T) {
 		entry := m.toEntry(getDevice(`{
 			"id": "INTUNE-ID-1",
 			"serialNumber": "SERIAL-1",
-			"wiFiMacAddress": "aabbccddee01",
+			"wiFiMacAddress": "a4bbccddee01",
 			"ethernetMacAddress": "",
 			"operatingSystem": "Windows",
 			"complianceState": "compliant",
@@ -87,7 +87,7 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, "intune-id-1", entry.ExternalID)
 		assert.Equal(t, []string{"0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"}, entry.Aliases)
 		assert.Equal(t, []string{"user@example.com", "upn@corp.example.com"}, entry.OwnerEmails)
-		assert.Equal(t, []string{"aabbccddee01"}, entry.MACs)
+		assert.Equal(t, []string{"a4bbccddee01"}, entry.MACs)
 
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Compliant)
@@ -202,5 +202,42 @@ func TestListManagedDevices(t *testing.T) {
 
 	crossOrigin = true
 	_, err = m.Collect(context.Background())
+	assert.NotNil(t, err)
+}
+
+func TestInvalidResponse(t *testing.T) {
+	for _, tc := range []struct {
+		contentType string
+		body        string
+	}{
+		{"text/html; charset=utf-8", `<html><body>Sign in</body></html>`},
+		{"", `{"value": []}`},
+		{"application/json", `{}`},
+		{"application/json", `{"value": null}`},
+	} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if tc.contentType != "" {
+				w.Header().Set("Content-Type", tc.contentType)
+			}
+			fmt.Fprint(w, tc.body)
+		}))
+
+		m := &Manager{
+			graph: &graphClient{rc: resty.New(), base: srv.URL},
+		}
+		_, err := m.Collect(context.Background())
+		assert.NotNil(t, err, tc.body)
+
+		srv.Close()
+	}
+}
+
+func TestParseExternalIDDisagreement(t *testing.T) {
+	m := &Manager{}
+
+	_, err := m.ParseExternalID(corev1.Device_Status_WINDOWS, []*devicemgrcommon.ProbeResult{
+		{Text: "  DeviceId : 0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d\n"},
+		{Text: "  DeviceId : 1a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d\n"},
+	})
 	assert.NotNil(t, err)
 }

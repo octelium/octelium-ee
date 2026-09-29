@@ -117,15 +117,12 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 }
 
 func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []*devicemgrcommon.ProbeResult) (string, error) {
-	for _, r := range results {
-		if r == nil {
-			continue
-		}
+	return devicemgrcommon.ParseAgreedID(results, func(r *devicemgrcommon.ProbeResult) string {
 		if id := strings.ToLower(strings.TrimSpace(r.Text)); uuidRe.MatchString(id) {
-			return id, nil
+			return id
 		}
-	}
-	return "", nil
+		return ""
+	})
 }
 
 func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
@@ -171,6 +168,9 @@ func (c *apiClient) listHosts(ctx context.Context, teamID uint32) ([]*fleetHost,
 		if err := c.get(ctx, hostsPath+"?"+q.Encode(), &resp); err != nil {
 			return nil, err
 		}
+		if resp.Hosts == nil {
+			return nil, errors.New("Invalid FleetDM response: missing hosts")
+		}
 		out = append(out, resp.Hosts...)
 		if len(resp.Hosts) < fleetPageSize {
 			break
@@ -191,6 +191,9 @@ func (c *apiClient) get(ctx context.Context, u string, out any) error {
 				resp.StatusCode(), snippet(resp.Body()))
 		}
 		return errors.Errorf("FleetDM status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+	}
+	if err := devicemgrcommon.CheckJSONContentType(resp.Header().Get("Content-Type")); err != nil {
+		return errors.Wrap(err, "FleetDM response")
 	}
 	return nil
 }

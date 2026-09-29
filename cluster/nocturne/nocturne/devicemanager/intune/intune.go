@@ -141,15 +141,12 @@ func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []
 	if osType != corev1.Device_Status_WINDOWS {
 		return "", nil
 	}
-	for _, r := range results {
-		if r == nil || r.Text == "" {
-			continue
-		}
+	return devicemgrcommon.ParseAgreedID(results, func(r *devicemgrcommon.ProbeResult) string {
 		if mm := deviceIDRe.FindStringSubmatch(r.Text); len(mm) == 2 {
-			return devicemgrcommon.NormalizeID(mm[1]), nil
+			return devicemgrcommon.NormalizeID(mm[1])
 		}
-	}
-	return "", nil
+		return ""
+	})
 }
 
 func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
@@ -207,6 +204,9 @@ func (g *graphClient) listManagedDevices(ctx context.Context, filter string) ([]
 		if err := g.get(ctx, u, &page); err != nil {
 			return nil, err
 		}
+		if page.Value == nil {
+			return nil, errors.New("Invalid Intune response: missing value")
+		}
 		out = append(out, page.Value...)
 		if page.NextLink != "" && !devicemgrcommon.IsSameOrigin(g.base, page.NextLink) {
 			return nil, errors.Errorf("Intune nextLink is not in the Microsoft Graph origin: %s", page.NextLink)
@@ -227,6 +227,9 @@ func (g *graphClient) get(ctx context.Context, u string, out any) error {
 				resp.StatusCode(), snippet(resp.Body()))
 		}
 		return errors.Errorf("Intune status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+	}
+	if err := devicemgrcommon.CheckJSONContentType(resp.Header().Get("Content-Type")); err != nil {
+		return errors.Wrap(err, "Intune response")
 	}
 	return nil
 }

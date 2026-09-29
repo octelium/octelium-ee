@@ -151,18 +151,26 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 }
 
 func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []*devicemgrcommon.ProbeResult) (string, error) {
-	for _, r := range results {
-		if r == nil || r.Text == "" {
-			continue
-		}
-		if u := uuidRe.FindString(r.Text); u != "" {
-			return strings.ToLower(u), nil
-		}
-		if t := strings.ToLower(strings.TrimSpace(r.Text)); agentIDRe.MatchString(t) {
-			return t, nil
-		}
+	return devicemgrcommon.ParseAgreedID(results, func(r *devicemgrcommon.ProbeResult) string {
+		return extractAgentID(r.Text)
+	})
+}
+
+func extractAgentID(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	if agentIDRe.MatchString(s) {
+		return s
 	}
-	return "", nil
+
+	var ret string
+	for _, u := range uuidRe.FindAllString(s, -1) {
+		if ret != "" && u != ret {
+			return ""
+		}
+		ret = u
+	}
+
+	return ret
 }
 
 func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
@@ -237,8 +245,11 @@ func (c *apiClient) listAgents(ctx context.Context, base url.Values) ([]*s1Agent
 		if err := c.get(ctx, agentsPath+"?"+q.Encode(), &page); err != nil {
 			return nil, err
 		}
+		if page.Data == nil {
+			return nil, errors.New("Invalid SentinelOne response: missing data")
+		}
 		out = append(out, page.Data...)
-		if page.Pagination.NextCursor == "" || len(page.Data) == 0 {
+		if page.Pagination.NextCursor == "" || page.Pagination.NextCursor == cursor || len(page.Data) == 0 {
 			break
 		}
 		cursor = page.Pagination.NextCursor
@@ -257,6 +268,9 @@ func (c *apiClient) get(ctx context.Context, u string, out any) error {
 				resp.StatusCode(), snippet(resp.Body()))
 		}
 		return errors.Errorf("SentinelOne status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+	}
+	if err := devicemgrcommon.CheckJSONContentType(resp.Header().Get("Content-Type")); err != nil {
+		return errors.Wrap(err, "SentinelOne response")
 	}
 	return nil
 }
