@@ -29,6 +29,7 @@ import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { MainService } from "./enterprisev1";
 import type { Condition as Condition$ } from "../corev1/corev1";
 import type { Condition } from "./enterprisev1";
+import type { ResetDeviceBindingRequest } from "./enterprisev1";
 import type { DeviceManagerList } from "./enterprisev1";
 import type { ListDeviceManagerOptions } from "./enterprisev1";
 import type { DeviceManager } from "./enterprisev1";
@@ -335,6 +336,13 @@ export interface IMainServiceClient {
      * @generated from protobuf rpc: DeleteDeviceManager
      */
     deleteDeviceManager(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult>;
+    /**
+     * ResetDeviceBinding clears the Device's Binding and posture so that the
+     * Cluster can select a DeviceManager again using the configured order.
+     *
+     * @generated from protobuf rpc: ResetDeviceBinding
+     */
+    resetDeviceBinding(input: ResetDeviceBindingRequest, options?: RpcOptions): UnaryCall<ResetDeviceBindingRequest, OperationResult>;
     /**
      * GetCoreCondition compiles a structured enterprise Condition into its
      * equivalent core Condition (i.e. a CEL expression) without applying it to
@@ -734,6 +742,16 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
+     * ResetDeviceBinding clears the Device's Binding and posture so that the
+     * Cluster can select a DeviceManager again using the configured order.
+     *
+     * @generated from protobuf rpc: ResetDeviceBinding
+     */
+    resetDeviceBinding(input: ResetDeviceBindingRequest, options?: RpcOptions): UnaryCall<ResetDeviceBindingRequest, OperationResult> {
+        const method = this.methods[41], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ResetDeviceBindingRequest, OperationResult>("unary", this._transport, method, opt, input);
+    }
+    /**
      * GetCoreCondition compiles a structured enterprise Condition into its
      * equivalent core Condition (i.e. a CEL expression) without applying it to
      * any resource. It is mainly useful to preview and validate a Condition
@@ -742,7 +760,7 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
      * @generated from protobuf rpc: GetCoreCondition
      */
     getCoreCondition(input: Condition, options?: RpcOptions): UnaryCall<Condition, Condition$> {
-        const method = this.methods[41], opt = this._transport.mergeOptions(options);
+        const method = this.methods[42], opt = this._transport.mergeOptions(options);
         return stackIntercept<Condition, Condition$>("unary", this._transport, method, opt, input);
     }
 }

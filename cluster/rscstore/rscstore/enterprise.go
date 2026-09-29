@@ -555,7 +555,6 @@ func (s *Server) doSummaryEnterpriseDeviceManager(ctx context.Context, common *v
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_polling_disabled`, colSpecPollingIsDisabled)),
 			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_managed_devices`, colStatusManagedDevices)),
 			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_linked_devices`, colStatusLinkedDevices)),
-			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_waiting_approval`, colStatusWaitingApprove)),
 			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_ambiguous`, colStatusAmbiguous)),
 			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_failed_updates`, colStatusFailedUpdates)),
 		)
@@ -581,7 +580,7 @@ func (s *Server) doSummaryEnterpriseDeviceManager(ctx context.Context, common *v
 			&ret.TotalOnePassword, &ret.TotalFleetDM, &ret.TotalHuntress, &ret.TotalIru,
 			&ret.TotalOK, &ret.TotalLoading, &ret.TotalError, &ret.TotalDegraded,
 			&ret.TotalPollingDisabled,
-			&ret.TotalManagedDevices, &ret.TotalLinkedDevices, &ret.TotalWaitingApproval,
+			&ret.TotalManagedDevices, &ret.TotalLinkedDevices,
 			&ret.TotalAmbiguous, &ret.TotalFailedUpdates)
 		if err != nil {
 			return nil, err

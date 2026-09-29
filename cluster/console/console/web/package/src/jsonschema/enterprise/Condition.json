@@ -1819,7 +1819,8 @@
                         "WINDOWS",
                         "MAC",
                         "ANDROID",
-                        "IOS"
+                        "IOS",
+                        "CHROMEOS"
                     ],
                     "type": "string",
                     "title": "OS Type",

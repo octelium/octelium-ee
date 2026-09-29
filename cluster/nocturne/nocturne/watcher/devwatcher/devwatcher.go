@@ -31,22 +31,17 @@ const (
 
 type Reconciler interface {
 	ReconcileDevice(ctx context.Context, dev *corev1.Device) error
+	ResetDeviceBinding(ctx context.Context, deviceUID, bindingUID string) error
 }
 
 type Resolver interface {
-	GetOwner(ownerUID string) (*devicemgrcommon.Owner, bool)
 	ListOwners() []*devicemgrcommon.Owner
-}
-
-type DeviceLocker interface {
-	LockDevice(uid string) func()
 }
 
 type Opts struct {
 	OcteliumC  octeliumc.ClientInterface
 	Resolver   Resolver
 	Reconciler Reconciler
-	Locker     DeviceLocker
 	Interval   time.Duration
 }
 
@@ -54,13 +49,12 @@ type Watcher struct {
 	octeliumC  octeliumc.ClientInterface
 	resolver   Resolver
 	reconciler Reconciler
-	locker     DeviceLocker
 	interval   time.Duration
 	nudgeCh    chan struct{}
 }
 
 func NewWatcher(opts *Opts) (*Watcher, error) {
-	if opts == nil || opts.OcteliumC == nil || opts.Resolver == nil || opts.Locker == nil {
+	if opts == nil || opts.OcteliumC == nil || opts.Resolver == nil || opts.Reconciler == nil {
 		return nil, errors.New("Invalid devwatcher Opts")
 	}
 
@@ -76,7 +70,6 @@ func NewWatcher(opts *Opts) (*Watcher, error) {
 		octeliumC:  opts.OcteliumC,
 		resolver:   opts.Resolver,
 		reconciler: opts.Reconciler,
-		locker:     opts.Locker,
 		interval:   interval,
 		nudgeCh:    make(chan struct{}, 1),
 	}, nil
@@ -120,10 +113,11 @@ func (w *Watcher) run(ctx context.Context) {
 }
 
 type linkTally struct {
-	linked          uint32
-	waitingApproval uint32
-	ambiguous       uint32
-	failedUpdates   uint32
+	linked        uint32
+	ambiguous     uint32
+	conflicts     uint32
+	suspended     uint32
+	failedUpdates uint32
 }
 
 func tallyFor(tallies map[string]*linkTally, ownerUID string) *linkTally {
@@ -147,6 +141,11 @@ func (w *Watcher) doSweep(ctx context.Context) error {
 		return errors.Wrap(err, "Could not list Devices")
 	}
 
+	dmUIDs, err := w.listDeviceManagerUIDs(ctx)
+	if err != nil {
+		zap.L().Warn("Could not list DeviceManagers during Device sweep", zap.Error(err))
+	}
+
 	tallies := map[string]*linkTally{}
 
 	for _, dev := range devices {
@@ -156,7 +155,7 @@ func (w *Watcher) doSweep(ctx context.Context) error {
 		default:
 		}
 
-		w.sweepDevice(ctx, dev, tallies)
+		w.sweepDevice(ctx, dev, dmUIDs, tallies)
 	}
 
 	w.updateLinkingStatus(ctx, tallies, sweepAt)
@@ -188,9 +187,36 @@ func (w *Watcher) listDevices(ctx context.Context) ([]*corev1.Device, error) {
 	}
 }
 
+func (w *Watcher) listDeviceManagerUIDs(ctx context.Context) (map[string]struct{}, error) {
+	ret := map[string]struct{}{}
+	var page uint32
+
+	for {
+		itmList, err := w.octeliumC.EnterpriseC().ListDeviceManager(ctx, &rmetav1.ListOptions{
+			Paginate:     true,
+			ItemsPerPage: itemsPerPage,
+			Page:         page,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		for _, itm := range itmList.Items {
+			ret[itm.Metadata.Uid] = struct{}{}
+		}
+
+		if itmList.ListResponseMeta == nil || !itmList.ListResponseMeta.HasMore {
+			return ret, nil
+		}
+
+		page = page + 1
+	}
+}
+
 func (w *Watcher) sweepDevice(
 	ctx context.Context,
 	dev *corev1.Device,
+	dmUIDs map[string]struct{},
 	tallies map[string]*linkTally,
 ) {
 	if dev == nil || dev.GetStatus() == nil {
@@ -198,157 +224,39 @@ func (w *Watcher) sweepDevice(
 	}
 
 	binding := dev.Status.GetBinding()
+	ownerUID := binding.GetOwnerRef().GetUid()
+
+	if dmUIDs != nil && ownerUID != "" {
+		if _, ok := dmUIDs[ownerUID]; !ok {
+			if err := w.reconciler.ResetDeviceBinding(ctx, dev.GetMetadata().GetUid(), binding.GetUid()); err != nil {
+				zap.L().Warn("Could not reset the Device binding of a deleted DeviceManager",
+					zap.String("device", dev.GetMetadata().GetName()),
+					zap.Error(err))
+			}
+			return
+		}
+	}
+
+	t := tallyFor(tallies, ownerUID)
 
 	switch binding.GetState() {
 	case corev1.Device_Status_Binding_ACCEPTED:
-		t := tallyFor(tallies, binding.GetOwnerRef().GetUid())
 		t.linked++
-
-		if err := w.refreshPosture(ctx, dev.GetMetadata().GetUid()); err != nil {
-			t.failedUpdates++
-			zap.L().Warn("Could not refresh Device posture",
-				zap.String("device", dev.GetMetadata().GetName()),
-				zap.Error(err))
+		if binding.GetValidity() != corev1.Device_Status_Binding_VALID {
+			t.suspended++
 		}
-
-	case corev1.Device_Status_Binding_WAITING_APPROVAL:
-		tallyFor(tallies, binding.GetOwnerRef().GetUid()).waitingApproval++
-		w.delegate(ctx, dev)
-
 	case corev1.Device_Status_Binding_AMBIGUOUS:
-		if ownerUID := binding.GetOwnerRef().GetUid(); ownerUID != "" {
-			tallyFor(tallies, ownerUID).ambiguous++
-		}
-		w.delegate(ctx, dev)
-
-	case corev1.Device_Status_Binding_REJECTED:
-
-	default:
-		w.delegate(ctx, dev)
-	}
-}
-
-func (w *Watcher) delegate(ctx context.Context, dev *corev1.Device) {
-	if w.reconciler == nil {
-		return
+		t.ambiguous++
+	case corev1.Device_Status_Binding_CONFLICT:
+		t.conflicts++
 	}
 
 	if err := w.reconciler.ReconcileDevice(ctx, dev); err != nil {
+		t.failedUpdates++
 		zap.L().Warn("Could not reconcile Device binding",
 			zap.String("device", dev.GetMetadata().GetName()),
 			zap.Error(err))
 	}
-}
-
-func (w *Watcher) refreshPosture(ctx context.Context, deviceUID string) error {
-	if deviceUID == "" {
-		return errors.New("Invalid Device uid")
-	}
-
-	unlock := w.locker.LockDevice(deviceUID)
-	defer unlock()
-
-	dev, err := w.octeliumC.CoreC().GetDevice(ctx, &rmetav1.GetOptions{
-		Uid: deviceUID,
-	})
-	if err != nil {
-		return errors.Wrap(err, "Could not get Device")
-	}
-
-	binding := dev.Status.GetBinding()
-	if binding.GetState() != corev1.Device_Status_Binding_ACCEPTED {
-		return nil
-	}
-
-	now := time.Now()
-
-	owner, ok := w.resolver.GetOwner(binding.GetOwnerRef().GetUid())
-	if !ok || owner == nil || !owner.Fresh(now) {
-		return w.clearExpiredPosture(ctx, dev, now)
-	}
-
-	match := owner.Fleet.MatchExternalID(binding.GetExternalID())
-	if match.State != devicemgrcommon.MatchStateUnique {
-		return w.clearExpiredPosture(ctx, dev, now)
-	}
-
-	desired := devicemgrcommon.MaterializePosture(owner, match.Entry)
-	current := dev.Status.GetPosture()
-
-	if posturesEqualIgnoringTimestamps(current, desired) && !refreshDue(current, owner, now) {
-		return nil
-	}
-
-	dev.Status.Posture = desired
-
-	if _, err := w.octeliumC.CoreC().UpdateDevice(ctx, dev); err != nil {
-		return errors.Wrap(err, "Could not update Device posture")
-	}
-
-	return nil
-}
-
-func (w *Watcher) clearExpiredPosture(
-	ctx context.Context,
-	dev *corev1.Device,
-	now time.Time,
-) error {
-	posture := dev.Status.GetPosture()
-	if posture == nil {
-		return nil
-	}
-
-	expiresAt := posture.GetExpiresAt()
-	if expiresAt == nil || !expiresAt.IsValid() || now.Before(expiresAt.AsTime()) {
-		return nil
-	}
-
-	dev.Status.Posture = nil
-
-	if _, err := w.octeliumC.CoreC().UpdateDevice(ctx, dev); err != nil {
-		return errors.Wrap(err, "Could not clear expired Device posture")
-	}
-
-	return nil
-}
-
-func posturesEqualIgnoringTimestamps(a, b *corev1.Device_Status_Posture) bool {
-	return pbutils.IsEqual(normalizePosture(a), normalizePosture(b))
-}
-
-func normalizePosture(posture *corev1.Device_Status_Posture) *corev1.Device_Status_Posture {
-	if posture == nil {
-		return nil
-	}
-
-	out := pbutils.Clone(posture).(*corev1.Device_Status_Posture)
-	out.LastSyncAt = nil
-	out.LastSeenAt = nil
-	out.ExpiresAt = nil
-
-	return out
-}
-
-func refreshDue(
-	current *corev1.Device_Status_Posture,
-	owner *devicemgrcommon.Owner,
-	now time.Time,
-) bool {
-	if current == nil {
-		return true
-	}
-
-	expiresAt := current.GetExpiresAt()
-	if expiresAt == nil || !expiresAt.IsValid() {
-		return true
-	}
-
-	staleAfter := owner.ExpiresAt.Sub(owner.CollectedAt)
-	if staleAfter <= 0 {
-		return true
-	}
-
-	return !now.Before(expiresAt.AsTime().Add(-staleAfter / 2))
 }
 
 func (w *Watcher) updateLinkingStatus(
@@ -372,7 +280,7 @@ func (w *Watcher) updateLinkingStatus(
 		})
 		if err != nil {
 			zap.L().Warn("Could not get DeviceManager while updating Linking status",
-				zap.String("deviceManager", owner.DM.GetMetadata().GetName()),
+				zap.String("deviceManager", owner.Name()),
 				zap.Error(err))
 			continue
 		}
@@ -382,11 +290,12 @@ func (w *Watcher) updateLinkingStatus(
 		}
 
 		dm.Status.Linking = &enterprisev1.DeviceManager_Status_Linking{
-			LastSweepAt:     sweepAt,
-			LinkedDevices:   t.linked,
-			WaitingApproval: t.waitingApproval,
-			Ambiguous:       t.ambiguous,
-			FailedUpdates:   t.failedUpdates,
+			LastSweepAt:   sweepAt,
+			LinkedDevices: t.linked,
+			Ambiguous:     t.ambiguous,
+			Conflicts:     t.conflicts,
+			Suspended:     t.suspended,
+			FailedUpdates: t.failedUpdates,
 		}
 
 		if _, err := w.octeliumC.EnterpriseC().UpdateDeviceManager(ctx, dm); err != nil {

@@ -30,7 +30,6 @@ import { UnknownFieldHandler } from "@protobuf-ts/runtime";
 import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
-import { DeviceManager_Spec_Linking_ApprovalMode } from "../../enterprisev1/enterprisev1";
 import { DeviceManager_Spec_Linking_Strategy } from "../../enterprisev1/enterprisev1";
 import { DeviceManager_Status_State } from "../../enterprisev1/enterprisev1";
 import { DeviceManager_Status_Type } from "../../enterprisev1/enterprisev1";
@@ -582,22 +581,18 @@ export interface GetDeviceManagerSummaryResponse {
      */
     totalLinkedDevices: number;
     /**
-     * @generated from protobuf field: uint64 totalWaitingApproval = 17
-     */
-    totalWaitingApproval: number;
-    /**
-     * @generated from protobuf field: uint64 totalAmbiguous = 18
+     * @generated from protobuf field: uint64 totalAmbiguous = 17
      */
     totalAmbiguous: number;
     /**
-     * @generated from protobuf field: uint64 totalFailedUpdates = 19
+     * @generated from protobuf field: uint64 totalFailedUpdates = 18
      */
     totalFailedUpdates: number;
     /**
      * Previous is the summary of the comparison window set by the
      * request's `compareFrom` and `compareTo` options.
      *
-     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse previous = 20
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse previous = 19
      */
     previous?: GetDeviceManagerSummaryResponse;
 }
@@ -919,11 +914,7 @@ export interface ListDeviceManagerOptions {
      */
     strategy: DeviceManager_Spec_Linking_Strategy;
     /**
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.ApprovalMode approvalMode = 5
-     */
-    approvalMode: DeviceManager_Spec_Linking_ApprovalMode;
-    /**
-     * @generated from protobuf field: bool isPollingDisabled = 6
+     * @generated from protobuf field: bool isPollingDisabled = 5
      */
     isPollingDisabled: boolean;
 }
@@ -2357,10 +2348,9 @@ class GetDeviceManagerSummaryResponse$Type extends MessageType<GetDeviceManagerS
             { no: 14, name: "totalPollingDisabled", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 15, name: "totalManagedDevices", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 16, name: "totalLinkedDevices", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 17, name: "totalWaitingApproval", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 18, name: "totalAmbiguous", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 19, name: "totalFailedUpdates", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 20, name: "previous", kind: "message", T: () => GetDeviceManagerSummaryResponse }
+            { no: 17, name: "totalAmbiguous", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 18, name: "totalFailedUpdates", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 19, name: "previous", kind: "message", T: () => GetDeviceManagerSummaryResponse }
         ]);
     }
     create(value?: PartialMessage<GetDeviceManagerSummaryResponse>): GetDeviceManagerSummaryResponse {
@@ -2381,7 +2371,6 @@ class GetDeviceManagerSummaryResponse$Type extends MessageType<GetDeviceManagerS
         message.totalPollingDisabled = 0;
         message.totalManagedDevices = 0;
         message.totalLinkedDevices = 0;
-        message.totalWaitingApproval = 0;
         message.totalAmbiguous = 0;
         message.totalFailedUpdates = 0;
         if (value !== undefined)
@@ -2441,16 +2430,13 @@ class GetDeviceManagerSummaryResponse$Type extends MessageType<GetDeviceManagerS
                 case /* uint64 totalLinkedDevices */ 16:
                     message.totalLinkedDevices = reader.uint64().toNumber();
                     break;
-                case /* uint64 totalWaitingApproval */ 17:
-                    message.totalWaitingApproval = reader.uint64().toNumber();
-                    break;
-                case /* uint64 totalAmbiguous */ 18:
+                case /* uint64 totalAmbiguous */ 17:
                     message.totalAmbiguous = reader.uint64().toNumber();
                     break;
-                case /* uint64 totalFailedUpdates */ 19:
+                case /* uint64 totalFailedUpdates */ 18:
                     message.totalFailedUpdates = reader.uint64().toNumber();
                     break;
-                case /* octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse previous */ 20:
+                case /* octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse previous */ 19:
                     message.previous = GetDeviceManagerSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
                 default:
@@ -2513,18 +2499,15 @@ class GetDeviceManagerSummaryResponse$Type extends MessageType<GetDeviceManagerS
         /* uint64 totalLinkedDevices = 16; */
         if (message.totalLinkedDevices !== 0)
             writer.tag(16, WireType.Varint).uint64(message.totalLinkedDevices);
-        /* uint64 totalWaitingApproval = 17; */
-        if (message.totalWaitingApproval !== 0)
-            writer.tag(17, WireType.Varint).uint64(message.totalWaitingApproval);
-        /* uint64 totalAmbiguous = 18; */
+        /* uint64 totalAmbiguous = 17; */
         if (message.totalAmbiguous !== 0)
-            writer.tag(18, WireType.Varint).uint64(message.totalAmbiguous);
-        /* uint64 totalFailedUpdates = 19; */
+            writer.tag(17, WireType.Varint).uint64(message.totalAmbiguous);
+        /* uint64 totalFailedUpdates = 18; */
         if (message.totalFailedUpdates !== 0)
-            writer.tag(19, WireType.Varint).uint64(message.totalFailedUpdates);
-        /* octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse previous = 20; */
+            writer.tag(18, WireType.Varint).uint64(message.totalFailedUpdates);
+        /* octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse previous = 19; */
         if (message.previous)
-            GetDeviceManagerSummaryResponse.internalBinaryWrite(message.previous, writer.tag(20, WireType.LengthDelimited).fork(), options).join();
+            GetDeviceManagerSummaryResponse.internalBinaryWrite(message.previous, writer.tag(19, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3126,8 +3109,7 @@ class ListDeviceManagerOptions$Type extends MessageType<ListDeviceManagerOptions
             { no: 2, name: "type", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Status.Type", DeviceManager_Status_Type] },
             { no: 3, name: "state", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Status.State", DeviceManager_Status_State] },
             { no: 4, name: "strategy", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy", DeviceManager_Spec_Linking_Strategy] },
-            { no: 5, name: "approvalMode", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.ApprovalMode", DeviceManager_Spec_Linking_ApprovalMode] },
-            { no: 6, name: "isPollingDisabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 5, name: "isPollingDisabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<ListDeviceManagerOptions>): ListDeviceManagerOptions {
@@ -3135,7 +3117,6 @@ class ListDeviceManagerOptions$Type extends MessageType<ListDeviceManagerOptions
         message.type = 0;
         message.state = 0;
         message.strategy = 0;
-        message.approvalMode = 0;
         message.isPollingDisabled = false;
         if (value !== undefined)
             reflectionMergePartial<ListDeviceManagerOptions>(this, message, value);
@@ -3158,10 +3139,7 @@ class ListDeviceManagerOptions$Type extends MessageType<ListDeviceManagerOptions
                 case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy strategy */ 4:
                     message.strategy = reader.int32();
                     break;
-                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.ApprovalMode approvalMode */ 5:
-                    message.approvalMode = reader.int32();
-                    break;
-                case /* bool isPollingDisabled */ 6:
+                case /* bool isPollingDisabled */ 5:
                     message.isPollingDisabled = reader.bool();
                     break;
                 default:
@@ -3188,12 +3166,9 @@ class ListDeviceManagerOptions$Type extends MessageType<ListDeviceManagerOptions
         /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy strategy = 4; */
         if (message.strategy !== 0)
             writer.tag(4, WireType.Varint).int32(message.strategy);
-        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.ApprovalMode approvalMode = 5; */
-        if (message.approvalMode !== 0)
-            writer.tag(5, WireType.Varint).int32(message.approvalMode);
-        /* bool isPollingDisabled = 6; */
+        /* bool isPollingDisabled = 5; */
         if (message.isPollingDisabled !== false)
-            writer.tag(6, WireType.Varint).bool(message.isPollingDisabled);
+            writer.tag(5, WireType.Varint).bool(message.isPollingDisabled);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

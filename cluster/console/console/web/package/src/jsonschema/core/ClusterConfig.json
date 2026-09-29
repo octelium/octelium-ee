@@ -675,6 +675,14 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.DNS.Zone",
                     "additionalProperties": false,
                     "description": "FallbackZone sets the zone that resolves the names that are not served by the Cluster itself"
+                },
+                "zones": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.DNS.Zone"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Zones is the list of DNS zones used to resolve matching domain suffixes"
                 }
             },
             "additionalProperties": false,
@@ -695,6 +703,13 @@
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
                     "additionalProperties": false,
                     "description": "CacheDuration is the duration for which the zone's answers are cached"
+                },
+                "domains": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Domains is the list of domain suffixes served by the zone"
                 }
             },
             "additionalProperties": false,
@@ -713,6 +728,11 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Device.Workload",
                     "additionalProperties": false,
                     "description": "Workload sets Device options for WORKLOAD Users"
+                },
+                "probing": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Device.Probing",
+                    "additionalProperties": false,
+                    "description": "Probing sets the device probing options"
                 }
             },
             "additionalProperties": false,
@@ -742,6 +762,18 @@
             "type": "object",
             "title": "Human",
             "description": "Human sets the Device defaults of the HUMAN Users"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Spec.Device.Probing": {
+            "properties": {
+                "isDisabled": {
+                    "type": "boolean",
+                    "description": "IsDisabled disables running Probes on the Devices"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Probing",
+            "description": "Probing sets the Cluster-wide options of running Probes on the Devices"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Device.Workload": {
             "properties": {
@@ -944,7 +976,7 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Probes is the list of the Probes that are run on the Devices"
+                    "description": "Probes is the list of the available Probes. The Cluster issues a bounded subset of them in each ProbeAttempt."
                 }
             },
             "additionalProperties": false,
@@ -954,21 +986,28 @@
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe": {
             "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the stable identifier of the Probe. It is unique within the Probes list."
+                },
                 "ownerRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
                     "description": "OwnerRef is the reference of the DeviceManager that owns the Probe"
                 },
-                "osType": {
-                    "enum": [
-                        "OS_TYPE_UNKNOWN",
-                        "LINUX",
-                        "WINDOWS",
-                        "MAC",
-                        "ANDROID",
-                        "IOS"
-                    ],
-                    "type": "string",
+                "osTypes": {
+                    "items": {
+                        "enum": [
+                            "OS_TYPE_UNKNOWN",
+                            "LINUX",
+                            "WINDOWS",
+                            "MAC",
+                            "ANDROID",
+                            "IOS",
+                            "CHROMEOS"
+                        ]
+                    },
+                    "type": "array",
                     "title": "OS Type",
                     "description": "OSType is the operating system of the Device"
                 },
@@ -979,7 +1018,7 @@
                 "condition": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
                     "additionalProperties": false,
-                    "description": "Condition decides whether the Probe is run on a given Device"
+                    "description": "Condition decides whether the Probe is run on a given Device. Its input contains `ctx.device` and `ctx.user`. A Probe without a Condition is run on every Device."
                 },
                 "runCommand": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.RunCommand",
@@ -995,6 +1034,11 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadRegistry",
                     "additionalProperties": false,
                     "description": "ReadRegistry reads a value from the Device's Windows registry"
+                },
+                "platformIdentifier": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.PlatformIdentifier",
+                    "additionalProperties": false,
+                    "description": "PlatformIdentifier reads a platform identifier of the Device"
                 }
             },
             "additionalProperties": false,
@@ -1019,6 +1063,11 @@
                                         "required": [
                                             "readRegistry"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "platformIdentifier"
+                                        ]
                                     }
                                 ]
                             }
@@ -1037,6 +1086,11 @@
                             "required": [
                                 "readRegistry"
                             ]
+                        },
+                        {
+                            "required": [
+                                "platformIdentifier"
+                            ]
                         }
                     ]
                 }
@@ -1044,11 +1098,31 @@
             "title": "Probe",
             "description": "Probe is a check that is run on the Devices in order to collect the information used to bind them to their DeviceManagers"
         },
+        "octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.PlatformIdentifier": {
+            "properties": {
+                "kind": {
+                    "enum": [
+                        "KIND_UNKNOWN",
+                        "HARDWARE_SERIAL",
+                        "HARDWARE_UUID",
+                        "OS_INSTALLATION_ID",
+                        "MAC_ADDRESS"
+                    ],
+                    "type": "string",
+                    "title": "Kind",
+                    "description": "Kind is the kind of the identifier"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Platform Identifier",
+            "description": "PlatformIdentifier reads an identifier of the Device natively from its platform without running any command"
+        },
         "octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadFile": {
             "properties": {
                 "path": {
                     "type": "string",
-                    "description": "Path is the path of the file to be read"
+                    "description": "Path is the absolute path of the file to be read"
                 },
                 "maxBytes": {
                     "type": "integer",
@@ -1080,7 +1154,7 @@
             "properties": {
                 "command": {
                     "type": "string",
-                    "description": "Command is the command to be run"
+                    "description": "Command is the absolute path of the command to be run"
                 },
                 "args": {
                     "items": {

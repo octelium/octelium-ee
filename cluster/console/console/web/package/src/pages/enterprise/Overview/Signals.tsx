@@ -118,8 +118,8 @@ const Signals = (props: { periodMinutes: number }) => {
         label="Device managers"
         value={managerIssues}
         badge={
-          n(managers?.totalWaitingApproval) > 0
-            ? `${compact(n(managers?.totalWaitingApproval))} waiting`
+          n(managers?.totalAmbiguous) > 0
+            ? `${compact(n(managers?.totalAmbiguous))} ambiguous`
             : undefined
         }
         footer={`${compact(n(managers?.totalLinkedDevices))} of ${compact(n(managers?.totalManagedDevices))} devices linked`}

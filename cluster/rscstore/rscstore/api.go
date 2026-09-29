@@ -1021,11 +1021,6 @@ func (s *srvEnterprise) ListDeviceManager(ctx context.Context, req *venterprisev
 			goqu.L(colSpecLinkingStrategy).Eq(req.Strategy.String()))
 	}
 
-	if req.ApprovalMode != enterprisev1.DeviceManager_Spec_Linking_APPROVAL_MODE_UNSET {
-		doListReq.filters = append(doListReq.filters,
-			goqu.L(colSpecLinkingApproval).Eq(req.ApprovalMode.String()))
-	}
-
 	if req.IsPollingDisabled {
 		doListReq.filters = append(doListReq.filters,
 			goqu.L(fmt.Sprintf(`%s = true`, colSpecPollingIsDisabled)))

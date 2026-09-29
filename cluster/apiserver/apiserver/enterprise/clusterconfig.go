@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/octelium/octelium/apis/main/enterprisev1"
+	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	apisrvcommon "github.com/octelium/octelium/cluster/apiserver/apiserver/common"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/serr"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
@@ -24,6 +25,7 @@ const (
 	maxClusterConfigCollectorExportersPerPipeline       = 64
 	maxClusterConfigCollectorInlineConfigBytes          = 1024 * 1024
 	maxClusterConfigScalerReplicas                int32 = 1024
+	maxClusterConfigDeviceManagers                      = 64
 )
 
 func (s *Server) GetClusterConfig(ctx context.Context, req *enterprisev1.GetClusterConfigRequest) (*enterprisev1.ClusterConfig, error) {
@@ -80,6 +82,48 @@ func (s *Server) validateClusterConfig(ctx context.Context, req *enterprisev1.Cl
 
 	if err := validateClusterConfigCertificate(req.Spec.Certificate); err != nil {
 		return err
+	}
+
+	if err := s.validateClusterConfigDeviceManagers(ctx, req.Spec.DeviceManagers); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Server) validateClusterConfigDeviceManagers(ctx context.Context, names []string) error {
+	if len(names) == 0 {
+		return nil
+	}
+
+	if len(names) > maxClusterConfigDeviceManagers {
+		return grpcutils.InvalidArg("Too many deviceManagers")
+	}
+
+	itemList, err := s.octeliumC.EnterpriseC().ListDeviceManager(ctx, &rmetav1.ListOptions{})
+	if err != nil {
+		return grpcutils.InternalWithErr(err)
+	}
+
+	existing := make(map[string]struct{}, len(itemList.Items))
+	for _, itm := range itemList.Items {
+		existing[itm.Metadata.Name] = struct{}{}
+	}
+
+	seen := make(map[string]struct{}, len(names))
+	for _, name := range names {
+		if err := apivalidation.ValidateName(name, 0, 0); err != nil {
+			return grpcutils.InvalidArg("Invalid DeviceManager name: %s", name)
+		}
+
+		if _, ok := seen[name]; ok {
+			return grpcutils.InvalidArg("Duplicate DeviceManager: %s", name)
+		}
+		seen[name] = struct{}{}
+
+		if _, ok := existing[name]; !ok {
+			return grpcutils.InvalidArg("DeviceManager does not exist: %s", name)
+		}
 	}
 
 	return nil

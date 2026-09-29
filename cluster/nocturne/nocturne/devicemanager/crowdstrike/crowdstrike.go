@@ -43,7 +43,7 @@ const (
 )
 
 var (
-	aidRe       = regexp.MustCompile(`[0-9a-f]{32}`)
+	aidRe       = regexp.MustCompile(`(?:\baid\s*=\s*"?|\bagent[ _]?id\s*:\s*)([0-9a-f-]{32,40})`)
 	aidAnchored = regexp.MustCompile(`^[0-9a-f]{32}$`)
 )
 
@@ -107,7 +107,8 @@ func (m *Manager) Close() error { return nil }
 func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
-			OSType:           corev1.Device_Status_WINDOWS,
+			ID:               "aid-windows",
+			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_WINDOWS},
 			RequireElevation: true,
 			ReadRegistry: &devicemgrcommon.ReadRegistry{
 				Key:  `HKLM\SYSTEM\CurrentControlSet\Services\CSAgent\Sim`,
@@ -115,7 +116,8 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 			},
 		},
 		{
-			OSType:           corev1.Device_Status_LINUX,
+			ID:               "aid-linux",
+			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_LINUX},
 			RequireElevation: true,
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        "/opt/CrowdStrike/falconctl",
@@ -125,7 +127,8 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 			},
 		},
 		{
-			OSType:           corev1.Device_Status_MAC,
+			ID:               "aid-macos",
+			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_MAC},
 			RequireElevation: true,
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        "/Applications/Falcon.app/Contents/Resources/falconctl",
@@ -139,15 +142,16 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 
 func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []*devicemgrcommon.ProbeResult) (string, error) {
 	for _, r := range results {
-		if r == nil || r.Err != nil || len(r.Output) == 0 {
+		if r == nil {
 			continue
 		}
-		if osType == corev1.Device_Status_WINDOWS {
-			if aid := strings.ToLower(hex.EncodeToString(r.Output)); aidAnchored.MatchString(aid) {
+		if len(r.Data) > 0 {
+			if aid := hex.EncodeToString(r.Data); aidAnchored.MatchString(aid) {
 				return aid, nil
 			}
+			continue
 		}
-		if aid := extractAID(string(r.Output)); aid != "" {
+		if aid := extractAID(r.Text); aid != "" {
 			return aid, nil
 		}
 	}
@@ -155,7 +159,18 @@ func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []
 }
 
 func extractAID(s string) string {
-	return aidRe.FindString(strings.ReplaceAll(strings.ToLower(s), "-", ""))
+	s = strings.ToLower(strings.TrimSpace(s))
+
+	if mm := aidRe.FindStringSubmatch(s); len(mm) == 2 {
+		s = mm[1]
+	}
+
+	s = strings.ReplaceAll(s, "-", "")
+	if !aidAnchored.MatchString(s) {
+		return ""
+	}
+
+	return s
 }
 
 func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
@@ -182,9 +197,10 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 		}
 	}
 
+	now := time.Now()
 	entries := make([]*devicemgrcommon.Entry, 0, len(details))
 	for aid, d := range details {
-		entries = append(entries, toEntry(d, zta[aid]))
+		entries = append(entries, toEntry(d, zta[aid], now))
 	}
 	return devicemgrcommon.NewFleet(entries), nil
 }
@@ -277,21 +293,21 @@ func (m *Manager) getZTA(ctx context.Context, ids []string) (map[string]*models.
 	return out, nil
 }
 
-func toEntry(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties) *devicemgrcommon.Entry {
+func toEntry(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties, now time.Time) *devicemgrcommon.Entry {
 	aid := ""
 	if d.DeviceID != nil {
 		aid = strings.ToLower(*d.DeviceID)
 	}
 
+	lastSeen, haveSeen := parseTime(d.LastSeen)
+
 	p := &corev1.Device_Status_Posture{
-		DiskEncryption: corev1.Device_Status_Posture_NOT_APPLICABLE,
-		Compliant:      corev1.Device_Status_Posture_NOT_APPLICABLE,
-		ThreatFree:     csThreatFree(d),
-		Signals:        csSignals(d),
-		Attrs:          csAttrs(d, z),
+		AgentHealthy: csAgentHealthy(d, lastSeen, haveSeen, now),
+		NotContained: csNotContained(d),
+		Attrs:        csAttrs(d, z),
 	}
-	if t, ok := parseTime(d.LastSeen); ok {
-		p.LastSeenAt = timestamppb.New(t)
+	if haveSeen {
+		p.LastSeenAt = timestamppb.New(lastSeen)
 	}
 	if z != nil && z.Assessment != nil && z.Assessment.Overall != nil {
 		overall := *z.Assessment.Overall
@@ -313,41 +329,31 @@ func toEntry(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties)
 	}
 }
 
-func csThreatFree(d *models.DeviceapiDeviceSwagger) corev1.Device_Status_Posture_SignalState {
-	status := strings.ToLower(strings.TrimSpace(d.Status))
-	containment := strings.ToLower(strings.TrimSpace(d.FilesystemContainmentStatus))
-
-	switch status {
+func csNotContained(d *models.DeviceapiDeviceSwagger) corev1.Device_Status_Posture_SignalState {
+	switch strings.ToLower(strings.TrimSpace(d.Status)) {
+	case "normal":
+		return corev1.Device_Status_Posture_PASS
 	case "contained", "containment_pending", "lift_containment_pending":
 		return corev1.Device_Status_Posture_FAIL
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
-
-	switch containment {
-	case "contained", "pending", "containment_pending":
-		return corev1.Device_Status_Posture_FAIL
-	case "normal", "not_contained":
-		return corev1.Device_Status_Posture_PASS
-	}
-
-	if status == "normal" {
-		return corev1.Device_Status_Posture_PASS
-	}
-
-	return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 }
 
-func csSignals(d *models.DeviceapiDeviceSwagger) map[string]corev1.Device_Status_Posture_SignalState {
-	rfm := isYes(d.ReducedFunctionalityMode)
-
-	running := false
-	switch strings.ToLower(strings.TrimSpace(d.Status)) {
-	case "normal", "contained", "containment_pending", "lift_containment_pending":
-		running = true
+func csAgentHealthy(d *models.DeviceapiDeviceSwagger,
+	lastSeen time.Time, haveSeen bool, now time.Time) corev1.Device_Status_Posture_SignalState {
+	recency := devicemgrcommon.RecencySignal(lastSeen, haveSeen, now)
+	if recency == corev1.Device_Status_Posture_FAIL {
+		return corev1.Device_Status_Posture_FAIL
 	}
 
-	return map[string]corev1.Device_Status_Posture_SignalState{
-		"agentRunning":  passFail(running),
-		"sensorHealthy": passFail(running && !rfm),
+	switch strings.ToLower(strings.TrimSpace(d.ReducedFunctionalityMode)) {
+	case "yes":
+		return corev1.Device_Status_Posture_FAIL
+	case "no":
+		return recency
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
 }
 
@@ -435,21 +441,6 @@ func csRisk(score int32) corev1.Device_Status_Posture_RiskLevel {
 	default:
 		return corev1.Device_Status_Posture_CRITICAL
 	}
-}
-
-func passFail(ok bool) corev1.Device_Status_Posture_SignalState {
-	if ok {
-		return corev1.Device_Status_Posture_PASS
-	}
-	return corev1.Device_Status_Posture_FAIL
-}
-
-func isYes(s string) bool {
-	switch strings.ToLower(strings.TrimSpace(s)) {
-	case "yes", "true", "1", "enabled":
-		return true
-	}
-	return false
 }
 
 func parseTime(s string) (time.Time, bool) {

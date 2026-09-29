@@ -10,8 +10,8 @@ package devicemanagers
 
 import (
 	"context"
+	"fmt"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -27,10 +27,10 @@ import (
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/devicemanager/sentinelone"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
-	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -40,6 +40,8 @@ const (
 	defaultPollInterval = 5 * time.Minute
 	minPollInterval     = 30 * time.Second
 	defaultPollTimeout  = 2 * time.Minute
+	resyncInterval      = 1 * time.Minute
+	itemsPerPage        = 500
 )
 
 type Nudger interface {
@@ -56,6 +58,9 @@ type Controller struct {
 	registry  *devicemgrcommon.Registry
 	nudger    Nudger
 	resetter  Resetter
+
+	locks     sync.Map
+	publishMu sync.Mutex
 
 	mu      sync.Mutex
 	workers map[string]*worker
@@ -83,54 +88,126 @@ func NewController(
 }
 
 func (c *Controller) OnAdd(ctx context.Context, dm *enterprisev1.DeviceManager) error {
-	return c.sync(ctx, dm)
+	return c.sync(ctx, dm.GetMetadata().GetUid())
 }
 
 func (c *Controller) OnUpdate(ctx context.Context, dm, old *enterprisev1.DeviceManager) error {
 	if old != nil && pbutils.IsEqual(dm.GetSpec(), old.GetSpec()) {
 		return nil
 	}
-	return c.sync(ctx, dm)
+	return c.sync(ctx, dm.GetMetadata().GetUid())
 }
 
 func (c *Controller) OnDelete(ctx context.Context, dm *enterprisev1.DeviceManager) error {
 	uid := dm.GetMetadata().GetUid()
-
-	old := c.removeWorker(uid)
-	if old != nil {
-		old.stop()
+	if uid == "" {
+		return errors.New("Invalid DeviceManager")
 	}
 
-	c.registry.DeleteOwner(uid)
+	unlock := c.lock(uid)
+	defer unlock()
 
-	if c.resetter != nil {
-		if err := c.resetter.ResetBindingsForOwner(ctx, uid); err != nil {
-			return errors.Wrap(err, "Could not reset Device bindings for deleted DeviceManager")
+	return c.doRemove(ctx, uid)
+}
+
+func (c *Controller) Run(ctx context.Context) {
+	go c.run(ctx)
+}
+
+func (c *Controller) run(ctx context.Context) {
+	ticker := time.NewTicker(resyncInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if err := c.Resync(ctx); err != nil {
+				zap.L().Warn("Could not resync DeviceManagers", zap.Error(err))
+			}
+		}
+	}
+}
+
+func (c *Controller) Resync(ctx context.Context) error {
+	dms, err := c.listDeviceManagers(ctx)
+	if err != nil {
+		return errors.Wrap(err, "Could not list DeviceManagers")
+	}
+
+	existing := make(map[string]struct{}, len(dms))
+	for _, dm := range dms {
+		uid := dm.GetMetadata().GetUid()
+		existing[uid] = struct{}{}
+
+		if err := c.sync(ctx, uid); err != nil {
+			zap.L().Warn("Could not sync DeviceManager",
+				zap.String("name", dm.GetMetadata().GetName()), zap.Error(err))
+		}
+	}
+
+	for _, uid := range c.knownUIDs() {
+		if _, ok := existing[uid]; ok {
+			continue
+		}
+
+		unlock := c.lock(uid)
+		err := c.doRemove(ctx, uid)
+		unlock()
+		if err != nil {
+			zap.L().Warn("Could not remove deleted DeviceManager",
+				zap.String("uid", uid), zap.Error(err))
 		}
 	}
 
 	return c.publishProbeConfig(ctx)
 }
 
-func (c *Controller) sync(ctx context.Context, dm *enterprisev1.DeviceManager) error {
-	if dm == nil || dm.GetMetadata().GetUid() == "" {
+func (c *Controller) lock(uid string) func() {
+	value, _ := c.locks.LoadOrStore(uid, &sync.Mutex{})
+	mu := value.(*sync.Mutex)
+	mu.Lock()
+
+	return mu.Unlock
+}
+
+func (c *Controller) sync(ctx context.Context, uid string) error {
+	if uid == "" {
 		return errors.New("Invalid DeviceManager")
 	}
 
-	if polling := dm.Spec.GetPolling(); polling != nil && polling.GetIsDisabled() {
-		return c.disable(ctx, dm)
+	unlock := c.lock(uid)
+	defer unlock()
+
+	dm, err := c.octeliumC.EnterpriseC().GetDeviceManager(ctx, &rmetav1.GetOptions{Uid: uid})
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return c.doRemove(ctx, uid)
+		}
+		return errors.Wrap(err, "Could not get DeviceManager")
 	}
+
+	if dm.Spec.GetPolling().GetIsDisabled() {
+		c.stopWorker(uid)
+		c.registry.DeleteOwner(uid)
+		c.setStatus(ctx, dm, enterprisev1.DeviceManager_Status_DISABLED, "")
+		return c.publishProbeConfig(ctx)
+	}
+
+	if w := c.getWorker(uid); w != nil && pbutils.IsEqual(w.dm.GetSpec(), dm.GetSpec()) {
+		return nil
+	}
+
+	c.stopWorker(uid)
+	c.registry.SetOwner(devicemgrcommon.NewPendingOwner(dm))
 
 	mgr, err := buildManager(c.ctx, c.octeliumC, dm)
 	if err != nil {
-		return errors.Wrap(err, "Could not build DeviceManager")
-	}
-
-	uid := dm.GetMetadata().GetUid()
-
-	old := c.removeWorker(uid)
-	if old != nil {
-		old.stop()
+		zap.L().Warn("Could not build DeviceManager",
+			zap.String("name", dm.GetMetadata().GetName()), zap.Error(err))
+		c.setStatus(ctx, dm, enterprisev1.DeviceManager_Status_ERROR, err.Error())
+		return c.publishProbeConfig(ctx)
 	}
 
 	replacement := newWorker(
@@ -142,9 +219,9 @@ func (c *Controller) sync(ctx context.Context, dm *enterprisev1.DeviceManager) e
 		mgr,
 	)
 
-	go replacement.run()
-
 	c.storeWorker(replacement)
+
+	go replacement.run()
 
 	zap.L().Info("Started DeviceManager worker",
 		zap.String("name", dm.GetMetadata().GetName()),
@@ -153,26 +230,120 @@ func (c *Controller) sync(ctx context.Context, dm *enterprisev1.DeviceManager) e
 	return c.publishProbeConfig(ctx)
 }
 
-func (c *Controller) disable(ctx context.Context, dm *enterprisev1.DeviceManager) error {
-	uid := dm.GetMetadata().GetUid()
-
-	old := c.removeWorker(uid)
-	if old != nil {
-		old.stop()
-	}
-
+func (c *Controller) doRemove(ctx context.Context, uid string) error {
+	c.stopWorker(uid)
 	c.registry.DeleteOwner(uid)
 
-	return c.publishProbeConfig(ctx)
+	var resetErr error
+	if c.resetter != nil {
+		resetErr = c.resetter.ResetBindingsForOwner(ctx, uid)
+	}
+
+	if err := c.publishProbeConfig(ctx); err != nil {
+		return err
+	}
+
+	if resetErr != nil {
+		return errors.Wrap(resetErr, "Could not reset Device bindings for deleted DeviceManager")
+	}
+
+	return nil
 }
 
-func (c *Controller) removeWorker(uid string) *worker {
+func (c *Controller) setStatus(
+	ctx context.Context,
+	dm *enterprisev1.DeviceManager,
+	state enterprisev1.DeviceManager_Status_State,
+	errMsg string,
+) {
+	if dm.Status == nil {
+		dm.Status = &enterprisev1.DeviceManager_Status{}
+	}
+
+	if dm.Status.Type == getStatusType(dm) &&
+		dm.Status.State == state &&
+		dm.Status.GetCollection().GetLastError() == errMsg {
+		return
+	}
+
+	dm.Status.Type = getStatusType(dm)
+	dm.Status.State = state
+
+	if dm.Status.Collection == nil {
+		dm.Status.Collection = &enterprisev1.DeviceManager_Status_Collection{}
+	}
+	dm.Status.Collection.LastError = errMsg
+
+	if _, err := c.octeliumC.EnterpriseC().UpdateDeviceManager(ctx, dm); err != nil {
+		zap.L().Warn("Could not update DeviceManager status",
+			zap.String("deviceManager", dm.GetMetadata().GetName()),
+			zap.Error(err))
+	}
+}
+
+func (c *Controller) listDeviceManagers(ctx context.Context) ([]*enterprisev1.DeviceManager, error) {
+	var ret []*enterprisev1.DeviceManager
+	var page uint32
+
+	for {
+		itmList, err := c.octeliumC.EnterpriseC().ListDeviceManager(ctx, &rmetav1.ListOptions{
+			Paginate:     true,
+			ItemsPerPage: itemsPerPage,
+			Page:         page,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		ret = append(ret, itmList.Items...)
+
+		if itmList.ListResponseMeta == nil || !itmList.ListResponseMeta.HasMore {
+			return ret, nil
+		}
+
+		page = page + 1
+	}
+}
+
+func (c *Controller) knownUIDs() []string {
+	ret := []string{}
+	seen := map[string]struct{}{}
+
+	add := func(uid string) {
+		if _, ok := seen[uid]; ok || uid == "" {
+			return
+		}
+		seen[uid] = struct{}{}
+		ret = append(ret, uid)
+	}
+
+	for _, owner := range c.registry.ListOwners() {
+		add(owner.UID())
+	}
+
+	for _, w := range c.snapshotWorkers() {
+		add(w.uid)
+	}
+
+	return ret
+}
+
+func (c *Controller) getWorker(uid string) *worker {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	return c.workers[uid]
+}
+
+func (c *Controller) stopWorker(uid string) {
+	c.mu.Lock()
 	old := c.workers[uid]
 	delete(c.workers, uid)
-	return old
+	c.mu.Unlock()
+
+	if old != nil {
+		old.stop()
+	}
 }
 
 func (c *Controller) storeWorker(w *worker) {
@@ -217,33 +388,49 @@ func buildManager(
 	}
 }
 
+func getStatusType(dm *enterprisev1.DeviceManager) enterprisev1.DeviceManager_Status_Type {
+	switch {
+	case dm.Spec.GetCrowdStrike() != nil:
+		return enterprisev1.DeviceManager_Status_CROWDSTRIKE
+	case dm.Spec.GetSentinelOne() != nil:
+		return enterprisev1.DeviceManager_Status_SENTINELONE
+	case dm.Spec.GetMicrosoftIntune() != nil:
+		return enterprisev1.DeviceManager_Status_MICROSOFT_INTUNE
+	case dm.Spec.GetJamf() != nil:
+		return enterprisev1.DeviceManager_Status_JAMF_PRO
+	case dm.Spec.GetOnePassword() != nil:
+		return enterprisev1.DeviceManager_Status_ONEPASSWORD
+	case dm.Spec.GetFleetDM() != nil:
+		return enterprisev1.DeviceManager_Status_FLEETDM
+	case dm.Spec.GetHuntress() != nil:
+		return enterprisev1.DeviceManager_Status_HUNTRESS
+	case dm.Spec.GetIru() != nil:
+		return enterprisev1.DeviceManager_Status_IRU
+	default:
+		return enterprisev1.DeviceManager_Status_TYPE_UNKNOWN
+	}
+}
+
 func (c *Controller) publishProbeConfig(ctx context.Context) error {
-	workers := c.snapshotWorkers()
+	c.publishMu.Lock()
+	defer c.publishMu.Unlock()
 
 	deviceConfig := &corev1.ClusterConfig_Status_Device{}
 
-	for _, w := range workers {
+	for _, w := range c.snapshotWorkers() {
 		if !devicemgrcommon.UsesProbe(w.dm) {
 			continue
 		}
 
-		ownerRef := umetav1.GetObjectReference(w.dm)
-		condition := w.dm.Spec.GetCondition()
-
 		for _, probe := range w.mgr.IdentityProbes() {
-			if probe == nil ||
-				(probe.RunCommand == nil && probe.ReadFile == nil && probe.ReadRegistry == nil) {
-				continue
+			if coreProbe := toCoreProbe(w.dm, probe); coreProbe != nil {
+				deviceConfig.Probes = append(deviceConfig.Probes, coreProbe)
 			}
-			deviceConfig.Probes = append(
-				deviceConfig.Probes,
-				toCoreProbe(probe, ownerRef, condition),
-			)
 		}
 	}
 
 	sort.Slice(deviceConfig.Probes, func(i, j int) bool {
-		return probeSortKey(deviceConfig.Probes[i]) < probeSortKey(deviceConfig.Probes[j])
+		return deviceConfig.Probes[i].Id < deviceConfig.Probes[j].Id
 	})
 
 	cc, err := c.octeliumC.CoreV1Utils().GetClusterConfig(ctx)
@@ -284,37 +471,20 @@ func (c *Controller) snapshotWorkers() []*worker {
 	return out
 }
 
-func probeSortKey(probe *corev1.ClusterConfig_Status_Device_Probe) string {
-	if probe == nil {
-		return ""
-	}
-
-	key := probe.GetOwnerRef().GetUid() + "|" + probe.GetOsType().String() + "|"
-
-	switch t := probe.GetType().(type) {
-	case *corev1.ClusterConfig_Status_Device_Probe_RunCommand_:
-		key += "command|" + t.RunCommand.Command + "|" + strings.Join(t.RunCommand.Args, " ")
-	case *corev1.ClusterConfig_Status_Device_Probe_ReadFile_:
-		key += "file|" + t.ReadFile.Path
-	case *corev1.ClusterConfig_Status_Device_Probe_ReadRegistry_:
-		key += "registry|" + t.ReadRegistry.Key + "|" + t.ReadRegistry.Name
-	default:
-		key += "unknown"
-	}
-
-	return key
-}
-
 func toCoreProbe(
+	dm *enterprisev1.DeviceManager,
 	probe *devicemgrcommon.Probe,
-	ownerRef *metav1.ObjectReference,
-	condition *corev1.Condition,
 ) *corev1.ClusterConfig_Status_Device_Probe {
+	if probe == nil || probe.ID == "" {
+		return nil
+	}
+
 	out := &corev1.ClusterConfig_Status_Device_Probe{
-		OwnerRef:         ownerRef,
-		OsType:           probe.OSType,
+		Id:               fmt.Sprintf("%s.%s", dm.GetMetadata().GetName(), probe.ID),
+		OwnerRef:         umetav1.GetObjectReference(dm),
+		OsTypes:          append([]corev1.Device_Status_OSType(nil), probe.OSTypes...),
 		RequireElevation: probe.RequireElevation,
-		Condition:        condition,
+		Condition:        dm.Spec.GetCondition(),
 	}
 
 	switch {
@@ -341,6 +511,14 @@ func toCoreProbe(
 				Name: probe.ReadRegistry.Name,
 			},
 		}
+	case probe.PlatformIdentifier != nil:
+		out.Type = &corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier_{
+			PlatformIdentifier: &corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier{
+				Kind: probe.PlatformIdentifier.Kind,
+			},
+		}
+	default:
+		return nil
 	}
 
 	return out
@@ -431,6 +609,10 @@ func (w *worker) poll() {
 
 	fleet, err := w.mgr.Collect(pollCtx)
 	if err != nil {
+		if w.ctx.Err() != nil {
+			return
+		}
+
 		zap.L().Warn("Could not collect from DeviceManager",
 			zap.String("name", w.name),
 			zap.Error(err))
@@ -442,6 +624,10 @@ func (w *worker) poll() {
 			0,
 			err.Error(),
 		)
+		return
+	}
+
+	if w.ctx.Err() != nil {
 		return
 	}
 
@@ -487,7 +673,7 @@ func (w *worker) setStatus(
 		dm.Status = &enterprisev1.DeviceManager_Status{}
 	}
 
-	dm.Status.Type = w.mgr.Type()
+	dm.Status.Type = getStatusType(dm)
 	dm.Status.State = state
 
 	if dm.Status.Collection == nil {

@@ -35,15 +35,9 @@ const (
 	fleetHTTPTimeout = 60 * time.Second
 	fleetMaxRetries  = 4
 	fleetMaxRespByte = 64 << 20
-
-	probeTimeoutSeconds = 15
-	probeMaxOutputBytes = 16384
 )
 
-var (
-	platformUUIDRe = regexp.MustCompile(`(?i)"IOPlatformUUID"\s*=\s*"([0-9a-f-]{36})"`)
-	uuidRe         = regexp.MustCompile(`(?i)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
-)
+var uuidRe = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 
 type Manager struct {
 	api    *apiClient
@@ -57,8 +51,9 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 	if spec == nil {
 		return nil, errors.Errorf("Not a FleetDM DeviceManager: %s", opts.DeviceManager.Metadata.Name)
 	}
-	if strings.TrimSpace(spec.BaseURL) == "" {
-		return nil, errors.Errorf("Empty FleetDM baseURL")
+	base, err := devicemgrcommon.ParseHTTPSURL(spec.BaseURL, "")
+	if err != nil {
+		return nil, errors.Wrap(err, "Invalid FleetDM baseURL")
 	}
 	if spec.GetApiToken().GetFromSecret() == "" {
 		return nil, errors.Errorf("Empty FleetDM apiToken")
@@ -72,7 +67,7 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 	}
 
 	rc := resty.New().
-		SetBaseURL(strings.TrimRight(strings.TrimSpace(spec.BaseURL), "/")).
+		SetBaseURL(base).
 		SetTimeout(fleetHTTPTimeout).
 		SetHeader("Accept", "application/json").
 		SetAuthToken(uenterprisev1.ToSecret(sec).GetValueStr()).
@@ -101,32 +96,21 @@ func (m *Manager) Close() error {
 func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
-			OSType: corev1.Device_Status_MAC,
-			RunCommand: &devicemgrcommon.RunCommand{
-				Command:        "/usr/sbin/ioreg",
-				Args:           []string{"-rd1", "-c", "IOPlatformExpertDevice"},
-				TimeoutSeconds: probeTimeoutSeconds,
-				MaxOutputBytes: probeMaxOutputBytes,
+			ID: "hardware-uuid",
+			OSTypes: []corev1.Device_Status_OSType{
+				corev1.Device_Status_MAC,
+				corev1.Device_Status_WINDOWS,
+			},
+			PlatformIdentifier: &devicemgrcommon.PlatformIdentifier{
+				Kind: corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier_HARDWARE_UUID,
 			},
 		},
 		{
-			OSType: corev1.Device_Status_WINDOWS,
-			RunCommand: &devicemgrcommon.RunCommand{
-				Command: `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`,
-				Args: []string{
-					"-NoProfile", "-NonInteractive", "-Command",
-					"(Get-CimInstance -ClassName Win32_ComputerSystemProduct).UUID",
-				},
-				TimeoutSeconds: probeTimeoutSeconds,
-				MaxOutputBytes: probeMaxOutputBytes,
-			},
-		},
-		{
-			OSType:           corev1.Device_Status_LINUX,
+			ID:               "hardware-uuid-linux",
+			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_LINUX},
 			RequireElevation: true,
-			ReadFile: &devicemgrcommon.ReadFile{
-				Path:     "/sys/class/dmi/id/product_uuid",
-				MaxBytes: 128,
+			PlatformIdentifier: &devicemgrcommon.PlatformIdentifier{
+				Kind: corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier_HARDWARE_UUID,
 			},
 		},
 	}
@@ -134,18 +118,11 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 
 func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []*devicemgrcommon.ProbeResult) (string, error) {
 	for _, r := range results {
-		if r == nil || r.Err != nil || len(r.Output) == 0 {
+		if r == nil {
 			continue
 		}
-		s := string(r.Output)
-		if osType == corev1.Device_Status_MAC {
-			if mm := platformUUIDRe.FindStringSubmatch(s); len(mm) == 2 {
-				return strings.ToLower(mm[1]), nil
-			}
-			continue
-		}
-		if u := uuidRe.FindString(s); u != "" {
-			return strings.ToLower(u), nil
+		if id := strings.ToLower(strings.TrimSpace(r.Text)); uuidRe.MatchString(id) {
+			return id, nil
 		}
 	}
 	return "", nil
@@ -184,6 +161,8 @@ func (c *apiClient) listHosts(ctx context.Context, teamID uint32) ([]*fleetHost,
 		q := url.Values{}
 		q.Set("page", strconv.Itoa(page))
 		q.Set("per_page", strconv.Itoa(fleetPageSize))
+		q.Set("order_key", "id")
+		q.Set("order_direction", "asc")
 		if teamID > 0 {
 			q.Set("team_id", strconv.FormatUint(uint64(teamID), 10))
 		}
@@ -233,8 +212,8 @@ type fleetHost struct {
 }
 
 type fleetIssues struct {
-	FailingPoliciesCount int `json:"failing_policies_count"`
-	TotalIssuesCount     int `json:"total_issues_count"`
+	FailingPoliciesCount *int `json:"failing_policies_count"`
+	TotalIssuesCount     int  `json:"total_issues_count"`
 }
 
 type fleetMDM struct {
@@ -243,43 +222,16 @@ type fleetMDM struct {
 }
 
 func toEntry(h *fleetHost) *devicemgrcommon.Entry {
-	failing := 0
-	if h.Issues != nil {
-		failing = h.Issues.FailingPoliciesCount
-	}
-	compliant := failing == 0
-
-	score := int32(100)
-	if !compliant {
-		score = 100 - int32(failing)*15
-		if score < 20 {
-			score = 20
-		}
-	}
-
-	diskEncryption := corev1.Device_Status_Posture_NOT_APPLICABLE
-	if h.DiskEncryptionEnabled != nil {
-		diskEncryption = passFail(*h.DiskEncryptionEnabled)
-		if !*h.DiskEncryptionEnabled && score > 60 {
-			score = 60
-		}
-	}
-
-	signals := map[string]corev1.Device_Status_Posture_SignalState{
-		"agentOnline": passFail(strings.EqualFold(h.Status, "online")),
-	}
-	if h.MDM != nil && strings.TrimSpace(h.MDM.EnrollmentStatus) != "" {
-		signals["mdmEnrolled"] = passFail(
-			strings.HasPrefix(strings.ToLower(h.MDM.EnrollmentStatus), "on"))
-	}
-
 	p := &corev1.Device_Status_Posture{
-		RiskLevel:      riskBand(score),
-		DiskEncryption: diskEncryption,
-		Compliant:      passFail(compliant),
-		ThreatFree:     corev1.Device_Status_Posture_NOT_APPLICABLE,
-		Signals:        signals,
+		DiskEncryption: devicemgrcommon.SignalFromBool(h.DiskEncryptionEnabled),
+		Compliant:      fleetCompliant(h.Issues),
+		AgentHealthy:   fleetAgentHealthy(h.Status),
 		Attrs:          fleetAttrs(h),
+	}
+	if h.MDM != nil {
+		p.Signals = map[string]corev1.Device_Status_Posture_SignalState{
+			devicemgrcommon.SignalKey("fleetdm", "mdmEnrolled"): fleetMDMEnrolled(h.MDM.EnrollmentStatus),
+		}
 	}
 	if t, ok := parseTime(h.SeenTime); ok {
 		p.LastSeenAt = timestamppb.New(t)
@@ -295,6 +247,40 @@ func toEntry(h *fleetHost) *devicemgrcommon.Entry {
 		Serial:     h.HardwareSerial,
 		MACs:       macs,
 		Posture:    p,
+	}
+}
+
+func fleetCompliant(issues *fleetIssues) corev1.Device_Status_Posture_SignalState {
+	switch {
+	case issues == nil || issues.FailingPoliciesCount == nil:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	case *issues.FailingPoliciesCount == 0:
+		return corev1.Device_Status_Posture_PASS
+	default:
+		return corev1.Device_Status_Posture_FAIL
+	}
+}
+
+func fleetAgentHealthy(status string) corev1.Device_Status_Posture_SignalState {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "online":
+		return corev1.Device_Status_Posture_PASS
+	case "offline", "missing":
+		return corev1.Device_Status_Posture_FAIL
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	}
+}
+
+func fleetMDMEnrolled(status string) corev1.Device_Status_Posture_SignalState {
+	status = strings.ToLower(strings.TrimSpace(status))
+	switch {
+	case strings.HasPrefix(status, "on"):
+		return corev1.Device_Status_Posture_PASS
+	case status == "off":
+		return corev1.Device_Status_Posture_FAIL
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
 }
 
@@ -315,8 +301,8 @@ func fleetAttrs(h *fleetHost) *structpb.Struct {
 		put("mdmEnrollmentStatus", h.MDM.EnrollmentStatus)
 		put("mdmName", h.MDM.Name)
 	}
-	if h.Issues != nil {
-		fields["failingPoliciesCount"] = float64(h.Issues.FailingPoliciesCount)
+	if h.Issues != nil && h.Issues.FailingPoliciesCount != nil {
+		fields["failingPoliciesCount"] = float64(*h.Issues.FailingPoliciesCount)
 	}
 	if len(fields) == 0 {
 		return nil
@@ -326,26 +312,6 @@ func fleetAttrs(h *fleetHost) *structpb.Struct {
 		return nil
 	}
 	return s
-}
-
-func riskBand(score int32) corev1.Device_Status_Posture_RiskLevel {
-	switch {
-	case score >= 90:
-		return corev1.Device_Status_Posture_LOW
-	case score >= 70:
-		return corev1.Device_Status_Posture_MEDIUM
-	case score >= 40:
-		return corev1.Device_Status_Posture_HIGH
-	default:
-		return corev1.Device_Status_Posture_CRITICAL
-	}
-}
-
-func passFail(ok bool) corev1.Device_Status_Posture_SignalState {
-	if ok {
-		return corev1.Device_Status_Posture_PASS
-	}
-	return corev1.Device_Status_Posture_FAIL
 }
 
 func parseTime(s string) (time.Time, bool) {

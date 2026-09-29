@@ -1,0 +1,51 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ResetDeviceBindingRequest",
+    "definitions": {
+        "ResetDeviceBindingRequest": {
+            "properties": {
+                "deviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "DeviceRef identifies the Device. Required."
+                },
+                "bindingUID": {
+                    "type": "string",
+                    "description": "BindingUID identifies the Binding to reset. Required. A replacement Binding with a different UID is never reset. If the Device has no Binding, the request succeeds without changing anything."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Reset Device Binding Request",
+            "description": "ResetDeviceBindingRequest resets a Device's current Binding and posture. The next reconciliation selects a DeviceManager again using the configured order."
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
+        }
+    }
+}

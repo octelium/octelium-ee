@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -39,21 +40,19 @@ const (
 	tokenHTTPTimeout = 30 * time.Second
 	jamfMaxRetries   = 4
 	jamfMaxRespByte  = 64 << 20
-
-	probeTimeoutSeconds = 15
-	probeMaxOutputBytes = 16384
 )
 
 var inventorySections = []string{
 	"GENERAL", "HARDWARE", "OPERATING_SYSTEM",
-	"USER_AND_LOCATION", "SECURITY", "DISK_ENCRYPTION",
+	"USER_AND_LOCATION", "SECURITY", "DISK_ENCRYPTION", "GROUP_MEMBERSHIPS",
 }
 
-var platformUUIDRe = regexp.MustCompile(`(?i)"IOPlatformUUID"\s*=\s*"([0-9a-f-]{36})"`)
+var uuidRe = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 
 type Manager struct {
-	jamf   *jamfClient
-	filter string
+	jamf            *jamfClient
+	filter          string
+	compliantGroups []string
 }
 
 var _ devicemgrcommon.Manager = (*Manager)(nil)
@@ -63,8 +62,12 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 	if spec == nil {
 		return nil, errors.Errorf("Not a Jamf DeviceManager: %s", opts.DeviceManager.Metadata.Name)
 	}
-	if strings.TrimSpace(spec.BaseURL) == "" || spec.ClientID == "" {
-		return nil, errors.Errorf("Empty Jamf baseURL or clientID")
+	base, err := devicemgrcommon.ParseHTTPSURL(spec.BaseURL, "")
+	if err != nil {
+		return nil, errors.Wrap(err, "Invalid Jamf baseURL")
+	}
+	if spec.ClientID == "" {
+		return nil, errors.Errorf("Empty Jamf clientID")
 	}
 	if spec.GetClientSecret().GetFromSecret() == "" {
 		return nil, errors.Errorf("Empty Jamf clientSecret")
@@ -77,7 +80,6 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		return nil, err
 	}
 
-	base := strings.TrimRight(strings.TrimSpace(spec.BaseURL), "/")
 	conf := &clientcredentials.Config{
 		ClientID:     spec.ClientID,
 		ClientSecret: uenterprisev1.ToSecret(sec).GetValueStr(),
@@ -101,8 +103,9 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		SetRetryAfter(retryAfter)
 
 	return &Manager{
-		jamf:   &jamfClient{rc: rc},
-		filter: spec.Filter,
+		jamf:            &jamfClient{rc: rc},
+		filter:          spec.Filter,
+		compliantGroups: spec.CompliantGroups,
 	}, nil
 }
 
@@ -118,12 +121,10 @@ func (m *Manager) Close() error {
 func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
-			OSType: corev1.Device_Status_MAC,
-			RunCommand: &devicemgrcommon.RunCommand{
-				Command:        "/usr/sbin/ioreg",
-				Args:           []string{"-rd1", "-c", "IOPlatformExpertDevice"},
-				TimeoutSeconds: probeTimeoutSeconds,
-				MaxOutputBytes: probeMaxOutputBytes,
+			ID:      "hardware-uuid-macos",
+			OSTypes: []corev1.Device_Status_OSType{corev1.Device_Status_MAC},
+			PlatformIdentifier: &devicemgrcommon.PlatformIdentifier{
+				Kind: corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier_HARDWARE_UUID,
 			},
 		},
 	}
@@ -134,11 +135,11 @@ func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []
 		return "", nil
 	}
 	for _, r := range results {
-		if r == nil || r.Err != nil || len(r.Output) == 0 {
+		if r == nil {
 			continue
 		}
-		if mm := platformUUIDRe.FindStringSubmatch(string(r.Output)); len(mm) == 2 {
-			return strings.ToLower(mm[1]), nil
+		if id := strings.ToLower(strings.TrimSpace(r.Text)); uuidRe.MatchString(id) {
+			return id, nil
 		}
 	}
 	return "", nil
@@ -149,12 +150,13 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 	if err != nil {
 		return nil, err
 	}
+	now := time.Now()
 	entries := make([]*devicemgrcommon.Entry, 0, len(computers))
 	for _, c := range computers {
 		if c == nil {
 			continue
 		}
-		entries = append(entries, toEntry(c))
+		entries = append(entries, m.toEntry(c, now))
 	}
 	return devicemgrcommon.NewFleet(entries), nil
 }
@@ -215,14 +217,21 @@ func (c *jamfClient) get(ctx context.Context, u string, out any) error {
 }
 
 type computer struct {
-	ID              string           `json:"id"`
-	UDID            string           `json:"udid"`
-	General         *general         `json:"general"`
-	Hardware        *hardware        `json:"hardware"`
-	OperatingSystem *operatingSystem `json:"operatingSystem"`
-	UserAndLocation *userAndLocation `json:"userAndLocation"`
-	Security        *security        `json:"security"`
-	DiskEncryption  *diskEncryption  `json:"diskEncryption"`
+	ID               string             `json:"id"`
+	UDID             string             `json:"udid"`
+	General          *general           `json:"general"`
+	Hardware         *hardware          `json:"hardware"`
+	OperatingSystem  *operatingSystem   `json:"operatingSystem"`
+	UserAndLocation  *userAndLocation   `json:"userAndLocation"`
+	Security         *security          `json:"security"`
+	DiskEncryption   *diskEncryption    `json:"diskEncryption"`
+	GroupMemberships []*groupMembership `json:"groupMemberships"`
+}
+
+type groupMembership struct {
+	GroupID    string `json:"groupId"`
+	GroupName  string `json:"groupName"`
+	SmartGroup bool   `json:"smartGroup"`
 }
 
 type general struct {
@@ -238,7 +247,7 @@ type general struct {
 }
 
 type remoteManagement struct {
-	Managed bool `json:"managed"`
+	Managed *bool `json:"managed"`
 }
 
 type site struct {
@@ -271,7 +280,7 @@ type security struct {
 	SipStatus             string `json:"sipStatus"`
 	GatekeeperStatus      string `json:"gatekeeperStatus"`
 	ActivationLockEnabled bool   `json:"activationLockEnabled"`
-	FirewallEnabled       bool   `json:"firewallEnabled"`
+	FirewallEnabled       *bool  `json:"firewallEnabled"`
 	SecureBootLevel       string `json:"secureBootLevel"`
 }
 
@@ -283,7 +292,7 @@ type bootPartitionEncryptionDetails struct {
 	PartitionFileVault2State string `json:"partitionFileVault2State"`
 }
 
-func toEntry(c *computer) *devicemgrcommon.Entry {
+func (m *Manager) toEntry(c *computer, now time.Time) *devicemgrcommon.Entry {
 	gen := c.General
 	if gen == nil {
 		gen = &general{}
@@ -301,57 +310,28 @@ func toEntry(c *computer) *devicemgrcommon.Entry {
 		sec = &security{}
 	}
 
-	managed := gen.RemoteManagement != nil && gen.RemoteManagement.Managed
-	encrypted := fileVaultEncrypted(c.DiskEncryption)
-	sip := strings.EqualFold(sec.SipStatus, "ENABLED")
-	gatekeeper := gatekeeperOK(sec.GatekeeperStatus)
-	secureBootFull := strings.EqualFold(sec.SecureBootLevel, "FULL_SECURITY")
-
-	score := int32(100)
-	if !encrypted {
-		score -= 30
-	}
-	if !sec.FirewallEnabled {
-		score -= 15
-	}
-	if !sip {
-		score -= 20
-	}
-	if !gatekeeper {
-		score -= 15
-	}
-	if !managed {
-		score -= 20
-	}
-	if hw.AppleSilicon && !secureBootFull {
-		score -= 10
-	}
-	if score < 0 {
-		score = 0
+	var managed *bool
+	if gen.RemoteManagement != nil {
+		managed = gen.RemoteManagement.Managed
 	}
 
-	signals := map[string]corev1.Device_Status_Posture_SignalState{
-		"firewall":   passFail(sec.FirewallEnabled),
-		"sip":        passFail(sip),
-		"gatekeeper": passFail(gatekeeper),
-		"managed":    passFail(managed),
-	}
-	if hw.AppleSilicon {
-		signals["secureBoot"] = passFail(secureBootFull)
-	} else {
-		signals["secureBoot"] = corev1.Device_Status_Posture_NOT_APPLICABLE
-	}
+	lastContact, haveContact := parseTime(gen.LastContactTime)
 
 	p := &corev1.Device_Status_Posture{
-		RiskLevel:      riskBand(score),
-		DiskEncryption: passFail(encrypted),
-		Compliant:      passFail(managed),
-		ThreatFree:     corev1.Device_Status_Posture_NOT_APPLICABLE,
-		Signals:        signals,
-		Attrs:          jamfAttrs(c, gen, hw, os, sec),
+		DiskEncryption: fileVaultSignal(c.DiskEncryption),
+		Compliant:      m.complianceSignal(c.GroupMemberships),
+		Firewall:       devicemgrcommon.SignalFromBool(sec.FirewallEnabled),
+		SecureBoot:     secureBootSignal(sec.SecureBootLevel),
+		Enrolled:       devicemgrcommon.SignalFromBool(managed),
+		AgentHealthy:   devicemgrcommon.RecencySignal(lastContact, haveContact, now),
+		Signals: map[string]corev1.Device_Status_Posture_SignalState{
+			devicemgrcommon.SignalKey("jamf", "sip"):        sipSignal(sec.SipStatus),
+			devicemgrcommon.SignalKey("jamf", "gatekeeper"): gatekeeperSignal(sec.GatekeeperStatus),
+		},
+		Attrs: jamfAttrs(c, gen, hw, os, sec),
 	}
-	if t, ok := parseTime(gen.LastContactTime); ok {
-		p.LastSeenAt = timestamppb.New(t)
+	if haveContact {
+		p.LastSeenAt = timestamppb.New(lastContact)
 	}
 
 	return &devicemgrcommon.Entry{
@@ -361,6 +341,23 @@ func toEntry(c *computer) *devicemgrcommon.Entry {
 		OwnerEmails: jamfOwnerEmails(c.UserAndLocation),
 		Posture:     p,
 	}
+}
+
+func (m *Manager) complianceSignal(groups []*groupMembership) corev1.Device_Status_Posture_SignalState {
+	if len(m.compliantGroups) == 0 {
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	}
+
+	for _, group := range groups {
+		if group == nil || !group.SmartGroup {
+			continue
+		}
+		if slices.Contains(m.compliantGroups, group.GroupName) {
+			return corev1.Device_Status_Posture_PASS
+		}
+	}
+
+	return corev1.Device_Status_Posture_FAIL
 }
 
 func jamfOwnerEmails(u *userAndLocation) []string {
@@ -427,43 +424,53 @@ func jamfAttrs(c *computer, gen *general, hw *hardware, os *operatingSystem, sec
 	return s
 }
 
-func fileVaultEncrypted(de *diskEncryption) bool {
+func fileVaultSignal(de *diskEncryption) corev1.Device_Status_Posture_SignalState {
 	if de == nil || de.BootPartitionEncryptionDetails == nil {
-		return false
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
-	switch strings.ToUpper(de.BootPartitionEncryptionDetails.PartitionFileVault2State) {
-	case "ENCRYPTED", "VALID":
-		return true
+	switch strings.ToUpper(strings.TrimSpace(de.BootPartitionEncryptionDetails.PartitionFileVault2State)) {
+	case "ENCRYPTED":
+		return corev1.Device_Status_Posture_PASS
+	case "UNENCRYPTED", "DECRYPTED", "DECRYPTING", "DECRYPTING_PAUSED", "INELIGIBLE":
+		return corev1.Device_Status_Posture_FAIL
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
-	return false
 }
 
-func gatekeeperOK(status string) bool {
+func secureBootSignal(level string) corev1.Device_Status_Posture_SignalState {
+	switch strings.ToUpper(strings.TrimSpace(level)) {
+	case "FULL_SECURITY":
+		return corev1.Device_Status_Posture_PASS
+	case "MEDIUM_SECURITY", "NO_SECURITY":
+		return corev1.Device_Status_Posture_FAIL
+	case "NOT_SUPPORTED":
+		return corev1.Device_Status_Posture_NOT_APPLICABLE
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	}
+}
+
+func sipSignal(status string) corev1.Device_Status_Posture_SignalState {
+	switch strings.ToUpper(strings.TrimSpace(status)) {
+	case "ENABLED":
+		return corev1.Device_Status_Posture_PASS
+	case "DISABLED":
+		return corev1.Device_Status_Posture_FAIL
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	}
+}
+
+func gatekeeperSignal(status string) corev1.Device_Status_Posture_SignalState {
 	switch strings.ToUpper(strings.TrimSpace(status)) {
 	case "APP_STORE", "APP_STORE_AND_IDENTIFIED_DEVELOPERS":
-		return true
-	}
-	return false
-}
-
-func riskBand(score int32) corev1.Device_Status_Posture_RiskLevel {
-	switch {
-	case score >= 90:
-		return corev1.Device_Status_Posture_LOW
-	case score >= 70:
-		return corev1.Device_Status_Posture_MEDIUM
-	case score >= 40:
-		return corev1.Device_Status_Posture_HIGH
-	default:
-		return corev1.Device_Status_Posture_CRITICAL
-	}
-}
-
-func passFail(ok bool) corev1.Device_Status_Posture_SignalState {
-	if ok {
 		return corev1.Device_Status_Posture_PASS
+	case "DISABLED":
+		return corev1.Device_Status_Posture_FAIL
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
-	return corev1.Device_Status_Posture_FAIL
 }
 
 func parseTime(s string) (time.Time, bool) {

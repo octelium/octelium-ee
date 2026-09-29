@@ -10,6 +10,7 @@ package devicemgrcommon
 
 import (
 	"context"
+	"net/url"
 	"sort"
 	"strings"
 	"sync"
@@ -21,9 +22,13 @@ import (
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/pkg/errors"
 )
 
-const DefaultStaleAfter = time.Hour
+const (
+	DefaultStaleAfter = time.Hour
+	AgentOfflineAfter = 24 * time.Hour
+)
 
 type ManagerOpts struct {
 	DeviceManager *enterprisev1.DeviceManager
@@ -33,8 +38,9 @@ type ManagerOpts struct {
 type ProviderType = enterprisev1.DeviceManager_Status_Type
 
 type ProbeResult struct {
-	Output []byte
-	Err    error
+	Text  string
+	Data  []byte
+	Items []string
 }
 
 type RunCommand struct {
@@ -54,12 +60,18 @@ type ReadRegistry struct {
 	Name string
 }
 
+type PlatformIdentifier struct {
+	Kind corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier_Kind
+}
+
 type Probe struct {
-	OSType           corev1.Device_Status_OSType
-	RequireElevation bool
-	RunCommand       *RunCommand
-	ReadFile         *ReadFile
-	ReadRegistry     *ReadRegistry
+	ID                 string
+	OSTypes            []corev1.Device_Status_OSType
+	RequireElevation   bool
+	RunCommand         *RunCommand
+	ReadFile           *ReadFile
+	ReadRegistry       *ReadRegistry
+	PlatformIdentifier *PlatformIdentifier
 }
 
 type Manager interface {
@@ -72,6 +84,7 @@ type Manager interface {
 
 type Entry struct {
 	ExternalID string
+	Aliases    []string
 	Serial     string
 	MACs       []string
 
@@ -93,6 +106,7 @@ type MatchMethod int
 const (
 	MatchMethodNone MatchMethod = iota
 	MatchMethodExternalID
+	MatchMethodProbeID
 	MatchMethodSerial
 	MatchMethodMAC
 )
@@ -153,6 +167,7 @@ type Fleet struct {
 	entries []*Entry
 
 	byExternalID uniqueIndex
+	byProbeID    uniqueIndex
 	bySerial     uniqueIndex
 	byMAC        uniqueIndex
 }
@@ -161,6 +176,7 @@ func NewFleet(entries []*Entry) *Fleet {
 	f := &Fleet{
 		entries:      make([]*Entry, 0, len(entries)),
 		byExternalID: newUniqueIndex(),
+		byProbeID:    newUniqueIndex(),
 		bySerial:     newUniqueIndex(),
 		byMAC:        newUniqueIndex(),
 	}
@@ -175,6 +191,12 @@ func NewFleet(entries []*Entry) *Fleet {
 
 		if entry.ExternalID != "" {
 			f.byExternalID.add(entry.ExternalID, entry)
+		}
+
+		for _, id := range append([]string{entry.ExternalID}, entry.Aliases...) {
+			if normalized := NormalizeID(id); normalized != "" {
+				f.byProbeID.add(normalized, entry)
+			}
 		}
 
 		if serial := NormalizeSerial(entry.Serial); serial != "" {
@@ -215,6 +237,15 @@ func (f *Fleet) MatchExternalID(externalID string) MatchResult {
 	}
 	result := f.byExternalID.get(externalID)
 	result.Method = MatchMethodExternalID
+	return result
+}
+
+func (f *Fleet) MatchProbeID(id string) MatchResult {
+	if f == nil {
+		return MatchResult{State: MatchStateNone}
+	}
+	result := f.byProbeID.get(NormalizeID(id))
+	result.Method = MatchMethodProbeID
 	return result
 }
 
@@ -280,6 +311,7 @@ func cloneEntry(entry *Entry) *Entry {
 
 	out := &Entry{
 		ExternalID:  entry.ExternalID,
+		Aliases:     append([]string(nil), entry.Aliases...),
 		Serial:      entry.Serial,
 		MACs:        append([]string(nil), entry.MACs...),
 		OwnerEmails: append([]string(nil), entry.OwnerEmails...),
@@ -326,6 +358,10 @@ func NewOwner(
 	}
 }
 
+func NewPendingOwner(dm *enterprisev1.DeviceManager) *Owner {
+	return NewOwner(nil, dm, nil, time.Time{}, 0)
+}
+
 func (o *Owner) UID() string {
 	if o == nil || o.DM == nil {
 		return ""
@@ -338,6 +374,13 @@ func (o *Owner) Fresh(now time.Time) bool {
 		return false
 	}
 	return now.Before(o.ExpiresAt)
+}
+
+func (o *Owner) Name() string {
+	if o == nil || o.DM == nil {
+		return ""
+	}
+	return o.DM.GetMetadata().GetName()
 }
 
 func (o *Owner) OwnerRef() *metav1.ObjectReference {
@@ -416,8 +459,19 @@ func MaterializePosture(owner *Owner, entry *Entry) *corev1.Device_Status_Postur
 		posture = &corev1.Device_Status_Posture{}
 	}
 
+	expiresAt := owner.ExpiresAt
+	if maxAge := MaxObservationAge(owner.DM); maxAge > 0 {
+		observedAt := owner.CollectedAt.Add(-maxAge)
+		if posture.LastSeenAt.IsValid() {
+			observedAt = posture.LastSeenAt.AsTime()
+		}
+		if observationExpiresAt := observedAt.Add(maxAge); observationExpiresAt.Before(expiresAt) {
+			expiresAt = observationExpiresAt
+		}
+	}
+
 	posture.LastSyncAt = pbutils.Timestamp(owner.CollectedAt)
-	posture.ExpiresAt = pbutils.Timestamp(owner.ExpiresAt)
+	posture.ExpiresAt = pbutils.Timestamp(expiresAt)
 
 	return posture
 }
@@ -435,18 +489,28 @@ func LinkingStrategy(dm *enterprisev1.DeviceManager) enterprisev1.DeviceManager_
 	return linking.GetStrategy()
 }
 
-func ApprovalMode(dm *enterprisev1.DeviceManager) enterprisev1.DeviceManager_Spec_Linking_ApprovalMode {
-	if dm == nil {
-		return enterprisev1.DeviceManager_Spec_Linking_MANUAL
+func RequireAgreement(dm *enterprisev1.DeviceManager) bool {
+	return dm != nil && dm.Spec.GetLinking().GetRequireAgreement()
+}
+
+func RequireOwnerMatch(dm *enterprisev1.DeviceManager) bool {
+	return dm != nil && dm.Spec.GetLinking().GetRequireOwnerMatch()
+}
+
+func VerificationInterval(dm *enterprisev1.DeviceManager) time.Duration {
+	if dm == nil || dm.Spec.GetLinking().GetVerificationInterval() == nil {
+		return 0
 	}
 
-	linking := dm.Spec.GetLinking()
-	if linking == nil ||
-		linking.GetApprovalMode() == enterprisev1.DeviceManager_Spec_Linking_APPROVAL_MODE_UNSET {
-		return enterprisev1.DeviceManager_Spec_Linking_MANUAL
+	return umetav1.ToDuration(dm.Spec.GetLinking().GetVerificationInterval()).ToGo()
+}
+
+func MaxObservationAge(dm *enterprisev1.DeviceManager) time.Duration {
+	if dm == nil || dm.Spec.GetPolling().GetMaxObservationAge() == nil {
+		return 0
 	}
 
-	return linking.GetApprovalMode()
+	return umetav1.ToDuration(dm.Spec.GetPolling().GetMaxObservationAge()).ToGo()
 }
 
 func UsesProbe(dm *enterprisev1.DeviceManager) bool {
@@ -490,6 +554,73 @@ func OwnerEmailMatches(userEmail string, ownerEmails []string) bool {
 	}
 
 	return false
+}
+
+func NormalizeID(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if strings.Trim(value, "0-") == "" {
+		return ""
+	}
+
+	return value
+}
+
+func SignalFromBool(value *bool) corev1.Device_Status_Posture_SignalState {
+	switch {
+	case value == nil:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	case *value:
+		return corev1.Device_Status_Posture_PASS
+	default:
+		return corev1.Device_Status_Posture_FAIL
+	}
+}
+
+func RecencySignal(lastSeenAt time.Time, ok bool, now time.Time) corev1.Device_Status_Posture_SignalState {
+	switch {
+	case !ok:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	case now.Sub(lastSeenAt) < AgentOfflineAfter:
+		return corev1.Device_Status_Posture_PASS
+	default:
+		return corev1.Device_Status_Posture_FAIL
+	}
+}
+
+func SignalKey(provider, name string) string {
+	return "x." + provider + "." + name
+}
+
+func ParseHTTPSURL(value, defaultValue string) (string, error) {
+	value = strings.TrimRight(strings.TrimSpace(value), "/")
+	if value == "" {
+		value = defaultValue
+	}
+
+	u, err := url.Parse(value)
+	if err != nil {
+		return "", errors.Errorf("Invalid URL: %s", value)
+	}
+
+	if u.Scheme != "https" || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
+		return "", errors.Errorf("URL must be a valid HTTPS URL: %s", value)
+	}
+
+	return value, nil
+}
+
+func IsSameOrigin(base, target string) bool {
+	baseURL, err := url.Parse(base)
+	if err != nil {
+		return false
+	}
+
+	targetURL, err := url.Parse(target)
+	if err != nil {
+		return false
+	}
+
+	return targetURL.Scheme == baseURL.Scheme && targetURL.Host == baseURL.Host && targetURL.User == nil
 }
 
 func NormalizeSerial(value string) string {

@@ -377,8 +377,8 @@ func TestEnterpriseListFilters(t *testing.T) {
 		Spec: &enterprisev1.DeviceManager_Spec{
 			Polling: &enterprisev1.DeviceManager_Spec_Polling{IsDisabled: true},
 			Linking: &enterprisev1.DeviceManager_Spec_Linking{
-				Strategy:     enterprisev1.DeviceManager_Spec_Linking_PROBE_ONLY,
-				ApprovalMode: enterprisev1.DeviceManager_Spec_Linking_AUTOMATIC,
+				Strategy:          enterprisev1.DeviceManager_Spec_Linking_PROBE_ONLY,
+				RequireOwnerMatch: true,
 			},
 			Type: &enterprisev1.DeviceManager_Spec_CrowdStrike_{
 				CrowdStrike: &enterprisev1.DeviceManager_Spec_CrowdStrike{},
@@ -416,8 +416,7 @@ func TestEnterpriseListFilters(t *testing.T) {
 
 	{
 		resp, err := srv.ListDeviceManager(env.ctx, &venterprisev1.ListDeviceManagerOptions{
-			Strategy:     enterprisev1.DeviceManager_Spec_Linking_PROBE_ONLY,
-			ApprovalMode: enterprisev1.DeviceManager_Spec_Linking_AUTOMATIC,
+			Strategy: enterprisev1.DeviceManager_Spec_Linking_PROBE_ONLY,
 		})
 		assert.Nil(t, err, "%+v", err)
 		assert.Len(t, resp.Items, 1)

@@ -31,16 +31,15 @@ import (
 const (
 	defaultBaseURL  = "https://api.huntress.io"
 	agentsPath      = "/v1/agents"
-	huntPageLimit   = 100
+	huntPageLimit   = 500
 	huntHTTPTimeout = 60 * time.Second
 	huntMaxRetries  = 4
 	huntMaxRespByte = 64 << 20
-
-	offlineAfter = 24 * time.Hour
 )
 
 type Manager struct {
-	api *apiClient
+	api             *apiClient
+	organizationIDs []int64
 }
 
 var _ devicemgrcommon.Manager = (*Manager)(nil)
@@ -64,9 +63,9 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		return nil, err
 	}
 
-	base := strings.TrimRight(strings.TrimSpace(spec.BaseURL), "/")
-	if base == "" {
-		base = defaultBaseURL
+	base, err := devicemgrcommon.ParseHTTPSURL(spec.BaseURL, defaultBaseURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "Invalid Huntress baseURL")
 	}
 
 	rc := resty.New().
@@ -82,7 +81,8 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		SetRetryAfter(retryAfter)
 
 	return &Manager{
-		api: &apiClient{rc: rc},
+		api:             &apiClient{rc: rc},
+		organizationIDs: spec.OrganizationIDs,
 	}, nil
 }
 
@@ -104,16 +104,31 @@ func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []
 }
 
 func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
-	agents, err := m.api.listAgents(ctx)
-	if err != nil {
-		return nil, err
+	var agents []*huntressAgent
+
+	if len(m.organizationIDs) == 0 {
+		ret, err := m.api.listAgents(ctx, 0)
+		if err != nil {
+			return nil, err
+		}
+		agents = ret
+	} else {
+		for _, organizationID := range m.organizationIDs {
+			ret, err := m.api.listAgents(ctx, organizationID)
+			if err != nil {
+				return nil, err
+			}
+			agents = append(agents, ret...)
+		}
 	}
+
+	now := time.Now()
 	entries := make([]*devicemgrcommon.Entry, 0, len(agents))
 	for _, a := range agents {
-		if a == nil {
+		if a == nil || a.ID == 0 {
 			continue
 		}
-		entries = append(entries, toEntry(a))
+		entries = append(entries, toEntry(a, now))
 	}
 	return devicemgrcommon.NewFleet(entries), nil
 }
@@ -124,35 +139,38 @@ type apiClient struct {
 
 type agentsResponse struct {
 	Pagination struct {
-		NextPage    *int `json:"next_page"`
-		CurrentPage int  `json:"current_page"`
-		TotalCount  int  `json:"total_count"`
+		NextPageToken string `json:"next_page_token"`
 	} `json:"pagination"`
 	Agents []*huntressAgent `json:"agents"`
 }
 
-func (c *apiClient) listAgents(ctx context.Context) ([]*huntressAgent, error) {
+func (c *apiClient) listAgents(ctx context.Context, organizationID int64) ([]*huntressAgent, error) {
 	var out []*huntressAgent
-	page := 1
+	pageToken := ""
 	for {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
 		q := url.Values{}
-		q.Set("page", strconv.Itoa(page))
 		q.Set("limit", strconv.Itoa(huntPageLimit))
+		if organizationID > 0 {
+			q.Set("organization_id", strconv.FormatInt(organizationID, 10))
+		}
+		if pageToken != "" {
+			q.Set("page_token", pageToken)
+		}
 
 		var resp agentsResponse
 		if err := c.get(ctx, agentsPath+"?"+q.Encode(), &resp); err != nil {
 			return nil, err
 		}
 		out = append(out, resp.Agents...)
-		if resp.Pagination.NextPage == nil ||
-			*resp.Pagination.NextPage <= page ||
+		if resp.Pagination.NextPageToken == "" ||
+			resp.Pagination.NextPageToken == pageToken ||
 			len(resp.Agents) == 0 {
 			break
 		}
-		page = *resp.Pagination.NextPage
+		pageToken = resp.Pagination.NextPageToken
 	}
 	return out, nil
 }
@@ -173,56 +191,42 @@ func (c *apiClient) get(ctx context.Context, u string, out any) error {
 }
 
 type huntressAgent struct {
-	ID             int64    `json:"id"`
-	Hostname       string   `json:"hostname"`
-	MACAddresses   []string `json:"mac_addresses"`
-	SerialNumber   string   `json:"serial_number"`
-	OS             string   `json:"os"`
-	Platform       string   `json:"platform"`
-	Version        string   `json:"version"`
-	IPv4Address    string   `json:"ipv4_address"`
-	ExternalIP     string   `json:"external_ip"`
-	LastSeen       string   `json:"last_seen"`
-	DefenderStatus string   `json:"defender_status"`
-	EDRVersion     string   `json:"edr_version"`
-	OrganizationID int64    `json:"organization_id"`
+	ID                     int64    `json:"id"`
+	Hostname               string   `json:"hostname"`
+	MACAddresses           []string `json:"mac_addresses"`
+	SerialNumber           string   `json:"serial_number"`
+	OS                     string   `json:"os"`
+	Platform               string   `json:"platform"`
+	Version                string   `json:"version"`
+	IPv4Address            string   `json:"ipv4_address"`
+	ExternalIP             string   `json:"external_ip"`
+	LastCallbackAt         string   `json:"last_callback_at"`
+	DefenderStatus         string   `json:"defender_status"`
+	FirewallStatus         string   `json:"firewall_status"`
+	TamperProtectionActual *bool    `json:"tamper_protection_actual"`
+	EDRVersion             string   `json:"edr_version"`
+	OrganizationID         int64    `json:"organization_id"`
 }
 
-func toEntry(a *huntressAgent) *devicemgrcommon.Entry {
-	lastSeen, haveSeen := parseTime(a.LastSeen)
-	reporting := haveSeen && time.Since(lastSeen) < offlineAfter
-	isWindows := strings.EqualFold(strings.TrimSpace(a.Platform), "windows")
-	defenderOK := isDefenderOK(a.DefenderStatus)
+func toEntry(a *huntressAgent, now time.Time) *devicemgrcommon.Entry {
+	lastCallback, haveCallback := parseTime(a.LastCallbackAt)
 
-	score := int32(100)
-	if isWindows && !defenderOK {
-		score -= 40
+	signals := map[string]corev1.Device_Status_Posture_SignalState{
+		devicemgrcommon.SignalKey("huntress", "defender"): defenderSignal(a.Platform, a.DefenderStatus),
 	}
-	if !reporting {
-		score -= 20
-	}
-	if score < 20 {
-		score = 20
-	}
-
-	defenderSignal := corev1.Device_Status_Posture_NOT_APPLICABLE
-	if isWindows {
-		defenderSignal = passFail(defenderOK)
+	if a.TamperProtectionActual != nil {
+		signals[devicemgrcommon.SignalKey("huntress", "tamperProtection")] =
+			devicemgrcommon.SignalFromBool(a.TamperProtectionActual)
 	}
 
 	p := &corev1.Device_Status_Posture{
-		RiskLevel:      riskBand(score),
-		DiskEncryption: corev1.Device_Status_Posture_NOT_APPLICABLE,
-		Compliant:      corev1.Device_Status_Posture_NOT_APPLICABLE,
-		ThreatFree:     corev1.Device_Status_Posture_NOT_APPLICABLE,
-		Signals: map[string]corev1.Device_Status_Posture_SignalState{
-			"defenderEnabled": defenderSignal,
-			"agentReporting":  passFail(reporting),
-		},
-		Attrs: huntressAttrs(a),
+		AgentHealthy: devicemgrcommon.RecencySignal(lastCallback, haveCallback, now),
+		NotContained: notContainedSignal(a.FirewallStatus),
+		Signals:      signals,
+		Attrs:        huntressAttrs(a),
 	}
-	if haveSeen {
-		p.LastSeenAt = timestamppb.New(lastSeen)
+	if haveCallback {
+		p.LastSeenAt = timestamppb.New(lastCallback)
 	}
 
 	return &devicemgrcommon.Entry{
@@ -233,12 +237,30 @@ func toEntry(a *huntressAgent) *devicemgrcommon.Entry {
 	}
 }
 
-func isDefenderOK(status string) bool {
+func notContainedSignal(status string) corev1.Device_Status_Posture_SignalState {
 	switch strings.ToLower(strings.TrimSpace(status)) {
-	case "active", "running", "enabled", "healthy", "protected", "managed":
-		return true
+	case "enabled", "disabled":
+		return corev1.Device_Status_Posture_PASS
+	case "pending isolation", "isolated", "pending release":
+		return corev1.Device_Status_Posture_FAIL
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
-	return false
+}
+
+func defenderSignal(platform, status string) corev1.Device_Status_Posture_SignalState {
+	if !strings.EqualFold(strings.TrimSpace(platform), "windows") {
+		return corev1.Device_Status_Posture_NOT_APPLICABLE
+	}
+
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "":
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	case "active", "running", "enabled", "healthy", "protected", "managed":
+		return corev1.Device_Status_Posture_PASS
+	default:
+		return corev1.Device_Status_Posture_FAIL
+	}
 }
 
 func huntressAttrs(a *huntressAgent) *structpb.Struct {
@@ -254,6 +276,7 @@ func huntressAttrs(a *huntressAgent) *structpb.Struct {
 	put("agentVersion", a.Version)
 	put("edrVersion", a.EDRVersion)
 	put("defenderStatus", a.DefenderStatus)
+	put("firewallStatus", a.FirewallStatus)
 	put("externalIP", a.ExternalIP)
 	if a.OrganizationID != 0 {
 		fields["organizationId"] = float64(a.OrganizationID)
@@ -266,26 +289,6 @@ func huntressAttrs(a *huntressAgent) *structpb.Struct {
 		return nil
 	}
 	return s
-}
-
-func riskBand(score int32) corev1.Device_Status_Posture_RiskLevel {
-	switch {
-	case score >= 90:
-		return corev1.Device_Status_Posture_LOW
-	case score >= 70:
-		return corev1.Device_Status_Posture_MEDIUM
-	case score >= 40:
-		return corev1.Device_Status_Posture_HIGH
-	default:
-		return corev1.Device_Status_Posture_CRITICAL
-	}
-}
-
-func passFail(ok bool) corev1.Device_Status_Posture_SignalState {
-	if ok {
-		return corev1.Device_Status_Posture_PASS
-	}
-	return corev1.Device_Status_Posture_FAIL
 }
 
 func parseTime(s string) (time.Time, bool) {

@@ -47,7 +47,7 @@ var selectFields = strings.Join([]string{
 	"id", "deviceName", "serialNumber", "wiFiMacAddress", "ethernetMacAddress",
 	"operatingSystem", "osVersion", "complianceState", "managementState",
 	"lastSyncDateTime", "manufacturer", "model", "userPrincipalName",
-	"azureADDeviceId", "deviceEnrollmentType", "jailBroken", "isEncrypted",
+	"azureADDeviceId", "deviceEnrollmentType", "jailBroken", "isEncrypted", "emailAddress",
 	"managementAgent", "deviceRegistrationState", "partnerReportedThreatState",
 	"userId", "managedDeviceOwnerType", "deviceCategoryDisplayName",
 }, ",")
@@ -55,8 +55,10 @@ var selectFields = strings.Join([]string{
 var deviceIDRe = regexp.MustCompile(`(?im)^\s*DeviceId\s*:\s*([0-9a-fA-F-]{36})`)
 
 type Manager struct {
-	graph  *graphClient
-	filter string
+	graph                    *graphClient
+	filter                   string
+	isGracePeriodCompliant   bool
+	isConfigManagerCompliant bool
 }
 
 var _ devicemgrcommon.Manager = (*Manager)(nil)
@@ -104,8 +106,10 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		SetRetryAfter(retryAfter)
 
 	return &Manager{
-		graph:  &graphClient{rc: rc, base: ep.graph},
-		filter: spec.Filter,
+		graph:                    &graphClient{rc: rc, base: ep.graph},
+		filter:                   spec.Filter,
+		isGracePeriodCompliant:   spec.IsGracePeriodCompliant,
+		isConfigManagerCompliant: spec.IsConfigManagerCompliant,
 	}, nil
 }
 
@@ -121,7 +125,8 @@ func (m *Manager) Close() error {
 func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
-			OSType: corev1.Device_Status_WINDOWS,
+			ID:      "entra-device-id-windows",
+			OSTypes: []corev1.Device_Status_OSType{corev1.Device_Status_WINDOWS},
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        `C:\Windows\System32\dsregcmd.exe`,
 				Args:           []string{"/status"},
@@ -137,11 +142,11 @@ func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []
 		return "", nil
 	}
 	for _, r := range results {
-		if r == nil || r.Err != nil || len(r.Output) == 0 {
+		if r == nil || r.Text == "" {
 			continue
 		}
-		if mm := deviceIDRe.FindStringSubmatch(string(r.Output)); len(mm) == 2 {
-			return strings.ToLower(mm[1]), nil
+		if mm := deviceIDRe.FindStringSubmatch(r.Text); len(mm) == 2 {
+			return devicemgrcommon.NormalizeID(mm[1]), nil
 		}
 	}
 	return "", nil
@@ -154,10 +159,10 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 	}
 	entries := make([]*devicemgrcommon.Entry, 0, len(devices))
 	for _, d := range devices {
-		if d == nil {
+		if d == nil || d.ID == "" {
 			continue
 		}
-		entries = append(entries, toEntry(d))
+		entries = append(entries, m.toEntry(d))
 	}
 	return devicemgrcommon.NewFleet(entries), nil
 }
@@ -203,6 +208,9 @@ func (g *graphClient) listManagedDevices(ctx context.Context, filter string) ([]
 			return nil, err
 		}
 		out = append(out, page.Value...)
+		if page.NextLink != "" && !devicemgrcommon.IsSameOrigin(g.base, page.NextLink) {
+			return nil, errors.Errorf("Intune nextLink is not in the Microsoft Graph origin: %s", page.NextLink)
+		}
 		u = page.NextLink
 	}
 	return out, nil
@@ -237,10 +245,11 @@ type managedDevice struct {
 	Manufacturer               string `json:"manufacturer"`
 	Model                      string `json:"model"`
 	UserPrincipalName          string `json:"userPrincipalName"`
+	EmailAddress               string `json:"emailAddress"`
 	AzureADDeviceID            string `json:"azureADDeviceId"`
 	DeviceEnrollmentType       string `json:"deviceEnrollmentType"`
 	JailBroken                 string `json:"jailBroken"`
-	IsEncrypted                bool   `json:"isEncrypted"`
+	IsEncrypted                *bool  `json:"isEncrypted"`
 	ManagementAgent            string `json:"managementAgent"`
 	DeviceRegistrationState    string `json:"deviceRegistrationState"`
 	PartnerReportedThreatState string `json:"partnerReportedThreatState"`
@@ -249,47 +258,43 @@ type managedDevice struct {
 	DeviceCategoryDisplayName  string `json:"deviceCategoryDisplayName"`
 }
 
-func toEntry(d *managedDevice) *devicemgrcommon.Entry {
-	score := complianceScore(d.ComplianceState)
-	if !d.IsEncrypted {
-		score -= 20
-	}
-	if strings.EqualFold(d.JailBroken, "true") {
-		score = 0
-	}
-	if threatSignal(d.PartnerReportedThreatState) == corev1.Device_Status_Posture_FAIL && score > 20 {
-		score = 20
-	}
-	if score < 0 {
-		score = 0
-	}
-
+func (m *Manager) toEntry(d *managedDevice) *devicemgrcommon.Entry {
 	p := &corev1.Device_Status_Posture{
-		RiskLevel:      riskBand(score),
-		DiskEncryption: passFail(d.IsEncrypted),
-		Compliant:      complianceSignal(d.ComplianceState),
-		ThreatFree:     threatSignal(d.PartnerReportedThreatState),
-		Signals: map[string]corev1.Device_Status_Posture_SignalState{
-			"notJailbroken": jailSignal(d.JailBroken),
-		},
-		Attrs: intuneAttrs(d),
+		DiskEncryption:  devicemgrcommon.SignalFromBool(d.IsEncrypted),
+		Compliant:       m.complianceSignal(d.ComplianceState),
+		ThreatFree:      threatSignal(d.PartnerReportedThreatState),
+		Enrolled:        enrolledSignal(d.ManagementState),
+		MobileIntegrity: mobileIntegritySignal(d.OperatingSystem, d.JailBroken),
+		Attrs:           intuneAttrs(d),
 	}
 	if t, ok := parseTime(d.LastSyncDateTime); ok {
 		p.LastSeenAt = timestamppb.New(t)
 	}
 
-	var emails []string
-	if upn := strings.TrimSpace(d.UserPrincipalName); strings.Contains(upn, "@") {
-		emails = []string{upn}
+	var aliases []string
+	if id := devicemgrcommon.NormalizeID(d.AzureADDeviceID); id != "" {
+		aliases = []string{id}
 	}
 
 	return &devicemgrcommon.Entry{
-		ExternalID:  strings.ToLower(strings.TrimSpace(d.AzureADDeviceID)),
+		ExternalID:  strings.ToLower(strings.TrimSpace(d.ID)),
+		Aliases:     aliases,
 		Serial:      d.SerialNumber,
 		MACs:        intuneMACs(d),
-		OwnerEmails: emails,
+		OwnerEmails: intuneOwnerEmails(d),
 		Posture:     p,
 	}
+}
+
+func intuneOwnerEmails(d *managedDevice) []string {
+	var ret []string
+	for _, email := range []string{d.EmailAddress, d.UserPrincipalName} {
+		email = strings.TrimSpace(email)
+		if strings.Contains(email, "@") {
+			ret = append(ret, email)
+		}
+	}
+	return ret
 }
 
 func intuneMACs(d *managedDevice) []string {
@@ -327,7 +332,10 @@ func intuneAttrs(d *managedDevice) *structpb.Struct {
 	put("userPrincipalName", d.UserPrincipalName)
 	put("operatingSystem", d.OperatingSystem)
 	put("osVersion", d.OSVersion)
-	fields["isEncrypted"] = d.IsEncrypted
+	put("azureADDeviceId", d.AzureADDeviceID)
+	if d.IsEncrypted != nil {
+		fields["isEncrypted"] = *d.IsEncrypted
+	}
 	if len(fields) == 0 {
 		return nil
 	}
@@ -338,80 +346,64 @@ func intuneAttrs(d *managedDevice) *structpb.Struct {
 	return s
 }
 
-func complianceScore(state string) int32 {
+func (m *Manager) complianceSignal(state string) corev1.Device_Status_Posture_SignalState {
 	switch strings.ToLower(strings.TrimSpace(state)) {
 	case "compliant":
-		return 100
-	case "configmanager":
-		return 80
+		return corev1.Device_Status_Posture_PASS
 	case "ingraceperiod":
-		return 70
-	case "conflict":
-		return 40
-	case "error":
-		return 30
-	case "noncompliant":
-		return 20
+		if m.isGracePeriodCompliant {
+			return corev1.Device_Status_Posture_PASS
+		}
+		return corev1.Device_Status_Posture_FAIL
+	case "configmanager":
+		if m.isConfigManagerCompliant {
+			return corev1.Device_Status_Posture_PASS
+		}
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	case "noncompliant", "conflict", "error":
+		return corev1.Device_Status_Posture_FAIL
 	default:
-		return 50
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
 }
 
-func complianceSignal(state string) corev1.Device_Status_Posture_SignalState {
+func enrolledSignal(state string) corev1.Device_Status_Posture_SignalState {
 	switch strings.ToLower(strings.TrimSpace(state)) {
-	case "compliant", "configmanager", "ingraceperiod":
+	case "managed":
 		return corev1.Device_Status_Posture_PASS
-	case "noncompliant", "conflict", "error":
-		return corev1.Device_Status_Posture_FAIL
 	case "", "unknown":
 		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	default:
-		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+		return corev1.Device_Status_Posture_FAIL
 	}
 }
 
-func jailSignal(s string) corev1.Device_Status_Posture_SignalState {
-	switch strings.ToLower(strings.TrimSpace(s)) {
+func mobileIntegritySignal(operatingSystem, jailBroken string) corev1.Device_Status_Posture_SignalState {
+	switch strings.ToLower(strings.TrimSpace(operatingSystem)) {
+	case "ios", "ipados", "android":
+	default:
+		return corev1.Device_Status_Posture_NOT_APPLICABLE
+	}
+
+	switch strings.ToLower(strings.TrimSpace(jailBroken)) {
 	case "true":
 		return corev1.Device_Status_Posture_FAIL
 	case "false":
 		return corev1.Device_Status_Posture_PASS
 	default:
-		return corev1.Device_Status_Posture_NOT_APPLICABLE
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
 }
 
 func threatSignal(s string) corev1.Device_Status_Posture_SignalState {
 	switch strings.ToLower(strings.TrimSpace(s)) {
-	case "secured", "lowseverity", "activated":
+	case "secured":
 		return corev1.Device_Status_Posture_PASS
-	case "mediumseverity", "highseverity", "compromised", "misconfigured", "unresponsive":
+	case "lowseverity", "mediumseverity", "highseverity", "compromised":
 		return corev1.Device_Status_Posture_FAIL
-	case "", "unknown", "deactivated":
-		return corev1.Device_Status_Posture_NOT_APPLICABLE
 	default:
-		return corev1.Device_Status_Posture_NOT_APPLICABLE
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
-}
-
-func riskBand(score int32) corev1.Device_Status_Posture_RiskLevel {
-	switch {
-	case score >= 90:
-		return corev1.Device_Status_Posture_LOW
-	case score >= 70:
-		return corev1.Device_Status_Posture_MEDIUM
-	case score >= 40:
-		return corev1.Device_Status_Posture_HIGH
-	default:
-		return corev1.Device_Status_Posture_CRITICAL
-	}
-}
-
-func passFail(ok bool) corev1.Device_Status_Posture_SignalState {
-	if ok {
-		return corev1.Device_Status_Posture_PASS
-	}
-	return corev1.Device_Status_Posture_FAIL
 }
 
 func parseTime(s string) (time.Time, bool) {

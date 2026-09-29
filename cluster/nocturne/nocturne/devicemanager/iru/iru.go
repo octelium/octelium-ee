@@ -10,6 +10,7 @@ package iru
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -47,8 +48,9 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 	if spec == nil {
 		return nil, errors.Errorf("Not an Iru DeviceManager: %s", opts.DeviceManager.Metadata.Name)
 	}
-	if strings.TrimSpace(spec.BaseURL) == "" {
-		return nil, errors.Errorf("Empty Iru baseURL")
+	base, err := devicemgrcommon.ParseHTTPSURL(spec.BaseURL, "")
+	if err != nil {
+		return nil, errors.Wrap(err, "Invalid Iru baseURL")
 	}
 	if spec.GetApiToken().GetFromSecret() == "" {
 		return nil, errors.Errorf("Empty Iru apiToken")
@@ -62,7 +64,7 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 	}
 
 	rc := resty.New().
-		SetBaseURL(strings.TrimRight(strings.TrimSpace(spec.BaseURL), "/")).
+		SetBaseURL(base).
 		SetTimeout(iruHTTPTimeout).
 		SetHeader("Accept", "application/json").
 		SetAuthToken(uenterprisev1.ToSecret(sec).GetValueStr()).
@@ -100,12 +102,13 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 	if err != nil {
 		return nil, err
 	}
+	now := time.Now()
 	entries := make([]*devicemgrcommon.Entry, 0, len(devices))
 	for _, d := range devices {
-		if d == nil || d.IsRemoved {
+		if d == nil || d.IsRemoved || d.DeviceID == "" {
 			continue
 		}
-		entries = append(entries, toEntry(d))
+		entries = append(entries, toEntry(d, now))
 	}
 	return devicemgrcommon.NewFleet(entries), nil
 }
@@ -154,22 +157,22 @@ func (c *apiClient) get(ctx context.Context, u string, out any) error {
 }
 
 type iruDevice struct {
-	DeviceID       string   `json:"device_id"`
-	DeviceName     string   `json:"device_name"`
-	SerialNumber   string   `json:"serial_number"`
-	Platform       string   `json:"platform"`
-	OSVersion      string   `json:"os_version"`
-	Model          string   `json:"model"`
-	MacAddress     string   `json:"mac_address"`
-	LastCheckIn    string   `json:"last_check_in"`
-	IsMissing      bool     `json:"is_missing"`
-	IsRemoved      bool     `json:"is_removed"`
-	MDMEnabled     bool     `json:"mdm_enabled"`
-	AgentInstalled bool     `json:"agent_installed"`
-	AgentVersion   string   `json:"agent_version"`
-	AssetTag       string   `json:"asset_tag"`
-	BlueprintID    string   `json:"blueprint_id"`
-	User           *iruUser `json:"user"`
+	DeviceID       string          `json:"device_id"`
+	DeviceName     string          `json:"device_name"`
+	SerialNumber   string          `json:"serial_number"`
+	Platform       string          `json:"platform"`
+	OSVersion      string          `json:"os_version"`
+	Model          string          `json:"model"`
+	MacAddress     string          `json:"mac_address"`
+	LastCheckIn    string          `json:"last_check_in"`
+	IsMissing      *bool           `json:"is_missing"`
+	IsRemoved      bool            `json:"is_removed"`
+	MDMEnabled     *bool           `json:"mdm_enabled"`
+	AgentInstalled *bool           `json:"agent_installed"`
+	AgentVersion   string          `json:"agent_version"`
+	AssetTag       string          `json:"asset_tag"`
+	BlueprintID    string          `json:"blueprint_id"`
+	User           json.RawMessage `json:"user"`
 }
 
 type iruUser struct {
@@ -177,30 +180,29 @@ type iruUser struct {
 	Name  string `json:"name"`
 }
 
-func toEntry(d *iruDevice) *devicemgrcommon.Entry {
-	healthy := d.MDMEnabled && !d.IsMissing
-
-	score := int32(100)
-	if d.IsMissing {
-		score = 20
-	} else if !d.MDMEnabled {
-		score = 50
+func (d *iruDevice) getUser() *iruUser {
+	if len(d.User) == 0 || d.User[0] != '{' {
+		return nil
 	}
+
+	ret := &iruUser{}
+	if err := json.Unmarshal(d.User, ret); err != nil {
+		return nil
+	}
+
+	return ret
+}
+
+func toEntry(d *iruDevice, now time.Time) *devicemgrcommon.Entry {
+	lastCheckIn, haveCheckIn := parseTime(d.LastCheckIn)
 
 	p := &corev1.Device_Status_Posture{
-		RiskLevel:      riskBand(score),
-		DiskEncryption: corev1.Device_Status_Posture_NOT_APPLICABLE,
-		Compliant:      passFail(healthy),
-		ThreatFree:     corev1.Device_Status_Posture_NOT_APPLICABLE,
-		Signals: map[string]corev1.Device_Status_Posture_SignalState{
-			"mdmEnabled":     passFail(d.MDMEnabled),
-			"agentInstalled": passFail(d.AgentInstalled),
-			"notMissing":     passFail(!d.IsMissing),
-		},
-		Attrs: iruAttrs(d),
+		Enrolled:     devicemgrcommon.SignalFromBool(d.MDMEnabled),
+		AgentHealthy: agentHealthySignal(d, lastCheckIn, haveCheckIn, now),
+		Attrs:        iruAttrs(d),
 	}
-	if t, ok := parseTime(d.LastCheckIn); ok {
-		p.LastSeenAt = timestamppb.New(t)
+	if haveCheckIn {
+		p.LastSeenAt = timestamppb.New(lastCheckIn)
 	}
 
 	var macs []string
@@ -209,15 +211,27 @@ func toEntry(d *iruDevice) *devicemgrcommon.Entry {
 	}
 
 	var emails []string
-	if d.User != nil && strings.Contains(d.User.Email, "@") {
-		emails = []string{d.User.Email}
+	if usr := d.getUser(); usr != nil && strings.Contains(usr.Email, "@") {
+		emails = []string{usr.Email}
 	}
 
 	return &devicemgrcommon.Entry{
+		ExternalID:  strings.ToLower(strings.TrimSpace(d.DeviceID)),
 		Serial:      d.SerialNumber,
 		MACs:        macs,
 		OwnerEmails: emails,
 		Posture:     p,
+	}
+}
+
+func agentHealthySignal(d *iruDevice, lastCheckIn time.Time, haveCheckIn bool, now time.Time) corev1.Device_Status_Posture_SignalState {
+	switch {
+	case d.AgentInstalled == nil || d.IsMissing == nil:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	case !*d.AgentInstalled || *d.IsMissing:
+		return corev1.Device_Status_Posture_FAIL
+	default:
+		return devicemgrcommon.RecencySignal(lastCheckIn, haveCheckIn, now)
 	}
 }
 
@@ -235,13 +249,19 @@ func iruAttrs(d *iruDevice) *structpb.Struct {
 	put("agentVersion", d.AgentVersion)
 	put("assetTag", d.AssetTag)
 	put("blueprintId", d.BlueprintID)
-	if d.User != nil {
-		put("userEmail", d.User.Email)
-		put("userName", d.User.Name)
+	if usr := d.getUser(); usr != nil {
+		put("userEmail", usr.Email)
+		put("userName", usr.Name)
 	}
-	fields["isMissing"] = d.IsMissing
-	fields["mdmEnabled"] = d.MDMEnabled
-	fields["agentInstalled"] = d.AgentInstalled
+	if d.IsMissing != nil {
+		fields["isMissing"] = *d.IsMissing
+	}
+	if d.MDMEnabled != nil {
+		fields["mdmEnabled"] = *d.MDMEnabled
+	}
+	if d.AgentInstalled != nil {
+		fields["agentInstalled"] = *d.AgentInstalled
+	}
 	if len(fields) == 0 {
 		return nil
 	}
@@ -250,26 +270,6 @@ func iruAttrs(d *iruDevice) *structpb.Struct {
 		return nil
 	}
 	return s
-}
-
-func riskBand(score int32) corev1.Device_Status_Posture_RiskLevel {
-	switch {
-	case score >= 90:
-		return corev1.Device_Status_Posture_LOW
-	case score >= 70:
-		return corev1.Device_Status_Posture_MEDIUM
-	case score >= 40:
-		return corev1.Device_Status_Posture_HIGH
-	default:
-		return corev1.Device_Status_Posture_CRITICAL
-	}
-}
-
-func passFail(ok bool) corev1.Device_Status_Posture_SignalState {
-	if ok {
-		return corev1.Device_Status_Posture_PASS
-	}
-	return corev1.Device_Status_Posture_FAIL
 }
 
 func parseTime(s string) (time.Time, bool) {

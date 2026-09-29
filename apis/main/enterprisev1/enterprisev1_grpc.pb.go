@@ -70,6 +70,7 @@ const (
 	MainService_ListDeviceManager_FullMethodName                   = "/octelium.api.main.enterprise.v1.MainService/ListDeviceManager"
 	MainService_UpdateDeviceManager_FullMethodName                 = "/octelium.api.main.enterprise.v1.MainService/UpdateDeviceManager"
 	MainService_DeleteDeviceManager_FullMethodName                 = "/octelium.api.main.enterprise.v1.MainService/DeleteDeviceManager"
+	MainService_ResetDeviceBinding_FullMethodName                  = "/octelium.api.main.enterprise.v1.MainService/ResetDeviceBinding"
 	MainService_GetCoreCondition_FullMethodName                    = "/octelium.api.main.enterprise.v1.MainService/GetCoreCondition"
 )
 
@@ -169,6 +170,9 @@ type MainServiceClient interface {
 	UpdateDeviceManager(ctx context.Context, in *DeviceManager, opts ...grpc.CallOption) (*DeviceManager, error)
 	// DeleteDeviceManager deletes a DeviceManager
 	DeleteDeviceManager(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
+	// ResetDeviceBinding clears the Device's Binding and posture so that the
+	// Cluster can select a DeviceManager again using the configured order.
+	ResetDeviceBinding(ctx context.Context, in *ResetDeviceBindingRequest, opts ...grpc.CallOption) (*metav1.OperationResult, error)
 	// GetCoreCondition compiles a structured enterprise Condition into its
 	// equivalent core Condition (i.e. a CEL expression) without applying it to
 	// any resource. It is mainly useful to preview and validate a Condition
@@ -594,6 +598,16 @@ func (c *mainServiceClient) DeleteDeviceManager(ctx context.Context, in *metav1.
 	return out, nil
 }
 
+func (c *mainServiceClient) ResetDeviceBinding(ctx context.Context, in *ResetDeviceBindingRequest, opts ...grpc.CallOption) (*metav1.OperationResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(metav1.OperationResult)
+	err := c.cc.Invoke(ctx, MainService_ResetDeviceBinding_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *mainServiceClient) GetCoreCondition(ctx context.Context, in *Condition, opts ...grpc.CallOption) (*corev1.Condition, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(corev1.Condition)
@@ -700,6 +714,9 @@ type MainServiceServer interface {
 	UpdateDeviceManager(context.Context, *DeviceManager) (*DeviceManager, error)
 	// DeleteDeviceManager deletes a DeviceManager
 	DeleteDeviceManager(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
+	// ResetDeviceBinding clears the Device's Binding and posture so that the
+	// Cluster can select a DeviceManager again using the configured order.
+	ResetDeviceBinding(context.Context, *ResetDeviceBindingRequest) (*metav1.OperationResult, error)
 	// GetCoreCondition compiles a structured enterprise Condition into its
 	// equivalent core Condition (i.e. a CEL expression) without applying it to
 	// any resource. It is mainly useful to preview and validate a Condition
@@ -837,6 +854,9 @@ func (UnimplementedMainServiceServer) UpdateDeviceManager(context.Context, *Devi
 }
 func (UnimplementedMainServiceServer) DeleteDeviceManager(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteDeviceManager not implemented")
+}
+func (UnimplementedMainServiceServer) ResetDeviceBinding(context.Context, *ResetDeviceBindingRequest) (*metav1.OperationResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResetDeviceBinding not implemented")
 }
 func (UnimplementedMainServiceServer) GetCoreCondition(context.Context, *Condition) (*corev1.Condition, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCoreCondition not implemented")
@@ -1600,6 +1620,24 @@ func _MainService_DeleteDeviceManager_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MainService_ResetDeviceBinding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetDeviceBindingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).ResetDeviceBinding(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_ResetDeviceBinding_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).ResetDeviceBinding(ctx, req.(*ResetDeviceBindingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MainService_GetCoreCondition_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Condition)
 	if err := dec(in); err != nil {
@@ -1788,6 +1826,10 @@ var MainService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteDeviceManager",
 			Handler:    _MainService_DeleteDeviceManager_Handler,
+		},
+		{
+			MethodName: "ResetDeviceBinding",
+			Handler:    _MainService_ResetDeviceBinding_Handler,
 		},
 		{
 			MethodName: "GetCoreCondition",

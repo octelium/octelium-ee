@@ -30,18 +30,17 @@ import (
 )
 
 const (
-	defaultBaseURL = "https://k2.kolide.com"
-	devicesPath    = "/api/v0/devices"
+	defaultBaseURL = "https://api.kolide.com"
+	apiVersion     = "2026-04-07"
+	devicesPath    = "/devices"
+	peoplePath     = "/people"
 	opPageSize     = 100
 	opHTTPTimeout  = 60 * time.Second
 	opMaxRetries   = 4
 	opMaxRespByte  = 64 << 20
 )
 
-var (
-	platformUUIDRe = regexp.MustCompile(`(?i)"IOPlatformUUID"\s*=\s*"([0-9a-f-]{36})"`)
-	uuidRe         = regexp.MustCompile(`(?i)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
-)
+var uuidRe = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 
 type Manager struct {
 	api *apiClient
@@ -65,15 +64,16 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		return nil, err
 	}
 
-	base := strings.TrimRight(strings.TrimSpace(spec.BaseURL), "/")
-	if base == "" {
-		base = defaultBaseURL
+	base, err := devicemgrcommon.ParseHTTPSURL(spec.BaseURL, defaultBaseURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "Invalid OnePassword baseURL")
 	}
 
 	rc := resty.New().
 		SetBaseURL(base).
 		SetTimeout(opHTTPTimeout).
 		SetHeader("Accept", "application/json").
+		SetHeader("X-Kolide-Api-Version", apiVersion).
 		SetAuthToken(uenterprisev1.ToSecret(sec).GetValueStr()).
 		SetResponseBodyLimit(opMaxRespByte).
 		SetRetryCount(opMaxRetries).
@@ -99,31 +99,33 @@ func (m *Manager) Close() error {
 func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
-			OSType: corev1.Device_Status_MAC,
+			ID: "hardware-uuid",
+			OSTypes: []corev1.Device_Status_OSType{
+				corev1.Device_Status_MAC,
+				corev1.Device_Status_WINDOWS,
+			},
+			PlatformIdentifier: &devicemgrcommon.PlatformIdentifier{
+				Kind: corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier_HARDWARE_UUID,
+			},
 		},
 		{
-			OSType: corev1.Device_Status_WINDOWS,
-		},
-		{
-			OSType: corev1.Device_Status_LINUX,
+			ID:               "hardware-uuid-linux",
+			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_LINUX},
+			RequireElevation: true,
+			PlatformIdentifier: &devicemgrcommon.PlatformIdentifier{
+				Kind: corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier_HARDWARE_UUID,
+			},
 		},
 	}
 }
 
 func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []*devicemgrcommon.ProbeResult) (string, error) {
 	for _, r := range results {
-		if r == nil || r.Err != nil || len(r.Output) == 0 {
+		if r == nil {
 			continue
 		}
-		s := string(r.Output)
-		if osType == corev1.Device_Status_MAC {
-			if mm := platformUUIDRe.FindStringSubmatch(s); len(mm) == 2 {
-				return strings.ToLower(mm[1]), nil
-			}
-			continue
-		}
-		if u := uuidRe.FindString(s); u != "" {
-			return strings.ToLower(u), nil
+		if id := strings.ToLower(strings.TrimSpace(r.Text)); uuidRe.MatchString(id) {
+			return id, nil
 		}
 	}
 	return "", nil
@@ -134,12 +136,25 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 	if err != nil {
 		return nil, err
 	}
+	people, err := m.api.listPeople(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	emails := make(map[string]string, len(people))
+	for _, person := range people {
+		if person != nil && person.ID != "" {
+			emails[person.ID] = person.Email
+		}
+	}
+
+	now := time.Now()
 	entries := make([]*devicemgrcommon.Entry, 0, len(devices))
 	for _, d := range devices {
-		if d == nil {
+		if d == nil || d.ID == "" {
 			continue
 		}
-		entries = append(entries, toEntry(d))
+		entries = append(entries, toEntry(d, emails, now))
 	}
 	return devicemgrcommon.NewFleet(entries), nil
 }
@@ -148,38 +163,65 @@ type apiClient struct {
 	rc *resty.Client
 }
 
+type pagination struct {
+	NextCursor string `json:"next_cursor"`
+	Count      int    `json:"count"`
+}
+
 type devicesResponse struct {
 	Data       []*kolideDevice `json:"data"`
-	Pagination struct {
-		Next  string `json:"next"`
-		Count int    `json:"count"`
-	} `json:"pagination"`
+	Pagination pagination      `json:"pagination"`
+}
+
+type peopleResponse struct {
+	Data       []*kolidePerson `json:"data"`
+	Pagination pagination      `json:"pagination"`
 }
 
 func (c *apiClient) listDevices(ctx context.Context) ([]*kolideDevice, error) {
 	var out []*kolideDevice
 	cursor := ""
 	for {
-		if err := ctx.Err(); err != nil {
-			return nil, err
-		}
-		q := url.Values{}
-		q.Set("per_page", strconv.Itoa(opPageSize))
-		if cursor != "" {
-			q.Set("cursor", cursor)
-		}
-
 		var page devicesResponse
-		if err := c.get(ctx, devicesPath+"?"+q.Encode(), &page); err != nil {
+		if err := c.getPage(ctx, devicesPath, cursor, &page); err != nil {
 			return nil, err
 		}
 		out = append(out, page.Data...)
-		if page.Pagination.Next == "" || len(page.Data) == 0 {
+		if page.Pagination.NextCursor == "" || page.Pagination.NextCursor == cursor || len(page.Data) == 0 {
 			break
 		}
-		cursor = page.Pagination.Next
+		cursor = page.Pagination.NextCursor
 	}
 	return out, nil
+}
+
+func (c *apiClient) listPeople(ctx context.Context) ([]*kolidePerson, error) {
+	var out []*kolidePerson
+	cursor := ""
+	for {
+		var page peopleResponse
+		if err := c.getPage(ctx, peoplePath, cursor, &page); err != nil {
+			return nil, err
+		}
+		out = append(out, page.Data...)
+		if page.Pagination.NextCursor == "" || page.Pagination.NextCursor == cursor || len(page.Data) == 0 {
+			break
+		}
+		cursor = page.Pagination.NextCursor
+	}
+	return out, nil
+}
+
+func (c *apiClient) getPage(ctx context.Context, pth, cursor string, out any) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	q := url.Values{}
+	q.Set("per_page", strconv.Itoa(opPageSize))
+	if cursor != "" {
+		q.Set("cursor", cursor)
+	}
+	return c.get(ctx, pth+"?"+q.Encode(), out)
 }
 
 func (c *apiClient) get(ctx context.Context, u string, out any) error {
@@ -198,64 +240,84 @@ func (c *apiClient) get(ctx context.Context, u string, out any) error {
 }
 
 type kolideDevice struct {
-	ID                   int64        `json:"id"`
-	Name                 string       `json:"name"`
-	HardwareUUID         string       `json:"hardware_uuid"`
-	Serial               string       `json:"serial"`
-	Platform             string       `json:"platform"`
-	OperatingSystem      string       `json:"operating_system"`
-	OSVersion            string       `json:"os_version"`
-	LastSeenAt           string       `json:"last_seen_at"`
-	FailureCount         int          `json:"failure_count"`
-	ResolvedFailureCount int          `json:"resolved_failure_count"`
-	AuthState            string       `json:"auth_state"`
-	Note                 string       `json:"note"`
-	PrimaryUserName      string       `json:"primary_user_name"`
-	AssignedOwner        *kolideOwner `json:"assigned_owner"`
+	ID                  string      `json:"id"`
+	Name                string      `json:"name"`
+	LastSeenAt          string      `json:"last_seen_at"`
+	OperatingSystem     string      `json:"operating_system"`
+	HardwareModel       string      `json:"hardware_model"`
+	Serial              string      `json:"serial"`
+	HardwareUUID        string      `json:"hardware_uuid"`
+	Note                string      `json:"note"`
+	AuthState           string      `json:"auth_state"`
+	DeviceType          string      `json:"device_type"`
+	FormFactor          string      `json:"form_factor"`
+	RegisteredOwnerInfo *linkObject `json:"registered_owner_info"`
 }
 
-type kolideOwner struct {
+type linkObject struct {
+	Identifier string `json:"identifier"`
+}
+
+type kolidePerson struct {
+	ID    string `json:"id"`
 	Email string `json:"email"`
-	Name  string `json:"name"`
 }
 
-func toEntry(d *kolideDevice) *devicemgrcommon.Entry {
-	compliant := d.FailureCount == 0
-
-	score := int32(100)
-	if !compliant {
-		score = 100 - int32(d.FailureCount)*20
-		if score < 20 {
-			score = 20
-		}
-	}
+func toEntry(d *kolideDevice, emails map[string]string, now time.Time) *devicemgrcommon.Entry {
+	lastSeen, haveSeen := parseTime(d.LastSeenAt)
 
 	p := &corev1.Device_Status_Posture{
-		RiskLevel:      riskBand(score),
-		DiskEncryption: corev1.Device_Status_Posture_NOT_APPLICABLE,
-		Compliant:      passFail(compliant),
-		ThreatFree:     corev1.Device_Status_Posture_NOT_APPLICABLE,
+		Compliant:    authStateCompliant(d.AuthState),
+		AgentHealthy: devicemgrcommon.RecencySignal(lastSeen, haveSeen, now),
 		Signals: map[string]corev1.Device_Status_Posture_SignalState{
-			"checksPassing": passFail(compliant),
+			devicemgrcommon.SignalKey("onepassword", "noIssues"): authStateNoIssues(d.AuthState),
 		},
 		Attrs: kolideAttrs(d),
 	}
-	if t, ok := parseTime(d.LastSeenAt); ok {
-		p.LastSeenAt = timestamppb.New(t)
+	if haveSeen {
+		p.LastSeenAt = timestamppb.New(lastSeen)
 	}
 
-	var emails []string
-	if d.AssignedOwner != nil {
-		if email := strings.TrimSpace(d.AssignedOwner.Email); strings.Contains(email, "@") {
-			emails = []string{email}
+	var aliases []string
+	if id := devicemgrcommon.NormalizeID(d.HardwareUUID); id != "" {
+		aliases = []string{id}
+	}
+
+	var ownerEmails []string
+	if d.RegisteredOwnerInfo != nil {
+		if email := strings.TrimSpace(emails[d.RegisteredOwnerInfo.Identifier]); strings.Contains(email, "@") {
+			ownerEmails = []string{email}
 		}
 	}
 
 	return &devicemgrcommon.Entry{
-		ExternalID:  strings.ToLower(strings.TrimSpace(d.HardwareUUID)),
+		ExternalID:  strings.ToLower(strings.TrimSpace(d.ID)),
+		Aliases:     aliases,
 		Serial:      d.Serial,
-		OwnerEmails: emails,
+		OwnerEmails: ownerEmails,
 		Posture:     p,
+	}
+}
+
+func authStateCompliant(state string) corev1.Device_Status_Posture_SignalState {
+	switch strings.ToLower(strings.TrimSpace(state)) {
+	case "good", "notified", "will block":
+		return corev1.Device_Status_Posture_PASS
+	case "blocked":
+		return corev1.Device_Status_Posture_FAIL
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	}
+}
+
+func authStateNoIssues(state string) corev1.Device_Status_Posture_SignalState {
+	switch strings.ToLower(strings.TrimSpace(state)) {
+	case "good":
+		return corev1.Device_Status_Posture_PASS
+	case "notified", "will block", "blocked":
+		return corev1.Device_Status_Posture_FAIL
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
 }
 
@@ -266,19 +328,17 @@ func kolideAttrs(d *kolideDevice) *structpb.Struct {
 			fields[k] = v
 		}
 	}
-	put("deviceId", strconv.FormatInt(d.ID, 10))
-	put("platform", d.Platform)
+	put("deviceId", d.ID)
+	put("name", d.Name)
+	put("deviceType", d.DeviceType)
+	put("formFactor", d.FormFactor)
 	put("operatingSystem", d.OperatingSystem)
-	put("osVersion", d.OSVersion)
+	put("hardwareModel", d.HardwareModel)
 	put("authState", d.AuthState)
-	put("primaryUserName", d.PrimaryUserName)
 	put("note", d.Note)
-	if d.AssignedOwner != nil {
-		put("ownerEmail", d.AssignedOwner.Email)
-		put("ownerName", d.AssignedOwner.Name)
+	if d.RegisteredOwnerInfo != nil {
+		put("registeredOwnerId", d.RegisteredOwnerInfo.Identifier)
 	}
-	fields["failureCount"] = float64(d.FailureCount)
-	fields["resolvedFailureCount"] = float64(d.ResolvedFailureCount)
 	if len(fields) == 0 {
 		return nil
 	}
@@ -287,26 +347,6 @@ func kolideAttrs(d *kolideDevice) *structpb.Struct {
 		return nil
 	}
 	return s
-}
-
-func riskBand(score int32) corev1.Device_Status_Posture_RiskLevel {
-	switch {
-	case score >= 90:
-		return corev1.Device_Status_Posture_LOW
-	case score >= 70:
-		return corev1.Device_Status_Posture_MEDIUM
-	case score >= 40:
-		return corev1.Device_Status_Posture_HIGH
-	default:
-		return corev1.Device_Status_Posture_CRITICAL
-	}
-}
-
-func passFail(ok bool) corev1.Device_Status_Posture_SignalState {
-	if ok {
-		return corev1.Device_Status_Posture_PASS
-	}
-	return corev1.Device_Status_Posture_FAIL
 }
 
 func parseTime(s string) (time.Time, bool) {

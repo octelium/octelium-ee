@@ -46,10 +46,10 @@ var (
 )
 
 type Manager struct {
-	api        *apiClient
-	siteIDs    string
-	accountIDs string
-	agentQuery string
+	api          *apiClient
+	siteIDs      []string
+	accountIDs   []string
+	agentFilters map[string]string
 }
 
 var _ devicemgrcommon.Manager = (*Manager)(nil)
@@ -59,8 +59,9 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 	if spec == nil {
 		return nil, errors.Errorf("Not a SentinelOne DeviceManager: %s", opts.DeviceManager.Metadata.Name)
 	}
-	if strings.TrimSpace(spec.ManagementURL) == "" {
-		return nil, errors.Errorf("Empty SentinelOne managementURL")
+	managementURL, err := devicemgrcommon.ParseHTTPSURL(spec.ManagementURL, "")
+	if err != nil {
+		return nil, errors.Wrap(err, "Invalid SentinelOne managementURL")
 	}
 	if spec.GetApiToken().GetFromSecret() == "" {
 		return nil, errors.Errorf("Empty SentinelOne apiToken")
@@ -74,7 +75,7 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 	}
 
 	rc := resty.New().
-		SetBaseURL(strings.TrimRight(strings.TrimSpace(spec.ManagementURL), "/")).
+		SetBaseURL(managementURL).
 		SetTimeout(s1HTTPTimeout).
 		SetHeader("Accept", "application/json").
 		SetHeader("Authorization", "ApiToken "+uenterprisev1.ToSecret(sec).GetValueStr()).
@@ -86,10 +87,10 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		SetRetryAfter(retryAfter)
 
 	return &Manager{
-		api:        &apiClient{rc: rc},
-		siteIDs:    spec.SiteIDs,
-		accountIDs: spec.AccountIDs,
-		agentQuery: spec.AgentQuery,
+		api:          &apiClient{rc: rc},
+		siteIDs:      spec.SiteIDs,
+		accountIDs:   spec.AccountIDs,
+		agentFilters: spec.AgentFilters,
 	}, nil
 }
 
@@ -105,7 +106,8 @@ func (m *Manager) Close() error {
 func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
-			OSType:           corev1.Device_Status_LINUX,
+			ID:               "agent-id-linux",
+			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_LINUX},
 			RequireElevation: true,
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        "/opt/sentinelone/bin/sentinelctl",
@@ -115,7 +117,8 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 			},
 		},
 		{
-			OSType:           corev1.Device_Status_MAC,
+			ID:               "agent-id-macos",
+			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_MAC},
 			RequireElevation: true,
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        "/usr/local/bin/sentinelctl",
@@ -125,7 +128,8 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 			},
 		},
 		{
-			OSType:           corev1.Device_Status_MAC,
+			ID:               "agent-id-macos-bundle",
+			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_MAC},
 			RequireElevation: true,
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        "/Library/Sentinel/sentinel-agent.bundle/Contents/MacOS/sentinelctl",
@@ -135,7 +139,8 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 			},
 		},
 		{
-			OSType:           corev1.Device_Status_WINDOWS,
+			ID:               "agent-id-windows",
+			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_WINDOWS},
 			RequireElevation: true,
 			ReadRegistry: &devicemgrcommon.ReadRegistry{
 				Key:  `HKLM\SOFTWARE\SentinelOne\Monitor`,
@@ -147,14 +152,13 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 
 func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []*devicemgrcommon.ProbeResult) (string, error) {
 	for _, r := range results {
-		if r == nil || r.Err != nil || len(r.Output) == 0 {
+		if r == nil || r.Text == "" {
 			continue
 		}
-		s := string(r.Output)
-		if u := uuidRe.FindString(s); u != "" {
+		if u := uuidRe.FindString(r.Text); u != "" {
 			return strings.ToLower(u), nil
 		}
-		if t := strings.ToLower(strings.TrimSpace(s)); agentIDRe.MatchString(t) {
+		if t := strings.ToLower(strings.TrimSpace(r.Text)); agentIDRe.MatchString(t) {
 			return t, nil
 		}
 	}
@@ -162,23 +166,9 @@ func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []
 }
 
 func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
-	q := url.Values{}
-	if m.siteIDs != "" {
-		q.Set("siteIds", m.siteIDs)
-	}
-	if m.accountIDs != "" {
-		q.Set("accountIds", m.accountIDs)
-	}
-	if m.agentQuery != "" {
-		extra, err := url.ParseQuery(m.agentQuery)
-		if err != nil {
-			return nil, errors.Wrap(err, "Invalid SentinelOne agentQuery")
-		}
-		for k, vs := range extra {
-			for _, v := range vs {
-				q.Add(k, v)
-			}
-		}
+	q, err := getAgentsQuery(m.siteIDs, m.accountIDs, m.agentFilters)
+	if err != nil {
+		return nil, err
 	}
 
 	agents, err := m.api.listAgents(ctx, q)
@@ -186,14 +176,33 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 		return nil, err
 	}
 
+	now := time.Now()
 	entries := make([]*devicemgrcommon.Entry, 0, len(agents))
 	for _, a := range agents {
 		if a == nil || a.UUID == "" {
 			continue
 		}
-		entries = append(entries, toEntry(a))
+		entries = append(entries, toEntry(a, now))
 	}
 	return devicemgrcommon.NewFleet(entries), nil
+}
+
+func getAgentsQuery(siteIDs, accountIDs []string, filters map[string]string) (url.Values, error) {
+	q := url.Values{}
+	if len(siteIDs) > 0 {
+		q.Set("siteIds", strings.Join(siteIDs, ","))
+	}
+	if len(accountIDs) > 0 {
+		q.Set("accountIds", strings.Join(accountIDs, ","))
+	}
+	for k, v := range filters {
+		switch strings.ToLower(k) {
+		case "siteids", "accountids", "cursor", "limit":
+			return nil, errors.Errorf("Reserved SentinelOne agent filter: %s", k)
+		}
+		q.Set(k, v)
+	}
+	return q, nil
 }
 
 type apiClient struct {
@@ -262,17 +271,17 @@ type s1Agent struct {
 	OSName                string       `json:"osName"`
 	OSType                string       `json:"osType"`
 	AgentVersion          string       `json:"agentVersion"`
-	IsActive              bool         `json:"isActive"`
-	IsUpToDate            bool         `json:"isUpToDate"`
-	Infected              bool         `json:"infected"`
-	ActiveThreats         int          `json:"activeThreats"`
+	IsActive              *bool        `json:"isActive"`
+	IsUpToDate            *bool        `json:"isUpToDate"`
+	Infected              *bool        `json:"infected"`
+	ActiveThreats         *int         `json:"activeThreats"`
 	NetworkStatus         string       `json:"networkStatus"`
 	LastActiveDate        string       `json:"lastActiveDate"`
 	Domain                string       `json:"domain"`
 	SiteName              string       `json:"siteName"`
 	GroupName             string       `json:"groupName"`
-	EncryptedApplications bool         `json:"encryptedApplications"`
-	FirewallEnabled       bool         `json:"firewallEnabled"`
+	EncryptedApplications *bool        `json:"encryptedApplications"`
+	FirewallEnabled       *bool        `json:"firewallEnabled"`
 	ScanStatus            string       `json:"scanStatus"`
 	MitigationMode        string       `json:"mitigationMode"`
 	NetworkInterfaces     []s1NetIface `json:"networkInterfaces"`
@@ -283,43 +292,22 @@ type s1NetIface struct {
 	Physical string `json:"physical"`
 }
 
-func toEntry(a *s1Agent) *devicemgrcommon.Entry {
-	threat := a.Infected || a.ActiveThreats > 0
-
-	score := int32(100)
-	if !a.IsActive {
-		score -= 30
-	}
-	if !a.IsUpToDate {
-		score -= 15
-	}
-	if !a.FirewallEnabled {
-		score -= 15
-	}
-	if !a.EncryptedApplications {
-		score -= 25
-	}
-	if threat && score > 20 {
-		score = 20
-	}
-	if score < 0 {
-		score = 0
-	}
+func toEntry(a *s1Agent, now time.Time) *devicemgrcommon.Entry {
+	lastActive, haveActive := parseTime(a.LastActiveDate)
 
 	p := &corev1.Device_Status_Posture{
-		RiskLevel:      riskBand(score),
-		DiskEncryption: passFail(a.EncryptedApplications),
-		Compliant:      corev1.Device_Status_Posture_NOT_APPLICABLE,
-		ThreatFree:     passFail(!threat),
+		DiskEncryption: devicemgrcommon.SignalFromBool(a.EncryptedApplications),
+		Firewall:       devicemgrcommon.SignalFromBool(a.FirewallEnabled),
+		ThreatFree:     s1ThreatFree(a),
+		AgentHealthy:   s1AgentHealthy(a, lastActive, haveActive, now),
+		NotContained:   s1NotContained(a.NetworkStatus),
 		Signals: map[string]corev1.Device_Status_Posture_SignalState{
-			"agentRunning":  passFail(a.IsActive),
-			"agentUpToDate": passFail(a.IsUpToDate),
-			"firewall":      passFail(a.FirewallEnabled),
+			devicemgrcommon.SignalKey("sentinelone", "agentUpToDate"): devicemgrcommon.SignalFromBool(a.IsUpToDate),
 		},
 		Attrs: s1Attrs(a),
 	}
-	if t, ok := parseTime(a.LastActiveDate); ok {
-		p.LastSeenAt = timestamppb.New(t)
+	if haveActive {
+		p.LastSeenAt = timestamppb.New(lastActive)
 	}
 
 	return &devicemgrcommon.Entry{
@@ -327,6 +315,40 @@ func toEntry(a *s1Agent) *devicemgrcommon.Entry {
 		Serial:     a.SerialNumber,
 		MACs:       s1MACs(a),
 		Posture:    p,
+	}
+}
+
+func s1ThreatFree(a *s1Agent) corev1.Device_Status_Posture_SignalState {
+	switch {
+	case a.Infected != nil && *a.Infected,
+		a.ActiveThreats != nil && *a.ActiveThreats > 0:
+		return corev1.Device_Status_Posture_FAIL
+	case a.Infected != nil && a.ActiveThreats != nil:
+		return corev1.Device_Status_Posture_PASS
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	}
+}
+
+func s1AgentHealthy(a *s1Agent, lastActive time.Time, haveActive bool, now time.Time) corev1.Device_Status_Posture_SignalState {
+	switch {
+	case a.IsActive == nil:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	case !*a.IsActive:
+		return corev1.Device_Status_Posture_FAIL
+	default:
+		return devicemgrcommon.RecencySignal(lastActive, haveActive, now)
+	}
+}
+
+func s1NotContained(networkStatus string) corev1.Device_Status_Posture_SignalState {
+	switch strings.ToLower(strings.TrimSpace(networkStatus)) {
+	case "connected":
+		return corev1.Device_Status_Posture_PASS
+	case "connecting", "disconnected", "disconnecting":
+		return corev1.Device_Status_Posture_FAIL
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
 }
 
@@ -364,8 +386,12 @@ func s1Attrs(a *s1Agent) *structpb.Struct {
 	put("siteName", a.SiteName)
 	put("groupName", a.GroupName)
 	put("osName", a.OSName)
-	fields["infected"] = a.Infected
-	fields["activeThreats"] = float64(a.ActiveThreats)
+	if a.Infected != nil {
+		fields["infected"] = *a.Infected
+	}
+	if a.ActiveThreats != nil {
+		fields["activeThreats"] = float64(*a.ActiveThreats)
+	}
 	if len(fields) == 0 {
 		return nil
 	}
@@ -374,26 +400,6 @@ func s1Attrs(a *s1Agent) *structpb.Struct {
 		return nil
 	}
 	return s
-}
-
-func riskBand(score int32) corev1.Device_Status_Posture_RiskLevel {
-	switch {
-	case score >= 90:
-		return corev1.Device_Status_Posture_LOW
-	case score >= 70:
-		return corev1.Device_Status_Posture_MEDIUM
-	case score >= 40:
-		return corev1.Device_Status_Posture_HIGH
-	default:
-		return corev1.Device_Status_Posture_CRITICAL
-	}
-}
-
-func passFail(ok bool) corev1.Device_Status_Posture_SignalState {
-	if ok {
-		return corev1.Device_Status_Posture_PASS
-	}
-	return corev1.Device_Status_Posture_FAIL
 }
 
 func parseTime(s string) (time.Time, bool) {

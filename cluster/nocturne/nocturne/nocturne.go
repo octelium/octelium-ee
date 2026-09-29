@@ -90,7 +90,6 @@ func Run(ctx context.Context) error {
 		OcteliumC:  octeliumC,
 		Resolver:   registry,
 		Reconciler: devCtl,
-		Locker:     devCtl,
 	})
 	if err != nil {
 		return err
@@ -108,7 +107,7 @@ func Run(ctx context.Context) error {
 		}
 	}
 
-	if err := cWatcher.Device(ctx, nil, devCtl.OnAdd, devCtl.OnUpdate, devCtl.OnDelete); err != nil {
+	if err := dmCtl.Resync(ctx); err != nil {
 		return err
 	}
 
@@ -116,6 +115,11 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
+	if err := cWatcher.Device(ctx, nil, devCtl.OnAdd, devCtl.OnUpdate, devCtl.OnDelete); err != nil {
+		return err
+	}
+
+	dmCtl.Run(ctx)
 	devWatcher.Run(ctx)
 
 	{

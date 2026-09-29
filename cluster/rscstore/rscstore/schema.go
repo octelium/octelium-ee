@@ -40,7 +40,6 @@ const (
 	colSpecServices          = "spec_services"
 	colSpecNamespaces        = "spec_namespaces"
 	colSpecLinkingStrategy   = "spec_linking_strategy"
-	colSpecLinkingApproval   = "spec_linking_approval_mode"
 	colSpecPollingIsDisabled = "spec_polling_is_disabled"
 	colSpecSubjectUserUID    = "spec_subject_user_uid"
 	colSpecSubjectUserName   = "spec_subject_user_name"
@@ -67,7 +66,6 @@ const (
 	colStatusFidoIsHardware = "status_fido_is_hardware"
 	colStatusManagedDevices = "status_managed_devices"
 	colStatusLinkedDevices  = "status_linked_devices"
-	colStatusWaitingApprove = "status_waiting_approval"
 	colStatusAmbiguous      = "status_ambiguous"
 	colStatusFailedUpdates  = "status_failed_updates"
 
@@ -181,7 +179,6 @@ func getResourceColumns() []*resourceColumn {
 		{name: colSpecIsPublic, kind: kindBoolean, path: "$.spec.isPublic"},
 		{name: colSpecIsAnonymous, kind: kindBoolean, path: "$.spec.isAnonymous"},
 		{name: colSpecLinkingStrategy, kind: kindVarchar, path: "$.spec.linking.strategy"},
-		{name: colSpecLinkingApproval, kind: kindVarchar, path: "$.spec.linking.approvalMode"},
 		{name: colSpecPollingIsDisabled, kind: kindBoolean, path: "$.spec.polling.isDisabled"},
 		{name: colSpecSubjectUserUID, kind: kindVarchar, path: "$.spec.subject.userRef.uid"},
 		{name: colSpecSubjectUserName, kind: kindVarchar, path: "$.spec.subject.userRef.name"},
@@ -208,7 +205,6 @@ func getResourceColumns() []*resourceColumn {
 		{name: colStatusFidoIsHardware, kind: kindBoolean, path: "$.status.info.fido.isHardware"},
 		{name: colStatusManagedDevices, kind: kindBigint, path: "$.status.collection.managedDevices"},
 		{name: colStatusLinkedDevices, kind: kindBigint, path: "$.status.linking.linkedDevices"},
-		{name: colStatusWaitingApprove, kind: kindBigint, path: "$.status.linking.waitingApproval"},
 		{name: colStatusAmbiguous, kind: kindBigint, path: "$.status.linking.ambiguous"},
 		{name: colStatusFailedUpdates, kind: kindBigint, path: "$.status.linking.failedUpdates"},
 		{name: colStatusSource, kind: kindVarchar, path: "$.status.source"},

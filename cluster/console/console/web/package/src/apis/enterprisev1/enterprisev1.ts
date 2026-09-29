@@ -3338,6 +3338,21 @@ export interface ClusterConfig_Spec {
      * @generated from protobuf field: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate certificate = 3
      */
     certificate?: ClusterConfig_Spec_Certificate;
+    /**
+     * DeviceManagers is the ordered list of DeviceManager names used to select
+     * a Device's single Binding. Names must be unique and reference existing
+     * DeviceManagers. Only listed managers participate. If unset, all managers
+     * are considered in ascending name order.
+     * The first applicable manager with a unique candidate satisfying its
+     * linking requirements wins. A manager with no match is skipped; an
+     * unavailable inventory, ambiguous match or ownership conflict blocks
+     * selection instead of falling through to a lower-priority manager.
+     * This order applies to new Bindings. Existing ACCEPTED Bindings remain
+     * assigned until reset or manager deletion, including during outages.
+     *
+     * @generated from protobuf field: repeated string deviceManagers = 4
+     */
+    deviceManagers: string[];
 }
 /**
  * Collector sets the OpenTelemetry Collector specific options
@@ -6273,12 +6288,13 @@ export interface ListSecretStoreOptions {
 }
 /**
  * DeviceManager represents an external device management or endpoint security
- * platform (e.g. CrowdStrike Falcon, Microsoft Intune, Jamf Pro) whose device
- * inventory is used by the Cluster as a source of the Devices' posture
- * information. The Cluster periodically polls the platform's inventory, links
- * its entries to the Cluster's Devices and materializes the resulting posture
- * into the `status.posture` field of the Device where it can then be used in
- * the authorization rules.
+ * platform (e.g. an EDR or an MDM) whose device inventory is used by the
+ * Cluster as a source of the Devices' posture information. The Cluster
+ * periodically polls the platform's inventory and automatically links matching
+ * Devices to its entries. A Device has one authoritative DeviceManager, selected
+ * using enterprise ClusterConfig.spec.deviceManagers, and its posture is stored
+ * in Device.status.posture. Unusable or expired posture is omitted from the
+ * authorization context.
  *
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager
  */
@@ -6321,10 +6337,11 @@ export interface DeviceManager {
  */
 export interface DeviceManager_Spec {
     /**
-     * Condition restricts the Devices that the DeviceManager applies to. A
-     * DeviceManager without a Condition applies to every Device.
+     * Condition restricts the Devices that the DeviceManager applies to. Its
+     * input contains `ctx.device` and `ctx.user`. A DeviceManager without a
+     * Condition applies to every Device.
      *
-     * @generated from protobuf field: octelium.api.main.core.v1.Condition condition = 12
+     * @generated from protobuf field: octelium.api.main.core.v1.Condition condition = 9
      */
     condition?: Condition$;
     /**
@@ -6411,6 +6428,28 @@ export interface DeviceManager_Spec {
     };
 }
 /**
+ * SecretRef is a reference to a Secret whose value is used as a
+ * credential
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+ */
+export interface DeviceManager_Spec_SecretRef {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "fromSecret";
+        /**
+         * FromSecret sets the name of the Secret
+         *
+         * @generated from protobuf field: string fromSecret = 1
+         */
+        fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
  * CrowdStrike sets the CrowdStrike Falcon specific options
  *
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike
@@ -6431,52 +6470,30 @@ export interface DeviceManager_Spec_CrowdStrike {
     /**
      * ClientSecret is the client secret of the Falcon API client. Required.
      *
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.ClientSecret clientSecret = 4
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef clientSecret = 3
      */
-    clientSecret?: DeviceManager_Spec_CrowdStrike_ClientSecret;
+    clientSecret?: DeviceManager_Spec_SecretRef;
     /**
      * MemberCID is the customer ID of the member tenant whose hosts are
      * collected. It is only used in the multi-tenant Falcon environments.
      *
-     * @generated from protobuf field: string memberCID = 5
+     * @generated from protobuf field: string memberCID = 4
      */
     memberCID: string;
     /**
      * HostFilter is an FQL filter that restricts the hosts that are
      * collected from the Falcon inventory.
      *
-     * @generated from protobuf field: string hostFilter = 6
+     * @generated from protobuf field: string hostFilter = 5
      */
     hostFilter: string;
     /**
      * DisableZeroTrustAssessment disables collecting the CrowdStrike Zero
      * Trust Assessment scores of the hosts.
      *
-     * @generated from protobuf field: bool disableZeroTrustAssessment = 7
+     * @generated from protobuf field: bool disableZeroTrustAssessment = 6
      */
     disableZeroTrustAssessment: boolean;
-}
-/**
- * ClientSecret is the client secret of the Falcon API client
- *
- * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.ClientSecret
- */
-export interface DeviceManager_Spec_CrowdStrike_ClientSecret {
-    /**
-     * @generated from protobuf oneof: type
-     */
-    type: {
-        oneofKind: "fromSecret";
-        /**
-         * FromSecret sets the name of the Secret whose value contains the
-         * client secret
-         *
-         * @generated from protobuf field: string fromSecret = 1
-         */
-        fromSecret: string;
-    } | {
-        oneofKind: undefined;
-    };
 }
 /**
  * Region is the CrowdStrike Falcon cloud region.
@@ -6529,8 +6546,8 @@ export enum DeviceManager_Spec_CrowdStrike_Region {
  */
 export interface DeviceManager_Spec_SentinelOne {
     /**
-     * ManagementURL is the URL of the SentinelOne management console (e.g.
-     * `https://example.sentinelone.net`). Required.
+     * ManagementURL is the HTTPS URL of the SentinelOne management console
+     * (e.g. `https://example.sentinelone.net`). Required.
      *
      * @generated from protobuf field: string managementURL = 1
      */
@@ -6538,52 +6555,32 @@ export interface DeviceManager_Spec_SentinelOne {
     /**
      * APIToken is the SentinelOne API token. Required.
      *
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.APIToken apiToken = 2
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiToken = 2
      */
-    apiToken?: DeviceManager_Spec_SentinelOne_APIToken;
+    apiToken?: DeviceManager_Spec_SecretRef;
     /**
-     * SiteIDs is a comma-separated list of the SentinelOne site IDs whose
-     * agents are collected.
+     * SiteIDs is the list of the SentinelOne site IDs whose agents are
+     * collected.
      *
-     * @generated from protobuf field: string siteIDs = 3
+     * @generated from protobuf field: repeated string siteIDs = 3
      */
-    siteIDs: string;
+    siteIDs: string[];
     /**
-     * AccountIDs is a comma-separated list of the SentinelOne account IDs
-     * whose agents are collected.
+     * AccountIDs is the list of the SentinelOne account IDs whose agents
+     * are collected.
      *
-     * @generated from protobuf field: string accountIDs = 4
+     * @generated from protobuf field: repeated string accountIDs = 4
      */
-    accountIDs: string;
+    accountIDs: string[];
     /**
-     * AgentQuery is a URL-encoded set of additional query parameters that
-     * are set in the SentinelOne agents listing requests in order to further
-     * restrict the agents that are collected.
+     * AgentFilters is a map of additional agent listing filters (e.g.
+     * `isDecommissioned: "false"`). The keys used for scoping and paging
+     * (i.e. `siteIds`, `accountIds`, `cursor`, `limit`) are not allowed.
      *
-     * @generated from protobuf field: string agentQuery = 5
+     * @generated from protobuf field: map<string, string> agentFilters = 5
      */
-    agentQuery: string;
-}
-/**
- * APIToken is the SentinelOne API token
- *
- * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.APIToken
- */
-export interface DeviceManager_Spec_SentinelOne_APIToken {
-    /**
-     * @generated from protobuf oneof: type
-     */
-    type: {
-        oneofKind: "fromSecret";
-        /**
-         * FromSecret sets the name of the Secret whose value contains the
-         * API token
-         *
-         * @generated from protobuf field: string fromSecret = 1
-         */
-        fromSecret: string;
-    } | {
-        oneofKind: undefined;
+    agentFilters: {
+        [key: string]: string;
     };
 }
 /**
@@ -6609,9 +6606,9 @@ export interface DeviceManager_Spec_MicrosoftIntune {
      * ClientSecret is the client secret of the Entra ID application.
      * Required.
      *
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.ClientSecret clientSecret = 3
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef clientSecret = 3
      */
-    clientSecret?: DeviceManager_Spec_MicrosoftIntune_ClientSecret;
+    clientSecret?: DeviceManager_Spec_SecretRef;
     /**
      * Cloud sets the Microsoft cloud environment.
      *
@@ -6625,28 +6622,20 @@ export interface DeviceManager_Spec_MicrosoftIntune {
      * @generated from protobuf field: string filter = 5
      */
     filter: string;
-}
-/**
- * ClientSecret is the client secret of the Entra ID application
- *
- * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.ClientSecret
- */
-export interface DeviceManager_Spec_MicrosoftIntune_ClientSecret {
     /**
-     * @generated from protobuf oneof: type
+     * IsGracePeriodCompliant treats the devices that are in their
+     * compliance grace period as compliant.
+     *
+     * @generated from protobuf field: bool isGracePeriodCompliant = 6
      */
-    type: {
-        oneofKind: "fromSecret";
-        /**
-         * FromSecret sets the name of the Secret whose value contains the
-         * client secret
-         *
-         * @generated from protobuf field: string fromSecret = 1
-         */
-        fromSecret: string;
-    } | {
-        oneofKind: undefined;
-    };
+    isGracePeriodCompliant: boolean;
+    /**
+     * IsConfigManagerCompliant treats the devices whose compliance is
+     * evaluated by Configuration Manager as compliant.
+     *
+     * @generated from protobuf field: bool isConfigManagerCompliant = 7
+     */
+    isConfigManagerCompliant: boolean;
 }
 /**
  * Cloud is the Microsoft cloud environment.
@@ -6687,7 +6676,7 @@ export enum DeviceManager_Spec_MicrosoftIntune_Cloud {
  */
 export interface DeviceManager_Spec_Jamf {
     /**
-     * BaseURL is the base URL of the Jamf Pro server (e.g.
+     * BaseURL is the HTTPS base URL of the Jamf Pro server (e.g.
      * `https://example.jamfcloud.com`). Required.
      *
      * @generated from protobuf field: string baseURL = 1
@@ -6703,9 +6692,9 @@ export interface DeviceManager_Spec_Jamf {
      * ClientSecret is the client secret of the Jamf Pro API client.
      * Required.
      *
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf.ClientSecret clientSecret = 3
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef clientSecret = 3
      */
-    clientSecret?: DeviceManager_Spec_Jamf_ClientSecret;
+    clientSecret?: DeviceManager_Spec_SecretRef;
     /**
      * Filter is a Jamf Pro RSQL filter expression that restricts the
      * computers that are collected.
@@ -6713,28 +6702,14 @@ export interface DeviceManager_Spec_Jamf {
      * @generated from protobuf field: string filter = 4
      */
     filter: string;
-}
-/**
- * ClientSecret is the client secret of the Jamf Pro API client
- *
- * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf.ClientSecret
- */
-export interface DeviceManager_Spec_Jamf_ClientSecret {
     /**
-     * @generated from protobuf oneof: type
+     * CompliantGroups is the list of the names of the Jamf Pro smart
+     * computer groups whose members are considered compliant. If it is
+     * unset, compliance is not reported.
+     *
+     * @generated from protobuf field: repeated string compliantGroups = 5
      */
-    type: {
-        oneofKind: "fromSecret";
-        /**
-         * FromSecret sets the name of the Secret whose value contains the
-         * client secret
-         *
-         * @generated from protobuf field: string fromSecret = 1
-         */
-        fromSecret: string;
-    } | {
-        oneofKind: undefined;
-    };
+    compliantGroups: string[];
 }
 /**
  * OnePassword sets the 1Password Device Trust (i.e. Kolide) specific
@@ -6744,8 +6719,8 @@ export interface DeviceManager_Spec_Jamf_ClientSecret {
  */
 export interface DeviceManager_Spec_OnePassword {
     /**
-     * BaseURL overrides the base URL of the 1Password Device Trust API. If
-     * unset, the default public API URL is used.
+     * BaseURL overrides the HTTPS base URL of the 1Password Device Trust
+     * API. If unset, the default public API URL is used.
      *
      * @generated from protobuf field: string baseURL = 1
      */
@@ -6753,31 +6728,9 @@ export interface DeviceManager_Spec_OnePassword {
     /**
      * APIToken is the 1Password Device Trust API token. Required.
      *
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword.APIToken apiToken = 2
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiToken = 2
      */
-    apiToken?: DeviceManager_Spec_OnePassword_APIToken;
-}
-/**
- * APIToken is the 1Password Device Trust API token
- *
- * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword.APIToken
- */
-export interface DeviceManager_Spec_OnePassword_APIToken {
-    /**
-     * @generated from protobuf oneof: type
-     */
-    type: {
-        oneofKind: "fromSecret";
-        /**
-         * FromSecret sets the name of the Secret whose value contains the
-         * API token
-         *
-         * @generated from protobuf field: string fromSecret = 1
-         */
-        fromSecret: string;
-    } | {
-        oneofKind: undefined;
-    };
+    apiToken?: DeviceManager_Spec_SecretRef;
 }
 /**
  * FleetDM sets the Fleet (i.e. FleetDM) specific options
@@ -6786,7 +6739,7 @@ export interface DeviceManager_Spec_OnePassword_APIToken {
  */
 export interface DeviceManager_Spec_FleetDM {
     /**
-     * BaseURL is the base URL of the Fleet server (e.g.
+     * BaseURL is the HTTPS base URL of the Fleet server (e.g.
      * `https://fleet.example.com`). Required.
      *
      * @generated from protobuf field: string baseURL = 1
@@ -6795,9 +6748,9 @@ export interface DeviceManager_Spec_FleetDM {
     /**
      * APIToken is the Fleet API token. Required.
      *
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM.APIToken apiToken = 2
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiToken = 2
      */
-    apiToken?: DeviceManager_Spec_FleetDM_APIToken;
+    apiToken?: DeviceManager_Spec_SecretRef;
     /**
      * TeamID is the ID of the Fleet team whose hosts are collected. If
      * unset, the hosts of every team are collected.
@@ -6807,36 +6760,14 @@ export interface DeviceManager_Spec_FleetDM {
     teamID: number;
 }
 /**
- * APIToken is the Fleet API token
- *
- * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM.APIToken
- */
-export interface DeviceManager_Spec_FleetDM_APIToken {
-    /**
-     * @generated from protobuf oneof: type
-     */
-    type: {
-        oneofKind: "fromSecret";
-        /**
-         * FromSecret sets the name of the Secret whose value contains the
-         * API token
-         *
-         * @generated from protobuf field: string fromSecret = 1
-         */
-        fromSecret: string;
-    } | {
-        oneofKind: undefined;
-    };
-}
-/**
  * Huntress sets the Huntress specific options
  *
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress
  */
 export interface DeviceManager_Spec_Huntress {
     /**
-     * BaseURL overrides the base URL of the Huntress API. If unset, the
-     * default public API URL is used.
+     * BaseURL overrides the HTTPS base URL of the Huntress API. If unset,
+     * the default public API URL is used.
      *
      * @generated from protobuf field: string baseURL = 1
      */
@@ -6852,31 +6783,17 @@ export interface DeviceManager_Spec_Huntress {
      * APISecret is the secret part of the Huntress API credentials which is
      * used as the HTTP basic authentication password. Required.
      *
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress.APISecret apiSecret = 3
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiSecret = 3
      */
-    apiSecret?: DeviceManager_Spec_Huntress_APISecret;
-}
-/**
- * APISecret is the secret part of the Huntress API credentials
- *
- * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress.APISecret
- */
-export interface DeviceManager_Spec_Huntress_APISecret {
+    apiSecret?: DeviceManager_Spec_SecretRef;
     /**
-     * @generated from protobuf oneof: type
+     * OrganizationIDs is the list of the Huntress organization IDs whose
+     * agents are collected. If unset, the agents of every organization of
+     * the account are collected.
+     *
+     * @generated from protobuf field: repeated int64 organizationIDs = 4
      */
-    type: {
-        oneofKind: "fromSecret";
-        /**
-         * FromSecret sets the name of the Secret whose value contains the
-         * API secret
-         *
-         * @generated from protobuf field: string fromSecret = 1
-         */
-        fromSecret: string;
-    } | {
-        oneofKind: undefined;
-    };
+    organizationIDs: number[];
 }
 /**
  * Iru sets the Iru specific options
@@ -6885,7 +6802,7 @@ export interface DeviceManager_Spec_Huntress_APISecret {
  */
 export interface DeviceManager_Spec_Iru {
     /**
-     * BaseURL is the base URL of the Iru API. Required.
+     * BaseURL is the HTTPS base URL of the Iru API. Required.
      *
      * @generated from protobuf field: string baseURL = 1
      */
@@ -6893,35 +6810,13 @@ export interface DeviceManager_Spec_Iru {
     /**
      * APIToken is the Iru API token. Required.
      *
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru.APIToken apiToken = 2
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiToken = 2
      */
-    apiToken?: DeviceManager_Spec_Iru_APIToken;
-}
-/**
- * APIToken is the Iru API token
- *
- * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru.APIToken
- */
-export interface DeviceManager_Spec_Iru_APIToken {
-    /**
-     * @generated from protobuf oneof: type
-     */
-    type: {
-        oneofKind: "fromSecret";
-        /**
-         * FromSecret sets the name of the Secret whose value contains the
-         * API token
-         *
-         * @generated from protobuf field: string fromSecret = 1
-         */
-        fromSecret: string;
-    } | {
-        oneofKind: undefined;
-    };
+    apiToken?: DeviceManager_Spec_SecretRef;
 }
 /**
  * Polling sets the options of the periodic collection of the provider's
- * device inventory
+ * device inventory and of the validity of the collected information
  *
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling
  */
@@ -6940,9 +6835,10 @@ export interface DeviceManager_Spec_Polling {
      */
     timeout?: Duration;
     /**
-     * StaleAfter is the duration after which the last collected inventory
-     * snapshot is considered stale and is no longer used to link the Devices
-     * or to refresh their posture.
+     * StaleAfter is the duration after the last successful collection
+     * after which the collected inventory is no longer used to link the
+     * Devices or to refresh their posture. It must be longer than the
+     * polling interval.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration staleAfter = 3
      */
@@ -6953,10 +6849,20 @@ export interface DeviceManager_Spec_Polling {
      * @generated from protobuf field: bool isDisabled = 4
      */
     isDisabled: boolean;
+    /**
+     * MaxObservationAge is the maximum age of the provider's own last
+     * observation of a device (e.g. its agent's last check-in) after which
+     * the device's posture is no longer valid regardless of how recently
+     * the inventory was collected.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration maxObservationAge = 5
+     */
+    maxObservationAge?: Duration;
 }
 /**
  * Linking sets the options of how the Cluster's Devices are discovered in
- * and bound to the provider's device inventory
+ * and bound to the provider's device inventory. Linking is automatic once
+ * a unique candidate satisfies the options.
  *
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking
  */
@@ -6969,49 +6875,27 @@ export interface DeviceManager_Spec_Linking {
      */
     strategy: DeviceManager_Spec_Linking_Strategy;
     /**
-     * ApprovalMode sets how a discovered candidate binding is approved. If
-     * unset, MANUAL is used.
+     * RequireAgreement only accepts a candidate when both the probe and
+     * the identity sources agree on the same inventory entry.
      *
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.ApprovalMode approvalMode = 2
-     */
-    approvalMode: DeviceManager_Spec_Linking_ApprovalMode;
-    /**
-     * RequireAgreement only accepts a candidate binding when both the probe
-     * and the identity sources agree on the same inventory entry.
-     *
-     * @generated from protobuf field: bool requireAgreement = 3
+     * @generated from protobuf field: bool requireAgreement = 2
      */
     requireAgreement: boolean;
     /**
-     * Priority is used to break the ties when more than one DeviceManager
-     * matches the same Device. The DeviceManager with the highest Priority
-     * wins. A tie between the DeviceManagers of an equal Priority is
-     * surfaced as ambiguous instead of being arbitrarily resolved.
+     * RequireOwnerMatch only accepts a candidate when the owner of the
+     * inventory entry matches the User of the Device.
      *
-     * @generated from protobuf field: uint32 priority = 4
+     * @generated from protobuf field: bool requireOwnerMatch = 3
      */
-    priority: number;
+    requireOwnerMatch: boolean;
     /**
-     * Verification sets the re-verification-related configuration.
+     * VerificationInterval is the interval at which the bound Devices are
+     * probed again to verify their Binding. A failed verification suspends
+     * the Binding and makes its posture unavailable.
      *
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification verification = 5
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration verificationInterval = 4
      */
-    verification?: DeviceManager_Spec_Linking_Verification;
-}
-/**
- * Verification sets the options of the periodic re-verification of the
- * already bound Devices
- *
- * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification
- */
-export interface DeviceManager_Spec_Linking_Verification {
-    /**
-     * Interval is the interval at which the bound Devices are
-     * re-verified.
-     *
-     * @generated from protobuf field: octelium.api.main.meta.v1.Duration interval = 1
-     */
-    interval?: Duration;
+    verificationInterval?: Duration;
 }
 /**
  * Strategy is how the candidate inventory entries of a Device are
@@ -7028,68 +6912,28 @@ export enum DeviceManager_Spec_Linking_Strategy {
      */
     STRATEGY_UNSET = 0,
     /**
-     * Discover and bind Devices only through provider inventory identity
-     * attributes available on both the Octelium Device and the
-     * DeviceManager inventory, such as serial number or MAC address.
+     * IDENTITY_ONLY discovers the candidates only through the Device's
+     * registration information (i.e. its serial number and MAC
+     * addresses).
      *
      * @generated from protobuf enum value: IDENTITY_ONLY = 1;
      */
     IDENTITY_ONLY = 1,
     /**
-     * Discover and bind Devices only through provider-specific local
-     * probes that return an external device identifier, such as a
-     * CrowdStrike AID.
+     * PROBE_ONLY discovers the candidates only through the results of the
+     * Probes run on the Device.
      *
      * @generated from protobuf enum value: PROBE_ONLY = 2;
      */
     PROBE_ONLY = 2,
     /**
-     * Evaluate both candidate sources concurrently. Within one
-     * DeviceManager, probe and identity resolving to different inventory
-     * entries is surfaced as AMBIGUOUS rather than silently ranked.
-     * Renamed from IDENTITY_THEN_PROBE: the implementation is concurrent
-     * ranked selection, not sequential fallback. If sequential-fallback
-     * semantics are ever wanted, add IDENTITY_THEN_PROBE = 4 with real
-     * sequencing rather than reinterpreting this value.
+     * IDENTITY_AND_PROBE discovers the candidates through both sources.
+     * Sources that resolve to different inventory entries make the
+     * Binding AMBIGUOUS.
      *
      * @generated from protobuf enum value: IDENTITY_AND_PROBE = 3;
      */
     IDENTITY_AND_PROBE = 3
-}
-/**
- * ApprovalMode is how a discovered candidate binding between a Device
- * and an inventory entry is approved.
- *
- * @generated from protobuf enum octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.ApprovalMode
- */
-export enum DeviceManager_Spec_Linking_ApprovalMode {
-    /**
-     * APPROVAL_MODE_UNSET is the default unset value which is equivalent
-     * to MANUAL.
-     *
-     * @generated from protobuf enum value: APPROVAL_MODE_UNSET = 0;
-     */
-    APPROVAL_MODE_UNSET = 0,
-    /**
-     * AUTOMATIC binds the Device as soon as a candidate is found without
-     * any further approval.
-     *
-     * @generated from protobuf enum value: AUTOMATIC = 1;
-     */
-    AUTOMATIC = 1,
-    /**
-     * EMAIL binds the Device only when the email of the inventory entry's
-     * owner matches the email of the Device's User.
-     *
-     * @generated from protobuf enum value: EMAIL = 2;
-     */
-    EMAIL = 2,
-    /**
-     * MANUAL leaves the binding pending until it is explicitly approved.
-     *
-     * @generated from protobuf enum value: MANUAL = 3;
-     */
-    MANUAL = 3
 }
 /**
  * Status is the current status of the DeviceManager
@@ -7149,7 +6993,8 @@ export interface DeviceManager_Status_Collection {
      */
     managedDevices: number;
     /**
-     * LastError is the error message of the last failed collection.
+     * LastError is the error message of the last failed or degraded
+     * collection.
      *
      * @generated from protobuf field: string lastError = 4
      */
@@ -7176,24 +7021,30 @@ export interface DeviceManager_Status_Linking {
      */
     linkedDevices: number;
     /**
-     * WaitingApproval is the number of the Devices whose binding is pending
-     * a manual approval.
-     *
-     * @generated from protobuf field: uint32 waitingApproval = 3
-     */
-    waitingApproval: number;
-    /**
      * Ambiguous is the number of the Devices that could not be bound since
      * more than one candidate matched them.
      *
-     * @generated from protobuf field: uint32 ambiguous = 4
+     * @generated from protobuf field: uint32 ambiguous = 3
      */
     ambiguous: number;
+    /**
+     * Conflicts is the number of the Devices whose candidate inventory
+     * entry is already bound to another Device.
+     *
+     * @generated from protobuf field: uint32 conflicts = 4
+     */
+    conflicts: number;
+    /**
+     * Suspended is the number of the Devices whose Binding is not VALID.
+     *
+     * @generated from protobuf field: uint32 suspended = 5
+     */
+    suspended: number;
     /**
      * FailedUpdates is the number of the Devices that could not be updated
      * during the last linking sweep.
      *
-     * @generated from protobuf field: uint32 failedUpdates = 5
+     * @generated from protobuf field: uint32 failedUpdates = 6
      */
     failedUpdates: number;
 }
@@ -7225,39 +7076,39 @@ export enum DeviceManager_Status_Type {
     /**
      * MICROSOFT_INTUNE means that the provider is Microsoft Intune.
      *
-     * @generated from protobuf enum value: MICROSOFT_INTUNE = 4;
+     * @generated from protobuf enum value: MICROSOFT_INTUNE = 3;
      */
-    MICROSOFT_INTUNE = 4,
+    MICROSOFT_INTUNE = 3,
     /**
      * JAMF_PRO means that the provider is Jamf Pro.
      *
-     * @generated from protobuf enum value: JAMF_PRO = 5;
+     * @generated from protobuf enum value: JAMF_PRO = 4;
      */
-    JAMF_PRO = 5,
+    JAMF_PRO = 4,
     /**
      * ONEPASSWORD means that the provider is 1Password Device Trust.
      *
-     * @generated from protobuf enum value: ONEPASSWORD = 6;
+     * @generated from protobuf enum value: ONEPASSWORD = 5;
      */
-    ONEPASSWORD = 6,
+    ONEPASSWORD = 5,
     /**
      * FLEETDM means that the provider is Fleet.
      *
-     * @generated from protobuf enum value: FLEETDM = 7;
+     * @generated from protobuf enum value: FLEETDM = 6;
      */
-    FLEETDM = 7,
+    FLEETDM = 6,
     /**
      * HUNTRESS means that the provider is Huntress.
      *
-     * @generated from protobuf enum value: HUNTRESS = 8;
+     * @generated from protobuf enum value: HUNTRESS = 7;
      */
-    HUNTRESS = 8,
+    HUNTRESS = 7,
     /**
      * IRU means that the provider is Iru.
      *
-     * @generated from protobuf enum value: IRU = 9;
+     * @generated from protobuf enum value: IRU = 8;
      */
-    IRU = 9
+    IRU = 8
 }
 /**
  * State is the current state of the DeviceManager.
@@ -7285,17 +7136,25 @@ export enum DeviceManager_Status_State {
      */
     LOADING = 2,
     /**
-     * ERROR means that the last collection from the provider failed.
+     * ERROR means that the last collection from the provider failed or that
+     * the DeviceManager could not be set up.
      *
      * @generated from protobuf enum value: ERROR = 3;
      */
     ERROR = 3,
     /**
-     * DEGRADED means that the DeviceManager is only partially operational.
+     * DEGRADED means that the last collection succeeded but some of its
+     * information could not be collected.
      *
      * @generated from protobuf enum value: DEGRADED = 4;
      */
-    DEGRADED = 4
+    DEGRADED = 4,
+    /**
+     * DISABLED means that the collection is disabled.
+     *
+     * @generated from protobuf enum value: DISABLED = 5;
+     */
+    DISABLED = 5
 }
 /**
  * DeviceManagerList is the list of DeviceManagers returned by the
@@ -7343,150 +7202,27 @@ export interface ListDeviceManagerOptions {
     common?: CommonListOptions;
 }
 /**
- * DeviceExtInfo is the enterprise-specific extension data of a Device. It is
- * stored in the `enterpriseV1` key of the Device's `status.ext` map and it
- * carries the provider-specific details of the DeviceManager that the Device is
- * bound to.
+ * ResetDeviceBindingRequest resets a Device's current Binding and posture.
+ * The next reconciliation selects a DeviceManager again using the configured
+ * order.
  *
- * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceExtInfo
+ * @generated from protobuf message octelium.api.main.enterprise.v1.ResetDeviceBindingRequest
  */
-export interface DeviceExtInfo {
+export interface ResetDeviceBindingRequest {
     /**
-     * DeviceManagerRef is a reference to the DeviceManager that the Device is
-     * bound to.
+     * DeviceRef identifies the Device. Required.
      *
-     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference deviceManagerRef = 1
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference deviceRef = 1
      */
-    deviceManagerRef?: ObjectReference;
+    deviceRef?: ObjectReference;
     /**
-     * DeviceManagerDetails is the provider-specific details of the inventory
-     * entry that the Device is bound to.
+     * BindingUID identifies the Binding to reset. Required. A replacement
+     * Binding with a different UID is never reset. If the Device has no
+     * Binding, the request succeeds without changing anything.
      *
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails deviceManagerDetails = 2
+     * @generated from protobuf field: string bindingUID = 2
      */
-    deviceManagerDetails?: DeviceExtInfo_DeviceManagerDetails;
-}
-/**
- * DeviceManagerDetails is the provider-specific details of the inventory
- * entry that the Device is bound to
- *
- * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails
- */
-export interface DeviceExtInfo_DeviceManagerDetails {
-    /**
-     * @generated from protobuf oneof: type
-     */
-    type: {
-        oneofKind: "crowdstrike";
-        /**
-         * Crowdstrike is the CrowdStrike Falcon specific details.
-         *
-         * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike crowdstrike = 1
-         */
-        crowdstrike: DeviceExtInfo_DeviceManagerDetails_Crowdstrike;
-    } | {
-        oneofKind: undefined;
-    };
-}
-/**
- * Crowdstrike is the CrowdStrike Falcon specific details
- *
- * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike
- */
-export interface DeviceExtInfo_DeviceManagerDetails_Crowdstrike {
-    /**
-     * Info is the inventory information of the host.
-     *
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Info info = 1
-     */
-    info?: DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info;
-    /**
-     * Assessment is the Zero Trust Assessment scores of the host.
-     *
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Assessment assessment = 2
-     */
-    assessment?: DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment;
-}
-/**
- * Assessment is the CrowdStrike Zero Trust Assessment scores of the host
- *
- * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Assessment
- */
-export interface DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment {
-    /**
-     * LastSyncAt is the date at which the assessment was last collected.
-     *
-     * @generated from protobuf field: google.protobuf.Timestamp lastSyncAt = 1
-     */
-    lastSyncAt?: Timestamp;
-    /**
-     * Overall is the overall Zero Trust Assessment score of the host.
-     *
-     * @generated from protobuf field: int32 overall = 2
-     */
-    overall: number;
-    /**
-     * OS is the operating system Zero Trust Assessment score of the host.
-     *
-     * @generated from protobuf field: int32 os = 3
-     */
-    os: number;
-}
-/**
- * Info is the inventory information of the host
- *
- * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Info
- */
-export interface DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info {
-    /**
-     * LastSyncAt is the date at which the information was last collected.
-     *
-     * @generated from protobuf field: google.protobuf.Timestamp lastSyncAt = 1
-     */
-    lastSyncAt?: Timestamp;
-    /**
-     * SerialNumber is the serial number of the host.
-     *
-     * @generated from protobuf field: string serialNumber = 2
-     */
-    serialNumber: string;
-    /**
-     * MacAddress is the MAC address of the host.
-     *
-     * @generated from protobuf field: string macAddress = 3
-     */
-    macAddress: string;
-    /**
-     * OSBuild is the operating system build of the host.
-     *
-     * @generated from protobuf field: string osBuild = 4
-     */
-    osBuild: string;
-    /**
-     * OSVersion is the operating system version of the host.
-     *
-     * @generated from protobuf field: string osVersion = 5
-     */
-    osVersion: string;
-    /**
-     * Status is the status of the host as it is reported by CrowdStrike.
-     *
-     * @generated from protobuf field: string status = 6
-     */
-    status: string;
-    /**
-     * AgentVersion is the version of the Falcon sensor that is installed
-     * on the host.
-     *
-     * @generated from protobuf field: string agentVersion = 7
-     */
-    agentVersion: string;
-    /**
-     * DeviceID is the CrowdStrike agent ID (i.e. AID) of the host.
-     *
-     * @generated from protobuf field: string deviceID = 8
-     */
-    deviceID: string;
+    bindingUID: string;
 }
 /**
  * UserExtInfo is the enterprise-specific extension data of a User. It is stored
@@ -16655,11 +16391,13 @@ class ClusterConfig_Spec$Type extends MessageType<ClusterConfig_Spec> {
         super("octelium.api.main.enterprise.v1.ClusterConfig.Spec", [
             { no: 1, name: "collector", kind: "message", T: () => ClusterConfig_Spec_Collector },
             { no: 2, name: "scaler", kind: "message", T: () => ClusterConfig_Spec_Scaler },
-            { no: 3, name: "certificate", kind: "message", T: () => ClusterConfig_Spec_Certificate }
+            { no: 3, name: "certificate", kind: "message", T: () => ClusterConfig_Spec_Certificate },
+            { no: 4, name: "deviceManagers", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<ClusterConfig_Spec>): ClusterConfig_Spec {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.deviceManagers = [];
         if (value !== undefined)
             reflectionMergePartial<ClusterConfig_Spec>(this, message, value);
         return message;
@@ -16677,6 +16415,9 @@ class ClusterConfig_Spec$Type extends MessageType<ClusterConfig_Spec> {
                     break;
                 case /* octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate certificate */ 3:
                     message.certificate = ClusterConfig_Spec_Certificate.internalBinaryRead(reader, reader.uint32(), options, message.certificate);
+                    break;
+                case /* repeated string deviceManagers */ 4:
+                    message.deviceManagers.push(reader.string());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -16699,6 +16440,9 @@ class ClusterConfig_Spec$Type extends MessageType<ClusterConfig_Spec> {
         /* octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate certificate = 3; */
         if (message.certificate)
             ClusterConfig_Spec_Certificate.internalBinaryWrite(message.certificate, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* repeated string deviceManagers = 4; */
+        for (let i = 0; i < message.deviceManagers.length; i++)
+            writer.tag(4, WireType.LengthDelimited).string(message.deviceManagers[i]);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -22572,7 +22316,7 @@ export const DeviceManager = new DeviceManager$Type();
 class DeviceManager_Spec$Type extends MessageType<DeviceManager_Spec> {
     constructor() {
         super("octelium.api.main.enterprise.v1.DeviceManager.Spec", [
-            { no: 12, name: "condition", kind: "message", T: () => Condition$ },
+            { no: 9, name: "condition", kind: "message", T: () => Condition$ },
             { no: 10, name: "polling", kind: "message", T: () => DeviceManager_Spec_Polling },
             { no: 11, name: "linking", kind: "message", T: () => DeviceManager_Spec_Linking },
             { no: 1, name: "crowdStrike", kind: "message", oneof: "type", T: () => DeviceManager_Spec_CrowdStrike },
@@ -22597,7 +22341,7 @@ class DeviceManager_Spec$Type extends MessageType<DeviceManager_Spec> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* octelium.api.main.core.v1.Condition condition */ 12:
+                case /* octelium.api.main.core.v1.Condition condition */ 9:
                     message.condition = Condition$.internalBinaryRead(reader, reader.uint32(), options, message.condition);
                     break;
                 case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling polling */ 10:
@@ -22690,15 +22434,15 @@ class DeviceManager_Spec$Type extends MessageType<DeviceManager_Spec> {
         /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru iru = 8; */
         if (message.type.oneofKind === "iru")
             DeviceManager_Spec_Iru.internalBinaryWrite(message.type.iru, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Condition condition = 9; */
+        if (message.condition)
+            Condition$.internalBinaryWrite(message.condition, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
         /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling polling = 10; */
         if (message.polling)
             DeviceManager_Spec_Polling.internalBinaryWrite(message.polling, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
         /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking linking = 11; */
         if (message.linking)
             DeviceManager_Spec_Linking.internalBinaryWrite(message.linking, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.core.v1.Condition condition = 12; */
-        if (message.condition)
-            Condition$.internalBinaryWrite(message.condition, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -22710,15 +22454,65 @@ class DeviceManager_Spec$Type extends MessageType<DeviceManager_Spec> {
  */
 export const DeviceManager_Spec = new DeviceManager_Spec$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class DeviceManager_Spec_SecretRef$Type extends MessageType<DeviceManager_Spec_SecretRef> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef", [
+            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<DeviceManager_Spec_SecretRef>): DeviceManager_Spec_SecretRef {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<DeviceManager_Spec_SecretRef>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceManager_Spec_SecretRef): DeviceManager_Spec_SecretRef {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string fromSecret */ 1:
+                    message.type = {
+                        oneofKind: "fromSecret",
+                        fromSecret: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DeviceManager_Spec_SecretRef, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string fromSecret = 1; */
+        if (message.type.oneofKind === "fromSecret")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+ */
+export const DeviceManager_Spec_SecretRef = new DeviceManager_Spec_SecretRef$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class DeviceManager_Spec_CrowdStrike$Type extends MessageType<DeviceManager_Spec_CrowdStrike> {
     constructor() {
         super("octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike", [
             { no: 1, name: "region", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.Region", DeviceManager_Spec_CrowdStrike_Region] },
             { no: 2, name: "clientID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "clientSecret", kind: "message", T: () => DeviceManager_Spec_CrowdStrike_ClientSecret },
-            { no: 5, name: "memberCID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 6, name: "hostFilter", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 7, name: "disableZeroTrustAssessment", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 3, name: "clientSecret", kind: "message", T: () => DeviceManager_Spec_SecretRef },
+            { no: 4, name: "memberCID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "hostFilter", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "disableZeroTrustAssessment", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Spec_CrowdStrike>): DeviceManager_Spec_CrowdStrike {
@@ -22743,16 +22537,16 @@ class DeviceManager_Spec_CrowdStrike$Type extends MessageType<DeviceManager_Spec
                 case /* string clientID */ 2:
                     message.clientID = reader.string();
                     break;
-                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.ClientSecret clientSecret */ 4:
-                    message.clientSecret = DeviceManager_Spec_CrowdStrike_ClientSecret.internalBinaryRead(reader, reader.uint32(), options, message.clientSecret);
+                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef clientSecret */ 3:
+                    message.clientSecret = DeviceManager_Spec_SecretRef.internalBinaryRead(reader, reader.uint32(), options, message.clientSecret);
                     break;
-                case /* string memberCID */ 5:
+                case /* string memberCID */ 4:
                     message.memberCID = reader.string();
                     break;
-                case /* string hostFilter */ 6:
+                case /* string hostFilter */ 5:
                     message.hostFilter = reader.string();
                     break;
-                case /* bool disableZeroTrustAssessment */ 7:
+                case /* bool disableZeroTrustAssessment */ 6:
                     message.disableZeroTrustAssessment = reader.bool();
                     break;
                 default:
@@ -22773,18 +22567,18 @@ class DeviceManager_Spec_CrowdStrike$Type extends MessageType<DeviceManager_Spec
         /* string clientID = 2; */
         if (message.clientID !== "")
             writer.tag(2, WireType.LengthDelimited).string(message.clientID);
-        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.ClientSecret clientSecret = 4; */
+        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef clientSecret = 3; */
         if (message.clientSecret)
-            DeviceManager_Spec_CrowdStrike_ClientSecret.internalBinaryWrite(message.clientSecret, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
-        /* string memberCID = 5; */
+            DeviceManager_Spec_SecretRef.internalBinaryWrite(message.clientSecret, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* string memberCID = 4; */
         if (message.memberCID !== "")
-            writer.tag(5, WireType.LengthDelimited).string(message.memberCID);
-        /* string hostFilter = 6; */
+            writer.tag(4, WireType.LengthDelimited).string(message.memberCID);
+        /* string hostFilter = 5; */
         if (message.hostFilter !== "")
-            writer.tag(6, WireType.LengthDelimited).string(message.hostFilter);
-        /* bool disableZeroTrustAssessment = 7; */
+            writer.tag(5, WireType.LengthDelimited).string(message.hostFilter);
+        /* bool disableZeroTrustAssessment = 6; */
         if (message.disableZeroTrustAssessment !== false)
-            writer.tag(7, WireType.Varint).bool(message.disableZeroTrustAssessment);
+            writer.tag(6, WireType.Varint).bool(message.disableZeroTrustAssessment);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -22796,72 +22590,22 @@ class DeviceManager_Spec_CrowdStrike$Type extends MessageType<DeviceManager_Spec
  */
 export const DeviceManager_Spec_CrowdStrike = new DeviceManager_Spec_CrowdStrike$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class DeviceManager_Spec_CrowdStrike_ClientSecret$Type extends MessageType<DeviceManager_Spec_CrowdStrike_ClientSecret> {
-    constructor() {
-        super("octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.ClientSecret", [
-            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
-        ]);
-    }
-    create(value?: PartialMessage<DeviceManager_Spec_CrowdStrike_ClientSecret>): DeviceManager_Spec_CrowdStrike_ClientSecret {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.type = { oneofKind: undefined };
-        if (value !== undefined)
-            reflectionMergePartial<DeviceManager_Spec_CrowdStrike_ClientSecret>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceManager_Spec_CrowdStrike_ClientSecret): DeviceManager_Spec_CrowdStrike_ClientSecret {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* string fromSecret */ 1:
-                    message.type = {
-                        oneofKind: "fromSecret",
-                        fromSecret: reader.string()
-                    };
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: DeviceManager_Spec_CrowdStrike_ClientSecret, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string fromSecret = 1; */
-        if (message.type.oneofKind === "fromSecret")
-            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.ClientSecret
- */
-export const DeviceManager_Spec_CrowdStrike_ClientSecret = new DeviceManager_Spec_CrowdStrike_ClientSecret$Type();
-// @generated message type with reflection information, may provide speed optimized methods
 class DeviceManager_Spec_SentinelOne$Type extends MessageType<DeviceManager_Spec_SentinelOne> {
     constructor() {
         super("octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne", [
             { no: 1, name: "managementURL", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "apiToken", kind: "message", T: () => DeviceManager_Spec_SentinelOne_APIToken },
-            { no: 3, name: "siteIDs", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "accountIDs", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 5, name: "agentQuery", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 2, name: "apiToken", kind: "message", T: () => DeviceManager_Spec_SecretRef },
+            { no: 3, name: "siteIDs", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "accountIDs", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "agentFilters", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 9 /*ScalarType.STRING*/ } }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Spec_SentinelOne>): DeviceManager_Spec_SentinelOne {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.managementURL = "";
-        message.siteIDs = "";
-        message.accountIDs = "";
-        message.agentQuery = "";
+        message.siteIDs = [];
+        message.accountIDs = [];
+        message.agentFilters = {};
         if (value !== undefined)
             reflectionMergePartial<DeviceManager_Spec_SentinelOne>(this, message, value);
         return message;
@@ -22874,17 +22618,17 @@ class DeviceManager_Spec_SentinelOne$Type extends MessageType<DeviceManager_Spec
                 case /* string managementURL */ 1:
                     message.managementURL = reader.string();
                     break;
-                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.APIToken apiToken */ 2:
-                    message.apiToken = DeviceManager_Spec_SentinelOne_APIToken.internalBinaryRead(reader, reader.uint32(), options, message.apiToken);
+                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiToken */ 2:
+                    message.apiToken = DeviceManager_Spec_SecretRef.internalBinaryRead(reader, reader.uint32(), options, message.apiToken);
                     break;
-                case /* string siteIDs */ 3:
-                    message.siteIDs = reader.string();
+                case /* repeated string siteIDs */ 3:
+                    message.siteIDs.push(reader.string());
                     break;
-                case /* string accountIDs */ 4:
-                    message.accountIDs = reader.string();
+                case /* repeated string accountIDs */ 4:
+                    message.accountIDs.push(reader.string());
                     break;
-                case /* string agentQuery */ 5:
-                    message.agentQuery = reader.string();
+                case /* map<string, string> agentFilters */ 5:
+                    this.binaryReadMap5(message.agentFilters, reader, options);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -22897,22 +22641,38 @@ class DeviceManager_Spec_SentinelOne$Type extends MessageType<DeviceManager_Spec
         }
         return message;
     }
+    private binaryReadMap5(map: DeviceManager_Spec_SentinelOne["agentFilters"], reader: IBinaryReader, options: BinaryReadOptions): void {
+        let len = reader.uint32(), end = reader.pos + len, key: keyof DeviceManager_Spec_SentinelOne["agentFilters"] | undefined, val: DeviceManager_Spec_SentinelOne["agentFilters"][any] | undefined;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case 1:
+                    key = reader.string();
+                    break;
+                case 2:
+                    val = reader.string();
+                    break;
+                default: throw new globalThis.Error("unknown map entry field for octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.agentFilters");
+            }
+        }
+        map[key ?? ""] = val ?? "";
+    }
     internalBinaryWrite(message: DeviceManager_Spec_SentinelOne, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* string managementURL = 1; */
         if (message.managementURL !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.managementURL);
-        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.APIToken apiToken = 2; */
+        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiToken = 2; */
         if (message.apiToken)
-            DeviceManager_Spec_SentinelOne_APIToken.internalBinaryWrite(message.apiToken, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* string siteIDs = 3; */
-        if (message.siteIDs !== "")
-            writer.tag(3, WireType.LengthDelimited).string(message.siteIDs);
-        /* string accountIDs = 4; */
-        if (message.accountIDs !== "")
-            writer.tag(4, WireType.LengthDelimited).string(message.accountIDs);
-        /* string agentQuery = 5; */
-        if (message.agentQuery !== "")
-            writer.tag(5, WireType.LengthDelimited).string(message.agentQuery);
+            DeviceManager_Spec_SecretRef.internalBinaryWrite(message.apiToken, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* repeated string siteIDs = 3; */
+        for (let i = 0; i < message.siteIDs.length; i++)
+            writer.tag(3, WireType.LengthDelimited).string(message.siteIDs[i]);
+        /* repeated string accountIDs = 4; */
+        for (let i = 0; i < message.accountIDs.length; i++)
+            writer.tag(4, WireType.LengthDelimited).string(message.accountIDs[i]);
+        /* map<string, string> agentFilters = 5; */
+        for (let k of globalThis.Object.keys(message.agentFilters))
+            writer.tag(5, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.LengthDelimited).string(message.agentFilters[k]).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -22924,64 +22684,16 @@ class DeviceManager_Spec_SentinelOne$Type extends MessageType<DeviceManager_Spec
  */
 export const DeviceManager_Spec_SentinelOne = new DeviceManager_Spec_SentinelOne$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class DeviceManager_Spec_SentinelOne_APIToken$Type extends MessageType<DeviceManager_Spec_SentinelOne_APIToken> {
-    constructor() {
-        super("octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.APIToken", [
-            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
-        ]);
-    }
-    create(value?: PartialMessage<DeviceManager_Spec_SentinelOne_APIToken>): DeviceManager_Spec_SentinelOne_APIToken {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.type = { oneofKind: undefined };
-        if (value !== undefined)
-            reflectionMergePartial<DeviceManager_Spec_SentinelOne_APIToken>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceManager_Spec_SentinelOne_APIToken): DeviceManager_Spec_SentinelOne_APIToken {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* string fromSecret */ 1:
-                    message.type = {
-                        oneofKind: "fromSecret",
-                        fromSecret: reader.string()
-                    };
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: DeviceManager_Spec_SentinelOne_APIToken, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string fromSecret = 1; */
-        if (message.type.oneofKind === "fromSecret")
-            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.APIToken
- */
-export const DeviceManager_Spec_SentinelOne_APIToken = new DeviceManager_Spec_SentinelOne_APIToken$Type();
-// @generated message type with reflection information, may provide speed optimized methods
 class DeviceManager_Spec_MicrosoftIntune$Type extends MessageType<DeviceManager_Spec_MicrosoftIntune> {
     constructor() {
         super("octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune", [
             { no: 1, name: "tenantID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "clientID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "clientSecret", kind: "message", T: () => DeviceManager_Spec_MicrosoftIntune_ClientSecret },
+            { no: 3, name: "clientSecret", kind: "message", T: () => DeviceManager_Spec_SecretRef },
             { no: 4, name: "cloud", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.Cloud", DeviceManager_Spec_MicrosoftIntune_Cloud] },
-            { no: 5, name: "filter", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 5, name: "filter", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "isGracePeriodCompliant", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 7, name: "isConfigManagerCompliant", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Spec_MicrosoftIntune>): DeviceManager_Spec_MicrosoftIntune {
@@ -22990,6 +22702,8 @@ class DeviceManager_Spec_MicrosoftIntune$Type extends MessageType<DeviceManager_
         message.clientID = "";
         message.cloud = 0;
         message.filter = "";
+        message.isGracePeriodCompliant = false;
+        message.isConfigManagerCompliant = false;
         if (value !== undefined)
             reflectionMergePartial<DeviceManager_Spec_MicrosoftIntune>(this, message, value);
         return message;
@@ -23005,14 +22719,20 @@ class DeviceManager_Spec_MicrosoftIntune$Type extends MessageType<DeviceManager_
                 case /* string clientID */ 2:
                     message.clientID = reader.string();
                     break;
-                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.ClientSecret clientSecret */ 3:
-                    message.clientSecret = DeviceManager_Spec_MicrosoftIntune_ClientSecret.internalBinaryRead(reader, reader.uint32(), options, message.clientSecret);
+                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef clientSecret */ 3:
+                    message.clientSecret = DeviceManager_Spec_SecretRef.internalBinaryRead(reader, reader.uint32(), options, message.clientSecret);
                     break;
                 case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.Cloud cloud */ 4:
                     message.cloud = reader.int32();
                     break;
                 case /* string filter */ 5:
                     message.filter = reader.string();
+                    break;
+                case /* bool isGracePeriodCompliant */ 6:
+                    message.isGracePeriodCompliant = reader.bool();
+                    break;
+                case /* bool isConfigManagerCompliant */ 7:
+                    message.isConfigManagerCompliant = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -23032,15 +22752,21 @@ class DeviceManager_Spec_MicrosoftIntune$Type extends MessageType<DeviceManager_
         /* string clientID = 2; */
         if (message.clientID !== "")
             writer.tag(2, WireType.LengthDelimited).string(message.clientID);
-        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.ClientSecret clientSecret = 3; */
+        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef clientSecret = 3; */
         if (message.clientSecret)
-            DeviceManager_Spec_MicrosoftIntune_ClientSecret.internalBinaryWrite(message.clientSecret, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+            DeviceManager_Spec_SecretRef.internalBinaryWrite(message.clientSecret, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         /* octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.Cloud cloud = 4; */
         if (message.cloud !== 0)
             writer.tag(4, WireType.Varint).int32(message.cloud);
         /* string filter = 5; */
         if (message.filter !== "")
             writer.tag(5, WireType.LengthDelimited).string(message.filter);
+        /* bool isGracePeriodCompliant = 6; */
+        if (message.isGracePeriodCompliant !== false)
+            writer.tag(6, WireType.Varint).bool(message.isGracePeriodCompliant);
+        /* bool isConfigManagerCompliant = 7; */
+        if (message.isConfigManagerCompliant !== false)
+            writer.tag(7, WireType.Varint).bool(message.isConfigManagerCompliant);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -23052,63 +22778,14 @@ class DeviceManager_Spec_MicrosoftIntune$Type extends MessageType<DeviceManager_
  */
 export const DeviceManager_Spec_MicrosoftIntune = new DeviceManager_Spec_MicrosoftIntune$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class DeviceManager_Spec_MicrosoftIntune_ClientSecret$Type extends MessageType<DeviceManager_Spec_MicrosoftIntune_ClientSecret> {
-    constructor() {
-        super("octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.ClientSecret", [
-            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
-        ]);
-    }
-    create(value?: PartialMessage<DeviceManager_Spec_MicrosoftIntune_ClientSecret>): DeviceManager_Spec_MicrosoftIntune_ClientSecret {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.type = { oneofKind: undefined };
-        if (value !== undefined)
-            reflectionMergePartial<DeviceManager_Spec_MicrosoftIntune_ClientSecret>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceManager_Spec_MicrosoftIntune_ClientSecret): DeviceManager_Spec_MicrosoftIntune_ClientSecret {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* string fromSecret */ 1:
-                    message.type = {
-                        oneofKind: "fromSecret",
-                        fromSecret: reader.string()
-                    };
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: DeviceManager_Spec_MicrosoftIntune_ClientSecret, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string fromSecret = 1; */
-        if (message.type.oneofKind === "fromSecret")
-            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.ClientSecret
- */
-export const DeviceManager_Spec_MicrosoftIntune_ClientSecret = new DeviceManager_Spec_MicrosoftIntune_ClientSecret$Type();
-// @generated message type with reflection information, may provide speed optimized methods
 class DeviceManager_Spec_Jamf$Type extends MessageType<DeviceManager_Spec_Jamf> {
     constructor() {
         super("octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf", [
             { no: 1, name: "baseURL", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "clientID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "clientSecret", kind: "message", T: () => DeviceManager_Spec_Jamf_ClientSecret },
-            { no: 4, name: "filter", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 3, name: "clientSecret", kind: "message", T: () => DeviceManager_Spec_SecretRef },
+            { no: 4, name: "filter", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "compliantGroups", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Spec_Jamf>): DeviceManager_Spec_Jamf {
@@ -23116,6 +22793,7 @@ class DeviceManager_Spec_Jamf$Type extends MessageType<DeviceManager_Spec_Jamf> 
         message.baseURL = "";
         message.clientID = "";
         message.filter = "";
+        message.compliantGroups = [];
         if (value !== undefined)
             reflectionMergePartial<DeviceManager_Spec_Jamf>(this, message, value);
         return message;
@@ -23131,11 +22809,14 @@ class DeviceManager_Spec_Jamf$Type extends MessageType<DeviceManager_Spec_Jamf> 
                 case /* string clientID */ 2:
                     message.clientID = reader.string();
                     break;
-                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf.ClientSecret clientSecret */ 3:
-                    message.clientSecret = DeviceManager_Spec_Jamf_ClientSecret.internalBinaryRead(reader, reader.uint32(), options, message.clientSecret);
+                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef clientSecret */ 3:
+                    message.clientSecret = DeviceManager_Spec_SecretRef.internalBinaryRead(reader, reader.uint32(), options, message.clientSecret);
                     break;
                 case /* string filter */ 4:
                     message.filter = reader.string();
+                    break;
+                case /* repeated string compliantGroups */ 5:
+                    message.compliantGroups.push(reader.string());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -23155,12 +22836,15 @@ class DeviceManager_Spec_Jamf$Type extends MessageType<DeviceManager_Spec_Jamf> 
         /* string clientID = 2; */
         if (message.clientID !== "")
             writer.tag(2, WireType.LengthDelimited).string(message.clientID);
-        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf.ClientSecret clientSecret = 3; */
+        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef clientSecret = 3; */
         if (message.clientSecret)
-            DeviceManager_Spec_Jamf_ClientSecret.internalBinaryWrite(message.clientSecret, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+            DeviceManager_Spec_SecretRef.internalBinaryWrite(message.clientSecret, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         /* string filter = 4; */
         if (message.filter !== "")
             writer.tag(4, WireType.LengthDelimited).string(message.filter);
+        /* repeated string compliantGroups = 5; */
+        for (let i = 0; i < message.compliantGroups.length; i++)
+            writer.tag(5, WireType.LengthDelimited).string(message.compliantGroups[i]);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -23172,61 +22856,11 @@ class DeviceManager_Spec_Jamf$Type extends MessageType<DeviceManager_Spec_Jamf> 
  */
 export const DeviceManager_Spec_Jamf = new DeviceManager_Spec_Jamf$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class DeviceManager_Spec_Jamf_ClientSecret$Type extends MessageType<DeviceManager_Spec_Jamf_ClientSecret> {
-    constructor() {
-        super("octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf.ClientSecret", [
-            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
-        ]);
-    }
-    create(value?: PartialMessage<DeviceManager_Spec_Jamf_ClientSecret>): DeviceManager_Spec_Jamf_ClientSecret {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.type = { oneofKind: undefined };
-        if (value !== undefined)
-            reflectionMergePartial<DeviceManager_Spec_Jamf_ClientSecret>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceManager_Spec_Jamf_ClientSecret): DeviceManager_Spec_Jamf_ClientSecret {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* string fromSecret */ 1:
-                    message.type = {
-                        oneofKind: "fromSecret",
-                        fromSecret: reader.string()
-                    };
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: DeviceManager_Spec_Jamf_ClientSecret, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string fromSecret = 1; */
-        if (message.type.oneofKind === "fromSecret")
-            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf.ClientSecret
- */
-export const DeviceManager_Spec_Jamf_ClientSecret = new DeviceManager_Spec_Jamf_ClientSecret$Type();
-// @generated message type with reflection information, may provide speed optimized methods
 class DeviceManager_Spec_OnePassword$Type extends MessageType<DeviceManager_Spec_OnePassword> {
     constructor() {
         super("octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword", [
             { no: 1, name: "baseURL", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "apiToken", kind: "message", T: () => DeviceManager_Spec_OnePassword_APIToken }
+            { no: 2, name: "apiToken", kind: "message", T: () => DeviceManager_Spec_SecretRef }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Spec_OnePassword>): DeviceManager_Spec_OnePassword {
@@ -23244,8 +22878,8 @@ class DeviceManager_Spec_OnePassword$Type extends MessageType<DeviceManager_Spec
                 case /* string baseURL */ 1:
                     message.baseURL = reader.string();
                     break;
-                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword.APIToken apiToken */ 2:
-                    message.apiToken = DeviceManager_Spec_OnePassword_APIToken.internalBinaryRead(reader, reader.uint32(), options, message.apiToken);
+                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiToken */ 2:
+                    message.apiToken = DeviceManager_Spec_SecretRef.internalBinaryRead(reader, reader.uint32(), options, message.apiToken);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -23262,9 +22896,9 @@ class DeviceManager_Spec_OnePassword$Type extends MessageType<DeviceManager_Spec
         /* string baseURL = 1; */
         if (message.baseURL !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.baseURL);
-        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword.APIToken apiToken = 2; */
+        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiToken = 2; */
         if (message.apiToken)
-            DeviceManager_Spec_OnePassword_APIToken.internalBinaryWrite(message.apiToken, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+            DeviceManager_Spec_SecretRef.internalBinaryWrite(message.apiToken, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -23276,61 +22910,11 @@ class DeviceManager_Spec_OnePassword$Type extends MessageType<DeviceManager_Spec
  */
 export const DeviceManager_Spec_OnePassword = new DeviceManager_Spec_OnePassword$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class DeviceManager_Spec_OnePassword_APIToken$Type extends MessageType<DeviceManager_Spec_OnePassword_APIToken> {
-    constructor() {
-        super("octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword.APIToken", [
-            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
-        ]);
-    }
-    create(value?: PartialMessage<DeviceManager_Spec_OnePassword_APIToken>): DeviceManager_Spec_OnePassword_APIToken {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.type = { oneofKind: undefined };
-        if (value !== undefined)
-            reflectionMergePartial<DeviceManager_Spec_OnePassword_APIToken>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceManager_Spec_OnePassword_APIToken): DeviceManager_Spec_OnePassword_APIToken {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* string fromSecret */ 1:
-                    message.type = {
-                        oneofKind: "fromSecret",
-                        fromSecret: reader.string()
-                    };
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: DeviceManager_Spec_OnePassword_APIToken, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string fromSecret = 1; */
-        if (message.type.oneofKind === "fromSecret")
-            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword.APIToken
- */
-export const DeviceManager_Spec_OnePassword_APIToken = new DeviceManager_Spec_OnePassword_APIToken$Type();
-// @generated message type with reflection information, may provide speed optimized methods
 class DeviceManager_Spec_FleetDM$Type extends MessageType<DeviceManager_Spec_FleetDM> {
     constructor() {
         super("octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM", [
             { no: 1, name: "baseURL", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "apiToken", kind: "message", T: () => DeviceManager_Spec_FleetDM_APIToken },
+            { no: 2, name: "apiToken", kind: "message", T: () => DeviceManager_Spec_SecretRef },
             { no: 3, name: "teamID", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -23350,8 +22934,8 @@ class DeviceManager_Spec_FleetDM$Type extends MessageType<DeviceManager_Spec_Fle
                 case /* string baseURL */ 1:
                     message.baseURL = reader.string();
                     break;
-                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM.APIToken apiToken */ 2:
-                    message.apiToken = DeviceManager_Spec_FleetDM_APIToken.internalBinaryRead(reader, reader.uint32(), options, message.apiToken);
+                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiToken */ 2:
+                    message.apiToken = DeviceManager_Spec_SecretRef.internalBinaryRead(reader, reader.uint32(), options, message.apiToken);
                     break;
                 case /* uint32 teamID */ 3:
                     message.teamID = reader.uint32();
@@ -23371,9 +22955,9 @@ class DeviceManager_Spec_FleetDM$Type extends MessageType<DeviceManager_Spec_Fle
         /* string baseURL = 1; */
         if (message.baseURL !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.baseURL);
-        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM.APIToken apiToken = 2; */
+        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiToken = 2; */
         if (message.apiToken)
-            DeviceManager_Spec_FleetDM_APIToken.internalBinaryWrite(message.apiToken, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+            DeviceManager_Spec_SecretRef.internalBinaryWrite(message.apiToken, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         /* uint32 teamID = 3; */
         if (message.teamID !== 0)
             writer.tag(3, WireType.Varint).uint32(message.teamID);
@@ -23388,68 +22972,20 @@ class DeviceManager_Spec_FleetDM$Type extends MessageType<DeviceManager_Spec_Fle
  */
 export const DeviceManager_Spec_FleetDM = new DeviceManager_Spec_FleetDM$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class DeviceManager_Spec_FleetDM_APIToken$Type extends MessageType<DeviceManager_Spec_FleetDM_APIToken> {
-    constructor() {
-        super("octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM.APIToken", [
-            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
-        ]);
-    }
-    create(value?: PartialMessage<DeviceManager_Spec_FleetDM_APIToken>): DeviceManager_Spec_FleetDM_APIToken {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.type = { oneofKind: undefined };
-        if (value !== undefined)
-            reflectionMergePartial<DeviceManager_Spec_FleetDM_APIToken>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceManager_Spec_FleetDM_APIToken): DeviceManager_Spec_FleetDM_APIToken {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* string fromSecret */ 1:
-                    message.type = {
-                        oneofKind: "fromSecret",
-                        fromSecret: reader.string()
-                    };
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: DeviceManager_Spec_FleetDM_APIToken, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string fromSecret = 1; */
-        if (message.type.oneofKind === "fromSecret")
-            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM.APIToken
- */
-export const DeviceManager_Spec_FleetDM_APIToken = new DeviceManager_Spec_FleetDM_APIToken$Type();
-// @generated message type with reflection information, may provide speed optimized methods
 class DeviceManager_Spec_Huntress$Type extends MessageType<DeviceManager_Spec_Huntress> {
     constructor() {
         super("octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress", [
             { no: 1, name: "baseURL", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "apiKey", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "apiSecret", kind: "message", T: () => DeviceManager_Spec_Huntress_APISecret }
+            { no: 3, name: "apiSecret", kind: "message", T: () => DeviceManager_Spec_SecretRef },
+            { no: 4, name: "organizationIDs", kind: "scalar", repeat: 1 /*RepeatType.PACKED*/, T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Spec_Huntress>): DeviceManager_Spec_Huntress {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.baseURL = "";
         message.apiKey = "";
+        message.organizationIDs = [];
         if (value !== undefined)
             reflectionMergePartial<DeviceManager_Spec_Huntress>(this, message, value);
         return message;
@@ -23465,8 +23001,15 @@ class DeviceManager_Spec_Huntress$Type extends MessageType<DeviceManager_Spec_Hu
                 case /* string apiKey */ 2:
                     message.apiKey = reader.string();
                     break;
-                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress.APISecret apiSecret */ 3:
-                    message.apiSecret = DeviceManager_Spec_Huntress_APISecret.internalBinaryRead(reader, reader.uint32(), options, message.apiSecret);
+                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiSecret */ 3:
+                    message.apiSecret = DeviceManager_Spec_SecretRef.internalBinaryRead(reader, reader.uint32(), options, message.apiSecret);
+                    break;
+                case /* repeated int64 organizationIDs */ 4:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.organizationIDs.push(reader.int64().toNumber());
+                    else
+                        message.organizationIDs.push(reader.int64().toNumber());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -23486,9 +23029,16 @@ class DeviceManager_Spec_Huntress$Type extends MessageType<DeviceManager_Spec_Hu
         /* string apiKey = 2; */
         if (message.apiKey !== "")
             writer.tag(2, WireType.LengthDelimited).string(message.apiKey);
-        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress.APISecret apiSecret = 3; */
+        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiSecret = 3; */
         if (message.apiSecret)
-            DeviceManager_Spec_Huntress_APISecret.internalBinaryWrite(message.apiSecret, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+            DeviceManager_Spec_SecretRef.internalBinaryWrite(message.apiSecret, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* repeated int64 organizationIDs = 4; */
+        if (message.organizationIDs.length) {
+            writer.tag(4, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.organizationIDs.length; i++)
+                writer.int64(message.organizationIDs[i]);
+            writer.join();
+        }
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -23500,61 +23050,11 @@ class DeviceManager_Spec_Huntress$Type extends MessageType<DeviceManager_Spec_Hu
  */
 export const DeviceManager_Spec_Huntress = new DeviceManager_Spec_Huntress$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class DeviceManager_Spec_Huntress_APISecret$Type extends MessageType<DeviceManager_Spec_Huntress_APISecret> {
-    constructor() {
-        super("octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress.APISecret", [
-            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
-        ]);
-    }
-    create(value?: PartialMessage<DeviceManager_Spec_Huntress_APISecret>): DeviceManager_Spec_Huntress_APISecret {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.type = { oneofKind: undefined };
-        if (value !== undefined)
-            reflectionMergePartial<DeviceManager_Spec_Huntress_APISecret>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceManager_Spec_Huntress_APISecret): DeviceManager_Spec_Huntress_APISecret {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* string fromSecret */ 1:
-                    message.type = {
-                        oneofKind: "fromSecret",
-                        fromSecret: reader.string()
-                    };
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: DeviceManager_Spec_Huntress_APISecret, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string fromSecret = 1; */
-        if (message.type.oneofKind === "fromSecret")
-            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress.APISecret
- */
-export const DeviceManager_Spec_Huntress_APISecret = new DeviceManager_Spec_Huntress_APISecret$Type();
-// @generated message type with reflection information, may provide speed optimized methods
 class DeviceManager_Spec_Iru$Type extends MessageType<DeviceManager_Spec_Iru> {
     constructor() {
         super("octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru", [
             { no: 1, name: "baseURL", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "apiToken", kind: "message", T: () => DeviceManager_Spec_Iru_APIToken }
+            { no: 2, name: "apiToken", kind: "message", T: () => DeviceManager_Spec_SecretRef }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Spec_Iru>): DeviceManager_Spec_Iru {
@@ -23572,8 +23072,8 @@ class DeviceManager_Spec_Iru$Type extends MessageType<DeviceManager_Spec_Iru> {
                 case /* string baseURL */ 1:
                     message.baseURL = reader.string();
                     break;
-                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru.APIToken apiToken */ 2:
-                    message.apiToken = DeviceManager_Spec_Iru_APIToken.internalBinaryRead(reader, reader.uint32(), options, message.apiToken);
+                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiToken */ 2:
+                    message.apiToken = DeviceManager_Spec_SecretRef.internalBinaryRead(reader, reader.uint32(), options, message.apiToken);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -23590,9 +23090,9 @@ class DeviceManager_Spec_Iru$Type extends MessageType<DeviceManager_Spec_Iru> {
         /* string baseURL = 1; */
         if (message.baseURL !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.baseURL);
-        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru.APIToken apiToken = 2; */
+        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiToken = 2; */
         if (message.apiToken)
-            DeviceManager_Spec_Iru_APIToken.internalBinaryWrite(message.apiToken, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+            DeviceManager_Spec_SecretRef.internalBinaryWrite(message.apiToken, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -23604,63 +23104,14 @@ class DeviceManager_Spec_Iru$Type extends MessageType<DeviceManager_Spec_Iru> {
  */
 export const DeviceManager_Spec_Iru = new DeviceManager_Spec_Iru$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class DeviceManager_Spec_Iru_APIToken$Type extends MessageType<DeviceManager_Spec_Iru_APIToken> {
-    constructor() {
-        super("octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru.APIToken", [
-            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
-        ]);
-    }
-    create(value?: PartialMessage<DeviceManager_Spec_Iru_APIToken>): DeviceManager_Spec_Iru_APIToken {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.type = { oneofKind: undefined };
-        if (value !== undefined)
-            reflectionMergePartial<DeviceManager_Spec_Iru_APIToken>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceManager_Spec_Iru_APIToken): DeviceManager_Spec_Iru_APIToken {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* string fromSecret */ 1:
-                    message.type = {
-                        oneofKind: "fromSecret",
-                        fromSecret: reader.string()
-                    };
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: DeviceManager_Spec_Iru_APIToken, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string fromSecret = 1; */
-        if (message.type.oneofKind === "fromSecret")
-            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru.APIToken
- */
-export const DeviceManager_Spec_Iru_APIToken = new DeviceManager_Spec_Iru_APIToken$Type();
-// @generated message type with reflection information, may provide speed optimized methods
 class DeviceManager_Spec_Polling$Type extends MessageType<DeviceManager_Spec_Polling> {
     constructor() {
         super("octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling", [
             { no: 1, name: "interval", kind: "message", T: () => Duration },
             { no: 2, name: "timeout", kind: "message", T: () => Duration },
             { no: 3, name: "staleAfter", kind: "message", T: () => Duration },
-            { no: 4, name: "isDisabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 4, name: "isDisabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 5, name: "maxObservationAge", kind: "message", T: () => Duration }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Spec_Polling>): DeviceManager_Spec_Polling {
@@ -23687,6 +23138,9 @@ class DeviceManager_Spec_Polling$Type extends MessageType<DeviceManager_Spec_Pol
                 case /* bool isDisabled */ 4:
                     message.isDisabled = reader.bool();
                     break;
+                case /* octelium.api.main.meta.v1.Duration maxObservationAge */ 5:
+                    message.maxObservationAge = Duration.internalBinaryRead(reader, reader.uint32(), options, message.maxObservationAge);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -23711,6 +23165,9 @@ class DeviceManager_Spec_Polling$Type extends MessageType<DeviceManager_Spec_Pol
         /* bool isDisabled = 4; */
         if (message.isDisabled !== false)
             writer.tag(4, WireType.Varint).bool(message.isDisabled);
+        /* octelium.api.main.meta.v1.Duration maxObservationAge = 5; */
+        if (message.maxObservationAge)
+            Duration.internalBinaryWrite(message.maxObservationAge, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -23726,18 +23183,16 @@ class DeviceManager_Spec_Linking$Type extends MessageType<DeviceManager_Spec_Lin
     constructor() {
         super("octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking", [
             { no: 1, name: "strategy", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy", DeviceManager_Spec_Linking_Strategy] },
-            { no: 2, name: "approvalMode", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.ApprovalMode", DeviceManager_Spec_Linking_ApprovalMode] },
-            { no: 3, name: "requireAgreement", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 4, name: "priority", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "verification", kind: "message", T: () => DeviceManager_Spec_Linking_Verification }
+            { no: 2, name: "requireAgreement", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 3, name: "requireOwnerMatch", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 4, name: "verificationInterval", kind: "message", T: () => Duration }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Spec_Linking>): DeviceManager_Spec_Linking {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.strategy = 0;
-        message.approvalMode = 0;
         message.requireAgreement = false;
-        message.priority = 0;
+        message.requireOwnerMatch = false;
         if (value !== undefined)
             reflectionMergePartial<DeviceManager_Spec_Linking>(this, message, value);
         return message;
@@ -23750,17 +23205,14 @@ class DeviceManager_Spec_Linking$Type extends MessageType<DeviceManager_Spec_Lin
                 case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy strategy */ 1:
                     message.strategy = reader.int32();
                     break;
-                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.ApprovalMode approvalMode */ 2:
-                    message.approvalMode = reader.int32();
-                    break;
-                case /* bool requireAgreement */ 3:
+                case /* bool requireAgreement */ 2:
                     message.requireAgreement = reader.bool();
                     break;
-                case /* uint32 priority */ 4:
-                    message.priority = reader.uint32();
+                case /* bool requireOwnerMatch */ 3:
+                    message.requireOwnerMatch = reader.bool();
                     break;
-                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification verification */ 5:
-                    message.verification = DeviceManager_Spec_Linking_Verification.internalBinaryRead(reader, reader.uint32(), options, message.verification);
+                case /* octelium.api.main.meta.v1.Duration verificationInterval */ 4:
+                    message.verificationInterval = Duration.internalBinaryRead(reader, reader.uint32(), options, message.verificationInterval);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -23777,18 +23229,15 @@ class DeviceManager_Spec_Linking$Type extends MessageType<DeviceManager_Spec_Lin
         /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy strategy = 1; */
         if (message.strategy !== 0)
             writer.tag(1, WireType.Varint).int32(message.strategy);
-        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.ApprovalMode approvalMode = 2; */
-        if (message.approvalMode !== 0)
-            writer.tag(2, WireType.Varint).int32(message.approvalMode);
-        /* bool requireAgreement = 3; */
+        /* bool requireAgreement = 2; */
         if (message.requireAgreement !== false)
-            writer.tag(3, WireType.Varint).bool(message.requireAgreement);
-        /* uint32 priority = 4; */
-        if (message.priority !== 0)
-            writer.tag(4, WireType.Varint).uint32(message.priority);
-        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification verification = 5; */
-        if (message.verification)
-            DeviceManager_Spec_Linking_Verification.internalBinaryWrite(message.verification, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+            writer.tag(2, WireType.Varint).bool(message.requireAgreement);
+        /* bool requireOwnerMatch = 3; */
+        if (message.requireOwnerMatch !== false)
+            writer.tag(3, WireType.Varint).bool(message.requireOwnerMatch);
+        /* octelium.api.main.meta.v1.Duration verificationInterval = 4; */
+        if (message.verificationInterval)
+            Duration.internalBinaryWrite(message.verificationInterval, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -23799,52 +23248,6 @@ class DeviceManager_Spec_Linking$Type extends MessageType<DeviceManager_Spec_Lin
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking
  */
 export const DeviceManager_Spec_Linking = new DeviceManager_Spec_Linking$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class DeviceManager_Spec_Linking_Verification$Type extends MessageType<DeviceManager_Spec_Linking_Verification> {
-    constructor() {
-        super("octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification", [
-            { no: 1, name: "interval", kind: "message", T: () => Duration }
-        ]);
-    }
-    create(value?: PartialMessage<DeviceManager_Spec_Linking_Verification>): DeviceManager_Spec_Linking_Verification {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        if (value !== undefined)
-            reflectionMergePartial<DeviceManager_Spec_Linking_Verification>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceManager_Spec_Linking_Verification): DeviceManager_Spec_Linking_Verification {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* octelium.api.main.meta.v1.Duration interval */ 1:
-                    message.interval = Duration.internalBinaryRead(reader, reader.uint32(), options, message.interval);
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: DeviceManager_Spec_Linking_Verification, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* octelium.api.main.meta.v1.Duration interval = 1; */
-        if (message.interval)
-            Duration.internalBinaryWrite(message.interval, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification
- */
-export const DeviceManager_Spec_Linking_Verification = new DeviceManager_Spec_Linking_Verification$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class DeviceManager_Status$Type extends MessageType<DeviceManager_Status> {
     constructor() {
@@ -23989,16 +23392,18 @@ class DeviceManager_Status_Linking$Type extends MessageType<DeviceManager_Status
         super("octelium.api.main.enterprise.v1.DeviceManager.Status.Linking", [
             { no: 1, name: "lastSweepAt", kind: "message", T: () => Timestamp },
             { no: 2, name: "linkedDevices", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 3, name: "waitingApproval", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 4, name: "ambiguous", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "failedUpdates", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 3, name: "ambiguous", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 4, name: "conflicts", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 5, name: "suspended", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 6, name: "failedUpdates", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Status_Linking>): DeviceManager_Status_Linking {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.linkedDevices = 0;
-        message.waitingApproval = 0;
         message.ambiguous = 0;
+        message.conflicts = 0;
+        message.suspended = 0;
         message.failedUpdates = 0;
         if (value !== undefined)
             reflectionMergePartial<DeviceManager_Status_Linking>(this, message, value);
@@ -24015,13 +23420,16 @@ class DeviceManager_Status_Linking$Type extends MessageType<DeviceManager_Status
                 case /* uint32 linkedDevices */ 2:
                     message.linkedDevices = reader.uint32();
                     break;
-                case /* uint32 waitingApproval */ 3:
-                    message.waitingApproval = reader.uint32();
-                    break;
-                case /* uint32 ambiguous */ 4:
+                case /* uint32 ambiguous */ 3:
                     message.ambiguous = reader.uint32();
                     break;
-                case /* uint32 failedUpdates */ 5:
+                case /* uint32 conflicts */ 4:
+                    message.conflicts = reader.uint32();
+                    break;
+                case /* uint32 suspended */ 5:
+                    message.suspended = reader.uint32();
+                    break;
+                case /* uint32 failedUpdates */ 6:
                     message.failedUpdates = reader.uint32();
                     break;
                 default:
@@ -24042,15 +23450,18 @@ class DeviceManager_Status_Linking$Type extends MessageType<DeviceManager_Status
         /* uint32 linkedDevices = 2; */
         if (message.linkedDevices !== 0)
             writer.tag(2, WireType.Varint).uint32(message.linkedDevices);
-        /* uint32 waitingApproval = 3; */
-        if (message.waitingApproval !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.waitingApproval);
-        /* uint32 ambiguous = 4; */
+        /* uint32 ambiguous = 3; */
         if (message.ambiguous !== 0)
-            writer.tag(4, WireType.Varint).uint32(message.ambiguous);
-        /* uint32 failedUpdates = 5; */
+            writer.tag(3, WireType.Varint).uint32(message.ambiguous);
+        /* uint32 conflicts = 4; */
+        if (message.conflicts !== 0)
+            writer.tag(4, WireType.Varint).uint32(message.conflicts);
+        /* uint32 suspended = 5; */
+        if (message.suspended !== 0)
+            writer.tag(5, WireType.Varint).uint32(message.suspended);
+        /* uint32 failedUpdates = 6; */
         if (message.failedUpdates !== 0)
-            writer.tag(5, WireType.Varint).uint32(message.failedUpdates);
+            writer.tag(6, WireType.Varint).uint32(message.failedUpdates);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -24178,29 +23589,30 @@ class ListDeviceManagerOptions$Type extends MessageType<ListDeviceManagerOptions
  */
 export const ListDeviceManagerOptions = new ListDeviceManagerOptions$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class DeviceExtInfo$Type extends MessageType<DeviceExtInfo> {
+class ResetDeviceBindingRequest$Type extends MessageType<ResetDeviceBindingRequest> {
     constructor() {
-        super("octelium.api.main.enterprise.v1.DeviceExtInfo", [
-            { no: 1, name: "deviceManagerRef", kind: "message", T: () => ObjectReference },
-            { no: 2, name: "deviceManagerDetails", kind: "message", T: () => DeviceExtInfo_DeviceManagerDetails }
+        super("octelium.api.main.enterprise.v1.ResetDeviceBindingRequest", [
+            { no: 1, name: "deviceRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "bindingUID", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
-    create(value?: PartialMessage<DeviceExtInfo>): DeviceExtInfo {
+    create(value?: PartialMessage<ResetDeviceBindingRequest>): ResetDeviceBindingRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.bindingUID = "";
         if (value !== undefined)
-            reflectionMergePartial<DeviceExtInfo>(this, message, value);
+            reflectionMergePartial<ResetDeviceBindingRequest>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceExtInfo): DeviceExtInfo {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ResetDeviceBindingRequest): ResetDeviceBindingRequest {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* octelium.api.main.meta.v1.ObjectReference deviceManagerRef */ 1:
-                    message.deviceManagerRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.deviceManagerRef);
+                case /* octelium.api.main.meta.v1.ObjectReference deviceRef */ 1:
+                    message.deviceRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.deviceRef);
                     break;
-                case /* octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails deviceManagerDetails */ 2:
-                    message.deviceManagerDetails = DeviceExtInfo_DeviceManagerDetails.internalBinaryRead(reader, reader.uint32(), options, message.deviceManagerDetails);
+                case /* string bindingUID */ 2:
+                    message.bindingUID = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -24213,13 +23625,13 @@ class DeviceExtInfo$Type extends MessageType<DeviceExtInfo> {
         }
         return message;
     }
-    internalBinaryWrite(message: DeviceExtInfo, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* octelium.api.main.meta.v1.ObjectReference deviceManagerRef = 1; */
-        if (message.deviceManagerRef)
-            ObjectReference.internalBinaryWrite(message.deviceManagerRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails deviceManagerDetails = 2; */
-        if (message.deviceManagerDetails)
-            DeviceExtInfo_DeviceManagerDetails.internalBinaryWrite(message.deviceManagerDetails, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+    internalBinaryWrite(message: ResetDeviceBindingRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference deviceRef = 1; */
+        if (message.deviceRef)
+            ObjectReference.internalBinaryWrite(message.deviceRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string bindingUID = 2; */
+        if (message.bindingUID !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.bindingUID);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -24227,276 +23639,9 @@ class DeviceExtInfo$Type extends MessageType<DeviceExtInfo> {
     }
 }
 /**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceExtInfo
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.ResetDeviceBindingRequest
  */
-export const DeviceExtInfo = new DeviceExtInfo$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class DeviceExtInfo_DeviceManagerDetails$Type extends MessageType<DeviceExtInfo_DeviceManagerDetails> {
-    constructor() {
-        super("octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails", [
-            { no: 1, name: "crowdstrike", kind: "message", oneof: "type", T: () => DeviceExtInfo_DeviceManagerDetails_Crowdstrike }
-        ]);
-    }
-    create(value?: PartialMessage<DeviceExtInfo_DeviceManagerDetails>): DeviceExtInfo_DeviceManagerDetails {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.type = { oneofKind: undefined };
-        if (value !== undefined)
-            reflectionMergePartial<DeviceExtInfo_DeviceManagerDetails>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceExtInfo_DeviceManagerDetails): DeviceExtInfo_DeviceManagerDetails {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike crowdstrike */ 1:
-                    message.type = {
-                        oneofKind: "crowdstrike",
-                        crowdstrike: DeviceExtInfo_DeviceManagerDetails_Crowdstrike.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).crowdstrike)
-                    };
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: DeviceExtInfo_DeviceManagerDetails, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike crowdstrike = 1; */
-        if (message.type.oneofKind === "crowdstrike")
-            DeviceExtInfo_DeviceManagerDetails_Crowdstrike.internalBinaryWrite(message.type.crowdstrike, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails
- */
-export const DeviceExtInfo_DeviceManagerDetails = new DeviceExtInfo_DeviceManagerDetails$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class DeviceExtInfo_DeviceManagerDetails_Crowdstrike$Type extends MessageType<DeviceExtInfo_DeviceManagerDetails_Crowdstrike> {
-    constructor() {
-        super("octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike", [
-            { no: 1, name: "info", kind: "message", T: () => DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info },
-            { no: 2, name: "assessment", kind: "message", T: () => DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment }
-        ]);
-    }
-    create(value?: PartialMessage<DeviceExtInfo_DeviceManagerDetails_Crowdstrike>): DeviceExtInfo_DeviceManagerDetails_Crowdstrike {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        if (value !== undefined)
-            reflectionMergePartial<DeviceExtInfo_DeviceManagerDetails_Crowdstrike>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceExtInfo_DeviceManagerDetails_Crowdstrike): DeviceExtInfo_DeviceManagerDetails_Crowdstrike {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Info info */ 1:
-                    message.info = DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info.internalBinaryRead(reader, reader.uint32(), options, message.info);
-                    break;
-                case /* octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Assessment assessment */ 2:
-                    message.assessment = DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment.internalBinaryRead(reader, reader.uint32(), options, message.assessment);
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: DeviceExtInfo_DeviceManagerDetails_Crowdstrike, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Info info = 1; */
-        if (message.info)
-            DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info.internalBinaryWrite(message.info, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Assessment assessment = 2; */
-        if (message.assessment)
-            DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment.internalBinaryWrite(message.assessment, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike
- */
-export const DeviceExtInfo_DeviceManagerDetails_Crowdstrike = new DeviceExtInfo_DeviceManagerDetails_Crowdstrike$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment$Type extends MessageType<DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment> {
-    constructor() {
-        super("octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Assessment", [
-            { no: 1, name: "lastSyncAt", kind: "message", T: () => Timestamp },
-            { no: 2, name: "overall", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
-            { no: 3, name: "os", kind: "scalar", T: 5 /*ScalarType.INT32*/ }
-        ]);
-    }
-    create(value?: PartialMessage<DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment>): DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.overall = 0;
-        message.os = 0;
-        if (value !== undefined)
-            reflectionMergePartial<DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment): DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* google.protobuf.Timestamp lastSyncAt */ 1:
-                    message.lastSyncAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSyncAt);
-                    break;
-                case /* int32 overall */ 2:
-                    message.overall = reader.int32();
-                    break;
-                case /* int32 os */ 3:
-                    message.os = reader.int32();
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* google.protobuf.Timestamp lastSyncAt = 1; */
-        if (message.lastSyncAt)
-            Timestamp.internalBinaryWrite(message.lastSyncAt, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* int32 overall = 2; */
-        if (message.overall !== 0)
-            writer.tag(2, WireType.Varint).int32(message.overall);
-        /* int32 os = 3; */
-        if (message.os !== 0)
-            writer.tag(3, WireType.Varint).int32(message.os);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Assessment
- */
-export const DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment = new DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info$Type extends MessageType<DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info> {
-    constructor() {
-        super("octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Info", [
-            { no: 1, name: "lastSyncAt", kind: "message", T: () => Timestamp },
-            { no: 2, name: "serialNumber", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "macAddress", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "osBuild", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 5, name: "osVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 6, name: "status", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 7, name: "agentVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 8, name: "deviceID", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
-        ]);
-    }
-    create(value?: PartialMessage<DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info>): DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.serialNumber = "";
-        message.macAddress = "";
-        message.osBuild = "";
-        message.osVersion = "";
-        message.status = "";
-        message.agentVersion = "";
-        message.deviceID = "";
-        if (value !== undefined)
-            reflectionMergePartial<DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info): DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* google.protobuf.Timestamp lastSyncAt */ 1:
-                    message.lastSyncAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSyncAt);
-                    break;
-                case /* string serialNumber */ 2:
-                    message.serialNumber = reader.string();
-                    break;
-                case /* string macAddress */ 3:
-                    message.macAddress = reader.string();
-                    break;
-                case /* string osBuild */ 4:
-                    message.osBuild = reader.string();
-                    break;
-                case /* string osVersion */ 5:
-                    message.osVersion = reader.string();
-                    break;
-                case /* string status */ 6:
-                    message.status = reader.string();
-                    break;
-                case /* string agentVersion */ 7:
-                    message.agentVersion = reader.string();
-                    break;
-                case /* string deviceID */ 8:
-                    message.deviceID = reader.string();
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* google.protobuf.Timestamp lastSyncAt = 1; */
-        if (message.lastSyncAt)
-            Timestamp.internalBinaryWrite(message.lastSyncAt, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* string serialNumber = 2; */
-        if (message.serialNumber !== "")
-            writer.tag(2, WireType.LengthDelimited).string(message.serialNumber);
-        /* string macAddress = 3; */
-        if (message.macAddress !== "")
-            writer.tag(3, WireType.LengthDelimited).string(message.macAddress);
-        /* string osBuild = 4; */
-        if (message.osBuild !== "")
-            writer.tag(4, WireType.LengthDelimited).string(message.osBuild);
-        /* string osVersion = 5; */
-        if (message.osVersion !== "")
-            writer.tag(5, WireType.LengthDelimited).string(message.osVersion);
-        /* string status = 6; */
-        if (message.status !== "")
-            writer.tag(6, WireType.LengthDelimited).string(message.status);
-        /* string agentVersion = 7; */
-        if (message.agentVersion !== "")
-            writer.tag(7, WireType.LengthDelimited).string(message.agentVersion);
-        /* string deviceID = 8; */
-        if (message.deviceID !== "")
-            writer.tag(8, WireType.LengthDelimited).string(message.deviceID);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Info
- */
-export const DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info = new DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info$Type();
+export const ResetDeviceBindingRequest = new ResetDeviceBindingRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class UserExtInfo$Type extends MessageType<UserExtInfo> {
     constructor() {
@@ -32799,6 +31944,7 @@ export const MainService = new ServiceType("octelium.api.main.enterprise.v1.Main
     { name: "ListDeviceManager", options: {}, I: ListDeviceManagerOptions, O: DeviceManagerList },
     { name: "UpdateDeviceManager", options: {}, I: DeviceManager, O: DeviceManager },
     { name: "DeleteDeviceManager", options: {}, I: DeleteOptions, O: OperationResult },
+    { name: "ResetDeviceBinding", options: {}, I: ResetDeviceBindingRequest, O: OperationResult },
     { name: "GetCoreCondition", options: {}, I: Condition, O: Condition$ }
 ]);
 /**

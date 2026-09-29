@@ -49,6 +49,13 @@
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate",
                     "additionalProperties": false,
                     "description": "Certificate sets the Certificate management-related configuration."
+                },
+                "deviceManagers": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "DeviceManagers is the ordered list of DeviceManager names used to select a Device's single Binding. Names must be unique and reference existing DeviceManagers. Only listed managers participate. If unset, all managers are considered in ascending name order. The first applicable manager with a unique candidate satisfying its linking requirements wins. A manager with no match is skipped; an unavailable inventory, ambiguous match or ownership conflict blocks selection instead of falling through to a lower-priority manager. This order applies to new Bindings. Existing ACCEPTED Bindings remain assigned until reset or manager deletion, including during outages."
                 }
             },
             "additionalProperties": false,

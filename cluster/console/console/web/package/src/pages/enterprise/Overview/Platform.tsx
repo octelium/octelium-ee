@@ -80,11 +80,10 @@ const Platform = (props: { periodMinutes: number }) => {
             icon={LaptopMinimal}
           />
           <MiniStat
-            label="Waiting approval"
-            value={n(managers?.totalWaitingApproval)}
-            tone={n(managers?.totalWaitingApproval) > 0 ? "warning" : "default"}
+            label="Ambiguous devices"
+            value={n(managers?.totalAmbiguous)}
+            tone={n(managers?.totalAmbiguous) > 0 ? "warning" : "default"}
             icon={Clock3}
-            to="/core/devices?state=PENDING"
           />
         </MiniStatGrid>
 
