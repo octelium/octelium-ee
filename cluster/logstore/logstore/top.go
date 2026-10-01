@@ -50,6 +50,8 @@ func (s *Server) listAccessLogTopUser(ctx context.Context, req *visibilityv1.Lis
 		return nil, err
 	}
 
+	filters = appendAccessStatusFilter(filters, req.Status)
+
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
 
 	filters = appendTimeFilters(filters, req.From, req.To)
@@ -113,6 +115,8 @@ func (s *Server) listAccessLogTopService(ctx context.Context, req *visibilityv1.
 	if err != nil {
 		return nil, err
 	}
+
+	filters = appendAccessStatusFilter(filters, req.Status)
 
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
 
@@ -180,6 +184,8 @@ func (s *Server) listAccessLogTopPolicy(ctx context.Context, req *visibilityv1.L
 	if err != nil {
 		return nil, err
 	}
+
+	filters = appendAccessStatusFilter(filters, req.Status)
 
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
 
@@ -250,6 +256,8 @@ func (s *Server) listAccessLogTopSession(ctx context.Context, req *visibilityv1.
 	if err != nil {
 		return nil, err
 	}
+
+	filters = appendAccessStatusFilter(filters, req.Status)
 
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
 

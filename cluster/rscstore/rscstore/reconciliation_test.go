@@ -191,6 +191,38 @@ func TestReconcileDeletesRemovedResource(t *testing.T) {
 	assert.True(t, localExists(ctx, t, srv, u3.Metadata.Uid))
 }
 
+func TestReconcileDoesNotResurrectRemovedResource(t *testing.T) {
+	ctx := context.Background()
+	tst, err := otests.Initialize(nil)
+	assert.Nil(t, err, "%+v", err)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
+	fakeC := tst.C
+
+	srv := setupReconcileServer(ctx, t, fakeC.OcteliumC)
+
+	u1 := createUser(ctx, t, fakeC.OcteliumC)
+	u2 := createUser(ctx, t, fakeC.OcteliumC)
+
+	reconcileKind(ctx, t, srv, ucorev1.KindUser)
+	assert.True(t, localExists(ctx, t, srv, u1.Metadata.Uid))
+	assert.True(t, localExists(ctx, t, srv, u2.Metadata.Uid))
+
+	err = srv.removeResource(ctx, u2)
+	assert.Nil(t, err, "%+v", err)
+	assert.False(t, localExists(ctx, t, srv, u2.Metadata.Uid))
+
+	err = srv.insertResource(ctx, u2)
+	assert.Nil(t, err, "%+v", err)
+	assert.False(t, localExists(ctx, t, srv, u2.Metadata.Uid))
+
+	reconcileKind(ctx, t, srv, ucorev1.KindUser)
+
+	assert.False(t, localExists(ctx, t, srv, u2.Metadata.Uid))
+	assert.True(t, localExists(ctx, t, srv, u1.Metadata.Uid))
+}
+
 func TestReconcileReflectsUpdate(t *testing.T) {
 	ctx := context.Background()
 	tst, err := otests.Initialize(nil)

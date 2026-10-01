@@ -7,7 +7,7 @@ on:
       scenario:
         description: "The e2e scenario to run against"
         required: false
-        default: "k3s-flannel-ee"
+        default: "k3s-flannel-ee-full"
       run:
         description: "Only run tests matching this regular expression (go test -run)"
         required: false
@@ -27,7 +27,7 @@ on:
       coreVersion:
         description: "Octelium core version to install. Empty means latest"
         required: false
-        default: ""
+        default: "main"
       skipApply:
         description: "With suite=all, skip the core Apply phase and its database upstreams"
         required: false
@@ -46,9 +46,9 @@ jobs:
       matrix:
         include:
           - runner: ubuntu-24.04
-            scenario: k3s-flannel-ee
+            scenario: k3s-flannel-ee-full
           - runner: ubuntu-24.04-arm
-            scenario: k3s-flannel-ee
+            scenario: k3s-flannel-ee-full
     runs-on: ${{ matrix.runner }}
     name: ${{ matrix.scenario }}-${{ matrix.runner }}
     timeout-minutes: 180

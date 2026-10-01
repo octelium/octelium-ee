@@ -219,6 +219,43 @@ func TestAccessLogQueriesComprehensive(t *testing.T) {
 	}
 
 	{
+		resp, err := ts.srv.listAccessLogTopUser(ts.ctx, &visibilityv1.ListAccessLogTopUserRequest{
+			Status: corev1.AccessLog_Entry_Common_DENIED,
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 2)
+		assert.Equal(t, user1.Metadata.Uid, resp.Items[0].User.Metadata.Uid)
+		assert.Equal(t, int32(19), resp.Items[0].Count)
+		assert.Equal(t, user2.Metadata.Uid, resp.Items[1].User.Metadata.Uid)
+		assert.Equal(t, int32(11), resp.Items[1].Count)
+	}
+
+	{
+		resp, err := ts.srv.listAccessLogTopUser(ts.ctx, &visibilityv1.ListAccessLogTopUserRequest{
+			Status:     corev1.AccessLog_Entry_Common_ALLOWED,
+			ServiceRef: serviceRef1,
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 2)
+		for _, item := range resp.Items {
+			assert.True(t, item.Count > 0)
+		}
+		assert.Equal(t, int32(60), resp.Items[0].Count+resp.Items[1].Count)
+	}
+
+	{
+		resp, err := ts.srv.listAccessLogTopService(ts.ctx, &visibilityv1.ListAccessLogTopServiceRequest{
+			Status: corev1.AccessLog_Entry_Common_DENIED,
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 2)
+		assert.Equal(t, service1.Metadata.Uid, resp.Items[0].Service.Metadata.Uid)
+		assert.Equal(t, int32(20), resp.Items[0].Count)
+		assert.Equal(t, service2.Metadata.Uid, resp.Items[1].Service.Metadata.Uid)
+		assert.Equal(t, int32(10), resp.Items[1].Count)
+	}
+
+	{
 		resp, err := ts.srv.getTop(ts.ctx, "access_logs", 10, colPolicyUID,
 			"entry.common.reason.details.policyMatch.policy.policyRef", nil)
 		assert.Nil(t, err, "%+v", err)

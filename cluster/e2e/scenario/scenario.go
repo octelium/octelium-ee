@@ -58,6 +58,7 @@ type opts struct {
 	coreVersion string
 	spire       bool
 	fixtures    bool
+	upgrade     bool
 	budget      time.Duration
 }
 
@@ -70,6 +71,7 @@ func register(id string, o opts) {
 		ret.Description = o.description
 		ret.Components = Components
 		ret.Install.Version = coreVersion(o.coreVersion)
+		ret.Install.OTelCollector = false
 
 		if o.spire {
 			ret.Install.EnableSPIFFECSI = true
@@ -80,6 +82,10 @@ func register(id string, o opts) {
 
 		if o.fixtures {
 			withFixtures(ret)
+		}
+
+		if o.upgrade {
+			ret.Caps = append(ret.Caps, scenario.CapUpgrade)
 		}
 
 		ret.Hooks.PostInstall = []scenario.Step{

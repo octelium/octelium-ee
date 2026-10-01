@@ -302,6 +302,42 @@ func TestRequestAutoApproveNoDuration(t *testing.T) {
 	assert.Equal(t, reqG.Status.AccessEndsAt.AsTime(), all.Of[2].GetNotAfter().AsTime())
 }
 
+func TestRequestAutoApprovePendingCarriesAccessEndsAt(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	uref := objRef("User")
+	svc := createService(t, ctx, octeliumC)
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition: matchAny(),
+		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
+			MaxAccessDuration: durationHours(1),
+		},
+	})
+
+	pending := baseRequest(uref, serviceRef(svc))
+	pending.Status.State = &accessv1.Request_Status_State{
+		CreatedAt: pbutils.Now(),
+		Status:    accessv1.Request_Status_State_PENDING,
+	}
+
+	req := createRequest(t, ctx, octeliumC, pending)
+	assert.Nil(t, ctrl.OnAdd(ctx, getRequest(t, ctx, octeliumC, req.Metadata.Uid)))
+
+	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
+	assert.NotNil(t, reqG.Status.Rule)
+	assert.NotNil(t, reqG.Status.AccessEndsAt)
+	assert.Equal(t, reqG.Status.ApprovalEndAt.AsTime().Add(time.Hour),
+		reqG.Status.AccessEndsAt.AsTime())
+
+	reqG = converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
+	assert.NotNil(t, reqG.Status.PolicyTriggerRef)
+}
+
 func TestRequestReview(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 

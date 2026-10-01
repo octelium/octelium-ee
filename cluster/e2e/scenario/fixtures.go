@@ -63,10 +63,11 @@ const (
 
 func init() {
 	register(FullScenario, opts{
-		description: "The Enterprise scenario plus SPIRE, Vault, Keycloak and an OTLP sink",
+		description: "The Enterprise scenario plus SPIRE, Vault, Keycloak, an OTLP sink and an upgrade",
 		spire:       true,
 		budget:      120 * time.Minute,
 		fixtures:    true,
+		upgrade:     true,
 	})
 }
 
@@ -318,6 +319,8 @@ spec:
     metadata:
       labels:
         app: otel-sink
+      annotations:
+        kubectl.kubernetes.io/default-container: shell
     spec:
       securityContext:
         fsGroup: 10001
@@ -329,6 +332,12 @@ spec:
             - name: data
               mountPath: %[2]s
       containers:
+        - name: shell
+          image: busybox:1.37
+          command: ["sh", "-c", "trap 'exit 0' TERM; while :; do sleep 1; done"]
+          volumeMounts:
+            - name: data
+              mountPath: %[2]s
         - name: collector
           image: otel/opentelemetry-collector-contrib:0.153.0
           args: ["--config=/etc/otel/config.yaml"]

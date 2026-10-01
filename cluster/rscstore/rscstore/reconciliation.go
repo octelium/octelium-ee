@@ -188,6 +188,9 @@ func (s *Server) reconcileCoreResourceKind(ctx context.Context, rk resourceKind)
 
 	seen := make(map[string]struct{}, len(items))
 
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -196,6 +199,10 @@ func (s *Server) reconcileCoreResourceKind(ctx context.Context, rk resourceKind)
 
 	for _, item := range items {
 		if item == nil || item.GetMetadata() == nil || item.GetMetadata().Uid == "" {
+			continue
+		}
+
+		if s.isRemovedResource(item) {
 			continue
 		}
 
@@ -326,6 +333,9 @@ func (s *Server) reconcileEnterpriseResourceKind(ctx context.Context, rk resourc
 
 	seen := make(map[string]struct{}, len(items))
 
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -334,6 +344,10 @@ func (s *Server) reconcileEnterpriseResourceKind(ctx context.Context, rk resourc
 
 	for _, item := range items {
 		if item == nil || item.GetMetadata() == nil || item.GetMetadata().Uid == "" {
+			continue
+		}
+
+		if s.isRemovedResource(item) {
 			continue
 		}
 
@@ -464,6 +478,9 @@ func (s *Server) reconcileAccessResourceKind(ctx context.Context, rk resourceKin
 
 	seen := make(map[string]struct{}, len(items))
 
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -472,6 +489,10 @@ func (s *Server) reconcileAccessResourceKind(ctx context.Context, rk resourceKin
 
 	for _, item := range items {
 		if item == nil || item.GetMetadata() == nil || item.GetMetadata().Uid == "" {
+			continue
+		}
+
+		if s.isRemovedResource(item) {
 			continue
 		}
 

@@ -12,6 +12,7 @@ import (
 	"context"
 	"database/sql"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -39,6 +40,8 @@ import (
 
 const tstAddr = "localhost:32123"
 
+const removedResourceTTL = 1 * time.Hour
+
 type Server struct {
 	octeliumC octeliumc.ClientInterface
 
@@ -47,6 +50,9 @@ type Server struct {
 	db            *sql.DB
 	auditLogItem  chan umetav1.ResourceObjectI
 	client        plogotlp.GRPCClient
+
+	writeMu     sync.Mutex
+	removedUIDs *cache.Cache
 }
 
 func getAddr() string {
@@ -64,6 +70,7 @@ func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 		octeliumC:    octeliumC,
 		genCache:     cache.New(cache.NoExpiration, 1*time.Minute),
 		auditLogItem: make(chan umetav1.ResourceObjectI, 10000),
+		removedUIDs:  cache.New(removedResourceTTL, 10*time.Minute),
 	}
 
 	cc, err := octeliumC.CoreV1Utils().GetClusterConfig(ctx)

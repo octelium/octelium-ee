@@ -155,6 +155,26 @@ func TestInsertResource(t *testing.T) {
 				assert.True(t, count == 0)
 			}
 		}
+
+		err = srv.insertResource(ctx, rsc)
+		assert.Nil(t, err)
+
+		{
+			rows, err := srv.db.QueryContext(ctx,
+				fmt.Sprintf(`SELECT COUNT(*) FROM resources WHERE uid = '%s'`, rsc.Metadata.Uid),
+			)
+			assert.Nil(t, err)
+
+			for rows.Next() {
+
+				var count int
+
+				err = rows.Scan(&count)
+				assert.Nil(t, err)
+
+				assert.True(t, count == 0)
+			}
+		}
 	}
 
 }

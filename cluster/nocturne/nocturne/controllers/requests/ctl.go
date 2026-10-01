@@ -81,7 +81,8 @@ func (c *Controller) doReconcile(ctx context.Context, itm *accessv1.Request) err
 	next := pbutils.Clone(itm).(*accessv1.Request)
 
 	if next.Status.State == nil ||
-		next.Status.State.Status == accessv1.Request_Status_State_STATUS_UNKNOWN {
+		next.Status.State.Status == accessv1.Request_Status_State_STATUS_UNKNOWN ||
+		(next.Status.State.Status == accessv1.Request_Status_State_PENDING && next.Status.Rule == nil) {
 		if err := c.initializeRequest(ctx, next); err != nil {
 			return err
 		}
@@ -98,13 +99,6 @@ func (c *Controller) doReconcile(ctx context.Context, itm *accessv1.Request) err
 	}
 
 	switch next.Status.State.Status {
-	case accessv1.Request_Status_State_PENDING:
-		if next.Status.Rule == nil {
-			if err := c.initializeRequest(ctx, next); err != nil {
-				return err
-			}
-		}
-
 	case accessv1.Request_Status_State_APPROVED:
 		if err := c.ensurePolicyTrigger(ctx, next); err != nil {
 			return err

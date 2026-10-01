@@ -14,6 +14,7 @@ import (
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
+	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"google.golang.org/protobuf/proto"
@@ -65,6 +66,16 @@ func appendAccessFlagFilters(filters []exp.Expression, isPublic, isAnonymous boo
 	}
 	if isAnonymous {
 		filters = append(filters, goqu.L(jsonIsAnonymous).Eq("true"))
+	}
+
+	return filters
+}
+
+func appendAccessStatusFilter(filters []exp.Expression,
+	status corev1.AccessLog_Entry_Common_Status) []exp.Expression {
+	switch status {
+	case corev1.AccessLog_Entry_Common_ALLOWED, corev1.AccessLog_Entry_Common_DENIED:
+		filters = append(filters, goqu.L(colStatus).Eq(status.String()))
 	}
 
 	return filters

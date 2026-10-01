@@ -23,6 +23,13 @@ import (
 func (s *Server) insertResource(ctx context.Context, rsc umetav1.ResourceObjectI) error {
 	s.setAuditLog(ctx, rsc)
 
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+
+	if s.isRemovedResource(rsc) {
+		return nil
+	}
+
 	if err := s.upsertResource(ctx, rsc); err != nil {
 		return err
 	}
@@ -37,6 +44,11 @@ func (s *Server) removeResource(ctx context.Context, rsc umetav1.ResourceObjectI
 		return nil
 	}
 
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+
+	s.removedUIDs.SetDefault(rsc.GetMetadata().GetUid(), struct{}{})
+
 	if _, err := s.db.ExecContext(ctx,
 		`DELETE FROM resources WHERE uid = ?`,
 		rsc.GetMetadata().GetUid(),
@@ -45,6 +57,15 @@ func (s *Server) removeResource(ctx context.Context, rsc umetav1.ResourceObjectI
 	}
 
 	return nil
+}
+
+func (s *Server) isRemovedResource(rsc umetav1.ResourceObjectI) bool {
+	if rsc == nil || rsc.GetMetadata() == nil {
+		return false
+	}
+
+	_, ok := s.removedUIDs.Get(rsc.GetMetadata().GetUid())
+	return ok
 }
 
 func (s *Server) setAuditLog(ctx context.Context, rsc umetav1.ResourceObjectI) {

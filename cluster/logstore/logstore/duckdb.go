@@ -226,12 +226,7 @@ func (s *Server) listAccessLog(ctx context.Context, req *visibilityv1.ListAccess
 		return nil, err
 	}
 
-	if req.Status != corev1.AccessLog_Entry_Common_STATUS_UNSET {
-		switch req.Status {
-		case corev1.AccessLog_Entry_Common_ALLOWED, corev1.AccessLog_Entry_Common_DENIED:
-			filters = append(filters, goqu.L(colStatus).Eq(req.Status.String()))
-		}
-	}
+	filters = appendAccessStatusFilter(filters, req.Status)
 
 	filters = appendTimeFilters(filters, req.From, req.To)
 
@@ -686,12 +681,7 @@ func (s *Server) doSummaryAccessLog(ctx context.Context, req *visibilityv1.GetAc
 		}
 	*/
 
-	if req.Status != corev1.AccessLog_Entry_Common_STATUS_UNSET {
-		switch req.Status {
-		case corev1.AccessLog_Entry_Common_ALLOWED, corev1.AccessLog_Entry_Common_DENIED:
-			filters = append(filters, goqu.L(colStatus).Eq(req.Status.String()))
-		}
-	}
+	filters = appendAccessStatusFilter(filters, req.Status)
 
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
 
