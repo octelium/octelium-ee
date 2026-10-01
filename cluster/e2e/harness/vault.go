@@ -9,9 +9,11 @@
 package harness
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	eescenario "github.com/octelium/octelium-ee/cluster/e2e/scenario"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
@@ -85,4 +87,24 @@ func (v *Vault) KeyInfo(t *testing.T) *VaultKeyInfo {
 	}
 
 	return ret
+}
+
+func (v *Vault) ExecWithin(t *testing.T, cmd string, budget time.Duration) []byte {
+	t.Helper()
+
+	ctx, cancel := v.h.Ctx(t)
+	defer cancel()
+	ctx, timeoutCancel := context.WithTimeout(ctx, budget)
+	defer timeoutCancel()
+
+	run := v.h.Cmd(ctx, fmt.Sprintf(
+		`kubectl exec -n %s %s -- sh -c 'export VAULT_ADDR=http://127.0.0.1:8200; `+
+			`export VAULT_TOKEN=%s; %s'`,
+		v.namespace, v.pod, v.token, cmd))
+	run.WaitDelay = time.Second
+	out, err := run.CombinedOutput()
+	if err != nil {
+		t.Fatalf("Could not run the Vault command within %s: %+v\n%s", budget, err, out)
+	}
+	return out
 }
