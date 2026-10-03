@@ -6,12 +6,12 @@ require (
 	github.com/duckdb/duckdb-go/v2 v2.10505.0
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260929075713-5348c4c2c2da
-	github.com/octelium/octelium/pkg v0.0.0-20260929075713-5348c4c2c2da
+	github.com/octelium/octelium/cluster/common v0.0.0-20261003070331-0fe86d9363da
+	github.com/octelium/octelium/pkg v0.0.0-20261003070331-0fe86d9363da
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/collector/pdata v1.66.0
 	go.uber.org/zap v1.28.0
-	google.golang.org/grpc v1.83.2
+	google.golang.org/grpc v1.84.0
 )
 
 require (
@@ -39,7 +39,7 @@ require (
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000 // indirect
 	github.com/pierrec/lz4/v4 v4.1.25 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/spiffe/go-spiffe/v2 v2.7.0 // indirect
+	github.com/spiffe/go-spiffe/v2 v2.8.1 // indirect
 	github.com/zeebo/xxh3 v1.1.0 // indirect
 	go.opentelemetry.io/collector/featuregate v1.66.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

@@ -8,8 +8,8 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260929075713-5348c4c2c2da
-	github.com/octelium/octelium/pkg v0.0.0-20260929075713-5348c4c2c2da
+	github.com/octelium/octelium/cluster/common v0.0.0-20261003070331-0fe86d9363da
+	github.com/octelium/octelium/pkg v0.0.0-20261003070331-0fe86d9363da
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/collector/pdata v1.66.0
 	go.uber.org/zap v1.28.0
@@ -66,8 +66,8 @@ require (
 	github.com/lestrrat-go/option/v2 v2.0.0 // indirect
 	github.com/lib/pq v1.12.3 // indirect
 	github.com/mileusna/useragent v1.3.5 // indirect
-	github.com/octelium/octelium/cluster/apiserver v0.0.0-20260929075713-5348c4c2c2da // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260929075713-5348c4c2c2da // indirect
+	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261003070331-0fe86d9363da // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261003070331-0fe86d9363da // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/open-policy-agent/opa v1.20.1 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
@@ -75,7 +75,7 @@ require (
 	github.com/redis/go-redis/v9 v9.22.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
-	github.com/spiffe/go-spiffe/v2 v2.7.0 // indirect
+	github.com/spiffe/go-spiffe/v2 v2.8.1 // indirect
 	github.com/tchap/go-patricia/v2 v2.3.3 // indirect
 	github.com/valyala/fastjson v1.6.10 // indirect
 	github.com/vektah/gqlparser/v2 v2.5.36 // indirect
@@ -133,7 +133,7 @@ require (
 	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
-	google.golang.org/grpc v1.83.2
+	google.golang.org/grpc v1.84.0
 	google.golang.org/protobuf v1.36.12
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
