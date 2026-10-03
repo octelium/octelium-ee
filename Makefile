@@ -261,3 +261,24 @@ tidy:
 	cd cluster/policyportal; $(CMD_TIDY)
 	cd cluster/accessportal; $(CMD_TIDY)
 	cd cluster/e2e; $(CMD_TIDY)
+
+OCTELIUM_REF ?= main
+
+update-octelium:
+	@set -e; \
+	refs=$$(git ls-remote https://$(REPOSITORY) "refs/heads/$(OCTELIUM_REF)" "refs/tags/$(OCTELIUM_REF)*"); \
+	commit=$$(echo "$$refs" | awk -v r="$(OCTELIUM_REF)" \
+		'$$2 == "refs/heads/" r || $$2 == "refs/tags/" r || $$2 == "refs/tags/" r "^{}" { c = $$1 } END { print c }'); \
+	commit=$${commit:-$(OCTELIUM_REF)}; \
+	echo "Updating $(REPOSITORY) modules to $$commit"; \
+	mods=$$(go list -m -f "{{if not .Main}}{{if not .Replace}}{{.Path}}@$$commit{{end}}{{end}}" "$(REPOSITORY)/..."); \
+	versions=$$(go list -m -f "{{.Path}}@{{.Version}}" $$mods); \
+	echo "$$versions"; \
+	for gomod in $$(go list -m -f "{{.GoMod}}"); do \
+		for version in $$versions; do \
+			if grep -qE "^(require)?[[:space:]]+$${version%@*}[[:space:]]" $$gomod; then \
+				go mod edit -require=$$version $$gomod; \
+			fi; \
+		done; \
+	done
+	$(MAKE) tidy
