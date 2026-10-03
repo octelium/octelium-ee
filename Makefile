@@ -206,7 +206,10 @@ gen-api-console:
 gen-api-access-portal:
 	cd ./cluster/accessportal/accessportal/web/package; npm run protoc
 
-gen-api: cp-pb gen-go-main gen-go-cluster gen-go-client gen-go-rsc gen-api-console gen-api-access-portal gen-json-schema
+gen-api-console-agent:
+	cd ./cluster/console-agent; npm run protoc
+
+gen-api: cp-pb gen-go-main gen-go-cluster gen-go-client gen-go-rsc gen-api-console gen-api-access-portal gen-api-console-agent gen-json-schema
 	rm -rf ./apis/protobuf
 	go run unsorted/licenser/main.go
 
