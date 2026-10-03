@@ -12,6 +12,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/agent"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	apisrvcommon "github.com/octelium/octelium/cluster/apiserver/apiserver/common"
@@ -85,6 +86,10 @@ func (s *Server) validateClusterConfig(ctx context.Context, req *enterprisev1.Cl
 	}
 
 	if err := s.validateClusterConfigDeviceManagers(ctx, req.Spec.DeviceManagers); err != nil {
+		return err
+	}
+
+	if err := agent.ValidateConfig(req.Spec.Agent); err != nil {
 		return err
 	}
 

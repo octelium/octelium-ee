@@ -189,6 +189,29 @@ func TestValidateClusterConfig(t *testing.T) {
 	}
 
 	{
+		err := srv.validateClusterConfig(ctx, tstClusterConfigWithSpec(cc, &enterprisev1.ClusterConfig_Spec{
+			Agent: &enterprisev1.ClusterConfig_Spec_Agent{
+				Version: "0.1.0",
+				Llm: &enterprisev1.ClusterConfig_Spec_Agent_LLM{
+					Service: "llm.default",
+					Model:   "gpt-5.1",
+				},
+			},
+		}))
+		assert.Nil(t, err, "%+v", err)
+	}
+
+	{
+		err := srv.validateClusterConfig(ctx, tstClusterConfigWithSpec(cc, &enterprisev1.ClusterConfig_Spec{
+			Agent: &enterprisev1.ClusterConfig_Spec_Agent{
+				Version: "0.1.0 && curl example.com",
+			},
+		}))
+		assert.NotNil(t, err)
+		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+	}
+
+	{
 		err := srv.validateClusterConfig(ctx, &enterprisev1.ClusterConfig{})
 		assert.NotNil(t, err)
 		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)

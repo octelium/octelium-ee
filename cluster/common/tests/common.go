@@ -15,15 +15,19 @@ import (
 	"github.com/google/uuid"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
+	"github.com/octelium/octelium-ee/pkg/apiutils/ucordiumv1"
+	"github.com/octelium/octelium/apis/main/cordiumv1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/raccessv1"
+	"github.com/octelium/octelium/apis/rsc/rcordiumv1"
 	"github.com/octelium/octelium/apis/rsc/rcorev1"
 	"github.com/octelium/octelium/apis/rsc/renterprisev1"
 	ot "github.com/octelium/octelium/cluster/common/tests"
 	"github.com/octelium/octelium/cluster/rscserver/rscserver"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -110,6 +114,16 @@ The initial SecretStore powered by the Kubernetes Cluster of the default Region
 
 	}
 
+	rscs = append(rscs, &cordiumv1.ClusterConfig{
+		ApiVersion: ucordiumv1.APIVersion,
+		Kind:       ucordiumv1.KindClusterConfig,
+		Metadata: &metav1.Metadata{
+			Name: "default",
+		},
+		Spec:   &cordiumv1.ClusterConfig_Spec{},
+		Status: &cordiumv1.ClusterConfig_Status{},
+	})
+
 	inner, err := ot.Initialize(&ot.Opts{
 		PreCreatedResources: rscs,
 		RscServerOpts: &rscserver.Opts{
@@ -125,11 +139,15 @@ The initial SecretStore powered by the Kubernetes Cluster of the default Region
 					raccessv1.UnimplementedResourceServiceServer
 				}{})
 
+				rcordiumv1.RegisterResourceServiceServer(s, &struct {
+					rcordiumv1.UnimplementedResourceServiceServer
+				}{})
+
 				return nil
 			},
 
-			NewResourceObject:     ovutils.NewResourceObject,
-			NewResourceObjectList: ovutils.NewResourceObjectList,
+			NewResourceObject:     newResourceObject,
+			NewResourceObjectList: newResourceObjectList,
 		},
 	})
 	if err != nil {
@@ -148,4 +166,20 @@ The initial SecretStore powered by the Kubernetes Cluster of the default Region
 			OcteliumC: octeliumC,
 		},
 	}, nil
+}
+
+func newResourceObject(api, version, kind string) (umetav1.ResourceObjectI, error) {
+	if api == ucordiumv1.API {
+		return ucordiumv1.NewObject(kind)
+	}
+
+	return ovutils.NewResourceObject(api, version, kind)
+}
+
+func newResourceObjectList(api, version, kind string) (proto.Message, error) {
+	if api == ucordiumv1.API {
+		return ucordiumv1.NewObjectList(kind)
+	}
+
+	return ovutils.NewResourceObjectList(api, version, kind)
 }

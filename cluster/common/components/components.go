@@ -42,3 +42,7 @@ func GetImage(component, version string) string {
 func OcteliumEnterpriseComponent(arg string) string {
 	return fmt.Sprintf("octeliumee-%s", arg)
 }
+
+func CordiumComponent(arg string) string {
+	return fmt.Sprintf("cordium-%s", arg)
+}

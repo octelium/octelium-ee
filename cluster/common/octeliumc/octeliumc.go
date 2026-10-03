@@ -14,10 +14,12 @@ import (
 	"os"
 
 	"github.com/octelium/octelium-ee/cluster/common/components"
+	"github.com/octelium/octelium/apis/main/cordiumv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/rsc/raccessv1"
 	"github.com/octelium/octelium/apis/rsc/rcachev1"
+	"github.com/octelium/octelium/apis/rsc/rcordiumv1"
 	"github.com/octelium/octelium/apis/rsc/rcorev1"
 	"github.com/octelium/octelium/apis/rsc/renterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rlockv1"
@@ -42,6 +44,9 @@ type Client struct {
 	enterpriseV1UtilsC *enterpriseV1UtilsC
 
 	accessC raccessv1.ResourceServiceClient
+
+	cordiumC        rcordiumv1.ResourceServiceClient
+	cordiumV1UtilsC *cordiumV1UtilsC
 }
 
 type CoreV1Utils interface {
@@ -52,8 +57,13 @@ type EnterpriseV1Utils interface {
 	GetClusterConfig(ctx context.Context) (*enterprisev1.ClusterConfig, error)
 }
 
+type CordiumV1Utils interface {
+	GetClusterConfig(ctx context.Context) (*cordiumv1.ClusterConfig, error)
+}
+
 type Opts struct {
-	Addr string
+	Addr        string
+	CordiumAddr string
 }
 
 func DefaultAddr() string {
@@ -61,6 +71,26 @@ func DefaultAddr() string {
 		components.OcteliumEnterpriseComponent(components.RscServer),
 		vutils.K8sNS,
 	)
+}
+
+func DefaultCordiumAddr() string {
+	return fmt.Sprintf("%s.%s.svc:8080",
+		components.CordiumComponent(components.RscServer),
+		vutils.K8sNS,
+	)
+}
+
+func getCordiumAddr(opts *Opts) string {
+	switch {
+	case opts.CordiumAddr != "":
+		return opts.CordiumAddr
+	case ldflags.IsTest() && os.Getenv("OCTELIUM_TEST_CORDIUM_RSCSERVER_PORT") != "":
+		return fmt.Sprintf("localhost:%s", os.Getenv("OCTELIUM_TEST_CORDIUM_RSCSERVER_PORT"))
+	case ldflags.IsTest():
+		return fmt.Sprintf("localhost:%s", os.Getenv("OCTELIUM_TEST_RSCSERVER_PORT"))
+	default:
+		return DefaultCordiumAddr()
+	}
 }
 
 func NewClient(ctx context.Context, opts *Opts) (*Client, error) {
@@ -90,6 +120,11 @@ func NewClient(ctx context.Context, opts *Opts) (*Client, error) {
 		return nil, err
 	}
 
+	cordiumConn, err := grpc.NewClient(getCordiumAddr(opts), tOpts...)
+	if err != nil {
+		return nil, err
+	}
+
 	ret := &Client{
 		coreC:       rcorev1.NewResourceServiceClient(grpcConn),
 		cacheC:      rcachev1.NewMainServiceClient(grpcConn),
@@ -98,14 +133,17 @@ func NewClient(ctx context.Context, opts *Opts) (*Client, error) {
 		vectorC:     rvectorv1.NewMainServiceClient(grpcConn),
 		enterpriseC: renterprisev1.NewResourceServiceClient(grpcConn),
 		accessC:     raccessv1.NewResourceServiceClient(grpcConn),
+		cordiumC:    rcordiumv1.NewResourceServiceClient(cordiumConn),
 
 		coreV1UtilsC: &coreV1UtilsC{},
 
 		enterpriseV1UtilsC: &enterpriseV1UtilsC{},
+		cordiumV1UtilsC:    &cordiumV1UtilsC{},
 	}
 
 	ret.coreV1UtilsC.c = ret.coreC
 	ret.enterpriseV1UtilsC.c = ret.enterpriseC
+	ret.cordiumV1UtilsC.c = ret.cordiumC
 
 	return ret, nil
 }
@@ -138,6 +176,10 @@ func (c *Client) AccessC() raccessv1.ResourceServiceClient {
 	return c.accessC
 }
 
+func (c *Client) CordiumC() rcordiumv1.ResourceServiceClient {
+	return c.cordiumC
+}
+
 func (c *Client) CoreV1Utils() octeliumc.CoreV1Utils {
 	return c.coreV1UtilsC
 }
@@ -146,12 +188,18 @@ func (c *Client) EnterpriseV1Utils() EnterpriseV1Utils {
 	return c.enterpriseV1UtilsC
 }
 
+func (c *Client) CordiumV1Utils() CordiumV1Utils {
+	return c.cordiumV1UtilsC
+}
+
 type ClientInterface interface {
 	octeliumc.ClientInterface
 
 	EnterpriseC() renterprisev1.ResourceServiceClient
 	EnterpriseV1Utils() EnterpriseV1Utils
 	AccessC() raccessv1.ResourceServiceClient
+	CordiumC() rcordiumv1.ResourceServiceClient
+	CordiumV1Utils() CordiumV1Utils
 }
 
 type coreV1UtilsC struct {
@@ -169,6 +217,16 @@ type enterpriseV1UtilsC struct {
 }
 
 func (c *enterpriseV1UtilsC) GetClusterConfig(ctx context.Context) (*enterprisev1.ClusterConfig, error) {
+	return c.c.GetClusterConfig(ctx, &rmetav1.GetOptions{
+		Name: "default",
+	})
+}
+
+type cordiumV1UtilsC struct {
+	c rcordiumv1.ResourceServiceClient
+}
+
+func (c *cordiumV1UtilsC) GetClusterConfig(ctx context.Context) (*cordiumv1.ClusterConfig, error) {
 	return c.c.GetClusterConfig(ctx, &rmetav1.GetOptions{
 		Name: "default",
 	})

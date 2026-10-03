@@ -1,11 +1,16 @@
 import type {
   APIRisk,
   ApprovalPreview,
+  AuthProvider,
   Conversation,
   ErrorInfo,
   FileInfo,
+  LoginSession,
   ModelInfo,
+  ModelsResponse,
   RunActivity,
+  SetModelRequest,
+  StartLoginRequest,
   Usage,
 } from "../protocol/index.ts";
 import type { MessageBuilder } from "../runs/builder.ts";
@@ -59,9 +64,21 @@ export interface BackendRunResult {
   usage?: Usage;
 }
 
+export interface AuthController {
+  listProviders(): Promise<AuthProvider[]>;
+  startLogin(req: StartLoginRequest): LoginSession;
+  getLogin(id: string): LoginSession | undefined;
+  answerLogin(id: string, promptId: string, value: string): LoginSession;
+  cancelLogin(id: string): LoginSession;
+  logout(provider: string): Promise<void>;
+}
+
 export interface AgentBackend {
   readonly model?: ModelInfo;
   readonly thinkingLevel?: string;
+  readonly auth?: AuthController;
+  listModels?(): Promise<ModelsResponse>;
+  setModel?(req: SetModelRequest): Promise<ModelsResponse>;
   run(
     input: BackendRunInput,
     ctx: BackendRunContext,

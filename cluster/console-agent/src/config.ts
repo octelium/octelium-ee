@@ -31,6 +31,8 @@ export const DEFAULT_BUILTIN_TOOLS: string[] = [...BUILTIN_TOOLS];
 export const DEFAULT_SKILLS_REPOSITORY =
   "https://github.com/octelium/octelium-skills";
 
+export const DEFAULT_LOGIN_PROVIDERS = ["anthropic", "openai"];
+
 const ConfigInputSchema = Type.Object(
   {
     dataDir: Type.Optional(Type.String()),
@@ -80,6 +82,7 @@ const ConfigInputSchema = Type.Object(
           contextWindow: Type.Optional(Type.Integer({ minimum: 1 })),
           maxTokens: Type.Optional(Type.Integer({ minimum: 1 })),
           input: Type.Optional(Type.Array(Type.Enum(["text", "image"]))),
+          loginProviders: Type.Optional(Type.Array(Type.String())),
         },
         { additionalProperties: false },
       ),
@@ -197,6 +200,7 @@ export interface Config {
     contextWindow?: number;
     maxTokens?: number;
     input?: ("text" | "image")[];
+    loginProviders: string[];
   };
   agent: {
     tools: string[];
@@ -317,6 +321,9 @@ export const getDefaultDataDir = (env: Env = process.env): string =>
 const getDefaultWorkDir = (): string =>
   fs.existsSync("/workspace") ? "/workspace" : os.homedir();
 
+export const getConsoleOrigin = (domain: string): string =>
+  `https://console.octelium.${domain}`;
+
 export const resolveConfig = (
   input: ConfigInput,
   env: Env = process.env,
@@ -325,7 +332,10 @@ export const resolveConfig = (
 
   const allowedOrigins = [...(input.server?.allowedOrigins ?? [])];
   if (domain) {
-    allowedOrigins.push(`https://${domain}`, `https://*.${domain}`);
+    allowedOrigins.push(getConsoleOrigin(domain));
+  }
+  if (env.CORDIUM_HOSTNAME) {
+    allowedOrigins.push(`https://${env.CORDIUM_HOSTNAME}`);
   }
 
   const llm = input.llm ?? {};
@@ -359,6 +369,7 @@ export const resolveConfig = (
       ...llm,
       provider: llm.provider ?? "octelium",
       thinkingLevel: llm.thinkingLevel ?? "medium",
+      loginProviders: llm.loginProviders ?? [...DEFAULT_LOGIN_PROVIDERS],
     },
     agent: {
       tools: input.agent?.tools ?? [...DEFAULT_BUILTIN_TOOLS],

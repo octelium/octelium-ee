@@ -110,7 +110,7 @@ protoc-install:
 
 gen-go-main:
 	mkdir -p apis/main/metav1 apis/main/corev1 apis/main/authv1 apis/main/userv1
-	mkdir -p apis/main/enterprisev1
+	mkdir -p apis/main/enterprisev1 apis/main/cordiumv1
 	mkdir -p apis/main/accessv1 apis/main/visibilityv1
 	mkdir -p apis/main/visibilityv1/vmetav1
 	mkdir -p apis/main/visibilityv1/vcorev1
@@ -127,6 +127,8 @@ gen-go-main:
 	protoc -I . -I $(PROTO_IN_MAIN)/authv1 authv1.proto \
 		--go_out=apis/main/authv1 --go-grpc_out=apis/main/authv1 $(PROTO_GO_OPT_GRPC)
 	
+	protoc -I . -I $(PROTO_IN_MAIN)/cordiumv1 cordiumv1.proto \
+		--go_out=apis/main/cordiumv1 --go-grpc_out=apis/main/cordiumv1 $(PROTO_GO_OPT_GRPC)
 	protoc -I . -I $(PROTO_IN_MAIN)/enterprisev1 enterprisev1.proto \
 		--go_out=apis/main/enterprisev1 --go-grpc_out=apis/main/enterprisev1 $(PROTO_GO_OPT_GRPC)
 	protoc -I . -I $(PROTO_IN_MAIN)/accessv1 accessv1.proto \
@@ -171,7 +173,7 @@ gen-go-cluster:
 
 gen-go-rsc:
 	mkdir -p apis/rsc/rmetav1 apis/rsc/rcorev1 apis/rsc/rcachev1 apis/rsc/rratelimitv1 apis/rsc/rlockv1 apis/rsc/rvectorv1
-	mkdir -p apis/rsc/renterprisev1 apis/rsc/raccessv1
+	mkdir -p apis/rsc/renterprisev1 apis/rsc/raccessv1 apis/rsc/rcordiumv1
 	protoc -I . -I $(PROTO_IN_RSC)/metav1 rmetav1.proto \
 		--go_out=apis/rsc/rmetav1 --go-grpc_out=apis/rsc/rmetav1 $(PROTO_GO_OPT)
 	protoc -I . -I $(PROTO_IN_RSC)/corev1 rcorev1.proto \
@@ -179,6 +181,8 @@ gen-go-rsc:
 
 	protoc -I . -I $(PROTO_IN_RSC)/enterprisev1 renterprisev1.proto \
 		--go_out=apis/rsc/renterprisev1 --go-grpc_out=apis/rsc/renterprisev1 $(PROTO_GO_OPT_GRPC)
+	protoc -I . -I $(PROTO_IN_RSC)/cordiumv1 rcordiumv1.proto \
+		--go_out=apis/rsc/rcordiumv1 --go-grpc_out=apis/rsc/rcordiumv1 $(PROTO_GO_OPT_GRPC)
 	protoc -I . -I $(PROTO_IN_RSC)/cachev1 rcachev1.proto \
 		--go_out=apis/rsc/rcachev1 --go-grpc_out=apis/rsc/rcachev1 $(PROTO_GO_OPT_GRPC)
 	protoc -I . -I $(PROTO_IN_RSC)/accessv1 raccessv1.proto \
@@ -208,6 +212,8 @@ gen-api-access-portal:
 
 gen-api-console-agent:
 	cd ./cluster/console-agent; npm run protoc
+	mkdir -p ./cluster/console/console/web/package/src/apis/consoleagent
+	cp ./cluster/console-agent/src/protocol/index.ts ./cluster/console/console/web/package/src/apis/consoleagent/protocol.ts
 
 gen-api: cp-pb gen-go-main gen-go-cluster gen-go-client gen-go-rsc gen-api-console gen-api-access-portal gen-api-console-agent gen-json-schema
 	rm -rf ./apis/protobuf

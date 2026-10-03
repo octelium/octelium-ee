@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/InitializeAgentRequest",
+    "definitions": {
+        "InitializeAgentRequest": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Initialize Agent Request",
+            "description": "InitializeAgentRequest is the request of the InitializeAgent method."
+        }
+    }
+}

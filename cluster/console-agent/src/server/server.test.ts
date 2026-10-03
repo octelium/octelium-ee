@@ -625,12 +625,12 @@ describe("server: security", () => {
   it("checks the request origin", async () => {
     const headers = { authorization: "Bearer secret-token" };
     const allowed = await fetch(`${t.baseUrl}/v1/conversations`, {
-      headers: { ...headers, origin: "https://console.example.com" },
+      headers: { ...headers, origin: "https://console.octelium.example.com" },
     });
     assert.equal(allowed.status, 200);
     assert.equal(
       allowed.headers.get("access-control-allow-origin"),
-      "https://console.example.com",
+      "https://console.octelium.example.com",
     );
     assert.equal(
       allowed.headers.get("access-control-allow-credentials"),
@@ -642,15 +642,20 @@ describe("server: security", () => {
     });
     assert.equal(denied.status, 403);
 
+    const sibling = await fetch(`${t.baseUrl}/v1/conversations`, {
+      headers: { ...headers, origin: "https://other.cordium.example.com" },
+    });
+    assert.equal(sibling.status, 403);
+
     const insecure = await fetch(`${t.baseUrl}/v1/conversations`, {
-      headers: { ...headers, origin: "http://console.example.com" },
+      headers: { ...headers, origin: "http://console.octelium.example.com" },
     });
     assert.equal(insecure.status, 403);
 
     const preflight = await fetch(`${t.baseUrl}/v1/conversations`, {
       method: "OPTIONS",
       headers: {
-        origin: "https://console.example.com",
+        origin: "https://console.octelium.example.com",
         "access-control-request-method": "POST",
       },
     });

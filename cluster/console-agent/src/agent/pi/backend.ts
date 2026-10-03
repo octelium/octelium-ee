@@ -1,6 +1,11 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { Api, ImageContent, Model } from "@earendil-works/pi-ai";
+import type {
+  Api,
+  ImageContent,
+  Model,
+  ModelThinkingLevel,
+} from "@earendil-works/pi-ai";
 import {
   createAgentSession,
   DefaultResourceLoader,
@@ -10,13 +15,19 @@ import {
   type AgentSession,
   type ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
-import type { Config } from "../../config.ts";
+import { THINKING_LEVELS, type Config } from "../../config.ts";
+import { badRequest } from "../../errors.ts";
 import type { Logger } from "../../log.ts";
 import type { APICatalog } from "../../octelium/catalog.ts";
 import type { OcteliumClient } from "../../octelium/client.ts";
-import type { ModelInfo } from "../../protocol/index.ts";
+import type {
+  ModelInfo,
+  ModelsResponse,
+  SetModelRequest,
+} from "../../protocol/index.ts";
 import type { ConversationStore } from "../../store/conversations.ts";
 import type { FileStore } from "../../store/files.ts";
+import { SettingsStore } from "../../store/settings.ts";
 import { buildSystemPrompt, type PromptContext } from "../prompt.ts";
 import { createBuiltinTools, filterAvailableTools } from "../tools/builtin.ts";
 import { createOcteliumTools } from "../tools/octelium.ts";
@@ -32,10 +43,16 @@ import type {
   BackendRunResult,
   ToolContextProvider,
 } from "../types.ts";
+import { AuthManager } from "./auth.ts";
 import { PiEventMapper } from "./mapper.ts";
-import { resolveModel, toModelInfo } from "./model.ts";
+import { resolveModel, toModelInfo, type ResolvedModel } from "./model.ts";
 
 const maxImageBytes = 5 * 1024 * 1024;
+
+export const PREFERRED_MODELS: Record<string, string> = {
+  anthropic: "claude-opus-4-8",
+  openai: "gpt-5.5",
+};
 
 const imageMimeTypes = new Set([
   "image/png",
@@ -90,7 +107,9 @@ export const formatBytes = (n: number): string => {
 export class PiBackend implements AgentBackend {
   model?: ModelInfo;
   thinkingLevel?: string;
+  auth?: AuthManager;
   private opts: PiBackendOptions;
+  private settings: SettingsStore;
   private agentDir: string;
   private modelRuntime?: ModelRuntime;
   private resolvedModel?: Model<Api>;
@@ -105,7 +124,9 @@ export class PiBackend implements AgentBackend {
   constructor(opts: PiBackendOptions) {
     this.opts = opts;
     this.agentDir = path.join(opts.config.dataDir, "pi");
-    this.thinkingLevel = opts.config.llm.thinkingLevel;
+    this.settings = new SettingsStore(opts.config.dataDir);
+    this.thinkingLevel =
+      this.settings.read().thinkingLevel ?? opts.config.llm.thinkingLevel;
   }
 
   get issues(): string[] {
@@ -127,6 +148,15 @@ export class PiBackend implements AgentBackend {
         allowModelNetwork: false,
         refreshOnCreate: false,
       }));
+
+    this.auth = new AuthManager({
+      modelRuntime: this.modelRuntime,
+      dataDir: this.opts.config.dataDir,
+      logger: this.opts.logger,
+      providers: this.opts.config.llm.loginProviders,
+      onLogin: (provider, selectModel) => this.onLogin(provider, selectModel),
+      onLogout: (provider) => this.onLogout(provider),
+    });
 
     const { available, unavailable } = filterAvailableTools(
       this.opts.config.agent.tools,
@@ -180,12 +210,7 @@ export class PiBackend implements AgentBackend {
       this.model = toModelInfo(this.opts.model);
       return this.resolvedModel;
     }
-    this.resolving ??= resolveModel(this.opts.config.llm, {
-      modelRuntime: this.modelRuntime!,
-      octelium: this.opts.octelium,
-      domain: this.opts.config.octelium.domain,
-      logger: this.opts.logger,
-    })
+    this.resolving ??= this.resolveInitialModel()
       .then((resolved) => {
         this.resolvedModel = resolved.model;
         this.model = resolved.info;
@@ -206,6 +231,162 @@ export class PiBackend implements AgentBackend {
         this.resolving = undefined;
       });
     return this.resolving;
+  }
+
+  private async resolveInitialModel(): Promise<ResolvedModel> {
+    let configured: ResolvedModel | undefined;
+    let configErr: Error | undefined;
+    try {
+      configured = await resolveModel(this.opts.config.llm, {
+        modelRuntime: this.modelRuntime!,
+        octelium: this.opts.octelium,
+        domain: this.opts.config.octelium.domain,
+        logger: this.opts.logger,
+      });
+    } catch (err) {
+      configErr = err as Error;
+    }
+
+    const saved = this.settings.read().model;
+    if (saved) {
+      const model = this.modelRuntime!.getModel(saved.provider, saved.id);
+      if (model && this.modelRuntime!.hasConfiguredAuth(model.provider)) {
+        return { model, info: toModelInfo(model) };
+      }
+      this.opts.logger.warn("The selected model is not available anymore", {
+        provider: saved.provider,
+        model: saved.id,
+      });
+    }
+
+    if (configured) {
+      return configured;
+    }
+    throw configErr;
+  }
+
+  async listModels(): Promise<ModelsResponse> {
+    let error: Error | undefined;
+    try {
+      await this.ensureModel();
+    } catch (err) {
+      error = err as Error;
+    }
+    const available = await this.modelRuntime!.getAvailable();
+    return {
+      current: this.model,
+      thinkingLevel: this.thinkingLevel,
+      models: available.map(toModelInfo),
+      error:
+        !this.model && error
+          ? { code: "model_unavailable", message: error.message }
+          : undefined,
+    };
+  }
+
+  async setModel(req: SetModelRequest): Promise<ModelsResponse> {
+    if (
+      typeof req?.provider !== "string" ||
+      typeof req.id !== "string" ||
+      req.provider === "" ||
+      req.id === ""
+    ) {
+      throw badRequest('The "provider" and "id" fields are required');
+    }
+    if (
+      req.thinkingLevel !== undefined &&
+      !(THINKING_LEVELS as readonly string[]).includes(req.thinkingLevel)
+    ) {
+      throw badRequest(`Invalid thinking level: ${req.thinkingLevel}`);
+    }
+
+    const model = this.modelRuntime!.getModel(req.provider, req.id);
+    if (!model) {
+      throw badRequest(`Unknown model ${req.provider}/${req.id}`);
+    }
+    if (!this.modelRuntime!.hasConfiguredAuth(model.provider)) {
+      throw badRequest(
+        `The provider "${model.provider}" is not configured. Sign in to it first`,
+      );
+    }
+
+    this.applyModel(model, req.thinkingLevel);
+    return this.listModels();
+  }
+
+  private applyModel(model: Model<Api>, thinkingLevel?: string) {
+    this.resolvedModel = model;
+    this.model = toModelInfo(model);
+    this.modelError = undefined;
+    if (thinkingLevel) {
+      this.thinkingLevel = thinkingLevel;
+    }
+    this.settings.update({
+      model: { provider: model.provider, id: model.id },
+      thinkingLevel: this.thinkingLevel,
+    });
+    this.opts.logger.info("Using the LLM model", {
+      provider: model.provider,
+      model: model.id,
+    });
+
+    for (const entry of this.sessions.values()) {
+      if (!entry.busy) {
+        this.syncSession(entry).catch((err) =>
+          this.opts.logger.warn("Could not update the session model", {
+            error: err as Error,
+          }),
+        );
+      }
+    }
+  }
+
+  private async syncSession(entry: SessionEntry) {
+    const model = this.resolvedModel;
+    if (!model) {
+      return;
+    }
+    if (
+      entry.session.model?.provider !== model.provider ||
+      entry.session.model?.id !== model.id
+    ) {
+      await entry.session.setModel(model);
+    }
+    if (
+      this.thinkingLevel &&
+      entry.session.thinkingLevel !== this.thinkingLevel
+    ) {
+      entry.session.setThinkingLevel(this.thinkingLevel as ModelThinkingLevel);
+    }
+  }
+
+  private async onLogin(
+    provider: string,
+    selectModel: boolean,
+  ): Promise<ModelInfo | undefined> {
+    if (!selectModel && this.resolvedModel) {
+      return undefined;
+    }
+    const available = await this.modelRuntime!.getAvailable(provider);
+    const model =
+      available.find((m) => m.id === PREFERRED_MODELS[provider]) ??
+      available[0];
+    if (!model) {
+      return undefined;
+    }
+    this.applyModel(model);
+    return toModelInfo(model);
+  }
+
+  private async onLogout(provider: string) {
+    if (this.settings.read().model?.provider === provider) {
+      this.settings.update({ model: undefined });
+    }
+    if (this.resolvedModel?.provider === provider) {
+      this.resolvedModel = undefined;
+      this.model = undefined;
+      this.modelError = `Signed out of the LLM provider "${provider}"`;
+    }
   }
 
   private createTools(conversationId: string): ToolDefinition[] {
@@ -279,7 +460,7 @@ export class PiBackend implements AgentBackend {
       agentDir: this.agentDir,
       modelRuntime: this.modelRuntime,
       model,
-      thinkingLevel: config.llm.thinkingLevel,
+      thinkingLevel: this.thinkingLevel as ModelThinkingLevel,
       noTools: "builtin",
       customTools: this.createTools(conversationId),
       resourceLoader: loader,
@@ -293,7 +474,7 @@ export class PiBackend implements AgentBackend {
         enableInstallTelemetry: false,
         enableAnalytics: false,
         cacheWarming: "off",
-        defaultThinkingLevel: config.llm.thinkingLevel,
+        defaultThinkingLevel: this.thinkingLevel as ModelThinkingLevel,
       }),
     });
 
@@ -401,6 +582,7 @@ export class PiBackend implements AgentBackend {
       if (ctx.signal.aborted) {
         return { status: "completed", usage: mapper.usage };
       }
+      await this.syncSession(entry);
       const { text, images } = this.buildPrompt(input, model);
       await entry.session.prompt(text, {
         images: images.length > 0 ? images : undefined,
@@ -490,6 +672,7 @@ export class PiBackend implements AgentBackend {
   }
 
   async dispose() {
+    this.auth?.dispose();
     for (const [id] of this.sessions) {
       this.forgetConversation(id);
     }

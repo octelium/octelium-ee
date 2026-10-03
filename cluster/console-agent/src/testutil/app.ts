@@ -29,6 +29,7 @@ export interface TestApp {
   app: App;
   mock: MockAPI;
   faux: FauxProviderHandle;
+  modelRuntime: ModelRuntime;
   baseUrl: string;
   root: string;
   close(): Promise<void>;
@@ -67,7 +68,7 @@ export const createTestApp = async (
   });
   const faux = fauxProvider({
     provider: "faux",
-    models: [{ id: "faux-1", input: ["text", "image"] }],
+    models: [{ id: "faux-1", input: ["text", "image"] }, { id: "faux-2" }],
   });
   modelRuntime.registerNativeProvider(faux.provider);
   faux.setResponses(opts.responses ?? []);
@@ -106,6 +107,7 @@ export const createTestApp = async (
     app,
     mock,
     faux,
+    modelRuntime,
     root,
     baseUrl: `http://127.0.0.1:${addr.port}`,
     close: async () => {
@@ -183,9 +185,9 @@ export const collectEvents = async (
   return events;
 };
 
-export const postJSON = async (url: string, body: unknown) =>
+export const postJSON = async (url: string, body: unknown, method = "POST") =>
   fetch(url, {
-    method: "POST",
+    method,
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });

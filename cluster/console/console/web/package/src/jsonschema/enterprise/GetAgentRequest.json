@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/GetAgentRequest",
+    "definitions": {
+        "GetAgentRequest": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Get Agent Request",
+            "description": "GetAgentRequest is the request of the GetAgent method."
+        }
+    }
+}

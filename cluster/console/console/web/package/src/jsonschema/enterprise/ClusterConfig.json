@@ -33,6 +33,363 @@
             "title": "Cluster Config",
             "description": "ClusterConfig represents the Cluster-scoped configuration of the enterprise-only features (e.g. the OpenTelemetry Collector, the scaling of the Cluster components, the Certificate management defaults, etc...). It is a singleton resource that is automatically created upon the Cluster's installation. It is separate from, and complements, the core ClusterConfig."
         },
+        "octelium.api.main.cordium.v1.Workspace.Spec.Image": {
+            "properties": {
+                "dockerfile": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.Workspace.Spec.Image.Dockerfile",
+                    "additionalProperties": false,
+                    "description": "Dockerfile builds the image from an inline or a downloaded Dockerfile."
+                },
+                "registry": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.Workspace.Spec.Image.Registry",
+                    "additionalProperties": false,
+                    "description": "Registry pulls a pre-built image from a container registry."
+                },
+                "git": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.Workspace.Spec.Image.Git",
+                    "additionalProperties": false,
+                    "description": "Git builds the image from a dedicated git repository."
+                },
+                "repository": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.Workspace.Spec.Image.Repository",
+                    "additionalProperties": false,
+                    "description": "Repository builds the image from the Workspace's own primary repository."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "dockerfile"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "registry"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "git"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "repository"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "dockerfile"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "registry"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "git"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "repository"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Image",
+            "description": "Image defines how the container image that is used as the Workspace's root filesystem is obtained. If it is unset, the Cluster's default base image is used."
+        },
+        "octelium.api.main.cordium.v1.Workspace.Spec.Image.Dockerfile": {
+            "properties": {
+                "inline": {
+                    "type": "string",
+                    "description": "Inline is the content of the Dockerfile provided as a string."
+                },
+                "url": {
+                    "type": "string",
+                    "description": "URL is a URL from which the Dockerfile content is downloaded."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "inline"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "url"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "inline"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "url"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Dockerfile",
+            "description": "Dockerfile builds the image from a Dockerfile that is provided directly instead of being read from a repository."
+        },
+        "octelium.api.main.cordium.v1.Workspace.Spec.Image.Git": {
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL is the HTTPS URL of the git repository (e.g. `https://github.com/myorg/dev-images`)."
+                },
+                "checkout": {
+                    "type": "string",
+                    "description": "Checkout is an optional branch, tag or commit to check out after cloning the repository."
+                },
+                "dockerfile": {
+                    "type": "string",
+                    "description": "Dockerfile is the path of the Dockerfile inside the repository. If it is unset, Cordium looks for a devcontainer spec (i.e. `.devcontainer/devcontainer.json` or `.devcontainer.json`) in the repository instead."
+                },
+                "context": {
+                    "type": "string",
+                    "description": "Context is the build context directory inside the repository. It defaults to the repository root."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Git",
+            "description": "Git builds the image from a dedicated git repository which is separate from the Workspace's own repository."
+        },
+        "octelium.api.main.cordium.v1.Workspace.Spec.Image.Registry": {
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL is the image reference (e.g. `ubuntu:24.04` or `registry.example.com/dev/base:latest`)."
+                },
+                "authentication": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.Workspace.Spec.Image.Registry.Authentication",
+                    "additionalProperties": false,
+                    "description": "Authentication is set for the private registries that require authentication."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Registry",
+            "description": "Registry pulls a pre-built image from a container registry."
+        },
+        "octelium.api.main.cordium.v1.Workspace.Spec.Image.Registry.Authentication": {
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "description": "Username is the registry username."
+                },
+                "password": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.Workspace.Spec.Image.Registry.Authentication.Password",
+                    "additionalProperties": false,
+                    "description": "Password is the registry password."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Authentication",
+            "description": "Authentication is the credentials that are used to pull the image from a private registry."
+        },
+        "octelium.api.main.cordium.v1.Workspace.Spec.Image.Registry.Authentication.Password": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string",
+                    "description": "FromSecret is the name of a Secret in the same Space whose content is used as the password. It is resolved by the Cluster at initialization time."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Password",
+            "description": "Password is the registry password or token."
+        },
+        "octelium.api.main.cordium.v1.Workspace.Spec.Image.Repository": {
+            "properties": {
+                "devcontainer": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.Workspace.Spec.Image.Repository.Devcontainer",
+                    "additionalProperties": false,
+                    "description": "Devcontainer builds the image from the repository's devcontainer spec."
+                },
+                "dockerfile": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.Workspace.Spec.Image.Repository.Dockerfile",
+                    "additionalProperties": false,
+                    "description": "Dockerfile builds the image from a Dockerfile inside the repository."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "devcontainer"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "dockerfile"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "devcontainer"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "dockerfile"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Repository",
+            "description": "Repository builds the image out of the Workspace's own primary repository (i.e. the `repository` field of the spec)."
+        },
+        "octelium.api.main.cordium.v1.Workspace.Spec.Image.Repository.Devcontainer": {
+            "properties": {
+                "dirPath": {
+                    "type": "string",
+                    "description": "DirPath is the directory of the devcontainer spec inside the repository (e.g. `.devcontainer`)."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Devcontainer",
+            "description": "Devcontainer builds the image from the Development Container spec that is contained in the repository."
+        },
+        "octelium.api.main.cordium.v1.Workspace.Spec.Image.Repository.Dockerfile": {
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Path is the path of the Dockerfile inside the repository (e.g. `docker/Dockerfile.dev`)."
+                },
+                "context": {
+                    "type": "string",
+                    "description": "Context is the build context directory inside the repository. It defaults to the repository root."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Dockerfile",
+            "description": "Dockerfile builds the image from a Dockerfile that is contained in the repository."
+        },
+        "octelium.api.main.cordium.v1.Workspace.Spec.Limit": {
+            "properties": {
+                "cpu": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.Workspace.Spec.Limit.CPU",
+                    "additionalProperties": false,
+                    "description": "CPU is the CPU allocation."
+                },
+                "memory": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.Workspace.Spec.Limit.Memory",
+                    "additionalProperties": false,
+                    "description": "Memory is the memory allocation."
+                },
+                "storage": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.Workspace.Spec.Limit.Storage",
+                    "additionalProperties": false,
+                    "description": "Storage is the storage allocation."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Limit",
+            "description": "Limit is the compute resources that are allocated for the Workspace. The effective limits are resolved by precedence (i.e. Workspace, Template, Space default and then the Cluster default) and are then capped by the Space and the Cluster maximums."
+        },
+        "octelium.api.main.cordium.v1.Workspace.Spec.Limit.CPU": {
+            "properties": {
+                "millicores": {
+                    "type": "integer",
+                    "description": "Millicores is the number of CPU millicores (i.e. 1 core equals 1000 millicores)."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "CPU",
+            "description": "CPU is the CPU allocation."
+        },
+        "octelium.api.main.cordium.v1.Workspace.Spec.Limit.Memory": {
+            "properties": {
+                "megabytes": {
+                    "type": "integer",
+                    "description": "Megabytes is the amount of memory in megabytes."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Memory",
+            "description": "Memory is the memory allocation."
+        },
+        "octelium.api.main.cordium.v1.Workspace.Spec.Limit.Storage": {
+            "properties": {
+                "megabytes": {
+                    "type": "integer",
+                    "description": "Megabytes is the amount of disk storage in megabytes."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Storage",
+            "description": "Storage is the storage allocation."
+        },
         "octelium.api.main.enterprise.v1.ClusterConfig.Spec": {
             "properties": {
                 "collector": {
@@ -56,12 +413,69 @@
                     },
                     "type": "array",
                     "description": "DeviceManagers is the ordered list of DeviceManager names used to select a Device's single Binding. Names must be unique and reference existing DeviceManagers. Only listed managers participate. If unset, all managers are considered in ascending name order. The first applicable manager with a unique candidate satisfying its linking requirements wins. A manager with no match is skipped; an unavailable inventory, ambiguous match or ownership conflict blocks selection instead of falling through to a lower-priority manager. This order applies to new Bindings. Existing ACCEPTED Bindings remain assigned until reset or manager deletion, including during outages."
+                },
+                "agent": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent",
+                    "additionalProperties": false,
+                    "description": "Agent sets the AI agent-related configuration."
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Spec",
             "description": "Spec is the ClusterConfig specification"
+        },
+        "octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent": {
+            "properties": {
+                "isDisabled": {
+                    "type": "boolean",
+                    "description": "IsDisabled disables the AgentService for all the Users. Note that the already existing agent environments are not deleted."
+                },
+                "llm": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.LLM",
+                    "additionalProperties": false,
+                    "description": "LLM sets the default LLM of the agents."
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Version is the version of the `@octelium/console-agent` npm package that is run by the agent Workspaces (e.g. `0.1.0`). If unset, the version that is bundled with the Cluster is used."
+                },
+                "image": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.Workspace.Spec.Image",
+                    "additionalProperties": false,
+                    "description": "Image sets the container image of the agent Workspaces. If unset, the default Cordium image is used and Node.js is installed upon the first start of every agent Workspace."
+                },
+                "limit": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.Workspace.Spec.Limit",
+                    "additionalProperties": false,
+                    "description": "Limit sets the compute resources of the agent Workspaces."
+                },
+                "config": {
+                    "additionalProperties": true,
+                    "type": "object",
+                    "description": "Config is an additional configuration of the agent (i.e. the same structure of its `config.json` file) that is merged on top of the configuration that is generated by the Cluster."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Agent",
+            "description": "Agent sets the configuration of the Users' AI agent environments that are provisioned via the AgentService"
+        },
+        "octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.LLM": {
+            "properties": {
+                "service": {
+                    "type": "string",
+                    "description": "Service is the name of the LLM-mode Service (e.g. `llm.default`) that is used by the agents via the Octelium identity of their Workspaces."
+                },
+                "model": {
+                    "type": "string",
+                    "description": "Model is the name of the model that is used by default (e.g. `gpt-5.1`). If unset, the agent discovers it from the Service."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM",
+            "description": "LLM sets the default LLM of the agents"
         },
         "octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate": {
             "properties": {

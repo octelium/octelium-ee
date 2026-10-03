@@ -96,6 +96,7 @@ func Phases() []suite.Phase {
 		{Name: "Certificate", Run: testCertificateSetAndServe},
 		{Name: "License", Run: testLicenseLifecycle},
 		{Name: "ClusterInfo", Run: testClusterInfo},
+		{Name: "Agent", Run: testAgent},
 	}
 }
 

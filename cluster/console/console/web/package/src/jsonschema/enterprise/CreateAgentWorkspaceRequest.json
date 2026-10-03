@@ -1,0 +1,22 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/CreateAgentWorkspaceRequest",
+    "definitions": {
+        "CreateAgentWorkspaceRequest": {
+            "properties": {
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is an optional human-readable name of the Workspace."
+                },
+                "isEphemeral": {
+                    "type": "boolean",
+                    "description": "IsEphemeral deletes the Workspace's storage once it is stopped so that every start of the Workspace begins with a fresh environment."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Create Agent Workspace Request",
+            "description": "CreateAgentWorkspaceRequest is the request of the CreateAgentWorkspace method."
+        }
+    }
+}

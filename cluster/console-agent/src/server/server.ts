@@ -2,7 +2,7 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as http from "node:http";
 import type { AddressInfo } from "node:net";
-import type { AgentBackend } from "../agent/types.ts";
+import type { AgentBackend, AuthController } from "../agent/types.ts";
 import type { Identity } from "../agent/pi/backend.ts";
 import type { Config } from "../config.ts";
 import {
@@ -27,7 +27,11 @@ import {
   type CreateConversationRequest,
   type CreateConversationResponse,
   type CreateRunRequest,
+  type ListAuthProvidersResponse,
   type ListConversationsResponse,
+  type LoginPromptAnswer,
+  type SetModelRequest,
+  type StartLoginRequest,
   type UpdateConversationRequest,
 } from "../protocol/index.ts";
 import type { RunManager } from "../runs/manager.ts";
@@ -213,6 +217,83 @@ export class AgentServer {
       `${API_PREFIX}/artifacts/:id/content`,
       (_req, res, params, url) => this.downloadArtifact(res, params.id, url),
     );
+
+    this.route("GET", `${API_PREFIX}/models`, async (_req, res) => {
+      const { backend } = this.deps;
+      if (!backend.listModels) {
+        throw notFound("Model selection is not supported");
+      }
+      sendJSON(res, 200, await backend.listModels());
+    });
+    this.route("PUT", `${API_PREFIX}/model`, async (req, res) => {
+      const { backend } = this.deps;
+      if (!backend.setModel) {
+        throw notFound("Model selection is not supported");
+      }
+      const body = await readJSON<SetModelRequest>(req);
+      sendJSON(res, 200, await backend.setModel(body));
+    });
+
+    this.route("GET", `${API_PREFIX}/auth/providers`, async (_req, res) => {
+      const body: ListAuthProvidersResponse = {
+        items: await this.auth().listProviders(),
+      };
+      sendJSON(res, 200, body);
+    });
+    this.route(
+      "DELETE",
+      `${API_PREFIX}/auth/providers/:id`,
+      async (_req, res, params) => {
+        await this.auth().logout(params.id);
+        sendNoContent(res);
+      },
+    );
+    this.route("POST", `${API_PREFIX}/auth/logins`, async (req, res) => {
+      const body = await readJSON<StartLoginRequest>(req);
+      if (typeof body.provider !== "string" || body.provider === "") {
+        throw badRequest('The "provider" field is required');
+      }
+      if (
+        body.selectModel !== undefined &&
+        typeof body.selectModel !== "boolean"
+      ) {
+        throw badRequest('The "selectModel" field must be a boolean');
+      }
+      sendJSON(res, 201, this.auth().startLogin(body));
+    });
+    this.route("GET", `${API_PREFIX}/auth/logins/:id`, (_req, res, params) => {
+      const login = this.auth().getLogin(params.id);
+      if (!login) {
+        throw notFound(`Login not found: ${params.id}`);
+      }
+      sendJSON(res, 200, login);
+    });
+    this.route(
+      "POST",
+      `${API_PREFIX}/auth/logins/:id/prompts/:promptId`,
+      async (req, res, params) => {
+        const body = await readJSON<LoginPromptAnswer>(req);
+        sendJSON(
+          res,
+          200,
+          this.auth().answerLogin(params.id, params.promptId, body.value),
+        );
+      },
+    );
+    this.route(
+      "DELETE",
+      `${API_PREFIX}/auth/logins/:id`,
+      (_req, res, params) => {
+        sendJSON(res, 200, this.auth().cancelLogin(params.id));
+      },
+    );
+  }
+
+  private auth(): AuthController {
+    if (!this.deps.backend.auth) {
+      throw notFound("Signing in is not supported");
+    }
+    return this.deps.backend.auth;
   }
 
   info(): AgentInfo {
@@ -238,6 +319,8 @@ export class AgentServer {
         approvals:
           config.approvals.octeliumAPI !== "never" || config.approvals.bash,
         uploads: { maxBytes: config.server.maxUploadBytes },
+        models: !!backend.listModels,
+        login: !!backend.auth,
       },
     };
   }
@@ -293,9 +376,9 @@ export class AgentServer {
           if (req.method === "OPTIONS") {
             res.writeHead(204, {
               "access-control-allow-methods":
-                "GET, POST, PATCH, DELETE, OPTIONS",
+                "GET, POST, PUT, PATCH, DELETE, OPTIONS",
               "access-control-allow-headers":
-                "authorization, content-type, last-event-id",
+                "authorization, content-type, last-event-id, x-file-name",
               "access-control-max-age": "600",
             });
             res.end();
@@ -328,7 +411,7 @@ export class AgentServer {
           throw notFound();
         }
       });
-      for (const key of ["id", "approvalId"]) {
+      for (const key of ["id", "approvalId", "promptId"]) {
         if (params[key] !== undefined && !isValidID(params[key])) {
           throw notFound();
         }

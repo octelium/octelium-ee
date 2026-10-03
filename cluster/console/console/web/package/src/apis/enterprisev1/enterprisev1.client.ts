@@ -10,6 +10,12 @@
 //
 // See the LICENSE file in the repository root for full license text.
 //
+import { AgentService } from "./enterprisev1";
+import type { Agent_Workspace } from "./enterprisev1";
+import type { CreateAgentWorkspaceRequest } from "./enterprisev1";
+import type { InitializeAgentRequest } from "./enterprisev1";
+import type { Agent } from "./enterprisev1";
+import type { GetAgentRequest } from "./enterprisev1";
 import { ClusterService } from "./enterprisev1";
 import type { DeleteLicenseResponse } from "./enterprisev1";
 import type { DeleteLicenseRequest } from "./enterprisev1";
@@ -904,5 +910,93 @@ export class ClusterServiceClient implements IClusterServiceClient, ServiceInfo 
     deleteLicense(input: DeleteLicenseRequest, options?: RpcOptions): UnaryCall<DeleteLicenseRequest, DeleteLicenseResponse> {
         const method = this.methods[4], opt = this._transport.mergeOptions(options);
         return stackIntercept<DeleteLicenseRequest, DeleteLicenseResponse>("unary", this._transport, method, opt, input);
+    }
+}
+/**
+ * AgentService manages the AI agent environment of the calling User. The agent
+ * of every User runs inside the Workspaces of a dedicated personal Cordium
+ * Space (i.e. `octelium.<USER>`) that is provisioned and kept up-to-date by the
+ * Cluster while still being fully visible and accessible to the User via
+ * Cordium. The lifecycle of the agent Workspaces themselves (e.g. starting,
+ * stopping, watching and deleting them) as well as deleting the entire agent
+ * Space is managed via the Cordium MainService.
+ *
+ * @generated from protobuf service octelium.api.main.enterprise.v1.AgentService
+ */
+export interface IAgentServiceClient {
+    /**
+     * GetAgent retrieves the current state of the calling User's agent
+     * environment without creating or changing anything.
+     *
+     * @generated from protobuf rpc: GetAgent
+     */
+    getAgent(input: GetAgentRequest, options?: RpcOptions): UnaryCall<GetAgentRequest, Agent>;
+    /**
+     * InitializeAgent provisions the calling User's agent environment (i.e. the
+     * agent Space, its Template and its primary Workspace) if it does not exist
+     * and reconciles it with the agent configuration of the enterprise
+     * ClusterConfig. It is idempotent.
+     *
+     * @generated from protobuf rpc: InitializeAgent
+     */
+    initializeAgent(input: InitializeAgentRequest, options?: RpcOptions): UnaryCall<InitializeAgentRequest, Agent>;
+    /**
+     * CreateAgentWorkspace creates an additional agent Workspace (e.g. a fresh
+     * Workspace with its own isolated storage) in the calling User's agent
+     * environment. InitializeAgent must have been called first.
+     *
+     * @generated from protobuf rpc: CreateAgentWorkspace
+     */
+    createAgentWorkspace(input: CreateAgentWorkspaceRequest, options?: RpcOptions): UnaryCall<CreateAgentWorkspaceRequest, Agent_Workspace>;
+}
+/**
+ * AgentService manages the AI agent environment of the calling User. The agent
+ * of every User runs inside the Workspaces of a dedicated personal Cordium
+ * Space (i.e. `octelium.<USER>`) that is provisioned and kept up-to-date by the
+ * Cluster while still being fully visible and accessible to the User via
+ * Cordium. The lifecycle of the agent Workspaces themselves (e.g. starting,
+ * stopping, watching and deleting them) as well as deleting the entire agent
+ * Space is managed via the Cordium MainService.
+ *
+ * @generated from protobuf service octelium.api.main.enterprise.v1.AgentService
+ */
+export class AgentServiceClient implements IAgentServiceClient, ServiceInfo {
+    typeName = AgentService.typeName;
+    methods = AgentService.methods;
+    options = AgentService.options;
+    constructor(private readonly _transport: RpcTransport) {
+    }
+    /**
+     * GetAgent retrieves the current state of the calling User's agent
+     * environment without creating or changing anything.
+     *
+     * @generated from protobuf rpc: GetAgent
+     */
+    getAgent(input: GetAgentRequest, options?: RpcOptions): UnaryCall<GetAgentRequest, Agent> {
+        const method = this.methods[0], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetAgentRequest, Agent>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * InitializeAgent provisions the calling User's agent environment (i.e. the
+     * agent Space, its Template and its primary Workspace) if it does not exist
+     * and reconciles it with the agent configuration of the enterprise
+     * ClusterConfig. It is idempotent.
+     *
+     * @generated from protobuf rpc: InitializeAgent
+     */
+    initializeAgent(input: InitializeAgentRequest, options?: RpcOptions): UnaryCall<InitializeAgentRequest, Agent> {
+        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        return stackIntercept<InitializeAgentRequest, Agent>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * CreateAgentWorkspace creates an additional agent Workspace (e.g. a fresh
+     * Workspace with its own isolated storage) in the calling User's agent
+     * environment. InitializeAgent must have been called first.
+     *
+     * @generated from protobuf rpc: CreateAgentWorkspace
+     */
+    createAgentWorkspace(input: CreateAgentWorkspaceRequest, options?: RpcOptions): UnaryCall<CreateAgentWorkspaceRequest, Agent_Workspace> {
+        const method = this.methods[2], opt = this._transport.mergeOptions(options);
+        return stackIntercept<CreateAgentWorkspaceRequest, Agent_Workspace>("unary", this._transport, method, opt, input);
     }
 }

@@ -19,6 +19,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/access"
+	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/agent"
 	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/cluster"
 	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/enterprise"
 	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/visibility"
@@ -288,6 +289,8 @@ func Run(ctx context.Context) error {
 
 		enterprisev1.RegisterClusterServiceServer(s, pSrv)
 	}
+
+	enterprisev1.RegisterAgentServiceServer(s, agent.NewServer(octeliumC))
 
 	{
 		accessUserSrv, err := access.NewServerUser(ctx, octeliumC)

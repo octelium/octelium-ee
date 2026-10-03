@@ -21,6 +21,7 @@ describe("config", () => {
         OCTELIUM_DOMAIN: "example.com",
         OCTELIUM_AUTH_PROXY_SOCKET: "/var/run/octelium-proxy.sock",
         OCTELIUM_CONSOLE_AGENT_DATA_DIR: "/tmp/agent-data",
+        CORDIUM_HOSTNAME: "abc.cordium.example.com",
       },
     );
     assert.equal(cfg.dataDir, "/tmp/agent-data");
@@ -28,8 +29,8 @@ describe("config", () => {
     assert.equal(cfg.server.port, 8080);
     assert.equal(cfg.server.cors, false);
     assert.deepEqual(cfg.server.allowedOrigins, [
-      "https://example.com",
-      "https://*.example.com",
+      "https://console.octelium.example.com",
+      "https://abc.cordium.example.com",
     ]);
     assert.equal(cfg.octelium.mode, "auto");
     assert.equal(cfg.octelium.domain, "example.com");

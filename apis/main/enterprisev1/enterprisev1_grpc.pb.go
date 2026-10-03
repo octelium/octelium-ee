@@ -2229,3 +2229,215 @@ var ClusterService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "enterprisev1.proto",
 }
+
+const (
+	AgentService_GetAgent_FullMethodName             = "/octelium.api.main.enterprise.v1.AgentService/GetAgent"
+	AgentService_InitializeAgent_FullMethodName      = "/octelium.api.main.enterprise.v1.AgentService/InitializeAgent"
+	AgentService_CreateAgentWorkspace_FullMethodName = "/octelium.api.main.enterprise.v1.AgentService/CreateAgentWorkspace"
+)
+
+// AgentServiceClient is the client API for AgentService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// AgentService manages the AI agent environment of the calling User. The agent
+// of every User runs inside the Workspaces of a dedicated personal Cordium
+// Space (i.e. `octelium.<USER>`) that is provisioned and kept up-to-date by the
+// Cluster while still being fully visible and accessible to the User via
+// Cordium. The lifecycle of the agent Workspaces themselves (e.g. starting,
+// stopping, watching and deleting them) as well as deleting the entire agent
+// Space is managed via the Cordium MainService.
+type AgentServiceClient interface {
+	// GetAgent retrieves the current state of the calling User's agent
+	// environment without creating or changing anything.
+	GetAgent(ctx context.Context, in *GetAgentRequest, opts ...grpc.CallOption) (*Agent, error)
+	// InitializeAgent provisions the calling User's agent environment (i.e. the
+	// agent Space, its Template and its primary Workspace) if it does not exist
+	// and reconciles it with the agent configuration of the enterprise
+	// ClusterConfig. It is idempotent.
+	InitializeAgent(ctx context.Context, in *InitializeAgentRequest, opts ...grpc.CallOption) (*Agent, error)
+	// CreateAgentWorkspace creates an additional agent Workspace (e.g. a fresh
+	// Workspace with its own isolated storage) in the calling User's agent
+	// environment. InitializeAgent must have been called first.
+	CreateAgentWorkspace(ctx context.Context, in *CreateAgentWorkspaceRequest, opts ...grpc.CallOption) (*Agent_Workspace, error)
+}
+
+type agentServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewAgentServiceClient(cc grpc.ClientConnInterface) AgentServiceClient {
+	return &agentServiceClient{cc}
+}
+
+func (c *agentServiceClient) GetAgent(ctx context.Context, in *GetAgentRequest, opts ...grpc.CallOption) (*Agent, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Agent)
+	err := c.cc.Invoke(ctx, AgentService_GetAgent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) InitializeAgent(ctx context.Context, in *InitializeAgentRequest, opts ...grpc.CallOption) (*Agent, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Agent)
+	err := c.cc.Invoke(ctx, AgentService_InitializeAgent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) CreateAgentWorkspace(ctx context.Context, in *CreateAgentWorkspaceRequest, opts ...grpc.CallOption) (*Agent_Workspace, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Agent_Workspace)
+	err := c.cc.Invoke(ctx, AgentService_CreateAgentWorkspace_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AgentServiceServer is the server API for AgentService service.
+// All implementations must embed UnimplementedAgentServiceServer
+// for forward compatibility.
+//
+// AgentService manages the AI agent environment of the calling User. The agent
+// of every User runs inside the Workspaces of a dedicated personal Cordium
+// Space (i.e. `octelium.<USER>`) that is provisioned and kept up-to-date by the
+// Cluster while still being fully visible and accessible to the User via
+// Cordium. The lifecycle of the agent Workspaces themselves (e.g. starting,
+// stopping, watching and deleting them) as well as deleting the entire agent
+// Space is managed via the Cordium MainService.
+type AgentServiceServer interface {
+	// GetAgent retrieves the current state of the calling User's agent
+	// environment without creating or changing anything.
+	GetAgent(context.Context, *GetAgentRequest) (*Agent, error)
+	// InitializeAgent provisions the calling User's agent environment (i.e. the
+	// agent Space, its Template and its primary Workspace) if it does not exist
+	// and reconciles it with the agent configuration of the enterprise
+	// ClusterConfig. It is idempotent.
+	InitializeAgent(context.Context, *InitializeAgentRequest) (*Agent, error)
+	// CreateAgentWorkspace creates an additional agent Workspace (e.g. a fresh
+	// Workspace with its own isolated storage) in the calling User's agent
+	// environment. InitializeAgent must have been called first.
+	CreateAgentWorkspace(context.Context, *CreateAgentWorkspaceRequest) (*Agent_Workspace, error)
+	mustEmbedUnimplementedAgentServiceServer()
+}
+
+// UnimplementedAgentServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedAgentServiceServer struct{}
+
+func (UnimplementedAgentServiceServer) GetAgent(context.Context, *GetAgentRequest) (*Agent, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAgent not implemented")
+}
+func (UnimplementedAgentServiceServer) InitializeAgent(context.Context, *InitializeAgentRequest) (*Agent, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InitializeAgent not implemented")
+}
+func (UnimplementedAgentServiceServer) CreateAgentWorkspace(context.Context, *CreateAgentWorkspaceRequest) (*Agent_Workspace, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateAgentWorkspace not implemented")
+}
+func (UnimplementedAgentServiceServer) mustEmbedUnimplementedAgentServiceServer() {}
+func (UnimplementedAgentServiceServer) testEmbeddedByValue()                      {}
+
+// UnsafeAgentServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AgentServiceServer will
+// result in compilation errors.
+type UnsafeAgentServiceServer interface {
+	mustEmbedUnimplementedAgentServiceServer()
+}
+
+func RegisterAgentServiceServer(s grpc.ServiceRegistrar, srv AgentServiceServer) {
+	// If the following call pancis, it indicates UnimplementedAgentServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&AgentService_ServiceDesc, srv)
+}
+
+func _AgentService_GetAgent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAgentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).GetAgent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_GetAgent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).GetAgent(ctx, req.(*GetAgentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_InitializeAgent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InitializeAgentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).InitializeAgent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_InitializeAgent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).InitializeAgent(ctx, req.(*InitializeAgentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_CreateAgentWorkspace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateAgentWorkspaceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).CreateAgentWorkspace(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_CreateAgentWorkspace_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).CreateAgentWorkspace(ctx, req.(*CreateAgentWorkspaceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// AgentService_ServiceDesc is the grpc.ServiceDesc for AgentService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var AgentService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "octelium.api.main.enterprise.v1.AgentService",
+	HandlerType: (*AgentServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetAgent",
+			Handler:    _AgentService_GetAgent_Handler,
+		},
+		{
+			MethodName: "InitializeAgent",
+			Handler:    _AgentService_InitializeAgent_Handler,
+		},
+		{
+			MethodName: "CreateAgentWorkspace",
+			Handler:    _AgentService_CreateAgentWorkspace_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "enterprisev1.proto",
+}
