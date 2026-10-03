@@ -282,3 +282,9 @@ update-octelium:
 		done; \
 	done
 	$(MAKE) tidy
+
+GO_MOD_FILES := '*go.mod' '*go.sum' go.work.sum
+
+update-octelium-commit: update-octelium
+	git diff --quiet HEAD -- $(GO_MOD_FILES) || \
+		git commit -m "update octelium to $$(go list -m -f '{{.Version}}' $(REPOSITORY)/pkg)" -- $(GO_MOD_FILES)
