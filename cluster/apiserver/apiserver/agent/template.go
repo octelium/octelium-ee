@@ -21,10 +21,11 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
+	"github.com/octelium/octelium/pkg/utils/ldflags"
 )
 
 const (
-	defaultConsoleAgentVersion = "0.1.0"
+	defaultConsoleAgentVersion = "dev"
 	consoleAgentPackage        = "@octelium/console-agent"
 	configEnvVar               = "OCTELIUM_CONSOLE_AGENT_CONFIG_JSON"
 
@@ -39,13 +40,13 @@ const (
 	maxLimitMegabytes  = 10000000
 )
 
-var rgxVersion = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z.+-]{0,127}$`)
+var rgxVersion = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z._+-]{0,127}$`)
 
 const installScript = `set -e
 if command -v apt-get >/dev/null 2>&1 && ! command -v rg >/dev/null 2>&1; then
   (apt-get update && apt-get install -y --no-install-recommends ripgrep fd-find) >/dev/null 2>&1 || true
 fi
-if command -v node >/dev/null 2>&1 && node -e 'const [major, minor] = process.versions.node.split(".").map(Number); process.exit(major > 22 || (major === 22 && minor >= 19) ? 0 : 1)'; then
+if command -v node >/dev/null 2>&1 && command -v npx >/dev/null 2>&1 && node -e 'const [major, minor] = process.versions.node.split(".").map(Number); process.exit(major > 22 || (major === 22 && minor >= 19) ? 0 : 1)'; then
   exit 0
 fi
 case "$(uname -m)" in
@@ -69,9 +70,18 @@ func getTemplateSpec(cfg *enterprisev1.ClusterConfig_Spec_Agent) (*cordiumv1.Tem
 		return nil, err
 	}
 
-	version := cfg.GetVersion()
-	if version == "" {
-		version = defaultConsoleAgentVersion
+	version := "latest"
+	if ldflags.IsDev() {
+		version = cfg.GetVersion()
+		if version == "" {
+			version = ldflags.GitBranch
+		}
+		if version == "" {
+			version = defaultConsoleAgentVersion
+		}
+	}
+	if !rgxVersion.MatchString(version) {
+		return nil, grpcutils.InvalidArg("Invalid agent version: %s", version)
 	}
 
 	agentConfig, err := getAgentConfig(cfg)
@@ -94,7 +104,7 @@ func getTemplateSpec(cfg *enterprisev1.ClusterConfig_Spec_Agent) (*cordiumv1.Tem
 				{
 					Name:         "console-agent",
 					Type:         cordiumv1.Workspace_Spec_Runtime_Task_POST_START,
-					Run:          fmt.Sprintf("exec npx --yes %s@%s serve", consoleAgentPackage, version),
+					Run:          fmt.Sprintf("exec npx --yes --prefer-online %s@%s serve", consoleAgentPackage, version),
 					IsBackground: true,
 					OnFailure:    cordiumv1.Workspace_Spec_Runtime_Task_ON_FAILURE_CONTINUE,
 				},

@@ -27,6 +27,7 @@ import (
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
+	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -68,6 +69,13 @@ func tstSetAgentConfig(ctx context.Context, t *testing.T, srv *Server, cfg *ente
 }
 
 func TestAgent(t *testing.T) {
+	t.Setenv("OCTELIUM_DEV", "true")
+	oldGitBranch := ldflags.GitBranch
+	ldflags.GitBranch = "dev"
+	t.Cleanup(func() {
+		ldflags.GitBranch = oldGitBranch
+	})
+
 	ctx := context.Background()
 
 	tst, err := tests.Initialize(nil)
@@ -165,7 +173,7 @@ func TestAgent(t *testing.T) {
 		assert.True(t, tmpl.Metadata.IsSystem)
 		assert.Equal(t, spc.Metadata.Uid, tmpl.Status.SpaceRef.Uid)
 		assert.Len(t, tmpl.Spec.Runtime.Tasks, 2)
-		assert.Equal(t, fmt.Sprintf("exec npx --yes %s@%s serve", consoleAgentPackage, defaultConsoleAgentVersion),
+		assert.Equal(t, fmt.Sprintf("exec npx --yes --prefer-online %s@%s serve", consoleAgentPackage, defaultConsoleAgentVersion),
 			tmpl.Spec.Runtime.Tasks[1].Run)
 		assert.Len(t, tmpl.Spec.Runtime.EnvVars, 0)
 	}
@@ -205,7 +213,7 @@ func TestAgent(t *testing.T) {
 
 		tmpl, err := srv.octeliumC.CordiumC().GetTemplate(ctx, &rmetav1.GetOptions{Uid: res.TemplateRef.Uid})
 		assert.Nil(t, err, "%+v", err)
-		assert.Equal(t, fmt.Sprintf("exec npx --yes %s@0.2.0 serve", consoleAgentPackage), tmpl.Spec.Runtime.Tasks[1].Run)
+		assert.Equal(t, fmt.Sprintf("exec npx --yes --prefer-online %s@0.2.0 serve", consoleAgentPackage), tmpl.Spec.Runtime.Tasks[1].Run)
 		assert.Len(t, tmpl.Spec.Runtime.EnvVars, 1)
 		assert.Equal(t, configEnvVar, tmpl.Spec.Runtime.EnvVars[0].Key)
 
@@ -369,6 +377,13 @@ func TestAgentMaxWorkspaces(t *testing.T) {
 }
 
 func TestTemplateSpec(t *testing.T) {
+	t.Setenv("OCTELIUM_DEV", "true")
+	oldGitBranch := ldflags.GitBranch
+	ldflags.GitBranch = "dev"
+	t.Cleanup(func() {
+		ldflags.GitBranch = oldGitBranch
+	})
+
 	{
 		spec, err := getTemplateSpec(nil)
 		assert.Nil(t, err, "%+v", err)
@@ -380,7 +395,7 @@ func TestTemplateSpec(t *testing.T) {
 		assert.True(t, spec.Runtime.Tasks[0].RunAsRoot)
 		assert.Equal(t, cordiumv1.Workspace_Spec_Runtime_Task_POST_START, spec.Runtime.Tasks[1].Type)
 		assert.True(t, spec.Runtime.Tasks[1].IsBackground)
-		assert.Equal(t, fmt.Sprintf("exec npx --yes %s@%s serve", consoleAgentPackage, defaultConsoleAgentVersion),
+		assert.Equal(t, fmt.Sprintf("exec npx --yes --prefer-online %s@%s serve", consoleAgentPackage, defaultConsoleAgentVersion),
 			spec.Runtime.Tasks[1].Run)
 	}
 
@@ -422,7 +437,7 @@ func TestTemplateSpec(t *testing.T) {
 		assert.Nil(t, err, "%+v", err)
 		assert.True(t, pbutils.IsEqual(cfg.Image, spec.Image))
 		assert.True(t, pbutils.IsEqual(cfg.Limit, spec.Limit))
-		assert.Equal(t, fmt.Sprintf("exec npx --yes %s@1.2.3-beta.1 serve", consoleAgentPackage), spec.Runtime.Tasks[1].Run)
+		assert.Equal(t, fmt.Sprintf("exec npx --yes --prefer-online %s@1.2.3-beta.1 serve", consoleAgentPackage), spec.Runtime.Tasks[1].Run)
 		assert.Len(t, spec.Runtime.EnvVars, 1)
 
 		agentCfg := make(map[string]any)
@@ -444,12 +459,73 @@ func TestTemplateSpec(t *testing.T) {
 	}
 }
 
+func TestTemplateSpecVersion(t *testing.T) {
+	oldGitBranch := ldflags.GitBranch
+	oldGitTag := ldflags.GitTag
+	oldMode := ldflags.Mode
+	ldflags.Mode = ""
+	t.Cleanup(func() {
+		ldflags.GitBranch = oldGitBranch
+		ldflags.GitTag = oldGitTag
+		ldflags.Mode = oldMode
+	})
+
+	tests := []struct {
+		name       string
+		branch     string
+		gitTag     string
+		dev        string
+		production string
+		version    string
+		want       string
+		isInvalid  bool
+	}{
+		{name: "local", want: "dev"},
+		{name: "main", branch: "main", want: "main"},
+		{name: "dev", branch: "dev", want: "dev"},
+		{name: "feature", branch: "b-feature", want: "b-feature"},
+		{name: "underscore", branch: "b-feature_1", want: "b-feature_1"},
+		{name: "release", branch: "main", gitTag: "v1.2.3", want: "latest"},
+		{name: "production", branch: "dev", production: "true", want: "latest"},
+		{name: "production override", branch: "dev", production: "true", version: "b-feature", want: "latest"},
+		{name: "production pin", branch: "dev", production: "true", version: "1.2.3", want: "latest"},
+		{name: "development release", branch: "b-feature", gitTag: "v1.2.3", dev: "true", want: "b-feature"},
+		{name: "development override", branch: "b-feature", version: "canary", want: "canary"},
+		{name: "development pin", branch: "dev", version: "1.2.3", want: "1.2.3"},
+		{name: "invalid branch", branch: "dev; touch /tmp/agent", isInvalid: true},
+	}
+	for _, tst := range tests {
+		t.Run(tst.name, func(t *testing.T) {
+			t.Setenv("OCTELIUM_DEV", tst.dev)
+			t.Setenv("OCTELIUM_PRODUCTION", tst.production)
+			ldflags.GitBranch = tst.branch
+			ldflags.GitTag = tst.gitTag
+			spec, err := getTemplateSpec(&enterprisev1.ClusterConfig_Spec_Agent{
+				Version: tst.version,
+			})
+			if tst.isInvalid {
+				assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+				return
+			}
+			assert.Nil(t, err, "%+v", err)
+			if !assert.NotNil(t, spec) {
+				return
+			}
+			assert.Equal(t, fmt.Sprintf("exec npx --yes --prefer-online %s@%s serve", consoleAgentPackage, tst.want),
+				spec.Runtime.Tasks[1].Run)
+		})
+	}
+}
+
 func TestValidateConfig(t *testing.T) {
 	validCfgs := []*enterprisev1.ClusterConfig_Spec_Agent{
 		nil,
 		{},
 		{Version: "0.1.0"},
 		{Version: "latest"},
+		{Version: "dev"},
+		{Version: "main"},
+		{Version: "b-feature_1"},
 		{Version: "1.0.0-rc.1+build.5"},
 		{Llm: &enterprisev1.ClusterConfig_Spec_Agent_LLM{Service: "llm"}},
 		{Llm: &enterprisev1.ClusterConfig_Spec_Agent_LLM{Service: "llm.default", Model: "claude-sonnet-4-5"}},
