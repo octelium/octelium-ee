@@ -29,13 +29,21 @@ octelium-console-agent ───────────── Cordium Workspace
 
 ## Running inside a Cordium Workspace
 
-The Workspace image needs Node.js 22.19+ and `git`. A Template can install and start the agent and expose it as the default Application:
+The enterprise `AgentService` (`octelium.api.main.enterprise.v1.AgentService`) provisions the agent of every User on demand: `InitializeAgent` creates the User's personal `octelium.<user>` Cordium Space, its `default` Template and a primary Workspace that serves the agent as its default Application on port `8080`. The Template installs Node.js upon the first start of a Workspace if the image lacks it (`ON_CREATE`) and starts `npx @octelium/console-agent@<version> serve` on every start (`POST_START`). The Template is generated from the `spec.agent` section of the enterprise ClusterConfig:
+
+| Field | Description |
+| --- | --- |
+| `isDisabled` | Disables the `AgentService` |
+| `llm.service`, `llm.model` | The default LLM Service and model (i.e. `llm.service` and `llm.model` below) |
+| `version` | The `@octelium/console-agent` version |
+| `image`, `limit` | The Workspace image and compute resources |
+| `config` | Any additional configuration (same structure as `config.json`), passed via `OCTELIUM_CONSOLE_AGENT_CONFIG_JSON` |
+
+The Workspaces themselves are started, stopped, watched and deleted via the Cordium `MainService` (the web console does so from its `/agent` page). The agent can also run in any other Workspace whose image has Node.js 22.19+ and `git`, for example with such a Template:
 
 ```yaml
 spec:
   runtime:
-    octelium:
-      serveAll: true
     envVars:
       - key: OCTELIUM_CONSOLE_AGENT_CONFIG_JSON
         value: '{"llm":{"service":"llm.default","model":"gpt-5.1"}}'
@@ -63,7 +71,7 @@ The configuration is read, in increasing precedence, from the defaults, a JSON f
 | `workDir` | `/workspace` if it exists, else `$HOME` | The agent's working directory |
 | `logLevel` | `info` | `debug`, `info`, `warn`, `error` |
 | `server.host`, `server.port` | `0.0.0.0`, `8080` | Listen address (`8080` is the portal's default Application port) |
-| `server.allowedOrigins` | `https://<domain>`, `https://*.<domain>` | Accepted `Origin` headers (plus the request's own origin) |
+| `server.allowedOrigins` | `https://console.octelium.<domain>`, `https://$CORDIUM_HOSTNAME` | Accepted `Origin` headers (plus the request's own origin) |
 | `server.cors` | `false` | Emit CORS headers. Keep it off when the Cluster ingress already handles CORS |
 | `server.authToken` | | Optional bearer token (or `?access_token=`) required for `/v1/*` |
 | `server.maxUploadBytes` | 100 MiB | Upload limit |
@@ -78,6 +86,7 @@ The configuration is read, in increasing precedence, from the defaults, a JSON f
 | `llm.apiKey`, `llm.apiKeyEnv` | | Provider credentials. Not needed with an Octelium LLM Service |
 | `llm.thinkingLevel` | `medium` | `off` … `max` |
 | `llm.contextWindow`, `llm.maxTokens`, `llm.reasoning`, `llm.input` | from Pi's catalog | Model metadata for unknown model IDs |
+| `llm.loginProviders` | `anthropic`, `openai` | The Pi providers that the Users can sign in to with their own subscriptions (Claude Pro/Max, ChatGPT) |
 | `agent.tools` | all | Pi built-in tools: `read`, `bash`, `edit`, `write`, `grep`, `find`, `ls` (`grep`/`find` are dropped if `rg`/`fd` are missing) |
 | `agent.systemPromptAppend` | | Extra instructions |
 | `agent.loadContextFiles` | `false` | Load `AGENTS.md`-style files from the working directory |
@@ -91,7 +100,11 @@ The configuration is read, in increasing precedence, from the defaults, a JSON f
 | `skills.paths` | | Local skill directories |
 | `webSearch` | | `{"provider": "brave" \| "tavily" \| "searxng", "baseUrl", "apiKey" \| "apiKeyEnv"}`. `baseUrl` can point to an Octelium Service for secretless access |
 
-Provider subscriptions supported by Pi (e.g. Claude or ChatGPT logins) can be used by running `PI_CODING_AGENT_DIR=<dataDir>/pi npx --package @earendil-works/pi-coding-agent@1.0.1 pi` once and `/login`: the agent reads the same `<dataDir>/pi/auth.json`.
+### Models and subscriptions
+
+The model can be switched at runtime (`PUT /v1/model`). The selection is saved in `<dataDir>/settings.json` and takes precedence over `llm.*` as long as its provider stays configured.
+
+A User can also sign in with their own Claude or ChatGPT subscription from the web console. The OAuth flows run inside the agent (`/v1/auth/logins`): the console shows the provider's sign-in link and then sends back what the provider shows after signing in (the code, or the URL of the page it redirected to, which never needs to load since it points to the Workspace's `localhost`). The tokens are stored and refreshed by Pi in `<dataDir>/pi/auth.json` inside the Workspace and never leave it. Once signed in, the agent switches to the provider's default model.
 
 ## HTTP API
 
@@ -114,8 +127,16 @@ All the types are exported from `@octelium/console-agent/protocol` (`src/protoco
 | `POST` | `/v1/files?name=<file name>` | Upload a file (raw body). Returns a `FileInfo` whose `id` can be attached to a run |
 | `GET` | `/v1/artifacts/{id}` | Artifact metadata |
 | `GET` | `/v1/artifacts/{id}/content` | Download an artifact (`attachment`, sandboxed CSP; `?inline=1` for safe types) |
+| `GET` | `/v1/models` | The current model, the thinking level and the available models |
+| `PUT` | `/v1/model` | Switch the model: `{"provider", "id", "thinkingLevel"?}` |
+| `GET` | `/v1/auth/providers` | The subscription providers and whether they are signed in |
+| `DELETE` | `/v1/auth/providers/{id}` | Sign out |
+| `POST` | `/v1/auth/logins` | Start signing in: `{"provider", "selectModel"?}`. Returns a `LoginSession` |
+| `GET` | `/v1/auth/logins/{id}` | Poll a `LoginSession` (`events` such as `auth_url`, the pending `prompt`, `status`) |
+| `POST` | `/v1/auth/logins/{id}/prompts/{promptId}` | Answer the pending prompt: `{"value"}` |
+| `DELETE` | `/v1/auth/logins/{id}` | Cancel signing in |
 
-Errors are `{"error": {"code", "message"}}`. `POST`/`PATCH` bodies must be `application/json`.
+Errors are `{"error": {"code", "message"}}`. `POST`/`PUT`/`PATCH` bodies must be `application/json`.
 
 ### Messages and blocks
 
@@ -149,8 +170,8 @@ Clients must ignore unknown block types and unknown fields, which is how new blo
 
 ## Requirements on the Cluster side
 
-- The Workspace must be able to reach the LLM Service (`runtime.octelium.serveAll` or `serveServices`) and its owner must be authorized to use it.
-- The web console calls the agent at the Workspace's hostname through the Cordium portal. Since that is a different origin than the console's, the portal Service has to allow the console's origin with credentials (e.g. `config.http.cors.allowClusterServices`).
+- The Workspace owner must be authorized to access the LLM Service, which is reached through the Workspace's `octelium connect`.
+- The web console calls the agent at the Workspace's hostname through the Cordium portal. Since that is a different origin than the console's, the portal Service allows exactly the console's origin (`https://console.octelium.<domain>`) with credentials. `allowClusterServices` is deliberately not used since it would let any Workspace Application in the Cluster read the agents of other Users.
 - Do not share the agent's Application with other Users: the agent acts with the Workspace owner's identity.
 
 ## Development

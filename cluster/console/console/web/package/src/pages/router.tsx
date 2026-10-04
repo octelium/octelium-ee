@@ -1,6 +1,7 @@
 import { RouteObject, useRoutes } from "react-router-dom";
 import { PageLoading } from "@/components/Loading";
 import { RouteErrorBoundary } from "@/components/ErrorBoundary";
+import routerAgent from "./Agent/router";
 import routerClusterMan from "./clusterman/router";
 import Home from "./Home";
 import routerSettings from "./Settings/router";
@@ -85,6 +86,7 @@ export default (): RouteObject => {
       },
 
       routerSettings(),
+      routerAgent(),
       { path: "core/*", element: <LazyRouteGroup load={loadCoreRoutes} /> },
       {
         path: "enterprise/*",

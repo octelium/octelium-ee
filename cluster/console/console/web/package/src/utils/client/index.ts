@@ -3,6 +3,7 @@ import * as grpcWeb from "@protobuf-ts/grpcweb-transport";
 import { getDomain, isDev } from "..";
 import * as AccessC from "../../apis/accessv1/accessv1.client";
 import * as AuthGRPC from "../../apis/authv1/authv1.client";
+import * as CordiumC from "../../apis/cordiumv1/cordiumv1.client";
 import * as CoreC from "../../apis/corev1/corev1.client";
 import * as EnterpriseC from "../../apis/enterprisev1/enterprisev1.client";
 import * as UserC from "../../apis/userv1/userv1.client";
@@ -99,6 +100,14 @@ export const getClientPolicyPortal =
 
 export const getClientCluster = (): EnterpriseC.ClusterServiceClient => {
   return new EnterpriseC.ClusterServiceClient(getTransport());
+};
+
+export const getClientAgent = (): EnterpriseC.AgentServiceClient => {
+  return new EnterpriseC.AgentServiceClient(getTransport());
+};
+
+export const getClientCordium = (): CordiumC.MainServiceClient => {
+  return new CordiumC.MainServiceClient(getTransport());
 };
 
 let visibilityMetricsClient: VisibilityMetricsC.MetricsServiceClient | undefined;

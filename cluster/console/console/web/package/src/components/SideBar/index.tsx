@@ -32,6 +32,7 @@ import {
   Settings2,
   Shield,
   ShieldCheck,
+  Sparkles,
   ShieldEllipsis,
   ShieldUser,
   SquareTerminal,
@@ -245,6 +246,8 @@ export default function Sidebar() {
   const items = activeSection?.items ?? [];
 
   const isOverview = loc.pathname === "/";
+  const isAgent =
+    loc.pathname === "/agent" || loc.pathname.startsWith("/agent/");
 
   return (
     <div className="min-h-full w-full flex flex-col">
@@ -266,6 +269,26 @@ export default function Sidebar() {
           strokeWidth={isOverview ? 2.5 : 2}
         />
         <span>Overview</span>
+      </Link>
+
+      <Link
+        to="/agent"
+        viewTransition
+        className={`text-body font-semibold ${twMerge(
+          "-mt-1.5 mb-3 flex w-full items-center gap-2",
+          "py-2 px-2.5 rounded-lg",
+          "transition-colors duration-150",
+          isAgent
+            ? "bg-slate-900 text-white shadow-sm"
+            : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/70",
+        )}`}
+      >
+        <Sparkles
+          size={15}
+          className="shrink-0"
+          strokeWidth={isAgent ? 2.5 : 2}
+        />
+        <span>Agent</span>
       </Link>
 
       <div ref={dropdownRef} className="relative mb-7">

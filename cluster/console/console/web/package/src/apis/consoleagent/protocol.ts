@@ -394,6 +394,82 @@ export interface ErrorResponse {
   };
 }
 
+export interface ModelsResponse {
+  current?: ModelInfo;
+  thinkingLevel?: string;
+  models: ModelInfo[];
+  error?: ErrorInfo;
+}
+
+export interface SetModelRequest {
+  provider: string;
+  id: string;
+  thinkingLevel?: string;
+}
+
+export interface AuthProvider {
+  id: string;
+  name: string;
+  loginLabel?: string;
+  subscription: boolean;
+  configured: boolean;
+  oauth: boolean;
+}
+
+export interface ListAuthProvidersResponse {
+  items: AuthProvider[];
+}
+
+export type LoginStatus = "pending" | "completed" | "failed" | "cancelled";
+
+export type LoginEvent =
+  | {
+      type: "info";
+      message: string;
+      links?: { url: string; label?: string }[];
+    }
+  | { type: "auth_url"; url: string; instructions?: string }
+  | {
+      type: "device_code";
+      userCode: string;
+      verificationUri: string;
+      intervalSeconds?: number;
+      expiresInSeconds?: number;
+    }
+  | { type: "progress"; message: string };
+
+export interface LoginPrompt {
+  id: string;
+  type: "text" | "secret" | "select" | "manual_code";
+  message: string;
+  placeholder?: string;
+  options?: { id: string; label: string; description?: string }[];
+}
+
+export interface LoginSession {
+  id: string;
+  provider: string;
+  status: LoginStatus;
+  events: LoginEvent[];
+  prompt?: LoginPrompt;
+  model?: ModelInfo;
+  error?: ErrorInfo;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StartLoginRequest {
+  provider: string;
+  selectModel?: boolean;
+}
+
+export interface LoginPromptAnswer {
+  value: string;
+}
+
+export const isTerminalLoginStatus = (status: LoginStatus): boolean =>
+  status !== "pending";
+
 export interface AgentInfo {
   name: string;
   version: string;
@@ -422,6 +498,8 @@ export interface AgentInfo {
     uploads: {
       maxBytes: number;
     };
+    models: boolean;
+    login: boolean;
   };
 }
 

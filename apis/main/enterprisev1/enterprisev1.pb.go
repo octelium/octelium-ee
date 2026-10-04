@@ -2105,7 +2105,8 @@ const (
 	// with the agent configuration of the Cluster. Note that its Workspaces
 	// might still need to be started.
 	Agent_READY Agent_State = 2
-	// OUTDATED means that the agent environment is provisioned but its
+	// OUTDATED means that the agent environment is provisioned but it is
+	// either incomplete (e.g. its primary Workspace was deleted) or its
 	// Template no longer matches the agent configuration of the Cluster. It
 	// is reconciled via the InitializeAgent method after which the running
 	// agent Workspaces need to be restarted in order to use the new

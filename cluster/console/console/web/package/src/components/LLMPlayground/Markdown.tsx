@@ -1,7 +1,10 @@
 import { ActionIcon, Tooltip } from "@mantine/core";
 import { Check, Copy } from "lucide-react";
 import * as React from "react";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, {
+  type Components,
+  type UrlTransform,
+} from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { twMerge } from "tailwind-merge";
 
@@ -45,7 +48,12 @@ const CodeBlock = (props: { language?: string; code: string }) => {
   );
 };
 
-const Markdown = (props: { children: string; className?: string }) => (
+const Markdown = (props: {
+  children: string;
+  className?: string;
+  components?: Components;
+  urlTransform?: UrlTransform;
+}) => (
   <div
     className={twMerge(
       "min-w-0 text-body leading-6 text-slate-700",
@@ -54,6 +62,7 @@ const Markdown = (props: { children: string; className?: string }) => (
   >
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
+      urlTransform={props.urlTransform}
       components={{
         p: ({ children }) => (
           <p className="my-2 first:mt-0 last:mb-0">{children}</p>
@@ -151,6 +160,7 @@ const Markdown = (props: { children: string; className?: string }) => (
             </code>
           );
         },
+        ...props.components,
       }}
     >
       {props.children}
