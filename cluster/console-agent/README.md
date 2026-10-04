@@ -174,6 +174,18 @@ Clients must ignore unknown block types and unknown fields, which is how new blo
 - The web console calls the agent at the Workspace's hostname through the Cordium portal. Since that is a different origin than the console's, the portal Service allows exactly the console's origin (`https://console.octelium.<domain>`) with credentials. `allowClusterServices` is deliberately not used since it would let any Workspace Application in the Cluster read the agents of other Users.
 - Do not share the agent's Application with other Users: the agent acts with the Workspace owner's identity.
 
+## Publishing
+
+`.github/workflows/publish-console-agent.yaml` publishes the package using npm trusted publishing (GitHub OIDC). Configure the package's trusted publisher on npmjs.com with GitHub organization `octelium`, repository `octelium-ee`, workflow filename `publish-console-agent.yaml`, no environment, and permission to run `npm publish`. No npm token secret is required.
+
+Every push to `main`, `dev` or `b-*` publishes a unique prerelease under the branch's npm dist-tag. For example, workflow run `123`, attempt `1`, on `dev` publishes `0.1.0-dev.123.1` as `@octelium/console-agent@dev`. The base version comes from `package.json`; retries receive a new version because npm versions cannot be overwritten.
+
+Pushing a `v*.*.*` Git tag or publishing a GitHub release publishes the tag's semver, removing the leading `v`. Stable releases use `latest`; semver prereleases and GitHub prereleases use `next`. Tag pushes also cover releases created by the repository's release workflow using `GITHUB_TOKEN`. Automatic runs skip versions already published by another event or an earlier run.
+
+To publish manually, run the workflow from GitHub Actions, select the branch or Git tag and supply the npm `tag`. An optional `version` sets an explicit semver. Without it, a selected Git tag supplies the version, while a selected branch produces a unique prerelease containing the manual npm tag. An explicit version must not already exist on npm.
+
+Run `npm run test:publish` to check publishing version resolution.
+
 ## Development
 
 ```bash

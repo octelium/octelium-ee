@@ -4,6 +4,11 @@
   "description": "The Octelium web console AI agent that runs inside a Cordium Workspace",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/octelium/octelium-ee.git",
+    "directory": "cluster/console-agent"
+  },
   "bin": {
     "octelium-console-agent": "./dist/cli.js"
   },
@@ -31,6 +36,7 @@
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"src/**/*.test.ts\"",
+    "test:publish": "node --test scripts/publish-version.test.mjs",
     "fmt": "prettier --write src",
     "protoc": "mkdir -p ./apis && protoc --proto_path ../../ --include_imports --include_source_info --descriptor_set_out ./apis/octelium.binpb apis/protobuf/main/corev1/corev1.proto apis/protobuf/main/userv1/userv1.proto apis/protobuf/main/enterprisev1/enterprisev1.proto apis/protobuf/main/accessv1/accessv1.proto apis/protobuf/main/cordiumv1/cordiumv1.proto apis/protobuf/main/visibilityv1/visibilityv1.proto apis/protobuf/main/visibilityv1/core/vcorev1.proto apis/protobuf/main/visibilityv1/enterprise/venterprisev1.proto apis/protobuf/main/visibilityv1/access/vaccessv1.proto apis/protobuf/main/visibilityv1/cordium/vcordiumv1.proto apis/protobuf/main/visibilityv1/metrics/vmetricsv1.proto apis/protobuf/main/visibilityv1/llm/vllmv1.proto"
   },
@@ -45,6 +51,7 @@
   "devDependencies": {
     "@types/node": "^26.6.4",
     "prettier": "^3.9.9",
+    "semver": "7.8.5",
     "typescript": "~6.0.3"
   }
 }
