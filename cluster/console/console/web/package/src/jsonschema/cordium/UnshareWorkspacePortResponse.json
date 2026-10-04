@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/UnshareWorkspacePortResponse",
+    "definitions": {
+        "UnshareWorkspacePortResponse": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Unshare Workspace Port Response",
+            "description": "UnshareWorkspacePortResponse is the response of the UnshareWorkspacePort method. It is intentionally empty."
+        }
+    }
+}

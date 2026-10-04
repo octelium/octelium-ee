@@ -20,11 +20,14 @@ import (
 	watchersee "github.com/octelium/octelium-ee/cluster/common/watchers"
 	"github.com/octelium/octelium/apis/cluster/caccessv1"
 	"github.com/octelium/octelium/apis/main/accessv1"
+	"github.com/octelium/octelium/apis/main/cordiumv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vcordiumv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
+	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/healthcheck"
 	oc "github.com/octelium/octelium/cluster/common/octeliumc"
 	"github.com/octelium/octelium/cluster/common/spiffec"
@@ -42,6 +45,8 @@ const tstAddr = "localhost:32123"
 
 const removedResourceTTL = 1 * time.Hour
 
+const versionInfoKeyCordium = "cordium"
+
 type Server struct {
 	octeliumC octeliumc.ClientInterface
 
@@ -53,6 +58,9 @@ type Server struct {
 
 	writeMu     sync.Mutex
 	removedUIDs *cache.Cache
+
+	cordiumMu         sync.Mutex
+	isWatchingCordium bool
 }
 
 func getAddr() string {
@@ -119,12 +127,20 @@ func (s *Server) Run(ctx context.Context) error {
 		return err
 	}
 
+	if err := s.validateCordiumReconcileKinds(); err != nil {
+		return err
+	}
+
 	if err := s.initGRPC(ctx); err != nil {
 		return err
 	}
 
 	if err := s.setResources(ctx); err != nil {
 		return err
+	}
+
+	if err := s.setCordiumResources(ctx); err != nil {
+		zap.L().Warn("Could not set Cordium resources", zap.Error(err))
 	}
 
 	go s.startProcessAuditLogLoop(ctx)
@@ -179,6 +195,10 @@ func (s *Server) initGRPC(ctx context.Context) error {
 	})
 
 	vaccessv1.RegisterResourceServiceServer(grpcSrv, &srvAccess{
+		s: s,
+	})
+
+	vcordiumv1.RegisterResourceServiceServer(grpcSrv, &srvCordium{
 		s: s,
 	})
 
@@ -594,6 +614,113 @@ func (s *Server) setResources(ctx context.Context) error {
 		}); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (s *Server) isCordiumInstalled(ctx context.Context) (bool, error) {
+	rgn, err := s.octeliumC.CoreC().GetRegion(ctx, &rmetav1.GetOptions{
+		Name: "default",
+	})
+	if err != nil {
+		return false, err
+	}
+
+	_, ok := rgn.GetStatus().GetVersionInfoMap()[versionInfoKeyCordium]
+	return ok, nil
+}
+
+func (s *Server) setCordiumResources(ctx context.Context) error {
+	isInstalled, err := s.isCordiumInstalled(ctx)
+	if err != nil {
+		return err
+	}
+
+	if !isInstalled {
+		zap.L().Debug("Cordium is not installed. Skipping watching its resources")
+		return nil
+	}
+
+	return s.watchCordiumResources(ctx)
+}
+
+func (s *Server) watchCordiumResources(ctx context.Context) error {
+	s.cordiumMu.Lock()
+	defer s.cordiumMu.Unlock()
+
+	if s.isWatchingCordium {
+		return nil
+	}
+
+	w := watchersee.NewCordiumV1(s.octeliumC)
+
+	if err := w.Workspace(ctx, nil,
+		func(ctx context.Context, item *cordiumv1.Workspace) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *cordiumv1.Workspace) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *cordiumv1.Workspace) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := w.Template(ctx, nil,
+		func(ctx context.Context, item *cordiumv1.Template) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *cordiumv1.Template) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *cordiumv1.Template) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := w.Space(ctx, nil,
+		func(ctx context.Context, item *cordiumv1.Space) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *cordiumv1.Space) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *cordiumv1.Space) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := w.GitProvider(ctx, nil,
+		func(ctx context.Context, item *cordiumv1.GitProvider) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *cordiumv1.GitProvider) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *cordiumv1.GitProvider) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := w.Secret(ctx, nil,
+		func(ctx context.Context, item *cordiumv1.Secret) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *cordiumv1.Secret) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *cordiumv1.Secret) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := w.UserSecret(ctx, nil,
+		func(ctx context.Context, item *cordiumv1.UserSecret) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *cordiumv1.UserSecret) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *cordiumv1.UserSecret) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	s.isWatchingCordium = true
 
 	return nil
 }

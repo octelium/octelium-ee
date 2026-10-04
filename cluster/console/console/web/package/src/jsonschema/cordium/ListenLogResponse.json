@@ -1,0 +1,47 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ListenLogResponse",
+    "definitions": {
+        "ListenLogResponse": {
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the timestamp at which the log entry was produced.",
+                    "format": "date-time"
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "TYPE_CLONING_REPO",
+                        "TYPE_PULLING_IMAGE",
+                        "TYPE_BUILDING_IMAGE",
+                        "TYPE_TASK"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the initialization stage that produced the log entry"
+                },
+                "mode": {
+                    "enum": [
+                        "MODE_UNKNOWN",
+                        "MODE_STDOUT",
+                        "MODE_STDERR"
+                    ],
+                    "type": "string",
+                    "title": "Mode",
+                    "description": "Mode is the output stream that the log entry was emitted on"
+                },
+                "data": {
+                    "type": "string",
+                    "description": "Data is the raw content of the log entry.",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Listen Log Response",
+            "description": "ListenLogResponse is a single log entry of the ListenLog stream."
+        }
+    }
+}

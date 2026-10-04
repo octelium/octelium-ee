@@ -15,6 +15,7 @@ import (
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/cluster/cclusterv1"
+	"github.com/octelium/octelium/apis/main/cordiumv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
@@ -26,6 +27,7 @@ import (
 	utils_cert "github.com/octelium/octelium/pkg/utils/cert"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func genResources(ctx context.Context, octeliumC octeliumc.ClientInterface) error {
@@ -109,8 +111,20 @@ func genResources(ctx context.Context, octeliumC octeliumc.ClientInterface) erro
 						"has-workspace": "true",
 					},
 				},
-				Spec:   &corev1.Region_Spec{},
-				Status: &corev1.Region_Status{},
+				Spec: &corev1.Region_Spec{},
+				Status: &corev1.Region_Status{
+					VersionInfoMap: map[string]*corev1.Region_Status_VersionInfo{
+						"cordium": {
+							Package: "cordium",
+							Version: "v0.1.0",
+						},
+					},
+					Ext: map[string]*structpb.Struct{
+						"cordium": pbutils.MessageToStructMust(&cordiumv1.RegionExtInfo{
+							IsEnabled: true,
+						}),
+					},
+				},
 			}
 
 			_, err = octeliumC.CoreC().CreateRegion(ctx, region)
@@ -584,6 +598,10 @@ The initial SecretStore powered by the Kubernetes Cluster of the default Region
 		if err != nil {
 			return err
 		}
+	}
+
+	if err := genCordiumResources(ctx, octeliumC); err != nil {
+		return err
 	}
 
 	zap.L().Debug("Done generating resources")

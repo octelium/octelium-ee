@@ -1,35 +1,46 @@
 import Yaml from "js-yaml";
 
 import * as AccessP from "../../apis/accessv1/accessv1";
+import * as CordiumP from "../../apis/cordiumv1/cordiumv1";
 import * as CoreP from "../../apis/corev1/corev1";
 import * as EnterpriseP from "../../apis/enterprisev1/enterprisev1";
 import * as MetaPB from "../../apis/metav1/metav1";
 import * as VisibilityCoreP from "../../apis/visibilityv1/core/vcorev1";
 import * as VisibilityAccessP from "../../apis/visibilityv1/access/vaccessv1";
+import * as VisibilityCordiumP from "../../apis/visibilityv1/cordium/vcordiumv1";
 import * as VisibilityEnterpriseP from "../../apis/visibilityv1/enterprise/venterprisev1";
 
 import { queryClient } from "@/utils";
+import { RpcError } from "@protobuf-ts/runtime-rpc";
 import { match } from "ts-pattern";
 import {
   getClientAccess,
+  getClientCordium,
   getClientCore,
   getClientEnterprise,
   getClientVisibilityCore,
   getClientVisibilityAccess,
+  getClientVisibilityCordium,
   getClientVisibilityEnterprise,
 } from "../client";
 
-export type Resource = ResourceCore | ResourceEnterprise | ResourceAccess;
+export type Resource =
+  | ResourceCore
+  | ResourceEnterprise
+  | ResourceAccess
+  | ResourceCordium;
 export type ResourceList =
   | ResourceCoreList
   | ResourceEnterpriseList
-  | ResourceAccessList;
+  | ResourceAccessList
+  | ResourceCordiumList;
 export type ResourceName =
   | ResourceCoreName
   | ResourceEnterpriseName
-  | ResourceAccessName;
+  | ResourceAccessName
+  | ResourceCordiumName;
 
-export type API = "core" | "enterprise" | "access";
+export type API = "core" | "enterprise" | "access" | "cordium";
 
 export type ResourceCore =
   | CoreP.Service
@@ -68,6 +79,16 @@ export type ResourceAccess =
   | AccessP.IntegrationIdentity
   | AccessP.IntegrationBinding;
 
+export type ResourceCordium =
+  | CordiumP.Workspace
+  | CordiumP.Template
+  | CordiumP.Space
+  | CordiumP.Membership
+  | CordiumP.GitProvider
+  | CordiumP.Secret
+  | CordiumP.UserSecret
+  | CordiumP.Region;
+
 export type ResourceCoreList =
   | CoreP.ServiceList
   | CoreP.NamespaceList
@@ -101,6 +122,16 @@ export type ResourceAccessList =
   | AccessP.IntegrationList
   | AccessP.IntegrationIdentityList
   | AccessP.IntegrationBindingList;
+
+export type ResourceCordiumList =
+  | CordiumP.WorkspaceList
+  | CordiumP.TemplateList
+  | CordiumP.SpaceList
+  | CordiumP.MembershipList
+  | CordiumP.GitProviderList
+  | CordiumP.SecretList
+  | CordiumP.UserSecretList
+  | CordiumP.RegionList;
 
 export type ResourceCoreName =
   | "Service"
@@ -138,6 +169,16 @@ export type ResourceAccessName =
   | "Integration"
   | "IntegrationIdentity"
   | "IntegrationBinding";
+
+export type ResourceCordiumName =
+  | "Workspace"
+  | "Template"
+  | "Space"
+  | "Membership"
+  | "GitProvider"
+  | "Secret"
+  | "UserSecret"
+  | "Region";
 
 const coreResourcePathMap = new Map<string, ResourceCoreName>([
   ["services", "Service"],
@@ -179,6 +220,17 @@ const accessResourcePathMap = new Map<string, ResourceAccessName>([
   ["integrationbindings", "IntegrationBinding"],
 ]);
 
+const cordiumResourcePathMap = new Map<string, ResourceCordiumName>([
+  ["workspaces", "Workspace"],
+  ["templates", "Template"],
+  ["spaces", "Space"],
+  ["memberships", "Membership"],
+  ["gitproviders", "GitProvider"],
+  ["secrets", "Secret"],
+  ["usersecrets", "UserSecret"],
+  ["regions", "Region"],
+]);
+
 const coreKindToPathMap = new Map<ResourceCoreName, string>(
   [...coreResourcePathMap].map(([path, kind]) => [kind, path]),
 );
@@ -191,6 +243,10 @@ const accessKindToPathMap = new Map<ResourceAccessName, string>(
   [...accessResourcePathMap].map(([path, kind]) => [kind, path]),
 );
 
+const cordiumKindToPathMap = new Map<ResourceCordiumName, string>(
+  [...cordiumResourcePathMap].map(([path, kind]) => [kind, path]),
+);
+
 export const getAPIFromAPIVersion = (arg: string): API | undefined => {
   if (!arg) return undefined;
   switch (arg.split("/").at(0)) {
@@ -200,6 +256,8 @@ export const getAPIFromAPIVersion = (arg: string): API | undefined => {
       return "enterprise";
     case "access":
       return "access";
+    case "cordium":
+      return "cordium";
     default:
       return undefined;
   }
@@ -235,6 +293,10 @@ export const cloneResource = (arg: Resource): Resource => {
       return AccessP[arg.kind as ResourceAccessName].clone(
         arg as any,
       ) as Resource;
+    case "cordium":
+      return CordiumP[arg.kind as ResourceCordiumName].clone(
+        arg as any,
+      ) as Resource;
     default:
       return CoreP[arg.kind as ResourceCoreName].clone(arg as any) as Resource;
   }
@@ -264,6 +326,12 @@ export const resourceToJSON = (arg: Resource): string => {
         return safeJSONStringify(
           JSON.parse(
             AccessP[arg.kind as ResourceAccessName].toJsonString(arg as any),
+          ),
+        );
+      case "cordium":
+        return safeJSONStringify(
+          JSON.parse(
+            CordiumP[arg.kind as ResourceCordiumName].toJsonString(arg as any),
           ),
         );
       default:
@@ -307,6 +375,10 @@ export const resourceFingerprint = (arg: Resource): string => {
         );
       case "access":
         return AccessP[arg.kind as ResourceAccessName].toJsonString(arg as any);
+      case "cordium":
+        return CordiumP[arg.kind as ResourceCordiumName].toJsonString(
+          arg as any,
+        );
       default:
         return "";
     }
@@ -360,6 +432,8 @@ export const resourceFromJSON = (arg: string): Resource | undefined => {
         return EnterpriseP[kind as ResourceEnterpriseName].fromJsonString(arg);
       case "access":
         return AccessP[kind as ResourceAccessName].fromJsonString(arg);
+      case "cordium":
+        return CordiumP[kind as ResourceCordiumName].fromJsonString(arg);
       default:
         return undefined;
     }
@@ -396,6 +470,8 @@ export const getResourcePathFromAPIKind = (arg: APIKind): string => {
       );
     case "access":
       return accessKindToPathMap.get(arg.kind as ResourceAccessName) ?? "";
+    case "cordium":
+      return cordiumKindToPathMap.get(arg.kind as ResourceCordiumName) ?? "";
     default:
       return "";
   }
@@ -474,6 +550,7 @@ export const getAPIKindFromPath = (path: string): APIKind | undefined => {
     .with("core", () => "core" as const)
     .with("enterprise", () => "enterprise" as const)
     .with("access", () => "access" as const)
+    .with("cordium", () => "cordium" as const)
     .otherwise(() => undefined);
 
   if (!api) return undefined;
@@ -482,6 +559,7 @@ export const getAPIKindFromPath = (path: string): APIKind | undefined => {
     .with("core", () => coreResourcePathMap.get(args[2]))
     .with("enterprise", () => enterpriseResourcePathMap.get(args[2]))
     .with("access", () => accessResourcePathMap.get(args[2]))
+    .with("cordium", () => cordiumResourcePathMap.get(args[2]))
     .otherwise(() => undefined) as ResourceName | undefined;
 
   if (!kind) return undefined;
@@ -509,6 +587,7 @@ export const getPBFromAPI = (api: API) =>
     .with("core", () => CoreP)
     .with("enterprise", () => EnterpriseP)
     .with("access", () => AccessP)
+    .with("cordium", () => CordiumP)
     .otherwise(() => undefined);
 
 export const getPBResourceListFromAPI = (api: API) =>
@@ -516,6 +595,7 @@ export const getPBResourceListFromAPI = (api: API) =>
     .with("core", () => VisibilityCoreP)
     .with("enterprise", () => VisibilityEnterpriseP)
     .with("access", () => VisibilityAccessP)
+    .with("cordium", () => VisibilityCordiumP)
     .otherwise(() => undefined);
 
 export const getClient = (api: API) =>
@@ -523,6 +603,7 @@ export const getClient = (api: API) =>
     .with("core", () => getClientCore())
     .with("enterprise", () => getClientEnterprise())
     .with("access", () => getClientAccess())
+    .with("cordium", () => getClientCordium())
     .otherwise(() => undefined);
 
 export const getResourceClient = (arg: Resource) => {
@@ -542,6 +623,7 @@ export const getClientResourceList = (api: API) =>
     .with("core", () => getClientVisibilityCore())
     .with("enterprise", () => getClientVisibilityEnterprise())
     .with("access", () => getClientVisibilityAccess())
+    .with("cordium", () => getClientVisibilityCordium())
     .otherwise(() => undefined);
 
 export const getClientResourceListP = (api: API) =>
@@ -549,6 +631,7 @@ export const getClientResourceListP = (api: API) =>
     .with("core", () => VisibilityCoreP)
     .with("enterprise", () => VisibilityEnterpriseP)
     .with("access", () => VisibilityAccessP)
+    .with("cordium", () => VisibilityCordiumP)
     .otherwise(() => undefined);
 
 type AnyClient = Record<string, (...args: any[]) => any>;
@@ -562,8 +645,34 @@ export const getListOptionsPB = (api: API, kind: string): AnyMessageType =>
 export const listResourcesPB = (api: API, kind: string, req: unknown) =>
   (getClientResourceList(api) as unknown as AnyClient)[`list${kind}`](req);
 
+const getResourceFromListPB = async (
+  api: API,
+  kind: string,
+  arg: { name?: string },
+) => {
+  const name = arg.name ?? "";
+  const { response } = await listResourcesPB(
+    api,
+    kind,
+    getListOptionsPB(api, kind)["create"]({
+      common: { query: name, itemsPerPage: 25 },
+    }),
+  );
+
+  const item = (response as ResourceList).items.find(
+    (itm) => itm.metadata?.name === name,
+  );
+  if (!item) {
+    throw new RpcError(`${kind} ${name} does not exist`, "NOT_FOUND");
+  }
+
+  return { response: item as Resource };
+};
+
 export const getResourcePB = (api: API, kind: string, arg: unknown) =>
-  (getClient(api) as unknown as AnyClient)[`get${kind}`](arg);
+  api === "cordium"
+    ? getResourceFromListPB(api, kind, arg as { name?: string })
+    : (getClient(api) as unknown as AnyClient)[`get${kind}`](arg);
 
 export const createResourcePB = (api: API, kind: string, arg: unknown) =>
   (getClient(api) as unknown as AnyClient)[`create${kind}`](arg);

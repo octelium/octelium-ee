@@ -1,0 +1,61 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ShareWorkspacePortRequest",
+    "definitions": {
+        "ShareWorkspacePortRequest": {
+            "properties": {
+                "workspaceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "WorkspaceRef is the reference of the Workspace that owns the Application."
+                },
+                "mode": {
+                    "enum": [
+                        "UNSET",
+                        "MEMBERS",
+                        "ALL"
+                    ],
+                    "type": "string",
+                    "title": "Mode",
+                    "description": "Mode is the audience with which the Application is shared. It mirrors the Workspace status' SharedPort mode"
+                },
+                "applicationName": {
+                    "type": "string",
+                    "description": "ApplicationName is the name of the Application to be shared as it is defined in the Workspace's spec."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Share Workspace Port Request",
+            "description": "ShareWorkspacePortRequest is the request of the ShareWorkspacePort method."
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
+        }
+    }
+}

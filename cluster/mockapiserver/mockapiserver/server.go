@@ -26,7 +26,6 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium-ee/cluster/policyportal/policyportal"
-	"github.com/octelium/octelium-ee/cluster/rscserver/rscserver"
 	"github.com/octelium/octelium-ee/cluster/rscstore/rscstore"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/authv1"
@@ -36,10 +35,15 @@ import (
 	"github.com/octelium/octelium/apis/main/userv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vcordiumv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vllmv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
+	"github.com/octelium/octelium/apis/rsc/raccessv1"
+	"github.com/octelium/octelium/apis/rsc/rcordiumv1"
+	"github.com/octelium/octelium/apis/rsc/rcorev1"
+	"github.com/octelium/octelium/apis/rsc/renterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/admin"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/user"
@@ -49,6 +53,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/sessionc"
 	"github.com/octelium/octelium/cluster/common/userctx"
 	"github.com/octelium/octelium/cluster/common/vutils"
+	"github.com/octelium/octelium/cluster/rscserver/rscserver"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
@@ -123,7 +128,30 @@ func Run(ctx context.Context) error {
 
 		os.Setenv("OCTELIUM_POSTGRES_DATABASE", dbName)
 
-		rscSrv, err := rscserver.NewServer(ctx)
+		rscSrv, err := rscserver.NewServer(ctx, &rscserver.Opts{
+			RegisterResourceFn: func(s grpc.ServiceRegistrar) error {
+				rcorev1.RegisterResourceServiceServer(s, &struct {
+					rcorev1.UnimplementedResourceServiceServer
+				}{})
+
+				renterprisev1.RegisterResourceServiceServer(s, &struct {
+					renterprisev1.UnimplementedResourceServiceServer
+				}{})
+
+				raccessv1.RegisterResourceServiceServer(s, &struct {
+					raccessv1.UnimplementedResourceServiceServer
+				}{})
+
+				rcordiumv1.RegisterResourceServiceServer(s, &struct {
+					rcordiumv1.UnimplementedResourceServiceServer
+				}{})
+
+				return nil
+			},
+
+			NewResourceObject:     ovutils.NewResourceObject,
+			NewResourceObjectList: ovutils.NewResourceObjectList,
+		})
 		if err != nil {
 			return err
 		}
@@ -222,6 +250,11 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
+	visibilityCordiumRscSrv, err := visibility.NewServerResourceCordium(ctx, octeliumC)
+	if err != nil {
+		return err
+	}
+
 	if err := genResources(ctx, octeliumC); err != nil {
 		return err
 	}
@@ -263,6 +296,7 @@ func Run(ctx context.Context) error {
 	vcorev1.RegisterResourceServiceServer(s, visibilityRscSrv)
 	venterprisev1.RegisterResourceServiceServer(s, visibilityEnterpriseRscSrv)
 	vaccessv1.RegisterResourceServiceServer(s, visibilityAccessRscSrv)
+	vcordiumv1.RegisterResourceServiceServer(s, visibilityCordiumRscSrv)
 
 	{
 		clusterSrv, err := visibility.NewServerCluster(ctx, octeliumC)

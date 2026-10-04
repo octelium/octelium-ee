@@ -5,12 +5,15 @@ import {
   Boxes,
   BookKey,
   ClipboardCheck,
+  CodeXml,
+  Container,
   Cpu,
   Building2,
   Folder,
   Inbox,
   LaptopMinimal,
   Layers,
+  LayoutTemplate,
   LucideIcon,
   PanelTop,
   Plug,
@@ -20,13 +23,14 @@ import {
   Terminal,
   User,
   UserCheck,
+  UsersRound,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Panel } from "@/components/Dashboard/components";
 import { useClusterSummary } from "@/components/Dashboard/queries";
 import { compact, exact } from "@/components/Dashboard/utils";
 
-type Api = "core" | "access" | "enterprise";
+type Api = "core" | "access" | "enterprise" | "cordium";
 
 type Summary = { totalNumber?: unknown } | undefined;
 
@@ -183,6 +187,45 @@ const GROUPS: Group[] = [
       },
     ],
   },
+  {
+    api: "cordium",
+    label: "Cordium",
+    icon: CodeXml,
+    to: "/cordium",
+    entries: [
+      {
+        kind: "Workspace",
+        label: "Workspaces",
+        to: "/cordium/workspaces",
+        icon: Container,
+        pick: (summary) => summary?.cordium?.workspace,
+        withRange: true,
+      },
+      {
+        kind: "Template",
+        label: "Templates",
+        to: "/cordium/templates",
+        icon: LayoutTemplate,
+        pick: (summary) => summary?.cordium?.template,
+        withRange: true,
+      },
+      {
+        kind: "Space",
+        label: "Spaces",
+        to: "/cordium/spaces",
+        icon: Layers,
+        pick: (summary) => summary?.cordium?.space,
+        withRange: true,
+      },
+      {
+        kind: "Membership",
+        label: "Memberships",
+        to: "/cordium/memberships",
+        icon: UsersRound,
+        pick: (summary) => summary?.cordium?.membership,
+      },
+    ],
+  },
 ];
 
 const Row = (props: {
@@ -253,7 +296,7 @@ const Inventory = (props: { periodMinutes: number }) => {
       title="Cluster inventory"
       description={`Resources across every API · green badges show what was created in the last ${rangeLabel}`}
     >
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {GROUPS.map((group) => {
           const GroupIcon = group.icon;
           return (

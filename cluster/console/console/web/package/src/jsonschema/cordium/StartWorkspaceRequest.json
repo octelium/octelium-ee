@@ -1,0 +1,89 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/StartWorkspaceRequest",
+    "definitions": {
+        "StartWorkspaceRequest": {
+            "properties": {
+                "workspaceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "WorkspaceRef is the reference of the Workspace to be started."
+                },
+                "config": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.StartWorkspaceRequest.Config",
+                    "additionalProperties": false,
+                    "description": "Config is the run-specific configuration of the run being started."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Start Workspace Request",
+            "description": "StartWorkspaceRequest is the request of the StartWorkspace method."
+        },
+        "octelium.api.main.cordium.v1.StartWorkspaceRequest.Config": {
+            "properties": {
+                "vars": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.cordium.v1.Workspace.Spec.Var"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Vars is the list of the variables that override the Workspace's own variables for this run."
+                },
+                "regionRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "RegionRef is the reference of the Region that is chosen to host the run. If it is unset, the Cluster picks a Region on its own, preferring the User's preferred Region if it is set in their UserConfig."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Config",
+            "description": "Config is the run-specific configuration that only applies to the run being started."
+        },
+        "octelium.api.main.cordium.v1.Workspace.Spec.Var": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the variable's name."
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Value is the variable's value."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Var",
+            "description": "Var is a variable that can be referenced from within the spec's string fields using the `${{ vars.NAME }}` syntax. The substitution is performed after all the configuration levels are merged."
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
+        }
+    }
+}

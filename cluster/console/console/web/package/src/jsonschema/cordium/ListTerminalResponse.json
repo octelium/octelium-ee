@@ -1,0 +1,34 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ListTerminalResponse",
+    "definitions": {
+        "ListTerminalResponse": {
+            "properties": {
+                "items": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.cordium.v1.Terminal"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Items is the list of the currently open terminals of the Workspace."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "List Terminal Response",
+            "description": "ListTerminalResponse is the response of the ListTerminal method."
+        },
+        "octelium.api.main.cordium.v1.Terminal": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the terminal's identifier. It is prefixed by the name of the Workspace that owns the terminal (i.e. `\u003cworkspace\u003e-\u003cid\u003e`)."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Terminal",
+            "description": "Terminal is an interactive terminal that is running inside a Workspace."
+        }
+    }
+}

@@ -523,6 +523,7 @@ func TestToResourceListSupportsEveryResourceKind(t *testing.T) {
 	kinds = append(kinds, coreResourceKinds()...)
 	kinds = append(kinds, enterpriseResourceKinds()...)
 	kinds = append(kinds, accessResourceKinds()...)
+	kinds = append(kinds, cordiumResourceKinds()...)
 
 	assert.NotEmpty(t, kinds)
 

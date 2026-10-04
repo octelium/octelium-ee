@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/GetUserConfigRequest",
+    "definitions": {
+        "GetUserConfigRequest": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Get User Config Request",
+            "description": "GetUserConfigRequest is the request of the GetUserConfig method. It is intentionally empty since the UserConfig of the calling User is always the one that is returned."
+        }
+    }
+}

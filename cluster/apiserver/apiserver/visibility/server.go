@@ -17,6 +17,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	pb "github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vcordiumv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vllmv1"
@@ -165,6 +166,42 @@ func NewServerResourceAccess(ctx context.Context, octeliumC octeliumc.ClientInte
 	return &ServerResourceAccess{
 		octeliumC: octeliumC,
 		accessC:   vaccessv1.NewResourceServiceClient(grpcConn),
+	}, nil
+}
+
+type ServerResourceCordium struct {
+	octeliumC octeliumc.ClientInterface
+	vcordiumv1.UnimplementedResourceServiceServer
+
+	cordiumC vcordiumv1.ResourceServiceClient
+}
+
+func NewServerResourceCordium(ctx context.Context, octeliumC octeliumc.ClientInterface) (*ServerResourceCordium, error) {
+
+	var host string
+
+	if ovutils.IsMockMode() {
+		host = "localhost:40001"
+	} else if ldflags.IsTest() {
+		host = fmt.Sprintf("localhost:%s", os.Getenv("OCTELIUM_TEST_RSCSTORE_PORT"))
+	} else {
+		host = "octeliumee-rscstore.octelium.svc:8080"
+	}
+
+	grpcOpts, err := oc.DefaultDialOpts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	grpcConn, err := grpc.NewClient(
+		host, grpcOpts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ServerResourceCordium{
+		octeliumC: octeliumC,
+		cordiumC:  vcordiumv1.NewResourceServiceClient(grpcConn),
 	}, nil
 }
 

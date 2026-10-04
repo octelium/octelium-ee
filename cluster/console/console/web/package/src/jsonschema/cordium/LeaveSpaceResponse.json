@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/LeaveSpaceResponse",
+    "definitions": {
+        "LeaveSpaceResponse": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Leave Space Response",
+            "description": "LeaveSpaceResponse is the response of the LeaveSpace method. It is intentionally empty."
+        }
+    }
+}

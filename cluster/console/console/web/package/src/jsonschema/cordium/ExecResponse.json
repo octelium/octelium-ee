@@ -1,0 +1,111 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ExecResponse",
+    "definitions": {
+        "ExecResponse": {
+            "properties": {
+                "stdout": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.ExecResponse.Stdout",
+                    "additionalProperties": false,
+                    "description": "Stdout is a chunk of the command's standard output."
+                },
+                "stderr": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.ExecResponse.Stderr",
+                    "additionalProperties": false,
+                    "description": "Stderr is a chunk of the command's standard error."
+                },
+                "exit": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.ExecResponse.Exit",
+                    "additionalProperties": false,
+                    "description": "Exit means that the command exited."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "stdout"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "stderr"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "exit"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "stdout"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "stderr"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "exit"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Exec Response",
+            "description": "ExecResponse is a server message of the Exec bidirectional stream."
+        },
+        "octelium.api.main.cordium.v1.ExecResponse.Exit": {
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "description": "Code is the exit code with which the command exited."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Exit",
+            "description": "Exit means that the command exited."
+        },
+        "octelium.api.main.cordium.v1.ExecResponse.Stderr": {
+            "properties": {
+                "data": {
+                    "type": "string",
+                    "description": "Data is the raw error output data.",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Stderr",
+            "description": "Stderr is a chunk of the command's standard error."
+        },
+        "octelium.api.main.cordium.v1.ExecResponse.Stdout": {
+            "properties": {
+                "data": {
+                    "type": "string",
+                    "description": "Data is the raw output data.",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Stdout",
+            "description": "Stdout is a chunk of the command's standard output."
+        }
+    }
+}

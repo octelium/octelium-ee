@@ -1,0 +1,55 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/CreateTerminalRequest",
+    "definitions": {
+        "CreateTerminalRequest": {
+            "properties": {
+                "workspaceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "WorkspaceRef is the reference of the Workspace in which the terminal is created."
+                },
+                "cols": {
+                    "type": "integer",
+                    "description": "Cols is the initial number of the columns of the terminal's window."
+                },
+                "rows": {
+                    "type": "integer",
+                    "description": "Rows is the initial number of the rows of the terminal's window."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Create Terminal Request",
+            "description": "CreateTerminalRequest is the request of the CreateTerminal method."
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
+        }
+    }
+}

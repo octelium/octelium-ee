@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/CreateTerminalResponse",
+    "definitions": {
+        "CreateTerminalResponse": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the identifier of the newly created terminal."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Create Terminal Response",
+            "description": "CreateTerminalResponse is the response of the CreateTerminal method."
+        }
+    }
+}

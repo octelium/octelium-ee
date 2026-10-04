@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/StartWorkspaceResponse",
+    "definitions": {
+        "StartWorkspaceResponse": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Start Workspace Response",
+            "description": "StartWorkspaceResponse is the response of the StartWorkspace method. It is intentionally empty since the start itself is asynchronous."
+        }
+    }
+}

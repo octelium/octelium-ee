@@ -84,6 +84,7 @@ func Phases() []suite.Phase {
 		{Name: "RscStoreReconciliation", Run: testRscStoreReconciliation},
 		{Name: "RscStoreResourceReplacement", Run: testRscStoreResourceReplacement},
 		{Name: "RscStoreAccessResources", Run: testRscStoreAccessResources},
+		{Name: "RscStoreCordiumResources", Run: testRscStoreCordiumResources},
 		{Name: "RscStoreSecretRedaction", Run: testRscStoreSecretRedaction},
 		{Name: "VisibilityScoping", Run: testVisibilityScoping},
 

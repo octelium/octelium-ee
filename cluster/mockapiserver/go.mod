@@ -11,7 +11,7 @@ require (
 	github.com/octelium/octelium/cluster/authserver v0.0.0-20261003070331-0fe86d9363da
 	github.com/octelium/octelium/cluster/common v0.0.0-20261003070331-0fe86d9363da
 	github.com/octelium/octelium/cluster/octovigil v0.0.0-20261003070331-0fe86d9363da // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261003070331-0fe86d9363da // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261003070331-0fe86d9363da
 	github.com/octelium/octelium/pkg v0.0.0-20261003070331-0fe86d9363da
 	go.uber.org/zap v1.28.0
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20241231184526-a9ab2273dd10 // indirect
@@ -22,7 +22,6 @@ require (
 	github.com/octelium/octelium-ee/cluster/apiserver v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-20250516172457-ae6f09fa68bf
 	github.com/octelium/octelium-ee/cluster/policyportal v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium-ee/cluster/rscserver v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/cluster/rscstore v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.12.1
 	k8s.io/api v0.37.0

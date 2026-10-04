@@ -47,6 +47,10 @@ const (
 	colSpecServiceName       = "spec_service_name"
 	colSpecCatalogUID        = "spec_catalog_uid"
 	colSpecCatalogName       = "spec_catalog_name"
+	colSpecRole              = "spec_role"
+	colSpecIsEphemeral       = "spec_is_ephemeral"
+	colSpecAutoStop          = "spec_auto_stop"
+	colSpecDisableSSH        = "spec_disable_ssh"
 
 	colStatusKeys           = "status_keys"
 	colStatusType           = "status_type"
@@ -79,6 +83,19 @@ const (
 	colStatusAppliedRevision  = "status_applied_revision"
 	colStatusCapabilities     = "status_capabilities"
 
+	colStatusIsBuild             = "status_is_build"
+	colStatusSpaceType           = "status_space_type"
+	colStatusStoppingReason      = "status_stopping_reason"
+	colStatusRunKeys             = "status_run_keys"
+	colStatusSharedPortModes     = "status_shared_port_modes"
+	colStatusCPUMillicores       = "status_cpu_millicores"
+	colStatusMemoryMegabytes     = "status_memory_megabytes"
+	colStatusStorageMegabytes    = "status_storage_megabytes"
+	colStatusLatestBuildState    = "status_latest_build_state"
+	colStatusReadyBuildID        = "status_ready_build_id"
+	colStatusRunningBuildID      = "status_running_build_id"
+	colStatusExtCordiumIsEnabled = "status_ext_cordium_is_enabled"
+
 	colUserUID               = "user_uid"
 	colUserName              = "user_name"
 	colDeviceUID             = "device_uid"
@@ -105,6 +122,14 @@ const (
 	colDirectoryProviderName = "directory_provider_name"
 	colCertificateIssuerUID  = "certificate_issuer_uid"
 	colCertificateIssuerName = "certificate_issuer_name"
+	colSessionUID            = "session_uid"
+	colSessionName           = "session_name"
+	colSpaceUID              = "space_uid"
+	colSpaceName             = "space_name"
+	colTemplateUID           = "template_uid"
+	colTemplateName          = "template_name"
+	colGitProviderUID        = "git_provider_uid"
+	colGitProviderName       = "git_provider_name"
 )
 
 const (
@@ -186,6 +211,10 @@ func getResourceColumns() []*resourceColumn {
 		{name: colSpecServiceName, kind: kindVarchar, path: "$.spec.resource.serviceRef.name"},
 		{name: colSpecCatalogUID, kind: kindVarchar, path: "$.spec.resource.catalog.catalogRef.uid"},
 		{name: colSpecCatalogName, kind: kindVarchar, path: "$.spec.resource.catalog.catalogRef.name"},
+		{name: colSpecRole, kind: kindVarchar, path: "$.spec.role"},
+		{name: colSpecIsEphemeral, kind: kindBoolean, path: "$.spec.isEphemeral"},
+		{name: colSpecAutoStop, kind: kindBoolean, path: "$.spec.runtime.autoStop"},
+		{name: colSpecDisableSSH, kind: kindBoolean, path: "$.spec.authorization.disableSSH"},
 
 		{name: colStatusType, kind: kindVarchar, path: "$.status.type"},
 		{name: colStatusState, kind: kindVarchar, path: "$.status.state"},
@@ -215,6 +244,16 @@ func getResourceColumns() []*resourceColumn {
 		{name: colStatusExternalTenantID, kind: kindVarchar, path: "$.status.externalTenantID"},
 		{name: colStatusDesiredRevision, kind: kindVarchar, path: "$.status.desiredRevision"},
 		{name: colStatusAppliedRevision, kind: kindVarchar, path: "$.status.appliedRevision"},
+		{name: colStatusIsBuild, kind: kindBoolean, path: "$.status.isBuild"},
+		{name: colStatusSpaceType, kind: kindVarchar, path: "$.status.spaceType"},
+		{name: colStatusStoppingReason, kind: kindVarchar, path: "$.status.stoppingReason"},
+		{name: colStatusCPUMillicores, kind: kindBigint, path: "$.status.limit.cpu.millicores"},
+		{name: colStatusMemoryMegabytes, kind: kindBigint, path: "$.status.limit.memory.megabytes"},
+		{name: colStatusStorageMegabytes, kind: kindBigint, path: "$.status.limit.storage.megabytes"},
+		{name: colStatusLatestBuildState, kind: kindVarchar, path: "$.status.buildInfo.builds[0].state"},
+		{name: colStatusReadyBuildID, kind: kindVarchar, path: "$.status.buildInfo.currentReadyBuildID"},
+		{name: colStatusRunningBuildID, kind: kindVarchar, path: "$.status.buildInfo.currentRunningBuildID"},
+		{name: colStatusExtCordiumIsEnabled, kind: kindBoolean, path: "$.status.ext.cordium.isEnabled"},
 
 		{name: colUserUID, kind: kindVarchar, path: "$.status.userRef.uid"},
 		{name: colUserName, kind: kindVarchar, path: "$.status.userRef.name"},
@@ -242,9 +281,18 @@ func getResourceColumns() []*resourceColumn {
 		{name: colDirectoryProviderName, kind: kindVarchar, path: "$.status.directoryProviderRef.name"},
 		{name: colCertificateIssuerUID, kind: kindVarchar, path: "$.status.certificateIssuerRef.uid"},
 		{name: colCertificateIssuerName, kind: kindVarchar, path: "$.status.certificateIssuerRef.name"},
+		{name: colSessionUID, kind: kindVarchar, path: "$.status.sessionRef.uid"},
+		{name: colSessionName, kind: kindVarchar, path: "$.status.sessionRef.name"},
+		{name: colSpaceUID, kind: kindVarchar, path: "$.status.spaceRef.uid"},
+		{name: colSpaceName, kind: kindVarchar, path: "$.status.spaceRef.name"},
+		{name: colTemplateUID, kind: kindVarchar, path: "$.status.templateRef.uid"},
+		{name: colTemplateName, kind: kindVarchar, path: "$.status.templateRef.name"},
+		{name: colGitProviderUID, kind: kindVarchar, path: "$.status.gitProviderRef.uid"},
+		{name: colGitProviderName, kind: kindVarchar, path: "$.status.gitProviderRef.name"},
 
 		{name: colTags, kind: kindVarcharList, path: "$.metadata.tags"},
 		{name: colStatusCapabilities, kind: kindVarcharList, path: "$.status.capabilities"},
+		{name: colStatusSharedPortModes, kind: kindVarcharList, path: "$.status.sharedPorts[*].mode"},
 		{name: colSpecGroups, kind: kindVarcharList, path: "$.spec.groups"},
 		{name: colSpecServices, kind: kindVarcharList,
 			path: "$.spec.resourceCollection.service.services"},
@@ -253,6 +301,7 @@ func getResourceColumns() []*resourceColumn {
 
 		{name: colSpecKeys, kind: kindKeys, path: "$.spec"},
 		{name: colStatusKeys, kind: kindKeys, path: "$.status"},
+		{name: colStatusRunKeys, kind: kindKeys, path: "$.status.run"},
 	}
 }
 

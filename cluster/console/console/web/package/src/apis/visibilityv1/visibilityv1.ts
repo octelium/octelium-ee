@@ -20,6 +20,14 @@ import { UnknownFieldHandler } from "@protobuf-ts/runtime";
 import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
+import { GetRegionSummaryResponse as GetRegionSummaryResponse$ } from "./cordium/vcordiumv1";
+import { GetUserSecretSummaryResponse } from "./cordium/vcordiumv1";
+import { GetSecretSummaryResponse as GetSecretSummaryResponse$3 } from "./cordium/vcordiumv1";
+import { GetGitProviderSummaryResponse } from "./cordium/vcordiumv1";
+import { GetMembershipSummaryResponse } from "./cordium/vcordiumv1";
+import { GetSpaceSummaryResponse } from "./cordium/vcordiumv1";
+import { GetTemplateSummaryResponse } from "./cordium/vcordiumv1";
+import { GetWorkspaceSummaryResponse } from "./cordium/vcordiumv1";
 import { GetDeviceManagerSummaryResponse } from "./enterprise/venterprisev1";
 import { GetDirectoryProviderGroupSummaryResponse } from "./enterprise/venterprisev1";
 import { GetDirectoryProviderUserSummaryResponse } from "./enterprise/venterprisev1";
@@ -2759,7 +2767,39 @@ export enum GetClusterSummaryRequest_Kind {
     /**
      * @generated from protobuf enum value: ACCESS_INTEGRATION_BINDING = 31;
      */
-    ACCESS_INTEGRATION_BINDING = 31
+    ACCESS_INTEGRATION_BINDING = 31,
+    /**
+     * @generated from protobuf enum value: CORDIUM_WORKSPACE = 32;
+     */
+    CORDIUM_WORKSPACE = 32,
+    /**
+     * @generated from protobuf enum value: CORDIUM_TEMPLATE = 33;
+     */
+    CORDIUM_TEMPLATE = 33,
+    /**
+     * @generated from protobuf enum value: CORDIUM_SPACE = 34;
+     */
+    CORDIUM_SPACE = 34,
+    /**
+     * @generated from protobuf enum value: CORDIUM_MEMBERSHIP = 35;
+     */
+    CORDIUM_MEMBERSHIP = 35,
+    /**
+     * @generated from protobuf enum value: CORDIUM_GIT_PROVIDER = 36;
+     */
+    CORDIUM_GIT_PROVIDER = 36,
+    /**
+     * @generated from protobuf enum value: CORDIUM_SECRET = 37;
+     */
+    CORDIUM_SECRET = 37,
+    /**
+     * @generated from protobuf enum value: CORDIUM_USER_SECRET = 38;
+     */
+    CORDIUM_USER_SECRET = 38,
+    /**
+     * @generated from protobuf enum value: CORDIUM_REGION = 39;
+     */
+    CORDIUM_REGION = 39
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetClusterSummaryResponse
@@ -2784,6 +2824,10 @@ export interface GetClusterSummaryResponse {
      * @generated from protobuf field: repeated octelium.api.main.visibility.v1.GetClusterSummaryResponse.Unavailable unavailables = 4
      */
     unavailables: GetClusterSummaryResponse_Unavailable[];
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium cordium = 5
+     */
+    cordium?: GetClusterSummaryResponse_Cordium;
 }
 /**
  * Core holds the summaries of the core API resources.
@@ -2929,6 +2973,45 @@ export interface GetClusterSummaryResponse_Enterprise {
      * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse deviceManager = 10
      */
     deviceManager?: GetDeviceManagerSummaryResponse;
+}
+/**
+ * Cordium holds the summaries of the cordium API resources.
+ *
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium
+ */
+export interface GetClusterSummaryResponse_Cordium {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.cordium.v1.GetWorkspaceSummaryResponse workspace = 1
+     */
+    workspace?: GetWorkspaceSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.cordium.v1.GetTemplateSummaryResponse template = 2
+     */
+    template?: GetTemplateSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.cordium.v1.GetSpaceSummaryResponse space = 3
+     */
+    space?: GetSpaceSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.cordium.v1.GetMembershipSummaryResponse membership = 4
+     */
+    membership?: GetMembershipSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.cordium.v1.GetGitProviderSummaryResponse gitProvider = 5
+     */
+    gitProvider?: GetGitProviderSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.cordium.v1.GetSecretSummaryResponse secret = 6
+     */
+    secret?: GetSecretSummaryResponse$3;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.cordium.v1.GetUserSecretSummaryResponse userSecret = 7
+     */
+    userSecret?: GetUserSecretSummaryResponse;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.cordium.v1.GetRegionSummaryResponse region = 8
+     */
+    region?: GetRegionSummaryResponse$;
 }
 /**
  * Unavailable is a kind whose summary could not be obtained.
@@ -9716,7 +9799,8 @@ class GetClusterSummaryResponse$Type extends MessageType<GetClusterSummaryRespon
             { no: 1, name: "core", kind: "message", T: () => GetClusterSummaryResponse_Core },
             { no: 2, name: "access", kind: "message", T: () => GetClusterSummaryResponse_Access },
             { no: 3, name: "enterprise", kind: "message", T: () => GetClusterSummaryResponse_Enterprise },
-            { no: 4, name: "unavailables", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetClusterSummaryResponse_Unavailable }
+            { no: 4, name: "unavailables", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetClusterSummaryResponse_Unavailable },
+            { no: 5, name: "cordium", kind: "message", T: () => GetClusterSummaryResponse_Cordium }
         ]);
     }
     create(value?: PartialMessage<GetClusterSummaryResponse>): GetClusterSummaryResponse {
@@ -9743,6 +9827,9 @@ class GetClusterSummaryResponse$Type extends MessageType<GetClusterSummaryRespon
                 case /* repeated octelium.api.main.visibility.v1.GetClusterSummaryResponse.Unavailable unavailables */ 4:
                     message.unavailables.push(GetClusterSummaryResponse_Unavailable.internalBinaryRead(reader, reader.uint32(), options));
                     break;
+                case /* octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium cordium */ 5:
+                    message.cordium = GetClusterSummaryResponse_Cordium.internalBinaryRead(reader, reader.uint32(), options, message.cordium);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -9767,6 +9854,9 @@ class GetClusterSummaryResponse$Type extends MessageType<GetClusterSummaryRespon
         /* repeated octelium.api.main.visibility.v1.GetClusterSummaryResponse.Unavailable unavailables = 4; */
         for (let i = 0; i < message.unavailables.length; i++)
             GetClusterSummaryResponse_Unavailable.internalBinaryWrite(message.unavailables[i], writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium cordium = 5; */
+        if (message.cordium)
+            GetClusterSummaryResponse_Cordium.internalBinaryWrite(message.cordium, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -10111,6 +10201,101 @@ class GetClusterSummaryResponse_Enterprise$Type extends MessageType<GetClusterSu
  * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise
  */
 export const GetClusterSummaryResponse_Enterprise = new GetClusterSummaryResponse_Enterprise$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterSummaryResponse_Cordium$Type extends MessageType<GetClusterSummaryResponse_Cordium> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium", [
+            { no: 1, name: "workspace", kind: "message", T: () => GetWorkspaceSummaryResponse },
+            { no: 2, name: "template", kind: "message", T: () => GetTemplateSummaryResponse },
+            { no: 3, name: "space", kind: "message", T: () => GetSpaceSummaryResponse },
+            { no: 4, name: "membership", kind: "message", T: () => GetMembershipSummaryResponse },
+            { no: 5, name: "gitProvider", kind: "message", T: () => GetGitProviderSummaryResponse },
+            { no: 6, name: "secret", kind: "message", T: () => GetSecretSummaryResponse$3 },
+            { no: 7, name: "userSecret", kind: "message", T: () => GetUserSecretSummaryResponse },
+            { no: 8, name: "region", kind: "message", T: () => GetRegionSummaryResponse$ }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterSummaryResponse_Cordium>): GetClusterSummaryResponse_Cordium {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterSummaryResponse_Cordium>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterSummaryResponse_Cordium): GetClusterSummaryResponse_Cordium {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.cordium.v1.GetWorkspaceSummaryResponse workspace */ 1:
+                    message.workspace = GetWorkspaceSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.workspace);
+                    break;
+                case /* octelium.api.main.visibility.cordium.v1.GetTemplateSummaryResponse template */ 2:
+                    message.template = GetTemplateSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.template);
+                    break;
+                case /* octelium.api.main.visibility.cordium.v1.GetSpaceSummaryResponse space */ 3:
+                    message.space = GetSpaceSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.space);
+                    break;
+                case /* octelium.api.main.visibility.cordium.v1.GetMembershipSummaryResponse membership */ 4:
+                    message.membership = GetMembershipSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.membership);
+                    break;
+                case /* octelium.api.main.visibility.cordium.v1.GetGitProviderSummaryResponse gitProvider */ 5:
+                    message.gitProvider = GetGitProviderSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.gitProvider);
+                    break;
+                case /* octelium.api.main.visibility.cordium.v1.GetSecretSummaryResponse secret */ 6:
+                    message.secret = GetSecretSummaryResponse$3.internalBinaryRead(reader, reader.uint32(), options, message.secret);
+                    break;
+                case /* octelium.api.main.visibility.cordium.v1.GetUserSecretSummaryResponse userSecret */ 7:
+                    message.userSecret = GetUserSecretSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.userSecret);
+                    break;
+                case /* octelium.api.main.visibility.cordium.v1.GetRegionSummaryResponse region */ 8:
+                    message.region = GetRegionSummaryResponse$.internalBinaryRead(reader, reader.uint32(), options, message.region);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterSummaryResponse_Cordium, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.cordium.v1.GetWorkspaceSummaryResponse workspace = 1; */
+        if (message.workspace)
+            GetWorkspaceSummaryResponse.internalBinaryWrite(message.workspace, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.cordium.v1.GetTemplateSummaryResponse template = 2; */
+        if (message.template)
+            GetTemplateSummaryResponse.internalBinaryWrite(message.template, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.cordium.v1.GetSpaceSummaryResponse space = 3; */
+        if (message.space)
+            GetSpaceSummaryResponse.internalBinaryWrite(message.space, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.cordium.v1.GetMembershipSummaryResponse membership = 4; */
+        if (message.membership)
+            GetMembershipSummaryResponse.internalBinaryWrite(message.membership, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.cordium.v1.GetGitProviderSummaryResponse gitProvider = 5; */
+        if (message.gitProvider)
+            GetGitProviderSummaryResponse.internalBinaryWrite(message.gitProvider, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.cordium.v1.GetSecretSummaryResponse secret = 6; */
+        if (message.secret)
+            GetSecretSummaryResponse$3.internalBinaryWrite(message.secret, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.cordium.v1.GetUserSecretSummaryResponse userSecret = 7; */
+        if (message.userSecret)
+            GetUserSecretSummaryResponse.internalBinaryWrite(message.userSecret, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.cordium.v1.GetRegionSummaryResponse region = 8; */
+        if (message.region)
+            GetRegionSummaryResponse$.internalBinaryWrite(message.region, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium
+ */
+export const GetClusterSummaryResponse_Cordium = new GetClusterSummaryResponse_Cordium$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class GetClusterSummaryResponse_Unavailable$Type extends MessageType<GetClusterSummaryResponse_Unavailable> {
     constructor() {

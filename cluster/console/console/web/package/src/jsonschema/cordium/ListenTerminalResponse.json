@@ -1,0 +1,107 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ListenTerminalResponse",
+    "definitions": {
+        "ListenTerminalResponse": {
+            "properties": {
+                "stdout": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.ListenTerminalResponse.Stdout",
+                    "additionalProperties": false,
+                    "description": "Stdout is a chunk of the terminal's output."
+                },
+                "windowSize": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.ListenTerminalResponse.WindowSize",
+                    "additionalProperties": false,
+                    "description": "WindowSize is a resize event of the terminal's window."
+                },
+                "close": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.ListenTerminalResponse.Close",
+                    "additionalProperties": false,
+                    "description": "Close means that the terminal was closed."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "stdout"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "windowSize"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "close"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "stdout"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "windowSize"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "close"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Listen Terminal Response",
+            "description": "ListenTerminalResponse is a single event of the ListenTerminal stream."
+        },
+        "octelium.api.main.cordium.v1.ListenTerminalResponse.Close": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Close",
+            "description": "Close means that the terminal was closed."
+        },
+        "octelium.api.main.cordium.v1.ListenTerminalResponse.Stdout": {
+            "properties": {
+                "data": {
+                    "type": "string",
+                    "description": "Data is the raw output data.",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Stdout",
+            "description": "Stdout is a chunk of the terminal's output."
+        },
+        "octelium.api.main.cordium.v1.ListenTerminalResponse.WindowSize": {
+            "properties": {
+                "cols": {
+                    "type": "integer",
+                    "description": "Cols is the number of the columns of the terminal's window."
+                },
+                "rows": {
+                    "type": "integer",
+                    "description": "Rows is the number of the rows of the terminal's window."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Window Size",
+            "description": "WindowSize is a resize event of the terminal's window."
+        }
+    }
+}

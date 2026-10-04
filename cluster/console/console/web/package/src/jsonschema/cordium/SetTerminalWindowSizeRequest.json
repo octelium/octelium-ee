@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/SetTerminalWindowSizeRequest",
+    "definitions": {
+        "SetTerminalWindowSizeRequest": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the identifier of the terminal to be resized."
+                },
+                "cols": {
+                    "type": "integer",
+                    "description": "Cols is the new number of the columns of the terminal's window."
+                },
+                "rows": {
+                    "type": "integer",
+                    "description": "Rows is the new number of the rows of the terminal's window."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Set Terminal Window Size Request",
+            "description": "SetTerminalWindowSizeRequest is the request of the SetTerminalWindowSize method."
+        }
+    }
+}

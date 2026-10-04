@@ -11,18 +11,21 @@ package suite
 import (
 	"cmp"
 	"context"
+	"fmt"
 	"slices"
 	"testing"
 	"time"
 
 	eeharness "github.com/octelium/octelium-ee/cluster/e2e/harness"
 	"github.com/octelium/octelium/apis/main/accessv1"
+	"github.com/octelium/octelium/apis/main/cordiumv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/userv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vcordiumv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
@@ -596,6 +599,89 @@ func testRscStoreAccessResources(t *testing.T, ch *harness.H) {
 	require.Nil(t, err)
 	waitVisibilityRequestState(t, h, req,
 		accessv1.Request_Status_State_STATUS_UNKNOWN, false)
+}
+
+func testRscStoreCordiumResources(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+
+	ctx := t.Context()
+
+	if !h.IsCordiumInstalled(t) {
+		t.Skip("Cordium is not installed in this Cluster")
+	}
+
+	actor := h.NewActorWithAuthorization(t, &corev1.User_Spec_Authorization{
+		InlinePolicies: eeharness.APIPolicy("cordium-api", eeharness.CordiumMainService),
+	})
+	cordiumC := h.CordiumC(actor.Conn)
+
+	spc, err := cordiumC.CreateSpace(ctx, &cordiumv1.Space{
+		Metadata: &metav1.Metadata{
+			Name: fmt.Sprintf("%s.%s", h.Name(), actor.User.Metadata.Name),
+		},
+		Spec: &cordiumv1.Space_Spec{},
+	})
+	require.Nil(t, err)
+
+	t.Cleanup(func() {
+		cordiumC.DeleteSpace(context.Background(), &metav1.DeleteOptions{Uid: spc.Metadata.Uid})
+	})
+
+	waitVisibilitySpace(t, h, spc, true)
+
+	t.Run("Summary", func(t *testing.T) {
+		res, err := h.VisibilityCordiumC().GetSpaceSummary(ctx, &vcordiumv1.GetSpaceSummaryRequest{})
+		require.Nil(t, err)
+		assert.True(t, res.TotalNumber > 0)
+		assert.True(t, res.TotalUserSpace > 0)
+	})
+
+	t.Run("EnabledRegions", func(t *testing.T) {
+		res, err := h.VisibilityCordiumC().ListRegion(ctx, &vcordiumv1.ListRegionOptions{
+			IsEnabled: true,
+		})
+		require.Nil(t, err)
+		require.NotEmpty(t, res.Items)
+		assert.Equal(t, "cordium/v1", res.Items[0].ApiVersion)
+
+		summary, err := h.VisibilityCordiumC().GetRegionSummary(ctx, &vcordiumv1.GetRegionSummaryRequest{})
+		require.Nil(t, err)
+		assert.EqualValues(t, len(res.Items), summary.TotalEnabled)
+	})
+
+	t.Run("Delete", func(t *testing.T) {
+		_, err := cordiumC.DeleteSpace(ctx, &metav1.DeleteOptions{Uid: spc.Metadata.Uid})
+		require.Nil(t, err)
+
+		waitVisibilitySpace(t, h, spc, false)
+	})
+}
+
+func waitVisibilitySpace(t *testing.T, h *eeharness.H, spc *cordiumv1.Space, want bool) {
+	t.Helper()
+
+	what := "the visibility mirror to carry the Space"
+	if !want {
+		what = "the visibility mirror to drop the Space"
+	}
+
+	h.Eventually(t, what, eeharness.IngestionBudget, func(ctx context.Context) error {
+		res, err := h.VisibilityCordiumC().ListSpace(ctx, &vcordiumv1.ListSpaceOptions{
+			UserRef: spc.Status.UserRef,
+		})
+		if err != nil {
+			return err
+		}
+
+		got := slices.ContainsFunc(res.Items, func(itm *cordiumv1.Space) bool {
+			return itm.Metadata.Uid == spc.Metadata.Uid
+		})
+		if got != want {
+			return errors.Errorf("the Space mirror presence is %v, want %v", got, want)
+		}
+
+		return nil
+	})
 }
 
 func waitVisibilityRequestState(t *testing.T, h *eeharness.H, req *accessv1.Request,

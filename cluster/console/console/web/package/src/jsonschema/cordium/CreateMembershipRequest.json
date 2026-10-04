@@ -1,0 +1,99 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/CreateMembershipRequest",
+    "definitions": {
+        "CreateMembershipRequest": {
+            "properties": {
+                "role": {
+                    "enum": [
+                        "UNKNOWN",
+                        "OWNER",
+                        "ADMIN",
+                        "USER"
+                    ],
+                    "type": "string",
+                    "title": "Role",
+                    "description": "Role is the level of access that the new Member has inside the Space. It mirrors the Membership's own Role"
+                },
+                "spaceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "SpaceRef is the reference of the Space to add the Member to."
+                },
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "UserRef is the reference of the Octelium User to be added."
+                },
+                "email": {
+                    "type": "string",
+                    "description": "Email is the email address of the Octelium User to be added. The User must already exist in the Cluster."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "userRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "email"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "userRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "email"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Create Membership Request",
+            "description": "CreateMembershipRequest is the request of the CreateMembership method."
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
+        }
+    }
+}

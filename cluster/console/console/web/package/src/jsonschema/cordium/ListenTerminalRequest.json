@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ListenTerminalRequest",
+    "definitions": {
+        "ListenTerminalRequest": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the identifier of the terminal to listen to."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Listen Terminal Request",
+            "description": "ListenTerminalRequest is the request of the ListenTerminal method."
+        }
+    }
+}

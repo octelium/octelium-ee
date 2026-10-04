@@ -20,6 +20,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	pb "github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vcordiumv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
@@ -44,6 +45,7 @@ type ServerCluster struct {
 	coreC         vcorev1.ResourceServiceClient
 	accessC       vaccessv1.ResourceServiceClient
 	enterpriseC   venterprisev1.ResourceServiceClient
+	cordiumC      vcordiumv1.ResourceServiceClient
 	componentLogC pb.ComponentLogServiceClient
 	accessLogC    pb.AccessLogServiceClient
 }
@@ -84,6 +86,7 @@ func NewServerCluster(ctx context.Context, octeliumC octeliumc.ClientInterface) 
 		coreC:         vcorev1.NewResourceServiceClient(rscStoreConn),
 		accessC:       vaccessv1.NewResourceServiceClient(rscStoreConn),
 		enterpriseC:   venterprisev1.NewResourceServiceClient(rscStoreConn),
+		cordiumC:      vcordiumv1.NewResourceServiceClient(rscStoreConn),
 		componentLogC: pb.NewComponentLogServiceClient(logStoreConn),
 		accessLogC:    pb.NewAccessLogServiceClient(logStoreConn),
 	}, nil
@@ -360,6 +363,78 @@ func (s *ServerCluster) getSummaryTasks() []*summaryTask {
 				return err
 			},
 		},
+		{
+			kind: pb.GetClusterSummaryRequest_CORDIUM_WORKSPACE,
+			fn: func(ctx context.Context, common *vmetav1.CommonSummaryOptions, ret *pb.GetClusterSummaryResponse) error {
+				res, err := s.cordiumC.GetWorkspaceSummary(ctx,
+					&vcordiumv1.GetWorkspaceSummaryRequest{Common: common})
+				ret.Cordium.Workspace = res
+				return err
+			},
+		},
+		{
+			kind: pb.GetClusterSummaryRequest_CORDIUM_TEMPLATE,
+			fn: func(ctx context.Context, common *vmetav1.CommonSummaryOptions, ret *pb.GetClusterSummaryResponse) error {
+				res, err := s.cordiumC.GetTemplateSummary(ctx,
+					&vcordiumv1.GetTemplateSummaryRequest{Common: common})
+				ret.Cordium.Template = res
+				return err
+			},
+		},
+		{
+			kind: pb.GetClusterSummaryRequest_CORDIUM_SPACE,
+			fn: func(ctx context.Context, common *vmetav1.CommonSummaryOptions, ret *pb.GetClusterSummaryResponse) error {
+				res, err := s.cordiumC.GetSpaceSummary(ctx,
+					&vcordiumv1.GetSpaceSummaryRequest{Common: common})
+				ret.Cordium.Space = res
+				return err
+			},
+		},
+		{
+			kind: pb.GetClusterSummaryRequest_CORDIUM_MEMBERSHIP,
+			fn: func(ctx context.Context, common *vmetav1.CommonSummaryOptions, ret *pb.GetClusterSummaryResponse) error {
+				res, err := s.cordiumC.GetMembershipSummary(ctx,
+					&vcordiumv1.GetMembershipSummaryRequest{Common: common})
+				ret.Cordium.Membership = res
+				return err
+			},
+		},
+		{
+			kind: pb.GetClusterSummaryRequest_CORDIUM_GIT_PROVIDER,
+			fn: func(ctx context.Context, common *vmetav1.CommonSummaryOptions, ret *pb.GetClusterSummaryResponse) error {
+				res, err := s.cordiumC.GetGitProviderSummary(ctx,
+					&vcordiumv1.GetGitProviderSummaryRequest{Common: common})
+				ret.Cordium.GitProvider = res
+				return err
+			},
+		},
+		{
+			kind: pb.GetClusterSummaryRequest_CORDIUM_SECRET,
+			fn: func(ctx context.Context, common *vmetav1.CommonSummaryOptions, ret *pb.GetClusterSummaryResponse) error {
+				res, err := s.cordiumC.GetSecretSummary(ctx,
+					&vcordiumv1.GetSecretSummaryRequest{Common: common})
+				ret.Cordium.Secret = res
+				return err
+			},
+		},
+		{
+			kind: pb.GetClusterSummaryRequest_CORDIUM_USER_SECRET,
+			fn: func(ctx context.Context, common *vmetav1.CommonSummaryOptions, ret *pb.GetClusterSummaryResponse) error {
+				res, err := s.cordiumC.GetUserSecretSummary(ctx,
+					&vcordiumv1.GetUserSecretSummaryRequest{Common: common})
+				ret.Cordium.UserSecret = res
+				return err
+			},
+		},
+		{
+			kind: pb.GetClusterSummaryRequest_CORDIUM_REGION,
+			fn: func(ctx context.Context, common *vmetav1.CommonSummaryOptions, ret *pb.GetClusterSummaryResponse) error {
+				res, err := s.cordiumC.GetRegionSummary(ctx,
+					&vcordiumv1.GetRegionSummaryRequest{Common: common})
+				ret.Cordium.Region = res
+				return err
+			},
+		},
 	}
 }
 
@@ -370,6 +445,7 @@ func (s *ServerCluster) GetClusterSummary(ctx context.Context,
 		Core:       &pb.GetClusterSummaryResponse_Core{},
 		Access:     &pb.GetClusterSummaryResponse_Access{},
 		Enterprise: &pb.GetClusterSummaryResponse_Enterprise{},
+		Cordium:    &pb.GetClusterSummaryResponse_Cordium{},
 	}
 
 	wanted := make(map[pb.GetClusterSummaryRequest_Kind]bool, len(req.GetKinds()))

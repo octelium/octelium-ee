@@ -8,6 +8,7 @@ import {
 import { ResourceComponentInfo } from "./types";
 
 import { resourceList as resourceListAccess } from "../access/router";
+import { resourceList as resourceListCordium } from "../cordium/router";
 import { resourceList as resourceListCore } from "../core/router";
 import { resourceList as resourceListEnterprise } from "../enterprise/router";
 
@@ -31,6 +32,7 @@ export const getResourceListByAPI = (): Record<
       core: resourceListCore,
       enterprise: resourceListEnterprise,
       access: resourceListAccess,
+      cordium: resourceListCordium,
     };
   }
   return byAPICache;
@@ -39,7 +41,12 @@ export const getResourceListByAPI = (): Record<
 export const getAllResourceComponents = (): ResourceComponentInfo[] => {
   if (!listCache) {
     const byAPI = getResourceListByAPI();
-    listCache = [...byAPI.core, ...byAPI.enterprise, ...byAPI.access];
+    listCache = [
+      ...byAPI.core,
+      ...byAPI.enterprise,
+      ...byAPI.access,
+      ...byAPI.cordium,
+    ];
   }
   return listCache;
 };

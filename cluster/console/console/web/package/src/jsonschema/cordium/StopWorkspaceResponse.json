@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/StopWorkspaceResponse",
+    "definitions": {
+        "StopWorkspaceResponse": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Stop Workspace Response",
+            "description": "StopWorkspaceResponse is the response of the StopWorkspace method. It is intentionally empty since the stoppage itself is asynchronous."
+        }
+    }
+}

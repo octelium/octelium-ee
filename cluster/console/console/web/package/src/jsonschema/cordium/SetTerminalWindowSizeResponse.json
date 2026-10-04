@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/SetTerminalWindowSizeResponse",
+    "definitions": {
+        "SetTerminalWindowSizeResponse": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Set Terminal Window Size Response",
+            "description": "SetTerminalWindowSizeResponse is the response of the SetTerminalWindowSize method. It is intentionally empty."
+        }
+    }
+}

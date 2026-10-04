@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ShareWorkspacePortResponse",
+    "definitions": {
+        "ShareWorkspacePortResponse": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Share Workspace Port Response",
+            "description": "ShareWorkspacePortResponse is the response of the ShareWorkspacePort method. It is intentionally empty."
+        }
+    }
+}

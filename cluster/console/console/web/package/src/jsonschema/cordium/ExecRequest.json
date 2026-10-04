@@ -1,0 +1,172 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ExecRequest",
+    "definitions": {
+        "ExecRequest": {
+            "properties": {
+                "request": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.ExecRequest.Request",
+                    "additionalProperties": false,
+                    "description": "Request initializes the execution. It must be the first message of the stream."
+                },
+                "writeData": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.ExecRequest.WriteData",
+                    "additionalProperties": false,
+                    "description": "WriteData writes data to the command's standard input."
+                },
+                "kill": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.ExecRequest.Kill",
+                    "additionalProperties": false,
+                    "description": "Kill terminates the running command."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "request"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "writeData"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "kill"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "request"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "writeData"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "kill"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Exec Request",
+            "description": "ExecRequest is a client message of the Exec bidirectional stream. The first message of the stream must carry a `request`."
+        },
+        "octelium.api.main.cordium.v1.ExecRequest.Kill": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Kill",
+            "description": "Kill terminates the running command."
+        },
+        "octelium.api.main.cordium.v1.ExecRequest.Request": {
+            "properties": {
+                "workspaceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "WorkspaceRef is the reference of the Workspace in which the command is executed."
+                },
+                "command": {
+                    "type": "string",
+                    "description": "Command is the shell command to be executed."
+                },
+                "workingDir": {
+                    "type": "string",
+                    "description": "WorkingDir is the working directory of the command."
+                },
+                "envVars": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.cordium.v1.ExecRequest.Request.EnvVar"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "EnvVars is the list of the environment variables that are set for the command."
+                },
+                "runAsRoot": {
+                    "type": "boolean",
+                    "description": "RunAsRoot runs the command as `root` instead of as the Workspace User."
+                },
+                "hasStdin": {
+                    "type": "boolean",
+                    "description": "HasStdin means that the client streams stdin to the command via the subsequent writeData messages."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request",
+            "description": "Request initializes the execution. It must be the first message that is sent by the client."
+        },
+        "octelium.api.main.cordium.v1.ExecRequest.Request.EnvVar": {
+            "properties": {
+                "key": {
+                    "type": "string",
+                    "description": "Key is the environment variable's name."
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Value is the environment variable's value."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Env Var",
+            "description": "EnvVar is an environment variable that is set for the executed command."
+        },
+        "octelium.api.main.cordium.v1.ExecRequest.WriteData": {
+            "properties": {
+                "data": {
+                    "type": "string",
+                    "description": "Data is the raw data that is written to the command's standard input.",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Write Data",
+            "description": "WriteData writes data to the command's standard input."
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
+        }
+    }
+}

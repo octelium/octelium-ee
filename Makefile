@@ -118,6 +118,7 @@ gen-go-main:
 	mkdir -p apis/main/visibilityv1/vaccessv1
 	mkdir -p apis/main/visibilityv1/vmetricsv1
 	mkdir -p apis/main/visibilityv1/vllmv1
+	mkdir -p apis/main/visibilityv1/vcordiumv1
 	protoc -I . -I $(PROTO_IN_MAIN)/metav1 metav1.proto \
 		--go_out=apis/main/metav1 --go-grpc_out=apis/main/metav1 $(PROTO_GO_OPT)
 	protoc -I . -I $(PROTO_IN_MAIN)/corev1 corev1.proto \
@@ -156,6 +157,9 @@ gen-go-main:
 
 	protoc -I . -I $(PROTO_IN_MAIN)/visibilityv1/llm vllmv1.proto \
 		--go_out=apis/main/visibilityv1/vllmv1 --go-grpc_out=apis/main/visibilityv1/vllmv1 $(PROTO_GO_OPT_GRPC)
+
+	protoc -I . -I $(PROTO_IN_MAIN)/visibilityv1/cordium vcordiumv1.proto \
+		--go_out=apis/main/visibilityv1/vcordiumv1 --go-grpc_out=apis/main/visibilityv1/vcordiumv1 $(PROTO_GO_OPT_GRPC)
 
 gen-go-cluster:
 	mkdir -p apis/cluster/cclusterv1 apis/cluster/coctovigilv1
@@ -224,6 +228,7 @@ gen-json-schema:
 	mkdir -p tmp/jsonschema/core
 	mkdir -p tmp/jsonschema/enterprise
 	mkdir -p tmp/jsonschema/access
+	mkdir -p tmp/jsonschema/cordium
 	protoc -I . -I $(PROTO_IN_MAIN)/corev1 \
 		--jsonschema_opt=enums_as_strings_only \
 		--jsonschema_opt=disallow_bigints_as_strings \
@@ -243,9 +248,17 @@ gen-json-schema:
 		--jsonschema_opt=disallow_additional_properties \
 		--jsonschema_opt=enforce_oneof \
 		--jsonschema_out=./tmp/jsonschema/access --proto_path=$(PROTO_IN_MAIN)/accessv1
+	protoc -I . -I $(PROTO_IN_MAIN)/corev1 -I $(PROTO_IN_MAIN)/metav1 \
+		-I $(PROTO_IN_MAIN)/cordiumv1 cordiumv1.proto \
+		--jsonschema_opt=enums_as_strings_only \
+		--jsonschema_opt=disallow_bigints_as_strings \
+		--jsonschema_opt=disallow_additional_properties \
+		--jsonschema_opt=enforce_oneof \
+		--jsonschema_out=./tmp/jsonschema/cordium --proto_path=$(PROTO_IN_MAIN)/cordiumv1
 	cp -r ./tmp/jsonschema/core ./cluster/console/console/web/package/src/jsonschema
 	cp -r ./tmp/jsonschema/enterprise ./cluster/console/console/web/package/src/jsonschema
 	cp -r ./tmp/jsonschema/access ./cluster/console/console/web/package/src/jsonschema
+	cp -r ./tmp/jsonschema/cordium ./cluster/console/console/web/package/src/jsonschema
 
 
 tidy:

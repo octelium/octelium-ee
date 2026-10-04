@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/RemoveTerminalRequest",
+    "definitions": {
+        "RemoveTerminalRequest": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the identifier of the terminal to be terminated."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Remove Terminal Request",
+            "description": "RemoveTerminalRequest is the request of the RemoveTerminal method."
+        }
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Terminal",
+    "definitions": {
+        "Terminal": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the terminal's identifier. It is prefixed by the name of the Workspace that owns the terminal (i.e. `\u003cworkspace\u003e-\u003cid\u003e`)."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Terminal",
+            "description": "Terminal is an interactive terminal that is running inside a Workspace."
+        }
+    }
+}

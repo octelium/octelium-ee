@@ -1,0 +1,148 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ClientMessage",
+    "definitions": {
+        "ClientMessage": {
+            "properties": {
+                "writeTerminalDataRequest": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.WriteTerminalDataRequest",
+                    "additionalProperties": false,
+                    "description": "WriteTerminalDataRequest writes data (i.e. stdin) to a terminal."
+                },
+                "setTerminalWindowSizeRequest": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.SetTerminalWindowSizeRequest",
+                    "additionalProperties": false,
+                    "description": "SetTerminalWindowSizeRequest resizes a terminal's window."
+                },
+                "listenTerminalRequest": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.ListenTerminalRequest",
+                    "additionalProperties": false,
+                    "description": "ListenTerminalRequest starts listening to a terminal's output."
+                },
+                "listenTerminalEndRequest": {
+                    "$ref": "#/definitions/octelium.api.main.cordium.v1.ClientMessage.ListenTerminalEndRequest",
+                    "additionalProperties": false,
+                    "description": "ListenTerminalEndRequest stops listening to a terminal's output."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "writeTerminalDataRequest"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "setTerminalWindowSizeRequest"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "listenTerminalRequest"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "listenTerminalEndRequest"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "writeTerminalDataRequest"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "setTerminalWindowSizeRequest"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "listenTerminalRequest"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "listenTerminalEndRequest"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Client Message",
+            "description": "ClientMessage is the envelope of the messages that are sent by the client over the Cordium portal's bidirectional WebSocket connection. It multiplexes the terminal operations of several Workspaces over a single connection."
+        },
+        "octelium.api.main.cordium.v1.ClientMessage.ListenTerminalEndRequest": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the ID of the terminal to stop listening to."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Listen Terminal End Request",
+            "description": "ListenTerminalEndRequest stops listening to a terminal's output without terminating the terminal itself."
+        },
+        "octelium.api.main.cordium.v1.ListenTerminalRequest": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the identifier of the terminal to listen to."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Listen Terminal Request",
+            "description": "ListenTerminalRequest is the request of the ListenTerminal method."
+        },
+        "octelium.api.main.cordium.v1.SetTerminalWindowSizeRequest": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the identifier of the terminal to be resized."
+                },
+                "cols": {
+                    "type": "integer",
+                    "description": "Cols is the new number of the columns of the terminal's window."
+                },
+                "rows": {
+                    "type": "integer",
+                    "description": "Rows is the new number of the rows of the terminal's window."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Set Terminal Window Size Request",
+            "description": "SetTerminalWindowSizeRequest is the request of the SetTerminalWindowSize method."
+        },
+        "octelium.api.main.cordium.v1.WriteTerminalDataRequest": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the identifier of the terminal to write to."
+                },
+                "data": {
+                    "type": "string",
+                    "description": "Data is the raw data (i.e. stdin) that is written to the terminal.",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Write Terminal Data Request",
+            "description": "WriteTerminalDataRequest is the request of the WriteTerminalData method."
+        }
+    }
+}

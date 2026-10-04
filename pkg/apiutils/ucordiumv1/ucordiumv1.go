@@ -28,6 +28,12 @@ const (
 	KindClusterConfig     = "ClusterConfig"
 )
 
+type ResourceObjectRefG interface {
+	*cordiumv1.Workspace | *cordiumv1.WorkspaceSnapshot | *cordiumv1.Volume |
+		*cordiumv1.Secret | *cordiumv1.Template | *cordiumv1.Space | *cordiumv1.Membership |
+		*cordiumv1.GitProvider | *cordiumv1.UserSecret | *cordiumv1.UserConfig | *cordiumv1.ClusterConfig
+}
+
 const API = "cordium"
 const Version = "v1"
 const APIVersion = "cordium/v1"

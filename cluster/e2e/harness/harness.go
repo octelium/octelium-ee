@@ -17,6 +17,7 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vcordiumv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
@@ -89,6 +90,10 @@ func (h *H) VisibilityAccessC() vaccessv1.ResourceServiceClient {
 
 func (h *H) VisibilityEnterpriseC() venterprisev1.ResourceServiceClient {
 	return venterprisev1.NewResourceServiceClient(h.Conn())
+}
+
+func (h *H) VisibilityCordiumC() vcordiumv1.ResourceServiceClient {
+	return vcordiumv1.NewResourceServiceClient(h.Conn())
 }
 
 func (h *H) AccessUserC(conn *grpc.ClientConn) accessv1.UserServiceClient {

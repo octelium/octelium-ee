@@ -16,6 +16,11 @@ const loadAccessRoutes: RouteLoader = () =>
     getChildren(createRouter()),
   );
 
+const loadCordiumRoutes: RouteLoader = () =>
+  import("./cordium/router").then(({ default: createRouter }) =>
+    getChildren(createRouter()),
+  );
+
 const loadCoreRoutes: RouteLoader = () =>
   import("./core/router").then(({ default: createRouter }) =>
     getChildren(createRouter()),
@@ -98,6 +103,10 @@ export default (): RouteObject => {
         element: <LazyRouteGroup load={loadVisibilityRoutes} />,
       },
       { path: "access/*", element: <LazyRouteGroup load={loadAccessRoutes} /> },
+      {
+        path: "cordium/*",
+        element: <LazyRouteGroup load={loadCordiumRoutes} />,
+      },
     ],
   };
 };

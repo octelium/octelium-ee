@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/RemoveTerminalResponse",
+    "definitions": {
+        "RemoveTerminalResponse": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Remove Terminal Response",
+            "description": "RemoveTerminalResponse is the response of the RemoveTerminal method. It is intentionally empty."
+        }
+    }
+}

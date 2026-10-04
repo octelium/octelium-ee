@@ -8,19 +8,24 @@ import {
   ChartNoAxesCombined,
   ChevronDown,
   ClipboardCheck,
+  CodeXml,
+  Container,
   Cpu,
   Crown,
   DoorClosed,
   Eye,
   Fingerprint,
   Folder,
+  GitBranch,
   Globe,
   Globe2,
   Inbox,
   KeyRound,
+  KeySquare,
   LaptopMinimal,
   Layers,
   LayoutDashboard,
+  LayoutTemplate,
   Library,
   Link2,
   LockKeyhole,
@@ -41,6 +46,7 @@ import {
   User,
   UserCheck,
   Users,
+  UsersRound,
 } from "lucide-react";
 
 import { AnimatePresence, motion } from "framer-motion";
@@ -112,6 +118,17 @@ const itemsAccess = [
   { title: "Secrets", url: "/access/secrets", icon: KeyRound },
 ];
 
+const itemsCordium = [
+  { title: "Workspaces", url: "/cordium/workspaces", icon: Container },
+  { title: "Templates", url: "/cordium/templates", icon: LayoutTemplate },
+  { title: "Spaces", url: "/cordium/spaces", icon: Layers },
+  { title: "Memberships", url: "/cordium/memberships", icon: UsersRound },
+  { title: "Git Providers", url: "/cordium/gitproviders", icon: GitBranch },
+  { title: "Secrets", url: "/cordium/secrets", icon: KeyRound },
+  { title: "User Secrets", url: "/cordium/usersecrets", icon: KeySquare },
+  { title: "Regions", url: "/cordium/regions", icon: Globe },
+];
+
 const itemsVisibility = [
   { title: "Access Logs", url: "/visibility/accesslogs", icon: ShieldEllipsis },
   {
@@ -150,6 +167,13 @@ const sections = [
     defaultPath: "/access",
     icon: UserCheck,
     items: itemsAccess,
+  },
+  {
+    label: "Cordium",
+    prefix: "/cordium",
+    defaultPath: "/cordium",
+    icon: CodeXml,
+    items: itemsCordium,
   },
   {
     label: "Cluster Management",

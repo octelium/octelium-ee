@@ -112,6 +112,7 @@ func testClusterSummaryFanOut(t *testing.T, ch *harness.H) {
 	require.NotNil(t, before.Core)
 	require.NotNil(t, before.Access)
 	require.NotNil(t, before.Enterprise)
+	require.NotNil(t, before.Cordium)
 
 	usr := h.CreateWorkloadUser(t, nil)
 	sec := h.CreateEnterpriseSecret(t, utilrand.GetRandomStringCanonical(24))
@@ -123,6 +124,8 @@ func testClusterSummaryFanOut(t *testing.T, ch *harness.H) {
 		assert.NotNil(t, before.Access.Policy)
 		assert.NotNil(t, before.Enterprise.SecretStore)
 		assert.NotNil(t, before.Enterprise.CertificateIssuer)
+		assert.NotNil(t, before.Cordium.Workspace)
+		assert.True(t, before.Cordium.Region.TotalNumber > 0)
 	})
 
 	t.Run("TheCountsFollowTheCreatedResources", func(t *testing.T) {
@@ -164,6 +167,7 @@ func testClusterSummaryFanOut(t *testing.T, ch *harness.H) {
 		assert.Nil(t, res.Core.Service)
 		assert.Nil(t, res.Access.Policy)
 		assert.Nil(t, res.Enterprise.Secret)
+		assert.Nil(t, res.Cordium.Workspace)
 	})
 
 	t.Run("TheHumanAndWorkloadCountsAddUp", func(t *testing.T) {

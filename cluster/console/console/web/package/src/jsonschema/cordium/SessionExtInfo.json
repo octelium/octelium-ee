@@ -1,0 +1,67 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/SessionExtInfo",
+    "definitions": {
+        "SessionExtInfo": {
+            "properties": {
+                "workspaceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "WorkspaceRef is the reference of the Workspace that the Session was created for."
+                },
+                "spaceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "SpaceRef is the reference of the Space that the Workspace belongs to."
+                },
+                "templateRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "TemplateRef is the reference of the Template that the Workspace was created from."
+                },
+                "spaceType": {
+                    "enum": [
+                        "SPACE_TYPE_UNSET",
+                        "USER",
+                        "ORGANIZATION"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the type of the Space"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Ext Info",
+            "description": "SessionExtInfo is the Cordium-specific information that is attached to the dedicated Octelium Session that is created for a Workspace run. It lets the rest of the Octelium Cluster identify which Workspace, Space and Template a given Session belongs to."
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
+        }
+    }
+}

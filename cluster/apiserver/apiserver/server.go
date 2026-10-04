@@ -23,6 +23,7 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vcordiumv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vllmv1"
@@ -107,6 +108,11 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
+	srvVisibilityResourceCordium, err := visibility.NewServerResourceCordium(ctx, octeliumC)
+	if err != nil {
+		return err
+	}
+
 	srvVisibilityMetric, err := visibility.NewServerMetric(ctx, octeliumC)
 	if err != nil {
 		return err
@@ -145,6 +151,7 @@ func Run(ctx context.Context) error {
 	vcorev1.RegisterResourceServiceServer(s, srvVisibilityResource)
 	venterprisev1.RegisterResourceServiceServer(s, srvVisibilityResourceEnterprise)
 	vaccessv1.RegisterResourceServiceServer(s, srvVisibilityResourceAccess)
+	vcordiumv1.RegisterResourceServiceServer(s, srvVisibilityResourceCordium)
 	visibilityv1.RegisterClusterServiceServer(s, srvVisibilityCluster)
 	enterprisev1.RegisterPolicyPortalServiceServer(s, policyPortalSrv)
 	enterprisev1.RegisterClusterServiceServer(s, clusterSrv)

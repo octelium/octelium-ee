@@ -16,13 +16,16 @@ import (
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uaccessv1"
+	"github.com/octelium/octelium-ee/pkg/apiutils/ucordiumv1"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/cluster/caccessv1"
 	"github.com/octelium/octelium/apis/main/accessv1"
+	"github.com/octelium/octelium/apis/main/cordiumv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vcordiumv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
@@ -1488,4 +1491,368 @@ type srvClusterAccess struct {
 
 func (s *srvClusterAccess) ListSubjectUser(ctx context.Context, req *caccessv1.ListSubjectUserRequest) (*corev1.UserList, error) {
 	return s.s.listSubjectUser(ctx, req)
+}
+
+type srvCordium struct {
+	s *Server
+	vcordiumv1.UnimplementedResourceServiceServer
+}
+
+func (s *srvCordium) GetWorkspaceSummary(ctx context.Context, req *vcordiumv1.GetWorkspaceSummaryRequest) (*vcordiumv1.GetWorkspaceSummaryResponse, error) {
+	return s.s.getSummaryCordiumWorkspace(ctx, req)
+}
+
+func (s *srvCordium) GetTemplateSummary(ctx context.Context, req *vcordiumv1.GetTemplateSummaryRequest) (*vcordiumv1.GetTemplateSummaryResponse, error) {
+	return s.s.getSummaryCordiumTemplate(ctx, req)
+}
+
+func (s *srvCordium) GetSpaceSummary(ctx context.Context, req *vcordiumv1.GetSpaceSummaryRequest) (*vcordiumv1.GetSpaceSummaryResponse, error) {
+	return s.s.getSummaryCordiumSpace(ctx, req)
+}
+
+func (s *srvCordium) GetMembershipSummary(ctx context.Context, req *vcordiumv1.GetMembershipSummaryRequest) (*vcordiumv1.GetMembershipSummaryResponse, error) {
+	return s.s.getSummaryCordiumMembership(ctx, req)
+}
+
+func (s *srvCordium) GetGitProviderSummary(ctx context.Context, req *vcordiumv1.GetGitProviderSummaryRequest) (*vcordiumv1.GetGitProviderSummaryResponse, error) {
+	return s.s.getSummaryCordiumGitProvider(ctx, req)
+}
+
+func (s *srvCordium) GetSecretSummary(ctx context.Context, req *vcordiumv1.GetSecretSummaryRequest) (*vcordiumv1.GetSecretSummaryResponse, error) {
+	return s.s.getSummaryCordiumSecret(ctx, req)
+}
+
+func (s *srvCordium) GetUserSecretSummary(ctx context.Context, req *vcordiumv1.GetUserSecretSummaryRequest) (*vcordiumv1.GetUserSecretSummaryResponse, error) {
+	return s.s.getSummaryCordiumUserSecret(ctx, req)
+}
+
+func (s *srvCordium) GetRegionSummary(ctx context.Context, req *vcordiumv1.GetRegionSummaryRequest) (*vcordiumv1.GetRegionSummaryResponse, error) {
+	return s.s.getSummaryCordiumRegion(ctx, req)
+}
+
+func (s *srvCordium) ListWorkspace(ctx context.Context, req *vcordiumv1.ListWorkspaceOptions) (*cordiumv1.WorkspaceList, error) {
+
+	doListReq := &doListReq{
+		api:     ucordiumv1.API,
+		version: ucordiumv1.Version,
+		kind:    ucordiumv1.KindWorkspace,
+		common:  req.Common,
+	}
+	var err error
+
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.UserRef, nil, "status.userRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SessionRef, nil, "status.sessionRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SpaceRef, nil, "status.spaceRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.TemplateRef, nil, "status.templateRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.RegionRef, nil, "status.regionRef")
+	if err != nil {
+		return nil, err
+	}
+
+	if req.State != cordiumv1.Workspace_Status_UNKNOWN {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusState).Eq(req.State.String()))
+	}
+
+	if req.SpaceType != cordiumv1.Space_Status_SPACE_TYPE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusSpaceType).Eq(req.SpaceType.String()))
+	}
+
+	if req.StoppingReason != cordiumv1.Workspace_Status_STOPPING_REASON_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusStoppingReason).Eq(req.StoppingReason.String()))
+	}
+
+	if req.IsBuild {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`%s = true`, colStatusIsBuild)))
+	}
+
+	if req.IsEphemeral {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`%s = true`, colSpecIsEphemeral)))
+	}
+
+	if req.IsShared {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`json_array_length(rsc, '$.status.sharedPorts') > 0`))
+	}
+
+	if req.IsFailed {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`list_contains(%s, 'failure')`, colStatusRunKeys)))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*cordiumv1.WorkspaceList), nil
+}
+
+func (s *srvCordium) ListTemplate(ctx context.Context, req *vcordiumv1.ListTemplateOptions) (*cordiumv1.TemplateList, error) {
+
+	doListReq := &doListReq{
+		api:     ucordiumv1.API,
+		version: ucordiumv1.Version,
+		kind:    ucordiumv1.KindTemplate,
+		common:  req.Common,
+	}
+	var err error
+
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.UserRef, nil, "status.userRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SpaceRef, nil, "status.spaceRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.GitProviderRef, nil, "status.gitProviderRef")
+	if err != nil {
+		return nil, err
+	}
+
+	if req.BuildState != cordiumv1.Template_Status_BuildInfo_Build_STATE_UNKNOWN {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusLatestBuildState).Eq(req.BuildState.String()))
+	}
+
+	if req.HasReadyBuild {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`COALESCE(%s, '') != ''`, colStatusReadyBuildID)))
+	}
+
+	if req.IsBuilding {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`COALESCE(%s, '') != ''`, colStatusRunningBuildID)))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*cordiumv1.TemplateList), nil
+}
+
+func (s *srvCordium) ListSpace(ctx context.Context, req *vcordiumv1.ListSpaceOptions) (*cordiumv1.SpaceList, error) {
+
+	doListReq := &doListReq{
+		api:     ucordiumv1.API,
+		version: ucordiumv1.Version,
+		kind:    ucordiumv1.KindSpace,
+		common:  req.Common,
+	}
+	var err error
+
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.UserRef, nil, "status.userRef")
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Type != cordiumv1.Space_Status_SPACE_TYPE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusType).Eq(req.Type.String()))
+	}
+
+	if req.IsSSHDisabled {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`%s = true`, colSpecDisableSSH)))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*cordiumv1.SpaceList), nil
+}
+
+func (s *srvCordium) ListMembership(ctx context.Context, req *vcordiumv1.ListMembershipOptions) (*cordiumv1.MembershipList, error) {
+
+	doListReq := &doListReq{
+		api:     ucordiumv1.API,
+		version: ucordiumv1.Version,
+		kind:    ucordiumv1.KindMembership,
+		common:  req.Common,
+	}
+	var err error
+
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.UserRef, nil, "status.userRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SpaceRef, nil, "status.spaceRef")
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Role != cordiumv1.Membership_Spec_UNKNOWN {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colSpecRole).Eq(req.Role.String()))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*cordiumv1.MembershipList), nil
+}
+
+func gitProviderTypeField(t vcordiumv1.ListGitProviderOptions_Type) string {
+	switch t {
+	case vcordiumv1.ListGitProviderOptions_GITHUB:
+		return "github"
+	case vcordiumv1.ListGitProviderOptions_GITLAB:
+		return "gitlab"
+	case vcordiumv1.ListGitProviderOptions_OAUTH2:
+		return "oauth2"
+	default:
+		return ""
+	}
+}
+
+func (s *srvCordium) ListGitProvider(ctx context.Context, req *vcordiumv1.ListGitProviderOptions) (*cordiumv1.GitProviderList, error) {
+
+	doListReq := &doListReq{
+		api:     ucordiumv1.API,
+		version: ucordiumv1.Version,
+		kind:    ucordiumv1.KindGitProvider,
+		common:  req.Common,
+	}
+	var err error
+
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.UserRef, nil, "status.userRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SpaceRef, nil, "status.spaceRef")
+	if err != nil {
+		return nil, err
+	}
+
+	if field := gitProviderTypeField(req.Type); field != "" {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`list_contains(%s, ?)`, colSpecKeys), field))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*cordiumv1.GitProviderList), nil
+}
+
+func (s *srvCordium) ListSecret(ctx context.Context, req *vcordiumv1.ListSecretOptions) (*cordiumv1.SecretList, error) {
+
+	doListReq := &doListReq{
+		api:     ucordiumv1.API,
+		version: ucordiumv1.Version,
+		kind:    ucordiumv1.KindSecret,
+		common:  req.Common,
+	}
+	var err error
+
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.UserRef, nil, "status.userRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SpaceRef, nil, "status.spaceRef")
+	if err != nil {
+		return nil, err
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*cordiumv1.SecretList), nil
+}
+
+func (s *srvCordium) ListUserSecret(ctx context.Context, req *vcordiumv1.ListUserSecretOptions) (*cordiumv1.UserSecretList, error) {
+
+	doListReq := &doListReq{
+		api:     ucordiumv1.API,
+		version: ucordiumv1.Version,
+		kind:    ucordiumv1.KindUserSecret,
+		common:  req.Common,
+	}
+	var err error
+
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.UserRef, nil, "status.userRef")
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Type != cordiumv1.UserSecret_Spec_DEFAULT {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colSpecType).Eq(req.Type.String()))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*cordiumv1.UserSecretList), nil
+}
+
+func (s *srvCordium) ListRegion(ctx context.Context, req *vcordiumv1.ListRegionOptions) (*cordiumv1.RegionList, error) {
+
+	doListReq := &doListReq{
+		api:     ucorev1.API,
+		version: ucorev1.Version,
+		kind:    ucorev1.KindRegion,
+		common:  req.Common,
+	}
+
+	if req.IsEnabled {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`%s = true`, colStatusExtCordiumIsEnabled)))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return toCordiumRegionList(ret.(*corev1.RegionList)), nil
+}
+
+func toCordiumRegionList(lst *corev1.RegionList) *cordiumv1.RegionList {
+	ret := &cordiumv1.RegionList{
+		ApiVersion:       ucordiumv1.APIVersion,
+		Kind:             "RegionList",
+		ListResponseMeta: lst.ListResponseMeta,
+	}
+
+	for _, itm := range lst.Items {
+		ret.Items = append(ret.Items, &cordiumv1.Region{
+			ApiVersion: ucordiumv1.APIVersion,
+			Kind:       ucorev1.KindRegion,
+			Metadata:   itm.Metadata,
+			Spec:       &cordiumv1.Region_Spec{},
+			Status:     &cordiumv1.Region_Status{},
+		})
+	}
+
+	return ret
 }
