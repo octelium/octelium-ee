@@ -17,6 +17,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	goversion "github.com/hashicorp/go-version"
 	"github.com/octelium/octelium/apis/main/cordiumv1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
@@ -41,6 +42,7 @@ const (
 )
 
 var rgxVersion = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z._+-]{0,127}$`)
+var rgxInvalidNumericPrerelease = regexp.MustCompile(`(^|\.)0[0-9]+($|\.)`)
 
 const installScript = `set -e
 if command -v apt-get >/dev/null 2>&1 && ! command -v rg >/dev/null 2>&1; then
@@ -78,6 +80,16 @@ func getTemplateSpec(cfg *enterprisev1.ClusterConfig_Spec_Agent) (*cordiumv1.Tem
 		}
 		if version == "" {
 			version = defaultConsoleAgentVersion
+		}
+	} else {
+		for _, ver := range []string{ldflags.SemVer, ldflags.GitTag} {
+			parsed, err := goversion.NewSemver(ver)
+			if err == nil && len(parsed.Segments()) == 3 &&
+				parsed.String() == strings.TrimPrefix(ver, "v") && rgxVersion.MatchString(parsed.String()) &&
+				!rgxInvalidNumericPrerelease.MatchString(parsed.Prerelease()) {
+				version = parsed.String()
+				break
+			}
 		}
 	}
 	if !rgxVersion.MatchString(version) {

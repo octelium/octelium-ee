@@ -29,13 +29,13 @@ octelium-console-agent ───────────── Cordium Workspace
 
 ## Running inside a Cordium Workspace
 
-The enterprise `AgentService` (`octelium.api.main.enterprise.v1.AgentService`) provisions the agent of every User on demand: `InitializeAgent` creates the User's personal `octelium.<user>` Cordium Space, its `default` Template and a primary Workspace that serves the agent as its default Application on port `8080`. The Template installs Node.js upon the first start of a Workspace if the image lacks it (`ON_CREATE`) and starts `npx --yes --prefer-online @octelium/console-agent@<version> serve` on every start (`POST_START`). Development builds use their Git branch as the npm tag, falling back to `dev` when build branch metadata is absent. Production always uses `latest`. The Template is generated from the `spec.agent` section of the enterprise ClusterConfig:
+The enterprise `AgentService` (`octelium.api.main.enterprise.v1.AgentService`) provisions the agent of every User on demand: `InitializeAgent` creates the User's personal `octelium.<user>` Cordium Space, its `default` Template and a primary Workspace that serves the agent as its default Application on port `8080`. The Template installs Node.js upon the first start of a Workspace if the image lacks it (`ON_CREATE`) and starts `npx --yes --prefer-online @octelium/console-agent@<version> serve` on every start (`POST_START`). Development builds use their Git branch as the npm tag, falling back to `dev` when build branch metadata is absent. Production uses the Go build's semver, removing a leading `v`, and falls back to `latest` when no valid semver is available. The Template is generated from the `spec.agent` section of the enterprise ClusterConfig:
 
 | Field | Description |
 | --- | --- |
 | `isDisabled` | Disables the `AgentService` |
 | `llm.service`, `llm.model` | The default LLM Service and model (i.e. `llm.service` and `llm.model` below) |
-| `version` | Development override for the `@octelium/console-agent` npm tag or version; production always uses `latest` |
+| `version` | Development override for the `@octelium/console-agent` npm tag or version; production uses the Go build's semver or `latest` |
 | `image`, `limit` | The Workspace image and compute resources |
 | `config` | Any additional configuration (same structure as `config.json`), passed via `OCTELIUM_CONSOLE_AGENT_CONFIG_JSON` |
 
@@ -61,7 +61,7 @@ spec:
 
 `npx … doctor` checks the configuration, the Octelium API access and the LLM access.
 
-`make build-apiserver` embeds the current Git branch in the API server. The Cluster's usual development/production detection selects the agent tag; `OCTELIUM_DEV=true` forces development and `OCTELIUM_PRODUCTION=true` forces production. The npm tag must already be published. Branches outside `main`, `dev` and `b-*` can be published manually with their branch name as the npm tag, or use `spec.agent.version: dev` during development.
+`make build-apiserver` embeds the current Git branch and release tag in the API server. Production checks the build's `SemVer` first, then its `GitTag`, and uses `latest` if neither contains a valid semver. The Cluster's usual development/production detection selects the agent version; `OCTELIUM_DEV=true` forces development and `OCTELIUM_PRODUCTION=true` forces production. The npm tag or version must already be published. Branches outside `main`, `dev` and `b-*` can be published manually with their branch name as the npm tag, or use `spec.agent.version: dev` during development.
 
 The `--prefer-online` flag checks for tag updates at every Workspace start. After changing the Cluster's agent configuration or upgrading from the fixed-version launcher, call `InitializeAgent` to reconcile its Template, then restart the Workspace to run the selected package version.
 

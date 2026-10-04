@@ -462,11 +462,13 @@ func TestTemplateSpec(t *testing.T) {
 func TestTemplateSpecVersion(t *testing.T) {
 	oldGitBranch := ldflags.GitBranch
 	oldGitTag := ldflags.GitTag
+	oldSemVer := ldflags.SemVer
 	oldMode := ldflags.Mode
 	ldflags.Mode = ""
 	t.Cleanup(func() {
 		ldflags.GitBranch = oldGitBranch
 		ldflags.GitTag = oldGitTag
+		ldflags.SemVer = oldSemVer
 		ldflags.Mode = oldMode
 	})
 
@@ -474,6 +476,7 @@ func TestTemplateSpecVersion(t *testing.T) {
 		name       string
 		branch     string
 		gitTag     string
+		semVer     string
 		dev        string
 		production string
 		version    string
@@ -485,11 +488,25 @@ func TestTemplateSpecVersion(t *testing.T) {
 		{name: "dev", branch: "dev", want: "dev"},
 		{name: "feature", branch: "b-feature", want: "b-feature"},
 		{name: "underscore", branch: "b-feature_1", want: "b-feature_1"},
-		{name: "release", branch: "main", gitTag: "v1.2.3", want: "latest"},
+		{name: "release", branch: "main", gitTag: "v1.2.3", want: "1.2.3"},
+		{name: "release without prefix", gitTag: "1.2.3", want: "1.2.3"},
 		{name: "production", branch: "dev", production: "true", want: "latest"},
-		{name: "production override", branch: "dev", production: "true", version: "b-feature", want: "latest"},
-		{name: "production pin", branch: "dev", production: "true", version: "1.2.3", want: "latest"},
-		{name: "development release", branch: "b-feature", gitTag: "v1.2.3", dev: "true", want: "b-feature"},
+		{name: "production semver", semVer: "1.2.3", production: "true", want: "1.2.3"},
+		{name: "production semver prefix", semVer: "v1.2.3", production: "true", want: "1.2.3"},
+		{name: "production prerelease", semVer: "v1.2.3-rc.1+build.5", production: "true", want: "1.2.3-rc.1+build.5"},
+		{name: "production semver precedence", semVer: "v2.3.4", gitTag: "v1.2.3", want: "2.3.4"},
+		{name: "production semver tag fallback", semVer: "invalid", gitTag: "v1.2.3", want: "1.2.3"},
+		{name: "production invalid semver", semVer: "invalid", gitTag: "invalid", want: "latest"},
+		{name: "production short semver", semVer: "v1.2", production: "true", want: "latest"},
+		{name: "production leading zero", semVer: "v01.2.3", production: "true", want: "latest"},
+		{name: "production leading zero prerelease", semVer: "1.2.3-rc.01", production: "true", want: "latest"},
+		{name: "production alphanumeric prerelease", semVer: "1.2.3-rc.01a", production: "true", want: "1.2.3-rc.01a"},
+		{name: "production extra segment", semVer: "1.2.3.4", production: "true", want: "latest"},
+		{name: "production branch semver", branch: "1.2.3", production: "true", want: "latest"},
+		{name: "production invalid metadata", semVer: "1.2.3\ntag=dev", production: "true", want: "latest"},
+		{name: "production override", branch: "dev", semVer: "v1.2.3", production: "true", version: "b-feature", want: "1.2.3"},
+		{name: "production pin", branch: "dev", semVer: "v1.2.3", production: "true", version: "2.3.4", want: "1.2.3"},
+		{name: "development release", branch: "b-feature", gitTag: "v1.2.3", semVer: "v1.2.3", dev: "true", want: "b-feature"},
 		{name: "development override", branch: "b-feature", version: "canary", want: "canary"},
 		{name: "development pin", branch: "dev", version: "1.2.3", want: "1.2.3"},
 		{name: "invalid branch", branch: "dev; touch /tmp/agent", isInvalid: true},
@@ -500,6 +517,7 @@ func TestTemplateSpecVersion(t *testing.T) {
 			t.Setenv("OCTELIUM_PRODUCTION", tst.production)
 			ldflags.GitBranch = tst.branch
 			ldflags.GitTag = tst.gitTag
+			ldflags.SemVer = tst.semVer
 			spec, err := getTemplateSpec(&enterprisev1.ClusterConfig_Spec_Agent{
 				Version: tst.version,
 			})
