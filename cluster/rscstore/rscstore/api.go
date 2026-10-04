@@ -1548,11 +1548,15 @@ func (s *srvCordium) ListWorkspace(ctx context.Context, req *vcordiumv1.ListWork
 	if err != nil {
 		return nil, err
 	}
-	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SpaceRef, nil, "status.spaceRef")
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SpaceRef, &apivalidation.CheckGetOptionsOpts{
+		ParentsMax: 1,
+	}, "status.spaceRef")
 	if err != nil {
 		return nil, err
 	}
-	doListReq.filters, err = appendRefFilter(doListReq.filters, req.TemplateRef, nil, "status.templateRef")
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.TemplateRef, &apivalidation.CheckGetOptionsOpts{
+		ParentsMax: 2,
+	}, "status.templateRef")
 	if err != nil {
 		return nil, err
 	}
@@ -1618,11 +1622,15 @@ func (s *srvCordium) ListTemplate(ctx context.Context, req *vcordiumv1.ListTempl
 	if err != nil {
 		return nil, err
 	}
-	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SpaceRef, nil, "status.spaceRef")
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SpaceRef, &apivalidation.CheckGetOptionsOpts{
+		ParentsMax: 1,
+	}, "status.spaceRef")
 	if err != nil {
 		return nil, err
 	}
-	doListReq.filters, err = appendRefFilter(doListReq.filters, req.GitProviderRef, nil, "status.gitProviderRef")
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.GitProviderRef, &apivalidation.CheckGetOptionsOpts{
+		ParentsMax: 2,
+	}, "status.gitProviderRef")
 	if err != nil {
 		return nil, err
 	}
@@ -1697,7 +1705,9 @@ func (s *srvCordium) ListMembership(ctx context.Context, req *vcordiumv1.ListMem
 	if err != nil {
 		return nil, err
 	}
-	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SpaceRef, nil, "status.spaceRef")
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SpaceRef, &apivalidation.CheckGetOptionsOpts{
+		ParentsMax: 1,
+	}, "status.spaceRef")
 	if err != nil {
 		return nil, err
 	}
@@ -1742,7 +1752,9 @@ func (s *srvCordium) ListGitProvider(ctx context.Context, req *vcordiumv1.ListGi
 	if err != nil {
 		return nil, err
 	}
-	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SpaceRef, nil, "status.spaceRef")
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SpaceRef, &apivalidation.CheckGetOptionsOpts{
+		ParentsMax: 1,
+	}, "status.spaceRef")
 	if err != nil {
 		return nil, err
 	}
@@ -1774,7 +1786,9 @@ func (s *srvCordium) ListSecret(ctx context.Context, req *vcordiumv1.ListSecretO
 	if err != nil {
 		return nil, err
 	}
-	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SpaceRef, nil, "status.spaceRef")
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SpaceRef, &apivalidation.CheckGetOptionsOpts{
+		ParentsMax: 1,
+	}, "status.spaceRef")
 	if err != nil {
 		return nil, err
 	}

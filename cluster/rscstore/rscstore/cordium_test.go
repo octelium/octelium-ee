@@ -34,12 +34,12 @@ func newTstCordiumRefs() *tstCordiumRefs {
 		userOne:     &metav1.ObjectReference{Name: "user-one", Uid: vutils.UUIDv4()},
 		userTwo:     &metav1.ObjectReference{Name: "user-two", Uid: vutils.UUIDv4()},
 		session:     &metav1.ObjectReference{Name: "session-one", Uid: vutils.UUIDv4()},
-		spaceOne:    &metav1.ObjectReference{Name: "space-one", Uid: vutils.UUIDv4()},
-		spaceTwo:    &metav1.ObjectReference{Name: "space-two", Uid: vutils.UUIDv4()},
-		template:    &metav1.ObjectReference{Name: "template-one", Uid: vutils.UUIDv4()},
+		spaceOne:    &metav1.ObjectReference{Name: "space-one.user-one", Uid: vutils.UUIDv4()},
+		spaceTwo:    &metav1.ObjectReference{Name: "space-two.cordium", Uid: vutils.UUIDv4()},
+		template:    &metav1.ObjectReference{Name: "template-one.space-one.user-one", Uid: vutils.UUIDv4()},
 		regionOne:   &metav1.ObjectReference{Name: "region-one", Uid: vutils.UUIDv4()},
 		regionTwo:   &metav1.ObjectReference{Name: "region-two", Uid: vutils.UUIDv4()},
-		gitProvider: &metav1.ObjectReference{Name: "github-one", Uid: vutils.UUIDv4()},
+		gitProvider: &metav1.ObjectReference{Name: "github-one.space-one.user-one", Uid: vutils.UUIDv4()},
 	}
 }
 

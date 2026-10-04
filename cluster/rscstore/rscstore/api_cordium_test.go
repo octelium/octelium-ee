@@ -1,6 +1,8 @@
 package rscstore
 
 import (
+	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -19,6 +21,94 @@ func getTstCordiumNames[T interface{ GetMetadata() *metav1.Metadata }](items []T
 	}
 
 	return ret
+}
+
+func getTstCordiumRefFilters(ref *metav1.ObjectReference) []*metav1.ObjectReference {
+	return []*metav1.ObjectReference{
+		{Name: ref.Name},
+		{Uid: ref.Uid},
+		ref,
+	}
+}
+
+func TestCordiumListInvalidReferences(t *testing.T) {
+	ctx := context.Background()
+	srv := &srvCordium{}
+
+	for _, tst := range []struct {
+		name    string
+		parents int
+		list    func(*metav1.ObjectReference) error
+	}{
+		{
+			name:    "workspace space",
+			parents: 1,
+			list: func(ref *metav1.ObjectReference) error {
+				_, err := srv.ListWorkspace(ctx, &vcordiumv1.ListWorkspaceOptions{SpaceRef: ref})
+				return err
+			},
+		},
+		{
+			name:    "workspace template",
+			parents: 2,
+			list: func(ref *metav1.ObjectReference) error {
+				_, err := srv.ListWorkspace(ctx, &vcordiumv1.ListWorkspaceOptions{TemplateRef: ref})
+				return err
+			},
+		},
+		{
+			name:    "template space",
+			parents: 1,
+			list: func(ref *metav1.ObjectReference) error {
+				_, err := srv.ListTemplate(ctx, &vcordiumv1.ListTemplateOptions{SpaceRef: ref})
+				return err
+			},
+		},
+		{
+			name:    "template git provider",
+			parents: 2,
+			list: func(ref *metav1.ObjectReference) error {
+				_, err := srv.ListTemplate(ctx, &vcordiumv1.ListTemplateOptions{GitProviderRef: ref})
+				return err
+			},
+		},
+		{
+			name:    "membership space",
+			parents: 1,
+			list: func(ref *metav1.ObjectReference) error {
+				_, err := srv.ListMembership(ctx, &vcordiumv1.ListMembershipOptions{SpaceRef: ref})
+				return err
+			},
+		},
+		{
+			name:    "git provider space",
+			parents: 1,
+			list: func(ref *metav1.ObjectReference) error {
+				_, err := srv.ListGitProvider(ctx, &vcordiumv1.ListGitProviderOptions{SpaceRef: ref})
+				return err
+			},
+		},
+		{
+			name:    "secret space",
+			parents: 1,
+			list: func(ref *metav1.ObjectReference) error {
+				_, err := srv.ListSecret(ctx, &vcordiumv1.ListSecretOptions{SpaceRef: ref})
+				return err
+			},
+		},
+	} {
+		for _, ref := range []*metav1.ObjectReference{
+			{},
+			{Name: "invalid name"},
+			{Name: ".space"},
+			{Name: "space."},
+			{Name: "space..user"},
+			{Name: strings.Repeat("parent.", tst.parents+1) + "resource"},
+			{Uid: "not-a-uid"},
+		} {
+			assert.NotNil(t, tst.list(ref), "%s: %+v", tst.name, ref)
+		}
+	}
 }
 
 func TestCordiumListWorkspaceFilters(t *testing.T) {
@@ -64,10 +154,18 @@ func TestCordiumListWorkspaceFilters(t *testing.T) {
 		list(&vcordiumv1.ListWorkspaceOptions{UserRef: &metav1.ObjectReference{Name: refs.userTwo.Name}}))
 	assert.Equal(t, []string{"ws-running"},
 		list(&vcordiumv1.ListWorkspaceOptions{SessionRef: refs.session}))
-	assert.Equal(t, []string{"ws-init", "ws-running"},
-		list(&vcordiumv1.ListWorkspaceOptions{SpaceRef: refs.spaceOne}))
-	assert.Equal(t, []string{"ws-running"},
-		list(&vcordiumv1.ListWorkspaceOptions{TemplateRef: refs.template}))
+	for _, ref := range getTstCordiumRefFilters(refs.spaceOne) {
+		assert.Equal(t, []string{"ws-init", "ws-running"},
+			list(&vcordiumv1.ListWorkspaceOptions{SpaceRef: ref}))
+	}
+	for _, ref := range getTstCordiumRefFilters(refs.spaceTwo) {
+		assert.Equal(t, []string{"ws-failed"},
+			list(&vcordiumv1.ListWorkspaceOptions{SpaceRef: ref}))
+	}
+	for _, ref := range getTstCordiumRefFilters(refs.template) {
+		assert.Equal(t, []string{"ws-running"},
+			list(&vcordiumv1.ListWorkspaceOptions{TemplateRef: ref}))
+	}
 	assert.Equal(t, []string{"ws-init"},
 		list(&vcordiumv1.ListWorkspaceOptions{RegionRef: refs.regionTwo}))
 
@@ -141,10 +239,14 @@ func TestCordiumListTemplateFilters(t *testing.T) {
 		list(&vcordiumv1.ListTemplateOptions{}))
 	assert.Equal(t, []string{"tmpl-ready"},
 		list(&vcordiumv1.ListTemplateOptions{UserRef: refs.userOne}))
-	assert.Equal(t, []string{"tmpl-building", "tmpl-ready"},
-		list(&vcordiumv1.ListTemplateOptions{SpaceRef: refs.spaceOne}))
-	assert.Equal(t, []string{"tmpl-ready"},
-		list(&vcordiumv1.ListTemplateOptions{GitProviderRef: refs.gitProvider}))
+	for _, ref := range getTstCordiumRefFilters(refs.spaceOne) {
+		assert.Equal(t, []string{"tmpl-building", "tmpl-ready"},
+			list(&vcordiumv1.ListTemplateOptions{SpaceRef: ref}))
+	}
+	for _, ref := range getTstCordiumRefFilters(refs.gitProvider) {
+		assert.Equal(t, []string{"tmpl-ready"},
+			list(&vcordiumv1.ListTemplateOptions{GitProviderRef: ref}))
+	}
 
 	assert.Equal(t, []string{"tmpl-ready"},
 		list(&vcordiumv1.ListTemplateOptions{
@@ -228,10 +330,12 @@ func TestCordiumListSpaceAndMembershipFilters(t *testing.T) {
 		assert.EqualValues(t, 3, resp.ListResponseMeta.TotalCount)
 	}
 
-	{
-		resp, err := srv.ListMembership(env.ctx, &vcordiumv1.ListMembershipOptions{SpaceRef: refs.spaceOne})
+	for _, ref := range getTstCordiumRefFilters(refs.spaceOne) {
+		resp, err := srv.ListMembership(env.ctx, &vcordiumv1.ListMembershipOptions{SpaceRef: ref})
 		assert.Nil(t, err, "%+v", err)
-		assert.ElementsMatch(t, []string{"mem-owner", "mem-admin"}, getTstCordiumNames(resp.Items))
+		if err == nil {
+			assert.ElementsMatch(t, []string{"mem-owner", "mem-admin"}, getTstCordiumNames(resp.Items))
+		}
 	}
 
 	{
@@ -288,10 +392,12 @@ func TestCordiumListGitProviderSecretAndUserSecretFilters(t *testing.T) {
 		assert.Equal(t, []string{name}, getTstCordiumNames(resp.Items), typ.String())
 	}
 
-	{
-		resp, err := srv.ListGitProvider(env.ctx, &vcordiumv1.ListGitProviderOptions{SpaceRef: refs.spaceOne})
+	for _, ref := range getTstCordiumRefFilters(refs.spaceOne) {
+		resp, err := srv.ListGitProvider(env.ctx, &vcordiumv1.ListGitProviderOptions{SpaceRef: ref})
 		assert.Nil(t, err, "%+v", err)
-		assert.ElementsMatch(t, []string{"github-one", "oauth2-one"}, getTstCordiumNames(resp.Items))
+		if err == nil {
+			assert.ElementsMatch(t, []string{"github-one", "oauth2-one"}, getTstCordiumNames(resp.Items))
+		}
 	}
 
 	{
@@ -303,10 +409,12 @@ func TestCordiumListGitProviderSecretAndUserSecretFilters(t *testing.T) {
 	insertRscStoreObject(t, env, newTstCordiumSecret("secret-one", now, "v1", refs.userOne, refs.spaceOne))
 	insertRscStoreObject(t, env, newTstCordiumSecret("secret-two", now.Add(time.Second), "v2", refs.userTwo, refs.spaceTwo))
 
-	{
-		resp, err := srv.ListSecret(env.ctx, &vcordiumv1.ListSecretOptions{SpaceRef: refs.spaceTwo})
+	for _, ref := range getTstCordiumRefFilters(refs.spaceTwo) {
+		resp, err := srv.ListSecret(env.ctx, &vcordiumv1.ListSecretOptions{SpaceRef: ref})
 		assert.Nil(t, err, "%+v", err)
-		assert.Equal(t, []string{"secret-two"}, getTstCordiumNames(resp.Items))
+		if err == nil {
+			assert.Equal(t, []string{"secret-two"}, getTstCordiumNames(resp.Items))
+		}
 	}
 
 	{
