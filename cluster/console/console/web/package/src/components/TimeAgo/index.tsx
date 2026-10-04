@@ -78,7 +78,6 @@ const TimeAgo = (props: { rfc3339?: Timestamp }) => {
       transitionProps={{
         transition: "pop",
         duration: 160,
-        exitDuration: 110,
         timingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
       }}
       styles={{ tooltip: { fontWeight: 700 } }}
