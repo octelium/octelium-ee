@@ -1,3 +1,4 @@
+import { Space_Status_Type } from "@/apis/cordiumv1/cordiumv1";
 import * as CoreC from "@/apis/corev1/corev1";
 import * as CoreP from "@/apis/corev1/corev1";
 import { ObjectReference } from "@/apis/metav1/metav1";
@@ -8,6 +9,12 @@ import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
 import { ResourceListLabel } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
 import TimestampPicker from "@/components/TimestampPicker";
+import {
+  getSpaceTypeLabel,
+  spaceRefOf,
+  templateRefOf,
+  workspaceRefOf,
+} from "@/pages/cordium/utils";
 import { useUpdateResource } from "@/pages/utils/resource";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { getResourceRef } from "@/utils/pb";
@@ -20,6 +27,7 @@ import {
   SessionCompactSecurityInfo,
   SessionOperationalDetails,
 } from "./Info";
+import { getCordiumSessionInfo } from "./utils";
 
 export const ItemInfo = (props: { item: CoreC.Session }) => {
   let { item } = props;
@@ -214,9 +222,13 @@ const SessionExpirationControl = (props: { item: CoreC.Session }) => {
 
 export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
   const { item } = props;
+  const cordiumInfo = getCordiumSessionInfo(item);
+  const workspaceRef = workspaceRefOf(cordiumInfo?.workspaceRef);
+  const spaceRef = spaceRefOf(cordiumInfo?.spaceRef);
+  const templateRef = templateRefOf(cordiumInfo?.templateRef);
 
   return {
-    groupOrder: ["Security", "Authorization"],
+    groupOrder: ["Cordium", "Security", "Authorization"],
     items: [
       ...(item.status?.userRef?.name || item.status?.userRef?.uid
         ? [
@@ -258,6 +270,44 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
                   </span>
                 </span>
               ),
+            },
+          ]
+        : []),
+
+      ...(workspaceRef
+        ? [
+            {
+              label: "Workspace",
+              group: "Cordium",
+              value: <ResourceListLabel itemRef={workspaceRef} />,
+            },
+          ]
+        : []),
+      ...(spaceRef
+        ? [
+            {
+              label: "Space",
+              group: "Cordium",
+              value: <ResourceListLabel itemRef={spaceRef} />,
+            },
+          ]
+        : []),
+      ...(templateRef
+        ? [
+            {
+              label: "Template",
+              group: "Cordium",
+              value: <ResourceListLabel itemRef={templateRef} />,
+            },
+          ]
+        : []),
+      ...(cordiumInfo &&
+      cordiumInfo.spaceType !== Space_Status_Type.SPACE_TYPE_UNSET
+        ? [
+            {
+              label: "Space type",
+              group: "Cordium",
+              value: <Label>{getSpaceTypeLabel(cordiumInfo.spaceType)}</Label>,
             },
           ]
         : []),
