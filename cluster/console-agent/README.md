@@ -110,6 +110,8 @@ The model can be switched at runtime (`PUT /v1/model`). The selection is saved i
 
 A User can also sign in with their own Claude or ChatGPT subscription from the web console. The OAuth flows run inside the agent (`/v1/auth/logins`): the console shows the provider's sign-in link and then sends back what the provider shows after signing in (the code, or the URL of the page it redirected to, which never needs to load since it points to the Workspace's `localhost`). The tokens are stored and refreshed by Pi in `<dataDir>/pi/auth.json` inside the Workspace and never leave it. Once signed in, the agent switches to the provider's default model.
 
+New ChatGPT registrations use the app name "Octelium Management" through OpenAI's `agent_name_hint`. The name is display metadata; OpenAI identifies the registration by its issued client ID and the installation by the persistent `<dataDir>/device-id`. Existing registrations keep their previously approved name; sign in again to register under the new name. Keep each agent's `dataDir` and OAuth credentials separate. The current Pi Claude subscription flow uses a fixed OAuth client and does not support a custom app name.
+
 ## HTTP API
 
 All the types are exported from `@octelium/console-agent/protocol` (`src/protocol/index.ts`), which has no runtime dependencies and is meant to be imported by the web console.
