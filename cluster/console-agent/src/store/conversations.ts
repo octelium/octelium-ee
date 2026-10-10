@@ -1,7 +1,13 @@
 import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { Conversation, Message } from "../protocol/index.ts";
+import type {
+  Conversation,
+  ConversationSearchMatch,
+  ConversationSearchResult,
+  Message,
+  MessageRole,
+} from "../protocol/index.ts";
 
 export const isValidID = (id: string): boolean =>
   /^[A-Za-z0-9_-]{1,64}$/.test(id);
@@ -18,14 +24,90 @@ interface StoredConversation extends Conversation {
   sessionFile?: string;
 }
 
+interface SearchEntry {
+  messageId: string;
+  role: MessageRole;
+  text: string;
+  lower: string;
+}
+
+const searchMaxMatches = 3;
+const snippetBefore = 60;
+const snippetLength = 180;
+
 const toConversation = (stored: StoredConversation): Conversation => {
   const { sessionFile: _, ...ret } = stored;
   return ret;
 };
 
+export const searchTerms = (query: string): string[] => [
+  ...new Set(
+    query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((term) => term !== ""),
+  ),
+];
+
+export const plainText = (markdown: string): string =>
+  markdown
+    .replace(/```[^\n]*/g, " ")
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\*\*|__|~~|`/g, "")
+    .replace(/^\s{0,3}(#{1,6}|>|[-*+]|\d+\.)\s+/gm, "")
+    .replace(/\|/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const messageText = (message: Message): string =>
+  plainText(
+    message.blocks
+      .map((block) => (block.type === "markdown" ? block.text : ""))
+      .filter((text) => text !== "")
+      .join("\n"),
+  );
+
+export const searchSnippet = (
+  text: string,
+  lower: string,
+  terms: string[],
+): string | undefined => {
+  let first = -1;
+  for (const term of terms) {
+    const idx = lower.indexOf(term);
+    if (idx < 0) {
+      return undefined;
+    }
+    if (first < 0 || idx < first) {
+      first = idx;
+    }
+  }
+
+  let start = Math.max(0, first - snippetBefore);
+  if (start > 0) {
+    const space = text.indexOf(" ", start);
+    if (space >= 0 && space < first) {
+      start = space + 1;
+    }
+  }
+  let end = Math.min(text.length, start + snippetLength);
+  if (end < text.length) {
+    const space = text.lastIndexOf(" ", end);
+    if (space > first) {
+      end = space;
+    }
+  }
+
+  return `${start > 0 ? "…" : ""}${text.slice(start, end)}${end < text.length ? "…" : ""}`;
+};
+
 export class ConversationStore {
   readonly dir: string;
   private conversations = new Map<string, StoredConversation>();
+  private searchCache = new Map<
+    string,
+    { messageCount: number; entries: SearchEntry[] }
+  >();
 
   constructor(dir: string) {
     this.dir = dir;
@@ -158,8 +240,70 @@ export class ConversationStore {
       return false;
     }
     this.conversations.delete(id);
+    this.searchCache.delete(id);
     fs.rmSync(this.conversationDir(id), { recursive: true, force: true });
     return true;
+  }
+
+  search(query: string, limit: number): ConversationSearchResult[] {
+    const terms = searchTerms(query);
+    if (terms.length === 0) {
+      return [];
+    }
+
+    const ret: ConversationSearchResult[] = [];
+    for (const conversation of this.list()) {
+      const title = conversation.title.toLowerCase();
+      const titleMatch = terms.every((term) => title.includes(term));
+      const matches: ConversationSearchMatch[] = [];
+      for (const entry of this.searchEntries(conversation)) {
+        const snippet = searchSnippet(entry.text, entry.lower, terms);
+        if (snippet === undefined) {
+          continue;
+        }
+        matches.push({
+          messageId: entry.messageId,
+          role: entry.role,
+          snippet,
+        });
+        if (matches.length >= searchMaxMatches) {
+          break;
+        }
+      }
+
+      if (titleMatch || matches.length > 0) {
+        ret.push({ conversation, titleMatch, matches });
+        if (ret.length >= limit) {
+          break;
+        }
+      }
+    }
+    return ret;
+  }
+
+  private searchEntries(conversation: Conversation): SearchEntry[] {
+    const cached = this.searchCache.get(conversation.id);
+    if (cached && cached.messageCount === conversation.messageCount) {
+      return cached.entries;
+    }
+
+    const entries: SearchEntry[] = [];
+    for (const message of this.getMessages(conversation.id)) {
+      const text = messageText(message);
+      if (text !== "") {
+        entries.push({
+          messageId: message.id,
+          role: message.role,
+          text,
+          lower: text.toLowerCase(),
+        });
+      }
+    }
+    this.searchCache.set(conversation.id, {
+      messageCount: conversation.messageCount,
+      entries,
+    });
+    return entries;
   }
 
   getMessages(id: string): Message[] {

@@ -365,6 +365,22 @@ export interface ListConversationsResponse {
   items: Conversation[];
 }
 
+export interface ConversationSearchMatch {
+  messageId: string;
+  role: MessageRole;
+  snippet: string;
+}
+
+export interface ConversationSearchResult {
+  conversation: Conversation;
+  titleMatch: boolean;
+  matches: ConversationSearchMatch[];
+}
+
+export interface SearchConversationsResponse {
+  items: ConversationSearchResult[];
+}
+
 export interface RunSnapshot {
   run: Run;
   message?: Message;
@@ -500,6 +516,7 @@ export interface AgentInfo {
     };
     models: boolean;
     login: boolean;
+    search: boolean;
   };
 }
 

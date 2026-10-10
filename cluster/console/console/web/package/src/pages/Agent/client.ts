@@ -16,6 +16,7 @@ import {
   type ModelsResponse,
   type Run,
   type RunInput,
+  type SearchConversationsResponse,
   type SetModelRequest,
 } from "@/apis/consoleagent/protocol";
 
@@ -97,6 +98,15 @@ export class AgentClient {
 
   listConversations() {
     return this.request<ListConversationsResponse>("GET", "/conversations");
+  }
+
+  searchConversations(query: string, signal?: AbortSignal) {
+    return this.request<SearchConversationsResponse>(
+      "GET",
+      `/conversations/search?q=${encodeURIComponent(query)}`,
+      undefined,
+      { signal },
+    );
   }
 
   getConversation(id: string) {

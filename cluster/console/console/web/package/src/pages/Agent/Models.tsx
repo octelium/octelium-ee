@@ -1,4 +1,5 @@
 import type {
+  AgentInfo,
   AuthProvider,
   LoginEvent,
   LoginSession,
@@ -7,22 +8,31 @@ import type {
 import {
   Badge,
   Button,
+  Combobox,
   Drawer,
+  Loader,
   PasswordInput,
   Select,
   TextInput,
+  useCombobox,
 } from "@mantine/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Brain,
+  Check,
+  ChevronDown,
   CircleAlert,
   CircleCheck,
   ExternalLink,
+  Image as ImageIcon,
   KeyRound,
   Sparkles,
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
+import { twMerge } from "tailwind-merge";
 import { AgentClient } from "./client";
+import { formatCount, matchesTerms, searchTerms } from "./utils";
 
 const THINKING_LEVELS = [
   "off",
@@ -263,31 +273,17 @@ const LoginFlow = (props: {
   );
 };
 
-const ModelsDrawer = (props: {
-  client: AgentClient;
-  opened: boolean;
-  onClose: () => void;
-}) => {
-  const { client } = props;
+const useModels = (client: AgentClient, enabled: boolean) => {
   const queryClient = useQueryClient();
-  const [signingIn, setSigningIn] = React.useState<AuthProvider>();
-
   const modelsKey = ["agent", client.baseUrl, "models"];
-  const providersKey = ["agent", client.baseUrl, "providers"];
 
-  const modelsQuery = useQuery({
+  const query = useQuery({
     queryKey: modelsKey,
     queryFn: () => client.listModels(),
-    enabled: props.opened,
+    enabled,
   });
 
-  const providersQuery = useQuery({
-    queryKey: providersKey,
-    queryFn: () => client.listAuthProviders(),
-    enabled: props.opened,
-  });
-
-  const setModel = useMutation({
+  const mutation = useMutation({
     mutationFn: (req: {
       provider: string;
       id: string;
@@ -302,6 +298,267 @@ const ModelsDrawer = (props: {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  return { query, mutation };
+};
+
+const ModelOption = (props: { model: ModelInfo; selected: boolean }) => {
+  const { model } = props;
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-body font-semibold">
+          {model.name ?? model.id}
+        </p>
+        <p className="flex items-center gap-1.5 truncate text-micro opacity-70">
+          <span className="truncate font-mono">{model.id}</span>
+          {model.contextWindow ? (
+            <span className="shrink-0">
+              · {formatCount(model.contextWindow)}
+            </span>
+          ) : null}
+        </p>
+      </div>
+      {model.reasoning && (
+        <Brain
+          size={12}
+          className="shrink-0 opacity-60"
+          aria-label="Reasoning"
+        />
+      )}
+      {model.input?.includes("image") && (
+        <ImageIcon
+          size={12}
+          className="shrink-0 opacity-60"
+          aria-label="Images"
+        />
+      )}
+      <Check
+        size={14}
+        strokeWidth={2.75}
+        className={twMerge("shrink-0", props.selected ? "" : "invisible")}
+      />
+    </div>
+  );
+};
+
+export const ModelPicker = (props: {
+  client: AgentClient;
+  info: AgentInfo;
+  onManage: () => void;
+}) => {
+  const { client, info } = props;
+  const [query, setQuery] = React.useState("");
+  const { query: modelsQuery, mutation } = useModels(
+    client,
+    info.capabilities.models,
+  );
+  const combobox = useCombobox({
+    onDropdownClose: () => {
+      combobox.resetSelectedOption();
+      setQuery("");
+    },
+    onDropdownOpen: () => combobox.focusSearchInput(),
+  });
+
+  const models = modelsQuery.data?.models ?? [];
+  const current = modelsQuery.data?.current ?? info.model;
+  const currentKey = current ? modelKey(current) : undefined;
+
+  const groups = React.useMemo(() => {
+    const terms = searchTerms(query);
+    const ret = new Map<string, ModelInfo[]>();
+    for (const model of models) {
+      if (
+        terms.length > 0 &&
+        !matchesTerms(
+          `${model.provider} ${model.id} ${model.name ?? ""}`,
+          terms,
+        )
+      ) {
+        continue;
+      }
+      ret.set(model.provider, [...(ret.get(model.provider) ?? []), model]);
+    }
+    return [...ret.entries()];
+  }, [models, query]);
+
+  if (!info.capabilities.models) {
+    return (
+      <span className="flex h-8 min-w-0 items-center gap-1.5 px-2 text-xs font-semibold text-slate-500">
+        <Sparkles size={13} className="shrink-0" />
+        <span className="truncate">{modelLabel(current)}</span>
+      </span>
+    );
+  }
+
+  return (
+    <Combobox
+      store={combobox}
+      width={320}
+      position="top-start"
+      offset={8}
+      shadow="md"
+      radius="lg"
+      withinPortal
+      transitionProps={{ transition: "pop", duration: 150 }}
+      onOptionSubmit={(value) => {
+        const model = models.find((m) => modelKey(m) === value);
+        if (model && value !== currentKey) {
+          mutation.mutate({ provider: model.provider, id: model.id });
+        }
+        combobox.closeDropdown();
+      }}
+      styles={{
+        dropdown: {
+          border: "1px solid var(--color-slate-200)",
+          boxShadow: "var(--shadow-overlay)",
+          padding: 0,
+          overflow: "hidden",
+        },
+      }}
+    >
+      <Combobox.Target withAriaAttributes={false}>
+        <button
+          type="button"
+          aria-label="Choose the model"
+          aria-haspopup="listbox"
+          aria-expanded={combobox.dropdownOpened}
+          onClick={() => combobox.toggleDropdown()}
+          className={twMerge(
+            "flex h-8 min-w-0 max-w-[220px] cursor-pointer items-center gap-1.5 rounded-full px-2.5 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900",
+            current ? "text-slate-600" : "text-amber-700",
+            combobox.dropdownOpened && "bg-slate-100 text-slate-900",
+          )}
+        >
+          {mutation.isPending ? (
+            <Loader size={11} color="gray" />
+          ) : (
+            <Sparkles size={13} className="shrink-0" />
+          )}
+          <span className="truncate text-xs font-semibold">
+            {current ? modelLabel(current) : "Choose a model"}
+          </span>
+          <ChevronDown size={12} strokeWidth={2.5} className="shrink-0" />
+        </button>
+      </Combobox.Target>
+
+      <Combobox.Dropdown>
+        <div className="border-b border-slate-100 p-2">
+          <Combobox.Search
+            value={query}
+            onChange={(event) => setQuery(event.currentTarget.value)}
+            placeholder="Search models"
+            styles={{
+              input: {
+                border: "none",
+                background: "var(--color-slate-50)",
+                borderRadius: "8px",
+                minHeight: "34px",
+                margin: 0,
+                width: "100%",
+              },
+            }}
+          />
+        </div>
+        {modelsQuery.data?.error && (
+          <p className="mx-2 mt-2 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-micro text-amber-800">
+            <CircleAlert size={13} className="mt-px shrink-0" />
+            {modelsQuery.data.error.message}
+          </p>
+        )}
+        <Combobox.Options className="max-h-[280px] overflow-y-auto p-1.5">
+          {modelsQuery.isPending ? (
+            <div className="flex justify-center py-6">
+              <Loader size="xs" color="gray" />
+            </div>
+          ) : groups.length === 0 ? (
+            <Combobox.Empty className="px-3 py-6 text-xs text-slate-500">
+              {models.length === 0
+                ? "No available models. Sign in to a provider first."
+                : "No models match your search"}
+            </Combobox.Empty>
+          ) : (
+            groups.map(([provider, items]) => (
+              <Combobox.Group key={provider} label={provider}>
+                {items.map((model) => (
+                  <Combobox.Option
+                    key={modelKey(model)}
+                    value={modelKey(model)}
+                    active={modelKey(model) === currentKey}
+                  >
+                    <ModelOption
+                      model={model}
+                      selected={modelKey(model) === currentKey}
+                    />
+                  </Combobox.Option>
+                ))}
+              </Combobox.Group>
+            ))
+          )}
+        </Combobox.Options>
+        {(current?.reasoning || info.capabilities.login) && (
+          <div className="flex items-center gap-2 border-t border-slate-100 bg-slate-50/70 px-3 py-2">
+            {current?.reasoning && (
+              <Select
+                size="xs"
+                className="w-32"
+                aria-label="Thinking level"
+                leftSection={<Brain size={12} />}
+                data={THINKING_LEVELS}
+                value={modelsQuery.data?.thinkingLevel ?? null}
+                disabled={mutation.isPending}
+                allowDeselect={false}
+                comboboxProps={{ withinPortal: false }}
+                onChange={(value) =>
+                  value &&
+                  mutation.mutate({
+                    provider: current.provider,
+                    id: current.id,
+                    thinkingLevel: value,
+                  })
+                }
+              />
+            )}
+            {info.capabilities.login && (
+              <Button
+                size="compact-xs"
+                variant="subtle"
+                color="gray"
+                className="ml-auto"
+                leftSection={<KeyRound size={12} />}
+                onClick={() => {
+                  combobox.closeDropdown();
+                  props.onManage();
+                }}
+              >
+                Subscriptions
+              </Button>
+            )}
+          </div>
+        )}
+      </Combobox.Dropdown>
+    </Combobox>
+  );
+};
+
+const ModelsDrawer = (props: {
+  client: AgentClient;
+  opened: boolean;
+  onClose: () => void;
+}) => {
+  const { client } = props;
+  const queryClient = useQueryClient();
+  const [signingIn, setSigningIn] = React.useState<AuthProvider>();
+
+  const modelsKey = ["agent", client.baseUrl, "models"];
+  const providersKey = ["agent", client.baseUrl, "providers"];
+
+  const providersQuery = useQuery({
+    queryKey: providersKey,
+    queryFn: () => client.listAuthProviders(),
+    enabled: props.opened,
+  });
+
   const logout = useMutation({
     mutationFn: (provider: string) => client.logout(provider),
     onSuccess: () => {
@@ -311,165 +568,110 @@ const ModelsDrawer = (props: {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const models = modelsQuery.data?.models ?? [];
-  const current = modelsQuery.data?.current;
-
-  const groups = React.useMemo(() => {
-    const ret = new Map<string, { value: string; label: string }[]>();
-    for (const model of models) {
-      const items = ret.get(model.provider) ?? [];
-      items.push({ value: modelKey(model), label: model.name ?? model.id });
-      ret.set(model.provider, items);
-    }
-    return [...ret.entries()].map(([group, items]) => ({ group, items }));
-  }, [models]);
-
   return (
     <Drawer
       opened={props.opened}
       onClose={props.onClose}
       position="right"
       size="md"
+      overlayProps={{ backgroundOpacity: 0.2, blur: 1 }}
       title={
         <span className="flex items-center gap-2 text-sm font-bold text-slate-800">
-          <Sparkles size={15} />
-          Model and accounts
+          <KeyRound size={15} />
+          Subscriptions
         </span>
       }
     >
-      <div className="flex flex-col gap-6">
-        <section>
-          <p className="mb-2 text-micro font-semibold uppercase tracking-[0.08em] text-slate-500">
-            Model
+      <div className="flex flex-col gap-4">
+        <p className="text-xs leading-5 text-slate-500">
+          Use your own subscription instead of the Cluster's LLM. The
+          credentials are stored only inside your agent Workspace and never
+          leave it.
+        </p>
+        <ul className="flex flex-col gap-2">
+          {(providersQuery.data?.items ?? []).map((provider) => (
+            <li
+              key={provider.id}
+              className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-card"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500">
+                <KeyRound size={14} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-body font-semibold text-slate-800">
+                  {provider.name}
+                </p>
+                {provider.configured ? (
+                  <Badge
+                    size="xs"
+                    variant="light"
+                    color="green"
+                    leftSection={<CircleCheck size={10} />}
+                  >
+                    {provider.oauth ? "Signed in" : "Configured"}
+                  </Badge>
+                ) : (
+                  <Badge size="xs" variant="light" color="gray">
+                    Not signed in
+                  </Badge>
+                )}
+              </div>
+              {provider.oauth ? (
+                <Button
+                  size="xs"
+                  variant="default"
+                  loading={logout.isPending && logout.variables === provider.id}
+                  onClick={() => logout.mutate(provider.id)}
+                >
+                  Sign out
+                </Button>
+              ) : (
+                <Button
+                  size="xs"
+                  color="dark"
+                  disabled={!!signingIn}
+                  onClick={() => setSigningIn(provider)}
+                >
+                  {provider.loginLabel ?? "Sign in"}
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+        {providersQuery.isPending && (
+          <div className="flex justify-center py-4">
+            <Loader size="xs" color="gray" />
+          </div>
+        )}
+        {providersQuery.data?.items.length === 0 && (
+          <p className="text-xs text-slate-500">
+            No subscription providers are enabled for this agent.
           </p>
-          {modelsQuery.data?.error && (
-            <p className="mb-2 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs text-amber-800">
-              <CircleAlert size={14} className="mt-0.5 shrink-0" />
-              {modelsQuery.data.error.message}
-            </p>
-          )}
-          <Select
-            size="sm"
-            searchable
-            placeholder={modelsQuery.isPending ? "Loading…" : "Choose a model"}
-            nothingFoundMessage="No available models. Sign in to a provider first."
-            data={groups}
-            value={current ? modelKey(current) : null}
-            disabled={setModel.isPending}
-            onChange={(value) => {
-              const model = models.find((m) => modelKey(m) === value);
-              if (model)
-                setModel.mutate({ provider: model.provider, id: model.id });
+        )}
+
+        {signingIn && (
+          <LoginFlow
+            key={signingIn.id}
+            client={client}
+            provider={signingIn}
+            onCancel={() => setSigningIn(undefined)}
+            onDone={(session) => {
+              void queryClient.invalidateQueries({ queryKey: providersKey });
+              void queryClient.invalidateQueries({ queryKey: modelsKey });
+              void queryClient.invalidateQueries({
+                queryKey: ["agent", client.baseUrl, "info"],
+              });
+              if (session.status === "completed") {
+                toast.success(
+                  session.model
+                    ? `Signed in. Now using ${modelLabel(session.model)}`
+                    : "Signed in",
+                );
+                setSigningIn(undefined);
+              }
             }}
           />
-          {current?.reasoning && (
-            <Select
-              className="mt-2"
-              size="xs"
-              label="Thinking level"
-              data={THINKING_LEVELS}
-              value={modelsQuery.data?.thinkingLevel ?? null}
-              disabled={setModel.isPending}
-              onChange={(value) =>
-                value &&
-                setModel.mutate({
-                  provider: current.provider,
-                  id: current.id,
-                  thinkingLevel: value,
-                })
-              }
-            />
-          )}
-        </section>
-
-        <section>
-          <p className="mb-1 text-micro font-semibold uppercase tracking-[0.08em] text-slate-500">
-            Subscriptions
-          </p>
-          <p className="mb-3 text-xs leading-5 text-slate-500">
-            Use your own subscription instead of the Cluster's LLM. The
-            credentials are stored only inside your agent Workspace.
-          </p>
-          <ul className="flex flex-col gap-2">
-            {(providersQuery.data?.items ?? []).map((provider) => (
-              <li
-                key={provider.id}
-                className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5"
-              >
-                <KeyRound size={15} className="shrink-0 text-slate-500" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-body font-semibold text-slate-800">
-                    {provider.name}
-                  </p>
-                  {provider.configured ? (
-                    <Badge
-                      size="xs"
-                      variant="light"
-                      color="green"
-                      leftSection={<CircleCheck size={10} />}
-                    >
-                      {provider.oauth ? "Signed in" : "Configured"}
-                    </Badge>
-                  ) : (
-                    <Badge size="xs" variant="light" color="gray">
-                      Not signed in
-                    </Badge>
-                  )}
-                </div>
-                {provider.oauth ? (
-                  <Button
-                    size="xs"
-                    variant="default"
-                    loading={
-                      logout.isPending && logout.variables === provider.id
-                    }
-                    onClick={() => logout.mutate(provider.id)}
-                  >
-                    Sign out
-                  </Button>
-                ) : (
-                  <Button
-                    size="xs"
-                    color="dark"
-                    disabled={!!signingIn}
-                    onClick={() => setSigningIn(provider)}
-                  >
-                    {provider.loginLabel ?? "Sign in"}
-                  </Button>
-                )}
-              </li>
-            ))}
-          </ul>
-          {providersQuery.data?.items.length === 0 && (
-            <p className="text-xs text-slate-500">
-              No subscription providers are enabled for this agent.
-            </p>
-          )}
-
-          {signingIn && (
-            <LoginFlow
-              key={signingIn.id}
-              client={client}
-              provider={signingIn}
-              onCancel={() => setSigningIn(undefined)}
-              onDone={(session) => {
-                void queryClient.invalidateQueries({ queryKey: providersKey });
-                void queryClient.invalidateQueries({ queryKey: modelsKey });
-                void queryClient.invalidateQueries({
-                  queryKey: ["agent", client.baseUrl, "info"],
-                });
-                if (session.status === "completed") {
-                  toast.success(
-                    session.model
-                      ? `Signed in. Now using ${modelLabel(session.model)}`
-                      : "Signed in",
-                  );
-                  setSigningIn(undefined);
-                }
-              }}
-            />
-          )}
-        </section>
+        )}
       </div>
     </Drawer>
   );

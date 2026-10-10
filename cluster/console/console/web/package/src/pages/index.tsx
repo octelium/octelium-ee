@@ -11,7 +11,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import { ScrollRestoration } from "react-router";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import "@fontsource/ubuntu/400.css";
 import "@fontsource/ubuntu/500.css";
@@ -20,6 +20,8 @@ import "@fontsource/ubuntu/700.css";
 export default () => {
   const dispatch = useAppDispatch();
   const [opened, { toggle }] = useDisclosure();
+  const { pathname } = useLocation();
+  const isAgent = pathname === "/agent" || pathname.startsWith("/agent/");
 
   const statusQuery = useQuery({
     queryKey: ["user", "status"],
@@ -81,7 +83,7 @@ export default () => {
             <AppErrorBoundary>
               <Outlet />
             </AppErrorBoundary>
-            <Footer />
+            {!isAgent && <Footer />}
           </div>
         </AppShell.Main>
       </AppShell>

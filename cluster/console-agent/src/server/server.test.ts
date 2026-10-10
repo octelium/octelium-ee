@@ -18,6 +18,7 @@ import type {
   FileInfo,
   Message,
   Run,
+  SearchConversationsResponse,
   TableBlock,
   ToolBlock,
 } from "../protocol/index.ts";
@@ -731,13 +732,42 @@ describe("server: conversations", () => {
     );
   });
 
+  it("searches the conversations", async () => {
+    const res = await postJSON(`${t.baseUrl}/v1/conversations`, {
+      title: "Denied requests",
+    });
+    const { conversation } = (await res.json()) as CreateConversationResponse;
+
+    const search = async (query: string) => {
+      const ret = await fetch(
+        `${t.baseUrl}/v1/conversations/search?q=${encodeURIComponent(query)}`,
+      );
+      assert.equal(ret.status, 200);
+      return (await ret.json()) as SearchConversationsResponse;
+    };
+
+    const found = await search("denied");
+    assert.deepEqual(
+      found.items.map((r) => [r.conversation.id, r.titleMatch]),
+      [[conversation.id, true]],
+    );
+    assert.deepEqual((await search("")).items, []);
+    assert.deepEqual((await search("nothing-matches")).items, []);
+    assert.equal(
+      (await fetch(`${t.baseUrl}/v1/conversations/search?q=a&limit=0`)).status,
+      400,
+    );
+  });
+
   it("returns the agent info", async () => {
     const info = (await (await fetch(`${t.baseUrl}/v1/info`)).json()) as {
       status: string;
       octelium: { mode: string; user?: { name?: string } };
       model?: { id: string };
+      capabilities: { search: boolean };
     };
     assert.equal(info.status, "ready");
+    assert.equal(info.capabilities.search, true);
     assert.equal(info.octelium.mode, "proxy");
     assert.equal(info.octelium.user?.name, "alice");
     assert.equal(info.model?.id, "faux-1");

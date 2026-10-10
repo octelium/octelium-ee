@@ -30,6 +30,7 @@ import {
   type ListAuthProvidersResponse,
   type ListConversationsResponse,
   type LoginPromptAnswer,
+  type SearchConversationsResponse,
   type SetModelRequest,
   type StartLoginRequest,
   type UpdateConversationRequest,
@@ -90,6 +91,9 @@ const inlineMimeTypes = new Set([
 
 const heartbeatMs = 15000;
 
+const searchDefaultLimit = 20;
+const searchMaxLimit = 50;
+
 export class AgentServer {
   private deps: ServerDeps;
   private routes: Route[] = [];
@@ -134,6 +138,11 @@ export class AgentServer {
     });
     this.route("POST", `${API_PREFIX}/conversations`, (req, res) =>
       this.createConversation(req, res),
+    );
+    this.route(
+      "GET",
+      `${API_PREFIX}/conversations/search`,
+      (_req, res, _params, url) => this.searchConversations(res, url),
     );
     this.route("GET", `${API_PREFIX}/conversations/:id`, (_req, res, params) =>
       this.getConversation(res, params.id),
@@ -321,6 +330,7 @@ export class AgentServer {
         uploads: { maxBytes: config.server.maxUploadBytes },
         models: !!backend.listModels,
         login: !!backend.auth,
+        search: true,
       },
     };
   }
@@ -470,6 +480,18 @@ export class AgentServer {
       conversation,
       messages: store.getMessages(id),
       activeRun: runs.getActiveSnapshot(id),
+    };
+    sendJSON(res, 200, body);
+  }
+
+  private searchConversations(res: http.ServerResponse, url: URL) {
+    const query = (url.searchParams.get("q") ?? "").slice(0, 200);
+    const limit = Number(url.searchParams.get("limit") ?? searchDefaultLimit);
+    if (!Number.isInteger(limit) || limit < 1) {
+      throw badRequest('The "limit" parameter must be a positive integer');
+    }
+    const body: SearchConversationsResponse = {
+      items: this.deps.store.search(query, Math.min(limit, searchMaxLimit)),
     };
     sendJSON(res, 200, body);
   }

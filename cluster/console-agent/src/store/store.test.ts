@@ -5,7 +5,13 @@ import * as path from "node:path";
 import { Readable } from "node:stream";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import type { Message } from "../protocol/index.ts";
-import { ConversationStore, isValidID } from "./conversations.ts";
+import {
+  ConversationStore,
+  isValidID,
+  plainText,
+  searchSnippet,
+  searchTerms,
+} from "./conversations.ts";
 import {
   FileStore,
   FileTooLargeError,
@@ -86,6 +92,91 @@ describe("conversation store", () => {
       [["m-partial", "interrupted"]],
     );
     assert.equal(reloaded.readPending(conv.id), undefined);
+  });
+
+  it("searches the titles and the messages", () => {
+    const store = new ConversationStore(dir);
+    store.init();
+    const audit = store.create("Security audit");
+    const policies = store.create("Policies");
+    store.appendMessage(policies.id, {
+      ...message(policies.id, "List the Policies of the Group admins"),
+      id: "m-user",
+      role: "user",
+    });
+    store.appendMessage(
+      policies.id,
+      message(policies.id, "The Group **admins** has 3 Policies attached"),
+    );
+
+    assert.deepEqual(store.search("   ", 10), []);
+
+    const byTitle = store.search("AUDIT", 10);
+    assert.deepEqual(
+      byTitle.map((r) => [r.conversation.id, r.titleMatch, r.matches.length]),
+      [[audit.id, true, 0]],
+    );
+
+    const byContent = store.search("admins policies", 10);
+    assert.equal(byContent.length, 1);
+    assert.equal(byContent[0].conversation.id, policies.id);
+    assert.equal(byContent[0].titleMatch, false);
+    assert.deepEqual(
+      byContent[0].matches.map((m) => [m.messageId, m.role]),
+      [
+        ["m-user", "user"],
+        ["m-The Group **admins** has 3 Policies attached", "assistant"],
+      ],
+    );
+    assert.equal(
+      byContent[0].matches[1].snippet,
+      "The Group admins has 3 Policies attached",
+    );
+
+    assert.deepEqual(store.search("admins audit", 10), []);
+    assert.equal(store.search("policies", 1).length, 1);
+
+    store.appendMessage(audit.id, message(audit.id, "No admins were found"));
+    assert.deepEqual(
+      store.search("admins", 10).map((r) => r.conversation.id),
+      [audit.id, policies.id],
+    );
+
+    store.delete(policies.id);
+    assert.deepEqual(
+      store.search("admins", 10).map((r) => r.conversation.id),
+      [audit.id],
+    );
+  });
+
+  it("converts the markdown to plain text", () => {
+    assert.equal(
+      plainText(
+        "## Summary\n\n- `api.prod` is **healthy**\n> see [the docs](https://x.y)\n\n```bash\nls -la\n```\n| a | b |",
+      ),
+      "Summary api.prod is healthy see the docs ls -la a b",
+    );
+    assert.equal(plainText("allow_all_prod"), "allow_all_prod");
+  });
+
+  it("builds the search snippets", () => {
+    assert.deepEqual(searchTerms("  Foo bar   foo "), ["foo", "bar"]);
+
+    const text = `${"lorem ".repeat(30)}needle ${"ipsum ".repeat(60)}`.trim();
+    const snippet = searchSnippet(text, text.toLowerCase(), ["needle"])!;
+    assert.ok(snippet.startsWith("…lorem"));
+    assert.ok(snippet.endsWith("ipsum…"));
+    assert.ok(snippet.includes("needle"));
+    assert.ok(snippet.length <= 182);
+
+    assert.equal(
+      searchSnippet("short text", "short text", ["text"]),
+      "short text",
+    );
+    assert.equal(
+      searchSnippet("short text", "short text", ["text", "missing"]),
+      undefined,
+    );
   });
 
   it("validates the IDs", () => {

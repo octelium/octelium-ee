@@ -120,6 +120,7 @@ All the types are exported from `@octelium/console-agent/protocol` (`src/protoco
 | `GET` | `/v1/info` | Version, protocol version, model, identity, capabilities, issues |
 | `GET` | `/v1/conversations` | List the conversations |
 | `POST` | `/v1/conversations` | Create a conversation, optionally starting a run: `{"title"?, "input"?: {"text", "attachments"?}}` |
+| `GET` | `/v1/conversations/search?q=<query>&limit=<n>` | Search the titles and the messages of the conversations. Every whitespace-separated term must match; returns up to `limit` (default 20, max 50) conversations with up to 3 message snippets each |
 | `GET` | `/v1/conversations/{id}` | The conversation, its messages and the snapshot of its active run |
 | `PATCH` | `/v1/conversations/{id}` | Rename: `{"title"}` |
 | `DELETE` | `/v1/conversations/{id}` | Cancel its run and delete it |
