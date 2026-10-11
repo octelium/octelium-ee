@@ -23,7 +23,6 @@ import (
 
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/accessv1"
-	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
@@ -44,26 +43,26 @@ func TestHandleIntegration(t *testing.T) {
 
 	signingSecret := utilrand.GetRandomString(32)
 
-	sec, err := srv.octeliumC.EnterpriseC().CreateSecret(ctx, &enterprisev1.Secret{
+	sec, err := srv.octeliumC.AccessC().CreateSecret(ctx, &accessv1.Secret{
 		Metadata: &metav1.Metadata{
 			Name: utilrand.GetRandomStringCanonical(8),
 		},
-		Spec: &enterprisev1.Secret_Spec{},
-		Data: &enterprisev1.Secret_Data{
-			Type: &enterprisev1.Secret_Data_Value{
+		Spec: &accessv1.Secret_Spec{},
+		Data: &accessv1.Secret_Data{
+			Type: &accessv1.Secret_Data_Value{
 				Value: signingSecret,
 			},
 		},
 	})
 	assert.Nil(t, err, "%+v", err)
 
-	botSec, err := srv.octeliumC.EnterpriseC().CreateSecret(ctx, &enterprisev1.Secret{
+	botSec, err := srv.octeliumC.AccessC().CreateSecret(ctx, &accessv1.Secret{
 		Metadata: &metav1.Metadata{
 			Name: utilrand.GetRandomStringCanonical(8),
 		},
-		Spec: &enterprisev1.Secret_Spec{},
-		Data: &enterprisev1.Secret_Data{
-			Type: &enterprisev1.Secret_Data_Value{
+		Spec: &accessv1.Secret_Spec{},
+		Data: &accessv1.Secret_Data{
+			Type: &accessv1.Secret_Data_Value{
 				Value: utilrand.GetRandomString(32),
 			},
 		},
