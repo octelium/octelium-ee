@@ -144,7 +144,14 @@ func testDeviceManagerPostureLifecycle(t *testing.T, ch *harness.H) {
 	h.WaitAllowed(t, client)
 
 	t.Run("AClientlessSessionCannotUseTheDevicePosture", func(t *testing.T) {
-		h.Probe(t, sess.User, svc).MustBeDenied(t)
+		clientless := h.NewAuthSession(t, harness.AuthSessionOpts{
+			User:        sess.User,
+			SessionType: corev1.Session_Status_CLIENTLESS,
+		})
+		cur := clientless.Session(t)
+		require.Equal(t, corev1.Session_Status_CLIENTLESS, cur.Status.Type)
+		require.Nil(t, cur.Status.DeviceRef)
+		h.WaitDenied(t, h.ServiceClient(svc, clientless.Token().AccessToken))
 	})
 
 	t.Run("APostureDowngradeRevokesAccess", func(t *testing.T) {

@@ -20,6 +20,7 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/cluster/e2e/harness"
+	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -89,6 +90,16 @@ func testKeycloakDirectoryProvider(t *testing.T, ch *harness.H) {
 	t.Run("MembershipMovesBetweenGroups", func(t *testing.T) {
 		localGroup := h.CreateGroup(t, nil)
 		managedUser := keycloakUser(t, h, dp, "kc-user-0@octelium.com")
+		t.Cleanup(func() {
+			ctx, cancel := h.Ctx(t)
+			defer cancel()
+			cur, err := h.CoreC().GetUser(ctx, &metav1.GetOptions{Uid: managedUser.Metadata.Uid})
+			require.Nil(t, err)
+			cur.Spec.Groups = slices.DeleteFunc(cur.Spec.Groups, func(name string) bool {
+				return name == localGroup.Metadata.Name
+			})
+			h.UpdateUser(t, cur)
+		})
 		managedUser.Spec.Groups = append(managedUser.Spec.Groups, localGroup.Metadata.Name)
 		h.UpdateUser(t, managedUser)
 
@@ -148,20 +159,32 @@ func testKeycloakDirectoryProvider(t *testing.T, ch *harness.H) {
 		k.CreateUser(t, "kc-polled", "kc-polled@octelium.com", "Polled", "User")
 
 		h.Eventually(t, "the polled synchronization to provision the new User",
-			eeharness.SyncBudget, func(ctx context.Context) error {
-				for _, itm := range h.DirectoryUsers(t, dp) {
-					usr, err := h.CoreC().GetUser(ctx,
-						&metav1.GetOptions{Uid: itm.Status.UserRef.Uid})
-					if err != nil {
-						return err
-					}
-					if usr.Spec.Email == "kc-polled@octelium.com" {
-						return nil
-					}
-				}
-				return errNotProvisioned("kc-polled@octelium.com")
+			eeharness.TimeoutBudget, func(ctx context.Context) error {
+				return keycloakUserProvisioned(ctx, h.EnterpriseC(), h.CoreC(), dp,
+					"kc-polled@octelium.com")
 			})
 	})
+}
+
+func keycloakUserProvisioned(ctx context.Context, c enterprisev1.MainServiceClient,
+	coreC corev1.MainServiceClient, dp *enterprisev1.DirectoryProvider, email string) error {
+	list, err := c.ListDirectoryProviderUser(ctx, &enterprisev1.ListDirectoryProviderUserOptions{
+		DirectoryProviderRef: umetav1.GetObjectReference(dp),
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, itm := range list.Items {
+		usr, err := coreC.GetUser(ctx, &metav1.GetOptions{Uid: itm.Status.UserRef.Uid})
+		if err != nil {
+			return err
+		}
+		if usr.Spec.Email == email {
+			return nil
+		}
+	}
+	return errNotProvisioned(email)
 }
 
 func testKeycloakBadCredentials(t *testing.T, ch *harness.H) {
