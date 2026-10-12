@@ -109,6 +109,7 @@ func testDeviceManagerPostureLifecycle(t *testing.T, ch *harness.H) {
 	svc = h.UpdateService(t, svc)
 
 	sess := h.NewAuthSession(t, harness.AuthSessionOpts{
+		UserType:    corev1.User_Spec_HUMAN,
 		SessionType: corev1.Session_Status_CLIENT,
 	})
 	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)

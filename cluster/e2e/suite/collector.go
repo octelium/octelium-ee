@@ -10,6 +10,7 @@ package suite
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -210,7 +211,7 @@ func newTrafficDriver(t *testing.T, h *eeharness.H) *trafficDriver {
 
 	return &trafficDriver{
 		h: h,
-		c: h.HTTPPublicToken("demo-nginx", h.AccessToken(t, usr)),
+		c: h.HTTPPublicToken("demo-nginx", h.AccessToken(t, usr)).SetRetryCount(0),
 	}
 }
 
@@ -220,6 +221,20 @@ func (d *trafficDriver) drive(t *testing.T) {
 	for range driveBatch {
 		d.h.WaitAllowed(t, d.c)
 	}
+}
+
+func (d *trafficDriver) driveContext(ctx context.Context) error {
+	for range driveBatch {
+		got, err := d.h.StatusOf(ctx, d.c, "/")
+		if err != nil {
+			return err
+		}
+		if got != http.StatusOK {
+			return errUnexpectedStatus(got, http.StatusOK)
+		}
+	}
+
+	return nil
 }
 
 func accessLogCount(ctx context.Context, h *eeharness.H) (uint32, error) {
@@ -278,7 +293,9 @@ func waitAccessLogGrows(t *testing.T, d *trafficDriver, by uint32) {
 			}
 
 			if attempts%driveEvery == 0 {
-				d.drive(t)
+				if err := d.driveContext(ctx); err != nil {
+					return errors.Wrap(err, "could not generate access log traffic")
+				}
 				driven += driveBatch
 			}
 			attempts++

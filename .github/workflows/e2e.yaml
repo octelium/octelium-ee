@@ -65,13 +65,14 @@ jobs:
           docker system prune --all --force || true
           df -h /
 
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+
       - name: Set up go
         uses: actions/setup-go@v5
         with:
           go-version: "${{ env.GO_VERSION }}"
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v4
+          cache-dependency-path: "**/go.sum"
 
       - name: Build
         run: |
@@ -89,11 +90,17 @@ jobs:
         run: ./bin/octeliumee-e2e install --scenario=${{ inputs.scenario || matrix.scenario }}
 
       - name: Test
+        env:
+          GOFLAGS: "-failfast"
         run: |
+          set -o pipefail
+          OUT="${{ runner.temp }}/e2e-artifacts"
+          mkdir -p "$OUT"
           ./bin/octeliumee-e2e test \
             --scenario=${{ inputs.scenario || matrix.scenario }} \
-            --artifacts="${{ runner.temp }}/e2e-artifacts" \
-            ${{ inputs.run && format('--run={0}', inputs.run) || '' }}
+            --artifacts="$OUT" \
+            ${{ inputs.run && format('--run={0}', inputs.run) || '' }} \
+            2>&1 | tee "$OUT/test.log"
 
       - name: Collect cluster state on failure
         if: failure()

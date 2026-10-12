@@ -342,6 +342,7 @@ func testDeviceManagerProbePlan(t *testing.T, ch *harness.H) {
 
 	t.Run("AClientRunsTheProbes", func(t *testing.T) {
 		sess := h.NewAuthSession(t, harness.AuthSessionOpts{
+			UserType:    corev1.User_Spec_HUMAN,
 			SessionType: corev1.Session_Status_CLIENT,
 		})
 

@@ -204,17 +204,20 @@ func certificateRef(crt *enterprisev1.Certificate) *metav1.ObjectReference {
 func peerCertificate(ctx context.Context, fqdn string) (*x509.Certificate, error) {
 	dialer := &net.Dialer{Timeout: 10 * time.Second}
 
-	conn, err := tls.DialWithDialer(dialer, "tcp", fmt.Sprintf("%s:443", fqdn),
-		&tls.Config{
+	tlsDialer := &tls.Dialer{
+		NetDialer: dialer,
+		Config: &tls.Config{
 			ServerName:         fqdn,
 			InsecureSkipVerify: true,
-		})
+		},
+	}
+	conn, err := tlsDialer.DialContext(ctx, "tcp", fmt.Sprintf("%s:443", fqdn))
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Close()
 
-	certs := conn.ConnectionState().PeerCertificates
+	certs := conn.(*tls.Conn).ConnectionState().PeerCertificates
 	if len(certs) < 1 {
 		return nil, errors.Errorf("the peer presented no certificate")
 	}

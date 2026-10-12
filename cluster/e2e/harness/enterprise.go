@@ -17,6 +17,7 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
+	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -267,15 +268,37 @@ func (h *H) SetCollectorPipelines(t *testing.T,
 	pipelines ...*enterprisev1.ClusterConfig_Spec_Collector_Pipeline) {
 	t.Helper()
 
-	cc := h.EnterpriseClusterConfig(t)
+	setCollectorPipelines(t, h.EnterpriseC(), pipelines...)
+}
+
+func setCollectorPipelines(t *testing.T, c enterprisev1.MainServiceClient,
+	pipelines ...*enterprisev1.ClusterConfig_Spec_Collector_Pipeline) {
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(t.Context(), 60*time.Second)
+	defer cancel()
+
+	cc, err := c.GetClusterConfig(ctx, &enterprisev1.GetClusterConfigRequest{})
+	if err != nil {
+		t.Fatalf("Could not get the enterprise ClusterConfig: %+v", err)
+	}
 
 	before := cc.Spec.Collector
+	if before != nil {
+		before = pbutils.Clone(before).(*enterprisev1.ClusterConfig_Spec_Collector)
+	}
 	t.Cleanup(func() {
-		cur := h.EnterpriseClusterConfig(t)
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+
+		cur, err := c.GetClusterConfig(ctx, &enterprisev1.GetClusterConfigRequest{})
+		if err != nil {
+			t.Errorf("Could not get the enterprise ClusterConfig during cleanup: %+v", err)
+			return
+		}
 		cur.Spec.Collector = before
-		if _, err := h.EnterpriseC().UpdateClusterConfig(context.Background(), cur); err != nil {
-			zap.L().Warn("Could not restore the ClusterConfig Collector pipelines",
-				zap.Error(err))
+		if _, err := c.UpdateClusterConfig(ctx, cur); err != nil {
+			t.Errorf("Could not restore the ClusterConfig Collector pipelines: %+v", err)
 		}
 	})
 
@@ -284,7 +307,9 @@ func (h *H) SetCollectorPipelines(t *testing.T,
 	}
 	cc.Spec.Collector.Pipelines = append(cc.Spec.Collector.Pipelines, pipelines...)
 
-	h.UpdateEnterpriseClusterConfig(t, cc)
+	if _, err := c.UpdateClusterConfig(ctx, cc); err != nil {
+		t.Fatalf("Could not update the enterprise ClusterConfig: %+v", err)
+	}
 }
 
 func (h *H) SecretStore(t *testing.T, name string) *enterprisev1.SecretStore {
@@ -338,9 +363,19 @@ func (h *H) WaitSecretStoreSynchronized(t *testing.T,
 	name string, typ enterprisev1.SecretStore_Status_Type, budget time.Duration) {
 	t.Helper()
 
-	h.Eventually(t, "the SecretStore synchronization to complete", budget,
+	h.waitSecretStoreSynchronized(t, h.EnterpriseC(), name, typ, budget)
+}
+
+func (h *H) waitSecretStoreSynchronized(t *testing.T, c enterprisev1.MainServiceClient,
+	name string, typ enterprisev1.SecretStore_Status_Type, budget time.Duration) {
+	t.Helper()
+
+	ctx, cancel := h.CtxWithin(t, budget)
+	defer cancel()
+
+	err := h.EventuallyErr(ctx, "the SecretStore synchronization to complete", budget,
 		func(ctx context.Context) error {
-			ss, err := h.EnterpriseC().GetSecretStore(ctx, &metav1.GetOptions{Name: name})
+			ss, err := c.GetSecretStore(ctx, &metav1.GetOptions{Name: name})
 			if err != nil {
 				return err
 			}
@@ -373,6 +408,9 @@ func (h *H) WaitSecretStoreSynchronized(t *testing.T,
 
 			return nil
 		})
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
 }
 
 func (h *H) SynchronizeDirectoryProvider(t *testing.T, dp *enterprisev1.DirectoryProvider) {

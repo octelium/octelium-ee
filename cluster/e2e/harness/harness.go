@@ -122,9 +122,16 @@ func (h *H) StateValue(t *testing.T, key string) string {
 func (h *H) Ctx(t *testing.T) (context.Context, context.CancelFunc) {
 	t.Helper()
 
-	if t.Context().Err() == nil {
-		return context.WithCancel(t.Context())
+	return h.CtxWithin(t, 60*time.Second)
+}
+
+func (h *H) CtxWithin(t *testing.T, budget time.Duration) (context.Context, context.CancelFunc) {
+	t.Helper()
+
+	ctx := t.Context()
+	if ctx.Err() != nil {
+		ctx = context.Background()
 	}
 
-	return context.WithTimeout(context.Background(), 60*time.Second)
+	return context.WithTimeout(ctx, budget)
 }

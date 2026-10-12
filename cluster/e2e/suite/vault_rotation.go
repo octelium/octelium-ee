@@ -90,7 +90,7 @@ func synchronizeCurrentSecretStore(t *testing.T, h *eeharness.H, ss *enterprisev
 	t.Helper()
 
 	before := ss.GetStatus().GetSynchronization().GetCreatedAt().AsTime()
-	ctx, cancel := h.Ctx(t)
+	ctx, cancel := h.CtxWithin(t, eeharness.SyncBudget)
 	defer cancel()
 	callCtx, callCancel := context.WithTimeout(ctx, 30*time.Second)
 	_, err := h.EnterpriseC().SynchronizeSecretStore(callCtx, &enterprisev1.SynchronizeSecretStoreRequest{
