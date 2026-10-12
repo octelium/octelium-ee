@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { setStatus } from "@/features/settings/slice";
 import { getClientUser } from "@/utils/client";
 import { useAppDispatch } from "@/utils/hooks";
+import { getRedirectPath } from "@/utils/redirect";
 import { AppShell, Burger } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useQuery } from "@tanstack/react-query";
@@ -37,7 +38,7 @@ export default () => {
   }, [dispatch, statusQuery.data]);
 
   const urlSearchParams = new URLSearchParams(window.location.search);
-  const redirect = urlSearchParams.get("redirect");
+  const redirect = getRedirectPath(urlSearchParams.get("redirect"), window.location.origin);
 
   if (redirect) {
     urlSearchParams.delete("redirect");

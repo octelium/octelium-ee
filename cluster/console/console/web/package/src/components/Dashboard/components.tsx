@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { compact, exact } from "./utils";
 
 export const PILL =
@@ -147,7 +147,7 @@ export const Trend = (props: {
     );
   }
 
-  const up = change > 0;
+  const up = change === null ? props.cur > props.prev : change > 0;
   const favorable = up === props.upIsGood;
   const Icon = up ? TrendingUp : TrendingDown;
 
@@ -160,8 +160,15 @@ export const Trend = (props: {
       title={`${exact(props.cur)} now vs ${exact(props.prev)} in the previous ${props.rangeLabel}`}
     >
       <Icon size={10} strokeWidth={2.5} />
-      {up ? "+" : ""}
-      {change}%
+      {change === null ? (
+        <>
+          New · {up ? "+" : ""}{exact(props.cur - props.prev)}
+        </>
+      ) : (
+        <>
+          {up ? "+" : ""}{change}%
+        </>
+      )}
     </span>
   );
 };
@@ -218,8 +225,8 @@ export const StatTile = (props: {
           "group outline-none transition-[border-color,box-shadow] duration-150 hover:border-slate-300 hover:shadow-raised focus-visible:ring-2 focus-visible:ring-slate-400",
       )}
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="truncate text-micro font-semibold uppercase tracking-[0.08em] text-slate-500">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <span className="min-w-0 break-words text-micro font-semibold uppercase tracking-[0.08em] text-slate-500">
           {props.label}
         </span>
         {!unavailable && props.trend && (
@@ -273,7 +280,7 @@ export const StatTile = (props: {
           </div>
         ))}
 
-      <span className="truncate text-micro font-normal text-slate-500">
+      <span className="break-words text-micro font-normal text-slate-500">
         {unavailable ? "Currently unavailable" : props.footer}
       </span>
 

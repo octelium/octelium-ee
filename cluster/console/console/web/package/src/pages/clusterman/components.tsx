@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { PILL } from "@/components/Dashboard/components";
 import { match } from "ts-pattern";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 const BADGE = PILL;
 

@@ -7,7 +7,7 @@ import TimeAgo from "@/components/TimeAgo";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { Button } from "@mantine/core";
 import { AlertTriangle, ExternalLink } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { getAudienceLabel, getInteractionModeLabel } from "../Integration/utils";
 import { getIntegrationRef, getRequestRef, getUserRef } from "./List";
 import { getPurposeLabel, getStateMeta, isFailing, isOutOfDate } from "./utils";

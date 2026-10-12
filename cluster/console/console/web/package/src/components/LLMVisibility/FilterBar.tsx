@@ -5,7 +5,7 @@ import { ActionIcon, Button, SegmentedControl, Tooltip } from "@mantine/core";
 import { AnimatePresence, motion } from "framer-motion";
 import { CalendarRange, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import {
   Drilldown,
   drilldownID,

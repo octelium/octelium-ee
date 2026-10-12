@@ -63,7 +63,6 @@ export const useClusterSummary = (
   priority: number,
   clusterScope?: ClusterScope,
 ) => {
-  const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
   const name = clusterScope?.name ?? "Cluster";
 
   return useDashboardQuery({
@@ -72,8 +71,9 @@ export const useClusterSummary = (
         ? summaryKey("cluster", name)
         : rangeSummaryKey("cluster", name, periodMinutes),
     priority,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
+      return (
         await getClientVisibilityCluster().getClusterSummary(
           GetClusterSummaryRequest.create({
             kinds: clusterScope?.kinds ?? [],
@@ -89,18 +89,18 @@ export const useClusterSummary = (
           }),
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };
 
 export const useClusterHealth = (periodMinutes: number, priority: number) => {
-  const { curFrom, curTo } = buildTimestamps(periodMinutes);
-
   return useDashboardQuery({
     queryKey: ["visibility", "cluster", "health", periodMinutes],
     priority,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo } = buildTimestamps(periodMinutes);
+      return (
         await getClientVisibilityCluster().getClusterHealth(
           GetClusterHealthRequest.create({
             from: toTs(curFrom),
@@ -108,21 +108,21 @@ export const useClusterHealth = (periodMinutes: number, priority: number) => {
           }),
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };
 
 export const useAccessSummary = (periodMinutes: number, priority: number) => {
-  const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
-
   return useDashboardQuery({
     queryKey: [
       ...visibilityKeys.accessSummary("current", periodMinutes, "all", NO_REFS),
       "compare",
     ],
     priority,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
+      return (
         await getClientVisibilityAccessLog().getAccessLogSummary(
           GetAccessLogSummaryRequest.create({
             from: toTs(curFrom),
@@ -132,14 +132,14 @@ export const useAccessSummary = (periodMinutes: number, priority: number) => {
           }),
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };
 
 // useAccessDataPoint returns the ungrouped access activity together with a
 // per-status series, so the allowed/denied breakdown costs a single request.
 export const useAccessDataPoint = (periodMinutes: number, priority: number) => {
-  const { curFrom, curTo } = buildTimestamps(periodMinutes);
   const interval = getAutoInterval(periodMinutes);
 
   return useDashboardQuery({
@@ -148,8 +148,9 @@ export const useAccessDataPoint = (periodMinutes: number, priority: number) => {
     ],
     priority,
     refetchMillis: POINT_REFETCH,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo } = buildTimestamps(periodMinutes);
+      return (
         await getClientVisibilityAccessLog().getAccessLogDataPoint(
           GetAccessLogDataPointRequest.create({
             from: toTs(curFrom),
@@ -160,7 +161,8 @@ export const useAccessDataPoint = (periodMinutes: number, priority: number) => {
           }),
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };
 
@@ -168,13 +170,12 @@ export const useAccessDenyReasons = (
   periodMinutes: number,
   priority: number,
 ) => {
-  const { curFrom, curTo } = buildTimestamps(periodMinutes);
-
   return useDashboardQuery({
     queryKey: [...dashboardKeys.accessTop("denyReason", periodMinutes)],
     priority,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo } = buildTimestamps(periodMinutes);
+      return (
         await getClientVisibilityAccessLog().listAccessLogTopDenyReason(
           ListAccessLogTopDenyReasonRequest.create({
             from: toTs(curFrom),
@@ -183,21 +184,21 @@ export const useAccessDenyReasons = (
           }),
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };
 
 export const useAuthSummary = (periodMinutes: number, priority: number) => {
-  const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
-
   return useDashboardQuery({
     queryKey: [
       ...visibilityKeys.authSummary("current", periodMinutes, NO_REFS),
       "compare",
     ],
     priority,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
+      return (
         await getClientVisibilityAuthenticationLog().getAuthenticationLogSummary(
           GetAuthenticationLogSummaryRequest.create({
             from: toTs(curFrom),
@@ -207,7 +208,8 @@ export const useAuthSummary = (periodMinutes: number, priority: number) => {
           }),
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };
 
@@ -220,7 +222,6 @@ export const useAuthDataPoint = (
     limitSeries: number;
   },
 ) => {
-  const { curFrom, curTo } = buildTimestamps(periodMinutes);
   const interval = getAutoInterval(periodMinutes);
 
   return useDashboardQuery({
@@ -230,8 +231,9 @@ export const useAuthDataPoint = (
     ],
     priority,
     refetchMillis: POINT_REFETCH,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo } = buildTimestamps(periodMinutes);
+      return (
         await getClientVisibilityAuthenticationLog().getAuthenticationLogDataPoint(
           GetAuthenticationLogDataPointRequest.create({
             from: toTs(curFrom),
@@ -242,21 +244,21 @@ export const useAuthDataPoint = (
           }),
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };
 
 export const useAuditSummary = (periodMinutes: number, priority: number) => {
-  const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
-
   return useDashboardQuery({
     queryKey: [
       ...visibilityKeys.auditSummary("current", periodMinutes, AUDIT_REFS),
       "compare",
     ],
     priority,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
+      return (
         await getClientVisibilityAuditLog().getAuditLogSummary(
           GetAuditLogSummaryRequest.create({
             from: toTs(curFrom),
@@ -266,20 +268,21 @@ export const useAuditSummary = (periodMinutes: number, priority: number) => {
           }),
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };
 
 export const useAuditDataPoint = (periodMinutes: number, priority: number) => {
-  const { curFrom, curTo } = buildTimestamps(periodMinutes);
   const interval = getAutoInterval(periodMinutes);
 
   return useDashboardQuery({
     queryKey: [...visibilityKeys.auditDataPoint(periodMinutes, AUDIT_REFS)],
     priority,
     refetchMillis: POINT_REFETCH,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo } = buildTimestamps(periodMinutes);
+      return (
         await getClientVisibilityAuditLog().getAuditLogDataPoint(
           GetAuditLogDataPointRequest.create({
             from: toTs(curFrom),
@@ -288,7 +291,8 @@ export const useAuditDataPoint = (periodMinutes: number, priority: number) => {
           }),
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };
 
@@ -296,16 +300,15 @@ export const useComponentSummary = (
   periodMinutes: number,
   priority: number,
 ) => {
-  const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
-
   return useDashboardQuery({
     queryKey: [
       ...visibilityKeys.componentSummary("current", periodMinutes),
       "compare",
     ],
     priority,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
+      return (
         await getClientVisibilityComponentLog().getComponentLogSummary(
           GetComponentLogSummaryRequest.create({
             from: toTs(curFrom),
@@ -315,7 +318,8 @@ export const useComponentSummary = (
           }),
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };
 
@@ -324,7 +328,6 @@ export const useComponentDataPoint = (
   level: "all" | "error",
   priority: number,
 ) => {
-  const { curFrom, curTo } = buildTimestamps(periodMinutes);
   const interval = getAutoInterval(periodMinutes);
 
   return useDashboardQuery({
@@ -335,8 +338,9 @@ export const useComponentDataPoint = (
     ],
     priority,
     refetchMillis: POINT_REFETCH,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo } = buildTimestamps(periodMinutes);
+      return (
         await getClientVisibilityComponentLog().getComponentLogDataPoint(
           GetComponentLogDataPointRequest.create({
             from: toTs(curFrom),
@@ -347,18 +351,18 @@ export const useComponentDataPoint = (
           }),
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };
 
 export const useTopComponents = (periodMinutes: number, priority: number) => {
-  const { curFrom, curTo } = buildTimestamps(periodMinutes);
-
   return useDashboardQuery({
     queryKey: ["componentLogTopComponent", periodMinutes],
     priority,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo } = buildTimestamps(periodMinutes);
+      return (
         await getClientVisibilityComponentLog().listComponentLogTopComponent(
           ListComponentLogTopComponentRequest.create({
             from: toTs(curFrom),
@@ -367,7 +371,8 @@ export const useTopComponents = (periodMinutes: number, priority: number) => {
           }),
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };
 
@@ -400,20 +405,20 @@ export const useAccessTop = (
   periodMinutes: number,
   priority: number = QUERY_PRIORITY.low,
 ) => {
-  const { curFrom, curTo } = buildTimestamps(periodMinutes);
-
   return useDashboardQuery<TopResponse>({
     queryKey: [...dashboardKeys.accessTop(resource, periodMinutes)],
     priority,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo } = buildTimestamps(periodMinutes);
+      return (
         await (getClientVisibilityAccessLog() as any)[
           accessTopMethod[resource]
         ](
           { from: toTs(curFrom), to: toTs(curTo), limit: TOP_LIMIT },
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };
 
@@ -422,20 +427,20 @@ export const useAuthTop = (
   periodMinutes: number,
   priority: number = QUERY_PRIORITY.low,
 ) => {
-  const { curFrom, curTo } = buildTimestamps(periodMinutes);
-
   return useDashboardQuery<TopResponse>({
     queryKey: [...dashboardKeys.authTop(resource, periodMinutes)],
     priority,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo } = buildTimestamps(periodMinutes);
+      return (
         await (getClientVisibilityAuthenticationLog() as any)[
           authTopMethod[resource]
         ](
           { from: toTs(curFrom), to: toTs(curTo), limit: TOP_LIMIT },
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };
 
@@ -444,17 +449,17 @@ export const useAuditTop = (
   periodMinutes: number,
   priority: number = QUERY_PRIORITY.low,
 ) => {
-  const { curFrom, curTo } = buildTimestamps(periodMinutes);
-
   return useDashboardQuery<TopResponse>({
     queryKey: [...dashboardKeys.auditTop(resource, periodMinutes)],
     priority,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo } = buildTimestamps(periodMinutes);
+      return (
         await (getClientVisibilityAuditLog() as any)[auditTopMethod[resource]](
           { from: toTs(curFrom), to: toTs(curTo), limit: TOP_LIMIT },
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };

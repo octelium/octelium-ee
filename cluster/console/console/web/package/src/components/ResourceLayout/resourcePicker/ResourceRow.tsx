@@ -2,7 +2,7 @@ import TimeAgo from "@/components/TimeAgo";
 import { Resource } from "@/utils/pb";
 import { ActionIcon, Tooltip } from "@mantine/core";
 import { Check, FileText } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { resourceFacts, resourceIcon } from "./facts";
 
 const Badge = (props: {

@@ -5,7 +5,7 @@ import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { Select } from "@mantine/core";
 import dayjs from "dayjs";
 import { LuTimer } from "react-icons/lu";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 export type AccessLogStatusFilter = "all" | "allowed" | "denied";
 

@@ -1,7 +1,7 @@
 import { Resource } from "@/utils/pb";
 import { Input } from "@mantine/core";
 import { ChevronDown, Search, X } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { resourceFacts, resourceIcon } from "./facts";
 
 export const SelectedChip = (props: {

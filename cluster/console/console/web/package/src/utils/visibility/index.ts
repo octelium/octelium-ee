@@ -84,7 +84,7 @@ export const pct = (value: number, total: number) =>
   total === 0 ? 0 : Math.round((value / total) * 100);
 
 export const deltaPct = (cur: number, prev: number) =>
-  prev === 0 ? 0 : Math.round(((cur - prev) / prev) * 100);
+  prev === 0 ? null : Math.round(((cur - prev) / prev) * 100);
 
 export const NO_REFS = {
   userRef: null,

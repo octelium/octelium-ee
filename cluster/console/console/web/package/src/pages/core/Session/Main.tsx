@@ -20,7 +20,7 @@ import { ResourceMainInfo } from "@/pages/utils/types";
 import { getResourceRef } from "@/utils/pb";
 import { Select } from "@mantine/core";
 import { Shield } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
 import { getType } from "./List";
 import {

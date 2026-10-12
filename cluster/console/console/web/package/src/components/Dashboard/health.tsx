@@ -19,8 +19,10 @@ import {
   UserCheck,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { PILL } from "./components";
+import RpcError from "@/components/RpcError";
+import { describeRpcError } from "@/utils/rpcError";
 
 export const STATUS_STYLE: Record<number, string> = {
   [GetClusterHealthResponse_Status.OK]:
@@ -136,9 +138,14 @@ export const SubsystemCard = (props: {
         </span>
         <StatusBadge status={subsystem.status} />
       </div>
-      <p className="text-micro font-normal leading-4 text-slate-500">
-        {subsystem.message}
-      </p>
+      {describeRpcError(subsystem.message).isRpcError ||
+      subsystem.message.startsWith("Could not be evaluated:") ? (
+        <RpcError error={subsystem.message} />
+      ) : (
+        <p className="text-micro font-normal leading-4 text-slate-500">
+          {subsystem.message}
+        </p>
+      )}
     </>
   );
 
@@ -152,15 +159,15 @@ export const SubsystemCard = (props: {
   if (!meta.to) return <div className={className}>{content}</div>;
 
   return (
-    <Link
-      to={meta.to}
-      className={twMerge(
-        className,
-        "outline-none transition-[border-color,box-shadow] duration-150 hover:shadow-raised focus-visible:ring-2 focus-visible:ring-slate-400",
-      )}
-    >
+    <div className={className}>
       {content}
-    </Link>
+      <Link
+        to={meta.to}
+        className="text-micro font-semibold text-slate-600 hover:text-slate-900"
+      >
+        View {meta.label.toLowerCase()}
+      </Link>
+    </div>
   );
 };
 

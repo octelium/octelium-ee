@@ -8,7 +8,7 @@ import { seriesColor, useChartColorScheme } from "@/utils/charts/palette";
 import { ArrowUpRight, LucideIcon } from "lucide-react";
 import * as React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 export type LeaderboardItem = {
   id: string;

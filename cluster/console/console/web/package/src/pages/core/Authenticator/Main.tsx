@@ -9,7 +9,7 @@ import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
 import { ResourceListLabel } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
 import { ResourceMainInfo } from "@/pages/utils/types";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 export const getType = (item: CoreP.Authenticator) => {
   return match(item.status?.type)

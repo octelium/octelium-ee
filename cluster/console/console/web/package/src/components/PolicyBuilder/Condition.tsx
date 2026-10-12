@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { useMemo, useState } from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
 import itemList, { ItemDef } from "./ItemList";
 import { ExprChip } from "./PrintCondition";

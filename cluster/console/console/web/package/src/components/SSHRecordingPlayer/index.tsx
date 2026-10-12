@@ -2,11 +2,9 @@ import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { ObjectReference } from "@/apis/metav1/metav1";
 import {
   ListSSHSessionRequest,
-  ListSSHSessionResponse,
   SSHSession,
   SSHSession_State,
 } from "@/apis/visibilityv1/visibilityv1";
-import { isDev } from "@/utils";
 import { getClientVisibilityAccessLog } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -20,7 +18,7 @@ import {
   SquareTerminal,
 } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
 import { SelectFromTimestamp } from "../AccessLogViewer/utils";
 import CardService from "../Card/CardService";
@@ -218,33 +216,6 @@ export const SSHSessionViewer = (props: {
       from?.seconds,
     ],
     queryFn: async () => {
-      if (isDev()) {
-        const startedAt = Timestamp.fromDate(
-          dayjs().subtract(18, "minute").toDate(),
-        );
-        return ListSSHSessionResponse.create({
-          items: [
-            SSHSession.create({
-              id: "12345",
-              startedAt,
-              endedAt: Timestamp.now(),
-              sessionRef: props.sessionRef,
-              userRef: props.userRef,
-              deviceRef: props.deviceRef,
-              serviceRef: props.serviceRef,
-              namespaceRef: props.namespaceRef,
-              state: SSHSession_State.COMPLETED,
-            }),
-          ],
-          listResponseMeta: {
-            totalCount: 1,
-            page,
-            itemsPerPage: 1,
-            hasMore: false,
-          },
-        });
-      }
-
       const { response } = await getClientVisibilityAccessLog().listSSHSession(
         ListSSHSessionRequest.create({
           userRef: props.userRef,

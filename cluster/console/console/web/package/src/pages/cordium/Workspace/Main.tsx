@@ -5,7 +5,7 @@ import { ResourceListLabel } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { AlertTriangle } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import {
   getFailureLabel,
   getImageSource,

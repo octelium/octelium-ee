@@ -184,7 +184,7 @@ const SeriesChart = ({
           margin: 12,
           hideOverlap: true,
           formatter: (value: number) =>
-            echarts.format.formatTime("MM/dd\nHH:mm", value),
+            echarts.format.formatTime("MM/dd\nhh:mm", value),
         },
         splitLine: { show: false },
       },

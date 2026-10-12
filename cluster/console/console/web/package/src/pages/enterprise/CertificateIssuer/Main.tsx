@@ -3,7 +3,7 @@ import CopyText from "@/components/CopyText";
 import { ResourceListLabel } from "@/components/ResourceList";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { AlertTriangle, CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { getIssuerPresentation } from "./List";
 
 export default (_props: { item: E.CertificateIssuer }) => <></>;

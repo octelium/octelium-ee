@@ -1,3 +1,4 @@
+import RpcError from "@/components/RpcError";
 import { Panel } from "@/components/Dashboard/components";
 import TimeAgo from "@/components/TimeAgo";
 import { ActionIcon, Alert, Button, Skeleton, Tooltip } from "@mantine/core";
@@ -159,7 +160,7 @@ const Packages = (props: {
       ) : versions.isError ? (
         <Alert color="red" title="Could not load the package versions">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="text-xs">{versions.error.message}</span>
+            <RpcError error={versions.error} />
             <Button
               size="compact-xs"
               variant="outline"

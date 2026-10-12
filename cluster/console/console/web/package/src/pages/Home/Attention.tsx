@@ -21,11 +21,14 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { Panel } from "@/components/Dashboard/components";
+import { StatusBadge, SubsystemGrid } from "@/components/Dashboard/health";
+import { GetClusterHealthResponse_Status } from "@/apis/visibilityv1/visibilityv1";
 import {
   useClusterSummary,
   useComponentSummary,
+  useClusterHealth,
 } from "@/components/Dashboard/queries";
 import { compact, exact } from "@/components/Dashboard/utils";
 
@@ -130,6 +133,22 @@ const Attention = (props: { periodMinutes: number }) => {
     QUERY_PRIORITY.critical,
   );
   const componentLogs = useComponentSummary(periodMinutes, QUERY_PRIORITY.high);
+  const health = useClusterHealth(periodMinutes, QUERY_PRIORITY.high);
+  const unhealthySubsystems = (health.data?.subsystems ?? []).filter(
+    (item) =>
+      item.status === GetClusterHealthResponse_Status.CRITICAL ||
+      item.status === GetClusterHealthResponse_Status.DEGRADED,
+  );
+  const unknownSubsystems = (health.data?.subsystems ?? []).filter(
+    (item) =>
+      item.status !== GetClusterHealthResponse_Status.OK &&
+      item.status !== GetClusterHealthResponse_Status.CRITICAL &&
+      item.status !== GetClusterHealthResponse_Status.DEGRADED,
+  );
+  const healthNeedsAttention =
+    health.data?.status === GetClusterHealthResponse_Status.CRITICAL ||
+    health.data?.status === GetClusterHealthResponse_Status.DEGRADED ||
+    unhealthySubsystems.length > 0;
 
   const requests = cluster.data?.access?.request;
   const reviews = cluster.data?.access?.review;
@@ -157,7 +176,7 @@ const Attention = (props: { periodMinutes: number }) => {
       label: "Access requests past their deadline",
       scope: "Access",
       severity: "critical",
-      to: "/access/requests?state=PENDING",
+      to: "/access/requests?isDeadlinePassed=true",
       icon: CalendarClock,
     },
     {
@@ -272,22 +291,40 @@ const Attention = (props: { periodMinutes: number }) => {
         b.count - a.count,
     );
 
-  const isLoading = cluster.isLoading || componentLogs.isLoading;
+  const isLoading =
+    cluster.isLoading || componentLogs.isLoading || health.isLoading;
   const failed =
     (cluster.data?.unavailables.length ?? 0) +
     (cluster.isError ? 1 : 0) +
-    (componentLogs.isError ? 1 : 0);
+    (componentLogs.isError ? 1 : 0) +
+    (health.isError ? 1 : 0) +
+    unknownSubsystems.length;
+  const incomplete =
+    failed > 0 || !health.data || !cluster.data || !componentLogs.data ||
+    (health.data.status !== GetClusterHealthResponse_Status.OK &&
+      !healthNeedsAttention);
 
-  const critical = items.filter((item) => item.severity === "critical").length;
+  const critical =
+    items.filter((item) => item.severity === "critical").length +
+    unhealthySubsystems.filter(
+      (item) => item.status === GetClusterHealthResponse_Status.CRITICAL,
+    ).length;
+  const signalCount = items.length + unhealthySubsystems.length;
 
   return (
     <Panel
       icon={critical > 0 ? ShieldAlert : AlertTriangle}
       title="Needs attention"
       description={
-        items.length === 0
-          ? "Everything across Core, Access and Enterprise looks healthy"
-          : `${items.length} signal${items.length === 1 ? "" : "s"} across Core, Access and Enterprise${critical > 0 ? ` · ${critical} critical` : ""}`
+        isLoading
+          ? "Checking signals across Core, Access and Enterprise"
+          : incomplete
+            ? "Some signals are unavailable; the assessment is incomplete"
+            : items.length === 0 && !healthNeedsAttention
+              ? "Everything across Core, Access and Enterprise looks healthy"
+              : items.length === 0
+                ? "Cluster health has signals that need attention"
+                : `${signalCount} signal${signalCount === 1 ? "" : "s"} across Core, Access and Enterprise${critical > 0 ? ` · ${critical} critical` : ""}`
       }
     >
       {isLoading && items.length === 0 ? (
@@ -301,13 +338,31 @@ const Attention = (props: { periodMinutes: number }) => {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {items.length === 0 ? (
+          {items.length === 0 && !healthNeedsAttention && !incomplete ? (
             <AllClear />
-          ) : (
+          ) : items.length > 0 ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
               {items.map((item) => (
                 <Card key={item.id} item={item} />
               ))}
+            </div>
+          ) : null}
+
+          {unhealthySubsystems.length > 0 ? (
+            <SubsystemGrid subsystems={unhealthySubsystems} />
+          ) : healthNeedsAttention ? (
+            <div className="flex items-center gap-2 text-body text-slate-700">
+              <StatusBadge status={health.data!.status} />
+              Cluster health needs attention. Review the health signals below.
+            </div>
+          ) : null}
+
+          {incomplete && (
+            <div
+              role="status"
+              className="rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-4 text-body text-amber-700"
+            >
+              Incomplete assessment
             </div>
           )}
 

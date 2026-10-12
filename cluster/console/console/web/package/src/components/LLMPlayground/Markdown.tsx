@@ -6,7 +6,7 @@ import ReactMarkdown, {
   type UrlTransform,
 } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 const CodeBlock = (props: { language?: string; code: string }) => {
   const [copied, setCopied] = React.useState(false);

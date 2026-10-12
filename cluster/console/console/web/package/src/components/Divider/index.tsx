@@ -1,4 +1,4 @@
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 const Divider = (props: { children?: React.ReactNode }) => {
   return (

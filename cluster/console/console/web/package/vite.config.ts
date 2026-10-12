@@ -1,18 +1,35 @@
 import react from "@vitejs/plugin-react";
 import path from "path";
-import { defineConfig } from "vite";
+import { defineConfig, type RollupCommonJSOptions } from "vite";
 import svgr from "vite-plugin-svgr";
 
-import type { RollupCommonJSOptions } from "@rollup/plugin-commonjs";
 import { createRequire } from "module";
+import { readFile } from "fs/promises";
 
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.resolve();
 
+const mantineShadowDomFix = () => ({
+  name: "mantine-shadow-dom-fix",
+  enforce: "pre" as const,
+  async load(id: string) {
+    if (
+      id.includes("@mantine/core/") &&
+      id.endsWith("/find-element-in-shadow-dom.mjs")
+    ) {
+      return readFile(
+        path.resolve(__dirname, "src/utils/mantine/find-element-in-shadow-dom.js"),
+        "utf8",
+      );
+    }
+  },
+});
+
 export default defineConfig({
   plugins: [
+    mantineShadowDomFix(),
     react(),
     svgr(),
     nodePolyfills({
@@ -28,6 +45,10 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "src"),
     },
+  },
+
+  optimizeDeps: {
+    rolldownOptions: { plugins: [mantineShadowDomFix()] },
   },
 
   build: {

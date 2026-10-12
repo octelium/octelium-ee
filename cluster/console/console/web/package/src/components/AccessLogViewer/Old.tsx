@@ -19,14 +19,13 @@ import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { ObjectReference } from "@/apis/metav1/metav1";
 import {
   ListAccessLogRequest,
-  ListAccessLogResponse,
 } from "@/apis/visibilityv1/visibilityv1";
 import Paginator from "@/components/Paginator";
-import { isDev } from "@/utils";
-import { getClientCore, getClientVisibilityAccessLog } from "@/utils/client";
+import { formatBytes as convertBytes } from "@/utils";
+import { getClientVisibilityAccessLog } from "@/utils/client";
 import dayjs from "dayjs";
 import { MdRefresh } from "react-icons/md";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
 import CardService from "../Card/CardService";
 import CardSession from "../Card/CardSession";
@@ -39,25 +38,7 @@ import TimeAgo from "../TimeAgo";
 import Editor from "./Editor";
 import { SelectFromTimestamp } from "./utils";
 
-export function convertBytes(
-  bytes: number,
-  options: { useBinaryUnits?: boolean; decimals?: number } = {},
-): string {
-  const { useBinaryUnits = false, decimals = 2 } = options;
-
-  if (decimals < 0) {
-    throw new Error(`Invalid decimals ${decimals}`);
-  }
-
-  const base = useBinaryUnits ? 1024 : 1000;
-  const units = useBinaryUnits
-    ? ["Bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]
-    : ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-
-  const i = Math.floor(Math.log(bytes) / Math.log(base));
-
-  return `${(bytes / Math.pow(base, i)).toFixed(decimals)} ${units[i]}`;
-}
+export { formatBytes as convertBytes } from "@/utils";
 
 const InfoDetailHTTP = (props: { item: AccessLog_Entry_Info_HTTP }) => {
   const { item } = props;
@@ -472,51 +453,6 @@ export const AccessLogC = (props: { accessLog: AccessLog }) => {
   );
 };
 
-export const getListAccessLogResponseTest = async () => {
-  const r = await getClientCore().listSession({});
-  const sess = r.response.items.at(0);
-  const rSvcs = await getClientCore().listService({});
-  const svc = rSvcs.response.items.at(0);
-  return ListAccessLogResponse.create({
-    items: [
-      AccessLog.create({
-        kind: "AccessLog",
-        metadata: {
-          createdAt: Timestamp.now(),
-          id: "mulb-o92x-p092j5ltc3q1nyajoiidx0tq-1r9h-x3p0",
-          actorRef: getResourceRef(sess!),
-        },
-        entry: {
-          common: {
-            sessionRef: getResourceRef(sess!),
-            userRef: sess?.status?.userRef,
-            deviceRef: sess?.status?.deviceRef,
-
-            mode: Service_Spec_Mode.HTTP,
-            serviceRef: getResourceRef(svc!),
-            namespaceRef: svc?.status?.namespaceRef,
-
-            status: AccessLog_Entry_Common_Status.ALLOWED,
-            reason: {
-              type: AccessLog_Entry_Common_Reason_Type.POLICY_MATCH,
-            },
-          },
-          info: {
-            type: {
-              oneofKind: "http",
-              http: {
-                request: {
-                  path: "/path/v1",
-                } as AccessLog_Entry_Info_HTTP_Request,
-              } as AccessLog_Entry_Info_HTTP,
-            },
-          },
-        },
-      }),
-    ],
-  });
-};
-
 const DoAccessLogViewer = (props: {
   userRef?: ObjectReference;
   sessionRef?: ObjectReference;
@@ -534,10 +470,6 @@ const DoAccessLogViewer = (props: {
     queryKey: ["visibility", "listAccessLog", { ...props }],
 
     queryFn: async () => {
-      if (isDev()) {
-        return getListAccessLogResponseTest();
-      }
-
       const req = ListAccessLogRequest.create({
         userRef: props.userRef,
         sessionRef: props.sessionRef,

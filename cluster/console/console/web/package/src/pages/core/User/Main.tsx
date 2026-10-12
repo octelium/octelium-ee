@@ -18,7 +18,7 @@ import { KeyRound, Plus, Shield, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
 import Edit from "../Credential/Edit";
 import { useUserRelatedResources } from "./related";

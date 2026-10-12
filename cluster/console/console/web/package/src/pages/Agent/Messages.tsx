@@ -12,7 +12,7 @@ import { ActionIcon, Tooltip } from "@mantine/core";
 import { motion } from "framer-motion";
 import { CircleAlert, RotateCcw } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { BlockView, fileIcon, StepsView, type BlockContext } from "./Blocks";
 import { modelLabel } from "./Models";
 import { AgentMark, CopyButton, Shimmer, useNow } from "./ui";

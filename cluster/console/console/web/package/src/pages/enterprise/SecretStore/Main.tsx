@@ -5,7 +5,7 @@ import TimeAgo from "@/components/TimeAgo";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { Alert } from "@mantine/core";
 import { AlertTriangle, Loader2 } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import {
   getSecretStorePresentation,
   getSecretStoreSyncState,

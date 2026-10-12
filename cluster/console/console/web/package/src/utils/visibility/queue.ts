@@ -66,7 +66,10 @@ export const queued = <T>(
       priority,
       order: counter++,
       start: () => {
-        run(signal).then(resolve, reject).finally(release);
+        Promise.resolve()
+          .then(() => run(signal))
+          .then(resolve, reject)
+          .finally(release);
       },
     };
 

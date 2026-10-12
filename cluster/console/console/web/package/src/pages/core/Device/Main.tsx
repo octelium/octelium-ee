@@ -15,7 +15,7 @@ import { ResourceMainInfo } from "@/pages/utils/types";
 import { getResourceRef } from "@/utils/pb";
 import { FaAndroid, FaApple, FaLinux, FaWindows } from "react-icons/fa";
 import { Activity, Shield } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 export const getOSIcon = (item: CoreP.Device) => {
   return match(item.status!.osType)

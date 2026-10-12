@@ -4,20 +4,17 @@ import { Value } from "@/apis/google/protobuf/struct";
 import {
   ComponentSelector,
   ListComponentLogRequest,
-  ListComponentLogResponse,
 } from "@/apis/visibilityv1/visibilityv1";
 import Paginator from "@/components/Paginator";
 import { ListLoading } from "@/components/Loading";
-import { isDev } from "@/utils";
-import { getClientCore, getClientVisibilityComponentLog } from "@/utils/client";
-import { getResourceRef } from "@/utils/pb";
+import { getClientVisibilityComponentLog } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import { Select } from "@mantine/core";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, RefreshCw } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
 import Editor from "../AccessLogViewer/Editor";
 import { SelectFromTimestamp } from "../AccessLogViewer/utils";
@@ -376,35 +373,6 @@ const ComponentLogViewer = (props: {
       props.component ? ComponentSelector.toJsonString(props.component) : null,
     ],
     queryFn: async () => {
-      if (isDev()) {
-        const r = await getClientCore().listSession({});
-        const sess = r.response.items.at(0);
-        return ListComponentLogResponse.create({
-          items: [
-            ComponentLog.create({
-              kind: "ComponentLog",
-              metadata: {
-                createdAt: Timestamp.now(),
-                id: "mulb-o92x-p092j5ltc3q1nyajoiidx0tq-1r9h-x3p0",
-                actorRef: getResourceRef(sess!),
-              },
-              entry: {
-                component: {
-                  namespace: "octelium",
-                  type: "nocturne",
-                  uid: "abc-123",
-                },
-                level: level ?? ComponentLog_Entry_Level.INFO,
-                message: "Component is starting...",
-                function: "main.Run",
-                file: "cmd/nocturne/main.go",
-                line: 42,
-              },
-            }),
-          ],
-        });
-      }
-
       const { response } =
         await getClientVisibilityComponentLog().listComponentLog(
           ListComponentLogRequest.create({

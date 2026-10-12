@@ -1,5 +1,5 @@
 import { Slider } from "@mantine/core";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 const PRIORITY_STEPS = [-4, -3, -2, -1, 0, 1, 2, 3, 4] as const;
 type Priority = (typeof PRIORITY_STEPS)[number];

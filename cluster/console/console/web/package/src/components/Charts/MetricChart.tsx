@@ -37,6 +37,7 @@ import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { useEffect, useMemo, useState } from "react";
 import DurationPicker from "../DurationPicker";
+import RpcError from "@/components/RpcError";
 import {
   axisLabelStyle,
   CHART_INK,
@@ -768,7 +769,7 @@ const MetricChart = (props: MetricChartProps) => {
           margin: 12,
           hideOverlap: true,
           formatter: (value: number) =>
-            echarts.format.formatTime("MM/dd\nHH:mm", value),
+            echarts.format.formatTime("MM/dd\nhh:mm", value),
         },
       },
 
@@ -865,9 +866,6 @@ const MetricChart = (props: MetricChartProps) => {
           },
           { label: "Peak", value: formatValue(statistics.peak, effectiveUnit) },
         ];
-
-  const errorMessage =
-    qry.error instanceof Error ? qry.error.message : "Unable to load this metric";
 
   const notRecorded = qry.isError && isMetricNotRecorded(qry.error);
   const failed = qry.isError && !notRecorded;
@@ -978,9 +976,7 @@ const MetricChart = (props: MetricChartProps) => {
             <p className="text-sm font-bold text-slate-700">
               Metric unavailable
             </p>
-            <p className="mt-1 line-clamp-2 text-xs font-normal text-slate-500">
-              {errorMessage}
-            </p>
+            <RpcError error={qry.error} />
             <button
               type="button"
               onClick={() => qry.refetch()}

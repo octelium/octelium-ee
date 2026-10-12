@@ -7,7 +7,7 @@ import { ResourceMainInfo } from "@/pages/utils/types";
 import { getClientAccess } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { OriginValue, hasOrigin } from "../Origin";
 import { getUrgencyLabel } from "../Request/utils";
 import { getDecisionMeta } from "./utils";

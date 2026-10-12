@@ -21,7 +21,7 @@ import {
   Type,
 } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import Section from "../Section";
 
 interface Row {

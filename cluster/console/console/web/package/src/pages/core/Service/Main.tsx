@@ -14,7 +14,7 @@ import { getResourceRef } from "@/utils/pb";
 import { Button, Switch } from "@mantine/core";
 import { ExternalLink, Server, Shield } from "lucide-react";
 import { FaLink } from "react-icons/fa";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { getType } from "./List";
 
 export const ItemInfo = (props: { item: CoreC.Service }) => {

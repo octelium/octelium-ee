@@ -2,7 +2,7 @@ import { Loader } from "@mantine/core";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Inbox } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 export const Panel = (props: {
   title: string;

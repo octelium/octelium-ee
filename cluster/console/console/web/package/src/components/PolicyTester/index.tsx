@@ -25,7 +25,7 @@ import {
   UserRound,
 } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
 import { getPolicyReason } from "../AccessLogViewer/Old";
 import SelectInlinePolicies from "../ResourceLayout/SelectInlinePolicies";

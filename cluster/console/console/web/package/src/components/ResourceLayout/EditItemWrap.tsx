@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, LoaderCircle, Pencil, X } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 const EditItemWrap = (props: {
   showComponent: React.ReactNode;

@@ -34,7 +34,7 @@ import {
 import * as React from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { type BlockContext } from "./Blocks";
 import { AgentClient } from "./client";
 import Composer, { type Upload } from "./Composer";

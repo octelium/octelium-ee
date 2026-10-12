@@ -2,7 +2,7 @@ import { ActionIcon, Button, Modal, Tooltip } from "@mantine/core";
 import { Check, Copy, Sparkles, Trash2 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 export const isMac =
   typeof navigator !== "undefined" &&

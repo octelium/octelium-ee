@@ -31,7 +31,7 @@ import {
   X,
 } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import Message from "./Message";
 import { defaultEndpoint, messageText, supportsStreaming } from "./protocols";
 import { runCompletion } from "./runner";

@@ -52,7 +52,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import * as React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 const itemsCore = [
   { title: "Services", url: "/core/services", icon: PanelTop },
@@ -180,7 +180,7 @@ const sections = [
     prefix: "/clusterman",
     defaultPath: "/clusterman",
     icon: Settings2,
-    items: [],
+    items: [{ title: "Cluster overview", url: "/clusterman", icon: Settings2 }],
   },
   {
     label: "Visibility",
@@ -196,7 +196,7 @@ const getBarIdx = (pathname: string) => {
     (section) =>
       pathname === section.prefix || pathname.startsWith(`${section.prefix}/`),
   );
-  return idx >= 0 ? idx : 0;
+  return idx;
 };
 
 export default function Sidebar() {
@@ -265,8 +265,8 @@ export default function Sidebar() {
     }
   };
 
-  const activeSection = sections[barIdx] ?? sections[0];
-  const ActiveIcon = activeSection.icon;
+  const activeSection = sections[barIdx];
+  const ActiveIcon = activeSection?.icon ?? Layers;
   const items = activeSection?.items ?? [];
 
   const isOverview = loc.pathname === "/";
@@ -324,7 +324,9 @@ export default function Sidebar() {
             if (event.key === "ArrowDown" || event.key === "ArrowUp") {
               event.preventDefault();
               openAndFocus(
-                event.key === "ArrowDown" ? barIdx : sections.length - 1,
+                event.key === "ArrowDown"
+                  ? Math.max(0, barIdx)
+                  : sections.length - 1,
               );
             }
           }}
@@ -349,7 +351,7 @@ export default function Sidebar() {
               API workspace
             </span>
             <span className="mt-0.5 block truncate text-body font-semibold text-slate-800">
-              {activeSection.label}
+              {activeSection?.label ?? "Choose workspace"}
             </span>
           </span>
           <motion.span
@@ -398,10 +400,10 @@ export default function Sidebar() {
                       type="button"
                       role="menuitemradio"
                       aria-checked={isActive}
-                      tabIndex={isActive ? 0 : -1}
+                      tabIndex={isActive || (barIdx < 0 && idx === 0) ? 0 : -1}
                       onClick={() => {
                         setDropdownOpen(false);
-                        if (!isActive) navigate(s.defaultPath);
+                        navigate(s.defaultPath);
                       }}
                       className={twMerge(
                         "group/item flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-left",

@@ -37,7 +37,8 @@ import {
   useNavigate,
 } from "react-router-dom";
 import { toast } from "sonner";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
+import RpcError from "@/components/RpcError";
 import CopyText from "../CopyText";
 import Paginator from "../Paginator";
 import {
@@ -832,7 +833,7 @@ const buildListReq = (pathname: string, search: string) => {
 };
 
 const ListErrorState = (props: {
-  message?: string;
+  error?: unknown;
   onRetry: () => void;
 }) => (
   <div
@@ -845,9 +846,7 @@ const ListErrorState = (props: {
     <h2 className="mt-4 text-sm font-semibold text-slate-900">
       Resources could not be loaded
     </h2>
-    <p className="mt-1.5 max-w-md text-sm text-slate-600">
-      {props.message ?? "Check your connection and try again."}
-    </p>
+    <RpcError error={props.error} />
     <Button
       className="mt-5"
       variant="default"
@@ -1104,7 +1103,7 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
 
       {isError && !itemList ? (
         <ListErrorState
-          message={error instanceof Error ? error.message : undefined}
+          error={error}
           onRetry={() => refetch()}
         />
       ) : isPending ? (

@@ -14,8 +14,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import License from "./License";
+import RpcError from "@/components/RpcError";
 import Packages from "./Packages";
 import {
   isUpgradeActive,
@@ -159,9 +160,7 @@ const Main = () => {
       {config.isError ? (
         <Alert color="red" title="Could not load the Cluster status">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="text-xs">
-              {config.error?.message ?? "The Cluster API returned no status."}
-            </span>
+            <RpcError error={config.error} />
             <Button
               size="compact-xs"
               variant="outline"

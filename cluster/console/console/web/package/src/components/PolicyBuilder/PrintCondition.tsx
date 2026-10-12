@@ -3,7 +3,7 @@ import {
   Condition_Expression,
 } from "@/apis/enterprisev1/enterprisev1";
 import { Braces, Check, Sparkles } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
 import itemList from "./ItemList";
 

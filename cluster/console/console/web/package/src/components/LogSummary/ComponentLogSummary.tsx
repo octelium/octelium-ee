@@ -2,9 +2,7 @@ import { ComponentLog_Entry_Level } from "@/apis/corev1/corev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import {
   GetComponentLogSummaryRequest,
-  GetComponentLogSummaryResponse,
 } from "@/apis/visibilityv1/visibilityv1";
-import { isDev } from "@/utils";
 import {
   getClientVisibilityComponentLog,
   refetchIntervalChart,
@@ -22,15 +20,6 @@ const ComponentLogSummary = (props: {
     queryKey: ["visibility", "getComponentLogSummary", { ...props }],
 
     queryFn: async () => {
-      if (isDev()) {
-        return GetComponentLogSummaryResponse.create({
-          totalNumber: 100,
-          totalDebug: 70,
-          totalInfo: 20,
-          totalWarn: 10,
-        });
-      }
-
       const req = GetComponentLogSummaryRequest.create({ ...props });
 
       const { response } =

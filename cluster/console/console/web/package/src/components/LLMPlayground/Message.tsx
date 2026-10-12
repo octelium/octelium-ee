@@ -13,7 +13,7 @@ import {
   Wrench,
 } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import Markdown from "./Markdown";
 import { messageText } from "./protocols";
 import { ChatMessage, Usage } from "./types";

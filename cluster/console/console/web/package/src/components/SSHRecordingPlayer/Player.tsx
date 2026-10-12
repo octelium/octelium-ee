@@ -1,12 +1,11 @@
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { SSHSession } from "@/apis/visibilityv1/visibilityv1";
-import { isDev } from "@/utils";
 import { getClientVisibilityAccessLog } from "@/utils/client";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { Gauge, Play, RotateCcw, Square } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 const MAX_FRAME_DELAY_MS = 2000;
 const UI_UPDATE_INTERVAL_MS = 50;
@@ -27,68 +26,6 @@ interface XTermSSHReplayProps {
   sshSession: SSHSession;
   initialPage?: number;
 }
-
-const generateMockPage = (page: number, fromMs?: number): APIResponse => {
-  const encoder = new TextEncoder();
-  const baseTime = 1000000000000;
-
-  const allFrames: { text: string; delay: number }[] = [
-    { text: "\x1b[32muser@server:~$\x1b[0m ", delay: 0 },
-    { text: "l", delay: 150 },
-    { text: "s -la\r\n", delay: 200 },
-    { text: "total 48\r\n", delay: 50 },
-    {
-      text: "drwxr-xr-x  5 user user 4096 Dec 17 10:30 \x1b[34m.\x1b[0m\r\n",
-      delay: 20,
-    },
-    {
-      text: "drwxr-xr-x  3 root root 4096 Dec 10 08:15 \x1b[34m..\x1b[0m\r\n",
-      delay: 20,
-    },
-    {
-      text: "-rw-r--r--  1 user user 3526 Dec 10 08:15 .bashrc\r\n",
-      delay: 20,
-    },
-    {
-      text: "drwxr-xr-x  3 user user 4096 Dec 15 14:20 \x1b[34mDocuments\x1b[0m\r\n",
-      delay: 20,
-    },
-    { text: "\x1b[32muser@server:~$\x1b[0m ", delay: 100 },
-    { text: "cd Documents\r\n", delay: 2000 },
-    { text: "\x1b[32muser@server:~/Documents$\x1b[0m ", delay: 50 },
-    { text: "cat readme.txt\r\n", delay: 1500 },
-    { text: "=================================\r\n", delay: 30 },
-    { text: "Welcome to the SSH Replay Demo!\r\n", delay: 30 },
-    { text: "=================================\r\n", delay: 30 },
-    { text: "\x1b[32muser@server:~/Documents$\x1b[0m ", delay: 200 },
-    { text: "exit\r\n", delay: 500 },
-    { text: "\x1b[33mConnection to server closed.\x1b[0m\r\n", delay: 50 },
-  ];
-
-  let currentTime = baseTime;
-  const timestampedFrames: SSHFrame[] = allFrames.map((item) => {
-    currentTime += item.delay;
-    return { content: encoder.encode(item.text), timestamp: currentTime };
-  });
-
-  const PAGE_SIZE = 6;
-  const filtered =
-    fromMs != null
-      ? timestampedFrames.filter((f) => f.timestamp >= fromMs)
-      : timestampedFrames;
-
-  const start = (page - 1) * PAGE_SIZE;
-  const end = start + PAGE_SIZE;
-  const pageFrames = filtered.slice(start, end);
-  const hasMore = end < filtered.length;
-
-  return {
-    frames: pageFrames,
-    hasMore,
-    nextPage: hasMore ? page + 1 : undefined,
-    total: filtered.length,
-  };
-};
 
 type PlaybackStatus =
   | { type: "idle" }
@@ -220,12 +157,6 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
       signal: AbortSignal,
       fromMs?: number,
     ): Promise<APIResponse> => {
-      if (isDev()) {
-        await new Promise((resolve) => setTimeout(resolve, 150));
-        if (signal.aborted) throw new DOMException("Aborted", "AbortError");
-        return generateMockPage(page, fromMs);
-      }
-
       const { response } =
         await getClientVisibilityAccessLog().listSSHSessionRecording({
           sessionID: sshSession.id,

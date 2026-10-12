@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { useLocation, useNavigate, useRouteError } from "react-router-dom";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
+import { describeRpcError } from "@/utils/rpcError";
 
 const CopyReport = (props: { report: ErrorReport }) => {
   const [copied, setCopied] = React.useState(false);
@@ -56,6 +57,7 @@ export const ErrorScreen = (props: {
 }) => {
   const [expanded, setExpanded] = React.useState(false);
   const navigate = useNavigate();
+  const rpcError = describeRpcError(props.report.message);
 
   return (
     <div className="flex w-full flex-col gap-4 py-4" role="alert">
@@ -81,7 +83,8 @@ export const ErrorScreen = (props: {
               {props.report.name}
             </div>
             <p className="mt-1 font-mono text-xs leading-5 break-words text-slate-800">
-              {props.report.message}
+              {rpcError.isRpcError || props.report.name === "RpcError"
+                ? rpcError.message : props.report.message}
             </p>
           </div>
 

@@ -19,13 +19,11 @@ import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { ObjectReference } from "@/apis/metav1/metav1";
 import {
   ListAccessLogRequest,
-  ListAccessLogResponse,
 } from "@/apis/visibilityv1/visibilityv1";
 import Paginator from "@/components/Paginator";
 import { ListLoading } from "@/components/Loading";
-import { isDev } from "@/utils";
-import { getClientCore, getClientVisibilityAccessLog } from "@/utils/client";
-import { getResourceRef } from "@/utils/pb";
+import { formatBytes as convertBytes } from "@/utils";
+import { getClientVisibilityAccessLog } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
@@ -37,7 +35,7 @@ import {
   ShieldX,
 } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
 import CardService from "../Card/CardService";
 import CardSession from "../Card/CardSession";
@@ -53,22 +51,7 @@ import {
   SelectFromTimestamp,
 } from "./utils";
 
-export function convertBytes(
-  bytes: number,
-  options: { useBinaryUnits?: boolean; decimals?: number } = {},
-): string {
-  const { useBinaryUnits = false, decimals = 2 } = options;
-  if (!Number.isFinite(bytes) || bytes <= 0) return "0 Bytes";
-  const base = useBinaryUnits ? 1024 : 1000;
-  const units = useBinaryUnits
-    ? ["Bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]
-    : ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-  const i = Math.min(
-    units.length - 1,
-    Math.floor(Math.log(bytes) / Math.log(base)),
-  );
-  return `${(bytes / Math.pow(base, i)).toFixed(Math.max(0, decimals))} ${units[i]}`;
-}
+export { formatBytes as convertBytes } from "@/utils";
 
 const durationBetween = (startedAt?: Timestamp, endedAt?: Timestamp) => {
   if (!startedAt || !endedAt) return undefined;
@@ -944,216 +927,6 @@ export const AccessLogC = ({ accessLog }: { accessLog: AccessLog }) => {
   );
 };
 
-export const getListAccessLogResponseTest = async () => {
-  const r = await getClientCore().listSession({});
-  const sess = r.response.items.at(0);
-  const rSvcs = await getClientCore().listService({});
-  const svc = rSvcs.response.items.at(0);
-  const sessionRef = sess
-    ? getResourceRef(sess)
-    : ObjectReference.create({ uid: "dev-session", name: "dev-session" });
-  const userRef =
-    sess?.status?.userRef ??
-    ObjectReference.create({ uid: "dev-user", name: "alice" });
-  const deviceRef =
-    sess?.status?.deviceRef ??
-    ObjectReference.create({ uid: "dev-device", name: "alice-laptop" });
-  const serviceRef = svc
-    ? getResourceRef(svc)
-    : ObjectReference.create({ uid: "dev-service", name: "admin-console" });
-  const namespaceRef =
-    svc?.status?.namespaceRef ??
-    ObjectReference.create({ uid: "dev-namespace", name: "default" });
-  const createdAt = (minutesAgo: number) =>
-    Timestamp.fromDate(dayjs().subtract(minutesAgo, "minute").toDate());
-  const common = {
-    sessionRef,
-    userRef,
-    deviceRef,
-    serviceRef,
-    namespaceRef,
-  };
-  const items = [
-    AccessLog.create({
-      kind: "AccessLog",
-      metadata: { createdAt: createdAt(1), id: "dev-access-http-get" },
-      entry: {
-        common: {
-          ...common,
-          connectionID: "conn-http-01",
-          mode: Service_Spec_Mode.HTTP,
-          status: AccessLog_Entry_Common_Status.ALLOWED,
-          reason: { type: AccessLog_Entry_Common_Reason_Type.POLICY_MATCH },
-        },
-        info: {
-          type: {
-            oneofKind: "http",
-            http: {
-              httpVersion: 2,
-              request: {
-                method: "GET",
-                path: "/api/v1/users?limit=25",
-                userAgent: "Mozilla/5.0 Octelium Console Dev",
-                bodyBytes: 0,
-              } as any,
-              response: { code: 200, bodyBytes: 18432 } as any,
-            },
-          },
-        },
-      },
-    }),
-    AccessLog.create({
-      kind: "AccessLog",
-      metadata: { createdAt: createdAt(3), id: "dev-access-http-denied" },
-      entry: {
-        common: {
-          ...common,
-          connectionID: "conn-http-02",
-          mode: Service_Spec_Mode.HTTP,
-          status: AccessLog_Entry_Common_Status.DENIED,
-          reason: {
-            type: AccessLog_Entry_Common_Reason_Type.NO_POLICY_MATCH,
-          },
-        },
-        info: {
-          type: {
-            oneofKind: "http",
-            http: {
-              httpVersion: 1,
-              request: {
-                method: "POST",
-                path: "/api/v1/policies",
-                userAgent: "curl/8.6.0",
-                bodyBytes: 926,
-              } as any,
-              response: { code: 403, bodyBytes: 148 } as any,
-            },
-          },
-        },
-      },
-    }),
-    AccessLog.create({
-      kind: "AccessLog",
-      metadata: { createdAt: createdAt(7), id: "dev-access-kubernetes" },
-      entry: {
-        common: {
-          ...common,
-          connectionID: "conn-k8s-01",
-          mode: Service_Spec_Mode.KUBERNETES,
-          status: AccessLog_Entry_Common_Status.ALLOWED,
-          reason: { type: AccessLog_Entry_Common_Reason_Type.POLICY_MATCH },
-        },
-        info: {
-          type: {
-            oneofKind: "kubernetes",
-            kubernetes: {
-              verb: "get",
-              resource: "pods",
-              subresource: "log",
-              namespace: "production",
-              name: "gateway-7d9f6c8c5b-z2m4q",
-              apiPrefix: "/api",
-              apiGroup: "",
-              apiVersion: "v1",
-              http: {
-                httpVersion: 2,
-                request: { method: "GET" } as any,
-              },
-            },
-          },
-        },
-      },
-    }),
-    AccessLog.create({
-      kind: "AccessLog",
-      metadata: { createdAt: createdAt(12), id: "dev-access-grpc" },
-      entry: {
-        common: {
-          ...common,
-          connectionID: "conn-grpc-01",
-          mode: Service_Spec_Mode.GRPC,
-          status: AccessLog_Entry_Common_Status.ALLOWED,
-          reason: { type: AccessLog_Entry_Common_Reason_Type.POLICY_MATCH },
-        },
-        info: {
-          type: {
-            oneofKind: "grpc",
-            grpc: {
-              package: "octelium.api.core.v1",
-              service: "UserService",
-              method: "ListUser",
-              serviceFullName: "octelium.api.core.v1.UserService",
-              status: 0,
-            } as any,
-          },
-        },
-      },
-    }),
-    AccessLog.create({
-      kind: "AccessLog",
-      metadata: { createdAt: createdAt(18), id: "dev-access-dns" },
-      entry: {
-        common: {
-          ...common,
-          connectionID: "conn-dns-01",
-          mode: Service_Spec_Mode.DNS,
-          status: AccessLog_Entry_Common_Status.ALLOWED,
-          reason: { type: AccessLog_Entry_Common_Reason_Type.POLICY_MATCH },
-        },
-        info: {
-          type: {
-            oneofKind: "dns",
-            dns: {
-              type: 1,
-              name: "cluster.internal",
-              answer: "10.20.0.15",
-            } as any,
-          },
-        },
-      },
-    }),
-    AccessLog.create({
-      kind: "AccessLog",
-      metadata: { createdAt: createdAt(26), id: "dev-access-postgres" },
-      entry: {
-        common: {
-          ...common,
-          connectionID: "conn-postgres-01",
-          mode: Service_Spec_Mode.POSTGRES,
-          status: AccessLog_Entry_Common_Status.ALLOWED,
-          reason: { type: AccessLog_Entry_Common_Reason_Type.POLICY_MATCH },
-        },
-        info: {
-          type: {
-            oneofKind: "postgres",
-            postgres: {
-              type: 1,
-              isTruncated: false,
-              details: {
-                oneofKind: "query",
-                query: {
-                  query:
-                    "SELECT id, email, created_at FROM users WHERE id = $1 LIMIT 1",
-                },
-              },
-            },
-          },
-        },
-      },
-    }),
-  ];
-
-  return ListAccessLogResponse.create({
-    items,
-    listResponseMeta: {
-      totalCount: items.length,
-      page: 0,
-      itemsPerPage: items.length,
-      hasMore: false,
-    },
-  });
-};
-
 const DoAccessLogViewer = (props: {
   userRef?: ObjectReference;
   sessionRef?: ObjectReference;
@@ -1183,33 +956,6 @@ const DoAccessLogViewer = (props: {
   const qry = useQuery({
     queryKey: ["visibility", "listAccessLog", { ...props, page }],
     queryFn: async () => {
-      if (isDev()) {
-        const response = await getListAccessLogResponseTest();
-        const items =
-          props.status === "allowed"
-            ? response.items.filter(
-                (item) =>
-                  item.entry?.common?.status ===
-                  AccessLog_Entry_Common_Status.ALLOWED,
-              )
-            : props.status === "denied"
-              ? response.items.filter(
-                  (item) =>
-                    item.entry?.common?.status ===
-                    AccessLog_Entry_Common_Status.DENIED,
-                )
-              : response.items;
-        return ListAccessLogResponse.create({
-          ...response,
-          items,
-          listResponseMeta: {
-            ...response.listResponseMeta,
-            totalCount: items.length,
-            itemsPerPage: items.length,
-            hasMore: false,
-          },
-        });
-      }
       const req = ListAccessLogRequest.create({
         userRef: props.userRef,
         sessionRef: props.sessionRef,

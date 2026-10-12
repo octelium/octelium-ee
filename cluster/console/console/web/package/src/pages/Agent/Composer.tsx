@@ -3,7 +3,7 @@ import { ActionIcon, Loader, Tooltip } from "@mantine/core";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { fileIcon } from "./Blocks";
 import { Kbd } from "./ui";
 import { formatBytes } from "./utils";

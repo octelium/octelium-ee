@@ -1,7 +1,7 @@
 import { ActionIcon, Button, Collapse, Tooltip } from "@mantine/core";
 import { ChevronRight, Plus, Trash2 } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 const DepthContext = React.createContext(0);
 

@@ -7,7 +7,7 @@ import { ResourceListLabel } from "@/components/ResourceList";
 import { useUpdateResource } from "@/pages/utils/resource";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { Switch } from "@mantine/core";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { getType } from "./List";
 
 export const ItemInfo = (props: { item: CoreC.IdentityProvider }) => {

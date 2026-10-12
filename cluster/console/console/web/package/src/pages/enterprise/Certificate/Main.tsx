@@ -18,7 +18,7 @@ import { Alert, Button, Modal } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, RefreshCcw, ShieldCheck, X } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
 import { getCertificatePresentation, getIssuanceState } from "./List";
 import { SetCertificateC } from "./SetCertificateC";

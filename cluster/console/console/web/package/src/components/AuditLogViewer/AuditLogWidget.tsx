@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
 import ChartPanel from "../Charts/ChartPanel";
 import { LogWidgetHeader } from "../LogWidget";
@@ -49,13 +49,13 @@ import PeriodSelector from "../LogWidget/PeriodSelector";
 
 const TrendBadge = ({ cur, prev }: { cur: number; prev: number }) => {
   const d = deltaPct(cur, prev);
-  if (d === 0 || prev === 0)
+  if ((cur === 0 && prev === 0) || d === 0)
     return (
       <span className="inline-flex items-center gap-0.5 text-micro font-normal text-slate-500">
         <Minus size={10} strokeWidth={3} /> —
       </span>
     );
-  const up = d > 0;
+  const up = d === null ? cur > prev : d > 0;
   return (
     <span
       className={twMerge(
@@ -68,8 +68,15 @@ const TrendBadge = ({ cur, prev }: { cur: number; prev: number }) => {
       ) : (
         <TrendingDown size={10} strokeWidth={2.5} />
       )}
-      {up ? "+" : ""}
-      {d}%
+      {d === null ? (
+        <>
+          New · {up ? "+" : ""}{(cur - prev).toLocaleString()}
+        </>
+      ) : (
+        <>
+          {up ? "+" : ""}{d}%
+        </>
+      )}
     </span>
   );
 };

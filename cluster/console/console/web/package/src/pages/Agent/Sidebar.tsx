@@ -19,7 +19,7 @@ import {
   X,
 } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { AgentClient } from "./client";
 import { Highlight, Kbd, modKey, StatusDot } from "./ui";
 import { groupConversations, matchesTerms, searchTerms } from "./utils";

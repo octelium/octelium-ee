@@ -105,14 +105,23 @@ export function formatBytes(
     throw new Error(`Invalid decimals ${decimals}`);
   }
 
+  if (!Number.isFinite(bytes)) return "—";
+  if (bytes === 0) return "0 Bytes";
+
   const base = useBinaryUnits ? 1024 : 1000;
   const units = useBinaryUnits
     ? ["Bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]
     : ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 
-  const i = Math.floor(Math.log(bytes) / Math.log(base));
+  const i = Math.max(
+    0,
+    Math.min(
+      units.length - 1,
+      Math.floor(Math.log(Math.abs(bytes)) / Math.log(base)),
+    ),
+  );
 
-  return `${(bytes / Math.pow(base, i)).toFixed(decimals)} ${units[i]}`;
+  return `${(bytes / Math.pow(base, i)).toFixed(i === 0 ? 0 : decimals)} ${units[i]}`;
 }
 
 export function slugify(input: string): string {

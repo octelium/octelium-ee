@@ -1,7 +1,7 @@
 import { EXTENDED_PERIODS, PRIMARY_PERIODS } from "@/utils/visibility";
 import { Menu, SegmentedControl } from "@mantine/core";
 import { ChevronDown } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 const PeriodSelector = (props: {
   value: number;

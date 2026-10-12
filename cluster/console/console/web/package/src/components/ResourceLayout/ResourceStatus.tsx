@@ -4,7 +4,7 @@ import { useUpdateResource } from "@/pages/utils/resource";
 import { ResourceStatusInfo, ResourceStatusTone } from "@/pages/utils/types";
 import { cloneResource, Resource } from "@/utils/pb";
 import { Select, Switch } from "@mantine/core";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import EditItemWrap from "./EditItemWrap";
 
 const TONE_CLASSES: Record<ResourceStatusTone, string> = {

@@ -26,7 +26,7 @@ import SelectResource from "@/components/ResourceLayout/SelectResource";
 import TextAreaCustom from "@/components/TextAreaCustom";
 import { strToNum } from "@/utils/convert";
 import { useListKeys } from "@/utils/forms";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
 
 type SegmentedTabsContextValue = {

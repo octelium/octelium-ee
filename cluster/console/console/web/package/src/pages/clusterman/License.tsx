@@ -1,3 +1,4 @@
+import RpcError from "@/components/RpcError";
 import {
   ClusterConfig_Status_LicenseInfo,
   ClusterConfig_Status_LicenseInfo_State,
@@ -180,7 +181,7 @@ const License = (props: { info?: ClusterConfig_Status_LicenseInfo }) => {
       ) : query.isError ? (
         <Alert color="red" title="Could not load the license">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="text-xs">{query.error.message}</span>
+            <RpcError error={query.error} />
             <Button
               size="compact-xs"
               variant="outline"

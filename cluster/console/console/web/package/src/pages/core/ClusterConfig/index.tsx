@@ -1,3 +1,4 @@
+import RpcError from "@/components/RpcError";
 import * as CoreP from "@/apis/corev1/corev1";
 import Cond from "@/components/Condition";
 import DurationPicker from "@/components/DurationPicker";
@@ -1633,7 +1634,7 @@ export default () => {
   });
 
   if (query.isLoading) return <div className="flex min-h-64 items-center justify-center"><Loader size="sm" color="gray" /></div>;
-  if (query.isError) return <div className="mx-auto mt-10 max-w-xl"><Alert color="red" title="Could not load cluster configuration" icon={<AlertTriangle size={16} />}><div className="space-y-3"><div className="text-xs">{query.error.message}</div><Button type="button" size="compact-sm" variant="outline" onClick={() => query.refetch()}>Retry</Button></div></Alert></div>;
+  if (query.isError) return <div className="mx-auto mt-10 max-w-xl"><Alert color="red" title="Could not load cluster configuration" icon={<AlertTriangle size={16} />}><div className="space-y-3"><RpcError error={query.error} /><Button type="button" size="compact-sm" variant="outline" onClick={() => query.refetch()}>Retry</Button></div></Alert></div>;
   if (!query.data?.response) return <div className="py-16 text-center text-sm font-semibold text-slate-500">Cluster configuration is unavailable.</div>;
 
   const item = query.data.response;

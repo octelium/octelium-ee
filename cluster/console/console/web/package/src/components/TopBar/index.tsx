@@ -13,13 +13,15 @@ import {
   LockKeyhole,
   LogOut,
   Settings,
+  UserRound,
   X,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 const initials = (name: string) =>
   name
-    .split(" ")
+    .trim()
+    .split(/\s+/)
     .slice(0, 2)
     .map((part) => part.at(0))
     .join("");
@@ -44,8 +46,8 @@ const TopBar = () => {
     settings.status?.user?.metadata?.picURL;
 
   const displayName =
-    settings.status?.user?.metadata?.displayName ??
-    settings.status?.user?.metadata?.name;
+    settings.status?.user?.metadata?.displayName?.trim() ||
+    settings.status?.user?.metadata?.name?.trim();
 
   return (
     <nav className="flex h-[60px] w-full min-w-0 items-center gap-2 overflow-hidden px-2 sm:gap-3 sm:px-4 lg:gap-5">
@@ -86,7 +88,7 @@ const TopBar = () => {
                       {initials(displayName)}
                     </span>
                   ) : (
-                    <div className="h-full w-full bg-sky-700" />
+                    <UserRound size={16} className="text-white" />
                   )}
                 </div>
               )}

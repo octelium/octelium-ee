@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
+import RpcError from "@/components/RpcError";
 import CopyText from "../CopyText";
 import DeleteResource from "../DeleteResource";
 import PageWrap from "../PageWrap";
@@ -345,11 +346,9 @@ export const ResourceLoadError = (props: {
     <p className="text-lg font-bold text-slate-800">
       This resource could not be loaded.
     </p>
-    <p className="max-w-xl text-sm font-normal text-red-600" role="alert">
-      {props.error instanceof Error
-        ? props.error.message
-        : "An unexpected error occurred."}
-    </p>
+    <div className="max-w-xl" role="alert">
+      <RpcError error={props.error} />
+    </div>
     <button
       type="button"
       className="text-sm font-semibold text-slate-700 underline underline-offset-4 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"

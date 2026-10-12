@@ -85,7 +85,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { AgentClient } from "./client";
 import { CopyButton, Shimmer } from "./ui";
 import {

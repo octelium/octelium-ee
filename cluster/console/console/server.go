@@ -155,12 +155,7 @@ func (s *server) renderIndex(w http.ResponseWriter) {
 	}
 	head.AppendHtml(scripts.String())
 
-	doc.Find("script[src]").Each(func(_ int, sel *goquery.Selection) {
-		sel.SetAttr("nonce", nonce)
-	})
-	doc.Find("link[rel='modulepreload']").Each(func(_ int, sel *goquery.Selection) {
-		sel.SetAttr("nonce", nonce)
-	})
+	setDocumentNonce(doc, nonce)
 
 	var out bytes.Buffer
 	out.WriteString("<!DOCTYPE html>")
@@ -173,6 +168,12 @@ func (s *server) renderIndex(w http.ResponseWriter) {
 	s.setDomainCookie(w)
 	s.setSecurityHeaders(w, nonce)
 	w.Write(out.Bytes())
+}
+
+func setDocumentNonce(doc *goquery.Document, nonce string) {
+	doc.Find("script, link[rel='modulepreload']").Each(func(_ int, sel *goquery.Selection) {
+		sel.SetAttr("nonce", nonce)
+	})
 }
 
 func (s *server) setDomainCookie(w http.ResponseWriter) {

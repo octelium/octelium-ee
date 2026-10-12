@@ -1,6 +1,6 @@
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import LineChart, { summarizePoints } from "./LineChart";
 
 const formatNumber = (value: number) =>

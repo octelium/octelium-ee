@@ -17,7 +17,7 @@ import { Button } from "@mantine/core";
 import { useMutation } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { IntegrationInventoryLabels } from "./List";
 import {
   getCapabilityLabel,

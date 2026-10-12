@@ -1,4 +1,4 @@
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 type LabelTone = "neutral" | "info" | "success" | "warning" | "danger";
 type LabelSize = "sm" | "md";

@@ -19,7 +19,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { UpgradeStateBadge, VersionChips } from "./components";
 import { isUpgradeActive } from "./queries";
 

@@ -2,9 +2,7 @@ import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { ObjectReference } from "@/apis/metav1/metav1";
 import {
   GetAuditLogSummaryRequest,
-  GetAuditLogSummaryResponse,
 } from "@/apis/visibilityv1/visibilityv1";
-import { isDev } from "@/utils";
 import {
   getClientVisibilityAuditLog,
   refetchIntervalChart,
@@ -25,17 +23,6 @@ const AuditLogSummary = (props: {
     queryKey: ["visibility", "getAuditLogSummary", { ...props }],
 
     queryFn: async () => {
-      if (isDev()) {
-        return GetAuditLogSummaryResponse.create({
-          totalNumber: 100,
-
-          totalUser: 14,
-          totalSession: 24,
-          totalResource: 43,
-          totalDevice: 5,
-        });
-      }
-
       const req = GetAuditLogSummaryRequest.create({
         ...props,
       });

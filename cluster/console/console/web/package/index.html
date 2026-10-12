@@ -4,24 +4,36 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./src/assets/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <title>Octelium Console</title>
     <script>
+      var stored;
       try {
-        var stored = window.localStorage.getItem("octelium-color-scheme");
-        var colorScheme =
-          stored === "light" || stored === "dark" || stored === "auto"
-            ? stored
-            : "light";
-        document.documentElement.setAttribute(
-          "data-mantine-color-scheme",
-          colorScheme !== "auto"
-            ? colorScheme
-            : window.matchMedia("(prefers-color-scheme: dark)").matches
-              ? "dark"
-              : "light",
-        );
+        stored = window.localStorage.getItem("octelium-color-scheme");
       } catch (e) {}
+      var colorScheme =
+        stored === "light" || stored === "dark" || stored === "auto"
+          ? stored
+          : "auto";
+      document.documentElement.setAttribute(
+        "data-mantine-color-scheme",
+        colorScheme !== "auto"
+          ? colorScheme
+          : window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light",
+      );
     </script>
+    <style>
+      html[data-mantine-color-scheme="light"] {
+        background-color: oklch(96.8% 0.007 247.896);
+        color-scheme: light;
+      }
+      html[data-mantine-color-scheme="dark"] {
+        background-color: oklch(16.5% 0.015 258);
+        color-scheme: dark;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

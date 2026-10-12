@@ -6,7 +6,7 @@ import { ResourceListLabel } from "@/components/ResourceList";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { cloneResource } from "@/utils/pb";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { getDestination, getType } from "./List";
 
 const secretLabel = (name: string) => <ResourceListLabel itemRef={ObjectReference.create({ apiVersion: "enterprise/v1", kind: "Secret", name })} />;

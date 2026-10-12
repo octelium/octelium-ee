@@ -11,22 +11,19 @@ import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { ObjectReference } from "@/apis/metav1/metav1";
 import {
   ListAuthenticationLogRequest,
-  ListAuthenticationLogResponse,
 } from "@/apis/visibilityv1/visibilityv1";
 import Paginator from "@/components/Paginator";
 import { ListLoading } from "@/components/Loading";
-import { isDev } from "@/utils";
 import {
   getClientCore,
   getClientVisibilityAuthenticationLog,
 } from "@/utils/client";
-import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, RefreshCw } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
 import Editor from "../AccessLogViewer/Editor";
 import { SelectFromTimestamp } from "../AccessLogViewer/utils";
@@ -547,143 +544,6 @@ export const AuthenticationLogC = ({
   );
 };
 
-const getListAuthenticationLogResponseTest = async () => {
-  const { response } = await getClientCore().listSession({});
-  const session = response.items.at(0);
-  const sessionRef = session
-    ? getResourceRef(session)
-    : ObjectReference.create({ uid: "dev-session", name: "dev-session" });
-  const userRef =
-    session?.status?.userRef ??
-    ObjectReference.create({ uid: "dev-user", name: "alice" });
-  const deviceRef =
-    session?.status?.deviceRef ??
-    ObjectReference.create({ uid: "dev-device", name: "alice-laptop" });
-  const identityProviderRef = ObjectReference.create({
-    uid: "dev-idp",
-    name: "google-workspace",
-  });
-  const authenticatorRef = ObjectReference.create({
-    uid: "dev-authenticator",
-    name: "alice-passkey",
-  });
-  const credentialRef = ObjectReference.create({
-    uid: "dev-credential",
-    name: "ci-access-token",
-  });
-  const createdAt = (minutesAgo: number) =>
-    Timestamp.fromDate(dayjs().subtract(minutesAgo, "minute").toDate());
-  const makeLog = (
-    id: string,
-    minutesAgo: number,
-    info: Record<string, unknown>,
-  ) =>
-    AuthenticationLog.create({
-      kind: "AuthenticationLog",
-      metadata: { id, createdAt: createdAt(minutesAgo), actorRef: userRef },
-      entry: {
-        sessionRef,
-        userRef,
-        deviceRef,
-        authentication: { info: info as any },
-      },
-    });
-  const items = [
-    makeLog("dev-auth-idp", 1, {
-      type: Session_Status_Authentication_Info_Type.IDENTITY_PROVIDER,
-      aal: Session_Status_Authentication_Info_AAL.AAL2,
-      downstream: {
-        ipAddress: "203.0.113.24",
-        userAgent: "Mozilla/5.0 Chrome/126.0",
-        clientVersion: "0.15.2",
-      },
-      details: {
-        oneofKind: "identityProvider",
-        identityProvider: {
-          email: "alice@example.com",
-          identifier: "00u-dev-alice",
-          identityProviderRef,
-        },
-      },
-    }),
-    makeLog("dev-auth-passkey", 4, {
-      type: Session_Status_Authentication_Info_Type.AUTHENTICATOR,
-      aal: Session_Status_Authentication_Info_AAL.AAL3,
-      downstream: {
-        ipAddress: "198.51.100.18",
-        userAgent: "Mozilla/5.0 Safari/17.5",
-        clientVersion: "0.15.2",
-      },
-      details: {
-        oneofKind: "authenticator",
-        authenticator: {
-          authenticatorRef,
-          type: Authenticator_Status_Type.FIDO,
-          mode: 1,
-          info: {
-            type: {
-              oneofKind: "fido",
-              fido: {
-                isPasskey: true,
-                isHardware: true,
-                isSoftware: false,
-                isAttestationVerified: true,
-                userVerified: true,
-                userPresent: true,
-                aaguid: "adce0002-35bc-c60a-648b-0b25f1f05503",
-              },
-            },
-          },
-        },
-      },
-    }),
-    makeLog("dev-auth-credential", 9, {
-      type: Session_Status_Authentication_Info_Type.CREDENTIAL,
-      aal: Session_Status_Authentication_Info_AAL.AAL1,
-      downstream: {
-        ipAddress: "10.20.4.17",
-        userAgent: "octelium-cli/0.15.2",
-        clientVersion: "0.15.2",
-      },
-      details: {
-        oneofKind: "credential",
-        credential: {
-          credentialRef,
-          tokenID: "tok_dev_7e2f9c4d",
-        },
-      },
-    }),
-    makeLog("dev-auth-refresh", 16, {
-      type: Session_Status_Authentication_Info_Type.REFRESH_TOKEN,
-      aal: Session_Status_Authentication_Info_AAL.AAL2,
-      downstream: {
-        ipAddress: "203.0.113.24",
-        userAgent: "octelium-client/0.15.2 linux/amd64",
-        clientVersion: "0.15.2",
-      },
-    }),
-    makeLog("dev-auth-external", 28, {
-      type: Session_Status_Authentication_Info_Type.EXTERNAL,
-      aal: Session_Status_Authentication_Info_AAL.AAL1,
-      downstream: {
-        ipAddress: "192.0.2.55",
-        userAgent: "External-OIDC-Bridge/2.4",
-        clientVersion: "2.4.0",
-      },
-    }),
-  ];
-
-  return ListAuthenticationLogResponse.create({
-    items,
-    listResponseMeta: {
-      totalCount: items.length,
-      page: 0,
-      itemsPerPage: items.length,
-      hasMore: false,
-    },
-  });
-};
-
 const DoAuthenticationLogViewer = (props: {
   userRef?: ObjectReference;
   sessionRef?: ObjectReference;
@@ -725,51 +585,6 @@ const DoAuthenticationLogViewer = (props: {
       },
     ],
     queryFn: async () => {
-      if (isDev()) {
-        const response = await getListAuthenticationLogResponseTest();
-        const matchesRef = (candidate?: ObjectReference, wanted?: ObjectReference) =>
-          !wanted ||
-          Boolean(
-            (candidate?.uid && wanted.uid && candidate.uid === wanted.uid) ||
-              (candidate?.name && wanted.name && candidate.name === wanted.name),
-          );
-        const items = response.items.filter(
-          (item) => {
-            const details = (item.entry?.authentication?.info as any)?.details;
-            const identityProviderRef =
-              details?.oneofKind === "identityProvider"
-                ? details.identityProvider?.identityProviderRef
-                : undefined;
-            const credentialRef =
-              details?.oneofKind === "credential"
-                ? details.credential?.credentialRef
-                : undefined;
-            const authenticatorRef =
-              details?.oneofKind === "authenticator"
-                ? details.authenticator?.authenticatorRef
-                : undefined;
-            return (
-              matchesRef(item.entry?.userRef, props.userRef) &&
-              matchesRef(item.entry?.sessionRef, props.sessionRef) &&
-              matchesRef(item.entry?.deviceRef, props.deviceRef) &&
-              matchesRef(identityProviderRef, props.identityProviderRef) &&
-              matchesRef(credentialRef, props.credentialRef) &&
-              matchesRef(authenticatorRef, props.authenticatorRef)
-            );
-          },
-        );
-        return ListAuthenticationLogResponse.create({
-          ...response,
-          items,
-          listResponseMeta: {
-            ...response.listResponseMeta,
-            totalCount: items.length,
-            itemsPerPage: items.length,
-            hasMore: false,
-          },
-        });
-      }
-
       const { response } =
         await getClientVisibilityAuthenticationLog().listAuthenticationLog(
           ListAuthenticationLogRequest.create({

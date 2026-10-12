@@ -8,7 +8,7 @@ import { getDomain, toNumOrZero } from "@/utils";
 import Label from "@/components/Label";
 import { match } from "ts-pattern";
 import * as CoreP from "@/apis/corev1/corev1";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { getOSIcon, getOSStr } from "./Main";
 import {
   SummaryItemCount,

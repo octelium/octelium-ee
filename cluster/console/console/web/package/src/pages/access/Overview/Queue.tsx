@@ -15,7 +15,7 @@ import {
   Timer,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { useAccessTotals, usePendingRequests, QUEUE_ITEMS } from "./queries";
 
 const SHOWN = 8;

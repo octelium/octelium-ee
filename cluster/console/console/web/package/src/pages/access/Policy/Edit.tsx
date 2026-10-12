@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { match } from "ts-pattern";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { useListKeys } from "@/utils/forms";
 
 const newCondition = (): AccessP.Policy_Spec_Rule_Condition =>

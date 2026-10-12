@@ -10,7 +10,7 @@ import { ResourceMainInfo } from "@/pages/utils/types";
 import { getClientVisibilityAccess } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 import { getAudienceLabel } from "../Integration/utils";
 import {
   getPurposeLabel,

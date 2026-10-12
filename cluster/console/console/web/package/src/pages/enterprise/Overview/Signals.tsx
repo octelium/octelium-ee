@@ -44,7 +44,7 @@ const Signals = (props: { periodMinutes: number }) => {
             ? `${compact(n(certificates?.totalExpired))} expired`
             : undefined
         }
-        footer={`${compact(n(certificates?.totalNumber))} Certificates · ${compact(n(certificates?.totalManaged))} managed`}
+        footer={`${compact(n(certificates?.totalNumber))} ${n(certificates?.totalNumber) === 1 ? "Certificate" : "Certificates"} · ${compact(n(certificates?.totalManaged))} managed`}
         bar={{
           value: n(certificates?.totalExpiringSoon),
           total: n(certificates?.totalNumber),
