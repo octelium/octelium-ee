@@ -106,26 +106,26 @@ export default () => {
 
   if (!user || !metadata) {
     return (
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-2 py-2 sm:px-4 sm:py-4">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-2 py-2 sm:px-4 sm:py-4">
         <section className="flex min-h-[360px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white/70 px-6 text-center">
           <CircleAlert size={22} className="mb-3 text-slate-500" />
-          <h1 className="text-base font-bold text-slate-700">
+          <h2 className="text-base font-bold text-slate-700">
             Account information is not available
-          </h1>
+          </h2>
           <p className="mt-1 max-w-md text-sm font-medium text-slate-500">
             Your signed-in user information has not finished loading yet.
           </p>
         </section>
 
         <Appearance />
-      </main>
+      </div>
     );
   }
 
   const sessionName = session?.metadata?.name;
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-2 py-2 sm:px-4 sm:py-4">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-2 py-2 sm:px-4 sm:py-4">
       <header className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-card sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div className="flex min-w-0 items-center gap-3.5">
           <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-700 shadow-sm">
@@ -144,9 +144,9 @@ export default () => {
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate text-lg font-bold text-slate-800">
+              <h2 className="truncate text-lg font-bold text-slate-800">
                 {displayName}
-              </h1>
+              </h2>
             </div>
             <div className="mt-1 flex min-w-0 items-center gap-1.5 text-sm font-medium text-slate-500">
               <Mail size={13} className="shrink-0" />
@@ -244,6 +244,6 @@ export default () => {
           )}
         </Section>
       )}
-    </main>
+    </div>
   );
 };

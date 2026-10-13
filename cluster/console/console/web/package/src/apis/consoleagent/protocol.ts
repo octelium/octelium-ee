@@ -1,4 +1,4 @@
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 
 export const API_PREFIX = "/v1";
 
@@ -59,6 +59,7 @@ export interface Message {
   runId?: string;
   blocks: Block[];
   attachments?: FileInfo[];
+  context?: RunContext;
   model?: ModelInfo;
   usage?: Usage;
   error?: ErrorInfo;
@@ -342,9 +343,29 @@ export interface FileInfo {
   createdAt: string;
 }
 
+export interface PageContext {
+  path: string;
+  title?: string;
+  details?: Record<string, string>;
+}
+
+export interface ContextItem {
+  kind: string;
+  id?: string;
+  title?: string;
+  data?: unknown;
+}
+
+export interface RunContext {
+  page?: PageContext;
+  resources?: ResourceRef[];
+  items?: ContextItem[];
+}
+
 export interface RunInput {
   text: string;
   attachments?: string[];
+  context?: RunContext;
 }
 
 export interface CreateConversationRequest {

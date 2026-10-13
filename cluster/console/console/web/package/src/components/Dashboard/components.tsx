@@ -2,8 +2,9 @@ import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import Sparkline from "@/components/Charts/Sparkline";
 import PeriodSelector from "@/components/LogWidget/PeriodSelector";
 import RefreshButton from "@/components/RefreshButton";
+import { PageActions, usePageDetails } from "@/components/PageHeader/context";
 import { useInView } from "@/hooks/use-in-view";
-import { deltaPct } from "@/utils/visibility";
+import { deltaPct, periodLabel } from "@/utils/visibility";
 import { Switch } from "@mantine/core";
 import { useIsFetching, useQueryClient } from "@tanstack/react-query";
 import {
@@ -611,84 +612,37 @@ export const InventoryRail = (props: {
   </div>
 );
 
-export type ShortcutLink = { label: string; to: string; icon?: LucideIcon };
-
-export const DashboardHeader = (props: {
-  title: string;
-  description: React.ReactNode;
+export const DashboardControls = (props: {
   periodMinutes: number;
   onPeriodChange: (value: number) => void;
   autoRefresh: boolean;
   onAutoRefreshChange: (value: boolean) => void;
-  shortcuts: ShortcutLink[];
-  shortcutsLabel: string;
-  badge?: React.ReactNode;
 }) => {
   const queryClient = useQueryClient();
   const fetching = useIsFetching(dashboardQueryFilters);
+  usePageDetails({ "Time range": `last ${periodLabel(props.periodMinutes)}` });
 
   return (
-    <header className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-card sm:px-5">
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold tracking-[-0.02em] text-slate-950">
-              {props.title}
-            </h1>
-            {props.badge}
-          </div>
-          <p className="mt-1 text-xs font-normal leading-5 text-slate-500">
-            {props.description}
-          </p>
-        </div>
+    <PageActions>
+      <PeriodSelector
+        value={props.periodMinutes}
+        onChange={props.onPeriodChange}
+      />
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          {fetching > 0 && (
-            <span className="text-micro font-normal tabular-nums text-slate-500">
-              Updating {fetching}…
-            </span>
-          )}
+      <Switch
+        size="xs"
+        label="Auto"
+        checked={props.autoRefresh}
+        onChange={(event) =>
+          props.onAutoRefreshChange(event.currentTarget.checked)
+        }
+      />
 
-          <PeriodSelector
-            value={props.periodMinutes}
-            onChange={props.onPeriodChange}
-          />
-
-          <Switch
-            size="xs"
-            label="Auto"
-            checked={props.autoRefresh}
-            onChange={(event) =>
-              props.onAutoRefreshChange(event.currentTarget.checked)
-            }
-          />
-
-          <RefreshButton
-            label="Refresh the page"
-            loading={fetching > 0}
-            onClick={() => queryClient.invalidateQueries(dashboardQueryFilters)}
-          />
-        </div>
-      </div>
-
-      <nav
-        aria-label={props.shortcutsLabel}
-        className="mt-3.5 flex flex-wrap gap-1.5 border-t border-slate-100 pt-3.5"
-      >
-        {props.shortcuts.map((shortcut) => {
-          const Icon = shortcut.icon;
-          return (
-            <Link
-              key={shortcut.to}
-              to={shortcut.to}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/70 px-2.5 py-1.5 text-micro font-semibold text-slate-600 outline-none transition-colors duration-150 hover:border-slate-300 hover:bg-white hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400"
-            >
-              {Icon && <Icon size={12} strokeWidth={2.3} />}
-              {shortcut.label}
-            </Link>
-          );
-        })}
-      </nav>
-    </header>
+      <RefreshButton
+        label="Refresh the page"
+        loading={fetching > 0}
+        onClick={() => queryClient.invalidateQueries(dashboardQueryFilters)}
+      />
+    </PageActions>
   );
 };

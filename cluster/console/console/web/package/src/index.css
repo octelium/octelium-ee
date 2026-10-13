@@ -134,3 +134,60 @@ input[type="range"]::-moz-range-thumb {
 .mantine-Combobox-option[data-combobox-active] {
   background-color: var(--color-slate-100);
 }
+
+:root {
+  --agent-dock-width: min(26rem, 100vw);
+  --agent-dock-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.agent-dock {
+  visibility: hidden;
+  transform: translateX(100%);
+  box-shadow: var(--shadow-overlay);
+  transition:
+    transform 320ms var(--agent-dock-ease),
+    visibility 0s linear 320ms;
+}
+
+.agent-dock[data-open] {
+  visibility: visible;
+  transform: none;
+  transition: transform 320ms var(--agent-dock-ease);
+}
+
+@media (min-width: 80em) {
+  :root[data-agent-dock] {
+    --agent-dock-offset: var(--agent-dock-width);
+  }
+
+  .agent-dock {
+    opacity: 0;
+    transform: translateX(1.5rem);
+    box-shadow: none;
+    transition:
+      transform 260ms var(--agent-dock-ease),
+      opacity 180ms ease-out,
+      visibility 0s linear 260ms;
+  }
+
+  .agent-dock[data-open] {
+    opacity: 1;
+    transform: none;
+    transition:
+      transform 260ms var(--agent-dock-ease),
+      opacity 180ms ease-out;
+  }
+}
+
+@media (min-width: 96em) {
+  :root {
+    --agent-dock-width: 28rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-dock,
+  .agent-dock[data-open] {
+    transition: none;
+  }
+}

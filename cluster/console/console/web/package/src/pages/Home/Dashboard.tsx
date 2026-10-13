@@ -1,20 +1,10 @@
-import { DashboardHeader, Deferred } from "@/components/Dashboard/components";
+import { DashboardControls, Deferred } from "@/components/Dashboard/components";
 import {
   AutoRefreshContext,
   useDashboardRange,
 } from "@/components/Dashboard/utils";
 import Meta from "@/components/Meta";
-import { getDomain } from "@/utils";
-import { periodLabel } from "@/utils/visibility";
 import { motion } from "framer-motion";
-import {
-  Building2,
-  ChartNoAxesCombined,
-  Cpu,
-  Eye,
-  Settings2,
-  UserCheck,
-} from "lucide-react";
 import * as React from "react";
 import Activity from "./Activity";
 import Attention from "./Attention";
@@ -27,19 +17,9 @@ import Operations from "./Operations";
 import Runtime from "./Runtime";
 import Signals from "./Signals";
 
-const SHORTCUTS = [
-  { label: "Core", to: "/core", icon: Cpu },
-  { label: "Access", to: "/access", icon: UserCheck },
-  { label: "Enterprise", to: "/enterprise", icon: Building2 },
-  { label: "Visibility", to: "/visibility", icon: Eye },
-  { label: "Metrics", to: "/visibility/metrics", icon: ChartNoAxesCombined },
-  { label: "Cluster", to: "/clusterman", icon: Settings2 },
-];
-
 const Dashboard = () => {
   const { periodMinutes, setPeriodMinutes } = useDashboardRange();
   const [autoRefresh, setAutoRefresh] = React.useState(true);
-  const rangeLabel = periodLabel(periodMinutes);
 
   return (
     <AutoRefreshContext.Provider value={autoRefresh}>
@@ -51,23 +31,11 @@ const Dashboard = () => {
       >
         <Meta title="Overview" />
 
-        <DashboardHeader
-          title="Cluster overview"
-          description={
-            <>
-              Security, identity and platform posture for{" "}
-              <span className="font-semibold text-slate-700">
-                {getDomain()}
-              </span>{" "}
-              · every panel below covers the last {rangeLabel}
-            </>
-          }
+        <DashboardControls
           periodMinutes={periodMinutes}
           onPeriodChange={setPeriodMinutes}
           autoRefresh={autoRefresh}
           onAutoRefreshChange={setAutoRefresh}
-          shortcuts={SHORTCUTS}
-          shortcutsLabel="Jump to an API"
         />
 
         <Deferred eager>

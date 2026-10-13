@@ -100,10 +100,10 @@ describe("Agent chat", () => {
   });
 
   it("searches the titles and the messages", async () => {
-    await page.keyboard.press("Control+k");
     const search = page.getByRole("searchbox", {
       name: "Search conversations",
     });
+    await search.click();
     await assert.doesNotReject(
       page.waitForFunction(
         () => document.activeElement?.getAttribute("type") === "search",

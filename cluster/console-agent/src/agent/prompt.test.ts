@@ -26,6 +26,9 @@ describe("system prompt", () => {
     assert.match(prompt, /Never run `octelium login`/);
     assert.match(prompt, /paused until the User approves them/);
     assert.match(prompt, /octelium:\/\/resource\/<apiVersion>\/<Kind>\/<name>/);
+    assert.match(prompt, /# Console context\n/);
+    assert.match(prompt, /<console_context> block/);
+    assert.match(prompt, /\/visibility\/accesslogs\?serviceRef\.name=/);
     assert.match(prompt, /# Current date\n2026-10-03/);
     assert.match(
       prompt,

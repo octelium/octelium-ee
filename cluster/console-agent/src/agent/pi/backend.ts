@@ -28,6 +28,7 @@ import type {
 import type { ConversationStore } from "../../store/conversations.ts";
 import type { FileStore } from "../../store/files.ts";
 import { SettingsStore } from "../../store/settings.ts";
+import { formatContext } from "../context.ts";
 import { buildSystemPrompt, type PromptContext } from "../prompt.ts";
 import { createBuiltinTools, filterAvailableTools } from "../tools/builtin.ts";
 import { createOcteliumTools } from "../tools/octelium.ts";
@@ -535,10 +536,15 @@ export class PiBackend implements AgentBackend {
       }
     }
 
-    const text =
+    const text = [
+      input.context ? formatContext(input.context) : "",
+      input.text,
       lines.length === 0
-        ? input.text
-        : `${input.text}\n\n[The User attached the following files]\n${lines.join("\n")}`.trim();
+        ? ""
+        : `[The User attached the following files]\n${lines.join("\n")}`,
+    ]
+      .filter((part) => part !== "")
+      .join("\n\n");
     return { text, images };
   }
 

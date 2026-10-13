@@ -48,6 +48,11 @@ import {
 } from "../ResourceList";
 
 import { ResourceComponentInfo } from "@/pages/utils/types";
+import { AskAgentMenuItem } from "@/components/AgentDock/AskButtons";
+import {
+  pinnedResource,
+  pinnedResources,
+} from "@/components/AgentDock/pageContext";
 import { Service, Service_Spec_Mode } from "@/apis/corev1/corev1";
 import { CommonListOptions } from "@/apis/metav1/metav1";
 import { getServicePublicURL } from "@/utils/octelium";
@@ -195,6 +200,7 @@ const ResourceItemActions = (props: {
               Visit public service
             </Menu.Item>
           )}
+          <AskAgentMenuItem pinned={pinnedResource(item)} />
 
           {visibilityItems.length > 0 && <Menu.Divider />}
           {visibilityItems.map(({ to, icon: Icon, label }) => (
@@ -1022,6 +1028,7 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
         isDeleting={mutationBulkDelete.isPending}
         onClearSelection={() => setSelected(new Set())}
         onDeleteSelection={() => setDeleteModalOpened(true)}
+        onAskSelection={() => pinnedResources(selectedItems)}
       />
 
       <BulkDeleteModal

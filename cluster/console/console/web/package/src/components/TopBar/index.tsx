@@ -1,6 +1,7 @@
 /// <reference types="vite-plugin-svgr/client" />
 
 import Logo from "@/assets/l03.svg?react";
+import { CommandPaletteTrigger } from "@/components/CommandPalette";
 import { getDomain } from "@/utils";
 import { getClientAuth } from "@/utils/client";
 import { useAppSelector } from "@/utils/hooks";
@@ -59,7 +60,9 @@ const TopBar = () => {
         <Logo className="h-auto w-[92px] text-slate-900 sm:w-[120px] lg:w-[152px]" />
       </Link>
 
-      <div className="flex-1" />
+      <div className="flex min-w-0 flex-1 items-center justify-end md:justify-center md:px-6">
+        <CommandPaletteTrigger />
+      </div>
 
       <Menu position="bottom-end" width={224} withinPortal>
         <Menu.Target>

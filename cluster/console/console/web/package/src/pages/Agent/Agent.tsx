@@ -45,6 +45,13 @@ import { twMerge } from "@/lib/utils";
 import Chat from "./Chat";
 import { AgentClient } from "./client";
 import {
+  agentKey,
+  devAgentURL,
+  infoKey,
+  workspaceKey,
+  workspaceStorageKey,
+} from "./environment";
+import {
   AgentMark,
   ConfirmModal,
   Shimmer,
@@ -62,11 +69,17 @@ import {
   writeStorage,
 } from "./utils";
 
-const devAgentURL = import.meta.env.VITE_CONSOLE_AGENT_URL as
-  string | undefined;
+export interface ReadyChatProps {
+  client: AgentClient;
+  info: AgentInfo;
+  banner?: React.ReactNode;
+}
 
-const agentKey = ["agent", "environment"];
-const workspaceStorageKey = "octelium-console-agent-workspace";
+const SurfaceContext = React.createContext<{
+  compact: boolean;
+  renderChat?: (props: ReadyChatProps) => React.ReactNode;
+}>({ compact: false });
+
 const agentStartupHintMs = 90000;
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -81,7 +94,7 @@ const workspaceTone = (ws?: Workspace): DotTone => {
 };
 
 const Shell = (props: { children: React.ReactNode }) => (
-  <div className="h-[calc(100dvh-92px)] min-h-[480px]">
+  <div className="mt-4 h-[calc(100dvh-92px-var(--page-header-height,0px))] min-h-[480px]">
     <div className="relative flex h-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
       {props.children}
     </div>
@@ -96,49 +109,59 @@ const StatePanel = (props: {
   header?: React.ReactNode;
   banner?: React.ReactNode;
   children?: React.ReactNode;
-}) => (
-  <div className="flex min-w-0 flex-1 flex-col">
-    <Meta title="Agent" />
-    <div className="flex h-12 shrink-0 items-center gap-2.5 px-3">
-      <AgentMark />
-      <span className="flex-1 text-body font-semibold text-slate-800">
-        Agent
-      </span>
-      {props.header}
-    </div>
-    {props.banner && <div className="px-3">{props.banner}</div>}
-    <div className="flex min-h-0 flex-1 overflow-y-auto px-4 py-8">
-      <motion.div
-        key={props.title}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, ease }}
-        className="m-auto flex w-full max-w-md flex-col items-center text-center"
-      >
-        {props.icon !== undefined ? (
-          <span
-            className={twMerge(
-              "flex h-11 w-11 items-center justify-center rounded-2xl shadow-sm",
-              props.tone === "error"
-                ? "bg-red-50 text-red-600 ring-1 ring-red-200"
-                : "bg-slate-900 text-white",
-            )}
-          >
-            {props.icon}
+}) => {
+  const { compact } = React.useContext(SurfaceContext);
+  return (
+    <div className="flex min-w-0 flex-1 flex-col">
+      {!compact && <Meta title="Agent" />}
+      {!compact && (
+        <div className="flex h-12 shrink-0 items-center gap-2.5 px-3">
+          <AgentMark />
+          <span className="flex-1 text-body font-semibold text-slate-800">
+            Agent
           </span>
-        ) : (
-          <AgentMark size="lg" live={props.loading} />
-        )}
-        <h2 className="mt-4 text-base font-bold text-slate-900">
-          {props.title}
-        </h2>
-        <div className="mt-1.5 w-full text-xs leading-5 text-slate-500">
-          {props.children}
+          {props.header}
         </div>
-      </motion.div>
+      )}
+      {props.banner && <div className="px-3">{props.banner}</div>}
+      <div
+        className={twMerge(
+          "flex min-h-0 flex-1 overflow-y-auto px-4",
+          compact ? "py-6" : "py-8",
+        )}
+      >
+        <motion.div
+          key={props.title}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease }}
+          className="m-auto flex w-full max-w-md flex-col items-center text-center"
+        >
+          {props.icon !== undefined ? (
+            <span
+              className={twMerge(
+                "flex h-11 w-11 items-center justify-center rounded-2xl shadow-sm",
+                props.tone === "error"
+                  ? "bg-red-50 text-red-600 ring-1 ring-red-200"
+                  : "bg-slate-900 text-white",
+              )}
+            >
+              {props.icon}
+            </span>
+          ) : (
+            <AgentMark size="lg" live={props.loading} />
+          )}
+          <h2 className="mt-4 text-base font-bold text-slate-900">
+            {props.title}
+          </h2>
+          <div className="mt-1.5 w-full text-xs leading-5 text-slate-500">
+            {props.children}
+          </div>
+        </motion.div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const bootSteps: { label: string; states: Workspace_Status_State[] }[] = [
   {
@@ -257,9 +280,10 @@ const AgentReady = (props: {
   banner?: React.ReactNode;
   header?: React.ReactNode;
 }) => {
+  const { renderChat } = React.useContext(SurfaceContext);
   const client = React.useMemo(() => new AgentClient(props.url), [props.url]);
   const infoQuery = useQuery({
-    queryKey: ["agent", client.baseUrl, "info"],
+    queryKey: infoKey(client.baseUrl),
     queryFn: () => client.info(),
     initialData: props.info,
   });
@@ -270,6 +294,10 @@ const AgentReady = (props: {
         <p>Reaching the agent inside your Workspace…</p>
       </StatePanel>
     );
+  }
+
+  if (renderChat) {
+    return renderChat({ client, info: infoQuery.data, banner: props.banner });
   }
 
   return (
@@ -550,7 +578,7 @@ const WorkspaceRunner = (props: {
   const startedRef = React.useRef(false);
 
   const wsQuery = useQuery({
-    queryKey: ["agent", "workspace", uid],
+    queryKey: workspaceKey(uid),
     queryFn: async () =>
       (await getClientCordium().getWorkspace(GetOptions.create({ uid })))
         .response,
@@ -581,7 +609,7 @@ const WorkspaceRunner = (props: {
         }),
       ),
     onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: ["agent", "workspace", uid] }),
+      queryClient.invalidateQueries({ queryKey: workspaceKey(uid) }),
     onError: (err) => {
       if ((err as RpcError).code !== "ALREADY_EXISTS") {
         toast.error(getErrorMessage(err));
@@ -600,7 +628,7 @@ const WorkspaceRunner = (props: {
         }),
       ),
     onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: ["agent", "workspace", uid] }),
+      queryClient.invalidateQueries({ queryKey: workspaceKey(uid) }),
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
@@ -620,7 +648,7 @@ const WorkspaceRunner = (props: {
   const url = running && hostname ? `https://${hostname}` : undefined;
 
   const infoQuery = useQuery({
-    queryKey: ["agent", url, "info"],
+    queryKey: infoKey(url),
     queryFn: () => new AgentClient(url!).info(AbortSignal.timeout(8000)),
     enabled: !!url,
     retry: false,
@@ -913,10 +941,25 @@ const AgentEnvironment = () => {
   );
 };
 
+export const AgentSurface = (props: {
+  compact?: boolean;
+  renderChat?: (props: ReadyChatProps) => React.ReactNode;
+}) => {
+  const value = React.useMemo(
+    () => ({ compact: !!props.compact, renderChat: props.renderChat }),
+    [props.compact, props.renderChat],
+  );
+  return (
+    <SurfaceContext.Provider value={value}>
+      {devAgentURL ? <AgentReady url={devAgentURL} /> : <AgentEnvironment />}
+    </SurfaceContext.Provider>
+  );
+};
+
 const Agent = () => (
   <MotionConfig reducedMotion="user">
     <Shell>
-      {devAgentURL ? <AgentReady url={devAgentURL} /> : <AgentEnvironment />}
+      <AgentSurface />
     </Shell>
   </MotionConfig>
 );

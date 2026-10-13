@@ -233,6 +233,64 @@ describe("server: runs", () => {
     assert.equal(detail.messages.length, 4);
   });
 
+  it("passes the console context to the model and keeps it on the message", async () => {
+    let prompt = "";
+    t.faux.setResponses([
+      (context) => {
+        const user = context.messages.findLast((m) => m.role === "user");
+        const content = user?.role === "user" ? user.content : "";
+        prompt =
+          typeof content === "string"
+            ? content
+            : content.map((c) => (c.type === "text" ? c.text : "")).join("");
+        return fauxAssistantMessage([fauxText("The Policy denies it")]);
+      },
+    ]);
+    const context = {
+      page: {
+        path: "/visibility/accesslogs?status=denied",
+        title: "Visibility › Access logs",
+      },
+      items: [
+        {
+          kind: "AccessLog",
+          id: "l1",
+          title: "alice → nginx.default",
+          data: { status: "DENIED" },
+        },
+      ],
+    };
+    const res = await postJSON(`${t.baseUrl}/v1/conversations`, {
+      input: { text: "Why was this denied?", context },
+    });
+    assert.equal(res.status, 201);
+    const created = (await res.json()) as CreateConversationResponse;
+    const events = await collectEvents(t.baseUrl, created.run!.id);
+    assert.equal(lastMessage(events).status, "completed");
+
+    assert.match(
+      prompt,
+      /^<console_context>\nPage: Visibility › Access logs \(\/visibility\/accesslogs\?status=denied\)\nItems:\n- AccessLog "alice → nginx.default" \(ID: l1\)\n  \{"status":"DENIED"\}\n<\/console_context>\n\nWhy was this denied\?$/,
+    );
+
+    const detail = (await (
+      await fetch(`${t.baseUrl}/v1/conversations/${created.conversation.id}`)
+    ).json()) as ConversationDetail;
+    assert.equal(detail.conversation.title, "Why was this denied?");
+    assert.deepEqual(detail.messages[0].context, context);
+    assert.equal(
+      detail.messages[0].blocks[0].type === "markdown" &&
+        detail.messages[0].blocks[0].text,
+      "Why was this denied?",
+    );
+
+    const invalid = await postJSON(
+      `${t.baseUrl}/v1/conversations/${created.conversation.id}/runs`,
+      { input: { text: "And this?", context: { page: { path: "x" } } } },
+    );
+    assert.equal(invalid.status, 400);
+  });
+
   it("reports invalid API requests back to the model", async () => {
     let toolResult = "";
     t.faux.setResponses([

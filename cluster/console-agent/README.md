@@ -121,12 +121,12 @@ All the types are exported from `@octelium/console-agent/protocol` (`src/protoco
 | `GET` | `/healthz` | Liveness |
 | `GET` | `/v1/info` | Version, protocol version, model, identity, capabilities, issues |
 | `GET` | `/v1/conversations` | List the conversations |
-| `POST` | `/v1/conversations` | Create a conversation, optionally starting a run: `{"title"?, "input"?: {"text", "attachments"?}}` |
+| `POST` | `/v1/conversations` | Create a conversation, optionally starting a run: `{"title"?, "input"?: {"text", "attachments"?, "context"?}}` |
 | `GET` | `/v1/conversations/search?q=<query>&limit=<n>` | Search the titles and the messages of the conversations. Every whitespace-separated term must match; returns up to `limit` (default 20, max 50) conversations with up to 3 message snippets each |
 | `GET` | `/v1/conversations/{id}` | The conversation, its messages and the snapshot of its active run |
 | `PATCH` | `/v1/conversations/{id}` | Rename: `{"title"}` |
 | `DELETE` | `/v1/conversations/{id}` | Cancel its run and delete it |
-| `POST` | `/v1/conversations/{id}/runs` | Start a run: `{"input": {"text", "attachments"?}}` (`409` if a run is active) |
+| `POST` | `/v1/conversations/{id}/runs` | Start a run: `{"input": {"text", "attachments"?, "context"?}}` (`409` if a run is active) |
 | `GET` | `/v1/runs/{id}` | Run snapshot (run + in-progress assistant message) |
 | `GET` | `/v1/runs/{id}/events` | SSE stream of the run's events |
 | `POST` | `/v1/runs/{id}/cancel` | Cancel the run |
@@ -144,6 +144,10 @@ All the types are exported from `@octelium/console-agent/protocol` (`src/protoco
 | `DELETE` | `/v1/auth/logins/{id}` | Cancel signing in |
 
 Errors are `{"error": {"code", "message"}}`. `POST`/`PUT`/`PATCH` bodies must be `application/json`.
+
+### Console context
+
+The console attaches the `context` of a run when the User asks from a console page instead of the Agent page: the `page` (`path` with its query parameters, `title` and `details` such as the time range), the `resources` that the User selected (`apiVersion`, `kind`, `name` and/or `uid`) and `items` such as log entries (`kind`, `id`, `title` and the JSON `data`, truncated to 8000 characters). The context is validated (`400` on invalid fields or when exceeding the limits in `src/agent/context.ts`), stored on the user message and prepended to the prompt as a `<console_context>` block. It requires protocol version 2.
 
 ### Messages and blocks
 

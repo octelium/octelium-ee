@@ -6,17 +6,12 @@ import AuthenticationLogViewer from "@/components/AuthenticationLogViewer";
 import LogPageShell, {
   useLogPageParams,
 } from "@/components/LogViewer/LogPageShell";
-import { ShieldUser } from "lucide-react";
 
 export default () => {
   const req = useLogListReq();
   const pagination = useLogPageParams();
   return (
-    <LogPageShell
-      title="Authentication logs"
-      description="Login, re-authentication, credential, identity-provider, and authenticator events."
-      icon={ShieldUser}
-    >
+    <LogPageShell title="Authentication logs">
       <AuthenticationLogViewer
         userRef={toObjectRef(req?.userRef)}
         sessionRef={toObjectRef(req?.sessionRef)}

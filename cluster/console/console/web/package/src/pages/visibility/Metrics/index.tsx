@@ -30,11 +30,16 @@ import { useInView } from "@/hooks/use-in-view";
 import { usePeriodRange } from "@/hooks/use-period-range";
 import PeriodSelector from "@/components/LogWidget/PeriodSelector";
 import RefreshButton from "@/components/RefreshButton";
+import {
+  PageActions,
+  usePageDetails,
+} from "@/components/PageHeader/context";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
 import {
   getClientVisibilityMetrics,
   refetchIntervalChart,
 } from "@/utils/client";
+import { periodLabel } from "@/utils/visibility";
 import {
   SegmentedControl,
   Select,
@@ -390,6 +395,8 @@ const Metrics = () => {
       patchParams({ "metrics.resolution": null });
   }, [periodMinutes, resolution, patchParams]);
 
+  usePageDetails({ "Time range": `last ${periodLabel(periodMinutes)}` });
+
   const lookbackSeconds = periodMinutes * 60;
   const step = React.useMemo(
     () => duration(resolution, periodMinutes),
@@ -474,37 +481,27 @@ const Metrics = () => {
 
   return (
     <div className="space-y-4 pb-8">
+      <PageActions>
+        <Switch
+          size="xs"
+          label="Auto-refresh"
+          checked={autoRefresh}
+          onChange={(event) => setAutoRefresh(event.currentTarget.checked)}
+        />
+        <RefreshButton
+          label="Refresh metrics"
+          onClick={() => {
+            queryClient.invalidateQueries({
+              queryKey: ["visibility", "queryMetrics"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["visibility", "metricStat"],
+            });
+          }}
+        />
+      </PageActions>
       <header className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-slate-900">
-              Cluster metrics
-            </h1>
-            <p className="mt-1 text-xs font-medium text-slate-500">
-              Traffic, authorization decisions, and component runtime health
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Switch
-              size="sm"
-              label="Auto-refresh"
-              checked={autoRefresh}
-              onChange={(event) => setAutoRefresh(event.currentTarget.checked)}
-            />
-            <RefreshButton
-              label="Refresh metrics"
-              onClick={() => {
-                queryClient.invalidateQueries({
-                  queryKey: ["visibility", "queryMetrics"],
-                });
-                queryClient.invalidateQueries({
-                  queryKey: ["visibility", "metricStat"],
-                });
-              }}
-            />
-          </div>
-        </div>
-        <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 xl:grid-cols-[auto_auto_minmax(180px,1fr)_minmax(180px,1fr)]">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[auto_auto_minmax(180px,1fr)_minmax(180px,1fr)]">
           <div>
             <div className="mb-1 text-micro font-semibold uppercase tracking-wide text-slate-500">
               Time range

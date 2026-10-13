@@ -6,13 +6,15 @@ import {
   GetClusterInfoResponse,
   GetLicenseResponse,
 } from "@/apis/enterprisev1/enterprisev1";
-import { DashboardHeader } from "@/components/Dashboard/components";
+import { DashboardControls } from "@/components/Dashboard/components";
 import {
   AutoRefreshContext,
   DashboardVisibilityContext,
   useDashboardQuery,
   useDashboardRange,
 } from "@/components/Dashboard/utils";
+import PageHeader from "@/components/PageHeader";
+import { PageHeaderProvider } from "@/components/PageHeader/context";
 import { useResourcePicker } from "@/components/ResourceLayout/resourcePicker/useResourcePicker";
 import ClusterCard from "@/pages/Home/ClusterCard";
 import ClusterMain from "@/pages/clusterman/Main";
@@ -147,15 +149,11 @@ const Header = (props: {
   periodMinutes?: number;
   onPeriodChange?: (period: number) => void;
 }) => (
-  <DashboardHeader
-    title="Network dashboard"
-    description="Fixture"
+  <DashboardControls
     periodMinutes={props.periodMinutes ?? 60}
     onPeriodChange={props.onPeriodChange ?? (() => {})}
     autoRefresh={false}
     onAutoRefreshChange={() => {}}
-    shortcuts={[]}
-    shortcutsLabel="Shortcuts"
   />
 );
 
@@ -283,7 +281,12 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <AutoRefreshContext.Provider value={scenario === "focus"}>
         <MemoryRouter initialEntries={["/dashboard?keep=yes"]}>
-          {content}
+          <PageHeaderProvider>
+            {(scenario === "dashboard" || scenario === "cluster") && (
+              <PageHeader />
+            )}
+            {content}
+          </PageHeaderProvider>
         </MemoryRouter>
       </AutoRefreshContext.Provider>
     </QueryClientProvider>

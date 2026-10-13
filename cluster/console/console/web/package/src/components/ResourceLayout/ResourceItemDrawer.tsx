@@ -1,6 +1,10 @@
+import { AskAgentButton } from "@/components/AgentDock/AskButtons";
+import { useOptionalAgent } from "@/components/AgentDock/context";
 import { approveNextNavigation, useHasDirtyForm } from "@/utils/forms";
 import { getAPIKindFromPath } from "@/utils/pb";
 import { Drawer } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
+import * as React from "react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import ResourceItemPage from "./ResourceItemPage";
@@ -17,6 +21,9 @@ const ResourceItemDrawer = () => {
   const returnTo = state?.returnTo ?? parentPath;
   const kind = getAPIKindFromPath(location.pathname)?.kind;
   const hasDirtyForm = useHasDirtyForm();
+  const agent = useOptionalAgent();
+  const docked = useMediaQuery("(min-width: 80em)");
+  const dockOpen = !!agent?.opened && !agent.hidden;
 
   useEffect(() => {
     let openFrame = 0;
@@ -43,6 +50,14 @@ const ResourceItemDrawer = () => {
       onClose={requestClose}
       position="right"
       size="min(960px, 100vw)"
+      zIndex={200}
+      trapFocus={!dockOpen}
+      closeButtonProps={
+        { "data-autofocus": true } as React.ComponentProps<"button">
+      }
+      removeScrollProps={{
+        shards: agent?.dockElement ? [agent.dockElement] : [],
+      }}
       transitionProps={{
         transition: "slide-left",
         duration: 250,
@@ -51,17 +66,28 @@ const ResourceItemDrawer = () => {
           navigate(returnTo, { replace: true, preventScrollReset: true }),
       }}
       title={
-        <div className="flex min-w-0 flex-col">
-          <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
-            {kind ?? "Resource"}
-          </span>
-          <span className="truncate text-sm font-bold text-slate-900">
-            {name}
-          </span>
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
+              {kind ?? "Resource"}
+            </span>
+            <span className="truncate text-sm font-bold text-slate-900">
+              {name}
+            </span>
+          </div>
+          <AskAgentButton
+            variant="icon"
+            label={`Ask the agent about ${name}`}
+          />
         </div>
       }
       overlayProps={{ backgroundOpacity: 0.2, blur: 1 }}
       styles={{
+        inner:
+          dockOpen && docked
+            ? { width: "calc(100% - var(--agent-dock-width))" }
+            : undefined,
+        title: { flex: 1, minWidth: 0 },
         header: {
           borderBottomWidth: "1px",
           borderBottomStyle: "solid",

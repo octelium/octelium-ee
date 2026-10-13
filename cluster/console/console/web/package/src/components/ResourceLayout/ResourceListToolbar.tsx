@@ -17,6 +17,12 @@ import {
 } from "../Paginator";
 import SearchList from "../SearchList";
 import RefreshButton from "@/components/RefreshButton";
+import { AskAgentButton } from "@/components/AgentDock/AskButtons";
+import type { PinnedContext } from "@/components/AgentDock/context";
+import {
+  PageActions,
+  PageTitleAddon,
+} from "@/components/PageHeader/context";
 
 export type ListDensity = "comfortable" | "compact" | "table";
 
@@ -148,12 +154,20 @@ const SelectionBar = (props: {
   isDeleting: boolean;
   onClear: () => void;
   onDelete: () => void;
+  onAsk?: () => PinnedContext;
 }) => (
   <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-300 bg-slate-900 px-3 py-2 text-white">
     <span className="text-xs font-semibold tabular-nums">
       {props.count} selected on this page
     </span>
     <div className="flex-1" />
+    {props.onAsk && (
+      <AskAgentButton
+        variant="white"
+        label="Ask agent"
+        pinned={props.onAsk}
+      />
+    )}
     <Button
       size="compact-xs"
       variant="white"
@@ -200,6 +214,7 @@ const ResourceListToolbar = (props: {
   isDeleting?: boolean;
   onClearSelection?: () => void;
   onDeleteSelection?: () => void;
+  onAskSelection?: () => PinnedContext;
 }) => {
   const {
     searchParams,
@@ -216,46 +231,49 @@ const ResourceListToolbar = (props: {
   const hasSelection = (props.selectedCount ?? 0) > 0;
 
   return (
-    <div className="sticky top-[60px] z-20 -mx-1 mb-4 flex flex-col gap-2.5 border-b border-slate-200 bg-canvas/95 px-1 pb-3 pt-1 backdrop-blur supports-[backdrop-filter]:bg-canvas/80">
-      <div className="flex items-end justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="truncate text-lg font-semibold tracking-tight text-slate-950">
-            {formatKindName(props.kindName)} resources
-          </h1>
-          <p className="mt-0.5 text-xs font-normal text-slate-600">
-            {props.showCount === false
-              ? "Loading resources…"
-              : `${props.totalCount.toLocaleString()} ${props.countLabel}`}
-            {props.isFetching && props.showCount !== false && (
-              <Loader2
-                size={11}
-                className="ml-1.5 inline motion-safe:animate-spin align-[-1px] text-slate-500"
-                strokeWidth={2.5}
-              />
-            )}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {props.onRefresh && (
-            <RefreshButton
-              label="Refresh resources"
-              loading={props.isFetching}
-              onClick={props.onRefresh}
-            />
-          )}
-          {props.canCreate && (
-            <Button
-              variant="filled"
-              color="ink"
-              className="shrink-0 !shadow-[0_8px_20px_-6px_rgba(15,23,42,0.35)]"
-              leftSection={<Plus size={14} />}
-              onClick={props.onCreate}
-            >
-              Create {props.kindName}
-            </Button>
-          )}
-        </div>
-      </div>
+    <div className="sticky top-[60px] z-20 -mx-1 mb-4 flex flex-col gap-2.5 border-b border-slate-200 bg-canvas/95 px-1 pb-3 pt-3 backdrop-blur supports-[backdrop-filter]:bg-canvas/80 sm:top-[calc(60px+var(--page-header-height,0px))]">
+      <PageTitleAddon>
+        {props.showCount !== false && (
+          <Tooltip
+            label={`${props.totalCount.toLocaleString()} ${props.countLabel}`}
+            withArrow
+            openDelay={300}
+          >
+            <span className="text-micro rounded-full border border-slate-200 bg-white px-2 py-0.5 font-semibold tabular-nums text-slate-600">
+              {props.totalCount.toLocaleString()}
+            </span>
+          </Tooltip>
+        )}
+        {props.isFetching && (
+          <Loader2
+            size={12}
+            className="motion-safe:animate-spin text-slate-400"
+            strokeWidth={2.5}
+            aria-label="Loading resources"
+          />
+        )}
+      </PageTitleAddon>
+      <PageActions>
+        {props.onRefresh && (
+          <RefreshButton
+            label="Refresh resources"
+            loading={props.isFetching}
+            onClick={props.onRefresh}
+          />
+        )}
+        {props.canCreate && (
+          <Button
+            variant="filled"
+            color="ink"
+            size="xs"
+            className="shrink-0"
+            leftSection={<Plus size={13} />}
+            onClick={props.onCreate}
+          >
+            Create {props.kindName}
+          </Button>
+        )}
+      </PageActions>
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="min-w-56 flex-1">
@@ -331,6 +349,7 @@ const ResourceListToolbar = (props: {
           isDeleting={!!props.isDeleting}
           onClear={props.onClearSelection ?? (() => {})}
           onDelete={props.onDeleteSelection ?? (() => {})}
+          onAsk={props.onAskSelection}
         />
       ) : (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">

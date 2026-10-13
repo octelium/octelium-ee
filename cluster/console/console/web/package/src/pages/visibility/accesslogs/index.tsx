@@ -7,18 +7,13 @@ import {
 import LogPageShell, {
   useLogPageParams,
 } from "@/components/LogViewer/LogPageShell";
-import { ShieldCheck } from "lucide-react";
 
 export default () => {
   const req = useLogListReq();
   const pagination = useLogPageParams();
 
   return (
-    <LogPageShell
-      title="Access logs"
-      description="Authorization decisions and request activity across Services, identities, and Policies."
-      icon={ShieldCheck}
-    >
+    <LogPageShell title="Access logs">
       <AccessLogViewer
         userRef={toObjectRef(req?.userRef)}
         sessionRef={toObjectRef(req?.sessionRef)}

@@ -8,6 +8,7 @@ import type {
   Message,
   Run,
   RunActivity,
+  RunContext,
   RunInput,
   RunSnapshot,
   RunStatus,
@@ -21,6 +22,7 @@ import type {
   ToolContextProvider,
   ToolRunContext,
 } from "../agent/types.ts";
+import { contextSummary, sanitizeContext } from "../agent/context.ts";
 import { ResourceCache } from "../agent/resources.ts";
 import { badRequest, conflict, notFound, tooManyRequests } from "../errors.ts";
 import type { Logger } from "../log.ts";
@@ -111,6 +113,7 @@ export class RunManager implements ToolContextProvider {
     if (text.length > maxInputChars) {
       throw badRequest(`The input exceeds ${maxInputChars} characters`);
     }
+    const context = sanitizeContext(input?.context);
 
     const attachments: FileInfo[] = [];
     for (const id of attachmentIDs) {
@@ -141,6 +144,7 @@ export class RunManager implements ToolContextProvider {
           ? []
           : [{ id: "b1", type: "markdown", text, createdAt: now }],
       attachments: attachments.length > 0 ? attachments : undefined,
+      context,
     };
     store.appendMessage(conversationId, userMessage);
 
@@ -211,11 +215,16 @@ export class RunManager implements ToolContextProvider {
         conversation: structuredClone(current),
       });
       if (this.opts.generateTitles) {
-        void this.generateTitle(conversationId, text, current.title);
+        const summary = context ? contextSummary(context) : "";
+        void this.generateTitle(
+          conversationId,
+          summary ? `${text}\n\n(About: ${summary})` : text,
+          current.title,
+        );
       }
     }
 
-    void this.execute(ar, current, text, attachments);
+    void this.execute(ar, current, text, attachments, context);
 
     return structuredClone(run);
   }
@@ -225,11 +234,12 @@ export class RunManager implements ToolContextProvider {
     conversation: Conversation,
     text: string,
     attachments: FileInfo[],
+    context: RunContext | undefined,
   ) {
     let result: BackendRunResult;
     try {
       result = await this.opts.backend.run(
-        { text, attachments },
+        { text, attachments, context },
         {
           runId: ar.run.id,
           conversation,

@@ -1,21 +1,10 @@
-import { DashboardHeader, Deferred } from "@/components/Dashboard/components";
+import { DashboardControls, Deferred } from "@/components/Dashboard/components";
 import {
   AutoRefreshContext,
   useDashboardRange,
 } from "@/components/Dashboard/utils";
 import Meta from "@/components/Meta";
-import { periodLabel } from "@/utils/visibility";
 import { motion } from "framer-motion";
-import {
-  CalendarClock,
-  ClipboardCheck,
-  Inbox,
-  Layers,
-  Plug,
-  Send,
-  Shield,
-  Timer,
-} from "lucide-react";
 import * as React from "react";
 import Grants from "./Grants";
 import Integrations from "./Integrations";
@@ -25,29 +14,9 @@ import Requests from "./Requests";
 import Signals from "./Signals";
 import Workflow from "./Workflow";
 
-const SHORTCUTS = [
-  { label: "Requests", to: "/access/requests", icon: Inbox },
-  { label: "Reviews", to: "/access/reviews", icon: ClipboardCheck },
-  { label: "Policies", to: "/access/policies", icon: Shield },
-  { label: "Catalogs", to: "/access/catalogs", icon: Layers },
-  { label: "Integrations", to: "/access/integrations", icon: Plug },
-  { label: "Pending", to: "/access/requests?state=PENDING", icon: Timer },
-  {
-    label: "Past deadline",
-    to: "/access/requests?isDeadlinePassed=true",
-    icon: CalendarClock,
-  },
-  {
-    label: "Failing presentations",
-    to: "/access/integrationbindings?isFailing=true",
-    icon: Send,
-  },
-];
-
 const Dashboard = () => {
   const { periodMinutes, setPeriodMinutes } = useDashboardRange();
   const [autoRefresh, setAutoRefresh] = React.useState(true);
-  const rangeLabel = periodLabel(periodMinutes);
 
   return (
     <AutoRefreshContext.Provider value={autoRefresh}>
@@ -59,15 +28,11 @@ const Dashboard = () => {
       >
         <Meta title="Access" />
 
-        <DashboardHeader
-          title="Access"
-          description={`Just-in-time access Requests, reviews and the Policies behind them · deltas cover the last ${rangeLabel}`}
+        <DashboardControls
           periodMinutes={periodMinutes}
           onPeriodChange={setPeriodMinutes}
           autoRefresh={autoRefresh}
           onAutoRefreshChange={setAutoRefresh}
-          shortcuts={SHORTCUTS}
-          shortcutsLabel="Jump to an access resource"
         />
 
         <Deferred eager>

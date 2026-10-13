@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "@/lib/utils";
+import AskLog from "../AccessLogViewer/AskLog";
 import Editor from "../AccessLogViewer/Editor";
 import { SelectFromTimestamp } from "../AccessLogViewer/utils";
 import CardSession from "../Card/CardSession";
@@ -81,7 +82,10 @@ const AuditLogDetails = ({ auditLog }: { auditLog: AuditLog }) => {
         <h4 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
           Event details
         </h4>
-        <Editor item={x} />
+        <div className="flex items-center gap-1.5">
+          <AskLog item={x} />
+          <Editor item={x} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 px-3.5 py-3 sm:grid-cols-2 sm:px-4 lg:grid-cols-3">

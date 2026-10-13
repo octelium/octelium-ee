@@ -1,7 +1,10 @@
 import { PILL } from "@/components/Dashboard/components";
 import Meta from "@/components/Meta";
+import {
+  PageActions,
+  PageTitleAddon,
+} from "@/components/PageHeader/context";
 import RefreshButton from "@/components/RefreshButton";
-import { getDomain } from "@/utils";
 import { Alert, Button } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useIsFetching, useQueryClient } from "@tanstack/react-query";
@@ -10,7 +13,6 @@ import {
   ArrowUpCircle,
   CheckCircle2,
   Loader2,
-  ServerCog,
   Sparkles,
 } from "lucide-react";
 import * as React from "react";
@@ -92,61 +94,34 @@ const Main = () => {
     >
       <Meta title="Cluster management" />
 
-      <header className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-card sm:px-5">
-        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
-              <ServerCog size={18} strokeWidth={2.1} />
-            </span>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-bold tracking-[-0.02em] text-slate-950">
-                  Cluster management
-                </h1>
-                {!versions.isLoading && (
-                  <StatusPill active={active} updates={updates} />
-                )}
-              </div>
-              <p className="mt-1 text-xs font-normal leading-5 text-slate-500">
-                Package versions, upgrade rollouts and the license of{" "}
-                <span className="font-semibold text-slate-700">
-                  {getDomain()}
-                </span>
-              </p>
-            </div>
-          </div>
+      <PageTitleAddon>
+        {!versions.isLoading && <StatusPill active={active} updates={updates} />}
+      </PageTitleAddon>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            {fetching > 0 && (
-              <span className="text-micro font-normal tabular-nums text-slate-500">
-                Updating {fetching}…
-              </span>
-            )}
+      <PageActions>
+        <RefreshButton
+          label="Refresh the page"
+          loading={fetching > 0}
+          onClick={() =>
+            queryClient.invalidateQueries({ queryKey: clustermanKeys.all })
+          }
+        />
 
-            <RefreshButton
-              label="Refresh the page"
-              loading={fetching > 0}
-              onClick={() =>
-                queryClient.invalidateQueries({ queryKey: clustermanKeys.all })
-              }
-            />
-
-            <Button
-              variant="filled"
-              color="ink"
-              leftSection={<ArrowUpCircle size={15} strokeWidth={2.5} />}
-              disabled={active || versions.isLoading}
-              onClick={() => openUpgrade(undefined)}
-            >
-              {active
-                ? "Upgrade in progress"
-                : versions.isLoading
-                  ? "Checking versions…"
-                  : "Upgrade Cluster"}
-            </Button>
-          </div>
-        </div>
-      </header>
+        <Button
+          variant="filled"
+          color="ink"
+          size="xs"
+          leftSection={<ArrowUpCircle size={14} strokeWidth={2.5} />}
+          disabled={active || versions.isLoading}
+          onClick={() => openUpgrade(undefined)}
+        >
+          {active
+            ? "Upgrade in progress"
+            : versions.isLoading
+              ? "Checking versions…"
+              : "Upgrade Cluster"}
+        </Button>
+      </PageActions>
 
       <Packages upgradeActive={active} onUpgrade={openUpgrade} />
 

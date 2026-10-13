@@ -6,7 +6,6 @@ import { useLogListReq } from "@/components/AccessLogViewer/listReq";
 import { ComponentLog_Entry_Level } from "@/apis/corev1/corev1";
 import { ComponentSelector } from "@/apis/visibilityv1/visibilityv1";
 import { useSearchParams } from "react-router-dom";
-import { ScrollText } from "lucide-react";
 
 export default () => {
   const req = useLogListReq();
@@ -18,11 +17,7 @@ export default () => {
       ]
     : undefined;
   return (
-    <LogPageShell
-      title="Component logs"
-      description="Runtime messages from Octelium control-plane and data-plane components."
-      icon={ScrollText}
-    >
+    <LogPageShell title="Component logs">
       <ComponentLogViewer
         component={
           req?.component

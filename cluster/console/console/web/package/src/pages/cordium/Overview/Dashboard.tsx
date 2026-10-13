@@ -1,21 +1,10 @@
-import { DashboardHeader, Deferred } from "@/components/Dashboard/components";
+import { DashboardControls, Deferred } from "@/components/Dashboard/components";
 import {
   AutoRefreshContext,
   useDashboardRange,
 } from "@/components/Dashboard/utils";
 import Meta from "@/components/Meta";
-import { periodLabel } from "@/utils/visibility";
 import { motion } from "framer-motion";
-import {
-  AlertTriangle,
-  CirclePlay,
-  Container,
-  GitBranch,
-  Hammer,
-  Layers,
-  LayoutTemplate,
-  UsersRound,
-} from "lucide-react";
 import * as React from "react";
 import Attention from "./Attention";
 import Capacity from "./Capacity";
@@ -25,33 +14,9 @@ import Signals from "./Signals";
 import Templates from "./Templates";
 import Workspaces from "./Workspaces";
 
-const SHORTCUTS = [
-  { label: "Workspaces", to: "/cordium/workspaces", icon: Container },
-  { label: "Templates", to: "/cordium/templates", icon: LayoutTemplate },
-  { label: "Spaces", to: "/cordium/spaces", icon: Layers },
-  { label: "Memberships", to: "/cordium/memberships", icon: UsersRound },
-  { label: "Git Providers", to: "/cordium/gitproviders", icon: GitBranch },
-  {
-    label: "Running",
-    to: "/cordium/workspaces?state=RUNNING",
-    icon: CirclePlay,
-  },
-  {
-    label: "Failed",
-    to: "/cordium/workspaces?isFailed=true",
-    icon: AlertTriangle,
-  },
-  {
-    label: "Building Templates",
-    to: "/cordium/templates?isBuilding=true",
-    icon: Hammer,
-  },
-];
-
 const Dashboard = () => {
   const { periodMinutes, setPeriodMinutes } = useDashboardRange();
   const [autoRefresh, setAutoRefresh] = React.useState(true);
-  const rangeLabel = periodLabel(periodMinutes);
 
   return (
     <AutoRefreshContext.Provider value={autoRefresh}>
@@ -63,15 +28,11 @@ const Dashboard = () => {
       >
         <Meta title="Cordium" />
 
-        <DashboardHeader
-          title="Cordium"
-          description={`Workspaces, the Templates they are built from and the Spaces that own them · deltas cover the last ${rangeLabel}`}
+        <DashboardControls
           periodMinutes={periodMinutes}
           onPeriodChange={setPeriodMinutes}
           autoRefresh={autoRefresh}
           onAutoRefreshChange={setAutoRefresh}
-          shortcuts={SHORTCUTS}
-          shortcutsLabel="Jump to a Cordium resource"
         />
 
         <Deferred eager>

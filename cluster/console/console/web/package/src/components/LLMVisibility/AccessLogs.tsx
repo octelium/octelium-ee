@@ -6,6 +6,7 @@ import {
   ListAccessLogRequest_OrderBy_Type,
 } from "@/apis/visibilityv1/llm/vllmv1";
 import { Duration } from "@/apis/metav1/metav1";
+import AskLog from "@/components/AccessLogViewer/AskLog";
 import LogEditor from "@/components/AccessLogViewer/Editor";
 import Paginator from "@/components/AccessLogViewer/Paginator";
 import TimeAgo from "@/components/TimeAgo";
@@ -365,6 +366,7 @@ const Row = (props: { item: CoreP.AccessLog }) => {
             )}
 
             <div className="flex items-center justify-end gap-2 border-t border-slate-100 px-3.5 py-2.5">
+              <AskLog item={props.item} />
               <LogEditor item={props.item} />
             </div>
           </motion.div>

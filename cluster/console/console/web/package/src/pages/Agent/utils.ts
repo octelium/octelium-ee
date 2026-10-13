@@ -17,6 +17,8 @@ import {
 } from "@/utils/pb";
 import { defaultUrlTransform } from "react-markdown";
 
+export { readStorage, writeStorage } from "./environment";
+
 export const formatBytes = (n: number): string => {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
@@ -158,22 +160,6 @@ export const toCSV = (
       columns.map((c) => escape(formatValue(row[c.key]))).join(","),
     ),
   ].join("\n");
-};
-
-export const readStorage = (key: string): string | undefined => {
-  try {
-    return localStorage.getItem(key) ?? undefined;
-  } catch {
-    return undefined;
-  }
-};
-
-export const writeStorage = (key: string, value: string) => {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    return;
-  }
 };
 
 export const searchTerms = (query: string): string[] => [

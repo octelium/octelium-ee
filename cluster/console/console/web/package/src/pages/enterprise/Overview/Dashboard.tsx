@@ -1,22 +1,10 @@
-import { DashboardHeader, Deferred } from "@/components/Dashboard/components";
+import { DashboardControls, Deferred } from "@/components/Dashboard/components";
 import {
   AutoRefreshContext,
   useDashboardRange,
 } from "@/components/Dashboard/utils";
 import Meta from "@/components/Meta";
-import { periodLabel } from "@/utils/visibility";
 import { motion } from "framer-motion";
-import {
-  BookKey,
-  Crown,
-  FlaskConical,
-  Folder,
-  Globe2,
-  KeyRound,
-  Settings2,
-  ShieldCheck,
-  Telescope,
-} from "lucide-react";
 import * as React from "react";
 import Certificates from "./Certificates";
 import Directories from "./Directories";
@@ -26,38 +14,9 @@ import Platform from "./Platform";
 import Signals from "./Signals";
 import Telemetry from "./Telemetry";
 
-const SHORTCUTS = [
-  { label: "Certificates", to: "/enterprise/certificates", icon: ShieldCheck },
-  {
-    label: "Certificate Issuers",
-    to: "/enterprise/certificateissuers",
-    icon: Crown,
-  },
-  {
-    label: "Directory Providers",
-    to: "/enterprise/directoryproviders",
-    icon: Folder,
-  },
-  { label: "Secret Stores", to: "/enterprise/secretstores", icon: BookKey },
-  { label: "Secrets", to: "/enterprise/secrets", icon: KeyRound },
-  {
-    label: "Collector Exporters",
-    to: "/enterprise/collectorexporters",
-    icon: Telescope,
-  },
-  { label: "DNS Providers", to: "/enterprise/dnsproviders", icon: Globe2 },
-  {
-    label: "Policy Tester",
-    to: "/enterprise/policytester",
-    icon: FlaskConical,
-  },
-  { label: "Cluster Config", to: "/enterprise/clusterconfig", icon: Settings2 },
-];
-
 const Dashboard = () => {
   const { periodMinutes, setPeriodMinutes } = useDashboardRange();
   const [autoRefresh, setAutoRefresh] = React.useState(true);
-  const rangeLabel = periodLabel(periodMinutes);
 
   return (
     <AutoRefreshContext.Provider value={autoRefresh}>
@@ -69,15 +28,11 @@ const Dashboard = () => {
       >
         <Meta title="Enterprise" />
 
-        <DashboardHeader
-          title="Enterprise"
-          description={`Certificates, identity directories, key management and telemetry integrations · deltas cover the last ${rangeLabel}`}
+        <DashboardControls
           periodMinutes={periodMinutes}
           onPeriodChange={setPeriodMinutes}
           autoRefresh={autoRefresh}
           onAutoRefreshChange={setAutoRefresh}
-          shortcuts={SHORTCUTS}
-          shortcutsLabel="Jump to an enterprise resource"
         />
 
         <Deferred eager>

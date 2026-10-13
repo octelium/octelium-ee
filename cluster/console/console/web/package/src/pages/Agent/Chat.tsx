@@ -1,18 +1,13 @@
 import {
-  isTerminalRunStatus,
-  type AgentEvent,
   type AgentInfo,
-  type ApprovalDecision,
   type Conversation,
   type FileInfo,
   type ListConversationsResponse,
-  type Message,
-  type RunInput,
 } from "@/apis/consoleagent/protocol";
 import Meta from "@/components/Meta";
 import { ActionIcon, Button, Menu, Popover, Tooltip } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowDown,
@@ -40,14 +35,14 @@ import { AgentClient } from "./client";
 import Composer, { type Upload } from "./Composer";
 import { MessageView, PendingAssistant, TranscriptSkeleton } from "./Messages";
 import ModelsDrawer, { ModelPicker } from "./Models";
-import { applyEvent, emptyChatState, type ChatState } from "./reducer";
 import Sidebar from "./Sidebar";
 import { AgentMark, ConfirmModal, isMac, StatusDot } from "./ui";
+import { useConversation } from "./useConversation";
+import { useTranscript } from "./useTranscript";
 import {
   conversationMarkdown,
   formatBytes,
   greeting,
-  messageText,
   readStorage,
   saveBlob,
   toFileName,
@@ -80,12 +75,6 @@ const suggestions = [
     prompt: "List the Policies that apply to the Group admins",
   },
 ];
-
-interface Optimistic {
-  text: string;
-  attachments: FileInfo[];
-  createdAt: string;
-}
 
 const hasFiles = (event: React.DragEvent) =>
   Array.from(event.dataTransfer.types).includes("Files");
@@ -121,51 +110,30 @@ const Chat = (props: {
     getInitialValueInEffect: false,
   });
 
-  const [chat, setChat] = React.useState<ChatState>(emptyChatState);
-  const [loading, setLoading] = React.useState(() => !!selected);
   const [input, setInput] = React.useState("");
   const [attachments, setAttachments] = React.useState<FileInfo[]>([]);
   const [uploads, setUploads] = React.useState<Upload[]>([]);
   const [previews, setPreviews] = React.useState<Record<string, string>>({});
-  const [sending, setSending] = React.useState(false);
-  const [optimistic, setOptimistic] = React.useState<Optimistic>();
   const [modelsOpened, setModelsOpened] = React.useState(false);
   const [collapsed, setCollapsed] = React.useState(
     () => readStorage(sidebarStorageKey) === "collapsed",
   );
   const [drawerOpened, setDrawerOpened] = React.useState(false);
   const [dragging, setDragging] = React.useState(false);
-  const [atBottom, setAtBottom] = React.useState(true);
-  const [scrolled, setScrolled] = React.useState(false);
   const [focusTarget, setFocusTarget] = React.useState<string>();
   const [flashId, setFlashId] = React.useState<string>();
   const [deleting, setDeleting] = React.useState<Conversation>();
   const [editingTitle, setEditingTitle] = React.useState(false);
-  const [approvalVisible, setApprovalVisible] = React.useState(false);
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const searchRef = React.useRef<HTMLInputElement>(null);
-  const transcriptRef = React.useRef<HTMLDivElement>(null);
-  const contentRef = React.useRef<HTMLDivElement>(null);
-  const stickToBottomRef = React.useRef(true);
-  const loadedRef = React.useRef<string | undefined>(undefined);
+  const uiSelectedRef = React.useRef<string | undefined>(undefined);
   const dragDepthRef = React.useRef(0);
   const draftsRef = React.useRef(new Map<string, string>());
   const inputRef = React.useRef(input);
   const draftKeyRef = React.useRef(selected ?? "");
 
   const sidebarOpen = wide ? !collapsed : drawerOpened;
-
-  const conversationsKey = React.useMemo(
-    () => ["agent", client.baseUrl, "conversations"],
-    [client.baseUrl],
-  );
-  const conversationsQuery = useQuery({
-    queryKey: conversationsKey,
-    queryFn: () => client.listConversations(),
-  });
-  const conversations = conversationsQuery.data?.items;
-  const conversation = conversations?.find((c) => c.id === selected);
 
   const setSelected = React.useCallback(
     (id?: string) => {
@@ -185,52 +153,54 @@ const Chat = (props: {
     [setSearchParams],
   );
 
-  const onConversationUpdated = React.useCallback(
-    (updated: Conversation) => {
-      queryClient.setQueryData<ListConversationsResponse>(
-        conversationsKey,
-        (data) => {
-          const items = (data?.items ?? []).filter(
-            (itm) => itm.id !== updated.id,
-          );
-          return { items: [updated, ...items] };
-        },
-      );
+  const conv = useConversation({
+    client,
+    conversationId: selected,
+    onCreated: (created) => {
+      uiSelectedRef.current = created.id;
+      draftKeyRef.current = created.id;
+      draftsRef.current.delete("");
+      setSelected(created.id);
     },
-    [queryClient, conversationsKey],
-  );
+  });
+  const {
+    chat,
+    conversations,
+    conversationsKey,
+    conversation,
+    onConversationUpdated,
+    loading,
+    sending,
+    switching,
+    busy,
+    isEmpty,
+    run,
+    isActive,
+    awaitingApproval,
+    showOptimistic,
+    showPendingAssistant,
+    optimisticMessage,
+    lastMessage,
+    lastAssistantID,
+    retryMessageID,
+    retryInput,
+  } = conv;
 
-  const load = React.useCallback(
-    async (id: string) => {
-      setLoading(true);
-      try {
-        const detail = await client.getConversation(id);
-        if (loadedRef.current !== id) return;
-        const messages = [...detail.messages];
-        const active = detail.activeRun;
-        if (
-          active?.message &&
-          !messages.some((m) => m.id === active.message!.id)
-        ) {
-          messages.push(active.message);
-        }
-        setChat({
-          messages,
-          run: active?.run,
-          lastSeq: active?.run.lastSeq ?? 0,
-        });
-        setOptimistic(undefined);
-      } catch (err) {
-        if (loadedRef.current === id) {
-          toast.error((err as Error).message);
-          setChat(emptyChatState);
-        }
-      } finally {
-        if (loadedRef.current === id) setLoading(false);
-      }
-    },
-    [client],
-  );
+  const transcript = useTranscript({
+    mounted: !isEmpty,
+    awaitingApproval,
+    messages: chat.messages,
+  });
+  const {
+    scrollRef: transcriptRef,
+    contentRef,
+    stickRef: stickToBottomRef,
+    atBottom,
+    scrolled,
+    approvalVisible,
+    scrollToBottom,
+    scrollToApproval,
+  } = transcript;
 
   React.useEffect(() => {
     inputRef.current = input;
@@ -245,147 +215,11 @@ const Chat = (props: {
   }, [selected]);
 
   React.useEffect(() => {
-    if (loadedRef.current === selected) return;
-    loadedRef.current = selected;
-    stickToBottomRef.current = true;
-    setAtBottom(true);
-    setScrolled(false);
-    setOptimistic(undefined);
+    if (uiSelectedRef.current === selected) return;
+    uiSelectedRef.current = selected;
+    transcript.reset();
     setEditingTitle(false);
-    setChat(emptyChatState);
-    if (selected) {
-      void load(selected);
-    } else {
-      setLoading(false);
-    }
-  }, [selected, load]);
-
-  const switching = loadedRef.current !== selected;
-  const run = switching ? undefined : chat.run;
-  const isActive = !!run && !isTerminalRunStatus(run.status);
-  const runId = run?.id;
-  const conversationId = run?.conversationId;
-
-  const lastSeqRef = React.useRef(chat.lastSeq);
-  React.useEffect(() => {
-    lastSeqRef.current = chat.lastSeq;
-  }, [chat.lastSeq]);
-
-  React.useEffect(() => {
-    if (!isActive || !runId || !conversationId) return;
-    const afterSeq = lastSeqRef.current;
-    let queue: AgentEvent[] = [];
-    let frame: number | undefined;
-
-    const flush = () => {
-      if (frame !== undefined) {
-        cancelAnimationFrame(frame);
-        frame = undefined;
-      }
-      if (queue.length === 0) return;
-      const events = queue;
-      queue = [];
-      setChat((state) =>
-        events.reduce(
-          (current, event) =>
-            loadedRef.current === event.conversationId
-              ? applyEvent(current, event)
-              : current,
-          state,
-        ),
-      );
-    };
-
-    const unsubscribe = client.subscribe(
-      runId,
-      afterSeq,
-      (event: AgentEvent) => {
-        if (event.type === "conversation.updated") {
-          onConversationUpdated(event.conversation);
-        }
-        queue.push(event);
-        frame ??= requestAnimationFrame(flush);
-      },
-      () => {
-        flush();
-        void queryClient.invalidateQueries({ queryKey: conversationsKey });
-        if (loadedRef.current === conversationId) {
-          void load(conversationId);
-        }
-      },
-    );
-
-    return () => {
-      unsubscribe();
-      flush();
-    };
-  }, [
-    client,
-    isActive,
-    runId,
-    conversationId,
-    onConversationUpdated,
-    queryClient,
-    conversationsKey,
-    load,
-  ]);
-
-  const userMessageArrived =
-    !!run && chat.messages.some((m) => m.id === run.userMessageId);
-  const showOptimistic = !!optimistic && !userMessageArrived;
-
-  React.useEffect(() => {
-    if (userMessageArrived) setOptimistic(undefined);
-  }, [userMessageArrived]);
-  const showPendingAssistant =
-    (sending || isActive) &&
-    !chat.messages.some(
-      (m) => m.role === "assistant" && m.id === run?.assistantMessageId,
-    );
-  const busy = loading || switching;
-  const isEmpty =
-    chat.messages.length === 0 && !showOptimistic && !busy && !sending;
-
-  React.useEffect(() => {
-    const el = transcriptRef.current;
-    const content = contentRef.current;
-    if (!el || !content) return;
-    const observer = new ResizeObserver(() => {
-      if (stickToBottomRef.current) {
-        el.scrollTop = el.scrollHeight;
-      }
-    });
-    observer.observe(content);
-    return () => observer.disconnect();
-  }, [isEmpty]);
-
-  const awaitingApproval = run?.status === "awaiting_approval";
-
-  React.useEffect(() => {
-    const root = transcriptRef.current;
-    if (!awaitingApproval || !root) return;
-    const targets = root.querySelectorAll("[data-approval-pending]");
-    if (targets.length === 0) {
-      setApprovalVisible(false);
-      return;
-    }
-    const visible = new Set<Element>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            visible.add(entry.target);
-          } else {
-            visible.delete(entry.target);
-          }
-        }
-        setApprovalVisible(visible.size > 0);
-      },
-      { root, threshold: 0.35 },
-    );
-    targets.forEach((target) => observer.observe(target));
-    return () => observer.disconnect();
-  }, [awaitingApproval, chat.messages]);
+  }, [selected, transcript.reset]);
 
   React.useLayoutEffect(() => {
     if (!focusTarget || loading) return;
@@ -404,13 +238,6 @@ const Chat = (props: {
     const timer = window.setTimeout(() => setFlashId(undefined), 1600);
     return () => window.clearTimeout(timer);
   }, [flashId]);
-
-  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
-    const el = transcriptRef.current;
-    if (!el) return;
-    stickToBottomRef.current = true;
-    el.scrollTo({ top: el.scrollHeight, behavior });
-  };
 
   const focusComposer = () =>
     requestAnimationFrame(() => textareaRef.current?.focus());
@@ -441,25 +268,10 @@ const Chat = (props: {
     [setSelected],
   );
 
-  const openSearch = React.useCallback(() => {
-    if (wide) {
-      setCollapsed(false);
-      writeStorage(sidebarStorageKey, "expanded");
-    } else {
-      setDrawerOpened(true);
-    }
-    window.setTimeout(() => searchRef.current?.focus(), 60);
-  }, [wide]);
-
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const mod = isMac ? event.metaKey : event.ctrlKey;
       const key = event.key.toLowerCase();
-      if (mod && !event.shiftKey && !event.altKey && key === "k") {
-        event.preventDefault();
-        openSearch();
-        return;
-      }
       if (mod && event.shiftKey && !event.altKey && key === "o") {
         event.preventDefault();
         newChat();
@@ -478,7 +290,7 @@ const Chat = (props: {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [openSearch, newChat]);
+  }, [newChat]);
 
   React.useEffect(() => {
     if (!drawerOpened) return;
@@ -524,92 +336,29 @@ const Chat = (props: {
     });
   };
 
-  const send = async (override?: { text: string; files: FileInfo[] }) => {
-    const text = (override?.text ?? input).trim();
-    const files = override?.files ?? attachments;
+  const send = async () => {
+    const text = input.trim();
+    const files = attachments;
     if ((!text && files.length === 0) || isActive || sending) return;
-    if (!override && uploads.length > 0) return;
+    if (uploads.length > 0) return;
 
-    const runInput: RunInput = {
-      text,
-      attachments: files.length > 0 ? files.map((a) => a.id) : undefined,
-    };
-
-    setSending(true);
-    setOptimistic({
-      text,
-      attachments: files,
-      createdAt: new Date().toISOString(),
-    });
-    if (!override) {
-      setInput("");
-      setAttachments([]);
-    }
+    setInput("");
+    setAttachments([]);
     stickToBottomRef.current = true;
     requestAnimationFrame(() => scrollToBottom("auto"));
 
-    try {
-      if (selected) {
-        const next = await client.startRun(selected, runInput);
-        if (loadedRef.current === selected) {
-          setChat((state) => ({ ...state, run: next, lastSeq: 0 }));
-        }
-      } else {
-        const res = await client.createConversation(runInput);
-        loadedRef.current = res.conversation.id;
-        draftKeyRef.current = res.conversation.id;
-        draftsRef.current.delete("");
-        setChat({ messages: [], run: res.run, lastSeq: 0 });
-        onConversationUpdated(res.conversation);
-        setSelected(res.conversation.id);
-      }
-      if (!override) {
-        setPreviews((current) => {
-          Object.values(current).forEach((url) => URL.revokeObjectURL(url));
-          return {};
-        });
-      }
-    } catch (err) {
-      toast.error((err as Error).message);
-      setOptimistic(undefined);
-      if (!override) {
-        setInput((current) => current || text);
-        setAttachments((current) => (current.length > 0 ? current : files));
-      }
-    } finally {
-      setSending(false);
+    if (await conv.send({ text, files })) {
+      setPreviews((current) => {
+        Object.values(current).forEach((url) => URL.revokeObjectURL(url));
+        return {};
+      });
+    } else {
+      setInput((current) => current || text);
+      setAttachments((current) => (current.length > 0 ? current : files));
     }
   };
 
-  const stop = async () => {
-    if (!run) return;
-    try {
-      await client.cancelRun(run.id);
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
-  };
-
-  const onDecide = React.useCallback(
-    async (
-      decisionRunId: string,
-      approvalId: string,
-      decision: ApprovalDecision,
-      reason?: string,
-    ) => {
-      try {
-        await client.decideApproval(
-          decisionRunId,
-          approvalId,
-          decision,
-          reason,
-        );
-      } catch (err) {
-        toast.error((err as Error).message);
-      }
-    },
-    [client],
-  );
+  const stop = () => void conv.stop();
 
   const rename = React.useCallback(
     async (target: Conversation, title: string) => {
@@ -648,58 +397,17 @@ const Chat = (props: {
     );
   };
 
-  const scrollToApproval = () => {
-    const items = transcriptRef.current?.querySelectorAll(
-      "[data-approval-pending]",
-    );
-    items?.[items.length - 1]?.scrollIntoView({
-      block: "center",
-      behavior: "smooth",
-    });
-  };
-
   const blockCtx = React.useMemo<Omit<BlockContext, "runId" | "streaming">>(
-    () => ({ client, onDecide }),
-    [client, onDecide],
+    () => ({ client, onDecide: conv.decide }),
+    [client, conv.decide],
   );
 
-  const lastMessage = chat.messages.at(-1);
-  const lastAssistantID = [...chat.messages]
-    .reverse()
-    .find((m) => m.role === "assistant")?.id;
-
-  const retryMessageID =
-    !isActive &&
-    !sending &&
-    lastMessage?.role === "assistant" &&
-    lastMessage.status !== "completed" &&
-    lastMessage.status !== "streaming"
-      ? lastMessage.id
-      : undefined;
-  const retryInput = React.useMemo(() => {
-    if (!retryMessageID) return undefined;
-    const user = [...chat.messages].reverse().find((m) => m.role === "user");
-    if (!user) return undefined;
-    return { text: messageText(user), files: user.attachments ?? [] };
-  }, [retryMessageID, chat.messages]);
-  const onRetry = retryInput ? () => void send(retryInput) : undefined;
-
-  const optimisticMessage: Message | undefined = optimistic && {
-    id: "optimistic",
-    conversationId: selected ?? "",
-    role: "user",
-    status: "completed",
-    createdAt: optimistic.createdAt,
-    attachments: optimistic.attachments,
-    blocks: [
-      {
-        id: "optimistic",
-        type: "markdown",
-        text: optimistic.text,
-        createdAt: optimistic.createdAt,
-      },
-    ],
-  };
+  const onRetry = retryInput
+    ? () => {
+        stickToBottomRef.current = true;
+        void conv.send(retryInput);
+      }
+    : undefined;
 
   const firstName =
     info.octelium.user?.displayName?.split(" ")[0] || info.octelium.user?.name;
@@ -723,7 +431,7 @@ const Chat = (props: {
       onAddFiles={(files) => void addFiles(files)}
       onRemoveAttachment={removeAttachment}
       onSend={() => void send()}
-      onStop={() => void stop()}
+      onStop={stop}
       isActive={isActive}
       sending={sending}
       placeholder={
@@ -741,7 +449,7 @@ const Chat = (props: {
       client={client}
       info={info}
       conversations={conversations ?? []}
-      loading={conversationsQuery.isPending}
+      loading={conv.conversationsLoading}
       selected={selected}
       onSelect={openConversation}
       onNew={newChat}
@@ -1011,14 +719,7 @@ const Chat = (props: {
           ) : (
             <div
               ref={transcriptRef}
-              onScroll={(event) => {
-                const el = event.currentTarget;
-                const distance =
-                  el.scrollHeight - el.scrollTop - el.clientHeight;
-                stickToBottomRef.current = distance < 80;
-                setAtBottom(distance < 80);
-                setScrolled(el.scrollTop > 4);
-              }}
+              onScroll={transcript.onScroll}
               className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]"
             >
               <div

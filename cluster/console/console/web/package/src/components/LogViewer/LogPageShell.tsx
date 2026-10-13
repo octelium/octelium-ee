@@ -1,6 +1,5 @@
 import { FilterChips, buildFilterChips } from "@/components/Paginator";
 import SearchList from "@/components/SearchList";
-import { Activity } from "lucide-react";
 import * as React from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
@@ -19,17 +18,11 @@ export const useLogPageParams = () => {
   return { page, setPage };
 };
 
-const LogPageShell = (props: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-  icon?: React.ElementType<{ size?: number; strokeWidth?: number }>;
-}) => {
+const LogPageShell = (props: { title: string; children: React.ReactNode }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
   const chips = buildFilterChips(searchParams);
-  const Icon = props.icon ?? Activity;
   const clearFilters = () => {
     const next = new URLSearchParams(searchParams);
     for (const chip of chips) next.delete(chip.key);
@@ -50,22 +43,9 @@ const LogPageShell = (props: {
   };
 
   return (
-    <main className="flex w-full flex-col gap-4 py-4">
-      <header className="rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-card">
-        <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white">
-            <Icon size={16} strokeWidth={2.25} />
-          </span>
-          <div className="min-w-0">
-            <h1 className="text-lg font-semibold tracking-tight text-slate-950">
-              {props.title}
-            </h1>
-            <p className="mt-0.5 text-xs leading-5 text-slate-500">
-              {props.description}
-            </p>
-          </div>
-        </div>
-        <div className="mt-3 max-w-md border-t border-slate-100 pt-3">
+    <div className="flex w-full flex-col gap-4 py-4">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+        <div className="w-full max-w-md">
           <SearchList
             placeholder={`Search ${props.title.toLowerCase()}`}
             label={`Search ${props.title.toLowerCase()}`}
@@ -73,17 +53,15 @@ const LogPageShell = (props: {
           />
         </div>
         {chips.length > 0 && (
-          <div className="mt-3">
-            <FilterChips
-              chips={chips}
-              onRemove={removeFilter}
-              onClear={clearFilters}
-            />
-          </div>
+          <FilterChips
+            chips={chips}
+            onRemove={removeFilter}
+            onClear={clearFilters}
+          />
         )}
-      </header>
+      </div>
       {props.children}
-    </main>
+    </div>
   );
 };
 

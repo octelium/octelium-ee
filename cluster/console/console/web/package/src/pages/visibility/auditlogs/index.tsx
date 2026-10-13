@@ -6,18 +6,13 @@ import AuditLogViewer from "@/components/AuditLogViewer";
 import LogPageShell, {
   useLogPageParams,
 } from "@/components/LogViewer/LogPageShell";
-import { ClipboardList } from "lucide-react";
 
 export default () => {
   const req = useLogListReq();
   const pagination = useLogPageParams();
 
   return (
-    <LogPageShell
-      title="Audit logs"
-      description="Administrative changes to cluster resources, including the actor and affected object."
-      icon={ClipboardList}
-    >
+    <LogPageShell title="Audit logs">
       <AuditLogViewer
         userRef={toObjectRef(req?.userRef)}
         sessionRef={toObjectRef(req?.sessionRef)}

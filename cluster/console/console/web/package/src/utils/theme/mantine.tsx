@@ -4,9 +4,11 @@ import {
   Button,
   Checkbox,
   createTheme,
+  Drawer,
   HoverCard,
   Input,
   Menu,
+  Modal,
   MultiSelect,
   NumberInput,
   Pagination,
@@ -140,6 +142,8 @@ const toggleLabelStyles = {
   description: labelStyles.description,
 };
 
+export const OVERLAY_Z_INDEX = 220;
+
 const theme = createTheme({
   fontFamily: FONT,
   fontFamilyMonospace:
@@ -171,6 +175,10 @@ const theme = createTheme({
         label: { fontFamily: FONT, fontWeight: 600 },
       },
     }),
+
+    Modal: Modal.extend({ defaultProps: { zIndex: OVERLAY_Z_INDEX } }),
+
+    Drawer: Drawer.extend({ defaultProps: { zIndex: OVERLAY_Z_INDEX } }),
 
     Input: Input.extend({ styles: { ...labelStyles, ...inputStyles } }),
 

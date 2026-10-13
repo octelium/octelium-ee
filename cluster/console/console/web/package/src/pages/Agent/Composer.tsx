@@ -86,7 +86,7 @@ const Composer = (props: {
   attachments: FileInfo[];
   uploads: Upload[];
   previews: Record<string, string>;
-  onAddFiles: (files: File[]) => void;
+  onAddFiles?: (files: File[]) => void;
   onRemoveAttachment: (id: string) => void;
   onSend: () => void;
   onStop: () => void;
@@ -95,6 +95,7 @@ const Composer = (props: {
   placeholder: string;
   modelPicker: React.ReactNode;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  header?: React.ReactNode;
   className?: string;
 }) => {
   const fileRef = React.useRef<HTMLInputElement>(null);
@@ -144,6 +145,8 @@ const Composer = (props: {
         }
       }}
     >
+      {props.header && <div className="px-3 pt-3">{props.header}</div>}
+
       <AnimatePresence initial={false}>
         {hasFiles && (
           <motion.div
@@ -200,7 +203,7 @@ const Composer = (props: {
         onChange={(event) => props.onChange(event.currentTarget.value)}
         onPaste={(event) => {
           const files = Array.from(event.clipboardData.files);
-          if (files.length > 0) {
+          if (files.length > 0 && props.onAddFiles) {
             event.preventDefault();
             props.onAddFiles(files);
           }
@@ -221,28 +224,32 @@ const Composer = (props: {
       />
 
       <div className="flex items-center gap-1 px-2 pb-2 pt-1">
-        <input
-          ref={fileRef}
-          type="file"
-          multiple
-          hidden
-          onChange={(event) => {
-            props.onAddFiles(Array.from(event.currentTarget.files ?? []));
-            event.currentTarget.value = "";
-          }}
-        />
-        <Tooltip label="Attach files" withArrow>
-          <ActionIcon
-            size={32}
-            radius="xl"
-            variant="subtle"
-            color="gray"
-            aria-label="Attach files"
-            onClick={() => fileRef.current?.click()}
-          >
-            <Paperclip size={15} />
-          </ActionIcon>
-        </Tooltip>
+        {props.onAddFiles && (
+          <>
+            <input
+              ref={fileRef}
+              type="file"
+              multiple
+              hidden
+              onChange={(event) => {
+                props.onAddFiles?.(Array.from(event.currentTarget.files ?? []));
+                event.currentTarget.value = "";
+              }}
+            />
+            <Tooltip label="Attach files" withArrow>
+              <ActionIcon
+                size={32}
+                radius="xl"
+                variant="subtle"
+                color="gray"
+                aria-label="Attach files"
+                onClick={() => fileRef.current?.click()}
+              >
+                <Paperclip size={15} />
+              </ActionIcon>
+            </Tooltip>
+          </>
+        )}
         <div className="min-w-0">{props.modelPicker}</div>
         <div className="ml-auto flex items-center gap-2">
           <span

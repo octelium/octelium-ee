@@ -14,6 +14,7 @@ import { CircleAlert, RotateCcw } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "@/lib/utils";
 import { BlockView, fileIcon, StepsView, type BlockContext } from "./Blocks";
+import { contextChips, ContextChips } from "./Context";
 import { modelLabel } from "./Models";
 import { AgentMark, CopyButton, Shimmer, useNow } from "./ui";
 import { formatBytes, formatCount, formatElapsed, messageText } from "./utils";
@@ -127,9 +128,14 @@ const UserMessage = (props: { message: Message; pending?: boolean }) => {
   const [expanded, setExpanded] = React.useState(false);
   const text = messageText(message);
   const isLong = text.length > longUserText || text.split("\n").length > 12;
+  const chips = React.useMemo(
+    () => contextChips(message.context),
+    [message.context],
+  );
 
   return (
     <div className="group/msg flex w-full flex-col items-end gap-1.5">
+      <ContextChips chips={chips} muted className="max-w-[85%] justify-end" />
       {message.attachments && message.attachments.length > 0 && (
         <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5">
           {message.attachments.map((file) => (

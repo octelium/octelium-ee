@@ -291,7 +291,7 @@ const AgentLink = (props: { href?: string; children?: React.ReactNode }) => {
 };
 
 export const AgentMarkdown = React.memo((props: { children: string }) => (
-  <div className="text-body">
+  <div className="text-body break-words">
     <Markdown urlTransform={urlTransform} components={{ a: AgentLink }}>
       {props.children}
     </Markdown>

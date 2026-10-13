@@ -353,7 +353,7 @@ const Sidebar = (props: {
           />
           <span className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1">
             {searchPending && <Loader size={12} color="gray" />}
-            {query ? (
+            {query && (
               <ActionIcon
                 size="sm"
                 variant="subtle"
@@ -366,11 +366,6 @@ const Sidebar = (props: {
               >
                 <X size={13} />
               </ActionIcon>
-            ) : (
-              <span className="hidden items-center gap-0.5 lg:flex">
-                <Kbd>{modKey}</Kbd>
-                <Kbd>K</Kbd>
-              </span>
             )}
           </span>
         </div>

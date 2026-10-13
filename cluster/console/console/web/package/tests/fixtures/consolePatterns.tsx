@@ -18,6 +18,8 @@ import {
   formatTokens,
 } from "@/components/LLMVisibility/utils";
 import LogPageShell from "@/components/LogViewer/LogPageShell";
+import PageHeader from "@/components/PageHeader";
+import { PageHeaderProvider } from "@/components/PageHeader/context";
 import RefreshButton from "@/components/RefreshButton";
 import ResourceListPage from "@/components/ResourceLayout/ResourceList";
 import { StatusPill } from "@/components/ResourceLayout/ResourceStatus";
@@ -121,7 +123,12 @@ const Resource = () => {
       return "Other";
     },
   });
-  return <ResourceListPage info={info} />;
+  return (
+    <PageHeaderProvider>
+      <PageHeader />
+      <ResourceListPage info={info} />
+    </PageHeaderProvider>
+  );
 };
 
 const Labels = () => {
@@ -225,7 +232,7 @@ const Fixture = () => {
       ) : scenario === "search" ? (
         <SearchList />
       ) : scenario === "log-search" ? (
-        <LogPageShell title="Access logs" description="Fixture">
+        <LogPageShell title="Access logs">
           <p>Events</p>
         </LogPageShell>
       ) : scenario === "empty" ? (

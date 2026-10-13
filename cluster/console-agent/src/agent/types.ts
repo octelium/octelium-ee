@@ -9,6 +9,7 @@ import type {
   ModelInfo,
   ModelsResponse,
   RunActivity,
+  RunContext,
   SetModelRequest,
   StartLoginRequest,
   Usage,
@@ -48,6 +49,7 @@ export interface ToolContextProvider {
 export interface BackendRunInput {
   text: string;
   attachments: FileInfo[];
+  context?: RunContext;
 }
 
 export interface BackendRunContext {

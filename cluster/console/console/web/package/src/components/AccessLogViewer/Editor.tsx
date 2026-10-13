@@ -11,7 +11,7 @@ import { Braces, Check, Copy, FileJson } from "lucide-react";
 import * as React from "react";
 import { match } from "ts-pattern";
 
-type LogItem = AccessLog | AuditLog | AuthenticationLog | ComponentLog;
+export type LogItem = AccessLog | AuditLog | AuthenticationLog | ComponentLog;
 
 const editorTheme = EditorView.theme(
   {
@@ -50,7 +50,7 @@ const editorTheme = EditorView.theme(
 
 const editorExtensions = [json(), editorTheme, EditorView.lineWrapping];
 
-const serializeLog = (item: LogItem) => {
+export const logToJSON = (item: LogItem): unknown => {
   try {
     const compact = match(item.kind)
       .with("AccessLog", () => AccessLog.toJsonString(item as AccessLog))
@@ -63,11 +63,14 @@ const serializeLog = (item: LogItem) => {
       )
       .otherwise(() => "{}");
 
-    return JSON.stringify(JSON.parse(compact), null, 2);
+    return JSON.parse(compact);
   } catch {
-    return "{}";
+    return {};
   }
 };
+
+const serializeLog = (item: LogItem) =>
+  JSON.stringify(logToJSON(item), null, 2);
 
 const Editor = ({ item }: { item: LogItem }) => {
   const [opened, { open, close }] = useDisclosure(false);
