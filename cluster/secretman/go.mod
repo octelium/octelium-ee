@@ -7,8 +7,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.26.6
 	github.com/aws/aws-sdk-go-v2/credentials v1.16.16
 	github.com/hashicorp/vault/api v1.15.0
-	github.com/octelium/octelium/cluster/common v0.0.0-20261003070331-0fe86d9363da
-	github.com/octelium/octelium/pkg v0.0.0-20261003070331-0fe86d9363da
+	github.com/octelium/octelium/cluster/common v0.0.0-20261012150739-7c015ebdee05
+	github.com/octelium/octelium/pkg v0.0.0-20261012150739-7c015ebdee05
 	github.com/pkg/errors v0.9.1
 	go.uber.org/zap v1.28.0
 	google.golang.org/api v0.278.0 // indirect
@@ -28,7 +28,7 @@ require (
 	github.com/lib/pq v1.12.3
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261003070331-0fe86d9363da
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261012150739-7c015ebdee05
 	github.com/stretchr/testify v1.12.1
 	google.golang.org/protobuf v1.36.12
 )
@@ -129,7 +129,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/crypto v0.55.0 // indirect
+	golang.org/x/crypto v0.56.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect

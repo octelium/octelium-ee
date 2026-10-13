@@ -8,8 +8,8 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20261003070331-0fe86d9363da
-	github.com/octelium/octelium/pkg v0.0.0-20261003070331-0fe86d9363da
+	github.com/octelium/octelium/cluster/common v0.0.0-20261012150739-7c015ebdee05
+	github.com/octelium/octelium/pkg v0.0.0-20261012150739-7c015ebdee05
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/collector/pdata v1.66.0
 	go.uber.org/zap v1.28.0
@@ -66,8 +66,8 @@ require (
 	github.com/lestrrat-go/option/v2 v2.0.0 // indirect
 	github.com/lib/pq v1.12.3 // indirect
 	github.com/mileusna/useragent v1.3.5 // indirect
-	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261003070331-0fe86d9363da // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261003070331-0fe86d9363da // indirect
+	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261012150739-7c015ebdee05 // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261012150739-7c015ebdee05 // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/open-policy-agent/opa v1.20.1 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
@@ -98,7 +98,7 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/crypto v0.55.0 // indirect
+	golang.org/x/crypto v0.56.0 // indirect
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260819154853-08b0e4226688 // indirect
