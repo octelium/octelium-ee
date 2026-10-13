@@ -26,6 +26,7 @@ const ComponentLogSummary = (props: {
         await getClientVisibilityComponentLog().getComponentLogSummary(req);
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 

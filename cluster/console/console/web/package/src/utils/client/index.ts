@@ -15,7 +15,10 @@ import * as VisibilityMetricsC from "../../apis/visibilityv1/metrics/vmetricsv1.
 import * as VisibilityLLMC from "../../apis/visibilityv1/llm/vllmv1.client";
 import * as VisibilityC from "../../apis/visibilityv1/visibilityv1.client";
 
+let transport: grpcWeb.GrpcWebFetchTransport | undefined;
+
 export const getTransport = () => {
+  if (transport) return transport;
   const domain = getDomain();
   const scheme = location.protocol === "https:" ? "https" : "http";
 
@@ -25,98 +28,176 @@ export const getTransport = () => {
     baseUrl = `http://${window.location.host}`;
   }
 
-  return new grpcWeb.GrpcWebFetchTransport({
+  transport = new grpcWeb.GrpcWebFetchTransport({
     baseUrl,
 
     fetchInit: {
       credentials: "include",
     },
   });
+  return transport;
 };
+
+let coreClient: CoreC.MainServiceClient | undefined;
 
 export const getClientCore = (): CoreC.MainServiceClient => {
-  return new CoreC.MainServiceClient(getTransport());
+  coreClient ??= new CoreC.MainServiceClient(getTransport());
+  return coreClient;
 };
+
+let enterpriseClient: EnterpriseC.MainServiceClient | undefined;
 
 export const getClientEnterprise = (): EnterpriseC.MainServiceClient => {
-  return new EnterpriseC.MainServiceClient(getTransport());
+  enterpriseClient ??= new EnterpriseC.MainServiceClient(getTransport());
+  return enterpriseClient;
 };
+
+let accessClient: AccessC.MainServiceClient | undefined;
 
 export const getClientAccess = (): AccessC.MainServiceClient => {
-  return new AccessC.MainServiceClient(getTransport());
+  accessClient ??= new AccessC.MainServiceClient(getTransport());
+  return accessClient;
 };
 
+let userClient: UserC.MainServiceClient | undefined;
+
 export const getClientUser = (): UserC.MainServiceClient => {
-  return new UserC.MainServiceClient(getTransport());
+  userClient ??= new UserC.MainServiceClient(getTransport());
+  return userClient;
 };
+
+let visibilityAccessLogClient: VisibilityC.AccessLogServiceClient | undefined;
 
 export const getClientVisibilityAccessLog =
   (): VisibilityC.AccessLogServiceClient => {
-    return new VisibilityC.AccessLogServiceClient(getTransport());
+    visibilityAccessLogClient ??= new VisibilityC.AccessLogServiceClient(
+      getTransport(),
+    );
+    return visibilityAccessLogClient;
   };
+
+let visibilityCoreClient: VisibilityCoreC.ResourceServiceClient | undefined;
 
 export const getClientVisibilityCore =
   (): VisibilityCoreC.ResourceServiceClient => {
-    return new VisibilityCoreC.ResourceServiceClient(getTransport());
+    visibilityCoreClient ??= new VisibilityCoreC.ResourceServiceClient(
+      getTransport(),
+    );
+    return visibilityCoreClient;
   };
+
+let visibilityAccessClient: VisibilityAccessC.ResourceServiceClient | undefined;
 
 export const getClientVisibilityAccess =
   (): VisibilityAccessC.ResourceServiceClient => {
-    return new VisibilityAccessC.ResourceServiceClient(getTransport());
+    visibilityAccessClient ??= new VisibilityAccessC.ResourceServiceClient(
+      getTransport(),
+    );
+    return visibilityAccessClient;
   };
+
+let visibilityEnterpriseClient:
+  VisibilityEnterpriseC.ResourceServiceClient | undefined;
 
 export const getClientVisibilityEnterprise =
   (): VisibilityEnterpriseC.ResourceServiceClient => {
-    return new VisibilityEnterpriseC.ResourceServiceClient(getTransport());
+    visibilityEnterpriseClient ??=
+      new VisibilityEnterpriseC.ResourceServiceClient(getTransport());
+    return visibilityEnterpriseClient;
   };
+
+let visibilityCordiumClient:
+  VisibilityCordiumC.ResourceServiceClient | undefined;
 
 export const getClientVisibilityCordium =
   (): VisibilityCordiumC.ResourceServiceClient => {
-    return new VisibilityCordiumC.ResourceServiceClient(getTransport());
+    visibilityCordiumClient ??= new VisibilityCordiumC.ResourceServiceClient(
+      getTransport(),
+    );
+    return visibilityCordiumClient;
   };
+
+let visibilityAuthenticationLogClient:
+  VisibilityC.AuthenticationLogServiceClient | undefined;
 
 export const getClientVisibilityAuthenticationLog =
   (): VisibilityC.AuthenticationLogServiceClient => {
-    return new VisibilityC.AuthenticationLogServiceClient(getTransport());
+    visibilityAuthenticationLogClient ??=
+      new VisibilityC.AuthenticationLogServiceClient(getTransport());
+    return visibilityAuthenticationLogClient;
   };
+
+let visibilityAuditLogClient: VisibilityC.AuditLogServiceClient | undefined;
 
 export const getClientVisibilityAuditLog =
   (): VisibilityC.AuditLogServiceClient => {
-    return new VisibilityC.AuditLogServiceClient(getTransport());
+    visibilityAuditLogClient ??= new VisibilityC.AuditLogServiceClient(
+      getTransport(),
+    );
+    return visibilityAuditLogClient;
   };
+
+let visibilityComponentLogClient:
+  VisibilityC.ComponentLogServiceClient | undefined;
 
 export const getClientVisibilityComponentLog =
   (): VisibilityC.ComponentLogServiceClient => {
-    return new VisibilityC.ComponentLogServiceClient(getTransport());
+    visibilityComponentLogClient ??= new VisibilityC.ComponentLogServiceClient(
+      getTransport(),
+    );
+    return visibilityComponentLogClient;
   };
+
+let visibilityClusterClient: VisibilityC.ClusterServiceClient | undefined;
 
 export const getClientVisibilityCluster =
   (): VisibilityC.ClusterServiceClient => {
-    return new VisibilityC.ClusterServiceClient(getTransport());
+    visibilityClusterClient ??= new VisibilityC.ClusterServiceClient(
+      getTransport(),
+    );
+    return visibilityClusterClient;
   };
 
+let authClient: AuthGRPC.MainServiceClient | undefined;
+
 export const getClientAuth = (): AuthGRPC.MainServiceClient => {
-  return new AuthGRPC.MainServiceClient(getTransport());
+  authClient ??= new AuthGRPC.MainServiceClient(getTransport());
+  return authClient;
 };
+
+let policyPortalClient: EnterpriseC.PolicyPortalServiceClient | undefined;
 
 export const getClientPolicyPortal =
   (): EnterpriseC.PolicyPortalServiceClient => {
-    return new EnterpriseC.PolicyPortalServiceClient(getTransport());
+    policyPortalClient ??= new EnterpriseC.PolicyPortalServiceClient(
+      getTransport(),
+    );
+    return policyPortalClient;
   };
 
+let clusterClient: EnterpriseC.ClusterServiceClient | undefined;
+
 export const getClientCluster = (): EnterpriseC.ClusterServiceClient => {
-  return new EnterpriseC.ClusterServiceClient(getTransport());
+  clusterClient ??= new EnterpriseC.ClusterServiceClient(getTransport());
+  return clusterClient;
 };
+
+let agentClient: EnterpriseC.AgentServiceClient | undefined;
 
 export const getClientAgent = (): EnterpriseC.AgentServiceClient => {
-  return new EnterpriseC.AgentServiceClient(getTransport());
+  agentClient ??= new EnterpriseC.AgentServiceClient(getTransport());
+  return agentClient;
 };
+
+let cordiumClient: CordiumC.MainServiceClient | undefined;
 
 export const getClientCordium = (): CordiumC.MainServiceClient => {
-  return new CordiumC.MainServiceClient(getTransport());
+  cordiumClient ??= new CordiumC.MainServiceClient(getTransport());
+  return cordiumClient;
 };
 
-let visibilityMetricsClient: VisibilityMetricsC.MetricsServiceClient | undefined;
+let visibilityMetricsClient:
+  VisibilityMetricsC.MetricsServiceClient | undefined;
 
 export const getClientVisibilityMetrics =
   (): VisibilityMetricsC.MetricsServiceClient => {

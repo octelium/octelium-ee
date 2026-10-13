@@ -336,6 +336,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: 60_000,
   });
 
@@ -364,6 +365,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: 60_000,
   });
 
@@ -388,6 +390,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 
@@ -409,6 +412,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 
@@ -431,6 +435,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 
@@ -454,6 +459,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 
@@ -477,6 +483,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 

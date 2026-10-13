@@ -42,6 +42,7 @@ const AuthenticationLogDataPoint = (props: {
 
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 

@@ -23,6 +23,7 @@ import {
   getClientVisibilityMetrics,
   refetchIntervalChart,
 } from "@/utils/client";
+import { retryQuery as retryMetricQuery } from "@/utils/queryPolicy";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import ReactEChartsCore from "echarts-for-react/esm/core";
 import { LineChart as LineChartC } from "echarts/charts";
@@ -111,26 +112,13 @@ type ChartSeries = {
   data: [number, number | null][];
 };
 
-const NON_RETRYABLE_METRIC_CODES = new Set([
-  "ABORTED",
-  "CANCELLED",
-  "CANCELED",
-  "FAILED_PRECONDITION",
-  "INVALID_ARGUMENT",
-  "NOT_FOUND",
-  "RESOURCE_EXHAUSTED",
-]);
-
 export const metricErrorCode = (error: unknown): string | undefined =>
   (error as { code?: string })?.code?.toUpperCase();
 
 export const isMetricNotRecorded = (error: unknown): boolean =>
   metricErrorCode(error) === "NOT_FOUND";
 
-export const retryMetricQuery = (failureCount: number, error: unknown) => {
-  const code = metricErrorCode(error);
-  return failureCount < 2 && (!code || !NON_RETRYABLE_METRIC_CODES.has(code));
-};
+export { retryMetricQuery };
 
 export type MetricChartProps = {
   title?: string;
@@ -564,9 +552,11 @@ const MetricChart = (props: MetricChartProps) => {
       return response;
     },
 
+    refetchOnWindowFocus: false,
     refetchInterval: autoRefresh && inView ? refetchIntervalChart : false,
     refetchIntervalInBackground: false,
     retry: retryMetricQuery,
+    meta: { dashboard: true },
     placeholderData: keepPreviousData,
   });
 

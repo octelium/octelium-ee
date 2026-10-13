@@ -40,6 +40,7 @@ const AuthenticationLogTopList = (props: {
 
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 
@@ -69,6 +70,7 @@ const AuthenticationLogTopList = (props: {
 
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 
@@ -98,6 +100,7 @@ const AuthenticationLogTopList = (props: {
 
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 

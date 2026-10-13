@@ -489,6 +489,7 @@ const DoAccessLogViewer = (props: {
         await getClientVisibilityAccessLog().listAccessLog(req);
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: 60000,
   });
 

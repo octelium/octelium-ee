@@ -232,6 +232,7 @@ export const SSHSessionViewer = (props: {
       );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: 60000,
   });
 

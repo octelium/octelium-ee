@@ -31,6 +31,7 @@ const AuditLogSummary = (props: {
         await getClientVisibilityAuditLog().getAuditLogSummary(req);
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 

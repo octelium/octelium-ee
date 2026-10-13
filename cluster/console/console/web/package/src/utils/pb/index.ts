@@ -11,7 +11,7 @@ import * as VisibilityCordiumP from "../../apis/visibilityv1/cordium/vcordiumv1"
 import * as VisibilityEnterpriseP from "../../apis/visibilityv1/enterprise/venterprisev1";
 
 import { queryClient } from "@/utils";
-import { RpcError } from "@protobuf-ts/runtime-rpc";
+import { RpcError, RpcOptions } from "@protobuf-ts/runtime-rpc";
 import { match } from "ts-pattern";
 import {
   getClientAccess,
@@ -642,8 +642,13 @@ export const getListOptionsPB = (api: API, kind: string): AnyMessageType =>
     `List${kind}Options`
   ];
 
-export const listResourcesPB = (api: API, kind: string, req: unknown) =>
-  (getClientResourceList(api) as unknown as AnyClient)[`list${kind}`](req);
+export const listResourcesPB = (
+  api: API,
+  kind: string,
+  req: unknown,
+  options?: RpcOptions,
+) =>
+  (getClientResourceList(api) as unknown as AnyClient)[`list${kind}`](req, options);
 
 const getResourceFromListPB = async (
   api: API,

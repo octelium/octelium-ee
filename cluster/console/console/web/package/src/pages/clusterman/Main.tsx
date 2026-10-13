@@ -19,6 +19,7 @@ import License from "./License";
 import RpcError from "@/components/RpcError";
 import Packages from "./Packages";
 import {
+  clustermanKeys,
   isUpgradeActive,
   PackageKey,
   upgradableCount,
@@ -68,7 +69,7 @@ const Main = () => {
   const config = useClusterConfig();
   const versions = useClusterVersionInfo();
   const queryClient = useQueryClient();
-  const fetching = useIsFetching();
+  const fetching = useIsFetching({ queryKey: clustermanKeys.all });
 
   const [opened, drawer] = useDisclosure(false);
   const [preselect, setPreselect] = React.useState<PackageKey | undefined>();
@@ -128,7 +129,9 @@ const Main = () => {
                 variant="default"
                 size="sm"
                 aria-label="Refresh the page"
-                onClick={() => queryClient.invalidateQueries()}
+                onClick={() =>
+                  queryClient.invalidateQueries({ queryKey: clustermanKeys.all })
+                }
               >
                 <RefreshCw
                   size={12}

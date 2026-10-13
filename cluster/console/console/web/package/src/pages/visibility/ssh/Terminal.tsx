@@ -43,6 +43,7 @@ export default () => {
       return response;
     },
     enabled: !!name,
+    refetchOnWindowFocus: false,
     refetchInterval: (query) =>
       query.state.data?.state === SSHSession_State.ONGOING ? 60_000 : false,
   });

@@ -9,6 +9,7 @@ import {
   Resource,
 } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
+import { retryQuery } from "@/utils/queryPolicy";
 import { useLocation, useParams } from "react-router-dom";
 
 export const useContextResource = () => {
@@ -22,8 +23,7 @@ export const useContextResource = () => {
     queryKey: [getGetKeyFromPath(loc.pathname), name],
     queryFn: () => getResourcePB(apiKind!.api, apiKind!.kind, { name }),
     enabled: !!apiKind,
-    retry: (failureCount, error) =>
-      (error as { code?: string })?.code !== "NOT_FOUND" && failureCount < 3,
+    retry: retryQuery,
   });
 
   if (!apiKind) {

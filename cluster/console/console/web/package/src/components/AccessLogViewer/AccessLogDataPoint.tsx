@@ -37,6 +37,7 @@ const AccessLogDataPoint = (props: {
 
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 

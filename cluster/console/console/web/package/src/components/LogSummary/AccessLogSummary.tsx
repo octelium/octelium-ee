@@ -32,6 +32,7 @@ const AccessLogSummary = (props: {
         await getClientVisibilityAccessLog().getAccessLogSummary(req);
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 

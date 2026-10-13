@@ -1,8 +1,9 @@
 const isDevVal = import.meta.env.MODE === "development";
 import type { RpcError } from "@protobuf-ts/runtime-rpc";
 
-import { QueryClient } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { onQueryError, queryRetryDelay, retryQuery } from "./queryPolicy";
 
 export function isDev(): boolean {
   return isDevVal;
@@ -13,9 +14,13 @@ export const onError = (err: RpcError) => {
 };
 
 export const queryClient = new QueryClient({
+  queryCache: new QueryCache({ onError: onQueryError }),
+  mutationCache: new MutationCache({ onError: onQueryError }),
   defaultOptions: {
     queries: {
       staleTime: 30000,
+      retry: retryQuery,
+      retryDelay: queryRetryDelay,
     },
   },
 });

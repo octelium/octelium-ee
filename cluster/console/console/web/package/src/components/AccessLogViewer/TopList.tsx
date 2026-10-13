@@ -42,6 +42,7 @@ const AccessLogTopList = (props: {
 
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 
@@ -64,6 +65,7 @@ const AccessLogTopList = (props: {
 
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 
@@ -87,6 +89,7 @@ const AccessLogTopList = (props: {
 
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 
@@ -110,6 +113,7 @@ const AccessLogTopList = (props: {
 
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 

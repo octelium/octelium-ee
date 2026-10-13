@@ -47,7 +47,8 @@ export const useResourcePicker = (args: {
 
   const query = useQuery({
     queryKey: ["listSelectComponent", api, kind, debouncedSearch],
-    queryFn: () => listResourcesForSelect(api, kind, debouncedSearch),
+    queryFn: ({ signal }) =>
+      listResourcesForSelect(api, kind, debouncedSearch, signal),
     placeholderData: keepPreviousData,
   });
 

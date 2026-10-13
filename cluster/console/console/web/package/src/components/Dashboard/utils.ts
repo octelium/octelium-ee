@@ -4,9 +4,11 @@ import {
   toTs,
 } from "@/utils/visibility";
 import { QUERY_PRIORITY, queued } from "@/utils/visibility/queue";
-import { useQuery } from "@tanstack/react-query";
+import { useDebouncedCallback } from "@mantine/hooks";
+import { QueryFilters, useQuery } from "@tanstack/react-query";
+import { retryQuery } from "@/utils/queryPolicy";
 import * as React from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 
 export const SUMMARY_REFETCH = 60_000;
 export const POINT_REFETCH = 30_000;
@@ -17,6 +19,11 @@ export const AutoRefreshContext = React.createContext(true);
 export const DashboardVisibilityContext = React.createContext(true);
 
 export const useAutoRefresh = () => React.useContext(AutoRefreshContext);
+
+export const dashboardQueryFilters: QueryFilters = {
+  predicate: (query) =>
+    query.meta?.dashboard === true && query.getObserversCount() > 0,
+};
 
 export const summaryKey = (api: string, kind: string): unknown[] => [
   "visibility",
@@ -62,28 +69,37 @@ export const useDashboardQuery = <T>(args: {
     queryFn: ({ signal }) =>
       queued(args.priority ?? QUERY_PRIORITY.normal, args.fetch, signal),
     staleTime: STALE_TIME,
-    retry: args.retry ?? 1,
-    refetchInterval: autoRefresh && visible
-      ? (args.refetchMillis ?? SUMMARY_REFETCH)
-      : false,
+    retry:
+      args.retry ??
+      ((failureCount, error) =>
+        failureCount < 1 && retryQuery(failureCount, error)),
+    meta: { dashboard: true },
+    refetchOnWindowFocus: false,
+    refetchInterval:
+      autoRefresh && visible ? (args.refetchMillis ?? SUMMARY_REFETCH) : false,
     refetchIntervalInBackground: false,
   });
 };
 
 export const useDashboardRange = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
 
   const rangeParam = Number(searchParams.get("range"));
   const periodMinutes = isKnownPeriod(rangeParam)
     ? rangeParam
     : DEFAULT_PERIOD_MINUTES;
 
-  const setPeriodMinutes = (value: number) => {
+  const setPeriodMinutes = useDebouncedCallback((value: number) => {
     const next = new URLSearchParams(searchParams);
     if (value === DEFAULT_PERIOD_MINUTES) next.delete("range");
     else next.set("range", String(value));
     setSearchParams(next, { replace: true, preventScrollReset: true });
-  };
+  }, 250);
+
+  React.useEffect(() => {
+    setPeriodMinutes.cancel();
+  }, [location.key, setPeriodMinutes]);
 
   return { periodMinutes, setPeriodMinutes };
 };

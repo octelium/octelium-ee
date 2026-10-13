@@ -209,6 +209,7 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: 60_000,
   });
 
@@ -228,6 +229,7 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: 60_000,
   });
 
@@ -248,6 +250,7 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 
@@ -265,6 +268,7 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 
@@ -282,6 +286,7 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 

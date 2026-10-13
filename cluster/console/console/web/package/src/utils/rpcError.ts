@@ -11,23 +11,31 @@ const messages: Record<string, string> = {
   CANCELLED: "The request was cancelled.",
 };
 
-export const describeRpcError = (error: unknown) => {
+const rpcErrorDetail = (error: unknown) => {
   const value = error as { code?: unknown; message?: unknown } | null;
-  const detail =
-    typeof error === "string"
-      ? error
-      : typeof value?.message === "string"
-        ? value.message
-        : "";
+  return typeof error === "string"
+    ? error
+    : typeof value?.message === "string"
+      ? value.message
+      : "";
+};
+
+export const rpcErrorCode = (error: unknown): string | undefined => {
+  const value = error as { code?: unknown } | null;
+  const detail = rpcErrorDetail(error);
   const match = /rpc error:\s*code\s*=\s*(\w+)/i.exec(detail);
   const code = typeof value?.code === "string" ? value.code : match?.[1];
-  const normalized = code?.replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase();
+  return code?.replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase();
+};
+
+export const describeRpcError = (error: unknown) => {
+  const code = rpcErrorCode(error);
 
   return {
     message:
-      messages[normalized ?? ""] ??
+      messages[code ?? ""] ??
       "This information could not be loaded. Try again.",
-    detail,
+    detail: rpcErrorDetail(error),
     isRpcError: Boolean(code),
   };
 };

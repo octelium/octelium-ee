@@ -275,6 +275,7 @@ const MetricStat = ({
       return (await getClientVisibilityMetrics().queryMetrics(request, { abort: signal }))
         .response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: autoRefresh && inView ? refetchIntervalChart : false,
     refetchIntervalInBackground: false,
     retry: retryMetricQuery,

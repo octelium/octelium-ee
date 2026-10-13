@@ -82,6 +82,7 @@ export default () => {
         )
         .otherwise(() => undefined);
     },
+    refetchOnWindowFocus: false,
     refetchInterval: 60000,
   });
 

@@ -16,7 +16,12 @@ import {
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { twMerge } from "@/lib/utils";
-import { compact, DashboardVisibilityContext, exact } from "./utils";
+import {
+  compact,
+  dashboardQueryFilters,
+  DashboardVisibilityContext,
+  exact,
+} from "./utils";
 
 export const PILL =
   "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-px text-micro font-semibold leading-[1.45]";
@@ -620,7 +625,7 @@ export const DashboardHeader = (props: {
   badge?: React.ReactNode;
 }) => {
   const queryClient = useQueryClient();
-  const fetching = useIsFetching();
+  const fetching = useIsFetching(dashboardQueryFilters);
 
   return (
     <header className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-card sm:px-5">
@@ -664,7 +669,7 @@ export const DashboardHeader = (props: {
               variant="default"
               size="sm"
               aria-label="Refresh the page"
-              onClick={() => queryClient.invalidateQueries()}
+              onClick={() => queryClient.invalidateQueries(dashboardQueryFilters)}
             >
               <RefreshCw
                 size={12}

@@ -7,11 +7,13 @@ import {
 } from "@/apis/enterprisev1/enterprisev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { getClientCluster, getClientEnterprise } from "@/utils/client";
+import { retryQuery } from "@/utils/queryPolicy";
 import { useQuery } from "@tanstack/react-query";
 import { Boxes, Cpu, LucideIcon, Sparkles } from "lucide-react";
 
 export const clustermanKeys = {
-  info: ["clusterInfo"],
+  all: ["clusterman"],
+  info: ["clusterman", "info"],
   config: ["clusterman", "main", "getCluster"],
   license: ["clusterman", "license"],
 };
@@ -70,12 +72,14 @@ export const isUpgradeActive = (
 export const useClusterVersionInfo = () =>
   useQuery({
     queryKey: clustermanKeys.info,
+    meta: { dashboard: true },
     queryFn: async () => {
       const { response } = await getClientCluster().getClusterInfo(
         GetClusterInfoRequest.create({}),
       );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: 60_000,
   });
 
@@ -86,6 +90,7 @@ export const useClusterConfig = () =>
       const { response } = await getClientEnterprise().getClusterConfig({});
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: (query) =>
       isUpgradeActive(query.state.data?.status?.upgradeRequest?.state)
         ? 5_000
@@ -101,7 +106,9 @@ export const useLicense = () =>
       );
       return response;
     },
-    retry: 1,
+    retry: (failureCount, error) =>
+      failureCount < 1 && retryQuery(failureCount, error),
+    refetchOnWindowFocus: false,
     refetchInterval: 300_000,
   });
 

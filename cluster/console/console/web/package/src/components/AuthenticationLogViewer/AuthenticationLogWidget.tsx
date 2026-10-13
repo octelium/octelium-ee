@@ -279,6 +279,7 @@ const AuthenticationLogHealthWidget = (
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: 60_000,
   });
 
@@ -300,6 +301,7 @@ const AuthenticationLogHealthWidget = (
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: 60_000,
   });
 
@@ -322,6 +324,7 @@ const AuthenticationLogHealthWidget = (
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 
@@ -341,6 +344,7 @@ const AuthenticationLogHealthWidget = (
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 
@@ -363,6 +367,7 @@ const AuthenticationLogHealthWidget = (
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 
@@ -384,6 +389,7 @@ const AuthenticationLogHealthWidget = (
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: refetchIntervalChart,
   });
 

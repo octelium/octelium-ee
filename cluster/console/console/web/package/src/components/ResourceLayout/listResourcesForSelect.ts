@@ -16,6 +16,7 @@ export const listResourcesForSelect = async (
   api: string,
   kind: string,
   query?: string,
+  signal?: AbortSignal,
 ): Promise<Resource[]> => {
   const requestType = getListOptionsPB(api as API, kind);
   if (!requestType?.create) {
@@ -31,7 +32,7 @@ export const listResourcesForSelect = async (
     }),
   });
 
-  const result = await listResourcesPB(api as API, kind, request);
+  const result = await listResourcesPB(api as API, kind, request, { abort: signal });
   const response = result?.response as ResourceList | undefined;
 
   if (!response) {

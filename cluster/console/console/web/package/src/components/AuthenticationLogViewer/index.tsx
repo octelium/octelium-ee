@@ -603,6 +603,7 @@ const DoAuthenticationLogViewer = (props: {
         );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: 60000,
   });
   const totalCount = Number(

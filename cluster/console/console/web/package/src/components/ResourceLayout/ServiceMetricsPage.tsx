@@ -31,6 +31,7 @@ import {
   chartRefreshMillis,
   refetchIntervalChart,
 } from "@/utils/client";
+import { retryQuery } from "@/utils/queryPolicy";
 import { ActionIcon, SegmentedControl, Switch, Tooltip } from "@mantine/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -214,9 +215,11 @@ const ServiceMetricCounter = (props: ServiceMetricCounterProps) => {
       );
       return response;
     },
+    refetchOnWindowFocus: false,
     refetchInterval: props.shared.autoRefresh && inView ? refetchIntervalChart : false,
     refetchIntervalInBackground: false,
-    retry: 1,
+    retry: (failureCount, error) =>
+      failureCount < 1 && retryQuery(failureCount, error),
   });
 
   const value = Math.max(0, metricCounterValue(qry.data, isCounter));

@@ -555,6 +555,7 @@ const WorkspaceRunner = (props: {
       (await getClientCordium().getWorkspace(GetOptions.create({ uid })))
         .response,
     initialData: initial,
+    refetchOnWindowFocus: false,
     refetchInterval: (query) => {
       const state = query.state.data?.status?.state;
       if (state === Workspace_Status_State.RUNNING) return 30000;
@@ -623,6 +624,7 @@ const WorkspaceRunner = (props: {
     queryFn: () => new AgentClient(url!).info(AbortSignal.timeout(8000)),
     enabled: !!url,
     retry: false,
+    refetchOnWindowFocus: false,
     refetchInterval: (query) => (query.state.data ? false : 2500),
   });
   const infoReady = !!infoQuery.data;
