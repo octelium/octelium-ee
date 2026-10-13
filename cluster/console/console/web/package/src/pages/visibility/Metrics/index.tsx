@@ -27,6 +27,8 @@ import MetricChart, {
   retryMetricQuery,
 } from "@/components/Charts/MetricChart";
 import { useInView } from "@/hooks/use-in-view";
+import { usePeriodRange } from "@/hooks/use-period-range";
+import PeriodSelector from "@/components/LogWidget/PeriodSelector";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
 import {
   getClientVisibilityMetrics,
@@ -59,7 +61,6 @@ import * as React from "react";
 import { useSearchParams } from "react-router-dom";
 
 type View = "overview" | "traffic" | "octovigil" | "rscserver" | "components";
-type Range = "15m" | "1h" | "6h" | "24h";
 type Resolution = "auto" | "1m" | "5m" | "15m";
 type TrafficDetail = "decisions" | "streams" | "http" | "dns";
 type ResourceOperation =
@@ -77,7 +78,6 @@ const VIEWS: View[] = [
   "rscserver",
   "components",
 ];
-const RANGES: Range[] = ["15m", "1h", "6h", "24h"];
 const RESOLUTIONS: Resolution[] = ["auto", "1m", "5m", "15m"];
 const TRAFFIC_DETAILS: TrafficDetail[] = [
   "decisions",
@@ -137,23 +137,16 @@ const componentsByNamespace: Record<string, string[]> = {
   cordium: ["apiserver", "genesis", "nocturne", "portal", "rscserver", "vigil"],
 };
 
-const ranges: Record<Range, number> = {
-  "15m": 15 * 60,
-  "1h": 60 * 60,
-  "6h": 6 * 60 * 60,
-  "24h": 24 * 60 * 60,
-};
-
-const duration = (value: Resolution, range: Range): Duration => {
+const duration = (value: Resolution, periodMinutes: number): Duration => {
   let resolved =
     value === "auto"
-      ? range === "15m" || range === "1h"
+      ? periodMinutes <= 60
         ? "1m"
-        : range === "6h"
+        : periodMinutes <= 360
           ? "5m"
           : "15m"
       : value;
-  if (range === "15m" && resolved === "15m") resolved = "1m";
+  if (periodMinutes <= 15 && resolved === "15m") resolved = "1m";
   if (resolved === "1m")
     return Duration.create({ type: { oneofKind: "minutes", minutes: 1 } });
   if (resolved === "5m")
@@ -342,7 +335,11 @@ const MetricStat = ({
 const Metrics = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const view = fromParam(searchParams.get("metrics.view"), VIEWS, "overview");
-  const range = fromParam(searchParams.get("metrics.range"), RANGES, "6h");
+  const { periodMinutes, setPeriodMinutes } = usePeriodRange({
+    defaultMinutes: 360,
+    legacyParam: "metrics.range",
+    maxMinutes: 1440,
+  });
   const resolution = fromParam(
     searchParams.get("metrics.resolution"),
     RESOLUTIONS,
@@ -391,14 +388,14 @@ const Metrics = () => {
   }, []);
 
   React.useEffect(() => {
-    if (range === "15m" && resolution === "15m")
+    if (periodMinutes <= 15 && resolution === "15m")
       patchParams({ "metrics.resolution": null });
-  }, [range, resolution, patchParams]);
+  }, [periodMinutes, resolution, patchParams]);
 
-  const lookbackSeconds = ranges[range];
+  const lookbackSeconds = periodMinutes * 60;
   const step = React.useMemo(
-    () => duration(resolution, range),
-    [resolution, range],
+    () => duration(resolution, periodMinutes),
+    [resolution, periodMinutes],
   );
   const refresh = autoRefresh && visible;
   const selectedComponent =
@@ -521,15 +518,10 @@ const Metrics = () => {
             <div className="mb-1 text-micro font-semibold uppercase tracking-wide text-slate-500">
               Time range
             </div>
-            <SegmentedControl
-              fullWidth
-              value={range}
-              onChange={(value) =>
-                patchParams({
-                  "metrics.range": value === "6h" ? null : value,
-                })
-              }
-              data={["15m", "1h", "6h", "24h"]}
+            <PeriodSelector
+              value={periodMinutes}
+              onChange={setPeriodMinutes}
+              maxMinutes={1440}
             />
           </div>
           <div>
@@ -551,7 +543,7 @@ const Metrics = () => {
                 {
                   value: "15m",
                   label: "15 minutes",
-                  disabled: range === "15m",
+                  disabled: periodMinutes <= 15,
                 },
               ]}
             />

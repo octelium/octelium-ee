@@ -1,23 +1,53 @@
-import { EXTENDED_PERIODS, PRIMARY_PERIODS } from "@/utils/visibility";
+import {
+  EXTENDED_PERIODS,
+  PRIMARY_PERIODS,
+  PeriodOption,
+} from "@/utils/visibility";
 import { Menu, SegmentedControl } from "@mantine/core";
-import { ChevronDown } from "lucide-react";
+import { CalendarRange, ChevronDown } from "lucide-react";
 import { twMerge } from "@/lib/utils";
 
 const PeriodSelector = (props: {
-  value: number;
+  value?: number;
   onChange: (value: number) => void;
+  onCustom?: () => void;
+  extraPeriods?: PeriodOption[];
+  maxMinutes?: number;
 }) => {
-  const extended = EXTENDED_PERIODS.find(
+  const extendedPeriods = [
+    ...EXTENDED_PERIODS,
+    ...(props.extraPeriods ?? []),
+  ].filter(
+    (option) =>
+      props.maxMinutes === undefined || option.minutes <= props.maxMinutes,
+  );
+  const extended = extendedPeriods.find(
     (option) => option.minutes === props.value,
   );
 
   const data = [
-    ...PRIMARY_PERIODS.map((option) => ({
+    ...PRIMARY_PERIODS.filter(
+      (option) =>
+        props.maxMinutes === undefined || option.minutes <= props.maxMinutes,
+    ).map((option) => ({
       value: String(option.minutes),
       label: option.label,
     })),
     ...(extended
       ? [{ value: String(extended.minutes), label: extended.label }]
+      : []),
+    ...(props.onCustom
+      ? [
+          {
+            value: "custom",
+            label: (
+              <span className="flex items-center gap-1 px-0.5">
+                <CalendarRange size={12} strokeWidth={2.5} />
+                Custom
+              </span>
+            ),
+          },
+        ]
       : []),
   ];
 
@@ -26,8 +56,12 @@ const PeriodSelector = (props: {
       <SegmentedControl
         size="xs"
         aria-label="Time range"
-        value={String(props.value)}
-        onChange={(value) => props.onChange(Number(value))}
+        value={props.value === undefined ? "custom" : String(props.value)}
+        onChange={(value) =>
+          value === "custom"
+            ? props.onCustom?.()
+            : props.onChange(Number(value))
+        }
         data={data}
       />
 
@@ -44,7 +78,7 @@ const PeriodSelector = (props: {
 
         <Menu.Dropdown>
           <div className="flex min-w-[104px] flex-col py-1">
-            {EXTENDED_PERIODS.map((option) => (
+            {extendedPeriods.map((option) => (
               <button
                 type="button"
                 key={option.minutes}

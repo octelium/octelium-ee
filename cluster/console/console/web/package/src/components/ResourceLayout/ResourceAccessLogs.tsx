@@ -2,6 +2,7 @@ import { ObjectReference } from "@/apis/metav1/metav1";
 
 import PageWrap from "@/components/PageWrap";
 import { getResourceRef, Resource } from "@/utils/pb";
+import { usePeriodRange } from "@/hooks/use-period-range";
 import { Activity, ShieldCheck } from "lucide-react";
 import * as React from "react";
 import { match } from "ts-pattern";
@@ -15,7 +16,9 @@ export const ResourceAccessLogs = (props: {
   itemsPerPage?: number;
 }) => {
   const { resource } = props;
-  const [periodMinutes, setPeriodMinutes] = React.useState(360);
+  const { periodMinutes, setPeriodMinutes } = usePeriodRange({
+    defaultMinutes: 360,
+  });
   const [status, setStatus] = React.useState<AccessLogStatusFilter>("all");
 
   if (resource.apiVersion !== `core/v1`) {

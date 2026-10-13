@@ -1,14 +1,10 @@
-import {
-  DEFAULT_PERIOD_MINUTES,
-  isKnownPeriod,
-  toTs,
-} from "@/utils/visibility";
+import { toTs } from "@/utils/visibility";
 import { QUERY_PRIORITY, queued } from "@/utils/visibility/queue";
-import { useDebouncedCallback } from "@mantine/hooks";
 import { QueryFilters, useQuery } from "@tanstack/react-query";
 import { retryQuery } from "@/utils/queryPolicy";
 import * as React from "react";
-import { useLocation, useSearchParams } from "react-router-dom";
+
+export { usePeriodRange as useDashboardRange } from "@/hooks/use-period-range";
 
 export const SUMMARY_REFETCH = 60_000;
 export const POINT_REFETCH = 30_000;
@@ -79,29 +75,6 @@ export const useDashboardQuery = <T>(args: {
       autoRefresh && visible ? (args.refetchMillis ?? SUMMARY_REFETCH) : false,
     refetchIntervalInBackground: false,
   });
-};
-
-export const useDashboardRange = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const location = useLocation();
-
-  const rangeParam = Number(searchParams.get("range"));
-  const periodMinutes = isKnownPeriod(rangeParam)
-    ? rangeParam
-    : DEFAULT_PERIOD_MINUTES;
-
-  const setPeriodMinutes = useDebouncedCallback((value: number) => {
-    const next = new URLSearchParams(searchParams);
-    if (value === DEFAULT_PERIOD_MINUTES) next.delete("range");
-    else next.set("range", String(value));
-    setSearchParams(next, { replace: true, preventScrollReset: true });
-  }, 250);
-
-  React.useEffect(() => {
-    setPeriodMinutes.cancel();
-  }, [location.key, setPeriodMinutes]);
-
-  return { periodMinutes, setPeriodMinutes };
 };
 
 export const rangeOptions = (from: number, to: number) => ({

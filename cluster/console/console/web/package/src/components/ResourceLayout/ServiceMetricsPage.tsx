@@ -24,6 +24,8 @@ import MetricChart, {
   histogramOp,
 } from "@/components/Charts/MetricChart";
 import { useInView } from "@/hooks/use-in-view";
+import { usePeriodRange } from "@/hooks/use-period-range";
+import PeriodSelector from "@/components/LogWidget/PeriodSelector";
 import PageWrap from "@/components/PageWrap";
 import { SummaryItemCount } from "@/components/Summary";
 import {
@@ -46,7 +48,6 @@ import * as React from "react";
 import { useContextResource } from "./utils";
 
 type MetricsResource = Service | Namespace;
-type Range = "15m" | "1h" | "6h" | "24h";
 type View = "overview" | "details";
 
 const SERVICE_NAME = "octelium.vigil.svc.name";
@@ -59,18 +60,11 @@ const VIGIL_COMPONENT = ComponentSelector.create({
   type: "vigil",
 });
 
-const RANGE_SECONDS: Record<Range, number> = {
-  "15m": 15 * 60,
-  "1h": 60 * 60,
-  "6h": 6 * 60 * 60,
-  "24h": 24 * 60 * 60,
-};
-
-const rangeStep = (range: Range): Duration => {
-  if (range === "15m" || range === "1h") {
+const rangeStep = (periodMinutes: number): Duration => {
+  if (periodMinutes <= 60) {
     return Duration.create({ type: { oneofKind: "minutes", minutes: 1 } });
   }
-  if (range === "6h") {
+  if (periodMinutes <= 360) {
     return Duration.create({ type: { oneofKind: "minutes", minutes: 5 } });
   }
   return Duration.create({ type: { oneofKind: "minutes", minutes: 15 } });
@@ -1285,7 +1279,10 @@ const ServiceDetails = (props: {
 
 export const ResourceMetrics = (props: { resource: MetricsResource }) => {
   const { resource } = props;
-  const [range, setRange] = React.useState<Range>("6h");
+  const { periodMinutes, setPeriodMinutes } = usePeriodRange({
+    defaultMinutes: 360,
+    maxMinutes: 1440,
+  });
   const [view, setView] = React.useState<View>("overview");
   const [autoRefresh, setAutoRefresh] = React.useState(true);
   const [visible, setVisible] = React.useState(
@@ -1323,8 +1320,8 @@ export const ResourceMetrics = (props: { resource: MetricsResource }) => {
   const shared: SharedChartProps = {
     component: VIGIL_COMPONENT,
     filters,
-    lookbackSeconds: RANGE_SECONDS[range],
-    step: rangeStep(range),
+    lookbackSeconds: periodMinutes * 60,
+    step: rangeStep(periodMinutes),
     autoRefresh: refresh,
     hideResolution: true,
     limitPointsPerSeries: POINTS_PER_SERIES_LIMIT,
@@ -1406,11 +1403,10 @@ export const ResourceMetrics = (props: { resource: MetricsResource }) => {
           />
           <div className="flex items-center gap-2">
             <Clock3 size={13} className="text-slate-500" />
-            <SegmentedControl
-              size="xs"
-              value={range}
-              onChange={(value) => setRange(value as Range)}
-              data={["15m", "1h", "6h", "24h"]}
+            <PeriodSelector
+              value={periodMinutes}
+              onChange={setPeriodMinutes}
+              maxMinutes={1440}
             />
           </div>
         </div>

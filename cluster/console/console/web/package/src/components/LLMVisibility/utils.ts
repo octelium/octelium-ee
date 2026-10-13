@@ -26,14 +26,6 @@ export type LLMRange = {
   to?: Timestamp;
 };
 
-export const RANGE_PRESETS = [
-  { label: "1h", minutes: 60 },
-  { label: "6h", minutes: 360 },
-  { label: "24h", minutes: 1440 },
-  { label: "7d", minutes: 10080 },
-  { label: "30d", minutes: 43200 },
-];
-
 export const rangeFromMinutes = (minutes: number): LLMRange => ({
   from: Timestamp.fromDate(new Date(Date.now() - minutes * 60000)),
   to: undefined,

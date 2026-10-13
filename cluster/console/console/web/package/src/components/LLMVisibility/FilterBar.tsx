@@ -1,18 +1,13 @@
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import * as CoreP from "@/apis/corev1/corev1";
 import TimestampPicker from "@/components/TimestampPicker";
+import PeriodSelector from "@/components/LogWidget/PeriodSelector";
 import { ActionIcon, Button, SegmentedControl, Tooltip } from "@mantine/core";
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarRange, RotateCcw, SlidersHorizontal, X } from "lucide-react";
+import { RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "@/lib/utils";
-import {
-  Drilldown,
-  drilldownID,
-  drilldownLabel,
-  LLMRange,
-  RANGE_PRESETS,
-} from "./utils";
+import { Drilldown, drilldownID, drilldownLabel, LLMRange } from "./utils";
 
 const STATUS_OPTIONS = [
   { value: "0", label: "All" },
@@ -37,32 +32,14 @@ const FilterBar = (props: {
   return (
     <div className="flex w-full flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-card">
       <div className="flex flex-wrap items-center gap-2">
-        <SegmentedControl
-          size="xs"
-          value={custom ? "custom" : String(props.minutes ?? 1440)}
+        <PeriodSelector
+          value={custom ? undefined : (props.minutes ?? 1440)}
           onChange={(value) => {
-            if (value === "custom") {
-              setCustom(true);
-              return;
-            }
             setCustom(false);
-            props.onMinutesChange(Number(value));
+            props.onMinutesChange(value);
           }}
-          data={[
-            ...RANGE_PRESETS.map((preset) => ({
-              value: String(preset.minutes),
-              label: preset.label,
-            })),
-            {
-              value: "custom",
-              label: (
-                <span className="flex items-center gap-1 px-0.5">
-                  <CalendarRange size={12} strokeWidth={2.5} />
-                  Custom
-                </span>
-              ),
-            },
-          ]}
+          onCustom={() => setCustom(true)}
+          extraPeriods={[{ label: "30d", minutes: 43200 }]}
         />
 
         <SegmentedControl

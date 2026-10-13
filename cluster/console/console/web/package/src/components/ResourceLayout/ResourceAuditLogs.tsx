@@ -1,5 +1,6 @@
 import PageWrap from "@/components/PageWrap";
 import { getResourceRef, Resource } from "@/utils/pb";
+import { usePeriodRange } from "@/hooks/use-period-range";
 import { Activity, ClipboardList } from "lucide-react";
 import * as React from "react";
 import AuditLogHealthWidget from "../AuditLogViewer/AuditLogWidget";
@@ -8,7 +9,9 @@ import { useContextResource } from "./utils";
 
 export const ResourceAuditLogs = (props: { resource: Resource }) => {
   const { resource } = props;
-  const [periodMinutes, setPeriodMinutes] = React.useState(360);
+  const { periodMinutes, setPeriodMinutes } = usePeriodRange({
+    defaultMinutes: 360,
+  });
   const displayName =
     resource.metadata?.displayName || resource.metadata?.name || "Resource";
 

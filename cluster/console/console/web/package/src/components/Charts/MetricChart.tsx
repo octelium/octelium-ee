@@ -472,12 +472,13 @@ const MetricChart = (props: MetricChartProps) => {
     1_000,
     explicitRange ?? (props.lookbackSeconds ?? 6 * 3_600) * 1_000,
   );
+  const selectedStep = props.hideResolution ? props.step : step;
   const effectiveStep = useMemo(
     () =>
       supportsResolution
-        ? normalizeMetricStep(step ?? DEFAULT_STEP, rangeMillis)
+        ? normalizeMetricStep(selectedStep ?? DEFAULT_STEP, rangeMillis)
         : undefined,
-    [supportsResolution, step, rangeMillis],
+    [supportsResolution, selectedStep, rangeMillis],
   );
 
   const queryKey = useMemo(
