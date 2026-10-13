@@ -1,3 +1,5 @@
+import RefreshButton from "@/components/RefreshButton";
+import EmptyState from "@/components/EmptyState";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { ObjectReference } from "@/apis/metav1/metav1";
 import {
@@ -255,19 +257,11 @@ export const SSHSessionViewer = (props: {
             }}
           />
         </div>
-        <button
-          type="button"
+        <RefreshButton
           onClick={() => qry.refetch()}
           disabled={qry.isLoading}
-          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-normal text-slate-500 shadow-card transition-colors duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <Radio
-            size={11}
-            strokeWidth={2.5}
-            className={qry.isLoading ? "motion-safe:animate-pulse" : ""}
-          />
-          Refresh
-        </button>
+          loading={qry.isFetching}
+        />
       </div>
 
       {qry.isError && (
@@ -291,11 +285,7 @@ export const SSHSessionViewer = (props: {
       )}
 
       {qry.data?.items.length === 0 && (
-        <div className="flex items-center justify-center py-16">
-          <span className="text-body font-semibold uppercase tracking-[0.08em] text-slate-500">
-            No SSH sessions found
-          </span>
-        </div>
+        <EmptyState title="No SSH sessions found" />
       )}
 
       {qry.data && qry.data.items.length > 0 && (

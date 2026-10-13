@@ -1,0 +1,329 @@
+import assert from "node:assert/strict";
+import { mkdtemp, rm } from "node:fs/promises";
+import { join } from "node:path";
+import { after, afterEach, before, beforeEach, describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
+import { chromium } from "playwright";
+import { createServer } from "vite";
+
+const root = fileURLToPath(new URL("../", import.meta.url));
+
+describe("Console shared presentation and controls", () => {
+  let cacheDir, server, browser, context, page, origin, errors;
+
+  before(async () => {
+    cacheDir = await mkdtemp(join(root, "node_modules/.vite-patterns-"));
+    server = await createServer({
+      root,
+      cacheDir,
+      server: { host: "127.0.0.1", port: 0, watch: null },
+    });
+    await server.listen();
+    origin = server.resolvedUrls.local[0];
+    browser = await chromium.launch();
+  });
+  after(async () => {
+    await browser?.close();
+    await server?.close();
+    if (cacheDir) await rm(cacheDir, { recursive: true, force: true });
+  });
+  beforeEach(async () => {
+    context = await browser.newContext({
+      locale: "en-US",
+      viewport: { width: 1440, height: 900 },
+    });
+    page = await context.newPage();
+    page.setDefaultTimeout(30_000);
+    errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+  });
+  afterEach(async () => {
+    await context?.close();
+    assert.deepEqual(errors, []);
+  });
+
+  const load = async (scenario, extra = {}) => {
+    await page.goto(
+      `${origin}tests/fixtures/consolePatterns.html?${new URLSearchParams({ scenario, ...extra })}`,
+    );
+    await page.waitForFunction(() => window.patterns);
+    await page.locator("[data-route]").waitFor();
+  };
+  const calls = async (name) =>
+    page.evaluate(
+      (name) =>
+        window.patterns.state.calls.filter((call) => call.name === name),
+      name,
+    );
+  const routeParams = async () =>
+    new URL(`http://fixture${await page.locator("[data-route]").textContent()}`)
+      .searchParams;
+  const settled = () =>
+    page.waitForFunction(() => window.patterns.queryClient.isFetching() === 0);
+
+  for (const [state, label, tone] of [
+    [1, "Active", "emerald"],
+    [2, "Pending", "amber"],
+    [3, "Rejected", "red"],
+  ]) {
+    it(`renders ${label} consistently in Session and Device rows`, async () => {
+      await load("labels", { state: String(state) });
+      for (const kind of ["session", "device"]) {
+        const badge = page
+          .locator(`[data-kind="${kind}"]`)
+          .getByText(label, { exact: true });
+        const style = await badge.getAttribute("class");
+        assert.ok(style.includes("rounded-full"));
+        assert.ok(style.includes(`text-${tone}-700`));
+        assert.equal(await badge.locator('[aria-hidden="true"]').count(), 1);
+      }
+    });
+  }
+
+  it("does not invent a resource status for unknown states", async () => {
+    await load("labels", { state: "99", disabled: "false" });
+    for (const kind of [
+      "session",
+      "device",
+      "user",
+      "policy",
+      "access-policy",
+    ]) {
+      assert.equal(
+        await page.locator(`[data-kind="${kind}"] .rounded-full`).count(),
+        0,
+      );
+    }
+  });
+
+  it("shares the detail status style with disabled User and Policy rows", async () => {
+    await load("labels");
+    for (const kind of ["user", "policy", "access-policy"]) {
+      const badge = page
+        .locator(`[data-kind="${kind}"]`)
+        .getByText("Disabled", { exact: true });
+      assert.ok((await badge.getAttribute("class")).includes("text-red-700"));
+    }
+    const detail = page
+      .locator('[data-kind="detail"]')
+      .getByText("Active", { exact: true });
+    assert.ok(
+      (await detail.getAttribute("class")).includes("text-emerald-700"),
+    );
+    assert.ok((await detail.getAttribute("class")).includes("text-xs"));
+    const health = page
+      .locator('[data-kind="health"]')
+      .getByText("Unknown", { exact: true });
+    assert.ok((await health.getAttribute("class")).includes("text-slate-500"));
+    assert.equal(await health.locator('svg[aria-hidden="true"]').count(), 1);
+  });
+
+  it("shares count formatting while preserving exact totals and generic fractional numbers", async () => {
+    await load("counts");
+    const result = await page.evaluate(() => {
+      const {
+        formatCount,
+        compact,
+        exact,
+        formatTokens,
+        formatMetricValue,
+        formatNumber,
+      } = window.patterns;
+      const values = [0, 1500, 9999, 48000, 1000000];
+      return {
+        count: values.map(formatCount),
+        dashboard: values.map(compact),
+        tokens: values.map(formatTokens),
+        metrics: values.map((value) => formatMetricValue("count", value)),
+        exact: exact(48000),
+        missing: [formatCount(NaN), formatCount(Infinity)],
+        fractional: formatNumber(0.00001),
+      };
+    });
+    const expected = ["0", "1,500", "9,999", "48K", "1M"];
+    assert.deepEqual(result, {
+      count: expected,
+      dashboard: expected,
+      tokens: expected,
+      metrics: expected,
+      exact: "48,000",
+      missing: ["—", "—"],
+      fractional: "0.00001",
+    });
+    for (const kind of ["home", "summary"]) {
+      assert.equal(
+        await page
+          .locator(`[data-kind="${kind}"]`)
+          .getByText("48K", { exact: true })
+          .count(),
+        1,
+      );
+    }
+    assert.equal(
+      await page
+        .locator('[data-kind="llm"]')
+        .getByText("48K", { exact: true })
+        .count(),
+      2,
+    );
+  });
+
+  it("provides an accessible manual refresh without disabling busy requests", async () => {
+    await load("refresh", { busy: "true" });
+    const button = page.getByRole("button", { name: "Refresh", exact: true });
+    assert.equal(await button.getAttribute("aria-busy"), "true");
+    assert.equal(await button.isDisabled(), false);
+    await button.focus();
+    await page.keyboard.press("Enter");
+    assert.equal((await calls("refresh")).length, 1);
+    await load("refresh", { disabled: "true" });
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Refresh", exact: true })
+        .isDisabled(),
+      true,
+    );
+  });
+
+  it("refreshes the current resource list without refetching unrelated queries", async () => {
+    await load("resource");
+    await page.getByRole("button", { name: "Refresh resources" }).waitFor();
+    await settled();
+    assert.equal((await calls("listUser")).length, 1);
+    await page.evaluate(() => {
+      window.patterns.state.hold = true;
+    });
+    const refresh = page.getByRole("button", { name: "Refresh resources" });
+    await refresh.click();
+    await page.waitForFunction(() => window.patterns.state.resolve);
+    assert.equal(await refresh.getAttribute("aria-busy"), "true");
+    await page.evaluate(() => window.patterns.state.resolve());
+    await settled();
+    assert.equal((await calls("listUser")).length, 2);
+    assert.equal((await calls("unrelated")).length, 1);
+  });
+
+  for (const [kind, method, title] of [
+    ["access", "listAccessLog", "No log entries found"],
+    [
+      "authentication",
+      "listAuthenticationLog",
+      "No authentication log entries found",
+    ],
+    ["audit", "listAuditLog", "No audit log entries found"],
+    ["component", "listComponentLog", "No component log entries found"],
+    ["ssh", "listSSHSession", "No SSH sessions found"],
+  ]) {
+    it(`uses shared empty and refresh controls for ${kind} logs without disguising load failures`, async () => {
+      await load("logs", { kind });
+      const empty = page.getByText(title, { exact: true });
+      await empty.waitFor();
+      assert.ok(
+        (await empty.locator("..").getAttribute("class")).includes(
+          "border-dashed",
+        ),
+      );
+      await page.getByRole("button", { name: "Refresh", exact: true }).click();
+      await settled();
+      assert.equal((await calls(method)).length, 2);
+      await load("logs", { kind, error: "true" });
+      await page.getByRole("alert").waitFor();
+      assert.equal(await page.getByText(title, { exact: true }).count(), 0);
+    });
+  }
+
+  for (const [scenario, label] of [
+    ["search", "Search resources"],
+    ["log-search", "Search access logs"],
+  ]) {
+    it(`shares the 250 ms search debounce and keyboard behavior on ${scenario}`, async () => {
+      await load(scenario, {
+        route: "/visibility/accesslogs?common.page=4&userRef.name=alice",
+      });
+      const input = page.getByRole("textbox", { name: label });
+      await page.keyboard.press("/");
+      assert.equal(
+        await input.evaluate((element) => document.activeElement === element),
+        true,
+      );
+      await page.clock.install();
+      await input.fill(scenario === "log-search" ? "  denied  " : "denied");
+      await page.clock.runFor(249);
+      assert.equal((await routeParams()).has("common.query"), false);
+      await page.clock.runFor(1);
+      await page.waitForFunction(() =>
+        document
+          .querySelector("[data-route]")
+          .textContent.includes("common.query=denied"),
+      );
+      assert.equal((await routeParams()).get("userRef.name"), "alice");
+      assert.equal((await routeParams()).has("common.page"), false);
+      await page.keyboard.press("Escape");
+      assert.equal(
+        await input.evaluate((element) => document.activeElement === element),
+        false,
+      );
+      const other = page.getByRole("textbox", { name: "Unrelated input" });
+      await other.focus();
+      await page.keyboard.press("/");
+      assert.equal(await other.inputValue(), "/");
+      await page.getByRole("button", { name: "Clear search" }).click();
+      await page.clock.runFor(250);
+      await page.waitForFunction(
+        () =>
+          !document
+            .querySelector("[data-route]")
+            .textContent.includes("common.query"),
+      );
+    });
+  }
+
+  it("clears displayed log filters and search while preserving sort and page size", async () => {
+    await load("log-search", {
+      route:
+        "/visibility/accesslogs?userRef.name=alice&status=DENIED&common.query=old&common.page=4&common.itemsPerPage=50&common.orderBy.type=CREATED_AT",
+    });
+    await page.clock.install();
+    await page
+      .getByRole("textbox", { name: "Search access logs" })
+      .fill("pending");
+    await page
+      .getByRole("button", { name: "Clear filters", exact: true })
+      .click();
+    await page.waitForFunction(
+      () =>
+        !document
+          .querySelector("[data-route]")
+          .textContent.includes("userRef.name") &&
+        document.querySelector('[aria-label="Search access logs"]').value ===
+          "",
+    );
+    await page.clock.runFor(1000);
+    assert.equal(
+      (await routeParams()).toString(),
+      "common.itemsPerPage=50&common.orderBy.type=CREATED_AT",
+    );
+    assert.equal(
+      await page
+        .getByRole("textbox", { name: "Search access logs" })
+        .inputValue(),
+      "",
+    );
+  });
+
+  it("uses the same quiet empty presentation for legacy logs and LLM panels", async () => {
+    await load("empty");
+    for (const title of [
+      "No log entries found",
+      "No inference activity in this range",
+    ]) {
+      const text = page.getByText(title, { exact: true });
+      assert.ok((await text.getAttribute("class")).includes("text-xs"));
+      assert.ok(
+        (await text.locator("..").getAttribute("class")).includes(
+          "border-dashed",
+        ),
+      );
+    }
+  });
+});

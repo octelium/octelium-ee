@@ -29,17 +29,16 @@ import MetricChart, {
 import { useInView } from "@/hooks/use-in-view";
 import { usePeriodRange } from "@/hooks/use-period-range";
 import PeriodSelector from "@/components/LogWidget/PeriodSelector";
+import RefreshButton from "@/components/RefreshButton";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
 import {
   getClientVisibilityMetrics,
   refetchIntervalChart,
 } from "@/utils/client";
 import {
-  ActionIcon,
   SegmentedControl,
   Select,
   Switch,
-  Tooltip,
 } from "@mantine/core";
 import {
   keepPreviousData,
@@ -52,7 +51,6 @@ import {
   Clock3,
   Cpu,
   Gauge,
-  RefreshCw,
   ServerCog,
   ShieldCheck,
   Waypoints,
@@ -493,24 +491,17 @@ const Metrics = () => {
               checked={autoRefresh}
               onChange={(event) => setAutoRefresh(event.currentTarget.checked)}
             />
-            <Tooltip label="Refresh visible metrics">
-              <ActionIcon
-                type="button"
-                variant="light"
-                color="gray"
-                onClick={() => {
-                  queryClient.invalidateQueries({
-                    queryKey: ["visibility", "queryMetrics"],
-                  });
-                  queryClient.invalidateQueries({
-                    queryKey: ["visibility", "metricStat"],
-                  });
-                }}
-                aria-label="Refresh metrics"
-              >
-                <RefreshCw size={15} />
-              </ActionIcon>
-            </Tooltip>
+            <RefreshButton
+              label="Refresh metrics"
+              onClick={() => {
+                queryClient.invalidateQueries({
+                  queryKey: ["visibility", "queryMetrics"],
+                });
+                queryClient.invalidateQueries({
+                  queryKey: ["visibility", "metricStat"],
+                });
+              }}
+            />
           </div>
         </div>
         <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 xl:grid-cols-[auto_auto_minmax(180px,1fr)_minmax(180px,1fr)]">

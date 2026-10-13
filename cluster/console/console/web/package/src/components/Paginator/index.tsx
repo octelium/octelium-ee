@@ -155,9 +155,11 @@ export const buildFilterChips = (
 export const FilterChips = ({
   chips,
   onRemove,
+  onClear,
 }: {
   chips: FilterChip[];
   onRemove: (key: string) => void;
+  onClear?: () => void;
 }) => {
   if (chips.length === 0) return null;
 
@@ -184,6 +186,15 @@ export const FilterChips = ({
           </button>
         </span>
       ))}
+      {onClear && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="text-xs font-semibold text-slate-600 hover:text-slate-950"
+        >
+          Clear filters
+        </button>
+      )}
     </div>
   );
 };

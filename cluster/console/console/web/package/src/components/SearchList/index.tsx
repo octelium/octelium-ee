@@ -3,7 +3,11 @@ import { Search, X } from "lucide-react";
 import * as React from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
-const SearchList = (props: { placeholder?: string }) => {
+const SearchList = (props: {
+  placeholder?: string;
+  label?: string;
+  trimQuery?: boolean;
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -16,12 +20,13 @@ const SearchList = (props: { placeholder?: string }) => {
   }, [currentQuery]);
 
   React.useEffect(() => {
-    if (query === currentQuery) return;
+    const value = props.trimQuery ? query.trim() : query;
+    if (value === currentQuery) return;
 
     const timeout = window.setTimeout(() => {
       const next = new URLSearchParams(location.search);
-      if (query.trim()) {
-        next.set("common.query", query);
+      if (value.trim()) {
+        next.set("common.query", value);
       } else {
         next.delete("common.query");
       }
@@ -34,7 +39,14 @@ const SearchList = (props: { placeholder?: string }) => {
     }, 250);
 
     return () => window.clearTimeout(timeout);
-  }, [currentQuery, location.pathname, location.search, navigate, query]);
+  }, [
+    currentQuery,
+    location.pathname,
+    location.search,
+    navigate,
+    query,
+    props.trimQuery,
+  ]);
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -64,7 +76,7 @@ const SearchList = (props: { placeholder?: string }) => {
       ref={inputRef}
       value={query}
       onChange={(event) => setQuery(event.currentTarget.value)}
-      aria-label="Search resources"
+      aria-label={props.label ?? "Search resources"}
       placeholder={props.placeholder ?? "Search…"}
       radius="md"
       leftSection={<Search size={15} strokeWidth={2.2} />}

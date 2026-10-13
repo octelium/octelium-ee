@@ -1,4 +1,5 @@
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
+import { formatCount } from "@/utils/format";
 import { Duration, ObjectReference } from "@/apis/metav1/metav1";
 import * as CoreP from "@/apis/corev1/corev1";
 import {
@@ -71,12 +72,7 @@ export const formatMs = (value: number): string => {
   return `${(value / 60000).toFixed(1)} min`;
 };
 
-export const formatTokens = (value: number): string => {
-  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(2)}B`;
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
-  return value.toLocaleString();
-};
+export const formatTokens = formatCount;
 
 export const DIMENSION_LABELS: Record<number, string> = {
   [Dimension.MODEL]: "Model",
@@ -280,7 +276,7 @@ export const formatMetricValue = (
     case "bytes":
       return formatTokens(value);
     default:
-      return value.toLocaleString();
+      return formatCount(value);
   }
 };
 

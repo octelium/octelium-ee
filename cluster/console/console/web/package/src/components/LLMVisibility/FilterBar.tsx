@@ -2,9 +2,10 @@ import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import * as CoreP from "@/apis/corev1/corev1";
 import TimestampPicker from "@/components/TimestampPicker";
 import PeriodSelector from "@/components/LogWidget/PeriodSelector";
-import { ActionIcon, Button, SegmentedControl, Tooltip } from "@mantine/core";
+import RefreshButton from "@/components/RefreshButton";
+import { Button, SegmentedControl } from "@mantine/core";
 import { AnimatePresence, motion } from "framer-motion";
-import { RotateCcw, SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "@/lib/utils";
 import { Drilldown, drilldownID, drilldownLabel, LLMRange } from "./utils";
@@ -51,11 +52,7 @@ const FilterBar = (props: {
 
         <div className="flex-1" />
 
-        <Tooltip label="Refresh" withArrow>
-          <ActionIcon variant="default" size="md" onClick={props.onRefresh}>
-            <RotateCcw size={14} strokeWidth={2.4} />
-          </ActionIcon>
-        </Tooltip>
+        <RefreshButton onClick={props.onRefresh} />
       </div>
 
       <AnimatePresence initial={false}>

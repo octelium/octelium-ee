@@ -16,6 +16,7 @@ import {
   countActiveListFilters,
 } from "../Paginator";
 import SearchList from "../SearchList";
+import RefreshButton from "@/components/RefreshButton";
 
 export type ListDensity = "comfortable" | "compact" | "table";
 
@@ -190,6 +191,7 @@ const ResourceListToolbar = (props: {
   showCount?: boolean;
   itemsPerPage: number;
   isFetching?: boolean;
+  onRefresh?: () => void;
   density: ListDensity;
   onDensityChange: (value: ListDensity) => void;
   canCreate?: boolean;
@@ -233,17 +235,26 @@ const ResourceListToolbar = (props: {
             )}
           </p>
         </div>
-        {props.canCreate && (
-          <Button
-            variant="filled"
-            color="ink"
-            className="shrink-0 !shadow-[0_8px_20px_-6px_rgba(15,23,42,0.35)]"
-            leftSection={<Plus size={14} />}
-            onClick={props.onCreate}
-          >
-            Create {props.kindName}
-          </Button>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {props.onRefresh && (
+            <RefreshButton
+              label="Refresh resources"
+              loading={props.isFetching}
+              onClick={props.onRefresh}
+            />
+          )}
+          {props.canCreate && (
+            <Button
+              variant="filled"
+              color="ink"
+              className="shrink-0 !shadow-[0_8px_20px_-6px_rgba(15,23,42,0.35)]"
+              leftSection={<Plus size={14} />}
+              onClick={props.onCreate}
+            >
+              Create {props.kindName}
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

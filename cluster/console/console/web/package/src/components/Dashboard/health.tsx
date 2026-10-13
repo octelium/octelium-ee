@@ -22,6 +22,7 @@ import { Link } from "react-router-dom";
 import { twMerge } from "@/lib/utils";
 import { PILL } from "./components";
 import RpcError from "@/components/RpcError";
+import SharedStatusBadge from "@/components/StatusBadge";
 import { describeRpcError } from "@/utils/rpcError";
 
 export const STATUS_STYLE: Record<number, string> = {
@@ -101,17 +102,16 @@ export const StatusBadge = (props: { status: number; className?: string }) => {
         : AlertTriangle;
 
   return (
-    <span
+    <SharedStatusBadge
+      label={STATUS_LABEL[props.status] ?? "Unknown"}
+      icon={Icon}
       className={twMerge(
         PILL,
         STATUS_STYLE[props.status] ??
           STATUS_STYLE[GetClusterHealthResponse_Status.UNKNOWN],
         props.className,
       )}
-    >
-      <Icon size={9} strokeWidth={2.5} />
-      {STATUS_LABEL[props.status] ?? "Unknown"}
-    </span>
+    />
   );
 };
 

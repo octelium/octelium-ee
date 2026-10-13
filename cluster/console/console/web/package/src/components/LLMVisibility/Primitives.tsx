@@ -1,6 +1,7 @@
 import { Loader } from "@mantine/core";
+import EmptyState from "@/components/EmptyState";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, Inbox } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "@/lib/utils";
 
@@ -232,17 +233,10 @@ export const QueryState = (props: {
 
   if (props.isEmpty) {
     return (
-      <div
-        className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 px-4 text-center"
-        style={{ minHeight: props.minHeight ?? 160 }}
-      >
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500">
-          <Inbox size={16} strokeWidth={2} />
-        </span>
-        <p className="text-xs font-normal text-slate-500">
-          {props.emptyLabel ?? "No inference activity in this range"}
-        </p>
-      </div>
+      <EmptyState
+        title={props.emptyLabel ?? "No inference activity in this range"}
+        minHeight={props.minHeight}
+      />
     );
   }
 

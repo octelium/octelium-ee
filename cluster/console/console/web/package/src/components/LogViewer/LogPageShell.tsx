@@ -1,6 +1,6 @@
 import { FilterChips, buildFilterChips } from "@/components/Paginator";
-import { TextInput } from "@mantine/core";
-import { Activity, Search } from "lucide-react";
+import SearchList from "@/components/SearchList";
+import { Activity } from "lucide-react";
 import * as React from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
@@ -30,33 +30,23 @@ const LogPageShell = (props: {
   const navigate = useNavigate();
   const chips = buildFilterChips(searchParams);
   const Icon = props.icon ?? Activity;
-  const queryParam = searchParams.get("common.query") ?? "";
-  const [query, setQuery] = React.useState(queryParam);
-
-  React.useEffect(() => setQuery(queryParam), [queryParam]);
-
-  React.useEffect(() => {
-    if (query.trim() === queryParam) return;
-    const timeout = window.setTimeout(() => {
-      const next = new URLSearchParams(searchParams);
-      const value = query.trim();
-      if (value) next.set("common.query", value);
-      else next.delete("common.query");
-      next.delete("common.page");
-      setSearchParams(next, { replace: true, preventScrollReset: true });
-    }, 350);
-    return () => window.clearTimeout(timeout);
-  }, [query, queryParam, searchParams, setSearchParams]);
+  const clearFilters = () => {
+    const next = new URLSearchParams(searchParams);
+    for (const chip of chips) next.delete(chip.key);
+    next.delete("common.query");
+    next.delete("common.page");
+    setSearchParams(next, { replace: true, preventScrollReset: true });
+  };
 
   const removeFilter = (key: string) => {
     const next = new URLSearchParams(searchParams);
     next.delete(key);
     next.delete("common.page");
     const search = next.toString();
-    navigate(
-      `${location.pathname}${search ? `?${search}` : ""}`,
-      { replace: true, preventScrollReset: true },
-    );
+    navigate(`${location.pathname}${search ? `?${search}` : ""}`, {
+      replace: true,
+      preventScrollReset: true,
+    });
   };
 
   return (
@@ -75,20 +65,20 @@ const LogPageShell = (props: {
             </p>
           </div>
         </div>
-        <div className="mt-3 border-t border-slate-100 pt-3">
-          <TextInput
-            size="xs"
-            value={query}
-            onChange={(event) => setQuery(event.currentTarget.value)}
-            leftSection={<Search size={13} />}
+        <div className="mt-3 max-w-md border-t border-slate-100 pt-3">
+          <SearchList
             placeholder={`Search ${props.title.toLowerCase()}`}
-            aria-label={`Search ${props.title.toLowerCase()}`}
-            className="max-w-md"
+            label={`Search ${props.title.toLowerCase()}`}
+            trimQuery
           />
         </div>
         {chips.length > 0 && (
           <div className="mt-3">
-            <FilterChips chips={chips} onRemove={removeFilter} />
+            <FilterChips
+              chips={chips}
+              onRemove={removeFilter}
+              onClear={clearFilters}
+            />
           </div>
         )}
       </header>

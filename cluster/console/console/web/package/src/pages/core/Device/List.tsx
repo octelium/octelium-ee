@@ -8,7 +8,7 @@ import { getDomain, toNumOrZero } from "@/utils";
 import Label from "@/components/Label";
 import { match } from "ts-pattern";
 import * as CoreP from "@/apis/corev1/corev1";
-import { twMerge } from "@/lib/utils";
+import StatusBadge from "@/components/StatusBadge";
 import { getOSIcon, getOSStr } from "./Main";
 import {
   SummaryItemCount,
@@ -62,17 +62,17 @@ export const LabelComponent = (props: { item: Device }) => {
   return (
     <ResourceListLabelWrap>
       <ResourceListLabel>
-        <span
-          className={twMerge(
-            match(item.spec?.state)
-              .with(CoreP.Device_Spec_State.REJECTED, () => `text-red-400`)
-              .with(CoreP.Device_Spec_State.ACTIVE, () => `text-green-400`)
-              .with(CoreP.Device_Spec_State.PENDING, () => `text-yellow-400`)
-              .otherwise(() => undefined),
-          )}
-        >
-          {getState(item)}
-        </span>
+        {getState(item) && (
+          <StatusBadge
+            label={getState(item)}
+            tone={match(item.spec?.state)
+              .with(CoreP.Device_Spec_State.REJECTED, () => "danger" as const)
+              .with(CoreP.Device_Spec_State.ACTIVE, () => "success" as const)
+              .with(CoreP.Device_Spec_State.PENDING, () => "warning" as const)
+              .otherwise(() => "neutral" as const)}
+            compact
+          />
+        )}
       </ResourceListLabel>
       <DeviceTypeLabel item={item} />
       {item.status?.hostname && (

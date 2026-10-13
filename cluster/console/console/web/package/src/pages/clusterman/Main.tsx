@@ -1,7 +1,8 @@
 import { PILL } from "@/components/Dashboard/components";
 import Meta from "@/components/Meta";
+import RefreshButton from "@/components/RefreshButton";
 import { getDomain } from "@/utils";
-import { ActionIcon, Alert, Button, Tooltip } from "@mantine/core";
+import { Alert, Button } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useIsFetching, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -9,7 +10,6 @@ import {
   ArrowUpCircle,
   CheckCircle2,
   Loader2,
-  RefreshCw,
   ServerCog,
   Sparkles,
 } from "lucide-react";
@@ -123,23 +123,13 @@ const Main = () => {
               </span>
             )}
 
-            <Tooltip label="Refresh everything" withArrow>
-              <ActionIcon
-                type="button"
-                variant="default"
-                size="sm"
-                aria-label="Refresh the page"
-                onClick={() =>
-                  queryClient.invalidateQueries({ queryKey: clustermanKeys.all })
-                }
-              >
-                <RefreshCw
-                  size={12}
-                  strokeWidth={2.5}
-                  className={fetching > 0 ? "motion-safe:animate-spin" : ""}
-                />
-              </ActionIcon>
-            </Tooltip>
+            <RefreshButton
+              label="Refresh the page"
+              loading={fetching > 0}
+              onClick={() =>
+                queryClient.invalidateQueries({ queryKey: clustermanKeys.all })
+              }
+            />
 
             <Button
               variant="filled"

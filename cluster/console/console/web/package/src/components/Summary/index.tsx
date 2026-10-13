@@ -1,4 +1,4 @@
-import { formatNumber } from "@/utils";
+import { formatCount as formatCountValue } from "@/utils/format";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Inbox } from "lucide-react";
 import { createContext, useContext, useRef } from "react";
@@ -69,7 +69,7 @@ export const SummaryItemCount = (props: {
                 active ? "text-slate-900" : "text-slate-700",
               )}
             >
-              {formatCount ? formatCount(count) : formatNumber(count)}
+              {formatCount ? formatCount(count) : formatCountValue(count)}
             </motion.span>
           </AnimatePresence>
         </div>

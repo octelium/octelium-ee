@@ -7,6 +7,7 @@ import {
 } from "@/components/ResourceList";
 
 import TimeAgo from "@/components/TimeAgo";
+import StatusBadge from "@/components/StatusBadge";
 import { getDomain } from "@/utils";
 import { MdTimer } from "react-icons/md";
 import { match } from "ts-pattern";
@@ -63,13 +64,13 @@ export const getType = (svc: Session) => {
 const getState = (svc: Session) => {
   return match(svc.spec?.state)
     .with(Session_Spec_State.ACTIVE, () => (
-      <span className="text-green-400">Active</span>
+      <StatusBadge label="Active" tone="success" compact />
     ))
     .with(Session_Spec_State.REJECTED, () => (
-      <span className="text-red-400">Rejected</span>
+      <StatusBadge label="Rejected" tone="danger" compact />
     ))
     .with(Session_Spec_State.PENDING, () => (
-      <span className="text-yellow-500">Pending</span>
+      <StatusBadge label="Pending" tone="warning" compact />
     ))
     .otherwise(() => "");
 };

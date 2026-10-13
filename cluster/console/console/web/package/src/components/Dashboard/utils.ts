@@ -2,6 +2,7 @@ import { toTs } from "@/utils/visibility";
 import { QUERY_PRIORITY, queued } from "@/utils/visibility/queue";
 import { QueryFilters, useQuery } from "@tanstack/react-query";
 import { retryQuery } from "@/utils/queryPolicy";
+import { formatCount } from "@/utils/format";
 import * as React from "react";
 
 export { usePeriodRange as useDashboardRange } from "@/hooks/use-period-range";
@@ -81,13 +82,9 @@ export const rangeOptions = (from: number, to: number) => ({
   common: { from: toTs(from), to: toTs(to) },
 });
 
-export const compact = (value: number) =>
-  new Intl.NumberFormat(undefined, {
-    notation: value >= 10_000 ? "compact" : "standard",
-    maximumFractionDigits: 1,
-  }).format(value);
+export const compact = formatCount;
 
-export const exact = (value: number) => value.toLocaleString();
+export const exact = (value: number) => formatCount(value, { compact: false });
 
 export const ratio = (value: number, total: number) =>
   total === 0 ? 0 : Math.round((value / total) * 1000) / 10;

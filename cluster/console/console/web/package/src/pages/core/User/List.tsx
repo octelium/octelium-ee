@@ -20,6 +20,7 @@ import {
 import { setListOptFilter } from "@/features/settings/slice";
 import { toURLWithQry } from "@/pages/utils";
 import { getDomain } from "@/utils";
+import StatusBadge from "@/components/StatusBadge";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useAppDispatch } from "@/utils/hooks";
 import { invalidateResourceListFromList } from "@/utils/pb";
@@ -76,7 +77,7 @@ export const LabelComponent = (props: { item: User }) => {
 
       {item.spec?.isDisabled && (
         <ResourceListLabel>
-          <span className="flex items-center text-red-400">Disabled</span>
+          <StatusBadge label="Disabled" tone="danger" compact />
         </ResourceListLabel>
       )}
 

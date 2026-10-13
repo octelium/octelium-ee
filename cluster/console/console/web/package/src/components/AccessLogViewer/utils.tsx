@@ -1,11 +1,11 @@
 import * as React from "react";
+import EmptyState from "@/components/EmptyState";
 
 import { AccessLog_Entry_Common_Status } from "@/apis/corev1/corev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { Select } from "@mantine/core";
 import dayjs from "dayjs";
 import { LuTimer } from "react-icons/lu";
-import { twMerge } from "@/lib/utils";
 
 export type AccessLogStatusFilter = "all" | "allowed" | "denied";
 
@@ -198,15 +198,5 @@ export const SelectFromTimestamp = (props: {
 };
 
 export const NoLogFound = () => {
-  return (
-    <div
-      className={twMerge(
-        "flex text-center items-center justify-center",
-        "font-bold text-4xl text-slate-600",
-        "my-16",
-      )}
-    >
-      No Items Found
-    </div>
-  );
+  return <EmptyState title="No log entries found" />;
 };

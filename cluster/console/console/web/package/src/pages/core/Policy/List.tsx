@@ -11,6 +11,7 @@ import {
   SummaryNoItems,
 } from "@/components/Summary";
 import { getDomain } from "@/utils";
+import StatusBadge from "@/components/StatusBadge";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import { Ban, ListChecks, ShieldCheck, ShieldX } from "lucide-react";
@@ -29,7 +30,7 @@ export const LabelComponent = (props: { item: Policy }) => {
     <ResourceListLabelWrap>
       {item.spec?.isDisabled && (
         <ResourceListLabel>
-          <span className="text-red-400">Disabled</span>
+          <StatusBadge label="Disabled" tone="danger" compact />
         </ResourceListLabel>
       )}
       {!!item.spec?.rules?.length && (

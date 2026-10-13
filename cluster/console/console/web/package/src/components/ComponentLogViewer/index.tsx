@@ -1,3 +1,5 @@
+import RefreshButton from "@/components/RefreshButton";
+import EmptyState from "@/components/EmptyState";
 import { ComponentLog, ComponentLog_Entry_Level } from "@/apis/corev1/corev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { Value } from "@/apis/google/protobuf/struct";
@@ -12,7 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Select } from "@mantine/core";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, RefreshCw } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
@@ -443,21 +445,11 @@ const ComponentLogViewer = (props: {
               ? `${totalCount.toLocaleString()} entries`
               : "No entries"}
           </span>
-          <button
-            type="button"
-            onClick={() => {
-              qry.refetch();
-            }}
+          <RefreshButton
+            onClick={() => qry.refetch()}
             disabled={qry.isLoading}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-normal text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-card disabled:opacity-50"
-          >
-            <RefreshCw
-              size={11}
-              strokeWidth={2.5}
-              className={qry.isLoading ? "motion-safe:animate-spin" : ""}
-            />
-            Refresh
-          </button>
+            loading={qry.isFetching}
+          />
         </div>
 
         {qry.isError && (
@@ -480,11 +472,7 @@ const ComponentLogViewer = (props: {
             ))}
 
             {qry.isSuccess && qry.data.items.length === 0 && (
-              <div className="flex items-center justify-center py-16">
-                <span className="text-body font-semibold uppercase tracking-[0.08em] text-slate-500">
-                  No component log entries found
-                </span>
-              </div>
+              <EmptyState title="No component log entries found" />
             )}
           </>
         ) : null}

@@ -1,4 +1,5 @@
 import { Stats } from "@/apis/visibilityv1/llm/vllmv1";
+import { formatCount } from "@/utils/format";
 import {
   Ban,
   Braces,
@@ -36,21 +37,21 @@ const StatsOverview = (props: { stats?: Stats }) => {
     <StatGrid>
       <StatCard
         label="Requests"
-        value={total.toLocaleString()}
-        hint={`${num(requests?.streamed).toLocaleString()} streamed`}
+        value={formatCount(total)}
+        hint={`${formatCount(num(requests?.streamed))} streamed`}
         icon={Sparkles}
       />
       <StatCard
         label="Denied"
-        value={denied.toLocaleString()}
+        value={formatCount(denied)}
         hint={formatPercent(ratio(denied, total))}
         tone={denied > 0 ? "danger" : "default"}
         icon={Ban}
       />
       <StatCard
         label="Failed"
-        value={failed.toLocaleString()}
-        hint={`${num(requests?.serverError).toLocaleString()} upstream errors`}
+        value={formatCount(failed)}
+        hint={`${formatCount(num(requests?.serverError))} upstream errors`}
         tone={failed > 0 ? "warning" : "default"}
         icon={ServerCrash}
       />
@@ -63,27 +64,27 @@ const StatsOverview = (props: { stats?: Stats }) => {
       <StatCard
         label="Reasoning tokens"
         value={formatTokens(num(stats?.tokens?.reasoningOutput))}
-        hint={`${num(requests?.withManagedReasoning).toLocaleString()} managed requests`}
+        hint={`${formatCount(num(requests?.withManagedReasoning))} managed requests`}
         icon={Braces}
       />
       <StatCard
         label="Discarded tokens"
         value={formatTokens(num(stats?.tokens?.discarded))}
-        hint={`${num(requests?.discardedInference).toLocaleString()} discarded inferences`}
+        hint={`${formatCount(num(requests?.discardedInference))} discarded inferences`}
         tone={num(stats?.tokens?.discarded) > 0 ? "warning" : "default"}
         icon={DatabaseZap}
       />
       <StatCard
         label="Guardrail denials"
-        value={num(requests?.guardrailDenied).toLocaleString()}
-        hint={`${num(requests?.guardrailModified).toLocaleString()} modified · ${num(requests?.guardrailError).toLocaleString()} errors`}
+        value={formatCount(num(requests?.guardrailDenied))}
+        hint={`${formatCount(num(requests?.guardrailModified))} modified · ${formatCount(num(requests?.guardrailError))} errors`}
         tone={num(requests?.guardrailDenied) > 0 ? "danger" : "default"}
         icon={ShieldAlert}
       />
       <StatCard
         label="Cache hit rate"
         value={formatPercent(cacheHitRate(stats))}
-        hint={`${cacheServed.toLocaleString()} served from cache`}
+        hint={`${formatCount(cacheServed)} served from cache`}
         tone={cacheServed > 0 ? "positive" : "default"}
         icon={DatabaseZap}
       />
@@ -101,21 +102,21 @@ const StatsOverview = (props: { stats?: Stats }) => {
       />
       <StatCard
         label="Tool calls"
-        value={num(stats?.toolCalls).toLocaleString()}
-        hint={`${num(stats?.distinctToolsCalled).toLocaleString()} distinct tools`}
+        value={formatCount(num(stats?.toolCalls))}
+        hint={`${formatCount(num(stats?.distinctToolsCalled))} distinct tools`}
         icon={Wrench}
       />
       <StatCard
         label="Token quota denials"
-        value={num(requests?.tokenRateLimitDenied).toLocaleString()}
-        hint={`${num(requests?.tokenRateLimitAllowed).toLocaleString()} allowed`}
+        value={formatCount(num(requests?.tokenRateLimitDenied))}
+        hint={`${formatCount(num(requests?.tokenRateLimitAllowed))} allowed`}
         tone={num(requests?.tokenRateLimitDenied) > 0 ? "warning" : "default"}
         icon={Gauge}
       />
       <StatCard
         label="Stream events"
         value={formatTokens(num(stats?.streamEvents))}
-        hint={`${num(requests?.streamed).toLocaleString()} streamed requests`}
+        hint={`${formatCount(num(requests?.streamed))} streamed requests`}
         icon={Radio}
       />
     </StatGrid>

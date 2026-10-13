@@ -1,15 +1,15 @@
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import Sparkline from "@/components/Charts/Sparkline";
 import PeriodSelector from "@/components/LogWidget/PeriodSelector";
+import RefreshButton from "@/components/RefreshButton";
 import { useInView } from "@/hooks/use-in-view";
 import { deltaPct } from "@/utils/visibility";
-import { ActionIcon, Switch, Tooltip } from "@mantine/core";
+import { Switch } from "@mantine/core";
 import { useIsFetching, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUpRight,
   LucideIcon,
   Minus,
-  RefreshCw,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
@@ -663,21 +663,11 @@ export const DashboardHeader = (props: {
             }
           />
 
-          <Tooltip label="Refresh everything" withArrow>
-            <ActionIcon
-              type="button"
-              variant="default"
-              size="sm"
-              aria-label="Refresh the page"
-              onClick={() => queryClient.invalidateQueries(dashboardQueryFilters)}
-            >
-              <RefreshCw
-                size={12}
-                strokeWidth={2.5}
-                className={fetching > 0 ? "motion-safe:animate-spin" : ""}
-              />
-            </ActionIcon>
-          </Tooltip>
+          <RefreshButton
+            label="Refresh the page"
+            loading={fetching > 0}
+            onClick={() => queryClient.invalidateQueries(dashboardQueryFilters)}
+          />
         </div>
       </div>
 

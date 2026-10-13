@@ -1009,6 +1009,7 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
         showCount={!isPending}
         itemsPerPage={itemsPerPage}
         isFetching={isFetching}
+        onRefresh={() => refetch()}
         density={effectiveDensity}
         onDensityChange={setDensity}
         canCreate={!props.info.unCreatable}

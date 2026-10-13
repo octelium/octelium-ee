@@ -26,6 +26,7 @@ import MetricChart, {
 import { useInView } from "@/hooks/use-in-view";
 import { usePeriodRange } from "@/hooks/use-period-range";
 import PeriodSelector from "@/components/LogWidget/PeriodSelector";
+import RefreshButton from "@/components/RefreshButton";
 import PageWrap from "@/components/PageWrap";
 import { SummaryItemCount } from "@/components/Summary";
 import {
@@ -34,7 +35,7 @@ import {
   refetchIntervalChart,
 } from "@/utils/client";
 import { retryQuery } from "@/utils/queryPolicy";
-import { ActionIcon, SegmentedControl, Switch, Tooltip } from "@mantine/core";
+import { SegmentedControl, Switch } from "@mantine/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
@@ -42,7 +43,6 @@ import {
   Clock3,
   Gauge,
   Network,
-  RefreshCw,
 } from "lucide-react";
 import * as React from "react";
 import { useContextResource } from "./utils";
@@ -1371,21 +1371,14 @@ export const ResourceMetrics = (props: { resource: MetricsResource }) => {
               checked={autoRefresh}
               onChange={(event) => setAutoRefresh(event.currentTarget.checked)}
             />
-            <Tooltip label="Refresh metrics" withArrow>
-              <ActionIcon
-                type="button"
-                variant="light"
-                color="gray"
-                aria-label="Refresh metrics"
-                onClick={() =>
-                  queryClient.invalidateQueries({
-                    queryKey: ["visibility", "queryMetrics"],
-                  })
-                }
-              >
-                <RefreshCw size={14} strokeWidth={2.2} />
-              </ActionIcon>
-            </Tooltip>
+            <RefreshButton
+              label="Refresh metrics"
+              onClick={() =>
+                queryClient.invalidateQueries({
+                  queryKey: ["visibility", "queryMetrics"],
+                })
+              }
+            />
           </div>
         </div>
 

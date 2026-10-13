@@ -1,3 +1,5 @@
+import RefreshButton from "@/components/RefreshButton";
+import EmptyState from "@/components/EmptyState";
 import {
   AccessLog,
   AccessLog_Entry_Common_Reason_Type,
@@ -30,7 +32,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
   ChevronDown,
-  RefreshCw,
   ShieldCheck,
   ShieldX,
 } from "lucide-react";
@@ -988,21 +989,11 @@ const DoAccessLogViewer = (props: {
         <span className="text-xs font-normal text-slate-500 tabular-nums">
           {totalCount ? `${totalCount.toLocaleString()} entries` : "No entries"}
         </span>
-        <button
-          type="button"
-          onClick={() => {
-            qry.refetch();
-          }}
+        <RefreshButton
+          onClick={() => qry.refetch()}
           disabled={qry.isLoading}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-normal text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-card disabled:opacity-50"
-        >
-          <RefreshCw
-            size={11}
-            strokeWidth={2.5}
-            className={qry.isLoading ? "motion-safe:animate-spin" : ""}
-          />
-          Refresh
-        </button>
+          loading={qry.isFetching}
+        />
       </div>
 
       {qry.isError && (
@@ -1024,11 +1015,7 @@ const DoAccessLogViewer = (props: {
             <AccessLogC key={x.metadata!.id} accessLog={x} />
           ))}
           {qry.data?.items.length === 0 && (
-            <div className="flex items-center justify-center py-16">
-              <span className="text-body font-semibold uppercase tracking-[0.08em] text-slate-500">
-                No log entries found
-              </span>
-            </div>
+            <EmptyState title="No log entries found" />
           )}
         </div>
       ) : null}

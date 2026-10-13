@@ -1,4 +1,4 @@
-import { formatNumber } from "@/utils";
+import { formatCount } from "@/utils/format";
 import { getResourcePath, printResourceNameWithDisplay, Resource } from "@/utils/pb";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
@@ -84,7 +84,7 @@ const TopList = (props: {
 
         <span className="relative flex shrink-0 items-center gap-2">
           <span className="text-xs font-semibold tabular-nums text-slate-700">
-            {formatNumber(item.count)}
+            {formatCount(item.count)}
           </span>
           <ArrowUpRight
             size={13}
