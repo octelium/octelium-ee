@@ -26,6 +26,7 @@ import MetricChart, {
   histogramOp,
   retryMetricQuery,
 } from "@/components/Charts/MetricChart";
+import { useInView } from "@/hooks/use-in-view";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
 import {
   getClientVisibilityMetrics,
@@ -236,7 +237,9 @@ const MetricStat = ({
   filters?: AttributeFilter[];
   autoRefresh: boolean;
 }) => {
+  const { ref, inView } = useInView<HTMLDivElement>(false);
   const query = useQuery({
+    enabled: inView,
     queryKey: [
       "visibility",
       "metricStat",
@@ -272,7 +275,7 @@ const MetricStat = ({
       return (await getClientVisibilityMetrics().queryMetrics(request, { abort: signal }))
         .response;
     },
-    refetchInterval: autoRefresh ? refetchIntervalChart : false,
+    refetchInterval: autoRefresh && inView ? refetchIntervalChart : false,
     refetchIntervalInBackground: false,
     retry: retryMetricQuery,
     placeholderData: keepPreviousData,
@@ -305,7 +308,7 @@ const MetricStat = ({
   }, [query.data, operation, step]);
 
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-card">
+    <div ref={ref} className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-card">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
@@ -313,7 +316,7 @@ const MetricStat = ({
           </div>
           <div className="mt-1.5 text-xl font-bold tabular-nums tracking-tight text-slate-800">
             {query.isLoading ? (
-              <span className="inline-block h-5 w-20 animate-pulse rounded bg-slate-100" />
+              <span className="inline-block h-5 w-20 motion-safe:animate-pulse rounded bg-slate-100" />
             ) : (
               formatValue(value, unit)
             )}

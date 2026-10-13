@@ -1,5 +1,5 @@
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
-import LineChart from "@/components/Charts/LineChart";
+import Sparkline from "@/components/Charts/Sparkline";
 import PeriodSelector from "@/components/LogWidget/PeriodSelector";
 import { useInView } from "@/hooks/use-in-view";
 import { deltaPct } from "@/utils/visibility";
@@ -16,7 +16,7 @@ import {
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { twMerge } from "@/lib/utils";
-import { compact, exact } from "./utils";
+import { compact, DashboardVisibilityContext, exact } from "./utils";
 
 export const PILL =
   "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-px text-micro font-semibold leading-[1.45]";
@@ -102,21 +102,33 @@ export const Panel = (props: {
 export const PanelSkeleton = (props: { height: number }) => (
   <div
     aria-hidden="true"
-    className="w-full animate-pulse rounded-xl border border-slate-200 bg-slate-50/70"
+    className="w-full motion-safe:animate-pulse rounded-xl border border-slate-200 bg-slate-50/70"
     style={{ height: props.height }}
   />
 );
 
 export const Deferred = (props: {
   height?: number;
+  eager?: boolean;
   children: React.ReactNode;
 }) => {
-  const { ref, inView } = useInView<HTMLDivElement>();
+  const { ref, inView } = useInView<HTMLDivElement>(false, props.eager);
+  const [mounted, setMounted] = React.useState(props.eager ?? false);
   const height = props.height ?? 280;
+
+  React.useEffect(() => {
+    if (inView) setMounted(true);
+  }, [inView]);
 
   return (
     <div ref={ref}>
-      {inView ? props.children : <PanelSkeleton height={height} />}
+      {inView || mounted ? (
+        <DashboardVisibilityContext.Provider value={inView}>
+          {props.children}
+        </DashboardVisibilityContext.Provider>
+      ) : (
+        <PanelSkeleton height={height} />
+      )}
     </div>
   );
 };
@@ -241,7 +253,7 @@ export const StatTile = (props: {
 
       <div className="flex items-baseline gap-2">
         {props.isLoading ? (
-          <span className="block h-8 w-24 animate-pulse rounded bg-slate-100" />
+          <span className="block h-8 w-24 motion-safe:animate-pulse rounded bg-slate-100" />
         ) : unavailable ? (
           <span className="text-3xl font-bold leading-none text-slate-400">
             —
@@ -271,8 +283,7 @@ export const StatTile = (props: {
           />
         ) : (
           <div className="-mx-1">
-            <LineChart
-              sparkline
+            <Sparkline
               points={props.points}
               color={props.color}
               height={40}
@@ -542,7 +553,7 @@ const InventoryCard = (props: {
       </div>
 
       {props.isLoading ? (
-        <span className="block h-6 w-14 animate-pulse rounded bg-slate-100" />
+        <span className="block h-6 w-14 motion-safe:animate-pulse rounded bg-slate-100" />
       ) : (
         <span
           className="text-2xl font-bold leading-none tracking-[-0.03em] tabular-nums text-slate-900"
@@ -658,7 +669,7 @@ export const DashboardHeader = (props: {
               <RefreshCw
                 size={12}
                 strokeWidth={2.5}
-                className={fetching > 0 ? "animate-spin" : ""}
+                className={fetching > 0 ? "motion-safe:animate-spin" : ""}
               />
             </ActionIcon>
           </Tooltip>

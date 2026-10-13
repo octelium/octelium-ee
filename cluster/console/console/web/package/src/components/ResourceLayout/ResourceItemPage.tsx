@@ -169,7 +169,7 @@ const ResourceMainBar = (props: { resource: Resource }) => {
 
 const ResourceItemSkeleton = () => (
   <div className="flex w-full flex-col gap-6">
-    <div className="h-9 w-full max-w-lg animate-pulse rounded-[10px] bg-slate-200" />
+    <div className="h-9 w-full max-w-lg motion-safe:animate-pulse rounded-[10px] bg-slate-200" />
     <ResourceOverviewSkeleton />
   </div>
 );

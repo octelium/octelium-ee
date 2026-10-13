@@ -286,7 +286,7 @@ const DeleteResource = (props: {
               loading={mutationDelete.isPending}
               leftSection={
                 mutationDelete.isPending ? (
-                  <Loader2 size={13} className="animate-spin" />
+                  <Loader2 size={13} className="motion-safe:animate-spin" />
                 ) : (
                   <Trash2 size={13} strokeWidth={2.25} />
                 )

@@ -43,7 +43,7 @@ export interface ResourceFormProps {
 const YAML_PARSE_DELAY = 300;
 
 const FormSkeleton = () => (
-  <div className="flex animate-pulse flex-col gap-3">
+  <div className="flex motion-safe:animate-pulse flex-col gap-3">
     <div className="h-9 w-full rounded-lg bg-slate-100" />
     <div className="h-9 w-2/3 rounded-lg bg-slate-100" />
     <div className="h-24 w-full rounded-lg bg-slate-100" />
@@ -359,7 +359,7 @@ const ResourceForm = (props: ResourceFormProps) => {
               props.isPending ? (
                 <Loader2
                   size={13}
-                  className="animate-spin"
+                  className="motion-safe:animate-spin"
                   strokeWidth={2.25}
                 />
               ) : (

@@ -20,9 +20,9 @@ import { ChatMessage, Usage } from "./types";
 
 const Typing = () => (
   <span className="inline-flex items-center gap-1 py-1 text-slate-500">
-    <i className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
-    <i className="h-1.5 w-1.5 animate-pulse rounded-full bg-current [animation-delay:150ms]" />
-    <i className="h-1.5 w-1.5 animate-pulse rounded-full bg-current [animation-delay:300ms]" />
+    <i className="h-1.5 w-1.5 motion-safe:animate-pulse rounded-full bg-current" />
+    <i className="h-1.5 w-1.5 motion-safe:animate-pulse rounded-full bg-current [animation-delay:150ms]" />
+    <i className="h-1.5 w-1.5 motion-safe:animate-pulse rounded-full bg-current [animation-delay:300ms]" />
   </span>
 );
 

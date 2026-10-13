@@ -58,6 +58,7 @@ export const queued = <T>(
     const release = () => {
       if (released) return;
       released = true;
+      signal?.removeEventListener("abort", cancel);
       inFlight--;
       drain();
     };

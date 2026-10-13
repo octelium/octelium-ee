@@ -15,7 +15,7 @@ const StateValue = (props: { item: E.CertificateIssuer }) => {
       {p.state === E.CertificateIssuer_Status_State.READY ? (
         <CheckCircle2 size={13} className="text-emerald-500" />
       ) : p.state === E.CertificateIssuer_Status_State.PREPARING ? (
-        <Loader2 size={13} className="animate-spin text-blue-500" />
+        <Loader2 size={13} className="motion-safe:animate-spin text-blue-500" />
       ) : p.state === E.CertificateIssuer_Status_State.NOT_READY ? (
         <AlertTriangle size={13} className="text-red-500" />
       ) : null}

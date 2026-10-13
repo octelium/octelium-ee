@@ -899,13 +899,12 @@ export const AccessLogC = ({ accessLog }: { accessLog: AccessLog }) => {
           </span>
         )}
 
-        <motion.span
-          animate={{ rotate: expanded ? 180 : 0 }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-          className="flex shrink-0 text-slate-500 transition-colors duration-200 group-hover:text-slate-700"
+        <span
+          style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
+          className="flex shrink-0 text-slate-500 transition-[color,transform] duration-350 ease-out motion-reduce:transition-none group-hover:text-slate-700"
         >
           <ChevronDown size={15} strokeWidth={2.25} />
-        </motion.span>
+        </span>
       </button>
 
       <AnimatePresence initial={false}>
@@ -999,7 +998,7 @@ const DoAccessLogViewer = (props: {
           <RefreshCw
             size={11}
             strokeWidth={2.5}
-            className={qry.isLoading ? "animate-spin" : ""}
+            className={qry.isLoading ? "motion-safe:animate-spin" : ""}
           />
           Refresh
         </button>

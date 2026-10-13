@@ -92,7 +92,7 @@ export const LogWidgetHeader = (props: {
             <RefreshCw
               size={12}
               strokeWidth={2.5}
-              className={props.isLoading ? "animate-spin" : ""}
+              className={props.isLoading ? "motion-safe:animate-spin" : ""}
             />
           </ActionIcon>
         </Tooltip>

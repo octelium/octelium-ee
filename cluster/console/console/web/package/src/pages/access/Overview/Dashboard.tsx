@@ -70,9 +70,13 @@ const Dashboard = () => {
           shortcutsLabel="Jump to an access resource"
         />
 
-        <Signals periodMinutes={periodMinutes} />
+        <Deferred eager>
+          <Signals periodMinutes={periodMinutes} />
+        </Deferred>
 
-        <Queue periodMinutes={periodMinutes} />
+        <Deferred eager>
+          <Queue periodMinutes={periodMinutes} />
+        </Deferred>
 
         <Deferred height={620}>
           <Requests periodMinutes={periodMinutes} />

@@ -47,7 +47,7 @@ export const ItemInfo = (props: { item: CoreC.Session }) => {
         <InfoItem title="Connected">
           <div className="flex items-center">
             <div className="flex relative w-[10px] h-[10px]">
-              <div className="bg-green-500 rounded-full w-[10px] h-[10px] animate-ping absolute"></div>
+              <div className="bg-green-500 rounded-full w-[10px] h-[10px] motion-safe:animate-ping absolute"></div>
               <div className="bg-green-500 rounded-full w-[10px] h-[10px]"></div>
             </div>
             <span className="ml-1">Yes</span>
@@ -262,7 +262,7 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
               value: (
                 <span className="flex items-center gap-1.5">
                   <span className="relative flex w-2.5 h-2.5 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                     <span className="relative inline-flex rounded-full w-2.5 h-2.5 bg-emerald-500" />
                   </span>
                   <span className="text-body font-semibold text-emerald-600">

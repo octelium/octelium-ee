@@ -2,13 +2,17 @@ import * as React from "react";
 
 const ROOT_MARGIN = "400px 0px";
 
-export function useInView<T extends HTMLElement>() {
+export function useInView<T extends HTMLElement>(
+  once = true,
+  initialInView = false,
+) {
   const ref = React.useRef<T | null>(null);
-  const [inView, setInView] = React.useState(false);
+  const [inView, setInView] = React.useState(initialInView);
+  const done = once && inView;
 
   React.useEffect(() => {
     const element = ref.current;
-    if (!element || inView) return;
+    if (!element || done) return;
 
     if (typeof IntersectionObserver === "undefined") {
       setInView(true);
@@ -17,14 +21,15 @@ export function useInView<T extends HTMLElement>() {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) setInView(true);
+        const visible = entries.some((entry) => entry.isIntersecting);
+        if (visible || !once) setInView(visible);
       },
       { rootMargin: ROOT_MARGIN },
     );
     observer.observe(element);
 
     return () => observer.disconnect();
-  }, [inView]);
+  }, [once, done]);
 
   return { ref, inView };
 }

@@ -195,7 +195,7 @@ const Leaderboard = (props: {
           {[0, 1, 2, 3, 4].map((index) => (
             <div
               key={index}
-              className="h-12 animate-pulse rounded-lg border border-slate-200 bg-white"
+              className="h-12 motion-safe:animate-pulse rounded-lg border border-slate-200 bg-white"
             />
           ))}
         </div>

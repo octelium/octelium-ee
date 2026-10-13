@@ -70,9 +70,13 @@ const Dashboard = () => {
           shortcutsLabel="Jump to an API"
         />
 
-        <Signals periodMinutes={periodMinutes} />
+        <Deferred eager>
+          <Signals periodMinutes={periodMinutes} />
+        </Deferred>
 
-        <Attention periodMinutes={periodMinutes} />
+        <Deferred eager>
+          <Attention periodMinutes={periodMinutes} />
+        </Deferred>
 
         <Deferred height={420}>
           <Health periodMinutes={periodMinutes} />

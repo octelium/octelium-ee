@@ -34,7 +34,7 @@ const StatusPill = (props: { active: boolean; updates: number }) => {
       <span
         className={twMerge(PILL, "border-blue-200 bg-blue-50 text-blue-700")}
       >
-        <Loader2 size={9} className="animate-spin" />
+        <Loader2 size={9} className="motion-safe:animate-spin" />
         Upgrading
       </span>
     );
@@ -133,7 +133,7 @@ const Main = () => {
                 <RefreshCw
                   size={12}
                   strokeWidth={2.5}
-                  className={fetching > 0 ? "animate-spin" : ""}
+                  className={fetching > 0 ? "motion-safe:animate-spin" : ""}
                 />
               </ActionIcon>
             </Tooltip>
@@ -178,7 +178,7 @@ const Main = () => {
       ) : (
         <div
           aria-hidden="true"
-          className="h-72 w-full animate-pulse rounded-xl border border-slate-200 bg-slate-50/70"
+          className="h-72 w-full motion-safe:animate-pulse rounded-xl border border-slate-200 bg-slate-50/70"
         />
       )}
 

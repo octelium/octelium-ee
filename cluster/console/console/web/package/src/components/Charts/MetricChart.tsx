@@ -35,6 +35,7 @@ import {
 } from "echarts/components";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
+import { useInView } from "@/hooks/use-in-view";
 import { useEffect, useMemo, useState } from "react";
 import DurationPicker from "../DurationPicker";
 import RpcError from "@/components/RpcError";
@@ -467,6 +468,7 @@ const MetricChart = (props: MetricChartProps) => {
   } = props;
 
   const [step, setStep] = useState(props.step);
+  const { ref, inView } = useInView<HTMLElement>(false);
 
   useEffect(() => {
     setStep(props.step);
@@ -525,7 +527,7 @@ const MetricChart = (props: MetricChartProps) => {
 
   const qry = useQuery({
     queryKey,
-    enabled,
+    enabled: enabled && inView,
 
     queryFn: async ({ signal }) => {
       const now = new Date();
@@ -562,7 +564,7 @@ const MetricChart = (props: MetricChartProps) => {
       return response;
     },
 
-    refetchInterval: autoRefresh ? refetchIntervalChart : false,
+    refetchInterval: autoRefresh && inView ? refetchIntervalChart : false,
     refetchIntervalInBackground: false,
     retry: retryMetricQuery,
     placeholderData: keepPreviousData,
@@ -872,6 +874,7 @@ const MetricChart = (props: MetricChartProps) => {
 
   return (
     <section
+      ref={ref}
       className="my-3 flex w-full flex-col rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4"
       aria-label={title ?? metric}
     >
@@ -889,7 +892,7 @@ const MetricChart = (props: MetricChartProps) => {
             )}
             {qry.isFetching && !qry.isLoading && (
               <span className="flex items-center gap-1.5 text-micro font-normal text-slate-500">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
+                <span className="h-1.5 w-1.5 motion-safe:animate-pulse rounded-full bg-blue-500" />
                 Updating
               </span>
             )}
@@ -960,7 +963,7 @@ const MetricChart = (props: MetricChartProps) => {
           style={{ height }}
           className="flex w-full flex-col items-center justify-center gap-3 text-center"
         >
-          <span className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+          <span className="h-6 w-6 motion-safe:animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
           <span className="text-xs font-normal text-slate-500">
             Loading metric data…
           </span>

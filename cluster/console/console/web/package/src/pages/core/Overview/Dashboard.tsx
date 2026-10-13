@@ -78,9 +78,13 @@ const Dashboard = () => {
           shortcutsLabel="Jump to a core resource"
         />
 
-        <Signals periodMinutes={periodMinutes} />
+        <Deferred eager>
+          <Signals periodMinutes={periodMinutes} />
+        </Deferred>
 
-        <Sessions periodMinutes={periodMinutes} />
+        <Deferred eager>
+          <Sessions periodMinutes={periodMinutes} />
+        </Deferred>
 
         <Deferred height={880}>
           <Authentication periodMinutes={periodMinutes} />

@@ -197,7 +197,7 @@ const Certificates = (props: { periodMinutes: number }) => {
             {[0, 1, 2].map((index) => (
               <div
                 key={index}
-                className="h-[46px] animate-pulse rounded-lg border border-slate-200 bg-slate-50"
+                className="h-[46px] motion-safe:animate-pulse rounded-lg border border-slate-200 bg-slate-50"
               />
             ))}
           </div>

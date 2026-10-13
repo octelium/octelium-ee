@@ -82,7 +82,7 @@ const ClusterCard = () => {
           {[0, 1].map((index) => (
             <div
               key={index}
-              className="h-[78px] animate-pulse rounded-lg border border-slate-200 bg-slate-50"
+              className="h-[78px] motion-safe:animate-pulse rounded-lg border border-slate-200 bg-slate-50"
             />
           ))}
         </div>

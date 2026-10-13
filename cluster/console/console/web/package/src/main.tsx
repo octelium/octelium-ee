@@ -3,6 +3,7 @@ import "@mantine/core/styles.layer.css";
 
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { MotionConfig } from "framer-motion";
 
 import { MantineProvider } from "@mantine/core";
 
@@ -26,17 +27,19 @@ installGlobalErrorLogging();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <Provider store={store}>
-      <MantineProvider
-        theme={themeMantine}
-        colorSchemeManager={colorSchemeManager}
-        defaultColorScheme={DEFAULT_COLOR_SCHEME}
-        cssVariablesResolver={cssVariablesResolver}
-      >
-        <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
-        </QueryClientProvider>
-      </MantineProvider>
-    </Provider>
+    <MotionConfig reducedMotion="user">
+      <Provider store={store}>
+        <MantineProvider
+          theme={themeMantine}
+          colorSchemeManager={colorSchemeManager}
+          defaultColorScheme={DEFAULT_COLOR_SCHEME}
+          cssVariablesResolver={cssVariablesResolver}
+        >
+          <QueryClientProvider client={queryClient}>
+            <RouterProvider router={router} />
+          </QueryClientProvider>
+        </MantineProvider>
+      </Provider>
+    </MotionConfig>
   </React.StrictMode>,
 );

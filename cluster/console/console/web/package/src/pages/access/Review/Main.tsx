@@ -133,7 +133,7 @@ export const MainInfo = (props: { item: AccessC.Review }): ResourceMainInfo => {
               label: "Request details",
               value: (
                 <span className="inline-flex items-center gap-1.5 text-xs font-normal text-slate-500">
-                  <Loader2 size={12} className="animate-spin" />
+                  <Loader2 size={12} className="motion-safe:animate-spin" />
                   Loading request context…
                 </span>
               ),

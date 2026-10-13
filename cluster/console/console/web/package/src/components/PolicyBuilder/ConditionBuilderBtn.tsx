@@ -122,7 +122,7 @@ const ConditionBuilderBtn = (props: {
                 size="compact-sm"
                 leftSection={
                   mutation.isPending ? (
-                    <Loader2 size={12} className="animate-spin" />
+                    <Loader2 size={12} className="motion-safe:animate-spin" />
                   ) : (
                     <Check size={12} strokeWidth={2.5} />
                   )

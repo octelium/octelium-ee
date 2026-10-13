@@ -272,7 +272,7 @@ export const MainInfo = (props: {
                 <div className="flex flex-wrap items-center gap-2">
                   {(p.currentSync.state === EnterpriseC.DirectoryProvider_Status_Synchronization_State.SYNCING ||
                     p.currentSync.state === EnterpriseC.DirectoryProvider_Status_Synchronization_State.SYNC_REQUESTED) && (
-                    <Loader2 size={13} className="animate-spin text-blue-500" />
+                    <Loader2 size={13} className="motion-safe:animate-spin text-blue-500" />
                   )}
                   <span className={twMerge("font-semibold", p.syncMeta.tone === "success" ? "text-emerald-600" : p.syncMeta.tone === "danger" ? "text-red-600" : "text-blue-600")}>
                     {p.syncMeta.label}

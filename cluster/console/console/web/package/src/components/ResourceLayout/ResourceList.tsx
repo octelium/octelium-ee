@@ -699,7 +699,7 @@ const BulkDeleteModal = (props: {
             loading={props.isPending}
             leftSection={
               props.isPending ? (
-                <Loader2 size={13} className="animate-spin" />
+                <Loader2 size={13} className="motion-safe:animate-spin" />
               ) : (
                 <Trash2 size={13} strokeWidth={2.25} />
               )
@@ -721,7 +721,7 @@ const ListSkeleton = (props: { density: ListDensity }) => {
 
   if (props.density === "table") {
     return (
-      <div className="w-full animate-pulse overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="w-full motion-safe:animate-pulse overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="h-9 border-b border-slate-200 bg-slate-50/70" />
         {rows.map((_, index) => (
           <div
@@ -740,7 +740,7 @@ const ListSkeleton = (props: { density: ListDensity }) => {
 
   return (
     <div
-      className="flex w-full animate-pulse flex-col gap-3"
+      className="flex w-full motion-safe:animate-pulse flex-col gap-3"
       aria-hidden="true"
     >
       {rows.map((_, index) => (
@@ -1069,7 +1069,7 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
         >
           <React.Suspense
             key={listKey}
-            fallback={<div className="h-12 animate-pulse rounded-lg bg-slate-100" />}
+            fallback={<div className="h-12 motion-safe:animate-pulse rounded-lg bg-slate-100" />}
           >
             <CompactSummary>
               <Summary />

@@ -32,14 +32,16 @@ const CopyText = (props: {
 }) => {
   const [state, setState] = React.useState<CopyState>("idle");
   const timer = React.useRef<number | undefined>(undefined);
+  const mounted = React.useRef(false);
   const { value, hide } = props;
 
-  React.useEffect(
-    () => () => {
+  React.useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
       if (timer.current) window.clearTimeout(timer.current);
-    },
-    [],
-  );
+    };
+  }, []);
 
   if (!value) return null;
 
@@ -49,6 +51,7 @@ const CopyText = (props: {
       : value;
 
   const flash = (next: CopyState) => {
+    if (!mounted.current) return;
     setState(next);
     if (timer.current) window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setState("idle"), 1200);

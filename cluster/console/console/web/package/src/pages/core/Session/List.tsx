@@ -108,7 +108,6 @@ export const LabelComponent = (props: { item: Session }) => {
         <ResourceListLabel>
           <div className="flex items-center">
             <div className="flex relative w-[10px] h-[10px]">
-              <div className="bg-green-500 rounded-full w-[10px] h-[10px] animate-ping absolute"></div>
               <div className="bg-green-500 rounded-full w-[10px] h-[10px]"></div>
             </div>
             <span className="ml-1">Connected</span>

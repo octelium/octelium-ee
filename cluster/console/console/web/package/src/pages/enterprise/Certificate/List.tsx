@@ -106,7 +106,7 @@ export const LabelComponent = (props: { item: Certificate }) => {
         issuance.state !== Certificate_Status_Issuance_State.STATE_UNSET && (
           <ResourceListLabel label="Issuance">
             {presentation.isInProgress && (
-              <Loader2 size={11} className="animate-spin text-blue-500" />
+              <Loader2 size={11} className="motion-safe:animate-spin text-blue-500" />
             )}
             {issuance.state === Certificate_Status_Issuance_State.FAILED && (
               <AlertTriangle size={11} className="text-red-500" />

@@ -80,9 +80,13 @@ const Dashboard = () => {
           shortcutsLabel="Jump to an enterprise resource"
         />
 
-        <Signals periodMinutes={periodMinutes} />
+        <Deferred eager>
+          <Signals periodMinutes={periodMinutes} />
+        </Deferred>
 
-        <Health periodMinutes={periodMinutes} />
+        <Deferred eager>
+          <Health periodMinutes={periodMinutes} />
+        </Deferred>
 
         <Deferred height={820}>
           <Certificates periodMinutes={periodMinutes} />

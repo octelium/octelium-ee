@@ -387,7 +387,7 @@ export const MainInfo = (props: {
               value: (
                 <div className="flex flex-wrap items-center gap-2">
                   {p.isSynchronizing && (
-                    <Loader2 size={13} className="animate-spin text-blue-500" />
+                    <Loader2 size={13} className="motion-safe:animate-spin text-blue-500" />
                   )}
                   <span
                     className={twMerge(

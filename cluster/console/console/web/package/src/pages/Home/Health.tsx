@@ -30,7 +30,7 @@ const Health = (props: { periodMinutes: number }) => {
           {[0, 1, 2, 3, 4, 5].map((index) => (
             <div
               key={index}
-              className="h-[86px] animate-pulse rounded-xl border border-slate-200 bg-slate-50"
+              className="h-[86px] motion-safe:animate-pulse rounded-xl border border-slate-200 bg-slate-50"
             />
           ))}
         </div>

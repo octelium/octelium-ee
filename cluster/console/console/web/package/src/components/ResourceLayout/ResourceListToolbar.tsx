@@ -159,7 +159,7 @@ const SelectionBar = (props: {
       color="red"
       leftSection={
         props.isDeleting ? (
-          <Loader2 size={12} className="animate-spin" strokeWidth={2.5} />
+          <Loader2 size={12} className="motion-safe:animate-spin" strokeWidth={2.5} />
         ) : (
           <Trash2 size={12} strokeWidth={2.5} />
         )
@@ -227,7 +227,7 @@ const ResourceListToolbar = (props: {
             {props.isFetching && props.showCount !== false && (
               <Loader2
                 size={11}
-                className="ml-1.5 inline animate-spin align-[-1px] text-slate-500"
+                className="ml-1.5 inline motion-safe:animate-spin align-[-1px] text-slate-500"
                 strokeWidth={2.5}
               />
             )}

@@ -93,7 +93,7 @@ export default () => {
         <React.Suspense
           fallback={
             <div
-              className="h-[460px] animate-pulse bg-slate-900"
+              className="h-[460px] motion-safe:animate-pulse bg-slate-900"
               aria-label="Loading terminal player"
             />
           }

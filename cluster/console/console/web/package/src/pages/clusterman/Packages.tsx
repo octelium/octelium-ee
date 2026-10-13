@@ -144,7 +144,7 @@ const Packages = (props: {
               <RefreshCw
                 size={12}
                 strokeWidth={2.5}
-                className={versions.isFetching ? "animate-spin" : ""}
+                className={versions.isFetching ? "motion-safe:animate-spin" : ""}
               />
             </ActionIcon>
           </Tooltip>

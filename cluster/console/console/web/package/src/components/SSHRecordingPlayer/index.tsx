@@ -263,7 +263,7 @@ export const SSHSessionViewer = (props: {
           <Radio
             size={11}
             strokeWidth={2.5}
-            className={qry.isLoading ? "animate-pulse" : ""}
+            className={qry.isLoading ? "motion-safe:animate-pulse" : ""}
           />
           Refresh
         </button>
@@ -283,7 +283,7 @@ export const SSHSessionViewer = (props: {
           {[0, 1, 2].map((item) => (
             <div
               key={item}
-              className="h-28 animate-pulse rounded-xl border border-slate-200 bg-slate-50"
+              className="h-28 motion-safe:animate-pulse rounded-xl border border-slate-200 bg-slate-50"
             />
           ))}
         </div>

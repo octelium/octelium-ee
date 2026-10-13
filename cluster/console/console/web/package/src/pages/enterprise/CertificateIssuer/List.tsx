@@ -70,7 +70,7 @@ export const LabelComponent = (props: { item: CertificateIssuer }) => {
         {p.state === CertificateIssuer_Status_State.READY ? (
           <CheckCircle2 size={11} className="text-emerald-500" />
         ) : p.state === CertificateIssuer_Status_State.PREPARING ? (
-          <Loader2 size={11} className="animate-spin text-blue-500" />
+          <Loader2 size={11} className="motion-safe:animate-spin text-blue-500" />
         ) : p.state === CertificateIssuer_Status_State.NOT_READY ? (
           <AlertTriangle size={11} className="text-red-500" />
         ) : null}

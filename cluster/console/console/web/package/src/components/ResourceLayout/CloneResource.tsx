@@ -169,7 +169,7 @@ const CloneResource = (props: {
                   <Loader2
                     size={13}
                     strokeWidth={2.5}
-                    className="animate-spin"
+                    className="motion-safe:animate-spin"
                   />
                 ) : (
                   <Copy size={13} strokeWidth={2.5} />

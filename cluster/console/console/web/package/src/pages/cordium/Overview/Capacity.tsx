@@ -25,7 +25,7 @@ const CapacityTile = (props: {
         </span>
       </span>
       {props.isLoading ? (
-        <span className="block h-7 w-24 animate-pulse rounded bg-slate-100" />
+        <span className="block h-7 w-24 motion-safe:animate-pulse rounded bg-slate-100" />
       ) : (
         <span className="text-2xl font-bold leading-none tracking-[-0.03em] tabular-nums text-slate-900">
           {props.value}

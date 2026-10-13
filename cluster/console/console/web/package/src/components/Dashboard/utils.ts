@@ -14,6 +14,8 @@ export const STALE_TIME = 20_000;
 
 export const AutoRefreshContext = React.createContext(true);
 
+export const DashboardVisibilityContext = React.createContext(true);
+
 export const useAutoRefresh = () => React.useContext(AutoRefreshContext);
 
 export const summaryKey = (api: string, kind: string): unknown[] => [
@@ -52,15 +54,16 @@ export const useDashboardQuery = <T>(args: {
     boolean | number | ((failureCount: number, error: unknown) => boolean);
 }) => {
   const autoRefresh = useAutoRefresh();
+  const visible = React.useContext(DashboardVisibilityContext);
 
   return useQuery({
     queryKey: args.queryKey,
-    enabled: args.enabled ?? true,
+    enabled: visible && (args.enabled ?? true),
     queryFn: ({ signal }) =>
       queued(args.priority ?? QUERY_PRIORITY.normal, args.fetch, signal),
     staleTime: STALE_TIME,
     retry: args.retry ?? 1,
-    refetchInterval: autoRefresh
+    refetchInterval: autoRefresh && visible
       ? (args.refetchMillis ?? SUMMARY_REFETCH)
       : false,
     refetchIntervalInBackground: false,

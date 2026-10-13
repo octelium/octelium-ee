@@ -114,7 +114,7 @@ export const LabelComponent = (props: { item: SecretStore }) => {
       <ResourceListLabel label="Type">{presentation.type}</ResourceListLabel>
       <ResourceListLabel label="State">
         {props.item.status?.state === SecretStore_Status_State.LOADING ? (
-          <Loader2 size={11} className="animate-spin text-blue-500" />
+          <Loader2 size={11} className="motion-safe:animate-spin text-blue-500" />
         ) : props.item.status?.state === SecretStore_Status_State.OK ? (
           <CheckCircle2 size={11} className="text-emerald-500" />
         ) : null}
@@ -123,7 +123,7 @@ export const LabelComponent = (props: { item: SecretStore }) => {
       {presentation.currentSync && (
         <ResourceListLabel label="Synchronization">
           {isRunning ? (
-            <Loader2 size={11} className="animate-spin text-blue-500" />
+            <Loader2 size={11} className="motion-safe:animate-spin text-blue-500" />
           ) : presentation.currentSync.state ===
             SecretStore_Status_Synchronization_State.FAILED ? (
             <AlertTriangle size={11} className="text-red-500" />

@@ -163,7 +163,7 @@ const MetricStat = (props: {
 
       <div className="flex items-baseline gap-1.5">
         {query.isLoading ? (
-          <span className="block h-6 w-20 animate-pulse rounded bg-slate-100" />
+          <span className="block h-6 w-20 motion-safe:animate-pulse rounded bg-slate-100" />
         ) : (
           <>
             <span className="text-2xl font-bold leading-none tabular-nums tracking-[-0.03em] text-slate-900">

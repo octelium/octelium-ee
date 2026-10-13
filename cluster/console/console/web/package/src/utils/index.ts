@@ -8,23 +8,6 @@ export function isDev(): boolean {
   return isDevVal;
 }
 
-const isWebgl2SupportedFn = (() => {
-  let isSupported = window.WebGL2RenderingContext ? undefined : false;
-  return () => {
-    if (isSupported === undefined) {
-      const canvas = document.createElement("canvas");
-      const gl = canvas.getContext("webgl2", {
-        depth: false,
-        antialias: false,
-      });
-      isSupported = gl instanceof window.WebGL2RenderingContext;
-    }
-    return isSupported;
-  };
-})();
-
-export const isWebgl2Supported = isWebgl2SupportedFn();
-
 export const onError = (err: RpcError) => {
   toast.error(err.message);
 };

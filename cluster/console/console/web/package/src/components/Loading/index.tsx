@@ -11,13 +11,9 @@ export const ListLoading = (props: { label: string }) => (
     transition={{ duration: 0.5 }}
     className="flex min-h-72 w-full flex-col items-center justify-center gap-3"
   >
-    <motion.div
-      animate={{ opacity: [0.45, 1, 0.45], scale: [0.96, 1, 0.96] }}
-      transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-      className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm"
-    >
+    <div className="motion-safe:animate-pulse flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm">
       <Loader size="sm" color="ink" type="oval" />
-    </motion.div>
+    </div>
     <span className="text-xs font-semibold tracking-wide text-slate-500">
       Loading {props.label}…
     </span>
@@ -36,12 +32,8 @@ export const PageLoading = (props: { className?: string }) => (
       props.className,
     )}
   >
-    <motion.div
-      animate={{ opacity: [0.45, 1, 0.45], scale: [0.96, 1, 0.96] }}
-      transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-      className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm"
-    >
+    <div className="motion-safe:animate-pulse flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm">
       <Loader size="sm" color="ink" type="oval" />
-    </motion.div>
+    </div>
   </motion.div>
 );

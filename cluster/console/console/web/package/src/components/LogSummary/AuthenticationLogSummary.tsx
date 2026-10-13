@@ -94,7 +94,7 @@ const AuthenticationLogSummary = (props: {
       ) : qry.isError ? (
         <p className="text-xs font-semibold text-red-600">Summary unavailable</p>
       ) : (
-        <div className="h-[58px] animate-pulse rounded-lg bg-slate-100" />
+        <div className="h-[58px] motion-safe:animate-pulse rounded-lg bg-slate-100" />
       )}
     </div>
   );

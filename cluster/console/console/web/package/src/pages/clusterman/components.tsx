@@ -46,7 +46,7 @@ export const UpgradeStateBadge = (props: {
       <span
         className={twMerge(BADGE, "border-blue-200 bg-blue-50 text-blue-700")}
       >
-        <Loader2 size={9} strokeWidth={2.5} className="animate-spin" />
+        <Loader2 size={9} strokeWidth={2.5} className="motion-safe:animate-spin" />
         Upgrading
       </span>
     ))

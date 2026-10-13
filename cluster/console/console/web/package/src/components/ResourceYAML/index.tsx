@@ -299,7 +299,7 @@ const ResourceYAML = (props: {
                   mutationUpdate.isPending ? (
                     <Loader2
                       size={11}
-                      className="animate-spin"
+                      className="motion-safe:animate-spin"
                       strokeWidth={2.5}
                     />
                   ) : (

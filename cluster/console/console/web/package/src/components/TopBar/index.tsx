@@ -169,7 +169,7 @@ const TopBar = () => {
                 mutationLogout.isPending ? (
                   <Loader2
                     size={13}
-                    className="animate-spin"
+                    className="motion-safe:animate-spin"
                     strokeWidth={2.25}
                   />
                 ) : (

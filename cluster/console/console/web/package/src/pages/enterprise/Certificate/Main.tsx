@@ -137,7 +137,7 @@ export const ItemInfo = (props: { item: Certificate }) => {
             issuance.state ===
               Certificate_Status_Issuance_State.ISSUANCE_REQUESTED) && (
             <InfoItem title="Issuance State">
-              <Loader2 size={14} className="mr-1 animate-spin" />
+              <Loader2 size={14} className="mr-1 motion-safe:animate-spin" />
               <span>{getIssuanceState(issuance.state)}</span>
             </InfoItem>
           )}
@@ -271,7 +271,7 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
                     <Loader2
                       size={13}
                       strokeWidth={2.5}
-                      className="animate-spin text-blue-500 shrink-0"
+                      className="motion-safe:animate-spin text-blue-500 shrink-0"
                     />
                   )}
                   <span

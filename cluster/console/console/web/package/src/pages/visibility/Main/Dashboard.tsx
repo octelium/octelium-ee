@@ -86,9 +86,13 @@ const Dashboard = () => {
           shortcutsLabel="Open a log explorer"
         />
 
-        <Streams periodMinutes={periodMinutes} />
+        <Deferred eager>
+          <Streams periodMinutes={periodMinutes} />
+        </Deferred>
 
-        <Breakdown periodMinutes={periodMinutes} />
+        <Deferred eager>
+          <Breakdown periodMinutes={periodMinutes} />
+        </Deferred>
 
         <Deferred height={620}>
           <Components periodMinutes={periodMinutes} />

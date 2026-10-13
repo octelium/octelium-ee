@@ -23,6 +23,7 @@ import MetricChart, {
   gaugeOp,
   histogramOp,
 } from "@/components/Charts/MetricChart";
+import { useInView } from "@/hooks/use-in-view";
 import PageWrap from "@/components/PageWrap";
 import { SummaryItemCount } from "@/components/Summary";
 import {
@@ -165,6 +166,7 @@ type ServiceMetricCounterProps = {
 };
 
 const ServiceMetricCounter = (props: ServiceMetricCounterProps) => {
+  const { ref, inView } = useInView<HTMLDivElement>(false);
   const operation = props.operation ?? increaseCounterOperation;
   const isCounter = operation.type.oneofKind === "counter";
   const operationFunction =
@@ -176,6 +178,7 @@ const ServiceMetricCounter = (props: ServiceMetricCounterProps) => {
   const filters = [...props.shared.filters, ...(props.filters ?? [])];
 
   const qry = useQuery({
+    enabled: inView,
     queryKey: [
       "visibility",
       "serviceMetricCounter",
@@ -186,7 +189,6 @@ const ServiceMetricCounter = (props: ServiceMetricCounterProps) => {
       props.shared.lookbackSeconds,
       durationKey(props.shared.step),
     ],
-    enabled: true,
     queryFn: async ({ signal }) => {
       const to = Timestamp.fromDate(new Date());
       const from = Timestamp.fromDate(
@@ -212,7 +214,7 @@ const ServiceMetricCounter = (props: ServiceMetricCounterProps) => {
       );
       return response;
     },
-    refetchInterval: props.shared.autoRefresh ? refetchIntervalChart : false,
+    refetchInterval: props.shared.autoRefresh && inView ? refetchIntervalChart : false,
     refetchIntervalInBackground: false,
     retry: 1,
   });
@@ -223,10 +225,10 @@ const ServiceMetricCounter = (props: ServiceMetricCounterProps) => {
     (isCounter && qry.data?.truncation?.pointsTruncated);
 
   return (
-    <div className="min-w-0">
+    <div ref={ref} className="min-w-0">
       {qry.isLoading ? (
         <div className="flex min-h-[76px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 shadow-card">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-slate-700" />
+          <span className="h-4 w-4 motion-safe:animate-spin rounded-full border-2 border-slate-200 border-t-slate-700" />
           <span className="text-xs font-normal text-slate-500">Loading…</span>
         </div>
       ) : qry.isError ? (

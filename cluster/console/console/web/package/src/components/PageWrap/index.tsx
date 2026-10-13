@@ -9,7 +9,7 @@ export interface QryInterface {
 
 const DefaultSkeleton = () => (
   <div
-    className="w-full animate-pulse space-y-3"
+    className="w-full motion-safe:animate-pulse space-y-3"
     role="status"
     aria-label="Loading"
   >

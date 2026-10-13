@@ -180,7 +180,7 @@ const RevokeRequest = (props: { item: AccessPB.Request }) => {
               disabled={!isConfirmed || mutation.isPending}
               leftSection={
                 mutation.isPending ? (
-                  <Loader2 className="animate-spin" size={13} />
+                  <Loader2 className="motion-safe:animate-spin" size={13} />
                 ) : (
                   <Ban size={13} strokeWidth={2.25} />
                 )

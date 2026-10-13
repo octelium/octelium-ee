@@ -45,7 +45,7 @@ export const MainInfo = (props: {
           )}
         >
           {item.status?.state === EnterpriseP.SecretStore_Status_State.LOADING && (
-            <Loader2 size={13} className="animate-spin" />
+            <Loader2 size={13} className="motion-safe:animate-spin" />
           )}
           {presentation.runtimeState.label}
         </span>
@@ -125,7 +125,7 @@ export const MainInfo = (props: {
             EnterpriseP.SecretStore_Status_Synchronization_State.SYNC_REQUESTED ||
             sync.state ===
               EnterpriseP.SecretStore_Status_Synchronization_State.SYNCING) && (
-            <Loader2 size={13} className="animate-spin text-blue-500" />
+            <Loader2 size={13} className="motion-safe:animate-spin text-blue-500" />
           )}
           <span
             className={twMerge(

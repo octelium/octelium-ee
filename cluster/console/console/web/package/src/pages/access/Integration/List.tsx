@@ -116,7 +116,7 @@ export const LabelComponent = (props: { item: Integration }) => {
       {p.currentSync && (
         <ResourceListLabel label="Synchronization">
           {p.isSynchronizing ? (
-            <Loader2 size={11} className="animate-spin text-blue-500" />
+            <Loader2 size={11} className="motion-safe:animate-spin text-blue-500" />
           ) : p.currentSync.state ===
             Integration_Status_Synchronization_State.FAILED ? (
             <AlertTriangle size={11} className="text-red-500" />

@@ -164,7 +164,7 @@ export const LabelComponent = (props: { item: DirectoryProvider }) => {
           DirectoryProvider_Status_Synchronization_State.SYNCING ||
           p.currentSync.state ===
             DirectoryProvider_Status_Synchronization_State.SYNC_REQUESTED ? (
-            <Loader2 size={11} className="animate-spin text-blue-500" />
+            <Loader2 size={11} className="motion-safe:animate-spin text-blue-500" />
           ) : p.currentSync.state ===
             DirectoryProvider_Status_Synchronization_State.FAILED ? (
             <AlertTriangle size={11} className="text-red-500" />

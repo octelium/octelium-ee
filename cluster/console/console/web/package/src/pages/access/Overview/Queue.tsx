@@ -167,7 +167,7 @@ const Queue = (props: { periodMinutes: number }) => {
           {[0, 1, 2, 3, 4].map((index) => (
             <div
               key={index}
-              className="h-[54px] animate-pulse rounded-lg border border-slate-200 bg-slate-50"
+              className="h-[54px] motion-safe:animate-pulse rounded-lg border border-slate-200 bg-slate-50"
             />
           ))}
         </div>

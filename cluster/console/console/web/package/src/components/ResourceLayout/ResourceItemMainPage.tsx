@@ -360,7 +360,7 @@ export const ResourceLoadError = (props: {
 );
 
 export const ResourceOverviewSkeleton = () => (
-  <div className="w-full animate-pulse overflow-hidden rounded-xl border border-slate-200 bg-white">
+  <div className="w-full motion-safe:animate-pulse overflow-hidden rounded-xl border border-slate-200 bg-white">
     <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50/60 px-4 py-4">
       <div className="h-10 w-10 shrink-0 rounded-lg bg-slate-200" />
       <div className="flex flex-1 flex-col gap-2">
@@ -653,7 +653,7 @@ const ResourceOverview = (props: {
             </div>
             <React.Suspense
               fallback={
-                <div className="h-[420px] animate-pulse rounded-xl bg-slate-100" />
+                <div className="h-[420px] motion-safe:animate-pulse rounded-xl bg-slate-100" />
               }
             >
               <Editor
@@ -672,7 +672,7 @@ const ResourceOverview = (props: {
         {section === "schema" && (
           <React.Suspense
             fallback={
-              <div className="m-4 h-28 animate-pulse rounded-xl bg-slate-100" />
+              <div className="m-4 h-28 motion-safe:animate-pulse rounded-xl bg-slate-100" />
             }
           >
             <ResourceSchemaContent item={item} />

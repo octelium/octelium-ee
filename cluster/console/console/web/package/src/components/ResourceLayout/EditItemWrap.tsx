@@ -87,7 +87,7 @@ const EditItemWrap = (props: {
       </AnimatePresence>
       {enabled && props.mutation?.isPending && (
         <span className="flex items-center gap-1 text-xs font-normal text-slate-500" role="status">
-          <LoaderCircle size={11} className="animate-spin" /> Saving…
+          <LoaderCircle size={11} className="motion-safe:animate-spin" /> Saving…
         </span>
       )}
       {enabled && props.mutation?.isError && (

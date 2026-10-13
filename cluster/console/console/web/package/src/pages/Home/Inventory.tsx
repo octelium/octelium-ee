@@ -262,7 +262,7 @@ const Row = (props: {
       )}
 
       {props.isLoading ? (
-        <span className="h-4 w-10 shrink-0 animate-pulse rounded bg-slate-100" />
+        <span className="h-4 w-10 shrink-0 motion-safe:animate-pulse rounded bg-slate-100" />
       ) : (
         <span
           className="shrink-0 text-sm font-bold tabular-nums text-slate-900"

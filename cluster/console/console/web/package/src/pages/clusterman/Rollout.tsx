@@ -47,7 +47,7 @@ const ActiveBanner = (props: {
 }) => (
   <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50/60 px-3.5 py-3">
     <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-white text-blue-700">
-      <Loader2 size={14} className="animate-spin" />
+      <Loader2 size={14} className="motion-safe:animate-spin" />
     </span>
     <div className="min-w-0 flex-1">
       <div className="flex flex-wrap items-center gap-2">
