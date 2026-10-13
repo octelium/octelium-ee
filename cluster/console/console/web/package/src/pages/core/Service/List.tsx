@@ -140,6 +140,7 @@ const Item = (props: { item: Service }) => {
               size="sm"
               href={`https://${getServicePublicFQDN(item, domain)}`}
               target="_blank"
+              rel="noopener noreferrer"
             >
               <span className="px-1">Visit</span>
               <BiLinkExternal />

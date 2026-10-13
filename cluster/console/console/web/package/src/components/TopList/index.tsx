@@ -66,6 +66,7 @@ const TopList = (props: {
           {md.picURL && (
             <img
               src={md.picURL}
+              referrerPolicy="no-referrer"
               alt=""
               loading="lazy"
               className="h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white object-cover shadow-sm"

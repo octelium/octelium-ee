@@ -21,6 +21,7 @@ export const SelectedChip = (props: {
         {metadata?.picURL ? (
           <img
             src={metadata.picURL}
+            referrerPolicy="no-referrer"
             alt=""
             loading="lazy"
             className="h-full w-full object-cover"

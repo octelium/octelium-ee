@@ -326,6 +326,7 @@ const CardItem = (props: {
         {md.picURL && !compact && (
           <img
             src={md.picURL}
+            referrerPolicy="no-referrer"
             alt=""
             loading="lazy"
             className="mt-0.5 h-10 w-10 shrink-0 rounded-lg border border-slate-200 object-cover"

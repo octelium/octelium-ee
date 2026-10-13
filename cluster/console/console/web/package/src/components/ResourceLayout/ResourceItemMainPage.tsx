@@ -500,6 +500,7 @@ const ResourceOverview = (props: {
             {md.picURL && md.picURL.length > 0 && (
               <img
                 src={md.picURL}
+                referrerPolicy="no-referrer"
                 className="h-11 w-11 shrink-0 rounded-lg border border-slate-200 object-cover shadow-sm"
                 alt=""
                 loading="lazy"

@@ -50,6 +50,7 @@ export const ItemInfo = (props: { item: CoreC.Service }) => {
               className="ml-2 shadow-lg"
               component="a"
               target="_blank"
+              rel="noopener noreferrer"
               href={`https://${getServicePublicFQDN(item, getDomain())}`}
               size={"xs"}
               rightSection={<FaLink />}

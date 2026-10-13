@@ -48,6 +48,7 @@ const ResourceInfo = (props: { resource: Resource }) => {
       {md.picURL && md.picURL.length > 0 && (
         <img
           src={md.picURL}
+          referrerPolicy="no-referrer"
           className="w-12 h-12 rounded-full border border-slate-200 shadow-sm"
           alt={md.displayName || md.name}
         />

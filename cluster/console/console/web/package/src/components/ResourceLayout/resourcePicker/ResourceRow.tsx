@@ -63,6 +63,7 @@ const ResourceRow = (props: {
           ) : metadata.picURL ? (
             <img
               src={metadata.picURL}
+              referrerPolicy="no-referrer"
               alt=""
               loading="lazy"
               className="h-full w-full rounded-[7px] object-cover"

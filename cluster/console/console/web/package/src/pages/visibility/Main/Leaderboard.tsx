@@ -72,6 +72,7 @@ const Row = (props: {
       {item.picURL && (
         <img
           src={item.picURL}
+          referrerPolicy="no-referrer"
           alt=""
           loading="lazy"
           className="h-8 w-8 shrink-0 rounded-lg border border-slate-200 bg-white object-cover"

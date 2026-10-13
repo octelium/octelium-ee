@@ -20,6 +20,18 @@ const currentRoute = () =>
     ? ""
     : `${window.location.pathname}${window.location.search}`;
 
+const scrubRoute = (route: string) => {
+  const path = route.split("#", 1)[0];
+  const index = path.indexOf("?");
+  if (index < 0) return path;
+
+  const params = new URLSearchParams(path.slice(index + 1));
+  const redacted = new URLSearchParams(
+    Array.from(params.keys(), (key) => [key, "[redacted]"]),
+  );
+  return `${path.slice(0, index)}?${redacted}`;
+};
+
 const isRouteErrorResponse = (
   value: unknown,
 ): value is { status: number; statusText: string; data: unknown } =>
@@ -70,7 +82,7 @@ export const buildErrorReport = (
     ...described,
     componentStack: context.componentStack,
     source: context.source,
-    route: context.route ?? currentRoute(),
+    route: scrubRoute(context.route ?? currentRoute()),
     at: new Date().toISOString(),
     userAgent:
       typeof navigator === "undefined" ? "unknown" : navigator.userAgent,

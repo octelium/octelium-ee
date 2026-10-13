@@ -10,6 +10,7 @@ package publicserver
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -97,7 +98,7 @@ func TestRenderIndex(t *testing.T) {
 	srv.handleIndex(w, req)
 	resp := w.Result()
 	defer resp.Body.Close()
-	_, err = io.ReadAll(resp.Body)
+	blob, err := io.ReadAll(resp.Body)
 	assert.Nil(t, err)
 
 	assert.True(t, strings.Contains(resp.Header.Get("Content-Security-Policy"), "frame-src"))
@@ -106,4 +107,20 @@ func TestRenderIndex(t *testing.T) {
 
 	assert.Equal(t, resp.StatusCode, http.StatusOK)
 	assert.Equal(t, "no-store", resp.Header.Get("Cache-Control"))
+	assert.Empty(t, resp.Cookies())
+
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(blob)))
+	assert.Nil(t, err)
+	script := doc.Find("script").FilterFunction(func(_ int, sel *goquery.Selection) bool {
+		return strings.Contains(sel.Text(), "window.__OCTELIUM_GLOBALS__")
+	})
+	assert.Equal(t, 1, script.Length())
+	nonce := script.AttrOr("nonce", "")
+	assert.NotEmpty(t, nonce)
+	assert.Contains(t, resp.Header.Get("Content-Security-Policy"), "'nonce-"+nonce+"'")
+	_, globalsJSON, found := strings.Cut(script.Text(), " = ")
+	assert.True(t, found)
+	var globals templateGlobals
+	assert.Nil(t, json.Unmarshal([]byte(globalsJSON), &globals))
+	assert.Equal(t, clusterCfg.Status.Domain, globals.Cluster.Domain)
 }

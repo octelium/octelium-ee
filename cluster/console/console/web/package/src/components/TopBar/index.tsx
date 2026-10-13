@@ -78,6 +78,7 @@ const TopBar = () => {
               {picURL ? (
                 <img
                   src={picURL}
+                  referrerPolicy="no-referrer"
                   alt=""
                   className="h-full w-full object-cover"
                 />
