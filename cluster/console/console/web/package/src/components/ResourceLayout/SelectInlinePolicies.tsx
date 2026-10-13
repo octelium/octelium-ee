@@ -1,9 +1,10 @@
 import * as CoreP from "@/apis/corev1/corev1";
 import { InlinePolicy } from "@/apis/corev1/corev1";
-import Edit from "@/pages/core/Policy/Edit";
-import { CloseButton, TextInput } from "@mantine/core";
+import { CloseButton, Loader, TextInput } from "@mantine/core";
 import * as React from "react";
 import ItemMessage from "../ItemMessage";
+
+const Edit = React.lazy(() => import("@/pages/core/Policy/Edit"));
 
 type Entry = { id: string; policy: InlinePolicy };
 
@@ -96,23 +97,25 @@ const SelectInlinePolicies = (props: {
                 />
               </div>
 
-              <Edit
-                item={CoreP.Policy.create({ spec: policy.spec })}
-                onUpdate={(updated) => {
-                  const next = entries.map((entry, entryIndex) =>
-                    entryIndex === index
-                      ? {
-                          ...entry,
-                          policy: CoreP.InlinePolicy.create({
-                            ...entry.policy,
-                            spec: updated.spec,
-                          }),
-                        }
-                      : entry,
-                  );
-                  commit(next);
-                }}
-              />
+              <React.Suspense fallback={<Loader size="sm" />}>
+                <Edit
+                  item={CoreP.Policy.create({ spec: policy.spec })}
+                  onUpdate={(updated) => {
+                    const next = entries.map((entry, entryIndex) =>
+                      entryIndex === index
+                        ? {
+                            ...entry,
+                            policy: CoreP.InlinePolicy.create({
+                              ...entry.policy,
+                              spec: updated.spec,
+                            }),
+                          }
+                        : entry,
+                    );
+                    commit(next);
+                  }}
+                />
+              </React.Suspense>
             </div>
           ))}
         </div>

@@ -1,10 +1,17 @@
 import { RouteObject } from "react-router-dom";
 
-import Root from "./index";
+import { PageLoading } from "@/components/Loading";
+import * as React from "react";
+
+const Root = React.lazy(() => import("./index"));
 
 export default (): RouteObject => {
   return {
     path: "clusterconfig",
-    element: <Root />,
+    element: (
+      <React.Suspense fallback={<PageLoading />}>
+        <Root />
+      </React.Suspense>
+    ),
   };
 };

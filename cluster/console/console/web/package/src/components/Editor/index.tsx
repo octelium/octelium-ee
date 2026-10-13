@@ -3,7 +3,7 @@ import { closeBrackets } from "@codemirror/autocomplete";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { json } from "@codemirror/lang-json";
 import { yaml, yamlLanguage } from "@codemirror/lang-yaml";
-import { foldGutter } from "@codemirror/language";
+import { foldGutter, StreamLanguage } from "@codemirror/language";
 import { EditorState } from "@codemirror/state";
 import { oneDark } from "@codemirror/theme-one-dark";
 import {
@@ -65,8 +65,8 @@ const Editor = (props: {
       return;
     }
 
-    import("@uiw/codemirror-extensions-langs").then(({ langs }) => {
-      if (!cancelled) setLuaExtension(langs.lua());
+    import("@codemirror/legacy-modes/mode/lua").then(({ lua }) => {
+      if (!cancelled) setLuaExtension(StreamLanguage.define(lua));
     });
 
     return () => {

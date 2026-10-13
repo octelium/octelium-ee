@@ -35,8 +35,8 @@ export default defineConfig({
     nodePolyfills({
       globals: {
         Buffer: true,
-        global: true,
-        process: true,
+        global: false,
+        process: false,
       },
     }),
   ],

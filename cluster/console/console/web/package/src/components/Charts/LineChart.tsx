@@ -9,7 +9,7 @@ import {
   useChartColorScheme,
   withAlpha,
 } from "@/utils/charts/palette";
-import ReactEChartsCore from "echarts-for-react";
+import ReactEChartsCore from "echarts-for-react/esm/core";
 import { BarChart, LineChart as LineChartC } from "echarts/charts";
 import {
   AriaComponent,

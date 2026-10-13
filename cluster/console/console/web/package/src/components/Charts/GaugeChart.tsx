@@ -1,4 +1,4 @@
-import ReactEChartsCore from "echarts-for-react";
+import ReactEChartsCore from "echarts-for-react/esm/core";
 import { GaugeChart as GaugeChartC } from "echarts/charts";
 import { TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";

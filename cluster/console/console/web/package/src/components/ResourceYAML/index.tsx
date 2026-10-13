@@ -27,7 +27,8 @@ import { Check, Copy, FileText, Loader2, Save } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { match } from "ts-pattern";
-import Editor from "../Editor";
+
+const Editor = React.lazy(() => import("../Editor"));
 
 type ViewMode = 0 | 1 | 2 | 3;
 
@@ -238,16 +239,18 @@ const ResourceYAML = (props: {
           </div>
 
           <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
-            <Editor
-              item={cur}
-              mode={props.mode === "json" ? "json" : "yaml"}
-              onResourceChange={(n) => setCur(n)}
-              value={value}
-              readOnly={isReadOnly}
-              schemaMode={activeSchemaMode}
-              minHeight="calc(100dvh - 210px)"
-              maxHeight="calc(100dvh - 210px)"
-            />
+            <React.Suspense fallback={<div role="status">Loading editor…</div>}>
+              <Editor
+                item={cur}
+                mode={props.mode === "json" ? "json" : "yaml"}
+                onResourceChange={(n) => setCur(n)}
+                value={value}
+                readOnly={isReadOnly}
+                schemaMode={activeSchemaMode}
+                minHeight="calc(100dvh - 210px)"
+                maxHeight="calc(100dvh - 210px)"
+              />
+            </React.Suspense>
           </div>
 
           <div className="flex min-h-9 shrink-0 items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">

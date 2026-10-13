@@ -24,7 +24,7 @@ import {
   refetchIntervalChart,
 } from "@/utils/client";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import ReactEChartsCore from "echarts-for-react";
+import ReactEChartsCore from "echarts-for-react/esm/core";
 import { LineChart as LineChartC } from "echarts/charts";
 import {
   AriaComponent,

@@ -2,7 +2,6 @@ import { Outlet, RouteObject } from "react-router-dom";
 import * as React from "react";
 
 import { PageLoading } from "@/components/Loading";
-import ResourceEditPage from "@/components/ResourceLayout/ResourceEdit";
 import ResourceListPage from "@/components/ResourceLayout/ResourceList";
 import { getResourcePathFromAPIKind } from "@/utils/pb";
 import { ResourceComponentInfo } from "../utils/types";
@@ -17,12 +16,19 @@ import secretRouter from "./Secret/router";
 import secretStoreRouter from "./SecretStore/router";
 
 import ResourceItemActionsPage from "@/components/ResourceLayout/ResourceActions";
-import ResourceCreateRoute from "@/components/ResourceLayout/ResourceCreateRoute";
 import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
-import ResourceItemDrawer from "@/components/ResourceLayout/ResourceItemDrawer";
 
 import MainPage from "./index";
 
+const ResourceEditPage = React.lazy(
+  () => import("@/components/ResourceLayout/ResourceEdit"),
+);
+const ResourceCreateRoute = React.lazy(
+  () => import("@/components/ResourceLayout/ResourceCreateRoute"),
+);
+const ResourceItemDrawer = React.lazy(
+  () => import("@/components/ResourceLayout/ResourceItemDrawer"),
+);
 const ResourceItemAuditLogsPage = React.lazy(
   () => import("@/components/ResourceLayout/ResourceAuditLogs"),
 );
@@ -87,10 +93,12 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
     {
       path: "edit",
       element: arg.Item.Edit ? (
-        <ResourceEditPage
-          specComponent={arg.Item.Edit}
-          readOnly={arg.readOnlyEdit}
-        />
+        <LazyPage>
+          <ResourceEditPage
+            specComponent={arg.Item.Edit}
+            readOnly={arg.readOnlyEdit}
+          />
+        </LazyPage>
       ) : null,
     },
     {
@@ -116,17 +124,23 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
       {
         path: "create",
         element: arg.Item.Edit ? (
-          <ResourceCreateRoute
-            api={arg.API}
-            kind={arg.Kind}
-            specComponent={arg.Item.Edit}
-            createResource={arg.Item.createResource}
-          />
+          <LazyPage>
+            <ResourceCreateRoute
+              api={arg.API}
+              kind={arg.Kind}
+              specComponent={arg.Item.Edit}
+              createResource={arg.Item.createResource}
+            />
+          </LazyPage>
         ) : null,
       },
       {
         path: ":name",
-        element: <ResourceItemDrawer />,
+        element: (
+          <LazyPage>
+            <ResourceItemDrawer />
+          </LazyPage>
+        ),
         children,
       },
     ],

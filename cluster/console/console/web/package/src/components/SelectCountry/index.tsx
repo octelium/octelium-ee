@@ -6,19 +6,13 @@ import {
 } from "@mantine/core";
 import countries from "i18n-iso-countries";
 import enLocale from "i18n-iso-countries/langs/en.json";
-import * as React from "react";
 
 countries.registerLocale(enLocale);
 
-let flagStyles: Promise<unknown> | undefined;
-
-const useFlagStyles = () => {
-  React.useEffect(() => {
-    if (!flagStyles) {
-      flagStyles = import("flag-icons/css/flag-icons.min.css");
-    }
-  }, []);
-};
+const flags = import.meta.glob<string>(
+  "/node_modules/flag-icons/flags/4x3/*.svg",
+  { eager: true, query: "?url&no-inline", import: "default" },
+);
 
 const countryOptions = Object.entries(
   countries.getNames("en", { select: "official" }),
@@ -27,15 +21,19 @@ const countryOptions = Object.entries(
   .sort((a, b) => a.label.localeCompare(b.label));
 
 export const CountryFlag = (props: { code?: string }) => {
-  useFlagStyles();
   const code = props.code?.trim().toLowerCase();
   if (!code || code.length !== 2) return null;
+  const src = flags[`/node_modules/flag-icons/flags/4x3/${code}.svg`];
+  if (!src) return null;
 
   return (
-    <span
+    <img
+      src={src}
+      alt=""
       aria-hidden="true"
-      className={`fi fi-${code} shrink-0 rounded-[2px]`}
-      style={{ fontSize: "1.05rem" }}
+      loading="lazy"
+      className="shrink-0 rounded-[2px]"
+      style={{ width: "1.4rem", height: "1.05rem" }}
     />
   );
 };

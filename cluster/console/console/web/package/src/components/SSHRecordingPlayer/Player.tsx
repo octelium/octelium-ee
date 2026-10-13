@@ -1,3 +1,4 @@
+import "@xterm/xterm/css/xterm.css";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { SSHSession } from "@/apis/visibilityv1/visibilityv1";
 import { getClientVisibilityAccessLog } from "@/utils/client";

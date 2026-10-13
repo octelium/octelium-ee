@@ -1,25 +1,6 @@
-import ClipLoader from "react-spinners/ClipLoader";
 import { Loader } from "@mantine/core";
 import { motion } from "framer-motion";
 import { twMerge } from "@/lib/utils";
-
-const Loading = () => {
-  return (
-    <div>
-      <div>
-        <ClipLoader
-          color={"#111"}
-          loading={true}
-          size={150}
-          aria-label="Loading Spinner"
-          data-testid="loader"
-        />
-      </div>
-    </div>
-  );
-};
-
-export default Loading;
 
 export const ListLoading = (props: { label: string }) => (
   <motion.div

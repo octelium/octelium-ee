@@ -18,6 +18,7 @@ import (
 	"io/fs"
 	"net/http"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -34,6 +35,8 @@ import (
 
 //go:embed web
 var fsWeb embed.FS
+
+var hashedAssetPath = regexp.MustCompile(`^assets/[^/]+-[A-Za-z0-9_-]{8}\.[A-Za-z0-9.]+$`)
 
 type server struct {
 	domain    string
@@ -196,7 +199,33 @@ func (s *server) handleStatic() http.Handler {
 	if err != nil {
 		zap.L().Fatal("Could not initialize static fs", zap.Error(err))
 	}
-	return http.FileServer(http.FS(subFS))
+	return newStaticHandler(subFS)
+}
+
+func newStaticHandler(staticFS fs.FS) http.Handler {
+	fileServer := http.FileServer(http.FS(staticFS))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		name := strings.TrimPrefix(r.URL.Path, "/")
+		if hashedAssetPath.MatchString(name) {
+			info, err := fs.Stat(staticFS, name)
+			if err == nil && info.Mode().IsRegular() {
+				w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			}
+		}
+		fileServer.ServeHTTP(staticResponseWriter{w}, r)
+	})
+}
+
+type staticResponseWriter struct {
+	http.ResponseWriter
+}
+
+func (w staticResponseWriter) WriteHeader(status int) {
+	if status >= http.StatusBadRequest {
+		w.Header().Set("Cache-Control", "no-store")
+	}
+	w.ResponseWriter.WriteHeader(status)
 }
 
 func (s *server) getMux() *http.ServeMux {

@@ -1,4 +1,4 @@
-import ReactEChartsCore from "echarts-for-react";
+import ReactEChartsCore from "echarts-for-react/esm/core";
 import { PieChart as PieChartC } from "echarts/charts";
 import { AriaComponent, TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";

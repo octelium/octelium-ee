@@ -31,7 +31,7 @@ import {
   Textarea,
   Tooltip,
 } from "@mantine/core";
-import ReactEChartsCore from "echarts-for-react";
+import ReactEChartsCore from "echarts-for-react/esm/core";
 import { BarChart, LineChart, PieChart, ScatterChart } from "echarts/charts";
 import {
   AriaComponent,
