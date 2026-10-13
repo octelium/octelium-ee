@@ -27,7 +27,7 @@ import {
 import * as React from "react";
 import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
-import { getPolicyReason } from "../AccessLogViewer/Old";
+import { getPolicyReason } from "./policyReason";
 import SelectInlinePolicies from "../ResourceLayout/SelectInlinePolicies";
 import SelectPolicies from "../ResourceLayout/SelectPolicies";
 import SelectResource from "../ResourceLayout/SelectResource";

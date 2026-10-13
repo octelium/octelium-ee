@@ -51,11 +51,6 @@ button {
   cursor: pointer;
 }
 
-:root {
-  --mantine-focus-ring: none;
-  --mantine-focus-shadow: none;
-}
-
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 12px;

@@ -10,18 +10,10 @@ import {
   SummaryItemCountWrap,
   SummaryNoItems,
 } from "@/components/Summary";
-import { getDomain } from "@/utils";
 import StatusBadge from "@/components/StatusBadge";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import { Ban, ListChecks, ShieldCheck, ShieldX } from "lucide-react";
-
-const ItemDetails = (props: { item: Policy; domain: string }) => {
-  const { item } = props;
-  const md = item.metadata!;
-
-  return <div></div>;
-};
 
 export const LabelComponent = (props: { item: Policy }) => {
   const { item } = props;
@@ -43,12 +35,6 @@ export const LabelComponent = (props: { item: Policy }) => {
       )}
     </ResourceListLabelWrap>
   );
-};
-
-export const ExtraComponent = (props: { item: Policy }) => {
-  const { item } = props;
-  const domain = getDomain();
-  return <ItemDetails item={item} domain={domain} />;
 };
 
 const DoSummary = (props: { resp: GetPolicySummaryResponse }) => {

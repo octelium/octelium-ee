@@ -15,7 +15,6 @@ import {
 } from "@/components/Summary";
 import TimeAgo from "@/components/TimeAgo";
 import { toURLWithQry } from "@/pages/utils";
-import { getDomain } from "@/utils";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import { Ban, KeyRound, ShieldCheck, Users } from "lucide-react";
@@ -29,13 +28,6 @@ export const getType = (svc: Credential): string => {
     .with(Credential_Spec_Type.OAUTH2, () => "OAuth2 Client Credential")
     .with(Credential_Spec_Type.ACCESS_TOKEN, () => "Access Token")
     .otherwise(() => "");
-};
-
-const ItemDetails = (props: { item: Credential; domain: string }) => {
-  const { item } = props;
-  const md = item.metadata!;
-
-  return <div></div>;
 };
 
 export const LabelComponent = (props: { item: Credential }) => {
@@ -70,12 +62,6 @@ export const LabelComponent = (props: { item: Credential }) => {
       )}
     </ResourceListLabelWrap>
   );
-};
-
-export const ExtraComponent = (props: { item: Credential }) => {
-  const { item } = props;
-  const domain = getDomain();
-  return <ItemDetails item={item} domain={domain} />;
 };
 
 const DoSummary = (props: { resp: GetCredentialSummaryResponse }) => {

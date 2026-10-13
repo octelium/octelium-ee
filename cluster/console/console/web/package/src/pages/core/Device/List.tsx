@@ -4,7 +4,7 @@ import {
 } from "@/components/ResourceList";
 import { Device } from "@/apis/corev1/corev1";
 
-import { getDomain, toNumOrZero } from "@/utils";
+import { toNumOrZero } from "@/utils";
 import Label from "@/components/Label";
 import { match } from "ts-pattern";
 import * as CoreP from "@/apis/corev1/corev1";
@@ -35,13 +35,6 @@ export const getState = (itm: CoreP.Device): string => {
     .with(CoreP.Device_Spec_State.REJECTED, () => "Rejected")
     .with(CoreP.Device_Spec_State.PENDING, () => "Pending")
     .otherwise(() => "");
-};
-
-const ItemDetails = (props: { item: Device; domain: string }) => {
-  const { item } = props;
-  const md = item.metadata!;
-
-  return <div></div>;
 };
 
 export const DeviceTypeLabel = (props: { item: Device }) => {
@@ -105,12 +98,6 @@ export const LabelComponent = (props: { item: Device }) => {
         )}
     </ResourceListLabelWrap>
   );
-};
-
-export const ExtraComponent = (props: { item: Device }) => {
-  const { item } = props;
-  const domain = getDomain();
-  return <ItemDetails item={item} domain={domain} />;
 };
 
 const DoSummary = (props: { resp: GetDeviceSummaryResponse }) => {

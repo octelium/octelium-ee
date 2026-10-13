@@ -6,7 +6,6 @@ import {
   ResourceListLabel,
   ResourceListLabelWrap,
 } from "@/components/ResourceList";
-import { getDomain } from "@/utils";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 
@@ -32,12 +31,6 @@ export const LabelComponent = (props: { item: Region }) => {
       )}
     </ResourceListLabelWrap>
   );
-};
-
-export const ExtraComponent = (props: { item: Region }) => {
-  const { item } = props;
-  const domain = getDomain();
-  return <></>;
 };
 
 const DoSummary = (props: { resp: GetRegionSummaryResponse }) => {

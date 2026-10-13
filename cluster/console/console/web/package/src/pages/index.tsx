@@ -11,8 +11,7 @@ import { AppShell, Burger } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
-import { ScrollRestoration } from "react-router";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, ScrollRestoration, useLocation } from "react-router-dom";
 
 import "@fontsource/ubuntu/400.css";
 import "@fontsource/ubuntu/500.css";

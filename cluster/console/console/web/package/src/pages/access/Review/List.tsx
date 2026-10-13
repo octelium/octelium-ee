@@ -54,10 +54,6 @@ export const LabelComponent = (props: { item: Review }) => {
   );
 };
 
-export const ExtraComponent = (props: { item: Review }) => {
-  return <div></div>;
-};
-
 const DoSummary = ({ resp }: { resp: GetReviewSummaryResponse }) => {
 
   return (

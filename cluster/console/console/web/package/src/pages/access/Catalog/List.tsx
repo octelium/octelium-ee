@@ -33,10 +33,6 @@ export const LabelComponent = (props: { item: Catalog }) => {
   );
 };
 
-export const ExtraComponent = (props: { item: Catalog }) => {
-  return <div></div>;
-};
-
 const DoSummary = ({ resp }: { resp: GetCatalogSummaryResponse }) => {
 
   return (

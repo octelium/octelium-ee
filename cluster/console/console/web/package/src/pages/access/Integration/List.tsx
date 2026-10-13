@@ -137,10 +137,6 @@ export const LabelComponent = (props: { item: Integration }) => {
   );
 };
 
-export const ExtraComponent = (props: { item: Integration }) => {
-  return <div></div>;
-};
-
 const DoSummary = ({ resp }: { resp: GetIntegrationSummaryResponse }) => {
   return (
     <div className="w-full">

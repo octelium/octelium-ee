@@ -14,7 +14,6 @@ import {
   SummaryNoItems,
 } from "@/components/Summary";
 import { toURLWithQry } from "@/pages/utils";
-import { getDomain } from "@/utils";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -36,13 +35,6 @@ export const getType = (svc: IdentityProvider): string => {
     .otherwise(() => "");
 };
 
-const ItemDetails = (props: { item: IdentityProvider; domain: string }) => {
-  const { item } = props;
-  const md = item.metadata!;
-
-  return <div></div>;
-};
-
 export const LabelComponent = (props: { item: IdentityProvider }) => {
   const { item } = props;
 
@@ -61,12 +53,6 @@ export const LabelComponent = (props: { item: IdentityProvider }) => {
       <ResourceListLabel label="Type">{getType(item)}</ResourceListLabel>
     </ResourceListLabelWrap>
   );
-};
-
-export const ExtraComponent = (props: { item: IdentityProvider }) => {
-  const { item } = props;
-  const domain = getDomain();
-  return <ItemDetails item={item} domain={domain} />;
 };
 
 const DoSummary = (props: { resp: GetIdentityProviderSummaryResponse }) => {

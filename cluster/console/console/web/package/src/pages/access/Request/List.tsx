@@ -114,10 +114,6 @@ export const LabelComponent = (props: { item: Request }) => {
   );
 };
 
-export const ExtraComponent = (props: { item: Request }) => {
-  return <div></div>;
-};
-
 const DoSummary = ({ resp }: { resp: GetRequestSummaryResponse }) => {
 
   return (

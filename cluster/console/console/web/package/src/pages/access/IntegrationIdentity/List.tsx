@@ -71,10 +71,6 @@ export const LabelComponent = (props: { item: IntegrationIdentity }) => {
   );
 };
 
-export const ExtraComponent = (props: { item: IntegrationIdentity }) => {
-  return <div></div>;
-};
-
 const DoSummary = ({
   resp,
 }: {

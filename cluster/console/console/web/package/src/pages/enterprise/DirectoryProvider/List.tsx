@@ -11,7 +11,6 @@ import {
 } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
 import { SummaryItemCount, SummaryItemCountWrap, SummaryNoItems } from "@/components/Summary";
-import { getDomain } from "@/utils";
 import { getClientVisibilityEnterprise } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
@@ -143,11 +142,6 @@ export const DirectoryProviderInventoryLabels = (props: {
   );
 };
 
-const ItemDetails = (props: { item: DirectoryProvider; domain: string }) => {
-  const { item } = props;
-  return <div></div>;
-};
-
 export const LabelComponent = (props: { item: DirectoryProvider }) => {
   const p = getDirectoryProviderPresentation(props.item);
   return (
@@ -183,11 +177,6 @@ export const LabelComponent = (props: { item: DirectoryProvider }) => {
       <DirectoryProviderInventoryLabels item={props.item} />
     </ResourceListLabelWrap>
   );
-};
-
-export const ExtraComponent = (props: { item: DirectoryProvider }) => {
-  const domain = getDomain();
-  return <ItemDetails item={props.item} domain={domain} />;
 };
 
 const DoSummary = ({ resp }: { resp: GetDirectoryProviderSummaryResponse }) => <SummaryItemCountWrap>

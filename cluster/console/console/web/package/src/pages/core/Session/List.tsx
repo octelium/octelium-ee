@@ -8,7 +8,6 @@ import {
 
 import TimeAgo from "@/components/TimeAgo";
 import StatusBadge from "@/components/StatusBadge";
-import { getDomain } from "@/utils";
 import { MdTimer } from "react-icons/md";
 import { match } from "ts-pattern";
 
@@ -75,13 +74,6 @@ const getState = (svc: Session) => {
     .otherwise(() => "");
 };
 
-const ItemDetails = (props: { item: Session; domain: string }) => {
-  const { item } = props;
-  const md = item.metadata!;
-
-  return <div></div>;
-};
-
 export const LabelComponent = (props: { item: Session }) => {
   const { item } = props;
 
@@ -124,12 +116,6 @@ export const LabelComponent = (props: { item: Session }) => {
 
     </ResourceListLabelWrap>
   );
-};
-
-export const ExtraComponent = (props: { item: Session }) => {
-  const { item } = props;
-  const domain = getDomain();
-  return <ItemDetails item={item} domain={domain} />;
 };
 
 const DoSummary = (props: { resp: GetSessionSummaryResponse }) => {

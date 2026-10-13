@@ -6,16 +6,8 @@ import {
 
 import { GetGatewaySummaryResponse } from "@/apis/visibilityv1/core/vcorev1";
 import { SummaryItemCount, SummaryItemCountWrap } from "@/components/Summary";
-import { getDomain } from "@/utils";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
-
-const ItemDetails = (props: { item: Gateway; domain: string }) => {
-  const { item } = props;
-  const md = item.metadata!;
-
-  return <div></div>;
-};
 
 export const LabelComponent = (props: { item: Gateway }) => {
   const { item } = props;
@@ -47,12 +39,6 @@ export const LabelComponent = (props: { item: Gateway }) => {
       )}
     </ResourceListLabelWrap>
   );
-};
-
-export const ExtraComponent = (props: { item: Gateway }) => {
-  const { item } = props;
-  const domain = getDomain();
-  return <ItemDetails item={item} domain={domain} />;
 };
 
 const DoSummary = (props: { resp: GetGatewaySummaryResponse }) => {

@@ -78,10 +78,6 @@ export const LabelComponent = (props: { item: Secret }) => (
   </ResourceListLabelWrap>
 );
 
-export const ExtraComponent = (props: { item: Secret }) => {
-  return <div></div>;
-};
-
 const DoSummary = ({ resp }: { resp: GetSecretSummaryResponse }) => {
   return (
     <div className="w-full">

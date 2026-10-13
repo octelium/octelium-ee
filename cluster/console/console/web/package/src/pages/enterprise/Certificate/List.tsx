@@ -12,7 +12,6 @@ import {
 } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
 import { SummaryItemCount, SummaryItemCountWrap, SummaryNoItems } from "@/components/Summary";
-import { getDomain } from "@/utils";
 import { getClientVisibilityEnterprise } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -30,11 +29,6 @@ import {
   Stamp,
 } from "lucide-react";
 import { match } from "ts-pattern";
-
-const ItemDetails = (props: { item: Certificate; domain: string }) => {
-  const { item } = props;
-  return <div></div>;
-};
 
 export const getIssuanceState = (arg: Certificate_Status_Issuance_State) =>
   match(arg)
@@ -147,11 +141,6 @@ export const LabelComponent = (props: { item: Certificate }) => {
       )}
     </ResourceListLabelWrap>
   );
-};
-
-export const ExtraComponent = (props: { item: Certificate }) => {
-  const domain = getDomain();
-  return <ItemDetails item={props.item} domain={domain} />;
 };
 
 const DoSummary = ({ resp }: { resp: GetCertificateSummaryResponse }) => <SummaryItemCountWrap>

@@ -19,7 +19,6 @@ import {
 } from "@/components/Summary";
 import { setListOptFilter } from "@/features/settings/slice";
 import { toURLWithQry } from "@/pages/utils";
-import { getDomain } from "@/utils";
 import StatusBadge from "@/components/StatusBadge";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useAppDispatch } from "@/utils/hooks";
@@ -52,13 +51,6 @@ const getType = (svc: User) => {
     .otherwise(() => <></>);
 };
 
-const ItemDetails = (props: { item: User; domain: string }) => {
-  const { item } = props;
-  const md = item.metadata!;
-
-  return <div></div>;
-};
-
 export const LabelComponent = (props: { item: User }) => {
   const { item } = props;
 
@@ -83,12 +75,6 @@ export const LabelComponent = (props: { item: User }) => {
 
     </ResourceListLabelWrap>
   );
-};
-
-export const ExtraComponent = (props: { item: User }) => {
-  const { item } = props;
-  const domain = getDomain();
-  return <ItemDetails item={item} domain={domain} />;
 };
 
 export const ListFilter = () => {

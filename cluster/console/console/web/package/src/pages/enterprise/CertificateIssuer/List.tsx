@@ -10,7 +10,6 @@ import {
   ResourceListLabel,
   ResourceListLabelWrap,
 } from "@/components/ResourceList";
-import { getDomain } from "@/utils";
 import { AlertTriangle, CheckCircle2, Globe2, Loader2 } from "lucide-react";
 import { match } from "ts-pattern";
 
@@ -55,11 +54,6 @@ export const getIssuerPresentation = (item: CertificateIssuer) => {
   };
 };
 
-const ItemDetails = (props: { item: CertificateIssuer; domain: string }) => {
-  const { item } = props;
-  return <div></div>;
-};
-
 export const LabelComponent = (props: { item: CertificateIssuer }) => {
   const p = getIssuerPresentation(props.item);
 
@@ -85,11 +79,6 @@ export const LabelComponent = (props: { item: CertificateIssuer }) => {
       )}
     </ResourceListLabelWrap>
   );
-};
-
-export const ExtraComponent = (props: { item: CertificateIssuer }) => {
-  const domain = getDomain();
-  return <ItemDetails item={props.item} domain={domain} />;
 };
 
 const DoSummary = ({ resp }: { resp: GetCertificateIssuerSummaryResponse }) => <SummaryItemCountWrap>

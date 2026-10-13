@@ -118,10 +118,6 @@ export const LabelComponent = (props: { item: IntegrationBinding }) => {
   );
 };
 
-export const ExtraComponent = (props: { item: IntegrationBinding }) => {
-  return <div></div>;
-};
-
 const DoSummary = ({ resp }: { resp: GetIntegrationBindingSummaryResponse }) => {
   return (
     <div className="w-full">

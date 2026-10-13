@@ -14,6 +14,15 @@ import {
   GetComponentLogDataPointRequest,
   GetComponentLogSummaryRequest,
   ListAccessLogTopDenyReasonRequest,
+  ListAccessLogTopPolicyRequest,
+  ListAccessLogTopServiceRequest,
+  ListAccessLogTopSessionRequest,
+  ListAccessLogTopUserRequest,
+  ListAuditLogTopSessionRequest,
+  ListAuditLogTopUserRequest,
+  ListAuthenticationLogTopCredentialRequest,
+  ListAuthenticationLogTopIdentityProviderRequest,
+  ListAuthenticationLogTopUserRequest,
   ListComponentLogTopComponentRequest,
 } from "@/apis/visibilityv1/visibilityv1";
 import {
@@ -394,6 +403,24 @@ const auditTopMethod = {
   session: "listAuditLogTopSession",
 } as const;
 
+const accessTopRequest = {
+  user: ListAccessLogTopUserRequest,
+  service: ListAccessLogTopServiceRequest,
+  policy: ListAccessLogTopPolicyRequest,
+  session: ListAccessLogTopSessionRequest,
+} as const;
+
+const authTopRequest = {
+  user: ListAuthenticationLogTopUserRequest,
+  identityProvider: ListAuthenticationLogTopIdentityProviderRequest,
+  credential: ListAuthenticationLogTopCredentialRequest,
+} as const;
+
+const auditTopRequest = {
+  user: ListAuditLogTopUserRequest,
+  session: ListAuditLogTopSessionRequest,
+} as const;
+
 type TopResponse = {
   items: { count: number }[];
   totalCount: number;
@@ -411,10 +438,12 @@ export const useAccessTop = (
     fetch: async (signal) => {
       const { curFrom, curTo } = buildTimestamps(periodMinutes);
       return (
-        await (getClientVisibilityAccessLog() as any)[
-          accessTopMethod[resource]
-        ](
-          { from: toTs(curFrom), to: toTs(curTo), limit: TOP_LIMIT },
+        await getClientVisibilityAccessLog()[accessTopMethod[resource]](
+          accessTopRequest[resource].create({
+            from: toTs(curFrom),
+            to: toTs(curTo),
+            limit: TOP_LIMIT,
+          }),
           { abort: signal },
         )
       ).response;
@@ -433,10 +462,12 @@ export const useAuthTop = (
     fetch: async (signal) => {
       const { curFrom, curTo } = buildTimestamps(periodMinutes);
       return (
-        await (getClientVisibilityAuthenticationLog() as any)[
-          authTopMethod[resource]
-        ](
-          { from: toTs(curFrom), to: toTs(curTo), limit: TOP_LIMIT },
+        await getClientVisibilityAuthenticationLog()[authTopMethod[resource]](
+          authTopRequest[resource].create({
+            from: toTs(curFrom),
+            to: toTs(curTo),
+            limit: TOP_LIMIT,
+          }),
           { abort: signal },
         )
       ).response;
@@ -455,8 +486,12 @@ export const useAuditTop = (
     fetch: async (signal) => {
       const { curFrom, curTo } = buildTimestamps(periodMinutes);
       return (
-        await (getClientVisibilityAuditLog() as any)[auditTopMethod[resource]](
-          { from: toTs(curFrom), to: toTs(curTo), limit: TOP_LIMIT },
+        await getClientVisibilityAuditLog()[auditTopMethod[resource]](
+          auditTopRequest[resource].create({
+            from: toTs(curFrom),
+            to: toTs(curTo),
+            limit: TOP_LIMIT,
+          }),
           { abort: signal },
         )
       ).response;

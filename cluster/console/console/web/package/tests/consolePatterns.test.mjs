@@ -196,6 +196,7 @@ describe("Console shared presentation and controls", () => {
     const refresh = page.getByRole("button", { name: "Refresh resources" });
     await refresh.click();
     await page.waitForFunction(() => window.patterns.state.resolve);
+    await refresh.and(page.locator('[aria-busy="true"]')).waitFor();
     assert.equal(await refresh.getAttribute("aria-busy"), "true");
     await page.evaluate(() => window.patterns.state.resolve());
     await settled();
@@ -237,6 +238,7 @@ describe("Console shared presentation and controls", () => {
     ["log-search", "Search access logs"],
   ]) {
     it(`shares the 250 ms search debounce and keyboard behavior on ${scenario}`, async () => {
+      await page.clock.install({ time: new Date("2026-10-13T12:00:00Z") });
       await load(scenario, {
         route: "/visibility/accesslogs?common.page=4&userRef.name=alice",
       });
@@ -246,7 +248,7 @@ describe("Console shared presentation and controls", () => {
         await input.evaluate((element) => document.activeElement === element),
         true,
       );
-      await page.clock.install();
+      await page.clock.pauseAt(new Date("2026-10-13T13:00:00Z"));
       await input.fill(scenario === "log-search" ? "  denied  " : "denied");
       await page.clock.runFor(249);
       assert.equal((await routeParams()).has("common.query"), false);
