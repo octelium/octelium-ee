@@ -222,6 +222,51 @@ describe("Console performance regressions", () => {
     );
   });
 
+  it("keeps CEL text and the cursor readable when switching light and dark modes", async () => {
+    await load("cel");
+    const content = page.locator(".cm-content");
+    const expression = '(ctx.user.metadata.name == "alice") && true';
+    await content.fill(expression);
+    await page.locator(".cm-cursor").waitFor();
+
+    for (const scheme of ["dark", "light", "dark"]) {
+      const colors = await page.evaluate((scheme) => {
+        document.documentElement.setAttribute(
+          "data-mantine-color-scheme",
+          scheme,
+        );
+        const probe = document.createElement("div");
+        probe.style.backgroundColor = "var(--color-white)";
+        probe.style.color = "var(--color-slate-800)";
+        probe.style.caretColor = "var(--color-slate-900)";
+        document.body.append(probe);
+        const expected = getComputedStyle(probe);
+        const editor = getComputedStyle(document.querySelector(".cm-editor"));
+        const cursor = getComputedStyle(document.querySelector(".cm-cursor"));
+        const result = {
+          background: editor.backgroundColor,
+          expectedBackground: expected.backgroundColor,
+          foreground: editor.color,
+          expectedForeground: expected.color,
+          cursor: cursor.borderLeftColor,
+          expectedCursor: expected.caretColor,
+          tokens: Array.from(document.querySelectorAll(".cm-line span")).map(
+            (element) => getComputedStyle(element).color,
+          ),
+        };
+        probe.remove();
+        return result;
+      }, scheme);
+      assert.equal(colors.background, colors.expectedBackground, scheme);
+      assert.equal(colors.foreground, colors.expectedForeground, scheme);
+      assert.equal(colors.cursor, colors.expectedCursor, scheme);
+      assert.notEqual(colors.foreground, colors.background, scheme);
+      assert.ok(colors.tokens.length > 0);
+      assert.ok(colors.tokens.every((color) => color !== colors.background));
+      assert.equal(await content.innerText(), expression);
+    }
+  });
+
   it("fetches just the displayed flags and handles invalid country codes", async () => {
     const requests = [];
     page.on("request", (request) => {
