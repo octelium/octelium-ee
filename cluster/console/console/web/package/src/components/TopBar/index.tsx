@@ -50,6 +50,8 @@ const TopBar = () => {
     settings.status?.user?.metadata?.displayName?.trim() ||
     settings.status?.user?.metadata?.name?.trim();
 
+  const email = settings.status?.user?.spec?.email?.trim();
+
   return (
     <nav className="flex h-[60px] w-full min-w-0 items-center gap-2 overflow-hidden px-2 sm:gap-3 sm:px-4 lg:gap-5">
       <Link
@@ -71,12 +73,6 @@ const TopBar = () => {
             className="group flex h-10 flex-none cursor-pointer items-center gap-2 rounded-lg px-1 transition-colors duration-150 hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 sm:px-2"
             aria-label="Account menu"
           >
-            {displayName && (
-              <span className="hidden max-w-36 truncate text-body font-normal text-slate-600 transition-colors duration-150 group-hover:text-slate-900 lg:block">
-                {displayName}
-              </span>
-            )}
-
             <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full ring-2 ring-white ring-offset-1 ring-offset-canvas transition-[box-shadow] duration-150 group-hover:ring-slate-300 sm:h-8 sm:w-8">
               {picURL ? (
                 <img
@@ -107,7 +103,16 @@ const TopBar = () => {
         </Menu.Target>
 
         <Menu.Dropdown>
-          {displayName && <Menu.Label>{displayName}</Menu.Label>}
+          {(displayName || email) && (
+            <Menu.Label className="flex flex-col gap-0.5">
+              {displayName && (
+                <span className="break-words">{displayName}</span>
+              )}
+              {email && (
+                <span className="break-all font-normal">{email}</span>
+              )}
+            </Menu.Label>
+          )}
           <Menu.Item
             leftSection={<Settings size={14} />}
             onClick={() => navigate("/settings")}

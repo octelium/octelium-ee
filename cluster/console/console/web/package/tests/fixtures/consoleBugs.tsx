@@ -6,8 +6,9 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { MantineProvider, Select } from "@mantine/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter, useLocation } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Provider } from "react-redux";
+import { User } from "@/apis/corev1/corev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { GetStatusResponse } from "@/apis/userv1/userv1";
 import {
@@ -35,6 +36,7 @@ import ComponentLogs from "@/components/ComponentLogViewer";
 import { SSHSessionViewer } from "@/components/SSHRecordingPlayer";
 import Sidebar from "@/components/SideBar";
 import TopBar from "@/components/TopBar";
+import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
 import Attention from "@/pages/Home/Attention";
 import LineChart from "@/components/Charts/LineChart";
 import SeriesChart from "@/components/Charts/SeriesChart";
@@ -58,6 +60,17 @@ const calls: { name: string; request: any }[] = [];
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
 });
+if (scenario === "overview") {
+  queryClient.setQueryDefaults(["core.getUser"], { staleTime: Infinity });
+  queryClient.setQueryData(["core.getUser", "alice"], {
+    response: User.create({
+      apiVersion: "core/v1",
+      kind: "User",
+      metadata: { name: "alice", uid: "user-uid" },
+      spec: { email: "alice@example.test" },
+    }),
+  });
+}
 (window as any).calls = calls;
 (Object.getPrototypeOf(getClientVisibilityAuditLog()) as any).getAuditLogSummary =
   async () => ({ response: GetAuditLogSummaryResponse.create() });
@@ -166,9 +179,12 @@ store.dispatch(
     status: GetStatusResponse.create({
       user: {
         metadata: {
-          displayName: "",
+          displayName: params.get("displayName") ?? "",
           name: scenario === "avatar-empty" ? "" : "alice",
         },
+        spec: params.has("email")
+          ? { email: params.get("email") ?? "" }
+          : undefined,
       },
     }),
   }),
@@ -206,6 +222,13 @@ const Fixture = () => (
               <TopBar />
             ) : scenario === "query" ? (
               <Query />
+            ) : scenario === "overview" ? (
+              <Routes>
+                <Route
+                  path="/core/users/:name"
+                  element={<ResourceItemMainPage unDeletable />}
+                />
+              </Routes>
             ) : scenario === "logs" ? (
               <>
                 <AccessLogs periodMinutes={60} />

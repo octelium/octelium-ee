@@ -30,7 +30,8 @@ import ResourceStatus from "./ResourceStatus";
 import { useContextResource } from "./utils";
 
 const METADATA_GROUP = "Metadata";
-type OverviewSection = "details" | "metadata" | "yaml" | "schema";
+type OverviewSection = "details" | "metadata" | "yaml";
+type YAMLSection = "content" | "schema";
 const ResourceSchemaContent = React.lazy(() =>
   import("../ResourceSchema").then((module) => ({
     default: module.ResourceSchemaContent,
@@ -458,6 +459,7 @@ const ResourceOverview = (props: {
   const { resource: item, info } = props;
   const md = item.metadata!;
   const [section, setSection] = React.useState<OverviewSection>("details");
+  const [yamlSection, setYAMLSection] = React.useState<YAMLSection>("content");
 
   const specificItems = (info.items ?? []).filter(
     (entry) => !isEmptyValue(entry.value),
@@ -589,15 +591,6 @@ const ResourceOverview = (props: {
                   </span>
                 ),
               },
-              {
-                value: "schema",
-                label: (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Braces size={13} />
-                    Schema
-                  </span>
-                ),
-              },
             ]}
           />
         </div>
@@ -627,57 +620,88 @@ const ResourceOverview = (props: {
         )}
 
         {section === "yaml" && (
-          <div className="space-y-3 p-3 sm:p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-sm font-semibold text-slate-800">
-                  Resource YAML
-                </h2>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  Read-only representation of the current resource.
-                </p>
-              </div>
-              <CopyButton value={resourceToYAML(item)}>
-                {({ copied, copy }) => (
-                  <Button
-                    size="compact-xs"
-                    variant="default"
-                    leftSection={
-                      copied ? <Check size={12} /> : <Copy size={12} />
-                    }
-                    onClick={copy}
-                  >
-                    {copied ? "Copied" : "Copy YAML"}
-                  </Button>
-                )}
-              </CopyButton>
-            </div>
-            <React.Suspense
-              fallback={
-                <div className="h-[420px] motion-safe:animate-pulse rounded-xl bg-slate-100" />
-              }
-            >
-              <Editor
-                item={item}
-                value={resourceToYAML(item)}
-                mode="yaml"
-                readOnly
-                autoFocus={false}
-                minHeight="420px"
-                maxHeight="calc(100dvh - 290px)"
+          <div>
+            <div className="border-b border-slate-200 bg-white p-2">
+              <SegmentedControl
+                fullWidth
+                value={yamlSection}
+                onChange={(value) => setYAMLSection(value as YAMLSection)}
+                aria-label="YAML content"
+                data={[
+                  {
+                    value: "content",
+                    label: (
+                      <span className="inline-flex items-center gap-1.5">
+                        <FileCode2 size={13} />
+                        Content
+                      </span>
+                    ),
+                  },
+                  {
+                    value: "schema",
+                    label: (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Braces size={13} />
+                        Schema
+                      </span>
+                    ),
+                  },
+                ]}
               />
-            </React.Suspense>
+            </div>
+            {yamlSection === "content" && (
+              <div className="space-y-3 p-3 sm:p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-semibold text-slate-800">
+                      Resource YAML
+                    </h2>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      Read-only representation of the current resource.
+                    </p>
+                  </div>
+                  <CopyButton value={resourceToYAML(item)}>
+                    {({ copied, copy }) => (
+                      <Button
+                        size="compact-xs"
+                        variant="default"
+                        leftSection={
+                          copied ? <Check size={12} /> : <Copy size={12} />
+                        }
+                        onClick={copy}
+                      >
+                        {copied ? "Copied" : "Copy YAML"}
+                      </Button>
+                    )}
+                  </CopyButton>
+                </div>
+                <React.Suspense
+                  fallback={
+                    <div className="h-[420px] motion-safe:animate-pulse rounded-xl bg-slate-100" />
+                  }
+                >
+                  <Editor
+                    item={item}
+                    value={resourceToYAML(item)}
+                    mode="yaml"
+                    readOnly
+                    autoFocus={false}
+                    minHeight="420px"
+                    maxHeight="calc(100dvh - 290px)"
+                  />
+                </React.Suspense>
+              </div>
+            )}
+            {yamlSection === "schema" && (
+              <React.Suspense
+                fallback={
+                  <div className="m-4 h-28 motion-safe:animate-pulse rounded-xl bg-slate-100" />
+                }
+              >
+                <ResourceSchemaContent item={item} />
+              </React.Suspense>
+            )}
           </div>
-        )}
-
-        {section === "schema" && (
-          <React.Suspense
-            fallback={
-              <div className="m-4 h-28 motion-safe:animate-pulse rounded-xl bg-slate-100" />
-            }
-          >
-            <ResourceSchemaContent item={item} />
-          </React.Suspense>
         )}
       </section>
     </div>

@@ -41,9 +41,9 @@ describe("Console bug regressions", () => {
     await context?.close();
   });
 
-  const load = async (scenario = "shared", path = "/") => {
+  const load = async (scenario = "shared", path = "/", extra = {}) => {
     await page.goto(
-      `${origin}tests/fixtures/consoleBugs.html?${new URLSearchParams({ scenario, path })}`,
+      `${origin}tests/fixtures/consoleBugs.html?${new URLSearchParams({ scenario, path, ...extra })}`,
     );
   };
 
@@ -401,9 +401,133 @@ describe("Console bug regressions", () => {
       const account = page.getByRole("button", { name: "Account menu" });
       await account.waitFor();
       if (scenario === "avatar")
-        assert.ok((await account.textContent()).includes("a"));
+        assert.equal(await account.textContent(), "a");
       else
         assert.equal(await account.locator("svg.lucide-user-round").count(), 1);
+      await account.click();
+      const menu = page.getByRole("menu");
+      await menu.waitFor();
+      assert.equal(
+        await menu.getByText("alice", { exact: true }).count(),
+        scenario === "avatar" ? 1 : 0,
+      );
+      assert.equal(await menu.getByText(/@/).count(), 0);
+    });
+  }
+
+  for (const displayName of ["", "Alice Example"]) {
+    it(`shows the email beneath the ${displayName ? "display name" : "user name"} in the account menu`, async () => {
+      await load("avatar", "/", {
+        displayName,
+        email: "  alice@example.test  ",
+      });
+      const account = page.getByRole("button", { name: "Account menu" });
+      await account.waitFor();
+      assert.equal(await account.textContent(), displayName ? "AE" : "a");
+      await account.click();
+      const menu = page.getByRole("menu");
+      const name = menu.getByText(displayName || "alice", { exact: true });
+      const email = menu.getByText("alice@example.test", { exact: true });
+      await email.waitFor();
+      const nameBox = await name.boundingBox();
+      const emailBox = await email.boundingBox();
+      assert.ok(emailBox.y >= nameBox.y + nameBox.height);
+    });
+  }
+
+  for (const email of ["", "   "]) {
+    it(`omits an ${email ? "all-whitespace" : "empty"} email from the account menu`, async () => {
+      await load("avatar", "/", { email });
+      await page.getByRole("button", { name: "Account menu" }).click();
+      const menu = page.getByRole("menu");
+      await menu.waitFor();
+      assert.equal(
+        await menu.locator(".mantine-Menu-label").textContent(),
+        "alice",
+      );
+    });
+  }
+
+  it("shows the email when the account name is missing", async () => {
+    await load("avatar-empty", "/", { email: "alice@example.test" });
+    await page.getByRole("button", { name: "Account menu" }).click();
+    await page
+      .getByRole("menu")
+      .getByText("alice@example.test", { exact: true })
+      .waitFor();
+  });
+
+  for (const width of [1440, 390]) {
+    it(`nests the resource schema inside YAML at ${width}px`, async () => {
+      await page.setViewportSize({ width, height: 900 });
+      await load("overview", "/core/users/alice");
+      const overview = page.getByRole("radiogroup", {
+        name: "Overview content",
+      });
+      const yaml = page.getByRole("radiogroup", { name: "YAML content" });
+      await overview.waitFor();
+      assert.equal(await overview.getByRole("radio").count(), 3);
+      assert.equal(
+        await overview.getByRole("radio", { name: "Schema" }).count(),
+        0,
+      );
+      assert.equal(await yaml.count(), 0);
+
+      await overview.getByText("YAML", { exact: true }).click();
+      await page.locator(".cm-content").waitFor();
+      assert.equal(await yaml.getByRole("radio").count(), 2);
+      assert.equal(
+        await yaml
+          .getByRole("radio", { name: "Content", exact: true })
+          .isChecked(),
+        true,
+      );
+      const content = page.locator(".cm-content");
+      const value = await content.innerText();
+      assert.match(value, /name: alice/);
+      await content.click();
+      await page.keyboard.type("changed");
+      assert.equal(await content.innerText(), value);
+
+      const style = (element) => {
+        const computed = getComputedStyle(element);
+        return [
+          computed.backgroundColor,
+          computed.borderRadius,
+          computed.padding,
+        ];
+      };
+      assert.deepEqual(
+        await yaml.evaluate(style),
+        await overview.evaluate(style),
+      );
+      const box = await yaml.boundingBox();
+      assert.ok(box.x >= 0 && box.x + box.width <= width);
+
+      await yaml.getByText("Schema", { exact: true }).click();
+      await page.getByPlaceholder("Search fields or descriptions").waitFor();
+      assert.equal(
+        await page.getByText("User fields", { exact: true }).count(),
+        1,
+      );
+      assert.equal(await page.locator(".cm-content").count(), 0);
+      assert.equal(
+        await page.getByRole("button", { name: "Copy YAML" }).count(),
+        0,
+      );
+
+      await overview.getByText("Metadata", { exact: true }).click();
+      assert.equal(await yaml.count(), 0);
+      await overview.getByText("YAML", { exact: true }).click();
+      assert.equal(
+        await yaml
+          .getByRole("radio", { name: "Schema", exact: true })
+          .isChecked(),
+        true,
+      );
+      await yaml.getByText("Content", { exact: true }).click();
+      await page.locator(".cm-content").waitFor();
+      await page.getByRole("button", { name: "Copy YAML" }).waitFor();
     });
   }
 
