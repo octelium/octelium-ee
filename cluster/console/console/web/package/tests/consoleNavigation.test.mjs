@@ -40,6 +40,22 @@ describe("Console navigation and agent panel", () => {
 
   const dock = () => page.getByRole("complementary", { name: "Agent" });
 
+  const openDock = async (scenario = "ready") => {
+    await load("/core/services", scenario);
+    await page
+      .getByRole("button", { name: "Ask the agent about this page" })
+      .click();
+    await dock().getByRole("button", { name: "Attach files" }).waitFor();
+  };
+
+  const attachFiles = async (files) => {
+    const [chooser] = await Promise.all([
+      page.waitForEvent("filechooser"),
+      dock().getByRole("button", { name: "Attach files" }).click(),
+    ]);
+    await chooser.setFiles(files);
+  };
+
   before(async () => {
     process.env.VITE_CONSOLE_AGENT_URL = "/agent-api";
     server = await createServer({
@@ -362,6 +378,168 @@ describe("Console navigation and agent panel", () => {
         },
       ],
     });
+  });
+
+  it("attaches files from the shared paperclip button beside the model selector", async () => {
+    await openDock();
+    const button = dock().getByRole("button", { name: "Attach files" });
+    assert.equal(await button.locator("svg.lucide-paperclip").count(), 1);
+    const attachBox = await button.boundingBox();
+    const modelBox = await dock()
+      .getByRole("button", { name: "Choose the model" })
+      .boundingBox();
+    assert.ok(attachBox.x + attachBox.width <= modelBox.x);
+    await attachFiles([
+      {
+        name: "notes.txt",
+        mimeType: "text/plain",
+        buffer: Buffer.from("Notes"),
+      },
+      {
+        name: "diagram.png",
+        mimeType: "image/png",
+        buffer: Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZUAAAAASUVORK5CYII=",
+          "base64",
+        ),
+      },
+    ]);
+    await dock().getByRole("button", { name: "Remove notes.txt" }).waitFor();
+    await dock().getByRole("button", { name: "Remove diagram.png" }).waitFor();
+    assert.match(
+      await dock().getByRole("img", { name: "diagram.png" }).getAttribute("src"),
+      /^blob:/,
+    );
+    await dock().getByRole("button", { name: "Remove diagram.png" }).click();
+    const composer = dock().getByRole("textbox", { name: "Message" });
+    await composer.fill("Explain these notes");
+    await dock().getByRole("button", { name: "Send", exact: true }).click();
+    await dock().getByText("The agent answered.").waitFor();
+    const created = (await calls()).find(
+      (call) => call.path === "/conversations" && call.method === "POST",
+    );
+    assert.equal(created.body.input.text, "Explain these notes");
+    assert.deepEqual(created.body.input.attachments, ["f-1"]);
+    assert.equal(created.body.input.context.page.path, "/core/services");
+    assert.equal(
+      await dock().getByRole("button", { name: "Remove notes.txt" }).count(),
+      0,
+    );
+    assert.equal(await composer.inputValue(), "");
+    await dock().getByText("notes.txt", { exact: true }).waitFor();
+  });
+
+  it("waits for uploads and allows a message containing only an attachment", async () => {
+    await openDock("upload-pending");
+    await attachFiles({
+      name: "notes.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("Notes"),
+    });
+    await dock().getByText("Uploading…", { exact: true }).waitFor();
+    assert.equal(
+      await dock().getByRole("button", { name: "Send", exact: true }).isDisabled(),
+      true,
+    );
+    await page.evaluate(() => window.finishAgentUpload());
+    await dock().getByRole("button", { name: "Remove notes.txt" }).waitFor();
+    await dock().getByRole("button", { name: "Send", exact: true }).click();
+    await dock().getByText("The agent answered.").waitFor();
+    const created = (await calls()).find(
+      (call) => call.path === "/conversations" && call.method === "POST",
+    );
+    assert.equal(created.body.input.text, "");
+    assert.deepEqual(created.body.input.attachments, ["f-1"]);
+  });
+
+  for (const scenario of ["oversized", "upload-error"]) {
+    it(`keeps ${scenario} files out of the agent message`, async () => {
+      await openDock(scenario);
+      await attachFiles({
+        name: "notes.txt",
+        mimeType: "text/plain",
+        buffer: Buffer.alloc(scenario === "oversized" ? 1024 * 1024 + 1 : 5),
+      });
+      await page.waitForFunction(
+        () => document.querySelector('input[type="file"]')?.value === "",
+      );
+      if (scenario === "upload-error") {
+        await page.waitForFunction(() =>
+          window.agentCalls.some((call) => call.path === "/files"),
+        );
+        await dock()
+          .getByText("Uploading…", { exact: true })
+          .waitFor({ state: "hidden" });
+      }
+      assert.equal(
+        await dock().getByRole("button", { name: "Remove notes.txt" }).count(),
+        0,
+      );
+      assert.equal(
+        await dock()
+          .getByRole("button", { name: "Send", exact: true })
+          .isDisabled(),
+        true,
+      );
+      assert.equal(
+        (await calls()).filter((call) => call.path === "/files").length,
+        scenario === "oversized" ? 0 : 1,
+      );
+    });
+  }
+
+  it("keeps attachments after a failed send so the message can be retried", async () => {
+    await openDock("send-error");
+    await attachFiles({
+      name: "notes.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("Notes"),
+    });
+    await dock().getByRole("button", { name: "Remove notes.txt" }).waitFor();
+    const composer = dock().getByRole("textbox", { name: "Message" });
+    await composer.fill("Explain these notes");
+    await dock().getByRole("button", { name: "Send", exact: true }).click();
+    await page.waitForFunction(() =>
+      window.agentCalls.some(
+        (call) => call.path === "/conversations" && call.method === "POST",
+      ),
+    );
+    await dock().getByRole("button", { name: "Send", exact: true }).waitFor();
+    assert.equal(await composer.inputValue(), "Explain these notes");
+    assert.equal(
+      await dock().getByRole("button", { name: "Remove notes.txt" }).count(),
+      1,
+    );
+    await dock().getByRole("button", { name: "Send", exact: true }).click();
+    await dock().getByText("The agent answered.").waitFor();
+    const posted = (await calls()).filter(
+      (call) => call.path === "/conversations" && call.method === "POST",
+    );
+    assert.equal(posted.length, 2);
+    assert.deepEqual(posted[0].body.input, posted[1].body.input);
+  });
+
+  it("discards pending attachments when starting a new conversation", async () => {
+    await openDock("upload-pending");
+    await attachFiles({
+      name: "notes.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("Notes"),
+    });
+    await dock().getByText("Uploading…", { exact: true }).waitFor();
+    await dock().getByRole("button", { name: "New conversation" }).click();
+    await page.evaluate(() => window.finishAgentUpload());
+    await dock()
+      .getByText("Uploading…", { exact: true })
+      .waitFor({ state: "hidden" });
+    assert.equal(
+      await dock().getByRole("button", { name: "Remove notes.txt" }).count(),
+      0,
+    );
+    assert.equal(
+      await dock().getByRole("button", { name: "Send", exact: true }).isDisabled(),
+      true,
+    );
   });
 
   it("hides the agent entry points when the agent is unavailable", async () => {

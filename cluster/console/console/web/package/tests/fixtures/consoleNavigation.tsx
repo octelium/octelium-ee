@@ -12,6 +12,7 @@ import type {
   AgentInfo,
   Block,
   Conversation,
+  FileInfo,
   Message,
   Run,
   RunInput,
@@ -43,6 +44,7 @@ interface Call {
 declare global {
   interface Window {
     agentCalls: Call[];
+    finishAgentUpload?: () => void;
   }
 }
 
@@ -52,6 +54,7 @@ const initialPath = params.get("path") ?? "/core/services";
 const prefix = "/agent-api/v1";
 const at = (ms: number) => new Date(ms).toISOString();
 let counter = 0;
+let sendFailed = false;
 
 const conversations = new Map<string, Conversation>([
   [
@@ -66,6 +69,7 @@ const conversations = new Map<string, Conversation>([
   ],
 ]);
 const messages = new Map<string, Message[]>([["c-old", []]]);
+const files = new Map<string, FileInfo>();
 const runs = new Map<string, { run: Run; input: RunInput }>();
 
 const info: AgentInfo = {
@@ -139,7 +143,33 @@ window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     return json({ items: [...conversations.values()] });
   }
 
+  if (path === "/files" && method === "POST") {
+    if (scenario === "upload-error") {
+      return json({ error: { message: "Upload failed" } }, 503);
+    }
+    if (scenario === "upload-pending") {
+      await new Promise<void>((resolve) => {
+        window.finishAgentUpload = resolve;
+      });
+    }
+    const file = init?.body as File;
+    const uploaded: FileInfo = {
+      id: `f-${++counter}`,
+      name: url.searchParams.get("name") ?? file.name,
+      mimeType: file.type,
+      size: file.size,
+      path: `/files/${counter}`,
+      createdAt: at(Date.now()),
+    };
+    files.set(uploaded.id, uploaded);
+    return json(uploaded);
+  }
+
   if (path === "/conversations" && method === "POST") {
+    if (scenario === "send-error" && !sendFailed) {
+      sendFailed = true;
+      return json({ error: { message: "Send failed" } }, 503);
+    }
     const id = `c-${++counter}`;
     const conversation: Conversation = {
       id,
@@ -231,6 +261,9 @@ class FakeEventSource {
       status: "completed",
       createdAt,
       context: input.context,
+      attachments: [...files.values()].filter((file) =>
+        input.attachments?.includes(file.id),
+      ),
       blocks: [markdown(input.text)],
     };
     const answer = markdown("The agent answered.");

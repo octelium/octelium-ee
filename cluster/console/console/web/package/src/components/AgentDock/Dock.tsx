@@ -1,10 +1,10 @@
-import type { Conversation } from "@/apis/consoleagent/protocol";
+import type { Conversation, FileInfo } from "@/apis/consoleagent/protocol";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { usePageDetailsValue } from "@/components/PageHeader/context";
 import TimeAgo from "@/components/TimeAgo";
 import { AgentSurface, type ReadyChatProps } from "@/pages/Agent/Agent";
 import { type BlockContext } from "@/pages/Agent/Blocks";
-import Composer from "@/pages/Agent/Composer";
+import Composer, { type Upload } from "@/pages/Agent/Composer";
 import { ContextChips, type ContextChip } from "@/pages/Agent/Context";
 import {
   MessageView,
@@ -15,6 +15,7 @@ import ModelsDrawer, { ModelPicker } from "@/pages/Agent/Models";
 import { AgentMark, StatusDot } from "@/pages/Agent/ui";
 import { useConversation } from "@/pages/Agent/useConversation";
 import { useTranscript } from "@/pages/Agent/useTranscript";
+import { formatBytes } from "@/pages/Agent/utils";
 import { ActionIcon, Button, Menu, Tooltip } from "@mantine/core";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -32,6 +33,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { twMerge } from "@/lib/utils";
 import { useAgent, type PinnedContext } from "./context";
 import {
@@ -160,12 +162,35 @@ const DockChat = (props: ReadyChatProps) => {
   const details = usePageDetailsValue();
 
   const [input, setInput] = React.useState("");
+  const [attachments, setAttachments] = React.useState<FileInfo[]>([]);
+  const [uploads, setUploads] = React.useState<Upload[]>([]);
+  const [previews, setPreviews] = React.useState<Record<string, string>>({});
   const [pinned, setPinned] = React.useState<PinnedContext>();
   const [pageIncluded, setPageIncluded] = React.useState(true);
   const [pending, setPending] = React.useState<string>();
   const [modelsOpened, setModelsOpened] = React.useState(false);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const sentPageRef = React.useRef<{ key?: string; path: string }>(undefined);
+  const previewURLsRef = React.useRef(new Map<string, string>());
+  const uploadVersionRef = React.useRef(0);
+
+  const clearAttachments = React.useCallback(() => {
+    uploadVersionRef.current += 1;
+    previewURLsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    previewURLsRef.current.clear();
+    setAttachments([]);
+    setUploads([]);
+    setPreviews({});
+  }, []);
+
+  React.useEffect(
+    () => () => {
+      uploadVersionRef.current += 1;
+      previewURLsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      previewURLsRef.current.clear();
+    },
+    [],
+  );
 
   const { trail } = agent;
   const page = React.useMemo(
@@ -231,9 +256,53 @@ const DockChat = (props: ReadyChatProps) => {
     if (agent.opened && !agent.hidden) focusComposer();
   }, [agent.opened, agent.hidden, focusComposer]);
 
+  const addFiles = async (files: File[]) => {
+    const version = uploadVersionRef.current;
+    for (const file of files) {
+      if (version !== uploadVersionRef.current) return;
+      if (file.size > info.capabilities.uploads.maxBytes) {
+        toast.error(
+          `${file.name} exceeds the maximum size of ${formatBytes(info.capabilities.uploads.maxBytes)}`,
+        );
+        continue;
+      }
+      const key = `${file.name}-${file.size}-${Math.random()}`;
+      setUploads((current) => [...current, { key, name: file.name }]);
+      try {
+        const uploaded = await client.uploadFile(file);
+        if (version !== uploadVersionRef.current) return;
+        setAttachments((current) => [...current, uploaded]);
+        if (file.type.startsWith("image/")) {
+          const url = URL.createObjectURL(file);
+          previewURLsRef.current.set(uploaded.id, url);
+          setPreviews((current) => ({ ...current, [uploaded.id]: url }));
+        }
+      } catch (err) {
+        if (version === uploadVersionRef.current) {
+          toast.error(`Could not upload ${file.name}: ${(err as Error).message}`);
+        }
+      } finally {
+        if (version === uploadVersionRef.current) {
+          setUploads((current) => current.filter((itm) => itm.key !== key));
+        }
+      }
+    }
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments((current) => current.filter((itm) => itm.id !== id));
+    const url = previewURLsRef.current.get(id);
+    if (!url) return;
+    URL.revokeObjectURL(url);
+    previewURLsRef.current.delete(id);
+    setPreviews(Object.fromEntries(previewURLsRef.current));
+  };
+
   const submit = async (value: string) => {
     const text = value.trim();
-    if (!text || isActive || sending) return;
+    const files = attachments;
+    if ((!text && files.length === 0) || isActive || sending) return;
+    if (uploads.length > 0) return;
 
     const key = agent.conversationId;
     const previous = sentPageRef.current;
@@ -259,7 +328,8 @@ const DockChat = (props: ReadyChatProps) => {
     transcript.stickRef.current = true;
     requestAnimationFrame(() => transcript.scrollToBottom("auto"));
 
-    if (await conv.send({ text: sendText, files: [], context })) {
+    if (await conv.send({ text: sendText, files, context })) {
+      files.forEach((file) => removeAttachment(file.id));
       setPinned(undefined);
       if (value === input) setInput("");
     } else {
@@ -271,6 +341,7 @@ const DockChat = (props: ReadyChatProps) => {
   React.useEffect(() => {
     if (!request) return;
     consume(request.id);
+    if (request.fresh || request.pinned) clearAttachments();
     if ((request.fresh || request.pinned) && agent.conversationId) {
       agent.setConversationId(undefined);
       sentPageRef.current = undefined;
@@ -283,15 +354,22 @@ const DockChat = (props: ReadyChatProps) => {
       setInput(request.text ?? "");
       focusComposer();
     }
-  }, [request]);
+  }, [request, clearAttachments]);
 
   React.useEffect(() => {
-    if (pending === undefined || busy || switching || sending || isActive) {
+    if (
+      pending === undefined ||
+      busy ||
+      switching ||
+      sending ||
+      isActive ||
+      uploads.length > 0
+    ) {
       return;
     }
     setPending(undefined);
     void submit(pending);
-  }, [pending, busy, switching, sending, isActive]);
+  }, [pending, busy, switching, sending, isActive, uploads.length]);
 
   const newChat = () => {
     agent.setConversationId(undefined);
@@ -299,6 +377,7 @@ const DockChat = (props: ReadyChatProps) => {
     setPinned(undefined);
     setPageIncluded(true);
     setInput("");
+    clearAttachments();
     focusComposer();
   };
 
@@ -372,6 +451,7 @@ const DockChat = (props: ReadyChatProps) => {
           conversations={conv.conversations ?? []}
           selected={agent.conversationId}
           onSelect={(id) => {
+            if (id !== agent.conversationId) clearAttachments();
             agent.setConversationId(id);
             sentPageRef.current = undefined;
             setPinned(undefined);
@@ -534,10 +614,11 @@ const DockChat = (props: ReadyChatProps) => {
           <Composer
             value={input}
             onChange={setInput}
-            attachments={[]}
-            uploads={[]}
-            previews={{}}
-            onRemoveAttachment={() => {}}
+            attachments={attachments}
+            uploads={uploads}
+            previews={previews}
+            onAddFiles={(files) => void addFiles(files)}
+            onRemoveAttachment={removeAttachment}
             onSend={() => void submit(input)}
             onStop={() => void conv.stop()}
             isActive={isActive}
