@@ -1,297 +1,484 @@
 import {
+  findSection,
+  navSections,
+  pageAgent,
+  pageOverview,
+  pageSettings,
+  type NavItem,
+} from "@/components/Navigation/catalog";
+import { twMerge } from "@/lib/utils";
+import { Menu, SegmentedControl, Tooltip } from "@mantine/core";
+import { useLocalStorage, useReducedMotion } from "@mantine/hooks";
+import {
   Check,
   ChevronDown,
   Layers,
-  LayoutDashboard,
-  Sparkles,
+  ListTree,
+  PanelLeftClose,
+  PanelLeftOpen,
+  X,
 } from "lucide-react";
-
-import { AnimatePresence, motion } from "framer-motion";
 import * as React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { twMerge } from "@/lib/utils";
-import { navSections as sections } from "@/components/Navigation/catalog";
+import { functionGroups, type FunctionGroup } from "./functions";
+import classes from "./styles.module.css";
 
-const getBarIdx = (pathname: string) => {
-  const idx = sections.findIndex(
-    (section) =>
-      pathname === section.prefix || pathname.startsWith(`${section.prefix}/`),
-  );
-  return idx;
-};
-
-export default function Sidebar() {
-  const loc = useLocation();
-  const navigate = useNavigate();
-  const [dropdownOpen, setDropdownOpen] = React.useState(false);
-  const dropdownRef = React.useRef<HTMLDivElement>(null);
-  const triggerRef = React.useRef<HTMLButtonElement>(null);
-  const optionRefs = React.useRef<Array<HTMLButtonElement | null>>([]);
-  const dropdownID = React.useId();
-  const barIdx = getBarIdx(loc.pathname);
-
-  React.useEffect(() => {
-    const handler = (event: PointerEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener("pointerdown", handler);
-    return () => document.removeEventListener("pointerdown", handler);
-  }, []);
-
-  React.useEffect(() => {
-    setDropdownOpen(false);
-  }, [loc.pathname]);
-
-  const focusOption = (index: number) => {
-    optionRefs.current[index]?.focus();
-  };
-
-  const openAndFocus = (index: number) => {
-    setDropdownOpen(true);
-    requestAnimationFrame(() => focusOption(index));
-  };
-
-  const handleMenuKeyDown = (event: React.KeyboardEvent) => {
-    const focusedIndex = optionRefs.current.findIndex(
-      (option) => option === document.activeElement,
-    );
-
-    switch (event.key) {
-      case "Escape":
+const MenuButton = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentPropsWithoutRef<"button"> & { "data-expanded"?: boolean }
+>((props, ref) => (
+  <Tooltip
+    label={props.title ?? ""}
+    disabled={!props.title}
+    opened={props["data-expanded"] ? false : undefined}
+    position="right"
+    openDelay={200}
+    events={{ hover: !!props.title, focus: !!props.title, touch: false }}
+    withArrow
+  >
+    <button
+      {...props}
+      title={undefined}
+      ref={ref}
+      onKeyDown={(event) => {
+        props.onKeyDown?.(event);
+        if (
+          event.defaultPrevented ||
+          !["ArrowDown", "ArrowUp"].includes(event.key)
+        )
+          return;
         event.preventDefault();
-        setDropdownOpen(false);
-        triggerRef.current?.focus();
-        break;
-      case "ArrowDown":
-        event.preventDefault();
-        focusOption((focusedIndex + 1 + sections.length) % sections.length);
-        break;
-      case "ArrowUp":
-        event.preventDefault();
-        focusOption((focusedIndex - 1 + sections.length) % sections.length);
-        break;
-      case "Home":
-        event.preventDefault();
-        focusOption(0);
-        break;
-      case "End":
-        event.preventDefault();
-        focusOption(sections.length - 1);
-        break;
-    }
-  };
+        const target = event.currentTarget;
+        const last = event.key === "ArrowUp";
+        if (!target.dataset.expanded) target.click();
+        requestAnimationFrame(() => {
+          const menu = document.getElementById(
+            target.getAttribute("aria-controls") ?? "",
+          );
+          const items = menu?.querySelectorAll<HTMLElement>("[data-menu-item]");
+          items?.[last ? items.length - 1 : 0]?.focus();
+        });
+      }}
+    />
+  </Tooltip>
+));
 
-  const activeSection = sections[barIdx];
-  const ActiveIcon = activeSection?.icon ?? Layers;
-  const items = activeSection?.items ?? [];
+const isCurrent = (pathname: string, url: string) =>
+  pathname === url || (url !== "/" && pathname.startsWith(`${url}/`));
 
-  const isOverview = loc.pathname === "/";
-  const isAgent =
-    loc.pathname === "/agent" || loc.pathname.startsWith("/agent/");
+const NavigationLink = (props: {
+  item: NavItem;
+  collapsed: boolean;
+  exact?: boolean;
+}) => {
+  const { pathname } = useLocation();
+  const { item, collapsed } = props;
+  const selected = props.exact
+    ? pathname === item.url
+    : isCurrent(pathname, item.url);
 
   return (
-    <div className="min-h-full w-full flex flex-col">
+    <Tooltip
+      label={item.title}
+      disabled={!collapsed}
+      position="right"
+      openDelay={200}
+      events={{ hover: collapsed, focus: collapsed, touch: false }}
+      withArrow
+    >
       <Link
-        to="/"
-        viewTransition
-        className={`text-body font-semibold ${twMerge(
-          "mb-3 flex w-full items-center gap-2",
-          "py-2 px-2.5 rounded-lg",
-          "transition-colors duration-150",
-          isOverview
-            ? "bg-slate-900 text-white shadow-sm"
-            : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/70",
-        )}`}
+        to={item.url}
+        aria-label={item.title}
+        aria-current={selected ? "page" : undefined}
+        className={twMerge(
+          classes.row,
+          "flex h-9 shrink-0 items-center gap-2.5 rounded-lg px-2.5 text-body outline-none transition-[background-color,color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-slate-400 [@media(pointer:coarse)]:h-11",
+          selected
+            ? "bg-white font-semibold text-slate-900 shadow-card ring-1 ring-slate-200"
+            : "font-normal text-slate-600 hover:bg-slate-200/50 hover:text-slate-900",
+        )}
       >
-        <LayoutDashboard
-          size={15}
+        <item.icon
+          size={16}
+          strokeWidth={selected ? 2.25 : 1.75}
           className="shrink-0"
-          strokeWidth={isOverview ? 2.5 : 2}
+          aria-hidden
         />
-        <span>Overview</span>
+        <span className={classes.label}>{item.title}</span>
       </Link>
+    </Tooltip>
+  );
+};
 
-      <Link
-        to="/agent"
-        viewTransition
-        className={`text-body font-semibold ${twMerge(
-          "-mt-1.5 mb-3 flex w-full items-center gap-2",
-          "py-2 px-2.5 rounded-lg",
-          "transition-colors duration-150",
-          isAgent
-            ? "bg-slate-900 text-white shadow-sm"
-            : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/70",
-        )}`}
-      >
-        <Sparkles
-          size={15}
-          className="shrink-0"
-          strokeWidth={isAgent ? 2.5 : 2}
-        />
-        <span>Agent</span>
-      </Link>
+const WorkspacePicker = (props: { collapsed: boolean }) => {
+  const { pathname } = useLocation();
+  const section = findSection(pathname);
+  const navigate = useNavigate();
+  const Icon = section?.icon ?? Layers;
+  const reducedMotion = useReducedMotion();
 
-      <div ref={dropdownRef} className="relative mb-7">
-        <button
-          ref={triggerRef}
+  return (
+    <Menu
+      withInitialFocusPlaceholder={false}
+      position={props.collapsed ? "right-start" : "bottom-start"}
+      width={248}
+      withinPortal
+      loop
+      closeOnItemClick
+      transitionProps={{ transition: "pop", duration: reducedMotion ? 0 : 150 }}
+    >
+      <Menu.Target>
+        <MenuButton
           type="button"
-          onClick={() => setDropdownOpen((v) => !v)}
-          onKeyDown={(event) => {
-            if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-              event.preventDefault();
-              openAndFocus(
-                event.key === "ArrowDown"
-                  ? Math.max(0, barIdx)
-                  : sections.length - 1,
-              );
-            }
-          }}
-          aria-haspopup="menu"
-          aria-expanded={dropdownOpen}
-          aria-controls={dropdownOpen ? dropdownID : undefined}
+          aria-label={`API workspace ${section?.label ?? "Choose workspace"}`}
+          title={
+            props.collapsed
+              ? `API workspace: ${section?.label ?? "Choose workspace"}`
+              : undefined
+          }
           className={twMerge(
-            "group flex h-14 w-full cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-2.5 text-left",
-            "shadow-card",
-            "transition-[border-color,box-shadow,background-color] duration-200",
-            "hover:border-slate-300 hover:bg-slate-50/70 hover:shadow-raised",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2",
-            dropdownOpen &&
-              "border-slate-300 bg-slate-50/80 shadow-raised",
+            classes.row,
+            "group flex h-10 w-full shrink-0 items-center gap-2.5 rounded-lg border border-slate-200 bg-white px-2.5 text-left text-body text-slate-800 shadow-card outline-none transition-[border-color,box-shadow] duration-150 hover:border-slate-300 focus-visible:ring-2 focus-visible:ring-slate-400 [@media(pointer:coarse)]:h-11",
           )}
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm transition-transform duration-200 group-hover:scale-[1.03]">
-            <ActiveIcon size={15} strokeWidth={2.25} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-micro font-semibold uppercase tracking-[0.09em] text-slate-500">
-              API workspace
-            </span>
-            <span className="mt-0.5 block truncate text-body font-semibold text-slate-800">
-              {activeSection?.label ?? "Choose workspace"}
-            </span>
-          </span>
-          <motion.span
-            animate={{ rotate: dropdownOpen ? 180 : 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors duration-200 group-hover:bg-white group-hover:text-slate-600"
+          <Icon size={16} className="shrink-0 text-slate-500" aria-hidden />
+          <span
+            className={twMerge(classes.label, "min-w-0 flex-1 font-semibold")}
           >
-            <ChevronDown size={14} strokeWidth={2.5} />
-          </motion.span>
-        </button>
-
-        <AnimatePresence initial={false}>
-          {dropdownOpen && (
-            <motion.div
-              key="dropdown"
-              id={dropdownID}
-              role="menu"
-              aria-label="Choose API workspace"
-              onKeyDown={handleMenuKeyDown}
-              initial={{ opacity: 0, y: -7, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -5, scale: 0.98 }}
-              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              style={{ transformOrigin: "top" }}
-              className="absolute left-0 right-0 top-[calc(100%+7px)] z-50 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-overlay"
-            >
-              <div className="border-b border-slate-100 bg-slate-50/70 px-3.5 py-3">
-                <p className="text-xs font-semibold text-slate-700">
-                  Choose workspace
-                </p>
-                <p className="mt-0.5 text-micro font-normal text-slate-500">
-                  Switch management API context
-                </p>
-              </div>
-
-              <div className="space-y-1 p-1.5">
-                {sections.map((s, idx) => {
-                  const Icon = s.icon;
-                  const isActive = idx === barIdx;
-                  return (
-                    <button
-                      key={s.prefix}
-                      ref={(element) => {
-                        optionRefs.current[idx] = element;
-                      }}
-                      type="button"
-                      role="menuitemradio"
-                      aria-checked={isActive}
-                      tabIndex={isActive || (barIdx < 0 && idx === 0) ? 0 : -1}
-                      onClick={() => {
-                        setDropdownOpen(false);
-                        navigate(s.defaultPath);
-                      }}
-                      className={twMerge(
-                        "group/item flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-left",
-                        "transition-[background-color,color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-inset",
-                        isActive
-                          ? "bg-slate-900 text-white"
-                          : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
-                      )}
-                    >
-                      <span
-                        className={twMerge(
-                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
-                          isActive
-                            ? "bg-white/10 text-white"
-                            : "border border-slate-200 bg-white text-slate-500 group-hover/item:border-slate-300 group-hover/item:text-slate-700",
-                        )}
-                      >
-                        <Icon size={14} strokeWidth={2.25} />
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-body font-semibold">
-                        {s.label}
-                      </span>
-                      {isActive && (
-                        <Check
-                          size={14}
-                          strokeWidth={2.75}
-                          className="shrink-0 text-slate-200"
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
+            {section?.label ?? "Choose workspace"}
+          </span>
+          {!props.collapsed && (
+            <ChevronDown
+              size={14}
+              className="shrink-0 text-slate-500"
+              aria-hidden
+            />
           )}
-        </AnimatePresence>
+        </MenuButton>
+      </Menu.Target>
+      <Menu.Dropdown style={{ maxWidth: "calc(100vw - 24px)" }}>
+        <Menu.Label>API workspaces</Menu.Label>
+        {navSections.map((workspace) => (
+          <Menu.RadioItem
+            key={workspace.prefix}
+            value={workspace.prefix}
+            checked={workspace === section}
+            onClick={() => navigate(workspace.defaultPath)}
+            closeMenuOnClick
+            checkIcon={<Check size={14} aria-hidden />}
+            className={
+              workspace === section
+                ? "!bg-slate-100 !text-slate-900"
+                : undefined
+            }
+          >
+            <span className="flex items-center gap-2">
+              <workspace.icon size={15} aria-hidden />
+              <span>{workspace.label}</span>
+            </span>
+          </Menu.RadioItem>
+        ))}
+      </Menu.Dropdown>
+    </Menu>
+  );
+};
+
+const Group = (props: { group: FunctionGroup; collapsed: boolean }) => {
+  const { pathname } = useLocation();
+  const { group, collapsed } = props;
+  const active = group.items.some((item) => isCurrent(pathname, item.url));
+  const [state, setState] = React.useState({ pathname, opened: active });
+  const opened = active && state.pathname !== pathname ? true : state.opened;
+  const id = React.useId();
+
+  if (collapsed) {
+    return (
+      <Menu
+        withInitialFocusPlaceholder={false}
+        position="right-start"
+        width={248}
+        withinPortal
+        loop
+      >
+        <Menu.Target>
+          <MenuButton
+            type="button"
+            aria-label={group.label}
+            data-active={active || undefined}
+            title={group.label}
+            className={twMerge(
+              "flex h-9 w-full items-center justify-center rounded-lg text-slate-600 outline-none transition-[background-color,color,box-shadow] duration-150 hover:bg-slate-200/50 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400 [@media(pointer:coarse)]:h-11",
+              active &&
+                "bg-white text-slate-900 shadow-card ring-1 ring-slate-200",
+            )}
+          >
+            <group.icon size={16} aria-hidden />
+          </MenuButton>
+        </Menu.Target>
+        <Menu.Dropdown
+          style={{ maxHeight: "calc(100dvh - 88px)", overflowY: "auto" }}
+        >
+          <Menu.Label>{group.label}</Menu.Label>
+          {group.items.map((item) => (
+            <Menu.Item
+              key={item.url}
+              component={Link}
+              to={item.url}
+              aria-current={isCurrent(pathname, item.url) ? "page" : undefined}
+              leftSection={<item.icon size={15} aria-hidden />}
+              className={
+                isCurrent(pathname, item.url)
+                  ? "!bg-slate-100 !text-slate-900"
+                  : undefined
+              }
+            >
+              {item.title}
+            </Menu.Item>
+          ))}
+        </Menu.Dropdown>
+      </Menu>
+    );
+  }
+
+  return (
+    <section aria-label={group.label}>
+      <button
+        type="button"
+        aria-expanded={opened}
+        aria-controls={id}
+        onClick={() => setState({ pathname, opened: !opened })}
+        className="flex h-9 w-full items-center gap-2 rounded-lg px-2.5 text-xs font-semibold text-slate-500 outline-none transition-colors hover:bg-slate-200/40 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-slate-400 [@media(pointer:coarse)]:h-11"
+      >
+        <group.icon size={14} className="shrink-0" aria-hidden />
+        <span className="min-w-0 flex-1 text-left">{group.label}</span>
+        <ChevronDown
+          size={13}
+          aria-hidden
+          className={twMerge(
+            "shrink-0 transition-transform duration-150",
+            !opened && "-rotate-90",
+          )}
+        />
+        {active && !opened && (
+          <span className="h-1 w-1 rounded-full bg-slate-700" />
+        )}
+      </button>
+      <ul id={id} hidden={!opened} className="space-y-px">
+        {group.items.map((item) => (
+          <li key={item.url}>
+            <NavigationLink item={item} collapsed={collapsed} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+};
+
+export default function Sidebar(props: {
+  collapsed?: boolean;
+  onToggle?: () => void;
+  onClose?: () => void;
+}) {
+  const collapsed = props.collapsed ?? false;
+  const { pathname } = useLocation();
+  const section = findSection(pathname);
+  const [storedMode, setMode] = useLocalStorage<"api" | "functions">({
+    key: "octelium-console-navigation-mode",
+    defaultValue: "api",
+    getInitialValueInEffect: false,
+    deserialize: (value) => (value === '"functions"' ? "functions" : "api"),
+  });
+  const mode = storedMode === "functions" ? "functions" : "api";
+  const reducedMotion = useReducedMotion();
+  const navRef = React.useRef<HTMLElement>(null);
+
+  React.useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const reveal = () => {
+      const selected = nav.querySelector<HTMLElement>(
+        '[aria-current="page"], [data-active]',
+      );
+      if (!selected || selected.getClientRects().length === 0) return;
+      const bounds = nav.getBoundingClientRect();
+      const item = selected.getBoundingClientRect();
+      if (item.top < bounds.top)
+        nav.scrollTop += Math.floor(item.top - bounds.top);
+      else if (item.bottom > bounds.bottom)
+        nav.scrollTop += Math.ceil(item.bottom - bounds.bottom);
+    };
+    reveal();
+    const observer = new ResizeObserver(reveal);
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, [pathname, mode, collapsed]);
+
+  const toggleLabel = props.onClose
+    ? "Close navigation"
+    : collapsed
+      ? "Expand sidebar"
+      : "Collapse sidebar";
+  const ToggleIcon = props.onClose
+    ? X
+    : collapsed
+      ? PanelLeftOpen
+      : PanelLeftClose;
+
+  return (
+    <div
+      className={twMerge(
+        classes.sidebar,
+        "flex h-full min-h-0 w-full flex-col",
+      )}
+      data-collapsed={collapsed || undefined}
+    >
+      <div
+        className={twMerge(
+          classes.row,
+          "flex h-12 shrink-0 items-center justify-between gap-2 px-3",
+        )}
+      >
+        <span
+          className={twMerge(
+            classes.label,
+            "text-xs font-semibold text-slate-500",
+          )}
+        >
+          Console
+        </span>
+        {(props.onToggle || props.onClose) && (
+          <Tooltip label={toggleLabel} position="right" withArrow>
+            <button
+              type="button"
+              aria-label={toggleLabel}
+              aria-expanded={props.onClose ? undefined : !collapsed}
+              onClick={props.onClose ?? props.onToggle}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 outline-none transition-colors hover:bg-slate-200/60 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
+            >
+              <ToggleIcon size={17} aria-hidden />
+            </button>
+          </Tooltip>
+        )}
       </div>
 
-      <nav className="flex flex-col gap-0.5">
-        {items.map((item) => {
-          const isActive =
-            loc.pathname === item.url ||
-            loc.pathname.startsWith(`${item.url}/`);
-          return (
-            <Link
-              key={item.title}
-              viewTransition
-              to={item.url}
-              className={`text-body font-semibold ${twMerge(
-                "flex w-full items-center gap-2",
-                "py-1.5 px-2.5 rounded-md",
-                "transition-colors duration-150",
-                isActive
-                  ? "bg-slate-900 text-white shadow-sm"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/70",
-              )}`}
-            >
-              <item.icon
-                size={15}
-                className="shrink-0"
-                strokeWidth={isActive ? 2.5 : 2}
-              />
-              <span>{item.title}</span>
-            </Link>
-          );
-        })}
+      <div className="shrink-0 space-y-1 px-2 pb-3">
+        <NavigationLink item={pageOverview} collapsed={collapsed} />
+        <NavigationLink item={pageAgent} collapsed={collapsed} />
+      </div>
+
+      <div className="shrink-0 space-y-2 border-t border-slate-200/80 px-2 py-3">
+        {collapsed ? (
+          <Menu
+            withInitialFocusPlaceholder={false}
+            position="right-start"
+            width={192}
+            withinPortal
+            loop
+          >
+            <Menu.Target>
+              <MenuButton
+                type="button"
+                aria-label={`Navigation view: ${mode === "api" ? "API" : "Functions"}`}
+                title={`Navigation view: ${mode === "api" ? "API" : "Functions"}`}
+                className="flex h-9 w-full items-center justify-center rounded-lg text-slate-500 outline-none transition-colors hover:bg-slate-200/50 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400"
+              >
+                {mode === "api" ? (
+                  <Layers size={16} aria-hidden />
+                ) : (
+                  <ListTree size={16} aria-hidden />
+                )}
+              </MenuButton>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Label>Navigation view</Menu.Label>
+              {(["api", "functions"] as const).map((value) => (
+                <Menu.RadioItem
+                  key={value}
+                  value={value}
+                  checked={mode === value}
+                  onChange={() => setMode(value)}
+                  closeMenuOnClick
+                  checkIcon={<Check size={14} aria-hidden />}
+                >
+                  {value === "api" ? "API" : "Functions"}
+                </Menu.RadioItem>
+              ))}
+            </Menu.Dropdown>
+          </Menu>
+        ) : (
+          <SegmentedControl
+            aria-label="Navigation view"
+            value={mode}
+            onChange={setMode}
+            data={[
+              { value: "api", label: "API" },
+              { value: "functions", label: "Functions" },
+            ]}
+            fullWidth
+            size="xs"
+            withItemsBorders={false}
+            transitionDuration={reducedMotion ? 0 : 150}
+          />
+        )}
+        {mode === "api" && <WorkspacePicker collapsed={collapsed} />}
+      </div>
+
+      <nav
+        ref={navRef}
+        aria-label="Console"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-3 [scrollbar-width:thin]"
+      >
+        {mode === "api" ? (
+          <>
+            {!collapsed && (
+              <p className="px-2.5 pb-2 pt-1 text-xs font-semibold text-slate-500">
+                {section ? "Resources" : "API workspaces"}
+              </p>
+            )}
+            <ul className="space-y-px">
+              {(section
+                ? [
+                    ...(section.items.some(
+                      (item) => item.url === section.defaultPath,
+                    )
+                      ? []
+                      : [
+                          {
+                            title: `${section.label} overview`,
+                            url: section.defaultPath,
+                            icon: pageOverview.icon,
+                          },
+                        ]),
+                    ...section.items,
+                  ]
+                : navSections.map((workspace) => ({
+                    title: workspace.label,
+                    url: workspace.defaultPath,
+                    icon: workspace.icon,
+                  }))
+              ).map((item) => (
+                <li key={item.url}>
+                  <NavigationLink
+                    item={item}
+                    collapsed={collapsed}
+                    exact={item.url === section?.defaultPath}
+                  />
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <div className="space-y-px">
+            {functionGroups.map((group) => (
+              <Group key={group.id} group={group} collapsed={collapsed} />
+            ))}
+          </div>
+        )}
       </nav>
+
+      <div className="shrink-0 border-t border-slate-200/80 p-2">
+        <NavigationLink item={pageSettings} collapsed={collapsed} />
+      </div>
     </div>
   );
 }

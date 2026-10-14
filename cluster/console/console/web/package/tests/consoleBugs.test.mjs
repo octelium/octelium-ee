@@ -304,11 +304,19 @@ describe("Console bug regressions", () => {
     await page
       .getByRole("menuitemradio", { name: "Core", exact: true })
       .click();
+    await page.waitForFunction(
+      () => document.querySelector("[data-location]")?.textContent === "/core",
+    );
     assert.equal(await page.locator("[data-location]").textContent(), "/core");
     await page.getByRole("button", { name: /API workspace Core/ }).click();
     await page
       .getByRole("menuitemradio", { name: "Cluster Management", exact: true })
       .click();
+    await page.waitForFunction(
+      () =>
+        document.querySelector("[data-location]")?.textContent ===
+        "/clusterman",
+    );
     assert.equal(
       await page.locator("[data-location]").textContent(),
       "/clusterman",

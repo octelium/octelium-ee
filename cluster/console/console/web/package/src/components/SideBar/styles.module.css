@@ -1,0 +1,31 @@
+.sidebar {
+  overflow: hidden;
+}
+
+.label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transition: opacity 120ms ease-out;
+}
+
+.sidebar[data-collapsed] .label {
+  width: 0;
+  flex: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.sidebar[data-collapsed] .row {
+  justify-content: center;
+  gap: 0;
+  padding-inline: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar *,
+  .sidebar *::before,
+  .sidebar *::after {
+    transition: none !important;
+  }
+}
