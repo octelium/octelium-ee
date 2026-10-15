@@ -1,6 +1,7 @@
-import { RouteObject } from "react-router-dom";
+import { Navigate, RouteObject } from "react-router-dom";
 
-import Home from "./Home";
+import { NotFoundPage, RouteError } from "@/components/RouteError";
+
 import Settings from "./Settings";
 
 import Root from "./index";
@@ -13,15 +14,24 @@ export default (): RouteObject => {
     element: <Root />,
     children: [
       {
-        path: "",
-        element: <Home />,
+        errorElement: <RouteError />,
+        children: [
+          {
+            index: true,
+            element: <Navigate to="/user/requests" replace />,
+          },
+          {
+            path: "settings",
+            element: <Settings />,
+          },
+          routerUser(),
+          routerReviewer(),
+          {
+            path: "*",
+            element: <NotFoundPage />,
+          },
+        ],
       },
-      {
-        path: "settings",
-        element: <Settings />,
-      },
-      routerUser(),
-      routerReviewer(),
     ],
   };
 };

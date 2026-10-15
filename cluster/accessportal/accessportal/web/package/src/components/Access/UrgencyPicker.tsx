@@ -1,6 +1,6 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import { Select } from "@mantine/core";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 import { URGENCY_OPTIONS, toneClasses, urgencyMeta } from "@/utils";
 

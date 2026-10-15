@@ -2,7 +2,9 @@ import type { CSSVariablesResolver } from "@mantine/core";
 
 const cssVariablesResolver: CSSVariablesResolver = () => ({
   variables: {},
-  light: {},
+  light: {
+    "--popover-border-color": "var(--color-slate-200)",
+  },
   dark: {
     "--mantine-color-black": "var(--color-white)",
 

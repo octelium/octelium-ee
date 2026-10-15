@@ -63,7 +63,13 @@ const PortalShell = (props: {
       </AppShell.Navbar>
 
       <AppShell.Main className="!bg-transparent">
-        <div className="mx-auto w-full max-w-[1440px]">{props.children}</div>
+        <div
+          id="portal-main"
+          tabIndex={-1}
+          className="mx-auto w-full max-w-[var(--page-max-width)] outline-none"
+        >
+          {props.children}
+        </div>
       </AppShell.Main>
 
       <Drawer.Root

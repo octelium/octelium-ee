@@ -4,6 +4,7 @@ import * as MetaP from "@/apis/metav1/metav1";
 import { Button, SegmentedControl, Textarea, Tooltip } from "@mantine/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  Check,
   CircleAlert,
   Layers,
   PanelRightOpen,
@@ -14,9 +15,9 @@ import {
 import * as React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
-import { useCatalogs } from "@/components/Access/hooks";
+import { useCatalogs, useService } from "@/components/Access/hooks";
 import UrgencyPicker from "@/components/Access/UrgencyPicker";
 import CatalogDetailsDrawer from "@/components/Catalog/CatalogDetailsDrawer";
 import DurationInput from "@/components/DurationInput";
@@ -25,32 +26,43 @@ import {
   Avatar,
   Badge,
   ConfirmDialog,
+  DocumentTitle,
   EmptyState,
   ErrorState,
   Eyebrow,
   Field,
   IconTile,
-  Loading,
+  LengthCounter,
   Note,
   PageHeader,
   SearchInput,
   SectionCard,
+  SkeletonRows,
+  SummaryRow,
+  isNotFoundError,
 } from "@/ui";
-import { formatDuration } from "@/utils";
+import {
+  MAX_JUSTIFICATION_BYTES,
+  formatDuration,
+  tsToMillis,
+  urgencyMeta,
+  utf8Length,
+} from "@/utils";
 import { getUserClient } from "@/utils/client";
 import { useAppSelector } from "@/utils/hooks";
 
 import ServicePicker from "./ServicePicker";
 import SubjectPicker from "./SubjectPicker";
 
-const MAX_JUSTIFICATION = 1500;
-
 type Selection =
   | { kind: "service"; name: string; label: string }
   | { kind: "catalog"; name: string; label: string };
 
 const StepBadge = (props: { index: number }) => (
-  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-[0.62rem] font-bold text-white">
+  <span
+    aria-label={`Step ${props.index}`}
+    className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 text-micro font-semibold text-slate-600"
+  >
     {props.index}
   </span>
 );
@@ -68,33 +80,47 @@ const CatalogCard = (props: {
     className={twMerge(
       "flex w-full items-center gap-2 rounded-lg border px-3 py-2.5 transition-[border-color,box-shadow,background-color] duration-150",
       props.selected
-        ? "border-slate-900 bg-slate-50 shadow-raised"
+        ? "border-slate-400 bg-slate-50 ring-1 ring-slate-300"
         : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
     )}
   >
     <button
       type="button"
       onClick={props.onClick}
-      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+      aria-pressed={props.selected}
+      className="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
     >
-      <IconTile tone={props.selected ? "slate" : "violet"}>
-        <Layers size={16} strokeWidth={2.2} />
-      </IconTile>
+      <div
+        className={twMerge(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+          props.selected ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500",
+        )}
+      >
+        {props.selected ? (
+          <Check size={16} strokeWidth={2.75} />
+        ) : (
+          <Layers size={16} strokeWidth={2} />
+        )}
+      </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[0.84rem] font-bold text-slate-800">
+        <div className="truncate text-body font-semibold text-slate-800">
           {props.title}
         </div>
         {props.subtitle && (
-          <div className="truncate font-mono text-[0.7rem] font-semibold text-slate-400">
+          <div className="truncate font-mono text-xs font-normal text-slate-500">
             {props.subtitle}
           </div>
         )}
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           {props.serviceCount > 0 && (
-            <Badge tone="slate">{props.serviceCount} services</Badge>
+            <Badge>
+              {props.serviceCount} listed service{props.serviceCount === 1 ? "" : "s"}
+            </Badge>
           )}
           {props.namespaceCount > 0 && (
-            <Badge tone="slate">{props.namespaceCount} namespaces</Badge>
+            <Badge>
+              {props.namespaceCount} namespace{props.namespaceCount === 1 ? "" : "s"}
+            </Badge>
           )}
         </div>
       </div>
@@ -103,10 +129,10 @@ const CatalogCard = (props: {
       <button
         type="button"
         onClick={props.onDetails}
-        aria-label={`View details for ${props.title}`}
-        className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 text-[0.68rem] font-bold text-slate-600 shadow-card transition-[border-color,background-color,color] hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+        aria-label={`View the contents of ${props.title}`}
+        className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-600 outline-none transition-[border-color,background-color,color] hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400"
       >
-        <PanelRightOpen size={14} strokeWidth={2.4} />
+        <PanelRightOpen size={14} strokeWidth={2.25} />
         <span className="hidden sm:inline">Contents</span>
       </button>
     </Tooltip>
@@ -116,7 +142,7 @@ const CatalogCard = (props: {
 const NewRequest = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const settings = useAppSelector((state) => state.settings);
+  const status = useAppSelector((state) => state.settings.status);
   const [searchParams] = useSearchParams();
   const deepLinkApplied = React.useRef(false);
   const [tab, setTab] = React.useState<"service" | "catalog">("service");
@@ -137,6 +163,9 @@ const NewRequest = () => {
 
   const catalogsQry = useCatalogs();
   const catalogs = catalogsQry.data ?? [];
+  const serviceQry = useService(
+    selection?.kind === "service" ? selection.name : undefined,
+  );
 
   React.useEffect(() => {
     if (deepLinkApplied.current) return;
@@ -149,17 +178,32 @@ const NewRequest = () => {
       setTab("service");
       setSelection({ kind: "service", name: svcName, label: svcName });
     } else if (catName) {
-      if (catalogsQry.isLoading) return;
       deepLinkApplied.current = true;
-      const cat = catalogs.find((c) => c.metadata?.name === catName);
       setTab("catalog");
-      setSelection({
-        kind: "catalog",
-        name: catName,
-        label: cat?.metadata?.displayName || cat?.metadata?.name || catName,
-      });
+      setSelection({ kind: "catalog", name: catName, label: catName });
     }
-  }, [searchParams, catalogsQry.isLoading, catalogs]);
+  }, [searchParams]);
+
+  const selectedCatalog =
+    selection?.kind === "catalog"
+      ? catalogs.find((c) => c.metadata?.name === selection.name)
+      : undefined;
+
+  const selectionLabel =
+    selection?.kind === "service"
+      ? serviceQry.data?.metadata?.displayName || selection.label
+      : selection?.kind === "catalog"
+        ? selectedCatalog?.metadata?.displayName || selection.label
+        : undefined;
+
+  const selectionError =
+    selection?.kind === "service" && serviceQry.isError
+      ? isNotFoundError(serviceQry.error)
+        ? `The Service ${selection.name} does not exist or is not visible to you`
+        : "The selected Service could not be checked. Try again."
+      : selection?.kind === "catalog" && catalogsQry.isSuccess && !selectedCatalog
+        ? `The Catalog ${selection.name} does not exist or is not visible to you`
+        : undefined;
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -240,27 +284,33 @@ const NewRequest = () => {
   );
 
   const selfName =
-    settings.status?.user?.metadata?.displayName ||
-    settings.status?.user?.metadata?.name ||
-    "My account";
+    status?.user?.metadata?.displayName || status?.user?.metadata?.name;
   const recipientLabel =
     requestFor === "subject"
       ? subject?.displayName || subject?.userRef?.name
-      : selfName;
+      : selfName || "You";
 
-  const tooLong = justification.length > MAX_JUSTIFICATION;
+  const justificationBytes = utf8Length(justification);
+  const tooLong = justificationBytes > MAX_JUSTIFICATION_BYTES;
+  const deadlinePassed =
+    !!deadline && (tsToMillis(deadline) ?? 0) <= Date.now();
+
   const blocker = !selection
     ? `Select a ${tab === "service" ? "Service" : "Catalog"} to request access to`
-    : requestFor === "subject" && !subject
-      ? "Select the user who should receive the access"
-      : tooLong
-        ? "The justification is too long"
-        : undefined;
+    : selectionError
+      ? selectionError
+      : requestFor === "subject" && !subject
+        ? "Select the user who should receive the access"
+        : tooLong
+          ? "The justification is too long"
+          : deadlinePassed
+            ? "The deadline is in the past. Choose a later time or clear it."
+            : undefined;
 
   return (
     <div className="w-full min-w-0">
+      <DocumentTitle title="New Request" />
       <PageHeader
-        eyebrow="Access"
         title="New Request"
         description="Request just-in-time access to a single Service or to an entire Catalog of resources."
       />
@@ -270,13 +320,13 @@ const NewRequest = () => {
           <SectionCard
             title="Who needs the access"
             description="The user the access is granted to"
-            icon={<UserRound size={14} strokeWidth={2.4} />}
-            tone="blue"
+            icon={<UserRound size={14} strokeWidth={2.25} />}
             actions={<StepBadge index={1} />}
           >
             <div className="flex flex-col gap-3">
               <SegmentedControl
                 fullWidth
+                aria-label="Request access for"
                 value={requestFor}
                 onChange={(value) => {
                   if (value === "self") {
@@ -293,23 +343,21 @@ const NewRequest = () => {
               />
 
               {requestFor === "self" ? (
-                <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2.5">
+                <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
                   <Avatar
-                    src={settings.status?.user?.metadata?.picURL}
+                    src={status?.user?.metadata?.picURL}
                     name={selfName}
                     size="sm"
                   />
                   <div className="min-w-0">
-                    <p className="truncate text-[0.8rem] font-bold text-slate-700">
-                      {selfName}
+                    <p className="truncate text-body font-semibold text-slate-800">
+                      {selfName || "Your account"}
                     </p>
-                    <p className="truncate text-[0.68rem] font-medium text-slate-400">
-                      {settings.status?.user?.spec?.email || "Your own access"}
+                    <p className="truncate text-xs font-normal text-slate-500">
+                      {status?.user?.spec?.email || "The access is granted to you"}
                     </p>
                   </div>
-                  <Badge tone="blue" className="ml-auto">
-                    You
-                  </Badge>
+                  <Badge className="ml-auto">You</Badge>
                 </div>
               ) : (
                 <SubjectPicker value={subject} onChange={setSubject} />
@@ -320,13 +368,13 @@ const NewRequest = () => {
           <SectionCard
             title="What to request"
             description="Pick a single Service or a whole Catalog"
-            icon={<ServerCog size={14} strokeWidth={2.4} />}
-            tone="violet"
+            icon={<ServerCog size={14} strokeWidth={2.25} />}
             actions={<StepBadge index={2} />}
           >
             <div className="flex flex-col gap-3">
               <SegmentedControl
                 fullWidth
+                aria-label="Resource type"
                 value={tab}
                 onChange={(value) => {
                   setTab(value as "service" | "catalog");
@@ -354,20 +402,21 @@ const NewRequest = () => {
                   <SearchInput
                     value={catalogQuery}
                     onChange={setCatalogQuery}
-                    placeholder="Search catalogs..."
+                    placeholder="Search catalogs by name"
                     ariaLabel="Search catalogs"
                   />
 
                   {catalogsQry.isLoading ? (
-                    <Loading label="Loading catalogs..." />
-                  ) : catalogsQry.isError ? (
+                    <SkeletonRows rows={3} />
+                  ) : catalogsQry.isError && !catalogsQry.data ? (
                     <ErrorState
                       title="Could not load catalogs"
+                      error={catalogsQry.error}
                       onRetry={() => catalogsQry.refetch()}
                     />
                   ) : filteredCatalogs.length === 0 ? (
                     <EmptyState
-                      icon={<Layers size={20} strokeWidth={2} />}
+                      icon={<Layers size={18} strokeWidth={2} />}
                       title={
                         catalogs.length ? "No matching catalogs" : "No catalogs available"
                       }
@@ -378,7 +427,7 @@ const NewRequest = () => {
                       }
                     />
                   ) : (
-                    <div className="flex max-h-[460px] flex-col gap-2 overflow-y-auto pr-0.5">
+                    <div className="flex max-h-[460px] flex-col gap-2 overflow-y-auto overscroll-contain pr-0.5">
                       {filteredCatalogs.map((c) => {
                         const collection = c.spec?.resourceCollection?.service;
                         return (
@@ -415,43 +464,37 @@ const NewRequest = () => {
         <SectionCard
           title="Access details"
           description="How long and how urgent"
-          icon={<Send size={14} strokeWidth={2.4} />}
-          tone="emerald"
+          icon={<Send size={14} strokeWidth={2.25} />}
           actions={<StepBadge index={3} />}
           className="lg:sticky lg:top-20"
         >
           <div className="flex flex-col gap-4">
-            <div className="rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2.5">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
               <Eyebrow>Summary</Eyebrow>
               {selection ? (
                 <div className="mt-1.5 flex items-center gap-2">
-                  <IconTile
-                    size="sm"
-                    tone={selection.kind === "catalog" ? "violet" : "blue"}
-                  >
+                  <IconTile size="sm" className="bg-white">
                     {selection.kind === "catalog" ? (
-                      <Layers size={13} strokeWidth={2.4} />
+                      <Layers size={13} strokeWidth={2.25} />
                     ) : (
-                      <ServerCog size={13} strokeWidth={2.4} />
+                      <ServerCog size={13} strokeWidth={2.25} />
                     )}
                   </IconTile>
-                  <span className="min-w-0 flex-1 truncate text-[0.82rem] font-bold text-slate-800">
-                    {selection.label}
+                  <span className="min-w-0 flex-1 truncate text-body font-semibold text-slate-800">
+                    {selectionLabel}
                   </span>
                 </div>
               ) : (
-                <p className="mt-1.5 text-[0.74rem] font-semibold text-slate-400">
+                <p className="mt-1.5 text-xs font-normal text-slate-500">
                   Nothing selected yet
                 </p>
               )}
-              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.7rem] font-semibold text-slate-500">
-                <span className="inline-flex items-center gap-1">
-                  <UserRound size={11} className="text-slate-400" />
-                  {recipientLabel || "No recipient"}
-                </span>
-                <span className="text-slate-300">•</span>
-                <span>{formatDuration(duration)}</span>
-              </div>
+              <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-xs font-normal text-slate-600">
+                <UserRound size={11} aria-hidden className="text-slate-500" />
+                {recipientLabel || "No recipient"}
+                <span aria-hidden className="text-slate-300">·</span>
+                {formatDuration(duration)}
+              </p>
             </div>
 
             <Field
@@ -477,33 +520,29 @@ const NewRequest = () => {
               onChange={setDeadline}
             />
 
-            <Field
-              label="Justification"
-              description="Reviewers decide faster with a clear reason"
-              hint={
-                <span
-                  className={
-                    tooLong
-                      ? "text-[0.66rem] font-bold text-red-500"
-                      : "text-[0.66rem] font-semibold text-slate-400"
-                  }
-                >
-                  {justification.length}/{MAX_JUSTIFICATION}
+            <Textarea
+              label={
+                <span className="flex w-full items-baseline justify-between gap-3">
+                  Justification
+                  <LengthCounter
+                    length={justificationBytes}
+                    max={MAX_JUSTIFICATION_BYTES}
+                  />
                 </span>
               }
-            >
-              <Textarea
-                autosize
-                minRows={3}
-                maxRows={6}
-                placeholder="I need access to ..."
-                value={justification}
-                onChange={(e) => setJustification(e.currentTarget.value)}
-              />
-            </Field>
+              description="Reviewers decide faster with a clear reason"
+              error={tooLong ? "The justification is too long" : undefined}
+              autosize
+              minRows={3}
+              maxRows={6}
+              placeholder="I need access to ..."
+              value={justification}
+              onChange={(e) => setJustification(e.currentTarget.value)}
+              styles={{ label: { display: "flex", width: "100%" } }}
+            />
 
             {blocker && (
-              <Note tone="slate" icon={<CircleAlert size={13} strokeWidth={2.4} />}>
+              <Note icon={<CircleAlert size={13} strokeWidth={2.25} />}>
                 {blocker}
               </Note>
             )}
@@ -512,7 +551,7 @@ const NewRequest = () => {
               fullWidth
               variant="filled"
               color="ink"
-              leftSection={<Send size={14} strokeWidth={2.6} />}
+              leftSection={<Send size={14} strokeWidth={2.25} />}
               disabled={!!blocker}
               loading={createMutation.isPending}
               onClick={() => setSubmitOpen(true)}
@@ -530,23 +569,24 @@ const NewRequest = () => {
         title="Submit this access request?"
         description="The Cluster evaluates the access policies and either decides immediately or routes the request to its reviewers."
         details={
-          <div className="flex flex-col gap-1.5 text-[0.74rem] font-semibold text-slate-600">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-slate-400">Resource</span>
-              <span className="truncate">{selection?.label ?? "—"}</span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-slate-400">For</span>
-              <span className="truncate">{recipientLabel ?? "—"}</span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-slate-400">Duration</span>
-              <span>{formatDuration(duration)}</span>
-            </div>
+          <div className="flex flex-col">
+            <SummaryRow label={selection?.kind === "catalog" ? "Catalog" : "Service"}>
+              {selection?.name ?? "—"}
+            </SummaryRow>
+            <SummaryRow label="For">{recipientLabel ?? "—"}</SummaryRow>
+            <SummaryRow label="Duration">{formatDuration(duration)}</SummaryRow>
+            <SummaryRow label="Urgency">{urgencyMeta(urgency).label}</SummaryRow>
+            {deadline && (
+              <SummaryRow label="Deadline">
+                {Timestamp.toDate(deadline).toLocaleString()}
+              </SummaryRow>
+            )}
+            <SummaryRow label="Justification">
+              {justification.trim() || "None"}
+            </SummaryRow>
           </div>
         }
         confirmLabel="Submit request"
-        danger={false}
         loading={createMutation.isPending}
       />
 

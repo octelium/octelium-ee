@@ -1,23 +1,14 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
-import { Button, Pagination, SegmentedControl, Select, Tooltip } from "@mantine/core";
+import { Button, Pagination, SegmentedControl } from "@mantine/core";
 import {
   keepPreviousData,
   useMutation,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import {
-  ChevronRight,
-  Inbox,
-  Layers,
-  Plus,
-  ServerCog,
-  Timer,
-  Workflow,
-  X,
-} from "lucide-react";
+import { ChevronRight, Inbox, Plus, SearchX } from "lucide-react";
 import * as React from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { resourceIcon } from "@/components/Access/icons";
@@ -26,146 +17,153 @@ import {
   Badge,
   Card,
   ConfirmDialog,
+  DocumentTitle,
   EmptyState,
   ErrorState,
   IconTile,
+  Note,
   PageHeader,
   ProgressBar,
   RefreshButton,
   SearchInput,
   SkeletonRows,
   StatusBadge,
+  SummaryRow,
   Toolbar,
-  UrgencyMeter,
+  UrgencyBadge,
 } from "@/ui";
 import {
   accessWindow,
   currentReviewStepIndex,
   formatDuration,
+  isOnBehalfOf,
   isPendingRequest,
+  requestCreatedAt,
+  requestRefetchInterval,
   requestResourceLabel,
   requestSubjectName,
   reviewSteps,
   shortName,
   statusMeta,
-  tsToMillis,
   urgencyMeta,
 } from "@/utils";
 import { getUserClient } from "@/utils/client";
 
 const ITEMS_PER_PAGE = 20;
 
+const MetaLine = (props: { items: React.ReactNode[] }) => (
+  <p className="mt-0.5 text-xs font-normal leading-5 text-slate-500">
+    {props.items
+      .filter((item) => item !== null && item !== false && item !== undefined)
+      .map((item, index) => (
+        <React.Fragment key={index}>
+          {index > 0 && <span aria-hidden className="mx-1.5 text-slate-300">·</span>}
+          {item}
+        </React.Fragment>
+      ))}
+  </p>
+);
+
 const RequestRow = (props: {
   item: AccessP.Request;
+  returnTo: string;
   onCancel: (name: string) => void;
 }) => {
   const { item } = props;
-  useNow(30000);
+  const now = useNow();
   const resource = requestResourceLabel(item);
   const status = statusMeta(item.status?.state?.status);
-  const subject = requestSubjectName(item);
   const pending = isPendingRequest(item);
   const Icon = resourceIcon(resource.kind);
   const steps = reviewSteps(item);
-  const window = accessWindow(item);
-  const active = status.group === "active" && !!window.endMs;
+  const grant = accessWindow(item, now);
+  const active = status.group === "active" && !!grant.endMs && grant.endMs > now;
+  const urgency = urgencyMeta(item.spec?.urgency);
 
   return (
-    <Card interactive className="relative">
+    <Card interactive>
       <div className="flex items-stretch">
         <Link
           to={`/user/requests/${item.metadata!.name}`}
-          className="flex min-w-0 flex-1 items-center gap-3.5 px-4 py-3.5"
+          state={{ returnTo: props.returnTo }}
+          className="flex min-w-0 flex-1 items-center gap-3.5 rounded-xl px-4 py-3.5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-400"
         >
-          <IconTile tone={resource.kind === "Catalog" ? "violet" : "blue"}>
-            <Icon size={16} strokeWidth={2.2} />
+          <IconTile>
+            <Icon size={16} strokeWidth={2} />
           </IconTile>
 
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="truncate text-[0.87rem] font-bold text-slate-800">
+              <span className="truncate text-body font-semibold text-slate-800">
                 {resource.name || item.metadata!.name}
               </span>
-              <Badge tone={resource.kind === "Catalog" ? "violet" : "slate"}>
-                {resource.kind}
-              </Badge>
-            </div>
-
-            <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.7rem] font-semibold text-slate-400">
-              <span className="sm:hidden">
+              {resource.kind === "Catalog" && <Badge>Catalog</Badge>}
+              <span className="ml-auto shrink-0 sm:hidden">
                 <StatusBadge status={item.status?.state?.status} />
               </span>
-              <span>
-                <TimeAgo rfc3339={item.status?.state?.createdAt} />
-              </span>
-              <span className="text-slate-200">•</span>
-              <span>{formatDuration(item.spec?.duration)}</span>
-              {subject && (
-                <>
-                  <span className="text-slate-200">•</span>
-                  <span>
-                    for{" "}
-                    <span className="text-slate-500">{shortName(subject)}</span>
-                  </span>
-                </>
-              )}
-              {pending && steps.length > 0 && (
-                <>
-                  <span className="text-slate-200">•</span>
-                  <span className="inline-flex items-center gap-1">
-                    <Workflow size={11} strokeWidth={2.6} />
-                    Step {Math.min(currentReviewStepIndex(item) + 1, steps.length)} of{" "}
-                    {steps.length}
-                  </span>
-                </>
-              )}
             </div>
 
-            {active && (
-              <div className="mt-2 flex items-center gap-2">
-                <ProgressBar
-                  value={window.progress}
-                  tone={window.progress > 0.8 ? "amber" : "emerald"}
-                  className="max-w-[220px]"
-                />
-                <span className="text-[0.68rem] font-bold text-emerald-600">
-                  <Countdown date={new Date(window.endMs!)} suffix=" of access left" />
-                </span>
-              </div>
-            )}
+            <MetaLine
+              items={[
+                <span key="created">
+                  Created <TimeAgo rfc3339={requestCreatedAt(item)} />
+                </span>,
+                formatDuration(item.spec?.duration),
+                isOnBehalfOf(item) && (
+                  <span key="subject">
+                    for{" "}
+                    <span className="font-medium text-slate-700">
+                      {shortName(requestSubjectName(item))}
+                    </span>
+                  </span>
+                ),
+                pending &&
+                  steps.length > 0 &&
+                  `Step ${Math.min(currentReviewStepIndex(item) + 1, steps.length)} of ${steps.length}`,
+                pending && (
+                  <span key="waiting">
+                    Waiting{" "}
+                    <Elapsed
+                      rfc3339={item.status?.approvalStartAt ?? item.metadata?.createdAt}
+                    />
+                  </span>
+                ),
+              ]}
+            />
 
-            {pending && (
-              <div className="mt-2 inline-flex items-center gap-1 text-[0.68rem] font-bold text-amber-600">
-                <Timer size={11} strokeWidth={2.6} />
-                <Elapsed
-                  rfc3339={item.status?.approvalStartAt ?? item.metadata?.createdAt}
-                  suffix=" awaiting a decision"
+            {active && (
+              <div className="mt-2 flex items-center gap-2.5">
+                <ProgressBar
+                  value={grant.progress}
+                  tone={grant.progress > 0.8 ? "amber" : "emerald"}
+                  label="Elapsed share of the access window"
+                  className="max-w-[200px]"
                 />
+                <span className="text-xs font-medium text-slate-700">
+                  <Countdown date={new Date(grant.endMs!)} suffix=" of access left" />
+                </span>
               </div>
             )}
           </div>
 
-          <div className="hidden shrink-0 items-center gap-3 sm:flex">
-            <UrgencyMeter urgency={item.spec?.urgency} />
+          <div className="hidden shrink-0 items-center gap-2 sm:flex">
+            {urgency.level >= 4 && <UrgencyBadge urgency={item.spec?.urgency} />}
             <StatusBadge status={item.status?.state?.status} withHint />
           </div>
         </Link>
 
-        <div className="flex shrink-0 items-center gap-1 pr-3">
+        <div className="flex shrink-0 items-center pr-3">
           {pending ? (
-            <Tooltip label="Cancel this request">
-              <Button
-                size="compact-xs"
-                variant="light"
-                color="red"
-                leftSection={<X size={11} strokeWidth={3} />}
-                onClick={() => props.onCancel(item.metadata!.name)}
-              >
-                Cancel
-              </Button>
-            </Tooltip>
+            <Button
+              size="compact-xs"
+              variant="default"
+              aria-label={`Cancel the request for ${resource.name || item.metadata!.name}`}
+              onClick={() => props.onCancel(item.metadata!.name)}
+            >
+              Cancel
+            </Button>
           ) : (
-            <ChevronRight size={16} className="text-slate-300" />
+            <ChevronRight size={16} aria-hidden className="text-slate-400" />
           )}
         </div>
       </div>
@@ -175,27 +173,32 @@ const RequestRow = (props: {
 
 const Requests = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
   const search = searchParams.get("q") ?? "";
   const group = searchParams.get("group") ?? "all";
-  const sort = searchParams.get("sort") ?? "recent";
   const [cancelName, setCancelName] = React.useState<string>();
 
   const qry = useQuery({
     queryKey: ["user", "listRequest", page],
     placeholderData: keepPreviousData,
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const { response } = await getUserClient().listRequest(
         AccessP.ListUserRequestOptions.create({
           common: { page: page - 1, itemsPerPage: ITEMS_PER_PAGE },
         }),
+        { abort: signal },
       );
       return response;
     },
-    refetchInterval: (query) =>
-      query.state.data?.items.some((item) => isPendingRequest(item)) ? 15000 : false,
+    refetchInterval: (query) => {
+      const intervals = (query.state.data?.items ?? [])
+        .map(requestRefetchInterval)
+        .filter((value): value is number => value !== false);
+      return intervals.length ? Math.min(...intervals) : false;
+    },
   });
 
   const cancelMutation = useMutation({
@@ -205,10 +208,11 @@ const Requests = () => {
       );
       return response;
     },
-    onSuccess: () => {
+    onSuccess: (_, name) => {
       toast.success("Request cancelled");
       setCancelName(undefined);
       queryClient.invalidateQueries({ queryKey: ["user", "listRequest"] });
+      queryClient.invalidateQueries({ queryKey: ["user", "getRequest", name] });
     },
     onError: (e) => {
       toast.error(e instanceof Error ? e.message : "Failed to cancel request");
@@ -216,55 +220,49 @@ const Requests = () => {
   });
 
   const items = qry.data?.items ?? [];
-  const counts = {
-    all: items.length,
-    pending: items.filter((item) => statusMeta(item.status?.state?.status).group === "pending").length,
-    active: items.filter((item) => statusMeta(item.status?.state?.status).group === "active").length,
-    closed: items.filter((item) => statusMeta(item.status?.state?.status).group === "closed").length,
-  };
-
-  const q = search.trim().toLowerCase();
-  const visibleItems = items
-    .filter((item) => {
-      const resource = requestResourceLabel(item);
-      const subject = requestSubjectName(item);
-      const matchesQuery =
-        !q ||
-        resource.name.toLowerCase().includes(q) ||
-        item.metadata!.name.toLowerCase().includes(q) ||
-        subject.toLowerCase().includes(q);
-      const matchesGroup =
-        group === "all" || statusMeta(item.status?.state?.status).group === group;
-      return matchesQuery && matchesGroup;
-    })
-    .sort((a, b) => {
-      if (sort === "urgency") {
-        const diff = urgencyMeta(b.spec?.urgency).level - urgencyMeta(a.spec?.urgency).level;
-        if (diff !== 0) return diff;
-      }
-      const aAt = tsToMillis(a.status?.state?.createdAt ?? a.metadata?.createdAt) ?? 0;
-      const bAt = tsToMillis(b.status?.state?.createdAt ?? b.metadata?.createdAt) ?? 0;
-      return sort === "oldest" ? aAt - bAt : bAt - aAt;
-    });
-
   const meta = qry.data?.listResponseMeta;
   const perPage = meta?.itemsPerPage || ITEMS_PER_PAGE;
   const totalPages = meta ? Math.max(1, Math.ceil(meta.totalCount / perPage)) : 1;
+  const singlePage = totalPages <= 1 && page === 1;
+
+  const countOf = (value: string) =>
+    value === "all"
+      ? items.length
+      : items.filter((item) => statusMeta(item.status?.state?.status).group === value)
+          .length;
+
+  const q = search.trim().toLowerCase();
+  const visibleItems = items.filter((item) => {
+    const resource = requestResourceLabel(item);
+    const matchesQuery =
+      !q ||
+      resource.name.toLowerCase().includes(q) ||
+      item.metadata!.name.toLowerCase().includes(q) ||
+      requestSubjectName(item).toLowerCase().includes(q) ||
+      (item.spec?.justification ?? "").toLowerCase().includes(q);
+    const matchesGroup =
+      group === "all" || statusMeta(item.status?.state?.status).group === group;
+    return matchesQuery && matchesGroup;
+  });
 
   const setParam = (key: string, value: string, fallback: string) =>
-    setSearchParams((prev) => {
-      if (value && value !== fallback) prev.set(key, value);
-      else prev.delete(key);
-      if (key !== "page") prev.delete("page");
-      return prev;
-    });
+    setSearchParams(
+      (prev) => {
+        if (value && value !== fallback) prev.set(key, value);
+        else prev.delete(key);
+        if (key !== "page") prev.delete("page");
+        return prev;
+      },
+      { replace: key === "q", preventScrollReset: key !== "page" },
+    );
 
   const cancelTarget = items.find((item) => item.metadata!.name === cancelName);
+  const filtered = !!q || group !== "all";
 
   return (
     <div className="w-full">
+      <DocumentTitle title="My Requests" />
       <PageHeader
-        eyebrow="Access"
         title="My Requests"
         description="Track your just-in-time access requests and the access they granted."
         actions={
@@ -273,7 +271,7 @@ const Requests = () => {
             <Button
               variant="filled"
               color="ink"
-              leftSection={<Plus size={14} strokeWidth={2.8} />}
+              leftSection={<Plus size={14} strokeWidth={2.5} />}
               onClick={() => navigate("/user/new")}
             >
               New Request
@@ -286,53 +284,52 @@ const Requests = () => {
         <SearchInput
           value={search}
           onChange={(value) => setParam("q", value, "")}
-          placeholder="Search by resource, request ID or subject..."
+          placeholder="Search by resource, request ID, recipient or reason"
           ariaLabel="Search requests"
         />
         <SegmentedControl
           value={group}
           onChange={(value) => setParam("group", value, "all")}
+          aria-label="Filter by status"
           data={[
-            { value: "all", label: `All ${counts.all ? `(${counts.all})` : ""}`.trim() },
-            {
-              value: "pending",
-              label: `Pending ${counts.pending ? `(${counts.pending})` : ""}`.trim(),
-            },
-            {
-              value: "active",
-              label: `Active ${counts.active ? `(${counts.active})` : ""}`.trim(),
-            },
-            {
-              value: "closed",
-              label: `Closed ${counts.closed ? `(${counts.closed})` : ""}`.trim(),
-            },
-          ]}
-        />
-        <Select
-          value={sort}
-          onChange={(value) => setParam("sort", value ?? "recent", "recent")}
-          aria-label="Sort requests"
-          allowDeselect={false}
-          className="sm:w-[150px]"
-          data={[
-            { value: "recent", label: "Newest first" },
-            { value: "oldest", label: "Oldest first" },
-            { value: "urgency", label: "Most urgent" },
-          ]}
+            { value: "all", label: "All" },
+            { value: "pending", label: "Pending" },
+            { value: "active", label: "Active" },
+            { value: "closed", label: "Closed" },
+          ].map((option) => ({
+            ...option,
+            label:
+              singlePage && countOf(option.value) > 0
+                ? `${option.label} (${countOf(option.value)})`
+                : option.label,
+          }))}
         />
       </Toolbar>
 
+      {!singlePage && filtered && (
+        <Note className="mb-3">
+          Search and filters apply to the {items.length} requests on this page.
+        </Note>
+      )}
+
       {qry.isLoading ? (
         <SkeletonRows rows={5} />
-      ) : qry.isError ? (
+      ) : qry.isError && !qry.data ? (
         <ErrorState
           title="Could not load your requests"
+          error={qry.error}
           onRetry={() => qry.refetch()}
         />
       ) : visibleItems.length === 0 ? (
         <Card>
           <EmptyState
-            icon={items.length ? <ServerCog size={20} strokeWidth={2} /> : <Inbox size={20} strokeWidth={2} />}
+            icon={
+              items.length ? (
+                <SearchX size={18} strokeWidth={2} />
+              ) : (
+                <Inbox size={18} strokeWidth={2} />
+              )
+            }
             title={items.length ? "No matching requests" : "No requests yet"}
             description={
               items.length
@@ -340,16 +337,32 @@ const Requests = () => {
                 : "Request access to a Service or a Catalog and it will show up here."
             }
             action={
-              !items.length ? (
+              items.length ? (
+                <Button
+                  variant="default"
+                  onClick={() =>
+                    setSearchParams(
+                      (prev) => {
+                        prev.delete("q");
+                        prev.delete("group");
+                        return prev;
+                      },
+                      { replace: true },
+                    )
+                  }
+                >
+                  Clear filters
+                </Button>
+              ) : (
                 <Button
                   variant="filled"
                   color="ink"
-                  leftSection={<Plus size={14} strokeWidth={2.8} />}
+                  leftSection={<Plus size={14} strokeWidth={2.5} />}
                   onClick={() => navigate("/user/new")}
                 >
                   New Request
                 </Button>
-              ) : undefined
+              )
             }
           />
         </Card>
@@ -359,6 +372,7 @@ const Requests = () => {
             <RequestRow
               key={item.metadata!.uid || item.metadata!.name}
               item={item}
+              returnTo={`${location.pathname}${location.search}`}
               onCancel={setCancelName}
             />
           ))}
@@ -375,7 +389,7 @@ const Requests = () => {
             size="sm"
             radius="md"
           />
-          <span className="text-[0.68rem] font-semibold text-slate-400">
+          <span className="text-micro font-normal text-slate-500">
             {meta?.totalCount ?? 0} requests in total
           </span>
         </div>
@@ -391,15 +405,13 @@ const Requests = () => {
         description="The request stops progressing through its review workflow and cannot be restored. You can always create a new one."
         details={
           cancelTarget ? (
-            <div className="flex items-center gap-2">
-              <Layers size={13} className="text-slate-400" />
-              <span className="truncate font-mono text-[0.74rem] font-semibold text-slate-600">
-                {requestResourceLabel(cancelTarget).name || cancelTarget.metadata!.name}
-              </span>
-            </div>
+            <SummaryRow label="Resource">
+              {requestResourceLabel(cancelTarget).name || cancelTarget.metadata!.name}
+            </SummaryRow>
           ) : undefined
         }
         confirmLabel="Cancel request"
+        danger
         loading={cancelMutation.isPending}
       />
     </div>

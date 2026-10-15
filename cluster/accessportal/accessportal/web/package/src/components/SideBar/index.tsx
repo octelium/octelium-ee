@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { NavLink } from "react-router-dom";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 import RightSidebar from "./RightSidebar";
 
@@ -47,7 +47,7 @@ const NavigationLink = (props: {
     onClick={props.onNavigate}
     className={({ isActive }) =>
       twMerge(
-        "flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 text-[0.8125rem] outline-none transition-[background-color,color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-slate-400 [@media(pointer:coarse)]:min-h-11",
+        "flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 text-body outline-none transition-[background-color,color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-slate-400 [@media(pointer:coarse)]:min-h-11",
         isActive
           ? "bg-white font-semibold text-slate-900 shadow-card ring-1 ring-slate-200"
           : "font-medium text-slate-600 hover:bg-slate-200/50 hover:text-slate-900",
@@ -65,7 +65,7 @@ const Sidebar = (props: { onNavigate?: () => void; onClose?: () => void }) => (
       <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-card">
         <ShieldCheck size={17} strokeWidth={1.8} aria-hidden />
       </div>
-      <span className="text-[0.8125rem] font-semibold text-slate-800">
+      <span className="text-body font-semibold text-slate-800">
         Access portal
       </span>
       {props.onClose && (

@@ -7,7 +7,6 @@ import {
   Globe,
   Layers,
   Monitor,
-  Network,
   Server,
   ShieldCheck,
   Terminal,
@@ -43,4 +42,4 @@ export const serviceTypeIcon = (type?: UserP.Service_Spec_Type) => {
 };
 
 export const resourceIcon = (kind: "Service" | "Catalog" | "Unknown") =>
-  kind === "Catalog" ? Layers : kind === "Service" ? Network : Server;
+  kind === "Catalog" ? Layers : Server;

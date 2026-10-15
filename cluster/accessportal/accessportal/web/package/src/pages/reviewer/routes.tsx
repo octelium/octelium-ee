@@ -1,4 +1,4 @@
-import { RouteObject } from "react-router-dom";
+import { Navigate, RouteObject } from "react-router-dom";
 
 import ReviewerLayout from "./layout";
 import ReviewDetail from "./Review/detail";
@@ -10,7 +10,7 @@ export const reviewerRoutes = (): RouteObject => ({
   path: "/reviewer",
   element: <ReviewerLayout />,
   children: [
-    { index: true, element: <Queue /> },
+    { index: true, element: <Navigate to="/reviewer/requests" replace /> },
     { path: "requests", element: <Queue /> },
     { path: "requests/:name", element: <ReviewRequest /> },
     { path: "reviews", element: <Reviews /> },

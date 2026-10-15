@@ -1,21 +1,14 @@
 import {
-  Accordion,
-  Badge,
   Button,
-  Checkbox,
   createTheme,
-  HoverCard,
+  Drawer,
   Input,
-  MultiSelect,
+  Modal,
   NumberInput,
   Pagination,
   Popover,
-  Radio,
   SegmentedControl,
   Select,
-  Switch,
-  Tabs,
-  TagsInput,
   Textarea,
   TextInput,
   Tooltip,
@@ -27,32 +20,36 @@ import {
 const FONT =
   'Ubuntu, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
+const SIZE_META = "0.75rem";
+const SIZE_BODY = "0.8125rem";
+
 const labelStyles = {
   label: {
-    fontSize: "0.75rem",
+    fontSize: SIZE_META,
     fontWeight: 600,
     fontFamily: FONT,
     color: "var(--color-slate-700)",
     marginBottom: "4px",
   },
   description: {
-    fontSize: "0.75rem",
+    fontSize: SIZE_META,
     fontWeight: 400,
     fontFamily: FONT,
-    color: "var(--color-slate-500)",
     lineHeight: 1.45,
+    color: "var(--color-slate-500)",
     marginBottom: "6px",
   },
   error: {
-    fontSize: "0.75rem",
+    fontSize: SIZE_META,
     fontWeight: 500,
     fontFamily: FONT,
+    color: "var(--color-red-600)",
   },
 };
 
 const inputStyles = {
   input: {
-    fontSize: "0.8125rem",
+    fontSize: SIZE_BODY,
     fontWeight: 400,
     fontFamily: FONT,
     backgroundColor: "var(--color-white)",
@@ -67,12 +64,21 @@ const inputStyles = {
 
 const optionStyles = {
   option: {
-    fontSize: "0.8125rem",
+    fontSize: SIZE_BODY,
     fontWeight: 400,
     fontFamily: FONT,
     borderRadius: "7px",
     minHeight: "34px",
     transition: "background-color 150ms, color 150ms",
+  },
+};
+
+const comboboxDefaultProps = {
+  radius: "md" as const,
+  comboboxProps: {
+    transitionProps: { transition: "pop" as MantineTransition, duration: 150 },
+    shadow: "md",
+    radius: "lg" as const,
   },
 };
 
@@ -102,14 +108,7 @@ const INK_DARK: MantineColorsTuple = [
   "#d4dbe6",
 ];
 
-const comboboxDefaultProps = {
-  radius: "md" as const,
-  comboboxProps: {
-    transitionProps: { transition: "pop" as MantineTransition, duration: 150 },
-    shadow: "sm",
-    radius: "md" as const,
-  },
-};
+export const OVERLAY_Z_INDEX = 220;
 
 const theme = createTheme({
   fontFamily: FONT,
@@ -128,38 +127,28 @@ const theme = createTheme({
 
   components: {
     Button: Button.extend({
-      defaultProps: {
-        variant: "filled",
-      },
+      defaultProps: { variant: "filled" },
       styles: {
         root: {
           fontFamily: FONT,
           fontWeight: 600,
-          fontSize: "0.8125rem",
+          fontSize: SIZE_BODY,
           borderRadius: "8px",
-          transition: "background-color 150ms, border-color 150ms, color 150ms",
+          transition:
+            "background-color 150ms, border-color 150ms, color 150ms, opacity 150ms",
           boxShadow: "none",
         },
-        label: {
-          fontFamily: FONT,
-          fontWeight: 600,
-        },
+        label: { fontFamily: FONT, fontWeight: 600 },
       },
     }),
 
-    Input: Input.extend({
-      styles: {
-        ...labelStyles,
-        ...inputStyles,
-      },
-    }),
+    Modal: Modal.extend({ defaultProps: { zIndex: OVERLAY_Z_INDEX } }),
 
-    TextInput: TextInput.extend({
-      styles: {
-        ...labelStyles,
-        ...inputStyles,
-      },
-    }),
+    Drawer: Drawer.extend({ defaultProps: { zIndex: OVERLAY_Z_INDEX } }),
+
+    Input: Input.extend({ styles: { ...labelStyles, ...inputStyles } }),
+
+    TextInput: TextInput.extend({ styles: { ...labelStyles, ...inputStyles } }),
 
     Textarea: Textarea.extend({
       styles: {
@@ -167,116 +156,20 @@ const theme = createTheme({
         input: {
           ...inputStyles.input,
           resize: "vertical" as const,
-          lineHeight: "1.6",
+          lineHeight: 1.6,
+          paddingTop: "8px",
+          paddingBottom: "8px",
         },
       },
     }),
 
     NumberInput: NumberInput.extend({
-      styles: {
-        ...labelStyles,
-        ...inputStyles,
-      },
-    }),
-
-    TagsInput: TagsInput.extend({
-      styles: {
-        ...labelStyles,
-        input: {
-          ...inputStyles.input,
-          minHeight: "36px",
-        },
-        pill: {
-          fontSize: "0.7rem",
-          fontWeight: 700,
-          fontFamily: FONT,
-          backgroundColor: "var(--color-slate-100)",
-          color: "var(--color-slate-700)",
-          border: "1px solid var(--color-slate-200)",
-        },
-      },
-    }),
-
-    MultiSelect: MultiSelect.extend({
-      defaultProps: comboboxDefaultProps,
-      styles: {
-        ...labelStyles,
-        input: {
-          ...inputStyles.input,
-          minHeight: "36px",
-        },
-        pill: {
-          fontSize: "0.7rem",
-          fontWeight: 700,
-          fontFamily: FONT,
-          backgroundColor: "var(--color-slate-100)",
-          color: "var(--color-slate-700)",
-          border: "1px solid var(--color-slate-200)",
-        },
-        ...optionStyles,
-      },
+      styles: { ...labelStyles, ...inputStyles },
     }),
 
     Select: Select.extend({
       defaultProps: comboboxDefaultProps,
-      styles: {
-        ...labelStyles,
-        ...inputStyles,
-        ...optionStyles,
-      },
-    }),
-
-    Switch: Switch.extend({
-      styles: {
-        label: {
-          fontSize: "0.78rem",
-          fontWeight: 600,
-          fontFamily: FONT,
-          color: "var(--color-slate-700)",
-        },
-        description: labelStyles.description,
-        track: {
-          transition: "background-color 150ms",
-          cursor: "pointer",
-        },
-        thumb: {
-          transition: "left 150ms",
-        },
-      },
-    }),
-
-    Checkbox: Checkbox.extend({
-      styles: {
-        label: {
-          fontSize: "0.78rem",
-          fontWeight: 600,
-          fontFamily: FONT,
-          color: "var(--color-slate-700)",
-        },
-        description: labelStyles.description,
-        input: {
-          cursor: "pointer",
-          borderColor: "var(--color-slate-200)",
-          transition: "background-color 150ms, border-color 150ms",
-        },
-      },
-    }),
-
-    Radio: Radio.extend({
-      styles: {
-        label: {
-          fontSize: "0.78rem",
-          fontWeight: 600,
-          fontFamily: FONT,
-          color: "var(--color-slate-700)",
-        },
-        description: labelStyles.description,
-        radio: {
-          cursor: "pointer",
-          borderColor: "var(--color-slate-200)",
-          transition: "background-color 150ms, border-color 150ms",
-        },
-      },
+      styles: { ...labelStyles, ...inputStyles, ...optionStyles },
     }),
 
     SegmentedControl: SegmentedControl.extend({
@@ -284,10 +177,12 @@ const theme = createTheme({
         root: {
           backgroundColor: "var(--color-slate-100)",
           border: "1px solid var(--color-slate-200)",
+          borderRadius: "10px",
+          padding: "3px",
         },
         label: {
-          fontSize: "0.8125rem",
-          fontWeight: 500,
+          fontSize: SIZE_BODY,
+          fontWeight: 600,
           color: "var(--color-slate-500)",
           transition: "color 150ms",
         },
@@ -295,6 +190,7 @@ const theme = createTheme({
           backgroundColor: "var(--color-white)",
           borderRadius: "7px",
           boxShadow: "var(--shadow-card)",
+          transition: "transform 150ms ease, width 150ms ease",
         },
       },
     }),
@@ -303,70 +199,13 @@ const theme = createTheme({
       styles: {
         control: {
           fontFamily: FONT,
-          fontWeight: 700,
-          fontSize: "0.78rem",
+          fontWeight: 600,
+          fontSize: SIZE_BODY,
           border: "1px solid var(--color-slate-200)",
           backgroundColor: "var(--color-white)",
           color: "var(--color-slate-600)",
-          boxShadow: "var(--shadow-card)",
-          transition: "background-color 150ms, border-color 150ms",
-          "&:hover": {
-            backgroundColor: "var(--color-slate-50)",
-            borderColor: "var(--color-slate-300)",
-          },
-          "&[data-active]": {
-            backgroundColor: "var(--color-slate-900)",
-            borderColor: "var(--color-slate-900)",
-            color: "var(--color-white)",
-          },
-        },
-      },
-    }),
-
-    Tabs: Tabs.extend({
-      styles: {
-        tab: {
-          fontSize: "0.78rem",
-          fontWeight: 700,
-          fontFamily: FONT,
-          transition: "color 150ms, border-color 150ms",
-        },
-        panel: {
-          fontFamily: FONT,
-          fontWeight: 600,
-        },
-      },
-    }),
-
-    Accordion: Accordion.extend({
-      styles: {
-        label: {
-          fontSize: "0.82rem",
-          fontWeight: 700,
-          fontFamily: FONT,
-          color: "var(--color-slate-800)",
-        },
-        panel: {
-          fontFamily: FONT,
-          fontWeight: 600,
-        },
-        control: {
-          transition: "background-color 150ms",
-        },
-      },
-    }),
-
-    Badge: Badge.extend({
-      styles: {
-        root: {
-          fontFamily: FONT,
-          fontWeight: 700,
-          fontSize: "0.65rem",
-          letterSpacing: "0.04em",
-        },
-        label: {
-          fontFamily: FONT,
-          fontWeight: 700,
+          boxShadow: "none",
+          transition: "background-color 150ms, border-color 150ms, color 150ms",
         },
       },
     }),
@@ -375,38 +214,20 @@ const theme = createTheme({
       defaultProps: {
         transitionProps: {
           transition: "fade" as MantineTransition,
-          duration: 200,
+          duration: 150,
         },
       },
       styles: {
         tooltip: {
           fontFamily: FONT,
-          fontWeight: 600,
-          fontSize: "0.75rem",
-          backgroundColor: "var(--color-slate-800)",
+          fontWeight: 400,
+          fontSize: SIZE_META,
+          backgroundColor: "var(--color-slate-900)",
           color: "var(--color-slate-50)",
-          border: "1px solid var(--color-slate-700)",
-          borderRadius: "6px",
+          border: "1px solid var(--color-slate-800)",
+          borderRadius: "8px",
           boxShadow: "var(--shadow-raised)",
           padding: "5px 10px",
-        },
-      },
-    }),
-
-    HoverCard: HoverCard.extend({
-      defaultProps: {
-        shadow: "md",
-        withArrow: true,
-        openDelay: 200,
-        closeDelay: 400,
-        transitionProps: { transition: "pop" as MantineTransition },
-      },
-      styles: {
-        dropdown: {
-          border: "1px solid var(--color-slate-200)",
-          borderRadius: "10px",
-          boxShadow: "var(--shadow-overlay)",
-          fontFamily: FONT,
         },
       },
     }),
@@ -417,19 +238,16 @@ const theme = createTheme({
         withArrow: true,
         transitionProps: {
           transition: "pop" as MantineTransition,
-          duration: 180,
+          duration: 150,
         },
       },
       styles: {
         dropdown: {
           border: "1px solid var(--color-slate-200)",
-          borderRadius: "10px",
+          borderRadius: "12px",
           boxShadow: "var(--shadow-overlay)",
           fontFamily: FONT,
           overflow: "visible",
-        },
-        arrow: {
-          border: "1px solid var(--color-slate-200)",
         },
       },
     }),

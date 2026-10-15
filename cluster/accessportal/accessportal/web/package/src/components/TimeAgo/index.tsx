@@ -9,35 +9,80 @@ dayjs.extend(relativeTime);
 dayjs.extend(utc);
 
 import { Tooltip } from "@mantine/core";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 import { Tone, formatSeconds, toneClasses } from "@/utils";
 
-export const useNow = (intervalMs = 10000) => {
-  const [now, setNow] = React.useState(() => Date.now());
+const TICK_MS = 15000;
 
-  React.useEffect(() => {
-    const interval = window.setInterval(() => setNow(Date.now()), intervalMs);
-    return () => window.clearInterval(interval);
-  }, [intervalMs]);
+const listeners = new Set<() => void>();
+let now = Date.now();
+let interval: ReturnType<typeof setInterval> | undefined;
 
-  return now;
+const tick = () => {
+  now = Date.now();
+  listeners.forEach((notify) => notify());
 };
+
+const start = () => {
+  if (interval || document.hidden) return;
+  now = Date.now();
+  interval = setInterval(tick, TICK_MS);
+};
+
+const stop = () => {
+  if (!interval) return;
+  clearInterval(interval);
+  interval = undefined;
+};
+
+const onVisibility = () => {
+  if (document.hidden) {
+    stop();
+    return;
+  }
+  tick();
+  start();
+};
+
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  if (listeners.size === 1) {
+    document.addEventListener("visibilitychange", onVisibility);
+  }
+  start();
+
+  return () => {
+    listeners.delete(listener);
+    if (listeners.size === 0) {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    }
+  };
+};
+
+const getSnapshot = () => now;
+
+export const useNow = () =>
+  React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
 export const absoluteLabel = (date: Date) =>
   dayjs(date).local().format("h:mm A · ddd, MMM D, YYYY");
 
 const TimeAgo = (props: { rfc3339?: Timestamp; className?: string }) => {
+  useNow();
   const t = props.rfc3339 ? Timestamp.toDate(props.rfc3339) : undefined;
-  useNow(10000);
 
   if (!t) return <span className={props.className}>—</span>;
 
   return (
     <Tooltip label={absoluteLabel(t)}>
-      <span className={twMerge("whitespace-nowrap", props.className)}>
+      <time
+        dateTime={t.toISOString()}
+        className={twMerge("whitespace-nowrap", props.className)}
+      >
         {dayjs(t).fromNow()}
-      </span>
+      </time>
     </Tooltip>
   );
 };
@@ -50,16 +95,14 @@ export const AbsoluteTime = (props: {
   if (!t) return <span className={props.className}>—</span>;
 
   return (
-    <Tooltip label={dayjs(t).fromNow()}>
-      <span className={twMerge("whitespace-nowrap", props.className)}>
-        {absoluteLabel(t)}
-      </span>
-    </Tooltip>
+    <time
+      dateTime={t.toISOString()}
+      className={twMerge("whitespace-nowrap", props.className)}
+    >
+      {absoluteLabel(t)}
+    </time>
   );
 };
-
-export const remainingSeconds = (target?: Date, now = Date.now()) =>
-  target ? Math.floor((target.getTime() - now) / 1000) : undefined;
 
 export const Countdown = (props: {
   date?: Date;
@@ -68,51 +111,34 @@ export const Countdown = (props: {
   tone?: Tone;
   className?: string;
 }) => {
-  const now = useNow(1000 * 15);
-  const seconds = remainingSeconds(props.date, now);
+  const current = useNow();
+  const seconds = props.date
+    ? Math.floor((props.date.getTime() - current) / 1000)
+    : undefined;
 
   if (seconds === undefined) return <span className={props.className}>—</span>;
   if (seconds <= 0) {
     return (
-      <span className={twMerge("text-slate-400", props.className)}>
+      <span className={twMerge("text-slate-500", props.className)}>
         {props.endedLabel ?? "Ended"}
       </span>
     );
   }
 
-  const label = `${formatSeconds(seconds)}${props.suffix ?? " left"}`;
-
   return (
     <Tooltip label={absoluteLabel(props.date!)}>
-      <span
+      <time
+        dateTime={props.date!.toISOString()}
         className={twMerge(
           "whitespace-nowrap",
           props.tone ? toneClasses[props.tone].text : undefined,
           props.className,
         )}
       >
-        {label}
-      </span>
+        {formatSeconds(seconds)}
+        {props.suffix ?? " left"}
+      </time>
     </Tooltip>
-  );
-};
-
-export const TimeRemaining = (props: {
-  rfc3339?: Timestamp;
-  className?: string;
-}) => {
-  const target = props.rfc3339 ? Timestamp.toDate(props.rfc3339) : undefined;
-  const now = useNow(1000 * 15);
-  const seconds = remainingSeconds(target, now);
-
-  if (seconds === undefined) return <span className={props.className}>—</span>;
-
-  return (
-    <Countdown
-      date={target}
-      tone={seconds <= 3600 ? "amber" : "emerald"}
-      className={props.className}
-    />
   );
 };
 
@@ -121,19 +147,22 @@ export const Elapsed = (props: {
   suffix?: string;
   className?: string;
 }) => {
+  const current = useNow();
   const from = props.rfc3339 ? Timestamp.toDate(props.rfc3339) : undefined;
-  const now = useNow(1000 * 15);
 
   if (!from) return <span className={props.className}>—</span>;
 
-  const seconds = Math.max(0, Math.floor((now - from.getTime()) / 1000));
+  const seconds = Math.max(0, Math.floor((current - from.getTime()) / 1000));
 
   return (
     <Tooltip label={absoluteLabel(from)}>
-      <span className={twMerge("whitespace-nowrap", props.className)}>
+      <time
+        dateTime={from.toISOString()}
+        className={twMerge("whitespace-nowrap", props.className)}
+      >
         {formatSeconds(seconds)}
         {props.suffix ?? ""}
-      </span>
+      </time>
     </Tooltip>
   );
 };

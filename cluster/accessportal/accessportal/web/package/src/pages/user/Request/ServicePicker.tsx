@@ -1,8 +1,8 @@
 import * as UserP from "@/apis/userv1/userv1";
-import { Select } from "@mantine/core";
-import { Check, Layers, Lock, Radio, Server } from "lucide-react";
+import { Button, Select } from "@mantine/core";
+import { Check, Layers, Server } from "lucide-react";
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { twMerge } from "@/lib/utils";
 
 import { useNamespaces, useServices } from "@/components/Access/hooks";
 import { serviceTypeIcon } from "@/components/Access/icons";
@@ -14,7 +14,7 @@ import {
   SearchInput,
   SkeletonRows,
 } from "@/ui";
-import { namespaceFromName, serviceModeMeta, shortName } from "@/utils";
+import { namespaceFromName, serviceModeLabel, shortName } from "@/utils";
 
 const ServiceCard = (props: {
   service: UserP.Service;
@@ -25,7 +25,6 @@ const ServiceCard = (props: {
   const name = s.metadata!.name;
   const display = s.metadata!.displayName || shortName(name);
   const ns = s.status?.namespace || namespaceFromName(name);
-  const mode = serviceModeMeta(s.spec?.type);
   const Icon = serviceTypeIcon(s.spec?.type);
 
   return (
@@ -47,42 +46,26 @@ const ServiceCard = (props: {
         )}
       >
         {props.selected ? (
-          <Check size={16} strokeWidth={3} />
+          <Check size={16} strokeWidth={2.75} />
         ) : (
-          <Icon size={16} strokeWidth={2.2} />
+          <Icon size={16} strokeWidth={2} />
         )}
       </div>
 
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[0.84rem] font-semibold text-slate-800">
+        <div className="truncate text-body font-semibold text-slate-800">
           {display}
         </div>
-        <div className="truncate font-mono text-[0.7rem] text-slate-500">
+        <div className="truncate font-mono text-xs font-normal text-slate-500">
           {name}
         </div>
-        {(s.spec?.port || s.status?.primaryHostname) && (
-          <div className="mt-1 flex min-w-0 items-center gap-2 truncate text-[0.66rem] font-semibold text-slate-400">
-            {s.status?.primaryHostname && (
-              <span className="truncate font-mono">{s.status.primaryHostname}</span>
-            )}
-            {s.spec?.port ? <span>:{s.spec.port}</span> : null}
-          </div>
-        )}
       </div>
 
       <div className="flex w-full shrink-0 flex-wrap items-center gap-1.5 sm:w-auto sm:justify-end">
-        <Badge tone={mode.tone}>{mode.label}</Badge>
-        {ns && <Badge tone="slate">{ns}</Badge>}
-        {s.spec?.isTLS && (
-          <Badge tone="emerald" icon={<Lock size={9} strokeWidth={3} />}>
-            TLS
-          </Badge>
-        )}
-        {s.spec?.isPublic && (
-          <Badge tone="amber" icon={<Radio size={9} strokeWidth={3} />}>
-            Public
-          </Badge>
-        )}
+        <Badge>{serviceModeLabel(s.spec?.type)}</Badge>
+        {ns && <Badge>{ns}</Badge>}
+        {s.spec?.isTLS && <Badge>TLS</Badge>}
+        {s.spec?.isPublic && <Badge>Public</Badge>}
       </div>
     </button>
   );
@@ -112,13 +95,15 @@ const ServicePicker = (props: {
       ?.map((item) => item.metadata?.name)
       .filter((name): name is string => !!name) ?? [];
 
+  const filteredOut = !!q || !!namespace;
+
   return (
     <div className="flex w-full min-w-0 flex-col gap-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <SearchInput
           value={query}
           onChange={setQuery}
-          placeholder="Search services by name..."
+          placeholder="Search services by name"
           ariaLabel="Search services"
         />
         {namespaceNames.length > 0 && (
@@ -139,37 +124,47 @@ const ServicePicker = (props: {
         )}
       </div>
 
-      {qry.isLoading || namespacesQry.isLoading ? (
+      {qry.isLoading ? (
         <SkeletonRows rows={4} />
-      ) : qry.isError || namespacesQry.isError ? (
+      ) : qry.isError && !qry.data ? (
         <ErrorState
           title="Could not load services"
+          error={qry.error}
           onRetry={() => {
             void qry.refetch();
-            void namespacesQry.refetch();
           }}
         />
       ) : filtered.length === 0 ? (
         <EmptyState
-          icon={<Server size={20} strokeWidth={2} />}
+          icon={<Server size={18} strokeWidth={2} />}
           title="No services found"
           description={
-            query
-              ? "No services match your search."
+            filteredOut
+              ? namespace && !q
+                ? "There are no Services visible to you in this namespace."
+                : "No services match your search."
               : "There are no Services available to you right now."
+          }
+          action={
+            filteredOut ? (
+              <Button
+                variant="default"
+                onClick={() => {
+                  setQuery("");
+                  setNamespace("");
+                }}
+              >
+                Clear filters
+              </Button>
+            ) : undefined
           }
         />
       ) : (
         <>
-          <div className="flex items-center justify-between">
-            <Eyebrow>
-              {filtered.length} service{filtered.length === 1 ? "" : "s"}
-            </Eyebrow>
-            {props.value && (
-              <Eyebrow className="text-slate-500">1 selected</Eyebrow>
-            )}
-          </div>
-          <div className="flex max-h-[460px] flex-col gap-2 overflow-y-auto pr-0.5">
+          <Eyebrow>
+            {filtered.length} service{filtered.length === 1 ? "" : "s"}
+          </Eyebrow>
+          <div className="flex max-h-[460px] flex-col gap-2 overflow-y-auto overscroll-contain pr-0.5">
             {filtered.map((s) => (
               <ServiceCard
                 key={s.metadata!.uid || s.metadata!.name}

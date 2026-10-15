@@ -30,7 +30,7 @@ export default () => {
       <div className="flex flex-col gap-1">
         <a
           href={authenticatorsHref}
-          className="flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 text-[0.8125rem] font-medium text-slate-600 outline-none transition-colors duration-150 hover:bg-slate-200/50 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400 [@media(pointer:coarse)]:min-h-11"
+          className="flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 text-body font-medium text-slate-600 outline-none transition-colors duration-150 hover:bg-slate-200/50 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400 [@media(pointer:coarse)]:min-h-11"
         >
           <LockKeyhole
             size={16}
@@ -45,7 +45,7 @@ export default () => {
         <button
           type="button"
           onClick={open}
-          className="flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 text-[0.8125rem] font-medium text-slate-600 outline-none transition-colors duration-150 hover:bg-red-50 hover:text-red-700 focus-visible:ring-2 focus-visible:ring-slate-400 [@media(pointer:coarse)]:min-h-11"
+          className="flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 text-body font-medium text-slate-600 outline-none transition-colors duration-150 hover:bg-red-50 hover:text-red-700 focus-visible:ring-2 focus-visible:ring-slate-400 [@media(pointer:coarse)]:min-h-11"
         >
           <LogOut size={16} strokeWidth={1.8} className="shrink-0" aria-hidden />
           Sign out
@@ -60,6 +60,9 @@ export default () => {
         padding="lg"
         size="sm"
         zIndex={240}
+        closeOnEscape={!mutationLogout.isPending}
+        closeOnClickOutside={!mutationLogout.isPending}
+        withCloseButton={!mutationLogout.isPending}
         closeButtonProps={{ "aria-label": "Close sign out dialog" }}
         styles={{
           header: { backgroundColor: "var(--color-white)" },
@@ -77,11 +80,16 @@ export default () => {
         }}
       >
         <div className="flex flex-col gap-5">
-          <p className="text-[0.8125rem] leading-relaxed text-slate-600">
+          <p className="text-body leading-relaxed text-slate-600">
             Are you sure you want to sign out of this session?
           </p>
           <div className="flex items-center justify-end gap-2">
-            <Button variant="default" size="sm" onClick={close}>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={close}
+              disabled={mutationLogout.isPending}
+            >
               Cancel
             </Button>
             <Button

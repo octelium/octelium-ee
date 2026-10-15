@@ -3,13 +3,13 @@ import * as MetaP from "@/apis/metav1/metav1";
 import * as UserP from "@/apis/userv1/userv1";
 import { useQuery } from "@tanstack/react-query";
 
-import { namespaceFromName } from "@/utils";
 import { getUserClient, getUserMainClient } from "@/utils/client";
 
 const MAX_PAGES = 1000;
 
 export const listAllServices = async (
   namespace = "",
+  signal?: AbortSignal,
 ): Promise<UserP.Service[]> => {
   const items: UserP.Service[] = [];
   let page = 0;
@@ -20,6 +20,7 @@ export const listAllServices = async (
         common: { page, itemsPerPage: 500 },
         namespace,
       }),
+      { abort: signal },
     );
     items.push(...response.items);
     if (!response.listResponseMeta?.hasMore || page > MAX_PAGES) break;
@@ -29,7 +30,9 @@ export const listAllServices = async (
   return items;
 };
 
-export const listAllNamespaces = async (): Promise<UserP.Namespace[]> => {
+export const listAllNamespaces = async (
+  signal?: AbortSignal,
+): Promise<UserP.Namespace[]> => {
   const items: UserP.Namespace[] = [];
   let page = 0;
 
@@ -38,6 +41,7 @@ export const listAllNamespaces = async (): Promise<UserP.Namespace[]> => {
       UserP.ListNamespaceOptions.create({
         common: { page, itemsPerPage: 500 },
       }),
+      { abort: signal },
     );
     items.push(...response.items);
     if (!response.listResponseMeta?.hasMore || page > MAX_PAGES) break;
@@ -47,7 +51,9 @@ export const listAllNamespaces = async (): Promise<UserP.Namespace[]> => {
   return items;
 };
 
-export const listAllCatalogs = async (): Promise<AccessP.Catalog[]> => {
+export const listAllCatalogs = async (
+  signal?: AbortSignal,
+): Promise<AccessP.Catalog[]> => {
   const items: AccessP.Catalog[] = [];
   let page = 0;
 
@@ -56,6 +62,7 @@ export const listAllCatalogs = async (): Promise<AccessP.Catalog[]> => {
       AccessP.ListUserCatalogOptions.create({
         common: { page, itemsPerPage: 500 },
       }),
+      { abort: signal },
     );
     items.push(...response.items);
     if (!response.listResponseMeta?.hasMore || page > MAX_PAGES) break;
@@ -65,24 +72,26 @@ export const listAllCatalogs = async (): Promise<AccessP.Catalog[]> => {
   return items;
 };
 
-export const useServices = (namespace = "") =>
+export const useServices = (namespace = "", enabled = true) =>
   useQuery({
     queryKey: ["userapi", "listService", namespace],
-    queryFn: () => listAllServices(namespace),
+    queryFn: ({ signal }) => listAllServices(namespace, signal),
     staleTime: 60 * 1000,
+    enabled,
   });
 
-export const useNamespaces = () =>
+export const useNamespaces = (enabled = true) =>
   useQuery({
     queryKey: ["userapi", "listNamespace"],
-    queryFn: listAllNamespaces,
+    queryFn: ({ signal }) => listAllNamespaces(signal),
     staleTime: 5 * 60 * 1000,
+    enabled,
   });
 
 export const useCatalogs = () =>
   useQuery({
     queryKey: ["user", "listCatalog"],
-    queryFn: listAllCatalogs,
+    queryFn: ({ signal }) => listAllCatalogs(signal),
     staleTime: 60 * 1000,
   });
 
@@ -91,9 +100,12 @@ export const useService = (name?: string) =>
     queryKey: ["userapi", "getService", name],
     enabled: !!name,
     staleTime: 60 * 1000,
-    queryFn: async () => {
-      const items = await listAllServices(namespaceFromName(name));
-      return items.find((item) => item.metadata?.name === name);
+    queryFn: async ({ signal }) => {
+      const { response } = await getUserMainClient().getService(
+        MetaP.GetOptions.create({ name: name! }),
+        { abort: signal },
+      );
+      return response;
     },
   });
 
@@ -103,11 +115,12 @@ export const useSubjectUser = (name?: string) =>
     enabled: !!name,
     staleTime: 5 * 60 * 1000,
     retry: false,
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const { response } = await getUserClient().getSubjectUser(
         AccessP.GetSubjectUserRequest.create({
           userRef: MetaP.ObjectReference.create({ name: name! }),
         }),
+        { abort: signal },
       );
       return response;
     },

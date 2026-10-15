@@ -3,42 +3,21 @@
 @import "tailwindcss";
 @import "./utils/theme/colors.css";
 
+@theme {
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1rem;
+  --text-body: 0.8125rem;
+  --text-body--line-height: 1.25rem;
+
+  --font-weight-normal: 500;
+
+  --default-transition-duration: 150ms;
+
+  --page-max-width: 1440px;
+}
+
 body {
   background-color: var(--color-canvas);
-}
-
-.xterm.terminal {
-  width: 100%;
-}
-
-.xterm-viewport {
-  overflow-y: hidden !important;
-}
-
-.cm-scroller {
-  overflow-x: unset !important;
-}
-
-.cm-editor {
-  overflow-x: auto !important;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--color-emerald-500);
-  cursor: pointer;
-  border: 2px solid var(--color-slate-900);
-}
-input[type="range"]::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--color-emerald-500);
-  cursor: pointer;
-  border: 2px solid var(--color-slate-900);
 }
 
 button {
@@ -56,6 +35,7 @@ button {
   color: var(--color-slate-400);
   border-color: var(--color-slate-200);
   cursor: not-allowed;
+  opacity: 1;
 }
 
 .mantine-Input-input:focus,
@@ -68,14 +48,48 @@ button {
     box-shadow 150ms !important;
 }
 
+.mantine-Input-input[data-error],
+.mantine-Input-input[data-error]:focus {
+  border-color: var(--color-red-600) !important;
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-red-600) 12%, transparent) !important;
+}
+
 .mantine-SegmentedControl-label[data-active] {
   color: var(--color-slate-900);
+}
+
+.mantine-SegmentedControl-label[data-disabled] {
+  color: var(--color-slate-300);
+}
+
+.mantine-Pagination-control:hover:not([data-active]) {
+  background-color: var(--color-slate-50);
+  border-color: var(--color-slate-300);
+}
+
+.mantine-Pagination-control[data-active] {
+  background-color: var(--color-slate-900) !important;
+  border-color: var(--color-slate-900) !important;
+  color: var(--color-white) !important;
 }
 
 .mantine-Button-root:focus-visible,
 .mantine-ActionIcon-root:focus-visible {
   outline: 2px solid var(--color-slate-500);
   outline-offset: 2px;
+}
+
+.mantine-Select-option[data-combobox-selected],
+.mantine-MultiSelect-option[data-combobox-selected],
+.mantine-Combobox-option[data-combobox-selected] {
+  background-color: var(--color-slate-900);
+  color: var(--color-white);
+}
+
+.mantine-Select-option[data-combobox-active],
+.mantine-MultiSelect-option[data-combobox-active],
+.mantine-Combobox-option[data-combobox-active] {
+  background-color: var(--color-slate-100);
 }
 
 @media (prefers-reduced-motion: reduce) {

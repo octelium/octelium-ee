@@ -9,7 +9,7 @@ export default () => {
               target="_blank"
               rel="noreferrer noopener"
             >
-              <span className="text-sm font-semibold transition-all duration-300 text-gray-400 sm:text-center hover:text-gray-600">
+              <span className="text-xs font-medium text-slate-500 transition-colors duration-150 hover:text-slate-800">
                 © {new Date().getFullYear()}{" "}
                 <span className="ml-1">octelium.com</span>
               </span>

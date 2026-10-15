@@ -5,10 +5,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { setStatus } from "@/features/settings/slice";
 import { useAppDispatch } from "@/utils/hooks";
 import { getUserMainClient } from "@/utils/client";
+import { getRedirectPath } from "@/utils/redirect";
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
-import { ScrollRestoration } from "react-router";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, ScrollRestoration } from "react-router-dom";
 
 import "@fontsource/ubuntu/400.css";
 import "@fontsource/ubuntu/500.css";
@@ -16,8 +16,6 @@ import "@fontsource/ubuntu/700.css";
 
 export default () => {
   const dispatch = useAppDispatch();
-  const urlSearchParams = new URLSearchParams(window.location.search);
-  const redirect = urlSearchParams.get("redirect");
 
   const statusQry = useQuery({
     queryKey: ["user", "getStatus"],
@@ -26,7 +24,7 @@ export default () => {
       return response;
     },
     staleTime: 5 * 60 * 1000,
-    retry: 1,
+    refetchOnWindowFocus: false,
   });
 
   React.useEffect(() => {
@@ -35,29 +33,34 @@ export default () => {
     }
   }, [dispatch, statusQry.data]);
 
-  if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
-    const val = urlSearchParams.get("redirect")!;
-    urlSearchParams.delete("redirect");
-    return <Navigate to={val} />;
+  const urlSearchParams = new URLSearchParams(window.location.search);
+  const redirect = getRedirectPath(
+    urlSearchParams.get("redirect"),
+    window.location.origin,
+  );
+
+  if (redirect) {
+    return <Navigate to={redirect} replace />;
   }
 
   return (
-    <div className="w-full min-h-screen flex flex-col bg-canvas">
-      <title>Octelium Access Portal</title>
+    <div className="flex min-h-screen w-full flex-col bg-canvas antialiased">
       <ScrollRestoration />
+      <a
+        href="#portal-main"
+        className="sr-only z-[300] rounded-md bg-white px-3 py-2 text-body font-semibold text-slate-900 shadow-raised focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
+      >
+        Skip to content
+      </a>
 
-      <div className="flex flex-1 flex-col bg-canvas antialiased">
-        <PortalShell header={<TopBar />}>
-          <Outlet />
-          <Footer />
-        </PortalShell>
-      </div>
+      <PortalShell header={<TopBar />}>
+        <Outlet />
+        <Footer />
+      </PortalShell>
 
       <Toaster
         position="bottom-center"
-        toastOptions={{
-          className: "bg-zinc-800 font-bold text-white",
-        }}
+        toastOptions={{ className: "bg-slate-900 font-semibold text-white" }}
       />
     </div>
   );

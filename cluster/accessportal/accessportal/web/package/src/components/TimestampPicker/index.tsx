@@ -157,16 +157,15 @@ const TimestampPicker = ({
                 minWidth: "220px",
                 cursor: "pointer",
                 textAlign: "left",
-                "&:hover": { borderColor: "var(--color-slate-300)" },
               },
             }}
           >
             {externalDate ? (
-              <span className="text-[0.78rem] font-bold text-slate-700">
+              <span className="text-body font-medium text-slate-900">
                 {formatTimestamp(externalDate)}
               </span>
             ) : (
-              <span className="text-[0.78rem] font-semibold text-slate-400">
+              <span className="text-body font-normal text-slate-400">
                 {placeholder}
               </span>
             )}
@@ -177,16 +176,16 @@ const TimestampPicker = ({
           p={0}
           style={{ maxWidth: "calc(100vw - 24px)", overflow: "hidden" }}
         >
-          <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/70 px-4 py-3">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
             <div className="flex min-w-0 items-center gap-2.5">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500">
                 <CalendarDays size={14} strokeWidth={2.25} />
               </span>
               <div className="min-w-0">
-                <p className="text-[0.72rem] font-bold text-slate-700">
-                  Choose timestamp
+                <p className="text-xs font-semibold text-slate-800">
+                  {label ?? "Choose a date and time"}
                 </p>
-                <p className="mt-0.5 truncate text-[0.62rem] font-semibold text-slate-400">
+                <p className="mt-0.5 truncate text-micro font-normal text-slate-500">
                   {timeZone} · {isFuture ? "Future time" : "Local time"}
                 </p>
               </div>
@@ -241,7 +240,7 @@ const TimestampPicker = ({
                             height: "38px",
                             paddingInline: "8px",
                             fontSize: "0.72rem",
-                            fontWeight: 700,
+                            fontWeight: 600,
                           },
                         }}
                       >
@@ -254,7 +253,7 @@ const TimestampPicker = ({
                       </Button>
                     ))}
                   </div>
-                  <p className="mt-3 text-center text-[0.62rem] font-semibold text-slate-400">
+                  <p className="mt-3 text-center text-micro font-normal text-slate-500">
                     Relative timestamps are calculated when selected.
                   </p>
                 </div>
@@ -266,7 +265,7 @@ const TimestampPicker = ({
                   }}
                 >
                   <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_170px]">
-                    <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 p-1">
+                    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-1">
                       <DatePicker
                         value={selectedDate}
                         onChange={(nextDate) => {
@@ -277,16 +276,16 @@ const TimestampPicker = ({
                           isFuture && !disableExcludePast ? new Date() : undefined
                         }
                         styles={{
-                          calendarHeader: { fontSize: "0.78rem", fontWeight: 700 },
+                          calendarHeader: { fontSize: "0.78rem", fontWeight: 600 },
                           weekday: {
                             color: "var(--color-slate-400)",
                             fontSize: "0.66rem",
-                            fontWeight: 700,
+                            fontWeight: 600,
                           },
                           day: {
                             borderRadius: "7px",
                             fontSize: "0.74rem",
-                            fontWeight: 600,
+                            fontWeight: 500,
                           },
                         }}
                       />
@@ -307,18 +306,18 @@ const TimestampPicker = ({
                         className={`rounded-lg border px-3 py-2.5 ${
                           validationError
                             ? "border-red-200 bg-red-50"
-                            : "border-slate-200 bg-slate-50/70"
+                            : "border-slate-200 bg-slate-50"
                         }`}
                       >
                         <p
-                          className={`text-[0.6rem] font-bold uppercase tracking-[0.06em] ${
-                            validationError ? "text-red-500" : "text-slate-400"
+                          className={`text-micro font-semibold uppercase tracking-[0.07em] ${
+                            validationError ? "text-red-700" : "text-slate-500"
                           }`}
                         >
                           {validationError ? "Check timestamp" : "Selection"}
                         </p>
                         <p
-                          className={`mt-1 text-[0.7rem] font-bold leading-relaxed ${
+                          className={`mt-1 text-xs font-medium leading-relaxed ${
                             validationError ? "text-red-700" : "text-slate-700"
                           }`}
                         >

@@ -1,22 +1,18 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
-import { Button, Pagination, SegmentedControl } from "@mantine/core";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import {
-  ClipboardCheck,
-  Flame,
-  Hourglass,
-  Timer,
-  Workflow,
-} from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Button, SegmentedControl } from "@mantine/core";
+import { useQuery } from "@tanstack/react-query";
+import { ClipboardCheck, Flame, Hourglass, SearchX } from "lucide-react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { twMerge } from "@/lib/utils";
 
 import { useSubjectUser } from "@/components/Access/hooks";
 import { resourceIcon } from "@/components/Access/icons";
-import { Countdown, Elapsed } from "@/components/TimeAgo";
+import { Countdown, Elapsed, useNow } from "@/components/TimeAgo";
 import {
   Avatar,
   Badge,
   Card,
+  DocumentTitle,
   EmptyState,
   ErrorState,
   Eyebrow,
@@ -27,126 +23,160 @@ import {
   SkeletonRows,
   StatTile,
   Toolbar,
-  UrgencyMeter,
+  UrgencyBadge,
 } from "@/ui";
 import {
   currentReviewStepIndex,
   formatDuration,
+  grantedDuration,
+  isOnBehalfOf,
   requestResourceLabel,
   requestSubjectName,
   requesterName,
+  reviewStepLabel,
   reviewStepTimeoutAt,
   reviewSteps,
   shortName,
-  toneClasses,
+  tsToDate,
+  tsToMillis,
   urgencyMeta,
   waitingMillis,
-  waitingTone,
 } from "@/utils";
 import { getReviewerClient } from "@/utils/client";
 
-const ITEMS_PER_PAGE = 20;
-
+const PAGE_SIZE = 500;
+const MAX_PAGES = 100;
 const STALE_MILLIS = 24 * 3600 * 1000;
 
-const QueueRow = (props: { item: AccessP.Request }) => {
+const listAllReviewerRequests = async (
+  signal?: AbortSignal,
+): Promise<AccessP.Request[]> => {
+  const items: AccessP.Request[] = [];
+
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const { response } = await getReviewerClient().listRequest(
+      AccessP.ListReviewerRequestOptions.create({
+        common: { page, itemsPerPage: PAGE_SIZE },
+      }),
+      { abort: signal },
+    );
+    items.push(...response.items);
+    if (!response.listResponseMeta?.hasMore) break;
+  }
+
+  return items;
+};
+
+const QueueRow = (props: { item: AccessP.Request; returnTo: string; now: number }) => {
   const { item } = props;
   const resource = requestResourceLabel(item);
   const urgency = urgencyMeta(item.spec?.urgency);
   const requester = requesterName(item);
-  const subject = requestSubjectName(item);
-  const onBehalf = !!subject && subject !== requester;
+  const onBehalf = isOnBehalfOf(item);
   const requesterQuery = useSubjectUser(requester);
   const steps = reviewSteps(item);
+  const current = currentReviewStepIndex(item);
   const timeoutAt = reviewStepTimeoutAt(item);
-  const waited = waitingMillis(item);
-  const tone = waitingTone(waited);
+  const deadline = tsToDate(item.spec?.deadline);
+  const stale = waitingMillis(item, props.now) > STALE_MILLIS;
   const Icon = resourceIcon(resource.kind);
+  const requesterLabel =
+    requesterQuery.data?.displayName || shortName(requester) || "—";
 
   return (
     <Card interactive>
       <Link
         to={`/reviewer/requests/${item.metadata!.name}`}
-        className="flex min-w-0 items-start gap-3.5 px-4 py-3.5"
+        state={{ returnTo: props.returnTo }}
+        className="flex min-w-0 items-start gap-3.5 rounded-xl px-4 py-3.5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-400"
       >
-        <IconTile tone={resource.kind === "Catalog" ? "violet" : "blue"}>
-          <Icon size={16} strokeWidth={2.2} />
+        <IconTile>
+          <Icon size={16} strokeWidth={2} />
         </IconTile>
 
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="truncate text-[0.87rem] font-bold text-slate-800">
+            <span className="truncate text-body font-semibold text-slate-800">
               {resource.name || item.metadata!.name}
             </span>
-            <Badge tone={resource.kind === "Catalog" ? "violet" : "slate"}>
-              {resource.kind}
-            </Badge>
-            {onBehalf && <Badge tone="amber">On behalf</Badge>}
+            {resource.kind === "Catalog" && <Badge>Catalog</Badge>}
+            {onBehalf && <Badge>On behalf</Badge>}
           </div>
 
-          <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.7rem] font-semibold text-slate-400">
+          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs font-normal text-slate-500">
             <span className="inline-flex items-center gap-1.5">
               <Avatar
                 src={requesterQuery.data?.picURL}
-                name={requesterQuery.data?.displayName || shortName(requester)}
+                name={requesterLabel}
                 size="xs"
               />
-              <span className="text-slate-600">
-                {requesterQuery.data?.displayName || shortName(requester) || "—"}
-              </span>
+              <span className="font-medium text-slate-700">{requesterLabel}</span>
             </span>
             {onBehalf && (
               <>
-                <span className="text-slate-200">→</span>
-                <span className="text-slate-600">{shortName(subject)}</span>
+                <span aria-label="for">→</span>
+                <span className="font-medium text-slate-700">
+                  {shortName(requestSubjectName(item))}
+                </span>
               </>
             )}
-            <span className="text-slate-200">•</span>
-            <span>{formatDuration(item.spec?.duration)}</span>
+            <span aria-hidden className="text-slate-300">·</span>
+            <span>{formatDuration(grantedDuration(item))}</span>
             {steps.length > 0 && (
               <>
-                <span className="text-slate-200">•</span>
-                <span className="inline-flex items-center gap-1">
-                  <Workflow size={11} strokeWidth={2.6} />
-                  Step {Math.min(currentReviewStepIndex(item) + 1, steps.length)} of{" "}
-                  {steps.length}
+                <span aria-hidden className="text-slate-300">·</span>
+                <span>
+                  Step {Math.min(current + 1, steps.length)} of {steps.length}:{" "}
+                  {reviewStepLabel(steps[current], current)}
                 </span>
               </>
             )}
           </div>
 
-          {item.spec?.justification && (
-            <p className="mt-1.5 line-clamp-2 text-[0.74rem] font-medium leading-relaxed text-slate-500">
+          {item.spec?.justification ? (
+            <p className="mt-1.5 line-clamp-2 text-xs font-normal leading-5 text-slate-700 [overflow-wrap:anywhere]">
               {item.spec.justification}
+            </p>
+          ) : (
+            <p className="mt-1.5 text-xs font-normal italic text-slate-500">
+              No justification provided
             </p>
           )}
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.68rem] font-bold">
-            <span className={`inline-flex items-center gap-1 ${toneClasses[tone].text}`}>
-              <Hourglass size={11} strokeWidth={2.8} />
-              <Elapsed
-                rfc3339={item.status?.approvalStartAt ?? item.metadata?.createdAt}
-                suffix=" waiting"
-              />
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs font-normal text-slate-500">
+            <span className={twMerge(stale && "font-medium text-amber-700")}>
+              Waiting{" "}
+              <Elapsed rfc3339={item.status?.approvalStartAt ?? item.metadata?.createdAt} />
             </span>
             {timeoutAt && (
-              <span className="inline-flex items-center gap-1 text-amber-600">
-                <Timer size={11} strokeWidth={2.8} />
-                <Countdown
-                  date={timeoutAt}
-                  suffix=" until timeout"
-                  endedLabel="Timed out"
-                />
-              </span>
+              <>
+                <span aria-hidden className="text-slate-300">·</span>
+                {timeoutAt.getTime() > props.now ? (
+                  <span>
+                    Step times out in <Countdown date={timeoutAt} suffix="" />
+                  </span>
+                ) : (
+                  <span>Step timed out</span>
+                )}
+              </>
             )}
-          </div>
+            {deadline && (
+              <>
+                <span aria-hidden className="text-slate-300">·</span>
+                {deadline.getTime() > props.now ? (
+                  <span>
+                    Deadline in <Countdown date={deadline} suffix="" />
+                  </span>
+                ) : (
+                  <span className="font-medium text-red-700">Deadline passed</span>
+                )}
+              </>
+            )}
+          </p>
         </div>
 
         <div className="flex shrink-0 flex-col items-end gap-2">
-          <div className="flex items-center gap-2">
-            <UrgencyMeter urgency={item.spec?.urgency} />
-            <Badge tone={urgency.tone}>{urgency.label}</Badge>
-          </div>
+          {urgency.level !== 3 && <UrgencyBadge urgency={item.spec?.urgency} />}
           <Button size="compact-xs" variant="default" component="span">
             Review
           </Button>
@@ -156,33 +186,29 @@ const QueueRow = (props: { item: AccessP.Request }) => {
   );
 };
 
+const rankDeadline = (item: AccessP.Request) =>
+  tsToMillis(item.spec?.deadline) ?? Number.MAX_SAFE_INTEGER;
+
 const Queue = () => {
+  const location = useLocation();
+  const now = useNow();
   const [searchParams, setSearchParams] = useSearchParams();
-  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
   const search = searchParams.get("q") ?? "";
   const sort = searchParams.get("sort") ?? "urgency";
   const focus = searchParams.get("focus") ?? "";
 
   const qry = useQuery({
-    queryKey: ["reviewer", "listRequest", page],
-    placeholderData: keepPreviousData,
-    queryFn: async () => {
-      const { response } = await getReviewerClient().listRequest(
-        AccessP.ListReviewerRequestOptions.create({
-          common: { page: page - 1, itemsPerPage: ITEMS_PER_PAGE },
-        }),
-      );
-      return response;
-    },
+    queryKey: ["reviewer", "listRequest"],
+    queryFn: ({ signal }) => listAllReviewerRequests(signal),
     refetchInterval: 15000,
   });
 
-  const allItems = qry.data?.items ?? [];
+  const allItems = qry.data ?? [];
   const urgentCount = allItems.filter(
     (item) => urgencyMeta(item.spec?.urgency).level >= 4,
   ).length;
   const staleCount = allItems.filter(
-    (item) => waitingMillis(item) > STALE_MILLIS,
+    (item) => waitingMillis(item, now) > STALE_MILLIS,
   ).length;
 
   const q = search.trim().toLowerCase();
@@ -193,13 +219,13 @@ const Queue = () => {
         !q ||
         resource.name.toLowerCase().includes(q) ||
         item.metadata!.name.toLowerCase().includes(q) ||
-        shortName(requesterName(item)).toLowerCase().includes(q) ||
+        requesterName(item).toLowerCase().includes(q) ||
         requestSubjectName(item).toLowerCase().includes(q) ||
         (item.spec?.justification ?? "").toLowerCase().includes(q);
       const matchesFocus =
         !focus ||
         (focus === "urgent" && urgencyMeta(item.spec?.urgency).level >= 4) ||
-        (focus === "stale" && waitingMillis(item) > STALE_MILLIS);
+        (focus === "stale" && waitingMillis(item, now) > STALE_MILLIS);
       return matchesQuery && matchesFocus;
     })
     .sort((a, b) => {
@@ -207,31 +233,33 @@ const Queue = () => {
         const diff =
           urgencyMeta(b.spec?.urgency).level - urgencyMeta(a.spec?.urgency).level;
         if (diff !== 0) return diff;
-        return waitingMillis(b) - waitingMillis(a);
+        const deadlineDiff = rankDeadline(a) - rankDeadline(b);
+        if (deadlineDiff !== 0) return deadlineDiff;
+        return waitingMillis(b, now) - waitingMillis(a, now);
       }
-      if (sort === "waiting") return waitingMillis(b) - waitingMillis(a);
-      return waitingMillis(a) - waitingMillis(b);
+      if (sort === "waiting") return waitingMillis(b, now) - waitingMillis(a, now);
+      return waitingMillis(a, now) - waitingMillis(b, now);
     });
-
-  const meta = qry.data?.listResponseMeta;
-  const perPage = meta?.itemsPerPage || ITEMS_PER_PAGE;
-  const totalPages = meta ? Math.max(1, Math.ceil(meta.totalCount / perPage)) : 1;
 
   const setParam = (key: string, value: string, fallback: string) =>
-    setSearchParams((prev) => {
-      if (value && value !== fallback) prev.set(key, value);
-      else prev.delete(key);
-      if (key !== "page") prev.delete("page");
-      return prev;
-    });
+    setSearchParams(
+      (prev) => {
+        if (value && value !== fallback) prev.set(key, value);
+        else prev.delete(key);
+        return prev;
+      },
+      { replace: key === "q", preventScrollReset: true },
+    );
 
   const toggleFocus = (value: string) =>
     setParam("focus", focus === value ? "" : value, "");
 
+  const returnTo = `${location.pathname}${location.search}`;
+
   return (
     <div className="w-full">
+      <DocumentTitle title={allItems.length ? `Review Queue (${allItems.length})` : "Review Queue"} />
       <PageHeader
-        eyebrow="Reviewer"
         title="Review Queue"
         description="Access requests that are waiting for your decision right now."
         actions={<RefreshButton onClick={() => qry.refetch()} loading={qry.isFetching} />}
@@ -242,7 +270,7 @@ const Queue = () => {
           label="In your queue"
           value={allItems.length}
           hint="Pending your review"
-          icon={<ClipboardCheck size={13} strokeWidth={2.4} />}
+          icon={<ClipboardCheck size={13} strokeWidth={2.25} aria-hidden />}
           active={!focus}
           onClick={() => setParam("focus", "", "")}
         />
@@ -250,8 +278,8 @@ const Queue = () => {
           label="High urgency"
           value={urgentCount}
           hint="High and above"
-          tone="amber"
-          icon={<Flame size={13} strokeWidth={2.4} />}
+          tone={urgentCount > 0 ? "amber" : undefined}
+          icon={<Flame size={13} strokeWidth={2.25} aria-hidden />}
           active={focus === "urgent"}
           onClick={() => toggleFocus("urgent")}
         />
@@ -259,8 +287,8 @@ const Queue = () => {
           label="Waiting over a day"
           value={staleCount}
           hint="Needs attention"
-          tone={staleCount > 0 ? "red" : "slate"}
-          icon={<Hourglass size={13} strokeWidth={2.4} />}
+          tone={staleCount > 0 ? "amber" : undefined}
+          icon={<Hourglass size={13} strokeWidth={2.25} aria-hidden />}
           active={focus === "stale"}
           onClick={() => toggleFocus("stale")}
         />
@@ -270,11 +298,12 @@ const Queue = () => {
         <SearchInput
           value={search}
           onChange={(value) => setParam("q", value, "")}
-          placeholder="Search by resource, requester or justification..."
+          placeholder="Search by resource, requester or justification"
           ariaLabel="Search the review queue"
         />
         <SegmentedControl
           value={sort}
+          aria-label="Sort the review queue"
           onChange={(value) => setParam("sort", value, "urgency")}
           data={[
             { value: "urgency", label: "Most urgent" },
@@ -286,20 +315,46 @@ const Queue = () => {
 
       {qry.isLoading ? (
         <SkeletonRows rows={4} />
-      ) : qry.isError ? (
+      ) : qry.isError && !qry.data ? (
         <ErrorState
           title="Could not load the review queue"
+          error={qry.error}
           onRetry={() => qry.refetch()}
         />
       ) : items.length === 0 ? (
         <Card>
           <EmptyState
-            icon={<ClipboardCheck size={20} strokeWidth={2} />}
+            icon={
+              allItems.length ? (
+                <SearchX size={18} strokeWidth={2} />
+              ) : (
+                <ClipboardCheck size={18} strokeWidth={2} />
+              )
+            }
             title={allItems.length ? "No matching requests" : "Your queue is clear"}
             description={
               allItems.length
                 ? "Try a different search term or clear the active filter."
                 : "Requests assigned to you for review will show up here."
+            }
+            action={
+              allItems.length ? (
+                <Button
+                  variant="default"
+                  onClick={() =>
+                    setSearchParams(
+                      (prev) => {
+                        prev.delete("q");
+                        prev.delete("focus");
+                        return prev;
+                      },
+                      { replace: true },
+                    )
+                  }
+                >
+                  Clear filters
+                </Button>
+              ) : undefined
             }
           />
         </Card>
@@ -313,23 +368,12 @@ const Queue = () => {
               <QueueRow
                 key={item.metadata!.uid || item.metadata!.name}
                 item={item}
+                returnTo={returnTo}
+                now={now}
               />
             ))}
           </div>
         </>
-      )}
-
-      {totalPages > 1 && (
-        <div className="mt-6 flex justify-center">
-          <Pagination
-            value={page}
-            total={totalPages}
-            onChange={(value) => setParam("page", String(value), "1")}
-            color="ink"
-            size="sm"
-            radius="md"
-          />
-        </div>
       )}
     </div>
   );

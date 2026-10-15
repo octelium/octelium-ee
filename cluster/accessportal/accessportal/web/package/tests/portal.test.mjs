@@ -247,6 +247,106 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
       assert.equal((await page.evaluate(() => window.calls)).filter((call) => call.method === "logout").length, 0);
     });
 
+    it("lists only the services of a namespace scoped catalog", async () => {
+      await load();
+      await page.getByText("Catalogs", { exact: true }).click();
+      await page.getByRole("button", { name: "View the contents of Team namespace", exact: true }).click();
+      const drawer = page.getByRole("dialog", { name: "Team namespace", exact: true });
+      await drawer.getByText("Dashboard", { exact: true }).waitFor();
+      assert.equal(await drawer.getByText("Database", { exact: true }).count(), 0);
+      assert.equal(await drawer.getByText("0", { exact: true }).count(), 0);
+    });
+
+    it("rejects fractional durations before they reach the API", async () => {
+      await load();
+      const amount = page.getByRole("textbox", { name: "Duration amount", exact: true });
+      await amount.fill("");
+      await amount.pressSequentially("1.5");
+      assert.equal((await amount.inputValue()).includes("."), false);
+    });
+
+    it("shows the recipient only for requests made on behalf of another user", async () => {
+      await load("/user/requests");
+      await page.getByText("for", { exact: false }).filter({ hasText: "bob" }).first().waitFor();
+      assert.equal(await page.getByText(/for\s+alice/).count(), 0);
+    });
+
+    it("shows the effective duration of a capped grant", async () => {
+      await load("/user/requests/capped");
+      await page.getByText("Granted for", { exact: true }).waitFor();
+      assert.equal(await page.getByText("48 hours", { exact: true }).count() > 0, true);
+      assert.equal(await page.getByText("2 hours", { exact: true }).count() > 0, true);
+      assert.equal(
+        await page.locator("section", { hasText: "Access window" }).getByText("48 hours", { exact: true }).count(),
+        0,
+      );
+    });
+
+    it("keeps a workflow cleared after its approved access expired", async () => {
+      await load("/user/requests/expired-after-approval");
+      await page.getByText("All 1 step cleared", { exact: true }).waitFor();
+      assert.equal(await page.getByText("Stopped here", { exact: true }).count(), 0);
+    });
+
+    it("shows unknown pages and missing requests without retrying", async () => {
+      await load("/nope");
+      assert.equal(await page.getByRole("heading", { level: 1 }).textContent(), "Page not found");
+      await load("/user/requests/missing");
+      assert.equal(await page.getByRole("heading", { level: 1 }).textContent(), "Request not found");
+      assert.ok(
+        (await page.evaluate(() => window.calls)).filter(
+          (call) => call.method === "getRequest" && call.request.name === "missing",
+        ).length <= 2,
+      );
+    });
+
+    it("loads every page of the review queue", async () => {
+      await load("/reviewer/requests");
+      await page.getByText("2 requests awaiting you", { exact: true }).waitFor();
+      assert.deepEqual(
+        [...new Set((await page.evaluate(() => window.calls))
+          .filter((call) => call.method === "listRequest" && call.request.common?.itemsPerPage === 500)
+          .map((call) => call.request.common.page))],
+        [0, 1],
+      );
+    });
+
+    it("binds review decisions to the displayed step", async () => {
+      await load("/reviewer/requests/queue-first");
+      await page.getByRole("button", { name: "Reject", exact: true }).filter({ visible: true }).click();
+      await page.getByText("Add a reason before rejecting this request", { exact: true }).filter({ visible: true }).waitFor();
+      assert.equal(await page.getByRole("dialog").count(), 0);
+      await page.getByRole("button", { name: "Approve", exact: true }).filter({ visible: true }).click();
+      const dialog = page.getByRole("dialog", { name: "Approve this request?", exact: true });
+      await dialog.getByRole("button", { name: "Approve request", exact: true }).click();
+      await page.getByRole("heading", { name: "Review Queue", exact: true }).waitFor();
+      const calls = await page.evaluate(() => window.calls);
+      const decision = calls.find((call) => call.method === "setReviewDecision");
+      assert.equal(decision.request.requestRef.name, "queue-first");
+      assert.equal(decision.request.expectedStepName, "security");
+      assert.equal(decision.request.decision, 1);
+      assert.equal(calls.filter((call) => call.method === "createReview").length, 0);
+    });
+
+    it("requires an explicit decision when editing a reset review", async () => {
+      await load("/reviewer/reviews/rv1.queue-second");
+      await page.getByRole("button", { name: "Set decision", exact: true }).click();
+      const save = page.getByRole("button", { name: "Save", exact: true });
+      assert.equal(await save.isDisabled(), true);
+      await page.getByText("Approve", { exact: true }).click();
+      await save.click();
+      await page.waitForFunction(() => window.calls.some((call) => call.method === "updateReview"));
+      const update = (await page.evaluate(() => window.calls)).find((call) => call.method === "updateReview");
+      assert.equal(update.request.spec.decision, 1);
+    });
+
+    it("offers no changes for reviews applied to an earlier step", async () => {
+      await load("/reviewer/reviews/rv2.queue-first");
+      await page.getByText(/applied to an earlier step/).waitFor();
+      assert.equal(await page.getByRole("button", { name: "Change decision", exact: true }).count(), 0);
+      assert.equal(await page.getByRole("button", { name: "Reset decision", exact: true }).count(), 0);
+    });
+
     it("closes mobile navigation after routing and avoids horizontal overflow", async () => {
       await page.setViewportSize({ width: 390, height: 844 });
       await load();

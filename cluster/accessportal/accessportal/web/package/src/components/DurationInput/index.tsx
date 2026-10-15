@@ -14,15 +14,21 @@ const DurationInput = (props: {
   const { unit, amount } = durationToParts(props.value);
 
   return (
-    <Group grow>
+    <Group grow gap="xs">
       <NumberInput
+        aria-label="Duration amount"
         min={1}
+        max={100000}
+        allowDecimal={false}
+        allowNegative={false}
+        clampBehavior="strict"
         value={amount}
         onChange={(v) =>
-          props.onChange(partsToDuration(unit, (v as number) || 1))
+          props.onChange(partsToDuration(unit, typeof v === "number" ? v : 1))
         }
       />
       <Select
+        aria-label="Duration unit"
         data={DURATION_UNIT_OPTIONS}
         value={unit}
         allowDeselect={false}

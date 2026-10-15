@@ -5,7 +5,7 @@ import { Button, Modal, Textarea } from "@mantine/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Save, X } from "lucide-react";
 import * as React from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import AuthorizationCard from "@/components/Access/AuthorizationCard";
@@ -22,20 +22,30 @@ import TimestampPicker from "@/components/TimestampPicker";
 import {
   BackLink,
   ConfirmDialog,
-  CopyValue,
+  DocumentTitle,
   ErrorState,
   Field,
+  LengthCounter,
   Loading,
   NotFoundState,
   PageHeader,
   SectionCard,
   StatusBadge,
+  SummaryRow,
   UrgencyBadge,
+  isNotFoundError,
 } from "@/ui";
-import { isPendingRequest, requestResourceLabel } from "@/utils";
+import {
+  MAX_JUSTIFICATION_BYTES,
+  isEvaluatingRequest,
+  isPendingRequest,
+  normalizeDuration,
+  requestRefetchInterval,
+  requestResourceLabel,
+  tsToMillis,
+  utf8Length,
+} from "@/utils";
 import { getUserClient } from "@/utils/client";
-
-const MAX_JUSTIFICATION = 1500;
 
 const EditRequestModal = (props: {
   opened: boolean;
@@ -44,11 +54,11 @@ const EditRequestModal = (props: {
 }) => {
   const queryClient = useQueryClient();
   const { request } = props;
-  const [urgency, setUrgency] = React.useState(
-    request.spec?.urgency ?? AccessP.Request_Spec_Urgency.NORMAL,
+  const [urgency, setUrgency] = React.useState<AccessP.Request_Spec_Urgency>(
+    request.spec?.urgency || AccessP.Request_Spec_Urgency.NORMAL,
   );
-  const [duration, setDuration] = React.useState<MetaP.Duration | undefined>(
-    request.spec?.duration,
+  const [duration, setDuration] = React.useState<MetaP.Duration>(
+    normalizeDuration(request.spec?.duration),
   );
   const [deadline, setDeadline] = React.useState<Timestamp | undefined>(
     request.spec?.deadline,
@@ -57,13 +67,16 @@ const EditRequestModal = (props: {
     request.spec?.justification ?? "",
   );
 
-  React.useEffect(() => {
-    if (!props.opened) return;
-    setUrgency(request.spec?.urgency ?? AccessP.Request_Spec_Urgency.NORMAL);
-    setDuration(request.spec?.duration);
-    setDeadline(request.spec?.deadline);
-    setJustification(request.spec?.justification ?? "");
-  }, [props.opened]);
+  const [prevOpened, setPrevOpened] = React.useState(props.opened);
+  if (props.opened !== prevOpened) {
+    setPrevOpened(props.opened);
+    if (props.opened) {
+      setUrgency(request.spec?.urgency || AccessP.Request_Spec_Urgency.NORMAL);
+      setDuration(normalizeDuration(request.spec?.duration));
+      setDeadline(request.spec?.deadline);
+      setJustification(request.spec?.justification ?? "");
+    }
+  }
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -88,17 +101,36 @@ const EditRequestModal = (props: {
     },
   });
 
+  const justificationBytes = utf8Length(justification);
+  const tooLong = justificationBytes > MAX_JUSTIFICATION_BYTES;
+  const deadlinePassed = !!deadline && (tsToMillis(deadline) ?? 0) <= Date.now();
+
   return (
     <Modal
       opened={props.opened}
       onClose={props.onClose}
       centered
-      radius="md"
+      radius="lg"
       title="Edit pending request"
-      styles={{ title: { fontWeight: 700, fontSize: "0.9rem" } }}
+      closeOnEscape={!mutation.isPending}
+      closeOnClickOutside={!mutation.isPending}
+      withCloseButton={!mutation.isPending}
+      styles={{
+        title: {
+          fontSize: "0.9375rem",
+          fontWeight: 600,
+          color: "var(--color-slate-900)",
+        },
+      }}
     >
-      <div className="flex flex-col gap-4">
-        <p className="text-[0.76rem] font-medium leading-relaxed text-slate-500">
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!tooLong && !deadlinePassed) mutation.mutate();
+        }}
+      >
+        <p className="text-xs font-normal leading-5 text-slate-500">
           The resource and the recipient of a request cannot be changed. Create a
           new request if you need different access.
         </p>
@@ -120,50 +152,50 @@ const EditRequestModal = (props: {
           onChange={setDeadline}
         />
 
-        <Field
-          label="Justification"
-          hint={
-            <span
-              className={
-                justification.length > MAX_JUSTIFICATION
-                  ? "text-[0.66rem] font-bold text-red-500"
-                  : "text-[0.66rem] font-semibold text-slate-400"
-              }
-            >
-              {justification.length}/{MAX_JUSTIFICATION}
+        <Textarea
+          label={
+            <span className="flex w-full items-baseline justify-between gap-3">
+              Justification
+              <LengthCounter length={justificationBytes} max={MAX_JUSTIFICATION_BYTES} />
             </span>
           }
-        >
-          <Textarea
-            autosize
-            minRows={3}
-            maxRows={7}
-            value={justification}
-            onChange={(event) => setJustification(event.currentTarget.value)}
-          />
-        </Field>
+          error={
+            tooLong
+              ? "The justification is too long"
+              : deadlinePassed
+                ? "The deadline is in the past. Choose a later time or clear it."
+                : undefined
+          }
+          autosize
+          minRows={3}
+          maxRows={7}
+          value={justification}
+          onChange={(event) => setJustification(event.currentTarget.value)}
+          styles={{ label: { display: "flex", width: "100%" } }}
+        />
 
         <div className="flex items-center justify-end gap-2">
           <Button
+            type="button"
             variant="default"
-            leftSection={<X size={13} strokeWidth={2.6} />}
+            leftSection={<X size={13} strokeWidth={2.25} />}
             onClick={props.onClose}
             disabled={mutation.isPending}
           >
             Discard
           </Button>
           <Button
+            type="submit"
             variant="filled"
             color="ink"
-            leftSection={<Save size={13} strokeWidth={2.6} />}
+            leftSection={<Save size={13} strokeWidth={2.25} />}
             loading={mutation.isPending}
-            disabled={justification.length > MAX_JUSTIFICATION}
-            onClick={() => mutation.mutate()}
+            disabled={tooLong || deadlinePassed}
           >
             Save changes
           </Button>
         </div>
-      </div>
+      </form>
     </Modal>
   );
 };
@@ -177,14 +209,14 @@ const RequestDetail = () => {
   const qry = useQuery({
     queryKey: ["user", "getRequest", name],
     enabled: !!name,
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const { response } = await getUserClient().getRequest(
         MetaP.GetOptions.create({ name: name! }),
+        { abort: signal },
       );
       return response;
     },
-    refetchInterval: (query) =>
-      isPendingRequest(query.state.data) ? 15000 : false,
+    refetchInterval: (query) => requestRefetchInterval(query.state.data),
   });
 
   const cancelMutation = useMutation({
@@ -205,30 +237,41 @@ const RequestDetail = () => {
     },
   });
 
-  if (qry.isLoading) return <Loading label="Loading request..." />;
-  if (qry.isError) {
-    return (
-      <ErrorState
-        title="Could not load this request"
-        onRetry={() => qry.refetch()}
-      />
-    );
-  }
+  if (qry.isLoading) return <Loading label="Loading request…" />;
   if (!qry.data) {
     return (
-      <NotFoundState
-        title="Request not found"
-        description="This request either does not exist or is no longer available to you."
-      />
+      <div className="w-full">
+        <DocumentTitle title="Request" />
+        <BackLink to="/user/requests">My Requests</BackLink>
+        {qry.isError && !isNotFoundError(qry.error) ? (
+          <ErrorState
+            title="Could not load this request"
+            error={qry.error}
+            onRetry={() => qry.refetch()}
+          />
+        ) : (
+          <NotFoundState
+            title="Request not found"
+            description="This request either does not exist or is no longer available to you."
+            action={
+              <Button component={Link} to="/user/requests" variant="default">
+                Back to My Requests
+              </Button>
+            }
+          />
+        )}
+      </div>
     );
   }
 
   const item = qry.data;
   const resource = requestResourceLabel(item);
   const pending = isPendingRequest(item);
+  const open = pending || isEvaluatingRequest(item);
 
   return (
     <div className="w-full">
+      <DocumentTitle title={resource.name || item.metadata!.name} />
       <BackLink to="/user/requests">My Requests</BackLink>
 
       <PageHeader
@@ -238,7 +281,6 @@ const RequestDetail = () => {
           <>
             <StatusBadge status={item.status?.state?.status} withHint />
             <UrgencyBadge urgency={item.spec?.urgency} />
-            <CopyValue value={item.metadata!.name} />
           </>
         }
         actions={
@@ -246,16 +288,14 @@ const RequestDetail = () => {
             <>
               <Button
                 variant="default"
-                leftSection={<Pencil size={13} strokeWidth={2.6} />}
+                leftSection={<Pencil size={13} strokeWidth={2.25} />}
                 onClick={() => setEditOpen(true)}
               >
                 Edit
               </Button>
               <Button
-                variant="light"
-                color="red"
-                leftSection={<X size={13} strokeWidth={2.8} />}
-                loading={cancelMutation.isPending}
+                variant="default"
+                leftSection={<X size={13} strokeWidth={2.25} />}
                 onClick={() => setCancelOpen(true)}
               >
                 Cancel request
@@ -267,7 +307,7 @@ const RequestDetail = () => {
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex min-w-0 flex-col gap-4">
-          <StatusHero request={item} />
+          <StatusHero request={item} canRequestAgain={!open} />
           <ResourceCard request={item} />
           <JustificationCard
             text={item.spec?.justification}
@@ -299,7 +339,13 @@ const RequestDetail = () => {
         onConfirm={() => cancelMutation.mutate()}
         title="Cancel this request?"
         description="The request stops progressing through its review workflow and cannot be restored."
+        details={
+          <SummaryRow label={resource.kind}>
+            {resource.name || item.metadata!.name}
+          </SummaryRow>
+        }
         confirmLabel="Cancel request"
+        danger
         loading={cancelMutation.isPending}
       />
     </div>

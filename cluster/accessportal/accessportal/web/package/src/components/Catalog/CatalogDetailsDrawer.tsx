@@ -1,10 +1,9 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import { Drawer, SegmentedControl } from "@mantine/core";
-import { useQuery } from "@tanstack/react-query";
-import { Globe2, Lock, Radio, Server } from "lucide-react";
+import { Globe2, Server } from "lucide-react";
 import * as React from "react";
 
-import { listAllNamespaces, listAllServices } from "@/components/Access/hooks";
+import { useServices } from "@/components/Access/hooks";
 import { serviceTypeIcon } from "@/components/Access/icons";
 import {
   Badge,
@@ -12,11 +11,11 @@ import {
   ErrorState,
   Eyebrow,
   IconTile,
-  Loading,
   MonoValue,
+  Note,
   SkeletonRows,
 } from "@/ui";
-import { namespaceFromName, serviceModeMeta, shortName } from "@/utils";
+import { namespaceFromName, serviceModeLabel, shortName } from "@/utils";
 
 type CatalogDetailsDrawerProps = {
   catalog?: AccessP.Catalog;
@@ -24,60 +23,46 @@ type CatalogDetailsDrawerProps = {
   onClose: () => void;
 };
 
+const fullServiceName = (name: string) =>
+  name.includes(".") ? name : `${name}.default`;
+
+const catalogScope = (catalog?: AccessP.Catalog) => {
+  const scope = catalog?.spec?.resourceCollection?.service;
+  return {
+    serviceNames: new Set((scope?.services ?? []).filter(Boolean).map(fullServiceName)),
+    namespaces: new Set((scope?.namespaces ?? []).filter(Boolean)),
+  };
+};
+
 const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
   const [view, setView] = React.useState<"services" | "namespaces">("services");
-  const scope = props.catalog?.spec?.resourceCollection?.service;
-  const serviceNames = new Set(scope?.services ?? []);
-  const scopeNamespaces = new Set(scope?.namespaces ?? []);
+  const scope = catalogScope(props.catalog);
+  const servicesQuery = useServices("", props.opened && !!props.catalog);
 
-  const servicesQuery = useQuery({
-    queryKey: ["userapi", "catalogServices", props.catalog?.metadata?.name],
-    enabled: props.opened && !!props.catalog,
-    queryFn: () => listAllServices(),
-  });
-  const namespacesQuery = useQuery({
-    queryKey: ["userapi", "catalogNamespaces", props.catalog?.metadata?.name],
-    enabled: props.opened && !!props.catalog,
-    queryFn: listAllNamespaces,
-  });
+  const namespaceOf = (service: { metadata?: { name: string }; status?: { namespace: string } }) =>
+    service.status?.namespace || namespaceFromName(service.metadata?.name);
 
-  const services = (servicesQuery.data ?? []).filter((service) => {
-    const name = service.metadata?.name ?? "";
-    const namespace = service.status?.namespace || namespaceFromName(name);
-    return (
-      serviceNames.size === 0 ||
-      serviceNames.has(name) ||
-      scopeNamespaces.has(namespace)
-    );
-  });
+  const services = (servicesQuery.data ?? []).filter(
+    (service) =>
+      scope.serviceNames.has(service.metadata?.name ?? "") ||
+      scope.namespaces.has(namespaceOf(service)),
+  );
 
-  const catalogNamespaceNames =
-    scopeNamespaces.size > 0
-      ? scopeNamespaces
-      : serviceNames.size > 0
-        ? new Set(
-            services.map(
-              (service) =>
-                service.status?.namespace ||
-                namespaceFromName(service.metadata?.name),
-            ),
-          )
-        : undefined;
-
-  const namespaces = (namespacesQuery.data ?? []).filter((namespace) => {
-    const name = namespace.metadata?.name ?? "";
-    return !catalogNamespaceNames || catalogNamespaceNames.has(name);
-  });
+  const visibleNames = new Set(services.map((service) => service.metadata?.name ?? ""));
+  const hiddenListed = [...scope.serviceNames].filter((name) => !visibleNames.has(name));
 
   const serviceCountByNamespace = services.reduce<Record<string, number>>(
     (counts, service) => {
-      const namespace =
-        service.status?.namespace || namespaceFromName(service.metadata?.name);
+      const namespace = namespaceOf(service);
       if (namespace) counts[namespace] = (counts[namespace] ?? 0) + 1;
       return counts;
     },
     {},
   );
+
+  const namespaces = [
+    ...new Set([...scope.namespaces, ...Object.keys(serviceCountByNamespace)]),
+  ].sort();
 
   return (
     <Drawer
@@ -86,19 +71,23 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
       position="right"
       size="min(560px, 100vw)"
       title={props.catalog?.metadata?.displayName || props.catalog?.metadata?.name}
-      overlayProps={{ backgroundOpacity: 0.35, blur: 2 }}
-      transitionProps={{ transition: "slide-left", duration: 220 }}
+      overlayProps={{ backgroundOpacity: 0.3 }}
+      transitionProps={{ transition: "slide-left", duration: 200 }}
       styles={{
-        title: { fontWeight: 700, fontSize: "0.95rem" },
+        title: {
+          fontWeight: 600,
+          fontSize: "0.9375rem",
+          color: "var(--color-slate-900)",
+        },
         body: { paddingTop: 0 },
       }}
     >
       <div className="flex flex-col gap-4">
-        <div className="rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2.5">
-          <MonoValue className="bg-transparent px-0">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+          <MonoValue className="border-0 bg-transparent px-0">
             {props.catalog?.metadata?.name}
           </MonoValue>
-          <p className="mt-1.5 text-[0.76rem] font-medium leading-relaxed text-slate-500">
+          <p className="mt-1 text-xs font-normal leading-5 text-slate-600">
             {props.catalog?.metadata?.description ||
               "Every Service collected by this Catalog is granted at once when the request is approved."}
           </p>
@@ -120,114 +109,105 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
           ]}
         />
 
-        {view === "services" ? (
-          servicesQuery.isLoading ? (
-            <SkeletonRows rows={4} />
-          ) : servicesQuery.isError ? (
-            <ErrorState
-              title="Could not load catalog services"
-              onRetry={() => {
-                void servicesQuery.refetch();
-              }}
-            />
-          ) : services.length === 0 ? (
+        {servicesQuery.isLoading ? (
+          <SkeletonRows rows={4} />
+        ) : servicesQuery.isError && !servicesQuery.data ? (
+          <ErrorState
+            title="Could not load the contents of this Catalog"
+            error={servicesQuery.error}
+            onRetry={() => {
+              void servicesQuery.refetch();
+            }}
+          />
+        ) : view === "services" ? (
+          services.length === 0 ? (
             <EmptyState
-              icon={<Server size={20} strokeWidth={2} />}
-              title="No services in this Catalog"
-              description="The Catalog does not contain any services available to you."
+              icon={<Server size={18} strokeWidth={2} />}
+              title="No services visible to you"
+              description="None of the Services in this Catalog are currently visible to you."
             />
           ) : (
             <div className="flex flex-col gap-2">
               <Eyebrow>Included services</Eyebrow>
+              {hiddenListed.length > 0 && (
+                <Note>
+                  {hiddenListed.length} listed Service
+                  {hiddenListed.length === 1 ? " is" : "s are"} not visible to
+                  you and {hiddenListed.length === 1 ? "is" : "are"} not shown.
+                </Note>
+              )}
               {services.map((service) => {
                 const name = service.metadata?.name ?? "";
-                const displayName =
-                  service.metadata?.displayName || shortName(name);
-                const namespace =
-                  service.status?.namespace || namespaceFromName(name);
-                const mode = serviceModeMeta(service.spec?.type);
+                const namespace = namespaceOf(service);
                 const Icon = serviceTypeIcon(service.spec?.type);
+                const location =
+                  service.status?.primaryHostname ||
+                  service.status?.addresses?.join(", ");
 
                 return (
                   <div
                     key={service.metadata?.uid || name}
                     className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5"
                   >
-                    <IconTile tone={mode.tone}>
-                      <Icon size={15} strokeWidth={2.2} />
+                    <IconTile>
+                      <Icon size={15} strokeWidth={2} />
                     </IconTile>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[0.8rem] font-bold text-slate-800">
-                        {displayName}
+                      <p className="truncate text-body font-semibold text-slate-800">
+                        {service.metadata?.displayName || shortName(name)}
                       </p>
-                      <p className="mt-0.5 truncate font-mono text-[0.68rem] font-semibold text-slate-400">
+                      <p className="truncate font-mono text-xs font-normal text-slate-500">
                         {name}
                       </p>
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                        <Badge tone={mode.tone}>{mode.label}</Badge>
-                        {namespace && <Badge tone="slate">{namespace}</Badge>}
+                        <Badge>{serviceModeLabel(service.spec?.type)}</Badge>
+                        {namespace && <Badge>Namespace {namespace}</Badge>}
                         {(service.spec?.port ?? 0) > 0 && (
-                          <Badge tone="slate">Port {service.spec!.port}</Badge>
+                          <Badge>Port {service.spec!.port}</Badge>
                         )}
-                        {service.spec?.isTLS && (
-                          <Badge tone="emerald" icon={<Lock size={9} strokeWidth={3} />}>
-                            TLS
-                          </Badge>
-                        )}
-                        {service.spec?.isPublic && (
-                          <Badge tone="amber" icon={<Radio size={9} strokeWidth={3} />}>
-                            Public
-                          </Badge>
-                        )}
+                        {service.spec?.isTLS && <Badge>TLS</Badge>}
+                        {service.spec?.isPublic && <Badge>Public</Badge>}
                       </div>
-                      {(service.status?.primaryHostname ||
-                        service.status?.addresses.length) && (
-                        <p className="mt-1.5 break-all font-mono text-[0.66rem] font-semibold text-slate-400">
-                          {service.status.primaryHostname ||
-                            service.status.addresses.join(", ")}
+                      {location ? (
+                        <p className="mt-1.5 font-mono text-xs font-normal text-slate-500 [overflow-wrap:anywhere]">
+                          {location}
                         </p>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 );
               })}
             </div>
           )
-        ) : namespacesQuery.isLoading ? (
-          <Loading label="Loading catalog namespaces..." />
-        ) : namespacesQuery.isError ? (
-          <ErrorState
-            title="Could not load catalog namespaces"
-            onRetry={() => {
-              void namespacesQuery.refetch();
-            }}
-          />
         ) : namespaces.length === 0 ? (
           <EmptyState
-            icon={<Globe2 size={20} strokeWidth={2} />}
+            icon={<Globe2 size={18} strokeWidth={2} />}
             title="No namespaces in this Catalog"
-            description="The Catalog does not contain any namespaces available to you."
+            description="The Catalog does not include any namespace visible to you."
           />
         ) : (
           <div className="flex flex-col gap-2">
             <Eyebrow>Included namespaces</Eyebrow>
-            {namespaces.map((namespace) => {
-              const name = namespace.metadata?.name ?? "";
+            {namespaces.map((name) => {
               const count = serviceCountByNamespace[name] ?? 0;
               return (
                 <div
-                  key={namespace.metadata?.uid || name}
+                  key={name}
                   className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5"
                 >
-                  <IconTile tone="blue">
-                    <Globe2 size={15} strokeWidth={2.2} />
+                  <IconTile>
+                    <Globe2 size={15} strokeWidth={2} />
                   </IconTile>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-mono text-[0.8rem] font-bold text-slate-800">
+                    <p className="truncate font-mono text-body font-semibold text-slate-800">
                       {name}
                     </p>
-                    <p className="mt-0.5 text-[0.7rem] font-semibold text-slate-400">
-                      {count} service{count === 1 ? "" : "s"} available to you
+                    <p className="mt-0.5 text-xs font-normal text-slate-500">
+                      {scope.namespaces.has(name)
+                        ? "Every Service in this namespace"
+                        : "Only the listed Services"}
+                      {" · "}
+                      {count} visible to you
                     </p>
                   </div>
                 </div>

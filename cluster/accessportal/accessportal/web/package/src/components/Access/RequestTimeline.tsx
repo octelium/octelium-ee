@@ -1,31 +1,32 @@
 import * as React from "react";
 import * as AccessP from "@/apis/accessv1/accessv1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
-import { Check, CircleDashed, Clock3, FilePlus2, History, XCircle } from "lucide-react";
+import { FilePlus2, Gavel, History } from "lucide-react";
 
 import TimeAgo from "@/components/TimeAgo";
 import { SectionCard, Timeline, TimelineItem } from "@/ui";
-import { Tone, shortName, statusMeta, tsToMillis } from "@/utils";
+import {
+  Tone,
+  requestCreatedAt,
+  reviewStepLabel,
+  reviewSteps,
+  statusMeta,
+  tsToMillis,
+} from "@/utils";
 
 type Event = {
   key: string;
   at?: Timestamp;
   millis: number;
   title: string;
-  tone: Tone;
-  icon: React.ReactNode;
+  tone?: Tone;
+  icon?: React.ReactNode;
   description?: string;
-};
-
-const statusIcon = (tone: Tone, group: string) => {
-  if (group === "active") return <Check size={13} strokeWidth={3} />;
-  if (tone === "red") return <XCircle size={13} strokeWidth={2.6} />;
-  if (group === "pending") return <Clock3 size={12} strokeWidth={2.8} />;
-  return <CircleDashed size={12} strokeWidth={2.8} />;
 };
 
 const RequestTimeline = (props: { request: AccessP.Request }) => {
   const status = props.request.status;
+  const steps = reviewSteps(props.request);
   const events: Event[] = [];
 
   const pushState = (
@@ -40,7 +41,6 @@ const RequestTimeline = (props: { request: AccessP.Request }) => {
       millis: tsToMillis(state.createdAt) ?? 0,
       title: meta.label,
       tone: meta.tone,
-      icon: statusIcon(meta.tone, meta.group),
       description: meta.hint,
     });
   };
@@ -55,24 +55,20 @@ const RequestTimeline = (props: { request: AccessP.Request }) => {
       key: `review-${index}`,
       at: step.setAt,
       millis: tsToMillis(step.setAt) ?? 0,
-      title: `Review decision on step ${step.stepIndex + 1}`,
-      tone: "blue",
-      icon: <Check size={12} strokeWidth={2.8} />,
-      description: shortName(step.reviewRef?.name)
-        ? `Review ${shortName(step.reviewRef?.name)}`
-        : undefined,
+      title: "Reviewer decision recorded",
+      icon: <Gavel size={11} strokeWidth={2.25} />,
+      description: reviewStepLabel(steps[step.stepIndex], step.stepIndex),
     });
   });
 
-  const createdAt = props.request.metadata?.createdAt;
+  const createdAt = requestCreatedAt(props.request);
   if (createdAt) {
     events.push({
       key: "created",
       at: createdAt,
       millis: tsToMillis(createdAt) ?? 0,
       title: "Request created",
-      tone: "slate",
-      icon: <FilePlus2 size={12} strokeWidth={2.6} />,
+      icon: <FilePlus2 size={11} strokeWidth={2.25} />,
     });
   }
 
@@ -91,7 +87,7 @@ const RequestTimeline = (props: { request: AccessP.Request }) => {
     <SectionCard
       title="Activity"
       description="Everything that happened to this request"
-      icon={<History size={14} strokeWidth={2.4} />}
+      icon={<History size={14} strokeWidth={2.25} />}
     >
       <Timeline>
         {sorted.map((event, index) => (

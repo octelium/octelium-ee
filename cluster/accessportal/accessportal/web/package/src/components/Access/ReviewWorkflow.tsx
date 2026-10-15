@@ -1,25 +1,37 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import { Tooltip } from "@mantine/core";
-import { Check, Circle, Clock3, Timer, UserRound, Users, Workflow } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { Check, Clock3, Minus, Users, Workflow } from "lucide-react";
+import { twMerge } from "@/lib/utils";
 
 import TimeAgo, { Countdown } from "@/components/TimeAgo";
-import { Avatar, Badge, Note, SectionCard } from "@/ui";
+import { Avatar, Badge, SectionCard } from "@/ui";
 import {
   ReviewerRef,
+  Tone,
   approvalRequirementLabel,
   currentReviewStepIndex,
   formatDuration,
   isPendingRequest,
-  onTimeoutMeta,
+  onTimeoutLabel,
+  reviewStepLabel,
   reviewStepTimeoutAt,
   reviewSteps,
   shortName,
   stepReviewers,
-  toneClasses,
+  wasApproved,
 } from "@/utils";
 
 import { useSubjectUser } from "./hooks";
+
+type StepState = "complete" | "current" | "stopped" | "upcoming" | "unreached";
+
+const STEP_BADGE: Record<StepState, { label: string; tone: Tone }> = {
+  complete: { label: "Cleared", tone: "emerald" },
+  current: { label: "In review", tone: "amber" },
+  stopped: { label: "Stopped here", tone: "slate" },
+  upcoming: { label: "Upcoming", tone: "slate" },
+  unreached: { label: "Not reached", tone: "slate" },
+};
 
 const ReviewerChip = (props: { reviewer: ReviewerRef }) => {
   const isUser = props.reviewer.kind === "user";
@@ -34,12 +46,12 @@ const ReviewerChip = (props: { reviewer: ReviewerRef }) => {
         {isUser ? (
           <Avatar src={query.data?.picURL} name={label} size="xs" />
         ) : (
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-50 text-violet-600">
-            <Users size={11} strokeWidth={2.6} />
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+            <Users size={11} strokeWidth={2.25} aria-hidden />
           </span>
         )}
-        <span className="truncate text-[0.7rem] font-bold text-slate-600">
-          {label}
+        <span className="truncate text-xs font-medium text-slate-700">
+          {isUser ? label : `${label} group`}
         </span>
       </span>
     </Tooltip>
@@ -50,37 +62,42 @@ const StepRow = (props: {
   step: AccessP.Policy_Spec_Rule_Action_Review_Step;
   index: number;
   total: number;
-  state: "complete" | "current" | "upcoming";
+  state: StepState;
   decisions: AccessP.Request_Status_Review_Step[];
   timeoutAt?: Date;
 }) => {
   const { state } = props;
-  const tone =
-    state === "complete" ? "emerald" : state === "current" ? "amber" : "slate";
   const reviewers = stepReviewers(props.step);
-  const timeout = onTimeoutMeta(props.step);
+  const badge = STEP_BADGE[state];
 
   return (
-    <li className="relative flex gap-3 pb-4 last:pb-0">
+    <li className="relative flex gap-3 pb-5 last:pb-0">
       {props.index < props.total - 1 && (
         <span
+          aria-hidden
           className={twMerge(
-            "absolute left-[13px] top-7 bottom-0 w-px",
-            state === "complete" ? "bg-emerald-200" : "bg-slate-200",
+            "absolute bottom-0 left-[13px] top-7 w-px",
+            state === "complete" ? "bg-emerald-300" : "bg-slate-200",
           )}
         />
       )}
       <span
+        aria-hidden
         className={twMerge(
-          "relative z-10 flex h-[27px] w-[27px] shrink-0 items-center justify-center rounded-full text-[0.66rem] font-bold",
-          toneClasses[tone].icon,
-          state === "current" && "ring-2 ring-amber-200",
+          "relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-micro font-semibold",
+          state === "complete"
+            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+            : state === "current"
+              ? "border-slate-900 bg-white text-slate-900"
+              : "border-slate-200 bg-white text-slate-500",
         )}
       >
         {state === "complete" ? (
-          <Check size={13} strokeWidth={3} />
+          <Check size={13} strokeWidth={2.75} />
         ) : state === "current" ? (
-          <Clock3 size={12} strokeWidth={2.8} />
+          <Clock3 size={12} strokeWidth={2.5} />
+        ) : state === "stopped" || state === "unreached" ? (
+          <Minus size={12} strokeWidth={2.5} />
         ) : (
           props.index + 1
         )}
@@ -88,20 +105,14 @@ const StepRow = (props: {
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-[0.78rem] font-bold text-slate-800">
-            Step {props.index + 1}
+          <span className="text-body font-semibold text-slate-800">
+            {reviewStepLabel(props.step, props.index)}
           </span>
-          <Badge tone={tone}>
-            {state === "complete"
-              ? "Cleared"
-              : state === "current"
-                ? "In review"
-                : "Upcoming"}
-          </Badge>
-          <span className="text-[0.7rem] font-semibold text-slate-400">
-            {approvalRequirementLabel(props.step)}
-          </span>
+          <Badge tone={badge.tone}>{badge.label}</Badge>
         </div>
+        <p className="mt-0.5 text-xs font-normal text-slate-500">
+          {approvalRequirementLabel(props.step)}
+        </p>
 
         {reviewers.length > 0 && (
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -114,43 +125,36 @@ const StepRow = (props: {
           </div>
         )}
 
-        {props.step.timeout && state !== "complete" && (
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7rem] font-semibold text-slate-400">
-            <span className="inline-flex items-center gap-1">
-              <Timer size={11} strokeWidth={2.6} />
-              Times out after {formatDuration(props.step.timeout)}
-            </span>
-            <span className={toneClasses[timeout.tone].text}>
-              {timeout.label}
-            </span>
+        {props.step.timeout && (state === "current" || state === "upcoming") && (
+          <p className="mt-2 text-xs font-normal text-slate-500">
+            Times out after {formatDuration(props.step.timeout)},{" "}
+            {onTimeoutLabel(props.step)}
             {state === "current" && props.timeoutAt && (
-              <Countdown
-                date={props.timeoutAt}
-                suffix=" until timeout"
-                endedLabel="Timeout reached"
-                tone="amber"
-              />
+              <>
+                {" · "}
+                <Countdown
+                  date={props.timeoutAt}
+                  suffix=" left"
+                  endedLabel="timeout reached"
+                  className="font-medium text-slate-700"
+                />
+              </>
             )}
-          </div>
+          </p>
         )}
 
         {props.decisions.length > 0 && (
-          <div className="mt-2 flex flex-col gap-1">
+          <ul className="mt-2 flex flex-col gap-0.5">
             {props.decisions.map((decision, index) => (
-              <div
-                key={`${decision.reviewRef?.name}-${index}`}
-                className="flex items-center gap-2 text-[0.7rem] font-semibold text-slate-500"
+              <li
+                key={`${decision.reviewRef?.uid ?? decision.reviewRef?.name}-${index}`}
+                className="flex items-center gap-1.5 text-xs font-normal text-slate-500"
               >
-                <UserRound size={11} strokeWidth={2.6} className="text-slate-300" />
-                <span className="truncate font-mono">
-                  {shortName(decision.reviewRef?.name) || "Review"}
-                </span>
-                <span className="ml-auto text-slate-400">
-                  <TimeAgo rfc3339={decision.setAt} />
-                </span>
-              </div>
+                <span aria-hidden className="h-1 w-1 rounded-full bg-slate-400" />
+                Decision recorded <TimeAgo rfc3339={decision.setAt} />
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </li>
@@ -168,30 +172,28 @@ const ReviewWorkflow = (props: {
 
   const current = currentReviewStepIndex(props.request);
   const pending = isPendingRequest(props.request);
-  const approved =
-    props.request.status?.state?.status ===
-    AccessP.Request_Status_State_Status.APPROVED;
+  const completed = wasApproved(props.request);
   const applied = props.request.status?.review?.lastSteps ?? [];
   const timeoutAt = reviewStepTimeoutAt(props.request);
+
+  const stateOf = (index: number): StepState => {
+    if (completed || index < current) return "complete";
+    if (index === current) return pending ? "current" : "stopped";
+    return pending ? "upcoming" : "unreached";
+  };
 
   return (
     <SectionCard
       title="Review workflow"
       description={
         pending
-          ? `Currently on step ${Math.min(current + 1, steps.length)} of ${steps.length}`
-          : `${steps.length} step${steps.length === 1 ? "" : "s"} defined by the matched policy rule`
+          ? `Waiting on step ${Math.min(current + 1, steps.length)} of ${steps.length}`
+          : completed
+            ? `All ${steps.length} step${steps.length === 1 ? "" : "s"} cleared`
+            : `Stopped at step ${Math.min(current + 1, steps.length)} of ${steps.length}`
       }
-      icon={<Workflow size={14} strokeWidth={2.4} />}
-      tone={pending ? "amber" : "slate"}
+      icon={<Workflow size={14} strokeWidth={2.25} />}
       className={props.className}
-      actions={
-        pending && timeoutAt ? (
-          <Badge tone="amber" icon={<Timer size={10} strokeWidth={2.8} />}>
-            <Countdown date={timeoutAt} suffix=" left" endedLabel="Timed out" />
-          </Badge>
-        ) : undefined
-      }
     >
       <ol className="flex flex-col">
         {steps.map((step, index) => (
@@ -200,24 +202,12 @@ const ReviewWorkflow = (props: {
             step={step}
             index={index}
             total={steps.length}
-            state={
-              approved || index < current
-                ? "complete"
-                : index === current && pending
-                  ? "current"
-                  : "upcoming"
-            }
+            state={stateOf(index)}
             decisions={applied.filter((item) => item.stepIndex === index)}
-            timeoutAt={timeoutAt}
+            timeoutAt={index === current ? timeoutAt : undefined}
           />
         ))}
       </ol>
-
-      {!pending && !approved && (
-        <Note tone="slate" className="mt-3" icon={<Circle size={11} strokeWidth={2.8} />}>
-          The workflow stopped before completing every step.
-        </Note>
-      )}
     </SectionCard>
   );
 };

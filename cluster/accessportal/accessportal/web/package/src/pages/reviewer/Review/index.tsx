@@ -1,91 +1,72 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
-import { Pagination, SegmentedControl } from "@mantine/core";
+import { Button, Pagination, SegmentedControl } from "@mantine/core";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import {
-  Check,
-  ChevronRight,
-  CircleDashed,
-  History,
-  ListChecks,
-  Workflow,
-  X,
-} from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { ChevronRight, Gavel, ListChecks, SearchX } from "lucide-react";
+import * as React from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import TimeAgo from "@/components/TimeAgo";
 import {
   Card,
   DecisionBadge,
+  DocumentTitle,
   EmptyState,
   ErrorState,
   Eyebrow,
   IconTile,
+  Note,
   PageHeader,
   RefreshButton,
   SearchInput,
   SkeletonRows,
   Toolbar,
 } from "@/ui";
-import { decisionMeta, shortName, tsToMillis } from "@/utils";
+import { shortName, tsToMillis } from "@/utils";
 import { getReviewerClient } from "@/utils/client";
 
 const ITEMS_PER_PAGE = 20;
 
-const ReviewRow = (props: { item: AccessP.Review }) => {
+const ReviewRow = (props: { item: AccessP.Review; returnTo: string }) => {
   const { item } = props;
-  const decision = decisionMeta(item.spec?.decision);
   const request = shortName(item.status?.requestRef?.name);
   const revisions = item.status?.lastRevisions?.length ?? 0;
+  const details: React.ReactNode[] = [
+    <span key="set">
+      Set <TimeAgo rfc3339={item.status?.setAt} />
+    </span>,
+    item.status?.stepName
+      ? `Step: ${item.status.stepName}`
+      : `Step ${(item.status?.stepIndex ?? 0) + 1}`,
+    revisions > 0 && `${revisions} earlier revision${revisions === 1 ? "" : "s"}`,
+  ].filter(Boolean);
 
   return (
     <Card interactive>
       <Link
         to={`/reviewer/reviews/${item.metadata!.name}`}
-        className="flex min-w-0 items-center gap-3.5 px-4 py-3.5"
+        state={{ returnTo: props.returnTo }}
+        className="flex min-w-0 items-center gap-3.5 rounded-xl px-4 py-3.5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-400"
       >
-        <IconTile tone={decision.tone}>
-          {item.spec?.decision === AccessP.Review_Spec_Decision.APPROVE ? (
-            <Check size={16} strokeWidth={3} />
-          ) : item.spec?.decision === AccessP.Review_Spec_Decision.REJECT ? (
-            <X size={16} strokeWidth={3} />
-          ) : (
-            <CircleDashed size={16} strokeWidth={2.4} />
-          )}
+        <IconTile>
+          <Gavel size={16} strokeWidth={2} />
         </IconTile>
 
         <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate font-mono text-[0.84rem] font-bold text-slate-800">
-              {request || item.metadata!.name}
-            </span>
-          </div>
+          <span className="block truncate text-body font-semibold text-slate-800">
+            Request <span className="font-mono">{request || item.metadata!.name}</span>
+          </span>
 
-          <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.7rem] font-semibold text-slate-400">
-            <span>
-              <TimeAgo rfc3339={item.status?.setAt} />
-            </span>
-            {typeof item.status?.stepIndex === "number" && (
-              <>
-                <span className="text-slate-200">•</span>
-                <span className="inline-flex items-center gap-1">
-                  <Workflow size={11} strokeWidth={2.6} />
-                  Step {item.status.stepIndex + 1}
-                </span>
-              </>
-            )}
-            {revisions > 0 && (
-              <>
-                <span className="text-slate-200">•</span>
-                <span className="inline-flex items-center gap-1">
-                  <History size={11} strokeWidth={2.6} />
-                  {revisions} revision{revisions === 1 ? "" : "s"}
-                </span>
-              </>
-            )}
-          </div>
+          <p className="mt-0.5 text-xs font-normal leading-5 text-slate-500">
+            {details.map((detail, index) => (
+              <React.Fragment key={index}>
+                {index > 0 && <span aria-hidden className="mx-1.5 text-slate-300">·</span>}
+                {detail}
+              </React.Fragment>
+            ))}
+          </p>
 
           {item.spec?.justification && (
-            <p className="mt-1.5 line-clamp-2 text-[0.74rem] font-medium leading-relaxed text-slate-500">
+            <p className="mt-1 line-clamp-2 text-xs font-normal leading-5 text-slate-700 [overflow-wrap:anywhere]">
               {item.spec.justification}
             </p>
           )}
@@ -93,7 +74,7 @@ const ReviewRow = (props: { item: AccessP.Review }) => {
 
         <div className="flex shrink-0 items-center gap-2">
           <DecisionBadge decision={item.spec?.decision} />
-          <ChevronRight size={16} className="text-slate-300" />
+          <ChevronRight size={16} aria-hidden className="text-slate-400" />
         </div>
       </Link>
     </Card>
@@ -101,6 +82,7 @@ const ReviewRow = (props: { item: AccessP.Review }) => {
 };
 
 const Reviews = () => {
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
   const search = searchParams.get("q") ?? "";
@@ -109,11 +91,12 @@ const Reviews = () => {
   const qry = useQuery({
     queryKey: ["reviewer", "listReview", page],
     placeholderData: keepPreviousData,
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const { response } = await getReviewerClient().listReview(
         AccessP.ListReviewerReviewOptions.create({
           common: { page: page - 1, itemsPerPage: ITEMS_PER_PAGE },
         }),
+        { abort: signal },
       );
       return response;
     },
@@ -123,11 +106,12 @@ const Reviews = () => {
   const q = search.trim().toLowerCase();
   const items = allItems
     .filter((item) => {
-      const request = shortName(item.status?.requestRef?.name).toLowerCase();
+      const request = (item.status?.requestRef?.name ?? "").toLowerCase();
       const matchesQuery =
         !q ||
         request.includes(q) ||
         item.metadata!.name.toLowerCase().includes(q) ||
+        (item.status?.stepName ?? "").toLowerCase().includes(q) ||
         (item.spec?.justification ?? "").toLowerCase().includes(q);
       const matchesDecision =
         decisionFilter === "all" ||
@@ -146,19 +130,23 @@ const Reviews = () => {
   const meta = qry.data?.listResponseMeta;
   const perPage = meta?.itemsPerPage || ITEMS_PER_PAGE;
   const totalPages = meta ? Math.max(1, Math.ceil(meta.totalCount / perPage)) : 1;
+  const filtered = !!q || decisionFilter !== "all";
 
   const setParam = (key: string, value: string, fallback: string) =>
-    setSearchParams((prev) => {
-      if (value && value !== fallback) prev.set(key, value);
-      else prev.delete(key);
-      if (key !== "page") prev.delete("page");
-      return prev;
-    });
+    setSearchParams(
+      (prev) => {
+        if (value && value !== fallback) prev.set(key, value);
+        else prev.delete(key);
+        if (key !== "page") prev.delete("page");
+        return prev;
+      },
+      { replace: key === "q", preventScrollReset: key !== "page" },
+    );
 
   return (
     <div className="w-full">
+      <DocumentTitle title="My Reviews" />
       <PageHeader
-        eyebrow="Reviewer"
         title="My Reviews"
         description="Every decision you have made on an access request."
         actions={<RefreshButton onClick={() => qry.refetch()} loading={qry.isFetching} />}
@@ -168,11 +156,12 @@ const Reviews = () => {
         <SearchInput
           value={search}
           onChange={(value) => setParam("q", value, "")}
-          placeholder="Search by request or justification..."
+          placeholder="Search by request, step or reason"
           ariaLabel="Search reviews"
         />
         <SegmentedControl
           value={decisionFilter}
+          aria-label="Filter by decision"
           onChange={(value) => setParam("decision", value, "all")}
           data={[
             { value: "all", label: "All" },
@@ -183,22 +172,54 @@ const Reviews = () => {
         />
       </Toolbar>
 
+      {totalPages > 1 && filtered && (
+        <Note className="mb-3">
+          Search and filters apply to the {allItems.length} reviews on this page.
+        </Note>
+      )}
+
       {qry.isLoading ? (
         <SkeletonRows rows={4} />
-      ) : qry.isError ? (
+      ) : qry.isError && !qry.data ? (
         <ErrorState
           title="Could not load your reviews"
+          error={qry.error}
           onRetry={() => qry.refetch()}
         />
       ) : items.length === 0 ? (
         <Card>
           <EmptyState
-            icon={<ListChecks size={20} strokeWidth={2} />}
+            icon={
+              allItems.length ? (
+                <SearchX size={18} strokeWidth={2} />
+              ) : (
+                <ListChecks size={18} strokeWidth={2} />
+              )
+            }
             title={allItems.length ? "No matching reviews" : "No reviews yet"}
             description={
               allItems.length
                 ? "Try a different search term or decision filter."
                 : "Once you approve or reject a request, your decision shows up here."
+            }
+            action={
+              allItems.length ? (
+                <Button
+                  variant="default"
+                  onClick={() =>
+                    setSearchParams(
+                      (prev) => {
+                        prev.delete("q");
+                        prev.delete("decision");
+                        return prev;
+                      },
+                      { replace: true },
+                    )
+                  }
+                >
+                  Clear filters
+                </Button>
+              ) : undefined
             }
           />
         </Card>
@@ -212,6 +233,7 @@ const Reviews = () => {
               <ReviewRow
                 key={item.metadata!.uid || item.metadata!.name}
                 item={item}
+                returnTo={`${location.pathname}${location.search}`}
               />
             ))}
           </div>
