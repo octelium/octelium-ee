@@ -55,6 +55,9 @@ const (
 	maxLicenseDisplayNameLen = 512
 	maxLicenseDomains        = 64
 	maxLicenseDomainLen      = 253
+	maxLicensePlanTierLen    = 64
+	maxLicensePlanFeatures   = 32
+	maxLicensePlanFeatureLen = 64
 	licenseClockSkew         = 5 * time.Minute
 )
 
@@ -487,8 +490,47 @@ func validateLicense(
 	if err := validateLicenseClusterDomain(lic, clusterDomain); err != nil {
 		return err
 	}
+	if err := validateLicensePlan(lic.Plan); err != nil {
+		return err
+	}
 
 	return nil
+}
+
+func validateLicensePlan(plan *enterprisev1.License_Plan) error {
+	if plan == nil {
+		return nil
+	}
+
+	if !isValidLicensePlanValue(plan.Tier, maxLicensePlanTierLen) {
+		return errors.Errorf("The License plan tier is invalid")
+	}
+
+	if len(plan.Features) > maxLicensePlanFeatures {
+		return errors.Errorf("The License plan has too many features")
+	}
+
+	for _, feature := range plan.Features {
+		if feature == "" || !isValidLicensePlanValue(feature, maxLicensePlanFeatureLen) {
+			return errors.Errorf("The License plan contains an invalid feature")
+		}
+	}
+
+	return nil
+}
+
+func isValidLicensePlanValue(val string, maxLen int) bool {
+	if len(val) > maxLen || !utf8.ValidString(val) {
+		return false
+	}
+
+	for _, r := range val {
+		if unicode.IsControl(r) || unicode.IsSpace(r) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func validateLicenseIdentifier(val string, field string) error {

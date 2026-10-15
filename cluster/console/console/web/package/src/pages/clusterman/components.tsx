@@ -2,6 +2,8 @@ import {
   ClusterConfig_Status_LicenseInfo_State,
   ClusterConfig_Status_UpgradeRequest,
   ClusterConfig_Status_UpgradeRequest_State,
+  License_Plan_Support_Type,
+  License_Plan_Type,
   License_Type,
 } from "@/apis/enterprisev1/enterprisev1";
 import {
@@ -119,6 +121,19 @@ export const LICENSE_TYPE_LABEL: Record<number, string> = {
   [License_Type.PERPETUAL]: "Perpetual",
   [License_Type.INTERNAL]: "Internal",
   [License_Type.TYPE_UNKNOWN]: "Unknown",
+};
+
+export const LICENSE_PLAN_LABEL: Record<number, string> = {
+  [License_Plan_Type.PREMIUM]: "Premium",
+  [License_Plan_Type.ENTERPRISE]: "Enterprise",
+  [License_Plan_Type.TYPE_UNKNOWN]: "Unknown",
+};
+
+export const LICENSE_SUPPORT_LABEL: Record<number, string> = {
+  [License_Plan_Support_Type.NONE]: "No support",
+  [License_Plan_Support_Type.STANDARD]: "Standard",
+  [License_Plan_Support_Type.PREMIUM]: "Premium",
+  [License_Plan_Support_Type.TYPE_UNKNOWN]: "Unknown",
 };
 
 export const VersionDelta = (props: {

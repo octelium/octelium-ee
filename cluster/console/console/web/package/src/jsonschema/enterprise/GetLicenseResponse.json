@@ -81,6 +81,11 @@
                     },
                     "type": "array",
                     "description": "AllowedClusterDomains is the list of the Cluster domains that the License is valid for. An empty list means that the License is valid for every Cluster domain."
+                },
+                "plan": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.License.Plan",
+                    "additionalProperties": false,
+                    "description": "Plan is the commercial plan that the License was issued for. It is unset for Licenses that were issued before plans were introduced."
                 }
             },
             "additionalProperties": false,
@@ -103,6 +108,76 @@
             "type": "object",
             "title": "Organization",
             "description": "Organization is the organization that the License was issued to"
+        },
+        "octelium.api.main.enterprise.v1.License.Plan": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "PREMIUM",
+                        "ENTERPRISE"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the type of the plan."
+                },
+                "tier": {
+                    "type": "string",
+                    "description": "Tier is the identifier of the pricing tier of the plan (e.g. \"T1\"). Tiers are defined by the Octelium Labs commercial catalog and typically correspond to the size of the organization."
+                },
+                "support": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.License.Plan.Support",
+                    "additionalProperties": false,
+                    "description": "Support is the support level that is included in the plan."
+                },
+                "limits": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.License.Plan.Limits",
+                    "additionalProperties": false,
+                    "description": "Limits are the usage limits of the plan."
+                },
+                "features": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Features is the list of the optional add-on features that are included in the plan."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Plan",
+            "description": "Plan is the commercial plan that the License was issued for."
+        },
+        "octelium.api.main.enterprise.v1.License.Plan.Limits": {
+            "properties": {
+                "maxUsers": {
+                    "type": "integer",
+                    "description": "MaxUsers is the maximum number of the Users that the plan covers. A zero value means that the number of Users is not limited."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Limits",
+            "description": "Limits are the usage limits of the plan."
+        },
+        "octelium.api.main.enterprise.v1.License.Plan.Support": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "NONE",
+                        "STANDARD",
+                        "PREMIUM"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the type of the support level."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Support",
+            "description": "Support is the support level that is included in the plan."
         }
     }
 }

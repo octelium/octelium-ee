@@ -26,7 +26,13 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
-import { Field, LICENSE_TYPE_LABEL, LicenseStateBadge } from "./components";
+import {
+  Field,
+  LICENSE_PLAN_LABEL,
+  LICENSE_SUPPORT_LABEL,
+  LICENSE_TYPE_LABEL,
+  LicenseStateBadge,
+} from "./components";
 import LicenseDrawer from "./LicenseDrawer";
 import { clustermanKeys, useLicense } from "./queries";
 
@@ -236,6 +242,27 @@ const License = (props: { info?: ClusterConfig_Status_LicenseInfo }) => {
             </Field>
             <Field label="Valid from">{formatDate(license?.notBefore)}</Field>
             <Field label="Issued">{formatDate(license?.issuedAt)}</Field>
+            {license?.plan && (
+              <>
+                <Field label="Plan">
+                  {[
+                    LICENSE_PLAN_LABEL[license.plan.type] ?? "Unknown",
+                    license.plan.tier,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </Field>
+                <Field label="Support">
+                  {LICENSE_SUPPORT_LABEL[license.plan.support?.type ?? 0] ??
+                    "Unknown"}
+                </Field>
+                <Field label="Users">
+                  {license.plan.limits?.maxUsers
+                    ? `Up to ${license.plan.limits.maxUsers}`
+                    : "Unlimited"}
+                </Field>
+              </>
+            )}
             <Field label="Set">
               {query.data?.setAt ? <TimeAgo rfc3339={query.data.setAt} /> : "—"}
             </Field>

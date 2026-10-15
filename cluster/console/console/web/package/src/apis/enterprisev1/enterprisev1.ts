@@ -10615,6 +10615,13 @@ export interface License {
      * @generated from protobuf field: repeated string allowedClusterDomains = 8
      */
     allowedClusterDomains: string[];
+    /**
+     * Plan is the commercial plan that the License was issued for. It is unset
+     * for Licenses that were issued before plans were introduced.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.License.Plan plan = 9
+     */
+    plan?: License_Plan;
 }
 /**
  * Organization is the organization that the License was issued to
@@ -10634,6 +10641,131 @@ export interface License_Organization {
      * @generated from protobuf field: string displayName = 2
      */
     displayName: string;
+}
+/**
+ * Plan is the commercial plan that the License was issued for.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.License.Plan
+ */
+export interface License_Plan {
+    /**
+     * Type is the type of the plan.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.License.Plan.Type type = 1
+     */
+    type: License_Plan_Type;
+    /**
+     * Tier is the identifier of the pricing tier of the plan (e.g. "T1").
+     * Tiers are defined by the Octelium Labs commercial catalog and typically
+     * correspond to the size of the organization.
+     *
+     * @generated from protobuf field: string tier = 2
+     */
+    tier: string;
+    /**
+     * Support is the support level that is included in the plan.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.License.Plan.Support support = 3
+     */
+    support?: License_Plan_Support;
+    /**
+     * Limits are the usage limits of the plan.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.License.Plan.Limits limits = 4
+     */
+    limits?: License_Plan_Limits;
+    /**
+     * Features is the list of the optional add-on features that are included
+     * in the plan.
+     *
+     * @generated from protobuf field: repeated string features = 5
+     */
+    features: string[];
+}
+/**
+ * Support is the support level that is included in the plan.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.License.Plan.Support
+ */
+export interface License_Plan_Support {
+    /**
+     * Type is the type of the support level.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.License.Plan.Support.Type type = 1
+     */
+    type: License_Plan_Support_Type;
+}
+/**
+ * Type is the type of the support level.
+ *
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.License.Plan.Support.Type
+ */
+export enum License_Plan_Support_Type {
+    /**
+     * TYPE_UNKNOWN is the default unset value.
+     *
+     * @generated from protobuf enum value: TYPE_UNKNOWN = 0;
+     */
+    TYPE_UNKNOWN = 0,
+    /**
+     * NONE means that no support is included.
+     *
+     * @generated from protobuf enum value: NONE = 1;
+     */
+    NONE = 1,
+    /**
+     * STANDARD is the standard support level.
+     *
+     * @generated from protobuf enum value: STANDARD = 2;
+     */
+    STANDARD = 2,
+    /**
+     * PREMIUM is the premium support level.
+     *
+     * @generated from protobuf enum value: PREMIUM = 3;
+     */
+    PREMIUM = 3
+}
+/**
+ * Limits are the usage limits of the plan.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.License.Plan.Limits
+ */
+export interface License_Plan_Limits {
+    /**
+     * MaxUsers is the maximum number of the Users that the plan covers. A
+     * zero value means that the number of Users is not limited.
+     *
+     * @generated from protobuf field: uint32 maxUsers = 1
+     */
+    maxUsers: number;
+}
+/**
+ * Type is the type of the plan.
+ *
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.License.Plan.Type
+ */
+export enum License_Plan_Type {
+    /**
+     * TYPE_UNKNOWN is the default unset value.
+     *
+     * @generated from protobuf enum value: TYPE_UNKNOWN = 0;
+     */
+    TYPE_UNKNOWN = 0,
+    /**
+     * PREMIUM is the plan that includes all the enterprise features without
+     * support.
+     *
+     * @generated from protobuf enum value: PREMIUM = 1;
+     */
+    PREMIUM = 1,
+    /**
+     * ENTERPRISE is the plan that includes all the enterprise features as
+     * well as support.
+     *
+     * @generated from protobuf enum value: ENTERPRISE = 2;
+     */
+    ENTERPRISE = 2
 }
 /**
  * Type is the type of the License.
@@ -31861,7 +31993,8 @@ class License$Type extends MessageType<License> {
             { no: 5, name: "notBefore", kind: "message", T: () => Timestamp },
             { no: 6, name: "notAfter", kind: "message", T: () => Timestamp },
             { no: 7, name: "type", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.License.Type", License_Type] },
-            { no: 8, name: "allowedClusterDomains", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+            { no: 8, name: "allowedClusterDomains", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 9, name: "plan", kind: "message", T: () => License_Plan }
         ]);
     }
     create(value?: PartialMessage<License>): License {
@@ -31903,6 +32036,9 @@ class License$Type extends MessageType<License> {
                 case /* repeated string allowedClusterDomains */ 8:
                     message.allowedClusterDomains.push(reader.string());
                     break;
+                case /* octelium.api.main.enterprise.v1.License.Plan plan */ 9:
+                    message.plan = License_Plan.internalBinaryRead(reader, reader.uint32(), options, message.plan);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -31939,6 +32075,9 @@ class License$Type extends MessageType<License> {
         /* repeated string allowedClusterDomains = 8; */
         for (let i = 0; i < message.allowedClusterDomains.length; i++)
             writer.tag(8, WireType.LengthDelimited).string(message.allowedClusterDomains[i]);
+        /* octelium.api.main.enterprise.v1.License.Plan plan = 9; */
+        if (message.plan)
+            License_Plan.internalBinaryWrite(message.plan, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -32004,6 +32143,177 @@ class License_Organization$Type extends MessageType<License_Organization> {
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.License.Organization
  */
 export const License_Organization = new License_Organization$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class License_Plan$Type extends MessageType<License_Plan> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.License.Plan", [
+            { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.License.Plan.Type", License_Plan_Type] },
+            { no: 2, name: "tier", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "support", kind: "message", T: () => License_Plan_Support },
+            { no: 4, name: "limits", kind: "message", T: () => License_Plan_Limits },
+            { no: 5, name: "features", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<License_Plan>): License_Plan {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.tier = "";
+        message.features = [];
+        if (value !== undefined)
+            reflectionMergePartial<License_Plan>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: License_Plan): License_Plan {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.License.Plan.Type type */ 1:
+                    message.type = reader.int32();
+                    break;
+                case /* string tier */ 2:
+                    message.tier = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.License.Plan.Support support */ 3:
+                    message.support = License_Plan_Support.internalBinaryRead(reader, reader.uint32(), options, message.support);
+                    break;
+                case /* octelium.api.main.enterprise.v1.License.Plan.Limits limits */ 4:
+                    message.limits = License_Plan_Limits.internalBinaryRead(reader, reader.uint32(), options, message.limits);
+                    break;
+                case /* repeated string features */ 5:
+                    message.features.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: License_Plan, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.License.Plan.Type type = 1; */
+        if (message.type !== 0)
+            writer.tag(1, WireType.Varint).int32(message.type);
+        /* string tier = 2; */
+        if (message.tier !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.tier);
+        /* octelium.api.main.enterprise.v1.License.Plan.Support support = 3; */
+        if (message.support)
+            License_Plan_Support.internalBinaryWrite(message.support, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.License.Plan.Limits limits = 4; */
+        if (message.limits)
+            License_Plan_Limits.internalBinaryWrite(message.limits, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* repeated string features = 5; */
+        for (let i = 0; i < message.features.length; i++)
+            writer.tag(5, WireType.LengthDelimited).string(message.features[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.License.Plan
+ */
+export const License_Plan = new License_Plan$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class License_Plan_Support$Type extends MessageType<License_Plan_Support> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.License.Plan.Support", [
+            { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.License.Plan.Support.Type", License_Plan_Support_Type] }
+        ]);
+    }
+    create(value?: PartialMessage<License_Plan_Support>): License_Plan_Support {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        if (value !== undefined)
+            reflectionMergePartial<License_Plan_Support>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: License_Plan_Support): License_Plan_Support {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.License.Plan.Support.Type type */ 1:
+                    message.type = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: License_Plan_Support, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.License.Plan.Support.Type type = 1; */
+        if (message.type !== 0)
+            writer.tag(1, WireType.Varint).int32(message.type);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.License.Plan.Support
+ */
+export const License_Plan_Support = new License_Plan_Support$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class License_Plan_Limits$Type extends MessageType<License_Plan_Limits> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.License.Plan.Limits", [
+            { no: 1, name: "maxUsers", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<License_Plan_Limits>): License_Plan_Limits {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.maxUsers = 0;
+        if (value !== undefined)
+            reflectionMergePartial<License_Plan_Limits>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: License_Plan_Limits): License_Plan_Limits {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint32 maxUsers */ 1:
+                    message.maxUsers = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: License_Plan_Limits, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint32 maxUsers = 1; */
+        if (message.maxUsers !== 0)
+            writer.tag(1, WireType.Varint).uint32(message.maxUsers);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.License.Plan.Limits
+ */
+export const License_Plan_Limits = new License_Plan_Limits$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class SetLicenseRequest$Type extends MessageType<SetLicenseRequest> {
     constructor() {

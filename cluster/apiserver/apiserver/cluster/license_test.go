@@ -525,6 +525,131 @@ func TestValidateLicense(t *testing.T) {
 	}
 }
 
+const (
+	tstIssuerFixtureKID       = "c0ffee00-1111-4222-8333-444455556666"
+	tstIssuerFixtureX         = "n9zD4WShFogoZGRYIiqdODl6FHzRvgArVqqMEAWCkus"
+	tstIssuerFixtureY         = "o646v23GsPLgYh9LhDkewh-2GaW3b3plnAQbPmJDJIE"
+	tstIssuerFixtureFinite    = "eyJhbGciOiJFUzI1NiIsImtpZCI6ImMwZmZlZTAwLTExMTEtNDIyMi04MzMzLTQ0NDQ1NTU1NjY2NiIsInR5cCI6Im9jdGVsaXVtLWxpY2Vuc2Urand0In0.eyJpc3MiOiJodHRwczovL2xpY2Vuc2Uub2N0ZWxpdW0uY29tIiwiYXVkIjpbIm9jdGVsaXVtLWVudGVycHJpc2UiXSwic3ViIjoiMWEyYjNjNGQtNWU2Zi00YTdiLThjOWQtMGUxZjJhM2I0YzVkIiwianRpIjoiN2QzZjFlMmEtNWI2Yy00ZDdlLThmOTAtYTFiMmMzZDRlNWY2IiwiaWF0IjoxNzkxMDAwMDAwLCJsaWNlbnNlIjp7InZlcnNpb24iOjEsInVpZCI6IjdkM2YxZTJhLTViNmMtNGQ3ZS04ZjkwLWExYjJjM2Q0ZTVmNiIsIm9yZ2FuaXphdGlvbiI6eyJ1aWQiOiIxYTJiM2M0ZC01ZTZmLTRhN2ItOGM5ZC0wZTFmMmEzYjRjNWQiLCJkaXNwbGF5TmFtZSI6IkFjbWUgSW5jLiDigJQgw5xuw69jb2RlIn0sImlzc3VlZEF0IjoiMjAyNi0xMC0wM1QwNDowMDowMFoiLCJub3RCZWZvcmUiOiIyMDI2LTEwLTAzVDA0OjAwOjAwWiIsIm5vdEFmdGVyIjoiMjAyNy0xMS0wMlQwNDowMDowMFoiLCJ0eXBlIjoiU1VCU0NSSVBUSU9OIiwiYWxsb3dlZENsdXN0ZXJEb21haW5zIjpbImNsdXN0ZXIuYWNtZS5leGFtcGxlIiwieG4tLWJjaGVyLWt2YS5leGFtcGxlIl0sInBsYW4iOnsidHlwZSI6IkVOVEVSUFJJU0UiLCJ0aWVyIjoiVDIiLCJzdXBwb3J0Ijp7InR5cGUiOiJQUkVNSVVNIn0sImxpbWl0cyI6eyJtYXhVc2VycyI6MTAwfSwiZmVhdHVyZXMiOlsic2llbS1leHBvcnQiXX19fQ.JcjSrH2ZRb8VAftqgtUkzJMo8dN6tmfnPwCaSA5jdQ-G4z66Odw8uUzVSupNMnNPYbU_Y4DiMH2-g0yay_0PPg"
+	tstIssuerFixturePerpetual = "eyJhbGciOiJFUzI1NiIsImtpZCI6ImMwZmZlZTAwLTExMTEtNDIyMi04MzMzLTQ0NDQ1NTU1NjY2NiIsInR5cCI6Im9jdGVsaXVtLWxpY2Vuc2Urand0In0.eyJpc3MiOiJodHRwczovL2xpY2Vuc2Uub2N0ZWxpdW0uY29tIiwiYXVkIjpbIm9jdGVsaXVtLWVudGVycHJpc2UiXSwic3ViIjoiMWEyYjNjNGQtNWU2Zi00YTdiLThjOWQtMGUxZjJhM2I0YzVkIiwianRpIjoiOGU0ZjJhM2ItNmM3ZC00ZThmLTlhMDEtYjJjM2Q0ZTVmNmE3IiwiaWF0IjoxNzkxMDAwMDAwLCJsaWNlbnNlIjp7InZlcnNpb24iOjEsInVpZCI6IjhlNGYyYTNiLTZjN2QtNGU4Zi05YTAxLWIyYzNkNGU1ZjZhNyIsIm9yZ2FuaXphdGlvbiI6eyJ1aWQiOiIxYTJiM2M0ZC01ZTZmLTRhN2ItOGM5ZC0wZTFmMmEzYjRjNWQiLCJkaXNwbGF5TmFtZSI6IkFjbWUgSW5jLiJ9LCJpc3N1ZWRBdCI6IjIwMjYtMTAtMDNUMDQ6MDA6MDBaIiwibm90QmVmb3JlIjoiMjAyNi0xMC0wM1QwNDowMDowMFoiLCJ0eXBlIjoiUEVSUEVUVUFMIiwicGxhbiI6eyJ0eXBlIjoiUFJFTUlVTSIsInRpZXIiOiJUMSIsInN1cHBvcnQiOnsidHlwZSI6Ik5PTkUifSwibGltaXRzIjp7Im1heFVzZXJzIjo1MH19fX0.fJL8QAWT4HPikAcXb2G8BhjZvpPrEITR5ADoHvooLjeeHahqh3_ZsAFeXITcof5VeIfmawBGbGy73bt4i3wG8Q"
+)
+
+func TestVerifyLicenseIssuerFixture(t *testing.T) {
+	vkey, err := parseLicenseVerificationKey(&licenseJWK{
+		KeyType: "EC",
+		KeyID:   tstIssuerFixtureKID,
+		Use:     "sig",
+		KeyOps:  []string{"verify"},
+		Alg:     "ES256",
+		Curve:   "P-256",
+		X:       tstIssuerFixtureX,
+		Y:       tstIssuerFixtureY,
+	})
+	assert.Nil(t, err, "%+v", err)
+	tstSetLicenseKeys(t, map[string]*licenseVerificationKey{
+		tstIssuerFixtureKID: vkey,
+	})
+
+	now := time.Unix(1791000000, 0).Add(time.Hour)
+
+	{
+		lic, err := verifyLicense(tstIssuerFixtureFinite, "Cluster.Acme.Example", now)
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, "7d3f1e2a-5b6c-4d7e-8f90-a1b2c3d4e5f6", lic.Uid)
+		assert.Equal(t, "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d", lic.Organization.Uid)
+		assert.Equal(t, "Acme Inc. — Ünïcode", lic.Organization.DisplayName)
+		assert.Equal(t, enterprisev1.License_SUBSCRIPTION, lic.Type)
+		assert.Equal(t, []string{"cluster.acme.example", "xn--bcher-kva.example"}, lic.AllowedClusterDomains)
+		assert.Equal(t, int64(1791000000), lic.IssuedAt.AsTime().Unix())
+		assert.Equal(t, int64(1791000000+395*24*3600), lic.NotAfter.AsTime().Unix())
+		assert.Equal(t, enterprisev1.License_Plan_ENTERPRISE, lic.Plan.Type)
+		assert.Equal(t, "T2", lic.Plan.Tier)
+		assert.Equal(t, enterprisev1.License_Plan_Support_PREMIUM, lic.Plan.Support.Type)
+		assert.Equal(t, uint32(100), lic.Plan.Limits.MaxUsers)
+		assert.Equal(t, []string{"siem-export"}, lic.Plan.Features)
+		assert.Equal(t, enterprisev1.ClusterConfig_Status_LicenseInfo_ACTIVE, getLicenseState(lic, now))
+	}
+
+	{
+		_, err := verifyLicense(tstIssuerFixtureFinite, "other.example.com", now)
+		assert.NotNil(t, err)
+	}
+
+	{
+		lic, err := verifyLicense(tstIssuerFixturePerpetual, "any.example.com", now)
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, enterprisev1.License_PERPETUAL, lic.Type)
+		assert.Nil(t, lic.NotAfter)
+		assert.Equal(t, enterprisev1.License_Plan_PREMIUM, lic.Plan.Type)
+		assert.Equal(t, enterprisev1.License_Plan_Support_NONE, lic.Plan.Support.Type)
+		assert.Equal(t, enterprisev1.ClusterConfig_Status_LicenseInfo_ACTIVE, getLicenseState(lic, now.Add(100*365*24*time.Hour)))
+	}
+
+	{
+		parts := strings.Split(tstIssuerFixtureFinite, ".")
+		assert.Len(t, parts, 3)
+		_, err := verifyLicense(parts[0]+"."+parts[1]+"."+tstIssuerFixturePerpetual[strings.LastIndex(tstIssuerFixturePerpetual, ".")+1:], "cluster.acme.example", now)
+		assert.NotNil(t, err)
+	}
+}
+
+func TestValidateLicensePlan(t *testing.T) {
+	{
+		assert.Nil(t, validateLicensePlan(nil))
+	}
+
+	{
+		err := validateLicensePlan(&enterprisev1.License_Plan{
+			Type:     enterprisev1.License_Plan_ENTERPRISE,
+			Tier:     "T1",
+			Support:  &enterprisev1.License_Plan_Support{Type: enterprisev1.License_Plan_Support_STANDARD},
+			Limits:   &enterprisev1.License_Plan_Limits{MaxUsers: 50},
+			Features: []string{"siem-export"},
+		})
+		assert.Nil(t, err, "%+v", err)
+	}
+
+	{
+		err := validateLicensePlan(&enterprisev1.License_Plan{
+			Tier: strings.Repeat("a", maxLicensePlanTierLen+1),
+		})
+		assert.NotNil(t, err)
+	}
+
+	{
+		err := validateLicensePlan(&enterprisev1.License_Plan{
+			Tier: "T 1",
+		})
+		assert.NotNil(t, err)
+	}
+
+	{
+		features := make([]string, maxLicensePlanFeatures+1)
+		for i := range features {
+			features[i] = "feature"
+		}
+		err := validateLicensePlan(&enterprisev1.License_Plan{
+			Features: features,
+		})
+		assert.NotNil(t, err)
+	}
+
+	{
+		err := validateLicensePlan(&enterprisev1.License_Plan{
+			Features: []string{""},
+		})
+		assert.NotNil(t, err)
+	}
+
+	{
+		lic := tstLicenseSpec()
+		lic.Plan = &enterprisev1.License_Plan{
+			Tier: "T1\n",
+		}
+		err := validateLicense(lic, "", time.Now())
+		assert.NotNil(t, err)
+	}
+}
+
 func TestValidateLicenseIdentifier(t *testing.T) {
 	{
 		assert.Nil(t, validateLicenseIdentifier("abc123", "test"))
