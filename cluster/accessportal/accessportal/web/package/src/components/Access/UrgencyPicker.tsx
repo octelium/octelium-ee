@@ -1,4 +1,5 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
+import { Select } from "@mantine/core";
 import { twMerge } from "tailwind-merge";
 
 import { URGENCY_OPTIONS, toneClasses, urgencyMeta } from "@/utils";
@@ -6,35 +7,41 @@ import { URGENCY_OPTIONS, toneClasses, urgencyMeta } from "@/utils";
 const UrgencyPicker = (props: {
   value: AccessP.Request_Spec_Urgency;
   onChange: (value: AccessP.Request_Spec_Urgency) => void;
-}) => (
-  <div className="grid grid-cols-3 gap-1.5">
-    {URGENCY_OPTIONS.map((option) => {
-      const meta = urgencyMeta(option.value);
-      const selected = props.value === option.value;
-      return (
-        <button
-          key={option.value}
-          type="button"
-          aria-pressed={selected}
-          onClick={() => props.onChange(option.value)}
-          className={twMerge(
-            "flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border px-1.5 text-[0.68rem] font-bold transition-[background-color,border-color,color] duration-150",
-            selected
-              ? "border-slate-900 bg-slate-900 text-white shadow-card"
-              : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50",
-          )}
-        >
+}) => {
+  const meta = urgencyMeta(props.value);
+
+  return (
+    <Select
+      aria-label="Urgency"
+      value={String(props.value)}
+      onChange={(value) => {
+        if (value !== null) props.onChange(Number(value));
+      }}
+      allowDeselect={false}
+      data={URGENCY_OPTIONS.map((option) => ({
+        value: String(option.value),
+        label: option.label,
+      }))}
+      leftSection={
+        <span
+          aria-hidden
+          className={twMerge("h-2 w-2 rounded-full", toneClasses[meta.tone].dot)}
+        />
+      }
+      renderOption={({ option }) => (
+        <span className="flex items-center gap-2.5">
           <span
+            aria-hidden
             className={twMerge(
-              "h-1.5 w-1.5 rounded-full",
-              selected ? "bg-white" : toneClasses[meta.tone].dot,
+              "h-2 w-2 rounded-full",
+              toneClasses[urgencyMeta(Number(option.value)).tone].dot,
             )}
           />
           {option.label}
-        </button>
-      );
-    })}
-  </div>
-);
+        </span>
+      )}
+    />
+  );
+};
 
 export default UrgencyPicker;

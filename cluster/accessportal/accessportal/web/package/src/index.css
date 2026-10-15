@@ -1,3 +1,5 @@
+@layer theme, base, mantine, components, utilities;
+
 @import "tailwindcss";
 @import "./utils/theme/colors.css";
 
@@ -43,17 +45,45 @@ button {
   cursor: pointer;
 }
 
+.mantine-Input-input::placeholder {
+  color: var(--color-slate-400);
+  font-weight: 400;
+}
+
+.mantine-Input-input:disabled,
+.mantine-Input-input[data-disabled] {
+  background-color: var(--color-slate-50);
+  color: var(--color-slate-400);
+  border-color: var(--color-slate-200);
+  cursor: not-allowed;
+}
+
 .mantine-Input-input:focus,
 .mantine-Input-input[data-focus] {
   border-color: var(--color-slate-900) !important;
   box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-slate-900) 12%, transparent) !important;
   outline: none !important;
   transition:
-    border-color 500ms,
-    box-shadow 500ms !important;
+    border-color 150ms,
+    box-shadow 150ms !important;
 }
 
-:root {
-  --mantine-focus-ring: none;
-  --mantine-focus-shadow: none;
+.mantine-SegmentedControl-label[data-active] {
+  color: var(--color-slate-900);
+}
+
+.mantine-Button-root:focus-visible,
+.mantine-ActionIcon-root:focus-visible {
+  outline: 2px solid var(--color-slate-500);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

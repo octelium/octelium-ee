@@ -3,7 +3,7 @@ import { getClientAuth } from "@/utils/client";
 import { Button, Modal } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
-import { Loader2, LockKeyhole, LogOut, X } from "lucide-react";
+import { ArrowUpRight, LockKeyhole, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
 export default () => {
@@ -27,99 +27,72 @@ export default () => {
 
   return (
     <div className="flex flex-col w-full">
-      <div className="flex flex-col gap-2">
-        <Button
-          variant="outline"
-          component="a"
+      <div className="flex flex-col gap-1">
+        <a
           href={authenticatorsHref}
-          leftSection={
-            <LockKeyhole size={14} strokeWidth={2.5} className="shrink-0" />
-          }
+          className="flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 text-[0.8125rem] font-medium text-slate-600 outline-none transition-colors duration-150 hover:bg-slate-200/50 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400 [@media(pointer:coarse)]:min-h-11"
         >
-          Authenticators
-        </Button>
+          <LockKeyhole
+            size={16}
+            strokeWidth={1.8}
+            className="shrink-0"
+            aria-hidden
+          />
+          <span className="flex-1">Authenticators</span>
+          <ArrowUpRight size={13} className="text-slate-500" aria-hidden />
+        </a>
 
-        <Button
+        <button
+          type="button"
           onClick={open}
-          variant={`outline`}
-          leftSection={
-            <LogOut size={14} strokeWidth={2.5} className="shrink-0" />
-          }
+          className="flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 text-[0.8125rem] font-medium text-slate-600 outline-none transition-colors duration-150 hover:bg-red-50 hover:text-red-700 focus-visible:ring-2 focus-visible:ring-slate-400 [@media(pointer:coarse)]:min-h-11"
         >
-          Log out
-        </Button>
+          <LogOut size={16} strokeWidth={1.8} className="shrink-0" aria-hidden />
+          Sign out
+        </button>
       </div>
 
       <Modal
         opened={opened}
         onClose={close}
         centered
-        withCloseButton={false}
-        padding={0}
+        title="Sign out"
+        padding="lg"
         size="sm"
+        zIndex={240}
+        closeButtonProps={{ "aria-label": "Close sign out dialog" }}
         styles={{
+          header: { backgroundColor: "var(--color-white)" },
+          title: {
+            fontSize: "0.9375rem",
+            fontWeight: 600,
+            color: "var(--color-slate-900)",
+          },
           content: {
+            backgroundColor: "var(--color-white)",
             borderRadius: "12px",
             border: "1px solid var(--color-slate-200)",
             overflow: "hidden",
           },
         }}
       >
-        <div className="flex flex-col">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-slate-50/60">
-            <div className="flex items-center gap-2">
-              <LogOut
-                size={14}
-                className="text-red-500 shrink-0"
-                strokeWidth={2.5}
-              />
-              <span className="text-[0.82rem] font-bold text-slate-800">
-                Log out
-              </span>
-            </div>
-            <button
-              onClick={close}
-              aria-label="Close logout dialog"
-              className="flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors duration-150 cursor-pointer"
-            >
-              <X size={13} strokeWidth={2.5} />
-            </button>
-          </div>
-
-          <div className="px-5 py-4">
-            <p className="text-[0.82rem] font-semibold text-slate-600">
-              Are you sure you want to log out of this session?
-            </p>
-          </div>
-
-          <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-slate-200 bg-slate-50/60">
-            <Button
-              variant="default"
-              size="sm"
-              leftSection={<X size={13} strokeWidth={2.5} />}
-              onClick={close}
-            >
+        <div className="flex flex-col gap-5">
+          <p className="text-[0.8125rem] leading-relaxed text-slate-600">
+            Are you sure you want to sign out of this session?
+          </p>
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="default" size="sm" onClick={close}>
               Cancel
             </Button>
             <Button
               variant="filled"
               color="red"
               size="sm"
-              leftSection={
-                mutationLogout.isPending ? (
-                  <Loader2
-                    size={13}
-                    className="animate-spin"
-                    strokeWidth={2.5}
-                  />
-                ) : (
-                  <LogOut size={13} strokeWidth={2.5} />
-                )
-              }
+              leftSection={<LogOut size={14} strokeWidth={2} />}
               loading={mutationLogout.isPending}
               onClick={() => mutationLogout.mutate()}
             >
-              {mutationLogout.isPending ? "Logging out…" : "Log out"}
+              {mutationLogout.isPending ? "Signing out…" : "Sign out"}
             </Button>
           </div>
         </div>

@@ -39,7 +39,7 @@ export const Eyebrow = (props: {
 }) => (
   <span
     className={twMerge(
-      "text-[0.62rem] font-bold uppercase tracking-[0.09em] text-slate-400",
+      "text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-slate-500",
       props.className,
     )}
   >
@@ -50,7 +50,7 @@ export const Eyebrow = (props: {
 export const BackLink = (props: { to: string; children: React.ReactNode }) => (
   <Link
     to={props.to}
-    className="group inline-flex items-center gap-1.5 mb-4 text-[0.72rem] font-bold text-slate-400 transition-colors duration-150 hover:text-slate-700"
+    className="group mb-4 inline-flex items-center gap-1.5 rounded text-xs font-medium text-slate-500 outline-none transition-colors duration-150 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-slate-400"
   >
     <ArrowLeft
       size={13}
@@ -77,7 +77,7 @@ export const PageHeader = (props: {
   >
     <div className="flex min-w-0 flex-col gap-1">
       {props.eyebrow && <Eyebrow>{props.eyebrow}</Eyebrow>}
-      <h1 className="text-[1.45rem] font-bold leading-tight tracking-[-0.015em] text-slate-900 break-words">
+      <h1 className="break-words text-2xl font-semibold leading-tight tracking-[-0.025em] text-slate-900">
         {props.title}
       </h1>
       {props.description && (
@@ -159,11 +159,11 @@ export const SectionCard = (props: {
           </IconTile>
         )}
         <div className="min-w-0">
-          <h2 className="text-[0.83rem] font-bold leading-snug text-slate-800">
+          <h2 className="text-[0.8125rem] font-semibold leading-snug text-slate-800">
             {props.title}
           </h2>
           {props.description && (
-            <p className="text-[0.7rem] font-medium leading-snug text-slate-400">
+            <p className="mt-0.5 text-xs font-normal leading-snug text-slate-500">
               {props.description}
             </p>
           )}
@@ -397,13 +397,13 @@ export const Field = (props: {
 }) => (
   <div className="flex flex-col gap-1.5">
     <div className="flex items-baseline justify-between gap-3">
-      <span className="text-[0.68rem] font-bold uppercase tracking-[0.06em] text-slate-500">
+      <span className="text-xs font-semibold text-slate-700">
         {props.label}
       </span>
       {props.hint}
     </div>
     {props.description && (
-      <span className="-mt-1 text-[0.68rem] font-medium leading-relaxed text-slate-400">
+      <span className="-mt-0.5 text-xs font-normal leading-relaxed text-slate-500">
         {props.description}
       </span>
     )}
@@ -654,7 +654,7 @@ export const SearchInput = (props: {
       onChange={(event) => props.onChange(event.target.value)}
       placeholder={props.placeholder}
       aria-label={props.ariaLabel ?? props.placeholder}
-      className="h-9 w-full rounded-md border border-slate-200 bg-white pl-9 pr-8 text-[0.78rem] font-semibold text-slate-700 shadow-card outline-none transition-[border-color,box-shadow] duration-150 placeholder:font-medium placeholder:text-slate-400 focus:border-slate-400 focus:shadow-[0_0_0_2px_var(--color-slate-200)]"
+      className="h-[38px] w-full rounded-lg border border-slate-200 bg-white pl-9 pr-8 text-[0.8125rem] font-normal text-slate-900 outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-slate-400 focus:border-slate-400 focus:shadow-[0_0_0_2px_var(--color-slate-200)]"
     />
     {props.value && (
       <button

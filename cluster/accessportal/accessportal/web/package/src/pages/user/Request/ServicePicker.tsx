@@ -1,5 +1,6 @@
 import * as UserP from "@/apis/userv1/userv1";
-import { Check, Lock, Radio, Server } from "lucide-react";
+import { Select } from "@mantine/core";
+import { Check, Layers, Lock, Radio, Server } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
 
@@ -33,9 +34,9 @@ const ServiceCard = (props: {
       onClick={props.onClick}
       aria-pressed={props.selected}
       className={twMerge(
-        "flex w-full min-w-0 flex-wrap items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-[border-color,box-shadow,background-color] duration-150",
+        "flex w-full min-w-0 flex-wrap items-center gap-3 rounded-lg border px-3 py-3 text-left outline-none transition-[border-color,box-shadow,background-color] duration-150 focus-visible:ring-2 focus-visible:ring-slate-400",
         props.selected
-          ? "border-slate-900 bg-slate-50 shadow-raised"
+          ? "border-slate-400 bg-slate-50 ring-1 ring-slate-300"
           : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
       )}
     >
@@ -53,10 +54,10 @@ const ServiceCard = (props: {
       </div>
 
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[0.84rem] font-bold text-slate-800">
+        <div className="truncate text-[0.84rem] font-semibold text-slate-800">
           {display}
         </div>
-        <div className="truncate font-mono text-[0.7rem] font-semibold text-slate-400">
+        <div className="truncate font-mono text-[0.7rem] text-slate-500">
           {name}
         </div>
         {(s.spec?.port || s.status?.primaryHostname) && (
@@ -110,59 +111,33 @@ const ServicePicker = (props: {
     namespacesQry.data
       ?.map((item) => item.metadata?.name)
       .filter((name): name is string => !!name) ?? [];
-  const namespaceServiceCounts = services.reduce<Record<string, number>>(
-    (counts, service) => {
-      const name =
-        service.status?.namespace || namespaceFromName(service.metadata?.name);
-      if (name) counts[name] = (counts[name] ?? 0) + 1;
-      return counts;
-    },
-    {},
-  );
-
-  const chipClass = (active: boolean) =>
-    twMerge(
-      "shrink-0 rounded-md border px-2.5 py-1 text-[0.68rem] font-bold transition-colors duration-150",
-      active
-        ? "border-slate-900 bg-slate-900 text-white"
-        : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50",
-    );
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-3">
-      <SearchInput
-        value={query}
-        onChange={setQuery}
-        placeholder="Search services by name..."
-        ariaLabel="Search services"
-      />
-
-      {namespaceNames.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-          <button
-            type="button"
-            onClick={() => setNamespace("")}
-            className={chipClass(!namespace)}
-          >
-            All namespaces
-          </button>
-          {namespaceNames.map((name) => (
-            <button
-              type="button"
-              key={name}
-              onClick={() => setNamespace(name)}
-              className={chipClass(namespace === name)}
-            >
-              <span>{name}</span>
-              {namespaceServiceCounts[name] !== undefined && (
-                <span className="ml-1 opacity-70">
-                  {namespaceServiceCounts[name]}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder="Search services by name..."
+          ariaLabel="Search services"
+        />
+        {namespaceNames.length > 0 && (
+          <Select
+            aria-label="Namespace"
+            value={namespace}
+            onChange={(value) => setNamespace(value ?? "")}
+            data={[
+              { value: "", label: "All namespaces" },
+              ...namespaceNames.map((name) => ({ value: name, label: name })),
+            ]}
+            leftSection={<Layers size={14} aria-hidden />}
+            searchable
+            allowDeselect={false}
+            nothingFoundMessage="No namespaces found"
+            className="w-full min-w-0 sm:w-48 sm:shrink-0"
+          />
+        )}
+      </div>
 
       {qry.isLoading || namespacesQry.isLoading ? (
         <SkeletonRows rows={4} />

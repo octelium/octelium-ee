@@ -29,65 +29,50 @@ const FONT =
 
 const labelStyles = {
   label: {
-    fontSize: "0.78rem",
-    fontWeight: 700,
+    fontSize: "0.75rem",
+    fontWeight: 600,
     fontFamily: FONT,
-    textTransform: "uppercase" as const,
-    letterSpacing: "0.05em",
-    color: "var(--color-slate-600)",
+    color: "var(--color-slate-700)",
     marginBottom: "4px",
   },
   description: {
     fontSize: "0.75rem",
-    fontWeight: 600,
+    fontWeight: 400,
     fontFamily: FONT,
-    color: "var(--color-slate-400)",
-    marginBottom: "4px",
+    color: "var(--color-slate-500)",
+    lineHeight: 1.45,
+    marginBottom: "6px",
   },
   error: {
     fontSize: "0.75rem",
-    fontWeight: 600,
+    fontWeight: 500,
     fontFamily: FONT,
   },
 };
 
 const inputStyles = {
   input: {
-    fontSize: "0.82rem",
-    fontWeight: 600,
+    fontSize: "0.8125rem",
+    fontWeight: 400,
     fontFamily: FONT,
     backgroundColor: "var(--color-white)",
     border: "1px solid var(--color-slate-200)",
-    borderRadius: "6px",
-    color: "var(--color-slate-800)",
-    boxShadow: "var(--shadow-card)",
-    transition: "border-color 500ms, box-shadow 500ms",
-    "&:focus, &[data-focus]": {
-      borderColor: "var(--color-slate-900)",
-      boxShadow:
-        "0 0 0 2px color-mix(in oklab, var(--color-slate-900) 12%, transparent)",
-      outline: "none",
-    },
-    "&:disabled": {
-      backgroundColor: "var(--color-slate-50)",
-      color: "var(--color-slate-400)",
-      borderColor: "var(--color-slate-200)",
-      cursor: "not-allowed",
-    },
-    "&::placeholder": {
-      color: "var(--color-slate-400)",
-      fontWeight: 600,
-    },
+    borderRadius: "8px",
+    color: "var(--color-slate-900)",
+    boxShadow: "none",
+    minHeight: "38px",
+    transition: "border-color 150ms, box-shadow 150ms",
   },
 };
 
 const optionStyles = {
   option: {
-    fontSize: "0.78rem",
-    fontWeight: 600,
+    fontSize: "0.8125rem",
+    fontWeight: 400,
     fontFamily: FONT,
-    borderRadius: "4px",
-    transition: "background-color 100ms",
+    borderRadius: "7px",
+    minHeight: "34px",
+    transition: "background-color 150ms, color 150ms",
   },
 };
 
@@ -120,7 +105,7 @@ const INK_DARK: MantineColorsTuple = [
 const comboboxDefaultProps = {
   radius: "md" as const,
   comboboxProps: {
-    transitionProps: { transition: "pop" as MantineTransition, duration: 180 },
+    transitionProps: { transition: "pop" as MantineTransition, duration: 150 },
     shadow: "sm",
     radius: "md" as const,
   },
@@ -139,6 +124,7 @@ const theme = createTheme({
     ink: virtualColor({ name: "ink", light: "inkLight", dark: "inkDark" }),
   },
   defaultRadius: "md",
+  cursorType: "pointer",
 
   components: {
     Button: Button.extend({
@@ -148,15 +134,15 @@ const theme = createTheme({
       styles: {
         root: {
           fontFamily: FONT,
-          fontWeight: 700,
-          fontSize: "0.78rem",
-          borderRadius: "6px",
-          transition: "background-color 500ms, box-shadow 500ms",
-          boxShadow: "var(--shadow-card)",
+          fontWeight: 600,
+          fontSize: "0.8125rem",
+          borderRadius: "8px",
+          transition: "background-color 150ms, border-color 150ms, color 150ms",
+          boxShadow: "none",
         },
         label: {
           fontFamily: FONT,
-          fontWeight: 700,
+          fontWeight: 600,
         },
       },
     }),
@@ -300,13 +286,10 @@ const theme = createTheme({
           border: "1px solid var(--color-slate-200)",
         },
         label: {
-          fontSize: "0.82rem",
-          fontWeight: 700,
+          fontSize: "0.8125rem",
+          fontWeight: 500,
           color: "var(--color-slate-500)",
           transition: "color 150ms",
-          "&[data-active]": {
-            color: "var(--color-slate-900)",
-          },
         },
         indicator: {
           backgroundColor: "var(--color-white)",

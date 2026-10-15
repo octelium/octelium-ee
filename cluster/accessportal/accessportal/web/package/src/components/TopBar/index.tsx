@@ -14,29 +14,30 @@ const TopBar = () => {
     settings.status?.user?.metadata?.picURL;
 
   const displayName =
-    settings.status?.user?.metadata?.displayName ??
-    settings.status?.user?.metadata?.name;
+    settings.status?.user?.metadata?.displayName?.trim() ||
+    settings.status?.user?.metadata?.name?.trim();
 
   return (
-    <nav className="w-full h-[60px] flex items-center px-4 gap-4">
+    <nav className="flex h-[60px] w-full min-w-0 items-center gap-3 px-2 sm:px-4">
       <Link
         to="/"
         className="flex-none flex items-center"
         aria-label="Go to home"
       >
-        <Logo className="w-[120px] md:w-[160px] h-auto text-slate-900" />
+        <Logo className="h-auto w-[108px] text-slate-900 sm:w-[152px]" />
       </Link>
 
       <div className="flex-1 flex items-center"></div>
 
       <button
+        type="button"
         onClick={() => navigate("/settings")}
         aria-label={displayName ? `Open settings for ${displayName}` : "Open settings"}
-        className="flex-none flex items-center gap-2 group cursor-pointer"
+        className="group flex h-10 min-w-0 flex-none items-center gap-2 rounded-lg px-2 outline-none transition-colors duration-150 hover:bg-white/70 focus-visible:ring-2 focus-visible:ring-slate-400"
         title={displayName ? `Settings — ${displayName}` : "Settings"}
       >
         {displayName && (
-          <span className="text-[0.72rem] font-semibold text-slate-500 group-hover:text-slate-800 transition-colors duration-150 hidden md:block">
+          <span className="hidden max-w-48 truncate text-xs font-medium text-slate-600 transition-colors duration-150 group-hover:text-slate-900 md:block">
             {displayName}
           </span>
         )}
@@ -60,7 +61,7 @@ const TopBar = () => {
               {displayName ? (
                 <span className="text-[0.6rem] font-bold text-white uppercase">
                   {displayName
-                    .split(" ")
+                    .split(/\s+/)
                     .slice(0, 2)
                     .map((w) => w.at(0))
                     .join("")}

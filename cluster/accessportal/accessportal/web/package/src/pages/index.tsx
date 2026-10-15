@@ -1,12 +1,10 @@
 import Footer from "@/components/Footer";
-import SideBar from "@/components/SideBar";
+import PortalShell from "@/components/SideBar/Shell";
 import TopBar from "@/components/TopBar";
 import { Toaster } from "@/components/ui/sonner";
 import { setStatus } from "@/features/settings/slice";
 import { useAppDispatch } from "@/utils/hooks";
 import { getUserMainClient } from "@/utils/client";
-import { AppShell, Burger } from "@mantine/core";
-import { useDisclosure, useHeadroom } from "@mantine/hooks";
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import { ScrollRestoration } from "react-router";
@@ -37,9 +35,6 @@ export default () => {
     }
   }, [dispatch, statusQry.data]);
 
-  const [opened, { toggle }] = useDisclosure();
-  const pinned = useHeadroom({ fixedAt: 120 });
-
   if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
     const val = urlSearchParams.get("redirect")!;
     urlSearchParams.delete("redirect");
@@ -51,54 +46,12 @@ export default () => {
       <title>Octelium Access Portal</title>
       <ScrollRestoration />
 
-      <div className="flex-1 flex flex-col bg-canvas antialiased">
-        <AppShell
-          className="!bg-transparent"
-          header={{ height: 60, collapsed: !pinned, offset: false }}
-          navbar={{
-            width: 300,
-            breakpoint: "sm",
-            collapsed: { mobile: !opened },
-          }}
-          padding="md"
-        >
-          <AppShell.Header
-            className="!bg-canvas border-b border-slate-200"
-            style={{ zIndex: 200 }}
-          >
-            <div className="flex flex-row items-center h-full">
-              <Burger
-                opened={opened}
-                onClick={toggle}
-                aria-label={opened ? "Close navigation" : "Open navigation"}
-                hiddenFrom="sm"
-                size="sm"
-              />
-              <TopBar />
-            </div>
-          </AppShell.Header>
-
-          <AppShell.Navbar
-            p="md"
-            className="!bg-transparent"
-            style={{
-              zIndex: 10,
-              marginTop: 60,
-              height: "calc(100vh - 60px)",
-              minHeight: 0,
-            }}
-          >
-            <SideBar />
-          </AppShell.Navbar>
-
-          <AppShell.Main className="!bg-transparent" style={{ marginTop: 60 }}>
-            <Outlet />
-          </AppShell.Main>
-
-        </AppShell>
+      <div className="flex flex-1 flex-col bg-canvas antialiased">
+        <PortalShell header={<TopBar />}>
+          <Outlet />
+          <Footer />
+        </PortalShell>
       </div>
-
-      <Footer />
 
       <Toaster
         position="bottom-center"
