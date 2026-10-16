@@ -1,6 +1,8 @@
 export const getRedirectPath = (value: string | null, origin: string) => {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return null;
-  if (/[\\\u0000-\u0020\u007f]/.test(value)) return null;
+  if ([...value].some((char) => char === "\\" || char <= " " || char === "\u007f")) {
+    return null;
+  }
 
   try {
     const url = new URL(value, origin);

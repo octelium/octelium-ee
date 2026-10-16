@@ -65,12 +65,20 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
       assert.deepEqual(errors, []);
     });
 
-    const load = async (path = "/user/new") => {
-      await page.goto(`${origin}?${new URLSearchParams({ path })}`);
+    const load = async (path = "/user/new", options = {}) => {
+      await page.goto(`${origin}?${new URLSearchParams({ path, ...options })}`);
       await page.getByRole("heading", { level: 1 }).waitFor();
     };
 
     const scheme = () => page.locator("html").getAttribute("data-mantine-color-scheme");
+
+    const discardDialog = () => page.getByRole("dialog", { name: "Discard unsaved changes?", exact: true });
+
+    const warnsBeforeUnload = () => page.evaluate(() => {
+      const event = new Event("beforeunload", { cancelable: true });
+      window.dispatchEvent(event);
+      return event.defaultPrevented;
+    });
 
     it("uses the system theme before the application starts", async () => {
       await page.route("**/tests/fixtures/portal.tsx", (route) => route.abort());
@@ -215,6 +223,9 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
         const signOut = page.getByRole("button", { name: "Sign out", exact: true });
         for (const action of [authenticator, signOut]) {
           assert.equal(await action.isVisible(), true);
+          await action.evaluate(async (element) => {
+            await Promise.all(element.getAnimations().map((animation) => animation.finished.catch(() => null)));
+          });
           const contrast = await action.evaluate((element) => {
             const canvas = document.createElement("canvas");
             canvas.width = canvas.height = 1;
@@ -345,6 +356,202 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
       await page.getByText(/applied to an earlier step/).waitFor();
       assert.equal(await page.getByRole("button", { name: "Change decision", exact: true }).count(), 0);
       assert.equal(await page.getByRole("button", { name: "Reset decision", exact: true }).count(), 0);
+    });
+
+    it("keeps the topbar account icon without displaying the user's name", async () => {
+      await load("/settings");
+      const account = page.getByRole("navigation", { name: "Account", exact: true });
+      await account.getByRole("link", { name: "Account settings for Alice Morgan", exact: true }).waitFor();
+      assert.equal(await account.getByText("Alice Morgan", { exact: true }).count(), 0);
+      assert.equal(await account.getByText("alice", { exact: true }).count(), 0);
+    });
+
+    it("keeps a new request draft until navigation is confirmed", async () => {
+      await load();
+      assert.equal(await warnsBeforeUnload(), false);
+      const reason = page.getByRole("textbox", { name: /Justification/ });
+      await reason.fill("Investigating a database incident");
+      assert.equal(await warnsBeforeUnload(), true);
+      await page.getByRole("link", { name: "Settings", exact: true }).click();
+      await discardDialog().getByRole("button", { name: "Keep editing", exact: true }).click();
+      assert.equal(await reason.inputValue(), "Investigating a database incident");
+      await page.getByRole("link", { name: "Settings", exact: true }).click();
+      await discardDialog().getByRole("button", { name: "Discard changes", exact: true }).click();
+      await page.getByRole("heading", { name: "Settings", exact: true }).waitFor();
+      assert.equal(await warnsBeforeUnload(), false);
+    });
+
+    it("does not warn after new request fields are restored", async () => {
+      await load();
+      const reason = page.getByRole("textbox", { name: /Justification/ });
+      const amount = page.getByRole("textbox", { name: "Duration amount", exact: true });
+      await reason.fill("Temporary draft");
+      await amount.fill("2");
+      assert.equal(await warnsBeforeUnload(), true);
+      await reason.fill("");
+      await amount.fill("1");
+      assert.equal(await warnsBeforeUnload(), false);
+      await page.getByRole("link", { name: "Settings", exact: true }).click();
+      await page.getByRole("heading", { name: "Settings", exact: true }).waitFor();
+      assert.equal(await discardDialog().count(), 0);
+    });
+
+    it("does not treat a prefilled resource as an unsaved change", async () => {
+      await load("/user/new?serviceRef.name=default.database");
+      await page.getByRole("button", { name: "Submit Request", exact: true }).waitFor();
+      assert.equal(await warnsBeforeUnload(), false);
+      await page.getByRole("link", { name: "Settings", exact: true }).click();
+      await page.getByRole("heading", { name: "Settings", exact: true }).waitFor();
+      assert.equal(await discardDialog().count(), 0);
+    });
+
+    it("protects new request drafts when going back", async () => {
+      await load("/settings", { browserHistory: "1" });
+      await page.getByRole("link", { name: "New Request", exact: true }).click();
+      await page.getByRole("textbox", { name: /Justification/ }).fill("Unsaved reason");
+      await page.goBack();
+      await discardDialog().getByRole("button", { name: "Keep editing", exact: true }).click();
+      assert.equal(await page.getByRole("textbox", { name: /Justification/ }).inputValue(), "Unsaved reason");
+      await page.goBack();
+      await discardDialog().getByRole("button", { name: "Discard changes", exact: true }).click();
+      await page.getByRole("heading", { name: "Settings", exact: true }).waitFor();
+    });
+
+    it("warns before reloading a new request draft", async () => {
+      await load();
+      const reason = page.getByRole("textbox", { name: /Justification/ });
+      await reason.fill("Keep this draft when reload is canceled");
+      const dialogPromise = page.waitForEvent("dialog");
+      const reload = page.evaluate(() => window.location.reload());
+      const dialog = await dialogPromise;
+      assert.equal(dialog.type(), "beforeunload");
+      await dialog.dismiss();
+      await reload;
+      assert.equal(await reason.inputValue(), "Keep this draft when reload is canceled");
+    });
+
+    it("submits a new request without a discard prompt", async () => {
+      await load();
+      await page.getByRole("button", { name: /Database/ }).click();
+      await page.getByRole("textbox", { name: /Justification/ }).fill("Investigating an incident");
+      await page.getByRole("button", { name: "Submit Request", exact: true }).click();
+      await page.getByRole("dialog", { name: "Submit this access request?", exact: true })
+        .getByRole("button", { name: "Submit request", exact: true }).click();
+      await page.getByText("Access request submitted", { exact: true }).waitFor();
+      await page.getByRole("heading", { name: "default.database", exact: true }).waitFor();
+      assert.equal(await discardDialog().count(), 0);
+      assert.equal(await warnsBeforeUnload(), false);
+    });
+
+    it("keeps a failed submission protected", async () => {
+      await load("/user/new", { failCreate: "1" });
+      await page.getByRole("button", { name: /Database/ }).click();
+      await page.getByRole("textbox", { name: /Justification/ }).fill("Retry this request");
+      await page.getByRole("button", { name: "Submit Request", exact: true }).click();
+      const submit = page.getByRole("dialog", { name: "Submit this access request?", exact: true });
+      await submit.getByRole("button", { name: "Submit request", exact: true }).click();
+      await page.getByText("Submission failed", { exact: true }).waitFor();
+      await submit.getByRole("button", { name: "Cancel", exact: true }).click();
+      await page.getByRole("link", { name: "Settings", exact: true }).click();
+      await discardDialog().getByRole("button", { name: "Keep editing", exact: true }).click();
+      assert.equal(await page.getByRole("textbox", { name: /Justification/ }).inputValue(), "Retry this request");
+      assert.equal(await warnsBeforeUnload(), true);
+    });
+
+    it("confirms closing a changed request edit and resets discarded fields", async () => {
+      await load("/user/requests/own-pending");
+      await page.getByRole("button", { name: "Edit", exact: true }).click();
+      const edit = page.getByRole("dialog", { name: "Edit pending request", exact: true });
+      assert.equal(await warnsBeforeUnload(), false);
+      await edit.getByRole("textbox", { name: /Justification/ }).fill("Changed reason");
+      await page.keyboard.press("Escape");
+      await discardDialog().getByRole("button", { name: "Keep editing", exact: true }).click();
+      assert.equal(await edit.getByRole("textbox", { name: /Justification/ }).inputValue(), "Changed reason");
+      await edit.getByRole("button", { name: "Discard", exact: true }).click();
+      await discardDialog().getByRole("button", { name: "Discard changes", exact: true }).click();
+      await edit.waitFor({ state: "hidden" });
+      assert.equal(await warnsBeforeUnload(), false);
+      await page.getByRole("button", { name: "Edit", exact: true }).click();
+      assert.equal(await edit.getByRole("textbox", { name: /Justification/ }).inputValue(), "");
+      await edit.getByRole("button", { name: "Discard", exact: true }).click();
+      await edit.waitFor({ state: "hidden" });
+      assert.equal(await discardDialog().count(), 0);
+    });
+
+    it("protects request edits on navigation and clears the guard after saving", async () => {
+      await load("/user/requests/own-pending");
+      await page.getByRole("button", { name: "Edit", exact: true }).click();
+      const edit = page.getByRole("dialog", { name: "Edit pending request", exact: true });
+      await edit.getByRole("textbox", { name: /Justification/ }).fill("Save this reason");
+      await page.evaluate(() => window.portalRouter.navigate("/settings"));
+      await discardDialog().getByRole("button", { name: "Keep editing", exact: true }).click();
+      await edit.getByRole("button", { name: "Save changes", exact: true }).click();
+      await edit.waitFor({ state: "hidden" });
+      assert.equal(await warnsBeforeUnload(), false);
+      await page.getByRole("link", { name: "Settings", exact: true }).click();
+      await page.getByRole("heading", { name: "Settings", exact: true }).waitFor();
+      assert.equal(await discardDialog().count(), 0);
+    });
+
+    it("keeps review reasons on canceled navigation and submits without a discard prompt", async () => {
+      await load("/reviewer/requests/queue-first");
+      const reason = page.getByRole("textbox", { name: /Reason/ }).filter({ visible: true });
+      await reason.fill("Approved for the incident response");
+      await page.locator("#portal-main").getByRole("link", { name: "Review Queue", exact: true }).click();
+      await discardDialog().getByRole("button", { name: "Keep editing", exact: true }).click();
+      assert.equal(await reason.inputValue(), "Approved for the incident response");
+      assert.equal(await warnsBeforeUnload(), true);
+      await page.getByRole("button", { name: "Approve", exact: true }).filter({ visible: true }).click();
+      await page.getByRole("dialog", { name: "Approve this request?", exact: true })
+        .getByRole("button", { name: "Approve request", exact: true }).click();
+      await page.getByRole("heading", { name: "Review Queue", exact: true }).waitFor();
+      assert.equal(await discardDialog().count(), 0);
+      assert.equal(await warnsBeforeUnload(), false);
+    });
+
+    it("protects changed review decisions and clears the guard after saving", async () => {
+      await load("/reviewer/reviews/rv1.queue-second");
+      await page.getByRole("button", { name: "Set decision", exact: true }).click();
+      assert.equal(await warnsBeforeUnload(), false);
+      await page.getByText("Approve", { exact: true }).click();
+      assert.equal(await warnsBeforeUnload(), true);
+      await page.getByRole("link", { name: "Settings", exact: true }).click();
+      await discardDialog().getByRole("button", { name: "Keep editing", exact: true }).click();
+      await page.getByRole("button", { name: "Discard", exact: true }).click();
+      await discardDialog().getByRole("button", { name: "Keep editing", exact: true }).click();
+      await page.getByRole("button", { name: "Save", exact: true }).click();
+      await page.getByText("Review updated", { exact: true }).waitFor();
+      assert.equal(await warnsBeforeUnload(), false);
+      await page.getByRole("link", { name: "Settings", exact: true }).click();
+      await page.getByRole("heading", { name: "Settings", exact: true }).waitFor();
+      assert.equal(await discardDialog().count(), 0);
+    });
+
+    it("uses the navigation drawer below 1024px and restores the desktop sidebar", async () => {
+      await page.setViewportSize({ width: 820, height: 1000 });
+      await load("/user/requests");
+      const open = page.getByRole("button", { name: "Open navigation", exact: true });
+      const sidebar = page.getByRole("navigation", { name: "Portal sidebar", exact: true });
+      await open.waitFor();
+      const main = await page.locator("#portal-main").boundingBox();
+      assert.ok(main.x < 40);
+      await open.click();
+      const drawer = page.getByRole("dialog", { name: "Portal navigation", exact: true });
+      await drawer.getByRole("link", { name: "Settings", exact: true }).click();
+      await drawer.waitFor({ state: "hidden" });
+      await page.getByRole("heading", { name: "Settings", exact: true }).waitFor();
+      await page.setViewportSize({ width: 1023, height: 1000 });
+      await open.waitFor();
+      await open.click();
+      await drawer.waitFor();
+      await page.setViewportSize({ width: 1024, height: 1000 });
+      await open.waitFor({ state: "hidden" });
+      await drawer.waitFor({ state: "hidden" });
+      await sidebar.waitFor();
+      await page.setViewportSize({ width: 820, height: 1000 });
+      await open.waitFor();
+      assert.equal(await open.getAttribute("aria-expanded"), "false");
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     });
 
     it("closes mobile navigation after routing and avoids horizontal overflow", async () => {

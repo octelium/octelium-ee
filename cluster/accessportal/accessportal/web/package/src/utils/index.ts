@@ -314,7 +314,7 @@ const DURATION_UNIT_SECONDS: Record<string, number> = {
 export const durationToSeconds = (d?: MetaP.Duration): number => {
   const kind = d?.type.oneofKind;
   if (!kind) return 0;
-  const amount = Number((d!.type as any)[kind]) || 0;
+  const amount = Number((d!.type as Record<string, unknown>)[kind]) || 0;
   return amount * (DURATION_UNIT_SECONDS[kind] ?? 0);
 };
 
@@ -323,7 +323,7 @@ export const durationToParts = (
 ): { unit: DurationUnit; amount: number } => {
   const kind = d?.type.oneofKind;
   if (kind && (DURATION_UNITS as readonly string[]).includes(kind)) {
-    const amount = Number((d!.type as any)[kind]) || 0;
+    const amount = Number((d!.type as Record<string, unknown>)[kind]) || 0;
     if (amount > 0) return { unit: kind as DurationUnit, amount };
   }
 
@@ -337,13 +337,17 @@ export const durationToParts = (
 export const partsToDuration = (
   unit: DurationUnit,
   amount: number,
-): MetaP.Duration =>
-  MetaP.Duration.create({
-    type: {
-      oneofKind: unit,
-      [unit]: Math.max(1, Math.trunc(amount) || 1),
-    } as any,
-  });
+): MetaP.Duration => {
+  const value = Math.max(1, Math.trunc(amount) || 1);
+  switch (unit) {
+    case "minutes":
+      return MetaP.Duration.create({ type: { oneofKind: unit, minutes: value } });
+    case "hours":
+      return MetaP.Duration.create({ type: { oneofKind: unit, hours: value } });
+    case "days":
+      return MetaP.Duration.create({ type: { oneofKind: unit, days: value } });
+  }
+};
 
 export const normalizeDuration = (d?: MetaP.Duration): MetaP.Duration => {
   const { unit, amount } = durationToParts(d);
@@ -365,7 +369,7 @@ export const formatDuration = (d?: MetaP.Duration): string => {
     if (seconds > 0 && seconds % 60 === 0) return plural(seconds / 60, "minute");
     return plural(Math.round(seconds), "second");
   }
-  const amount = Number((d!.type as any)[kind]) || 0;
+  const amount = Number((d!.type as Record<string, unknown>)[kind]) || 0;
   return plural(amount, kind.replace(/s$/, ""));
 };
 

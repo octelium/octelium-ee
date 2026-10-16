@@ -22,6 +22,7 @@ import UrgencyPicker from "@/components/Access/UrgencyPicker";
 import CatalogDetailsDrawer from "@/components/Catalog/CatalogDetailsDrawer";
 import DurationInput from "@/components/DurationInput";
 import TimestampPicker from "@/components/TimestampPicker";
+import UnsavedChangesDialog from "@/components/UnsavedChangesDialog";
 import {
   Avatar,
   Badge,
@@ -39,17 +40,20 @@ import {
   SectionCard,
   SkeletonRows,
   SummaryRow,
-  isNotFoundError,
 } from "@/ui";
 import {
   MAX_JUSTIFICATION_BYTES,
+  durationToSeconds,
   formatDuration,
   tsToMillis,
   urgencyMeta,
   utf8Length,
 } from "@/utils";
 import { getUserClient } from "@/utils/client";
+import { isNotFoundError } from "@/utils/rpcError";
 import { useAppSelector } from "@/utils/hooks";
+import { useUnsavedChanges } from "@/utils/hooks/useUnsavedChanges";
+import { useNow } from "@/utils/time";
 
 import ServicePicker from "./ServicePicker";
 import SubjectPicker from "./SubjectPicker";
@@ -142,13 +146,22 @@ const CatalogCard = (props: {
 const NewRequest = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const now = useNow();
   const status = useAppSelector((state) => state.settings.status);
   const [searchParams] = useSearchParams();
-  const deepLinkApplied = React.useRef(false);
-  const [tab, setTab] = React.useState<"service" | "catalog">("service");
+  const [initialSelection] = React.useState<Selection | undefined>(() => {
+    const svcName = searchParams.get("serviceRef.name");
+    const catName = searchParams.get("catalogRef.name");
+    if (svcName) return { kind: "service", name: svcName, label: svcName };
+    if (catName) return { kind: "catalog", name: catName, label: catName };
+    return undefined;
+  });
+  const [tab, setTab] = React.useState<"service" | "catalog">(
+    initialSelection?.kind ?? "service",
+  );
   const [catalogQuery, setCatalogQuery] = React.useState("");
   const [detailsCatalog, setDetailsCatalog] = React.useState<AccessP.Catalog>();
-  const [selection, setSelection] = React.useState<Selection | undefined>();
+  const [selection, setSelection] = React.useState(initialSelection);
   const [requestFor, setRequestFor] = React.useState<"self" | "subject">("self");
   const [subject, setSubject] = React.useState<AccessP.SubjectUser | undefined>();
   const [deadline, setDeadline] = React.useState<Timestamp>();
@@ -158,7 +171,16 @@ const NewRequest = () => {
   );
   const [justification, setJustification] = React.useState("");
   const [duration, setDuration] = React.useState<MetaP.Duration>(
-    MetaP.Duration.create({ type: { oneofKind: "hours", hours: 1 } as any }),
+    MetaP.Duration.create({ type: { oneofKind: "hours", hours: 1 } }),
+  );
+  const unsavedChanges = useUnsavedChanges(
+    selection?.kind !== initialSelection?.kind ||
+      selection?.name !== initialSelection?.name ||
+      requestFor !== "self" ||
+      !!deadline ||
+      urgency !== AccessP.Request_Spec_Urgency.NORMAL ||
+      justification !== "" ||
+      durationToSeconds(duration) !== 3600,
   );
 
   const catalogsQry = useCatalogs();
@@ -166,23 +188,6 @@ const NewRequest = () => {
   const serviceQry = useService(
     selection?.kind === "service" ? selection.name : undefined,
   );
-
-  React.useEffect(() => {
-    if (deepLinkApplied.current) return;
-
-    const svcName = searchParams.get("serviceRef.name");
-    const catName = searchParams.get("catalogRef.name");
-
-    if (svcName) {
-      deepLinkApplied.current = true;
-      setTab("service");
-      setSelection({ kind: "service", name: svcName, label: svcName });
-    } else if (catName) {
-      deepLinkApplied.current = true;
-      setTab("catalog");
-      setSelection({ kind: "catalog", name: catName, label: catName });
-    }
-  }, [searchParams]);
 
   const selectedCatalog =
     selection?.kind === "catalog"
@@ -268,7 +273,9 @@ const NewRequest = () => {
       toast.success("Access request submitted");
       setSubmitOpen(false);
       queryClient.invalidateQueries({ queryKey: ["user", "listRequest"] });
-      navigate(`/user/requests/${response.metadata!.name}`);
+      unsavedChanges.allowNavigation(() =>
+        navigate(`/user/requests/${response.metadata!.name}`),
+      );
     },
     onError: (e) => {
       toast.error(e instanceof Error ? e.message : "Failed to submit request");
@@ -293,7 +300,7 @@ const NewRequest = () => {
   const justificationBytes = utf8Length(justification);
   const tooLong = justificationBytes > MAX_JUSTIFICATION_BYTES;
   const deadlinePassed =
-    !!deadline && (tsToMillis(deadline) ?? 0) <= Date.now();
+    !!deadline && (tsToMillis(deadline) ?? 0) <= now;
 
   const blocker = !selection
     ? `Select a ${tab === "service" ? "Service" : "Catalog"} to request access to`
@@ -310,6 +317,7 @@ const NewRequest = () => {
   return (
     <div className="w-full min-w-0">
       <DocumentTitle title="New Request" />
+      <UnsavedChangesDialog guard={unsavedChanges} />
       <PageHeader
         title="New Request"
         description="Request just-in-time access to a single Service or to an entire Catalog of resources."

@@ -1,4 +1,4 @@
-export default () => {
+const Footer = () => {
   return (
     <>
       <div className="w-full mb-6 pt-8">
@@ -20,3 +20,5 @@ export default () => {
     </>
   );
 };
+
+export default Footer;

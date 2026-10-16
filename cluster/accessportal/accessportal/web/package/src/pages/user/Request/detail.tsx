@@ -19,6 +19,7 @@ import StatusHero from "@/components/Access/StatusHero";
 import UrgencyPicker from "@/components/Access/UrgencyPicker";
 import DurationInput from "@/components/DurationInput";
 import TimestampPicker from "@/components/TimestampPicker";
+import UnsavedChangesDialog from "@/components/UnsavedChangesDialog";
 import {
   BackLink,
   ConfirmDialog,
@@ -33,10 +34,10 @@ import {
   StatusBadge,
   SummaryRow,
   UrgencyBadge,
-  isNotFoundError,
 } from "@/ui";
 import {
   MAX_JUSTIFICATION_BYTES,
+  durationToSeconds,
   isEvaluatingRequest,
   isPendingRequest,
   normalizeDuration,
@@ -46,6 +47,16 @@ import {
   utf8Length,
 } from "@/utils";
 import { getUserClient } from "@/utils/client";
+import { isNotFoundError } from "@/utils/rpcError";
+import { useUnsavedChanges } from "@/utils/hooks/useUnsavedChanges";
+import { useNow } from "@/utils/time";
+
+const requestDraft = (request: AccessP.Request) => ({
+  urgency: request.spec?.urgency ?? AccessP.Request_Spec_Urgency.NORMAL,
+  duration: normalizeDuration(request.spec?.duration),
+  deadline: request.spec?.deadline,
+  justification: request.spec?.justification ?? "",
+});
 
 const EditRequestModal = (props: {
   opened: boolean;
@@ -53,30 +64,44 @@ const EditRequestModal = (props: {
   request: AccessP.Request;
 }) => {
   const queryClient = useQueryClient();
+  const now = useNow();
   const { request } = props;
+  const [initial, setInitial] = React.useState(() => requestDraft(request));
   const [urgency, setUrgency] = React.useState<AccessP.Request_Spec_Urgency>(
-    request.spec?.urgency || AccessP.Request_Spec_Urgency.NORMAL,
+    initial.urgency,
   );
   const [duration, setDuration] = React.useState<MetaP.Duration>(
-    normalizeDuration(request.spec?.duration),
+    initial.duration,
   );
   const [deadline, setDeadline] = React.useState<Timestamp | undefined>(
-    request.spec?.deadline,
+    initial.deadline,
   );
   const [justification, setJustification] = React.useState(
-    request.spec?.justification ?? "",
+    initial.justification,
   );
 
   const [prevOpened, setPrevOpened] = React.useState(props.opened);
   if (props.opened !== prevOpened) {
     setPrevOpened(props.opened);
     if (props.opened) {
-      setUrgency(request.spec?.urgency || AccessP.Request_Spec_Urgency.NORMAL);
-      setDuration(normalizeDuration(request.spec?.duration));
-      setDeadline(request.spec?.deadline);
-      setJustification(request.spec?.justification ?? "");
+      const draft = requestDraft(request);
+      setInitial(draft);
+      setUrgency(draft.urgency);
+      setDuration(draft.duration);
+      setDeadline(draft.deadline);
+      setJustification(draft.justification);
     }
   }
+
+  const unsavedChanges = useUnsavedChanges(
+    props.opened &&
+      (urgency !== initial.urgency ||
+        durationToSeconds(duration) !== durationToSeconds(initial.duration) ||
+        deadline?.seconds !== initial.deadline?.seconds ||
+        deadline?.nanos !== initial.deadline?.nanos ||
+        justification !== initial.justification),
+  );
+  const close = () => unsavedChanges.confirmDiscard(props.onClose);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -103,100 +128,104 @@ const EditRequestModal = (props: {
 
   const justificationBytes = utf8Length(justification);
   const tooLong = justificationBytes > MAX_JUSTIFICATION_BYTES;
-  const deadlinePassed = !!deadline && (tsToMillis(deadline) ?? 0) <= Date.now();
+  const deadlinePassed = !!deadline && (tsToMillis(deadline) ?? 0) <= now;
 
   return (
-    <Modal
-      opened={props.opened}
-      onClose={props.onClose}
-      centered
-      radius="lg"
-      title="Edit pending request"
-      closeOnEscape={!mutation.isPending}
-      closeOnClickOutside={!mutation.isPending}
-      withCloseButton={!mutation.isPending}
-      styles={{
-        title: {
-          fontSize: "0.9375rem",
-          fontWeight: 600,
-          color: "var(--color-slate-900)",
-        },
-      }}
-    >
-      <form
-        className="flex flex-col gap-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!tooLong && !deadlinePassed) mutation.mutate();
+    <>
+      <Modal
+        opened={props.opened}
+        onClose={close}
+        centered
+        radius="lg"
+        title="Edit pending request"
+        closeOnEscape={!mutation.isPending && !unsavedChanges.opened}
+        closeOnClickOutside={!mutation.isPending && !unsavedChanges.opened}
+        trapFocus={!unsavedChanges.opened}
+        withCloseButton={!mutation.isPending}
+        styles={{
+          title: {
+            fontSize: "0.9375rem",
+            fontWeight: 600,
+            color: "var(--color-slate-900)",
+          },
         }}
       >
-        <p className="text-xs font-normal leading-5 text-slate-500">
-          The resource and the recipient of a request cannot be changed. Create a
-          new request if you need different access.
-        </p>
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!tooLong && !deadlinePassed) mutation.mutate();
+          }}
+        >
+          <p className="text-xs font-normal leading-5 text-slate-500">
+            The resource and the recipient of a request cannot be changed. Create a
+            new request if you need different access.
+          </p>
 
-        <Field label="Urgency" description="Higher urgency helps reviewers triage the queue">
-          <UrgencyPicker value={urgency} onChange={setUrgency} />
-        </Field>
+          <Field label="Urgency" description="Higher urgency helps reviewers triage the queue">
+            <UrgencyPicker value={urgency} onChange={setUrgency} />
+          </Field>
 
-        <Field label="Duration" description="How long the access should last once approved">
-          <DurationInput value={duration} onChange={setDuration} />
-        </Field>
+          <Field label="Duration" description="How long the access should last once approved">
+            <DurationInput value={duration} onChange={setDuration} />
+          </Field>
 
-        <TimestampPicker
-          label="Deadline"
-          description="Expire the request if it is not decided by this time"
-          placeholder="No deadline"
-          value={deadline}
-          isFuture
-          onChange={setDeadline}
-        />
+          <TimestampPicker
+            label="Deadline"
+            description="Expire the request if it is not decided by this time"
+            placeholder="No deadline"
+            value={deadline}
+            isFuture
+            onChange={setDeadline}
+          />
 
-        <Textarea
-          label={
-            <span className="flex w-full items-baseline justify-between gap-3">
-              Justification
-              <LengthCounter length={justificationBytes} max={MAX_JUSTIFICATION_BYTES} />
-            </span>
-          }
-          error={
-            tooLong
-              ? "The justification is too long"
-              : deadlinePassed
-                ? "The deadline is in the past. Choose a later time or clear it."
-                : undefined
-          }
-          autosize
-          minRows={3}
-          maxRows={7}
-          value={justification}
-          onChange={(event) => setJustification(event.currentTarget.value)}
-          styles={{ label: { display: "flex", width: "100%" } }}
-        />
+          <Textarea
+            label={
+              <span className="flex w-full items-baseline justify-between gap-3">
+                Justification
+                <LengthCounter length={justificationBytes} max={MAX_JUSTIFICATION_BYTES} />
+              </span>
+            }
+            error={
+              tooLong
+                ? "The justification is too long"
+                : deadlinePassed
+                  ? "The deadline is in the past. Choose a later time or clear it."
+                  : undefined
+            }
+            autosize
+            minRows={3}
+            maxRows={7}
+            value={justification}
+            onChange={(event) => setJustification(event.currentTarget.value)}
+            styles={{ label: { display: "flex", width: "100%" } }}
+          />
 
-        <div className="flex items-center justify-end gap-2">
-          <Button
-            type="button"
-            variant="default"
-            leftSection={<X size={13} strokeWidth={2.25} />}
-            onClick={props.onClose}
-            disabled={mutation.isPending}
-          >
-            Discard
-          </Button>
-          <Button
-            type="submit"
-            variant="filled"
-            color="ink"
-            leftSection={<Save size={13} strokeWidth={2.25} />}
-            loading={mutation.isPending}
-            disabled={tooLong || deadlinePassed}
-          >
-            Save changes
-          </Button>
-        </div>
-      </form>
-    </Modal>
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="default"
+              leftSection={<X size={13} strokeWidth={2.25} />}
+              onClick={close}
+              disabled={mutation.isPending}
+            >
+              Discard
+            </Button>
+            <Button
+              type="submit"
+              variant="filled"
+              color="ink"
+              leftSection={<Save size={13} strokeWidth={2.25} />}
+              loading={mutation.isPending}
+              disabled={tooLong || deadlinePassed}
+            >
+              Save changes
+            </Button>
+          </div>
+        </form>
+      </Modal>
+      <UnsavedChangesDialog guard={unsavedChanges} />
+    </>
   );
 };
 

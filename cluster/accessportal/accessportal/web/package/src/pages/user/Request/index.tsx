@@ -11,8 +11,8 @@ import * as React from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
-import { resourceIcon } from "@/components/Access/icons";
-import TimeAgo, { Countdown, Elapsed, useNow } from "@/components/TimeAgo";
+import { ResourceIcon } from "@/components/Access/icons";
+import TimeAgo, { Countdown, Elapsed } from "@/components/TimeAgo";
 import {
   Badge,
   Card,
@@ -48,6 +48,7 @@ import {
   urgencyMeta,
 } from "@/utils";
 import { getUserClient } from "@/utils/client";
+import { useNow } from "@/utils/time";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -74,7 +75,6 @@ const RequestRow = (props: {
   const resource = requestResourceLabel(item);
   const status = statusMeta(item.status?.state?.status);
   const pending = isPendingRequest(item);
-  const Icon = resourceIcon(resource.kind);
   const steps = reviewSteps(item);
   const grant = accessWindow(item, now);
   const active = status.group === "active" && !!grant.endMs && grant.endMs > now;
@@ -89,7 +89,7 @@ const RequestRow = (props: {
           className="flex min-w-0 flex-1 items-center gap-3.5 rounded-xl px-4 py-3.5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-400"
         >
           <IconTile>
-            <Icon size={16} strokeWidth={2} />
+            <ResourceIcon kind={resource.kind} size={16} strokeWidth={2} />
           </IconTile>
 
           <div className="min-w-0 flex-1">

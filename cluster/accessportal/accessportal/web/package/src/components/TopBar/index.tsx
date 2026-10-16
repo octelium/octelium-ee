@@ -35,11 +35,6 @@ const TopBar = () => {
         aria-label={displayName ? `Account settings for ${displayName}` : "Account settings"}
         className="group flex h-10 min-w-0 flex-none items-center gap-2 rounded-lg px-2 outline-none transition-colors duration-150 hover:bg-slate-200/60 focus-visible:ring-2 focus-visible:ring-slate-400"
       >
-        {displayName && (
-          <span className="hidden max-w-48 truncate text-xs font-medium text-slate-600 transition-colors duration-150 group-hover:text-slate-900 md:block">
-            {displayName}
-          </span>
-        )}
         <Avatar
           src={picURL}
           name={displayName}

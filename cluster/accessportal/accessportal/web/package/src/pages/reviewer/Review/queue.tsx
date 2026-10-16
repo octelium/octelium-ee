@@ -6,8 +6,8 @@ import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { twMerge } from "@/lib/utils";
 
 import { useSubjectUser } from "@/components/Access/hooks";
-import { resourceIcon } from "@/components/Access/icons";
-import { Countdown, Elapsed, useNow } from "@/components/TimeAgo";
+import { ResourceIcon } from "@/components/Access/icons";
+import { Countdown, Elapsed } from "@/components/TimeAgo";
 import {
   Avatar,
   Badge,
@@ -43,6 +43,7 @@ import {
   waitingMillis,
 } from "@/utils";
 import { getReviewerClient } from "@/utils/client";
+import { useNow } from "@/utils/time";
 
 const PAGE_SIZE = 500;
 const MAX_PAGES = 100;
@@ -79,7 +80,6 @@ const QueueRow = (props: { item: AccessP.Request; returnTo: string; now: number 
   const timeoutAt = reviewStepTimeoutAt(item);
   const deadline = tsToDate(item.spec?.deadline);
   const stale = waitingMillis(item, props.now) > STALE_MILLIS;
-  const Icon = resourceIcon(resource.kind);
   const requesterLabel =
     requesterQuery.data?.displayName || shortName(requester) || "—";
 
@@ -91,7 +91,7 @@ const QueueRow = (props: { item: AccessP.Request; returnTo: string; now: number 
         className="flex min-w-0 items-start gap-3.5 rounded-xl px-4 py-3.5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-400"
       >
         <IconTile>
-          <Icon size={16} strokeWidth={2} />
+          <ResourceIcon kind={resource.kind} size={16} strokeWidth={2} />
         </IconTile>
 
         <div className="min-w-0 flex-1">

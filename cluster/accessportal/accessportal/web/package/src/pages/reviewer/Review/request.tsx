@@ -16,6 +16,7 @@ import RequestTimeline from "@/components/Access/RequestTimeline";
 import ResourceCard from "@/components/Access/ResourceCard";
 import ReviewWorkflow from "@/components/Access/ReviewWorkflow";
 import StatusHero from "@/components/Access/StatusHero";
+import UnsavedChangesDialog from "@/components/UnsavedChangesDialog";
 import {
   BackLink,
   ConfirmDialog,
@@ -30,7 +31,6 @@ import {
   StatusBadge,
   SummaryRow,
   UrgencyBadge,
-  isNotFoundError,
 } from "@/ui";
 import {
   MAX_JUSTIFICATION_BYTES,
@@ -47,6 +47,8 @@ import {
   utf8Length,
 } from "@/utils";
 import { getReviewerClient } from "@/utils/client";
+import { isNotFoundError } from "@/utils/rpcError";
+import { useUnsavedChanges } from "@/utils/hooks/useUnsavedChanges";
 
 const DecisionPanel = (props: {
   className?: string;
@@ -130,6 +132,7 @@ const ReviewRequest = () => {
   const [justificationError, setJustificationError] = React.useState<string>();
   const [decisionToSubmit, setDecisionToSubmit] =
     React.useState<AccessP.Review_Spec_Decision>();
+  const unsavedChanges = useUnsavedChanges(justification !== "");
 
   const qry = useQuery({
     queryKey: ["reviewer", "getRequest", name],
@@ -166,7 +169,7 @@ const ReviewRequest = () => {
       toast.success("Review submitted");
       setDecisionToSubmit(undefined);
       queryClient.invalidateQueries({ queryKey: ["reviewer"] });
-      navigate("/reviewer/requests");
+      unsavedChanges.allowNavigation(() => navigate("/reviewer/requests"));
     },
     onError: (e) => {
       setDecisionToSubmit(undefined);
@@ -241,6 +244,7 @@ const ReviewRequest = () => {
   return (
     <div className="w-full">
       <DocumentTitle title={`Review ${resource.name || item.metadata!.name}`} />
+      <UnsavedChangesDialog guard={unsavedChanges} />
       <BackLink to="/reviewer/requests">Review Queue</BackLink>
 
       <PageHeader

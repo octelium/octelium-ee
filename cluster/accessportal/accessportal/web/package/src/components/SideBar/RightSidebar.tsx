@@ -6,7 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 import { ArrowUpRight, LockKeyhole, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
-export default () => {
+const RightSidebar = () => {
   const [opened, { open, close }] = useDisclosure(false);
 
   const mutationLogout = useMutation({
@@ -108,3 +108,5 @@ export default () => {
     </div>
   );
 };
+
+export default RightSidebar;

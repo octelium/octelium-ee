@@ -13,7 +13,6 @@ import {
   MonoValue,
   Note,
   SectionCard,
-  isNotFoundError,
 } from "@/ui";
 import {
   namespaceFromName,
@@ -21,9 +20,9 @@ import {
   serviceModeLabel,
   shortName,
 } from "@/utils";
-import { describeRpcError } from "@/utils/rpcError";
+import { describeRpcError, isNotFoundError } from "@/utils/rpcError";
 
-import { serviceTypeIcon } from "./icons";
+import { ServiceTypeIcon } from "./icons";
 import { useCatalogs, useService } from "./hooks";
 
 const ResourceHeading = (props: {
@@ -51,13 +50,12 @@ const ResourceHeading = (props: {
 const ServiceResource = (props: { name: string }) => {
   const query = useService(props.name);
   const service = query.data;
-  const Icon = serviceTypeIcon(service?.spec?.type);
   const namespace = service?.status?.namespace || namespaceFromName(props.name);
 
   return (
     <div className="flex flex-col gap-4">
       <ResourceHeading
-        icon={<Icon size={18} strokeWidth={2} />}
+        icon={<ServiceTypeIcon serviceType={service?.spec?.type} size={18} strokeWidth={2} />}
         title={service?.metadata?.displayName || shortName(props.name)}
         name={props.name}
         badges={

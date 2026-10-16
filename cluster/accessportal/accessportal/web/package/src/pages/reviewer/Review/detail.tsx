@@ -11,6 +11,7 @@ import JustificationCard from "@/components/Access/JustificationCard";
 import RequestFacts from "@/components/Access/RequestFacts";
 import ResourceCard from "@/components/Access/ResourceCard";
 import TimeAgo from "@/components/TimeAgo";
+import UnsavedChangesDialog from "@/components/UnsavedChangesDialog";
 import {
   BackLink,
   ConfirmDialog,
@@ -28,7 +29,6 @@ import {
   SectionCard,
   Timeline,
   TimelineItem,
-  isNotFoundError,
 } from "@/ui";
 import {
   MAX_JUSTIFICATION_BYTES,
@@ -38,7 +38,8 @@ import {
   utf8Length,
 } from "@/utils";
 import { getReviewerClient } from "@/utils/client";
-import { describeRpcError } from "@/utils/rpcError";
+import { useUnsavedChanges } from "@/utils/hooks/useUnsavedChanges";
+import { describeRpcError, isNotFoundError } from "@/utils/rpcError";
 
 const ReviewDetail = () => {
   const { name } = useParams<{ name: string }>();
@@ -50,6 +51,14 @@ const ReviewDetail = () => {
   );
   const [justification, setJustification] = React.useState("");
   const [justificationError, setJustificationError] = React.useState<string>();
+  const [initial, setInitial] = React.useState({
+    decision: AccessP.Review_Spec_Decision.UNSET,
+    justification: "",
+  });
+  const unsavedChanges = useUnsavedChanges(
+    editing &&
+      (decision !== initial.decision || justification !== initial.justification),
+  );
 
   const qry = useQuery({
     queryKey: ["reviewer", "getReview", name],
@@ -157,8 +166,13 @@ const ReviewDetail = () => {
   const bytes = utf8Length(justification);
 
   const startEditing = () => {
-    setDecision(item.spec?.decision ?? AccessP.Review_Spec_Decision.UNSET);
-    setJustification(item.spec?.justification ?? "");
+    const draft = {
+      decision: item.spec?.decision ?? AccessP.Review_Spec_Decision.UNSET,
+      justification: item.spec?.justification ?? "",
+    };
+    setInitial(draft);
+    setDecision(draft.decision);
+    setJustification(draft.justification);
     setJustificationError(undefined);
     setEditing(true);
   };
@@ -188,6 +202,7 @@ const ReviewDetail = () => {
   return (
     <div className="w-full">
       <DocumentTitle title={`Review of ${request || item.metadata!.name}`} />
+      <UnsavedChangesDialog guard={unsavedChanges} />
       <BackLink to="/reviewer/reviews">My Reviews</BackLink>
 
       <PageHeader
@@ -302,7 +317,9 @@ const ReviewDetail = () => {
                     variant="default"
                     leftSection={<X size={14} strokeWidth={2.5} />}
                     disabled={updateMutation.isPending}
-                    onClick={() => setEditing(false)}
+                    onClick={() =>
+                      unsavedChanges.confirmDiscard(() => setEditing(false))
+                    }
                   >
                     Discard
                   </Button>

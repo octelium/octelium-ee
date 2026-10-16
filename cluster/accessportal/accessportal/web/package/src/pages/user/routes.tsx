@@ -1,9 +1,11 @@
 import UserLayout from "./layout";
-import RequestDetail from "./Request/detail";
 import Requests from "./Request/index";
-import NewRequest from "./Request/new";
 
+import * as React from "react";
 import { Navigate, RouteObject } from "react-router-dom";
+
+const RequestDetail = React.lazy(() => import("./Request/detail"));
+const NewRequest = React.lazy(() => import("./Request/new"));
 
 export const userRoutes = (): RouteObject => ({
   path: "/user",

@@ -5,7 +5,7 @@ import * as React from "react";
 import { twMerge } from "@/lib/utils";
 
 import { useNamespaces, useServices } from "@/components/Access/hooks";
-import { serviceTypeIcon } from "@/components/Access/icons";
+import { ServiceTypeIcon } from "@/components/Access/icons";
 import {
   Badge,
   EmptyState,
@@ -25,7 +25,6 @@ const ServiceCard = (props: {
   const name = s.metadata!.name;
   const display = s.metadata!.displayName || shortName(name);
   const ns = s.status?.namespace || namespaceFromName(name);
-  const Icon = serviceTypeIcon(s.spec?.type);
 
   return (
     <button
@@ -48,7 +47,7 @@ const ServiceCard = (props: {
         {props.selected ? (
           <Check size={16} strokeWidth={2.75} />
         ) : (
-          <Icon size={16} strokeWidth={2} />
+          <ServiceTypeIcon serviceType={s.spec?.type} size={16} strokeWidth={2} />
         )}
       </div>
 

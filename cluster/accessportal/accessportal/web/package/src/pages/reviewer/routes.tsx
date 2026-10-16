@@ -1,10 +1,12 @@
+import * as React from "react";
 import { Navigate, RouteObject } from "react-router-dom";
 
 import ReviewerLayout from "./layout";
-import ReviewDetail from "./Review/detail";
-import Reviews from "./Review/index";
-import Queue from "./Review/queue";
-import ReviewRequest from "./Review/request";
+
+const ReviewDetail = React.lazy(() => import("./Review/detail"));
+const Reviews = React.lazy(() => import("./Review/index"));
+const Queue = React.lazy(() => import("./Review/queue"));
+const ReviewRequest = React.lazy(() => import("./Review/request"));
 
 export const reviewerRoutes = (): RouteObject => ({
   path: "/reviewer",

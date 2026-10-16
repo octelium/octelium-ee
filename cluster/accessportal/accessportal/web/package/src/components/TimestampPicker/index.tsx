@@ -1,9 +1,11 @@
+import "@mantine/dates/styles.layer.css";
+
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { Button, InputBase, Popover, SegmentedControl } from "@mantine/core";
 import { DatePicker, TimeInput } from "@mantine/dates";
 import dayjs from "dayjs";
 import { CalendarDays, ChevronDown, Clock3, RotateCcw } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Field } from "@/ui";
 
@@ -63,16 +65,19 @@ const TimestampPicker = ({
     externalDate ? dayjs(externalDate).format("HH:mm") : dayjs().format("HH:mm"),
   );
   const [validationError, setValidationError] = useState<string>();
+  const externalTimestamp = externalDate?.getTime();
+  const [previousTimestamp, setPreviousTimestamp] = useState(externalTimestamp);
   const timeZone = useMemo(
     () => Intl.DateTimeFormat().resolvedOptions().timeZone || "Local time",
     [],
   );
 
-  useEffect(() => {
+  if (externalTimestamp !== previousTimestamp) {
+    setPreviousTimestamp(externalTimestamp);
     setSelectedDate(externalDate);
     if (externalDate) setTimeValue(dayjs(externalDate).format("HH:mm"));
     setValidationError(undefined);
-  }, [externalDate?.getTime()]);
+  }
 
   const customTimestamp = useMemo(() => {
     if (!selectedDate || !/^\d{2}:\d{2}$/.test(timeValue)) return null;

@@ -1,16 +1,16 @@
 import "@/index.css";
 import "@mantine/core/styles.layer.css";
-import "@mantine/dates/styles.layer.css";
 
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { MantineProvider } from "@mantine/core";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
-import { createMemoryRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, createMemoryRouter, RouterProvider } from "react-router-dom";
 
 import * as AccessP from "@/apis/accessv1/accessv1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
+import * as MetaP from "@/apis/metav1/metav1";
 import * as UserP from "@/apis/userv1/userv1";
 import { RpcError } from "@protobuf-ts/runtime-rpc";
 import routes from "@/pages/router";
@@ -30,8 +30,15 @@ import cssVariablesResolver from "@/utils/theme/cssVariables";
 import theme from "@/utils/theme/mantine";
 
 const params = new URLSearchParams(window.location.search);
-const calls: { method: string; request: any }[] = [];
-(window as any).calls = calls;
+const calls: { method: string; request: unknown }[] = [];
+window.calls = calls;
+
+declare global {
+  interface Window {
+    calls: typeof calls;
+    portalRouter: ReturnType<typeof createMemoryRouter>;
+  }
+}
 
 const services = [
   UserP.Service.create({
@@ -66,7 +73,7 @@ for (const [client, method, response] of [
     }),
   ],
 ] as const) {
-  Object.getPrototypeOf(client)[method] = async (request: any) => {
+  Object.getPrototypeOf(client)[method] = async (request: unknown) => {
     calls.push({ method, request });
     return { response };
   };
@@ -86,7 +93,8 @@ Object.getPrototypeOf(getUserMainClient()).listService = async (
 };
 
 const at = (minutes: number) => Timestamp.fromDate(new Date(Date.now() + minutes * 60_000));
-const hours = (value: number) => ({ type: { oneofKind: "hours", hours: value } as any });
+const hours = (value: number) =>
+  MetaP.Duration.create({ type: { oneofKind: "hours", hours: value } });
 const S = AccessP.Request_Status_State_Status;
 
 const step = (name: string) =>
@@ -128,7 +136,7 @@ const request = (
       approvalEndAt: extra.approvalEndAgo !== undefined ? at(-extra.approvalEndAgo) : undefined,
       accessEndsAt: extra.accessEndsIn !== undefined ? at(extra.accessEndsIn) : undefined,
       effectiveDuration: extra.effectiveSeconds
-        ? { type: { oneofKind: "seconds", seconds: extra.effectiveSeconds } as any }
+        ? { type: { oneofKind: "seconds", seconds: extra.effectiveSeconds } }
         : undefined,
       lastStates: (extra.lastStates ?? []).map((value) => ({ status: value, createdAt: at(-60) })),
       rule: extra.steps
@@ -184,8 +192,8 @@ const catalogs = [
   }),
 ];
 
-const stub = (client: object, method: string, handler: (request: any) => any) => {
-  Object.getPrototypeOf(client)[method] = async (request: any) => {
+const stub = <T,>(client: object, method: string, handler: (request: T) => unknown) => {
+  Object.getPrototypeOf(client)[method] = async (request: T) => {
     calls.push({ method, request });
     return { response: handler(request) };
   };
@@ -202,42 +210,59 @@ stub(getUserClient(), "listRequest", () =>
     listResponseMeta: { totalCount: myRequests.length, itemsPerPage: 20 },
   }),
 );
-stub(getUserClient(), "getRequest", (options) =>
+stub(getUserClient(), "getRequest", (options: MetaP.GetOptions) =>
   myRequests.find((item) => item.metadata?.name === options.name) ?? notFound(),
 );
 stub(getUserClient(), "getSubjectUser", () => notFound());
-stub(getUserMainClient(), "getService", (options) =>
+stub(getUserMainClient(), "getService", (options: MetaP.GetOptions) =>
   services.find((item) => item.metadata?.name === options.name) ?? notFound(),
 );
-stub(getReviewerClient(), "listRequest", (options) =>
+stub(getReviewerClient(), "listRequest", (options: AccessP.ListReviewerRequestOptions) =>
   AccessP.RequestList.create({
     items: [queue[options.common?.page ?? 0]].filter(Boolean),
     listResponseMeta: { totalCount: 1, hasMore: (options.common?.page ?? 0) === 0 },
   }),
 );
-stub(getReviewerClient(), "getRequest", (options) =>
+stub(getReviewerClient(), "getRequest", (options: MetaP.GetOptions) =>
   queue.find((item) => item.metadata?.name === options.name) ?? notFound(),
 );
 stub(getReviewerClient(), "listReview", () =>
   AccessP.ReviewList.create({ items: reviews, listResponseMeta: { totalCount: reviews.length } }),
 );
-stub(getReviewerClient(), "getReview", (options) =>
+stub(getReviewerClient(), "getReview", (options: MetaP.GetOptions) =>
   reviews.find((item) => item.metadata?.name === options.name) ?? notFound(),
 );
-stub(getReviewerClient(), "setReviewDecision", (options) =>
+stub(getReviewerClient(), "setReviewDecision", (options: AccessP.SetReviewDecisionRequest) =>
   AccessP.Review.create({ spec: { decision: options.decision } }),
 );
-stub(getReviewerClient(), "createReview", (review) => review);
-stub(getReviewerClient(), "updateReview", (review) => review);
+stub(getReviewerClient(), "createReview", (review: AccessP.Review) => review);
+stub(getReviewerClient(), "updateReview", (review: AccessP.Review) => review);
+stub(getUserClient(), "updateRequest", (value: AccessP.Request) => {
+  const index = myRequests.findIndex((item) => item.metadata?.name === value.metadata?.name);
+  myRequests[index] = value;
+  return value;
+});
+stub(getUserClient(), "createRequest", (value: AccessP.Request) => {
+  if (params.has("failCreate")) throw new RpcError("Submission failed", "UNAVAILABLE");
+  const created = AccessP.Request.clone(value);
+  created.metadata!.name = "created-request";
+  myRequests.push(created);
+  return created;
+});
 
 Object.getPrototypeOf(getClientAuth()).logout = async () => {
   calls.push({ method: "logout", request: {} });
   throw new Error("Sign out unavailable");
 };
 
-const router = createMemoryRouter([routes()], {
-  initialEntries: [params.get("path") ?? "/user/new"],
-});
+const initialPath = params.get("path") ?? "/user/new";
+if (params.has("browserHistory")) {
+  window.history.replaceState(null, "", initialPath);
+}
+const router = params.has("browserHistory")
+  ? createBrowserRouter([routes()])
+  : createMemoryRouter([routes()], { initialEntries: [initialPath] });
+window.portalRouter = router;
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

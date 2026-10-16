@@ -11,15 +11,13 @@ const PortalShell = (props: {
   children: React.ReactNode;
 }) => {
   const location = useLocation();
-  const desktop = useMediaQuery("(min-width: 48em)");
+  const desktop = useMediaQuery("(min-width: 64em)");
   const reducedMotion = useReducedMotion();
   const [drawerRoute, setDrawerRoute] = React.useState<string | null>(null);
   const drawerOpened = !desktop && drawerRoute === location.key;
   const closeDrawer = () => setDrawerRoute(null);
 
-  React.useEffect(() => {
-    if (desktop) setDrawerRoute(null);
-  }, [desktop]);
+  if (desktop && drawerRoute !== null) setDrawerRoute(null);
 
   return (
     <AppShell
@@ -27,7 +25,7 @@ const PortalShell = (props: {
       header={{ height: 60 }}
       navbar={{
         width: 264,
-        breakpoint: "sm",
+        breakpoint: "64em",
         collapsed: { mobile: true },
       }}
       padding="md"
@@ -44,7 +42,7 @@ const PortalShell = (props: {
             aria-haspopup="dialog"
             aria-expanded={drawerOpened}
             onClick={() => setDrawerRoute(location.key)}
-            className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-600 outline-none transition-colors hover:bg-slate-200/60 focus-visible:ring-2 focus-visible:ring-slate-400 min-[48em]:hidden"
+            className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-600 outline-none transition-colors hover:bg-slate-200/60 focus-visible:ring-2 focus-visible:ring-slate-400 min-[64em]:hidden"
           >
             <Menu size={20} aria-hidden />
           </button>

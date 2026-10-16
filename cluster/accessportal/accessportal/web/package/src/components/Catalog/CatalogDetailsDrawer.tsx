@@ -4,7 +4,7 @@ import { Globe2, Server } from "lucide-react";
 import * as React from "react";
 
 import { useServices } from "@/components/Access/hooks";
-import { serviceTypeIcon } from "@/components/Access/icons";
+import { ServiceTypeIcon } from "@/components/Access/icons";
 import {
   Badge,
   EmptyState,
@@ -139,7 +139,6 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
               {services.map((service) => {
                 const name = service.metadata?.name ?? "";
                 const namespace = namespaceOf(service);
-                const Icon = serviceTypeIcon(service.spec?.type);
                 const location =
                   service.status?.primaryHostname ||
                   service.status?.addresses?.join(", ");
@@ -150,7 +149,7 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
                     className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5"
                   >
                     <IconTile>
-                      <Icon size={15} strokeWidth={2} />
+                      <ServiceTypeIcon serviceType={service.spec?.type} size={15} strokeWidth={2} />
                     </IconTile>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-body font-semibold text-slate-800">

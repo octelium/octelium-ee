@@ -39,3 +39,8 @@ export const describeRpcError = (error: unknown) => {
     isRpcError: Boolean(code),
   };
 };
+
+export const isNotFoundError = (error: unknown) => {
+  const code = rpcErrorCode(error);
+  return code === "NOT_FOUND" || code === "PERMISSION_DENIED";
+};

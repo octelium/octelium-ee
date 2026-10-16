@@ -10,36 +10,39 @@ import {
   Server,
   ShieldCheck,
   Terminal,
+  type LucideIcon,
+  type LucideProps,
 } from "lucide-react";
 
-export const serviceTypeIcon = (type?: UserP.Service_Spec_Type) => {
-  switch (type) {
-    case UserP.Service_Spec_Type.HTTP:
-    case UserP.Service_Spec_Type.WEB:
-    case UserP.Service_Spec_Type.DNS:
-      return Globe;
-    case UserP.Service_Spec_Type.SSH:
-      return Terminal;
-    case UserP.Service_Spec_Type.POSTGRES:
-    case UserP.Service_Spec_Type.MYSQL:
-      return Database;
-    case UserP.Service_Spec_Type.KUBERNETES:
-      return Boxes;
-    case UserP.Service_Spec_Type.MCP:
-    case UserP.Service_Spec_Type.LLM:
-      return Bot;
-    case UserP.Service_Spec_Type.TCP:
-    case UserP.Service_Spec_Type.UDP:
-    case UserP.Service_Spec_Type.GRPC:
-      return Cable;
-    case UserP.Service_Spec_Type.SOCKS5:
-      return ShieldCheck;
-    case UserP.Service_Spec_Type.RDP_WEB:
-      return Monitor;
-    default:
-      return Server;
-  }
+const SERVICE_ICONS: Partial<Record<UserP.Service_Spec_Type, LucideIcon>> = {
+  [UserP.Service_Spec_Type.HTTP]: Globe,
+  [UserP.Service_Spec_Type.WEB]: Globe,
+  [UserP.Service_Spec_Type.DNS]: Globe,
+  [UserP.Service_Spec_Type.SSH]: Terminal,
+  [UserP.Service_Spec_Type.POSTGRES]: Database,
+  [UserP.Service_Spec_Type.MYSQL]: Database,
+  [UserP.Service_Spec_Type.KUBERNETES]: Boxes,
+  [UserP.Service_Spec_Type.MCP]: Bot,
+  [UserP.Service_Spec_Type.LLM]: Bot,
+  [UserP.Service_Spec_Type.TCP]: Cable,
+  [UserP.Service_Spec_Type.UDP]: Cable,
+  [UserP.Service_Spec_Type.GRPC]: Cable,
+  [UserP.Service_Spec_Type.SOCKS5]: ShieldCheck,
+  [UserP.Service_Spec_Type.RDP_WEB]: Monitor,
 };
 
-export const resourceIcon = (kind: "Service" | "Catalog" | "Unknown") =>
-  kind === "Catalog" ? Layers : Server;
+export const ServiceTypeIcon = ({
+  serviceType,
+  ...props
+}: LucideProps & { serviceType?: UserP.Service_Spec_Type }) => {
+  const Icon = serviceType === undefined ? Server : SERVICE_ICONS[serviceType] ?? Server;
+  return <Icon {...props} />;
+};
+
+export const ResourceIcon = ({
+  kind,
+  ...props
+}: LucideProps & { kind: "Service" | "Catalog" | "Unknown" }) => {
+  const Icon = kind === "Catalog" ? Layers : Server;
+  return <Icon {...props} />;
+};

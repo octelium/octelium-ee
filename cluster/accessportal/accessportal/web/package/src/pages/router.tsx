@@ -8,7 +8,7 @@ import Root from "./index";
 import routerReviewer from "./reviewer/routes";
 import routerUser from "./user/routes";
 
-export default (): RouteObject => {
+const rootRoutes = (): RouteObject => {
   return {
     path: "/",
     element: <Root />,
@@ -35,3 +35,5 @@ export default (): RouteObject => {
     ],
   };
 };
+
+export default rootRoutes;

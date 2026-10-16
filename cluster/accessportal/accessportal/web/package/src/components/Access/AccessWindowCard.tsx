@@ -3,7 +3,7 @@ import { Button } from "@mantine/core";
 import { KeyRound, RotateCcw } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { AbsoluteTime, Countdown, absoluteLabel, useNow } from "@/components/TimeAgo";
+import { AbsoluteTime, Countdown } from "@/components/TimeAgo";
 import {
   Eyebrow,
   InfoGrid,
@@ -19,6 +19,7 @@ import {
   newRequestHref,
   tsToDate,
 } from "@/utils";
+import { absoluteLabel, useNow } from "@/utils/time";
 
 const AccessWindowCard = (props: {
   request: AccessP.Request;

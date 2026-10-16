@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { twMerge } from "@/lib/utils";
 
 import { Tone, decisionMeta, statusMeta, toneClasses, urgencyMeta } from "../utils";
-import { describeRpcError, rpcErrorCode } from "../utils/rpcError";
+import { describeRpcError } from "../utils/rpcError";
 
 export const DocumentTitle = (props: { title: string }) => (
   <title>{`${props.title} · Octelium Access Portal`}</title>
@@ -762,11 +762,6 @@ export const EmptyState = (props: {
   </div>
 );
 
-export const isNotFoundError = (error: unknown) => {
-  const code = rpcErrorCode(error);
-  return code === "NOT_FOUND" || code === "PERMISSION_DENIED";
-};
-
 export const ErrorState = (props: {
   title?: string;
   description?: string;
@@ -830,6 +825,7 @@ export const ConfirmDialog = (props: {
   title: string;
   description: React.ReactNode;
   confirmLabel: string;
+  cancelLabel?: string;
   loading?: boolean;
   danger?: boolean;
   details?: React.ReactNode;
@@ -861,7 +857,7 @@ export const ConfirmDialog = (props: {
     )}
     <div className="mt-6 flex items-center justify-end gap-2">
       <Button variant="default" onClick={props.onClose} disabled={props.loading}>
-        Cancel
+        {props.cancelLabel ?? "Cancel"}
       </Button>
       <Button
         variant="filled"

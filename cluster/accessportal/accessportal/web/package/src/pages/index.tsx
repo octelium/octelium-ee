@@ -2,6 +2,7 @@ import Footer from "@/components/Footer";
 import PortalShell from "@/components/SideBar/Shell";
 import TopBar from "@/components/TopBar";
 import { Toaster } from "@/components/ui/sonner";
+import { Loading } from "@/ui";
 import { setStatus } from "@/features/settings/slice";
 import { useAppDispatch } from "@/utils/hooks";
 import { getUserMainClient } from "@/utils/client";
@@ -14,7 +15,7 @@ import "@fontsource/ubuntu/400.css";
 import "@fontsource/ubuntu/500.css";
 import "@fontsource/ubuntu/700.css";
 
-export default () => {
+const Root = () => {
   const dispatch = useAppDispatch();
 
   const statusQry = useQuery({
@@ -54,7 +55,9 @@ export default () => {
       </a>
 
       <PortalShell header={<TopBar />}>
-        <Outlet />
+        <React.Suspense fallback={<Loading label="Loading page…" />}>
+          <Outlet />
+        </React.Suspense>
         <Footer />
       </PortalShell>
 
@@ -65,3 +68,5 @@ export default () => {
     </div>
   );
 };
+
+export default Root;
