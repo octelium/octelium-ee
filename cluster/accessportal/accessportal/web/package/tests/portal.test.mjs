@@ -270,10 +270,143 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
 
     it("rejects fractional durations before they reach the API", async () => {
       await load();
+      await page.getByRole("button", { name: "Custom duration", exact: true }).click();
       const amount = page.getByRole("textbox", { name: "Duration amount", exact: true });
       await amount.fill("");
       await amount.pressSequentially("1.5");
       assert.equal((await amount.inputValue()).includes("."), false);
+    });
+
+    it("offers the access duration presets in both themes", async () => {
+      await load();
+      const duration = page.getByRole("group", { name: "Duration", exact: true });
+      const summary = page.locator("section", { has: page.getByRole("heading", { name: "Access details", exact: true }) })
+        .locator("p", { hasText: "Alice Morgan" });
+      const presets = ["30 minutes", "1 hour", "4 hours", "8 hours", "1 day"];
+      for (const colorScheme of ["light", "dark"]) {
+        await page.emulateMedia({ colorScheme });
+        await page.waitForFunction((value) => document.documentElement.dataset.mantineColorScheme === value, colorScheme);
+        await duration.getByRole("button", { name: "1 hour", exact: true }).click();
+        assert.equal(await duration.getByRole("button", { name: "1 hour", exact: true }).getAttribute("aria-pressed"), "true");
+        assert.equal(await page.getByRole("textbox", { name: "Duration amount", exact: true }).count(), 0);
+        for (const label of presets) {
+          const preset = duration.getByRole("button", { name: label, exact: true });
+          await preset.click();
+          assert.equal(await preset.getAttribute("aria-pressed"), "true");
+          assert.equal(await duration.locator('[aria-pressed="true"]').count(), 1);
+          assert.ok((await summary.textContent()).includes(label));
+        }
+      }
+      assert.equal((await page.evaluate(() => window.calls)).some((call) => call.method === "createRequest"), false);
+    });
+
+    it("applies custom durations explicitly and discards canceled changes", async () => {
+      await load();
+      const custom = page.getByRole("button", { name: "Custom duration", exact: true });
+      const dialog = page.getByRole("dialog", { name: "Custom duration", exact: true });
+      const amount = dialog.getByRole("textbox", { name: "Duration amount", exact: true });
+      const unit = dialog.getByRole("combobox", { name: "Duration unit", exact: true });
+      await custom.click();
+      assert.equal(await amount.inputValue(), "1");
+      assert.equal(await unit.inputValue(), "Hours");
+      await amount.fill("3");
+      assert.equal(await warnsBeforeUnload(), false);
+      await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+      await dialog.waitFor({ state: "hidden" });
+      assert.equal(await warnsBeforeUnload(), false);
+      await custom.click();
+      assert.equal(await amount.inputValue(), "1");
+      await amount.fill("90");
+      await unit.click();
+      await page.getByRole("option", { name: "Minutes", exact: true }).click();
+      await dialog.getByText("Access for 90 minutes", { exact: true }).waitFor();
+      await dialog.getByRole("button", { name: "Apply duration", exact: true }).click();
+      await dialog.waitFor({ state: "hidden" });
+      await page.getByText("Custom duration: 90 minutes", { exact: true }).waitFor();
+      assert.equal(await custom.getAttribute("aria-pressed"), "true");
+      assert.equal(await warnsBeforeUnload(), true);
+      await custom.click();
+      assert.equal(await amount.inputValue(), "90");
+      assert.equal(await unit.inputValue(), "Minutes");
+      await amount.fill("120");
+      await page.keyboard.press("Escape");
+      await dialog.waitFor({ state: "hidden" });
+      await page.getByText("Custom duration: 90 minutes", { exact: true }).waitFor();
+      await custom.click();
+      assert.equal(await amount.inputValue(), "90");
+    });
+
+    it("requires a positive custom duration and supports keyboard apply", async () => {
+      await load();
+      const custom = page.getByRole("button", { name: "Custom duration", exact: true });
+      await custom.focus();
+      await page.keyboard.press("Enter");
+      const dialog = page.getByRole("dialog", { name: "Custom duration", exact: true });
+      const amount = dialog.getByRole("textbox", { name: "Duration amount", exact: true });
+      const apply = dialog.getByRole("button", { name: "Apply duration", exact: true });
+      await amount.fill("");
+      assert.equal(await apply.isDisabled(), true);
+      await dialog.getByText("Enter a whole number from 1 to 100,000", { exact: true }).waitFor();
+      await amount.press("Enter");
+      assert.equal(await dialog.isVisible(), true);
+      assert.equal(await warnsBeforeUnload(), false);
+      await amount.fill("6");
+      await amount.press("Enter");
+      await dialog.waitFor({ state: "hidden" });
+      await page.getByText("Custom duration: 6 hours", { exact: true }).waitFor();
+      assert.equal(await custom.evaluate((element) => element === document.activeElement), true);
+    });
+
+    it("edits existing custom durations without submitting the request form", async () => {
+      await load("/user/requests/own-pending");
+      await page.getByRole("button", { name: "Edit", exact: true }).click();
+      const edit = page.getByRole("dialog", { name: "Edit pending request", exact: true });
+      await edit.getByText("Custom duration: 2 hours", { exact: true }).waitFor();
+      await edit.getByRole("button", { name: "Custom duration", exact: true }).click();
+      const custom = page.getByRole("dialog", { name: "Custom duration", exact: true });
+      const amount = custom.getByRole("textbox", { name: "Duration amount", exact: true });
+      assert.equal(await amount.inputValue(), "2");
+      await amount.fill("3");
+      await custom.getByRole("combobox", { name: "Duration unit", exact: true }).click();
+      await page.keyboard.press("Escape");
+      await page.getByRole("listbox").waitFor({ state: "hidden" });
+      assert.equal(await custom.isVisible(), true);
+      await amount.focus();
+      await page.keyboard.press("Escape");
+      await custom.waitFor({ state: "hidden" });
+      assert.equal(await edit.isVisible(), true);
+      assert.equal(await warnsBeforeUnload(), false);
+      await edit.getByRole("button", { name: "Custom duration", exact: true }).click();
+      assert.equal(await amount.inputValue(), "2");
+      await amount.fill("24");
+      await amount.press("Enter");
+      await custom.waitFor({ state: "hidden" });
+      assert.equal(await edit.getByRole("button", { name: "1 day", exact: true }).getAttribute("aria-pressed"), "true");
+      assert.equal((await page.evaluate(() => window.calls)).some((call) => call.method === "updateRequest"), false);
+      await edit.getByRole("button", { name: "Save changes", exact: true }).click();
+      await edit.waitFor({ state: "hidden" });
+      const update = (await page.evaluate(() => window.calls)).find((call) => call.method === "updateRequest");
+      assert.equal(update.request.spec.duration.type.oneofKind, "hours");
+      assert.equal(update.request.spec.duration.type.hours, 24);
+    });
+
+    it("keeps duration presets and the custom popover within narrow screens", async () => {
+      await page.setViewportSize({ width: 320, height: 844 });
+      await load();
+      const duration = page.getByRole("group", { name: "Duration", exact: true });
+      const custom = duration.getByRole("button", { name: "Custom duration", exact: true });
+      for (const colorScheme of ["light", "dark"]) {
+        await page.emulateMedia({ colorScheme });
+        await custom.click();
+        const dialog = page.getByRole("dialog", { name: "Custom duration", exact: true });
+        await dialog.getByRole("textbox", { name: "Duration amount", exact: true }).waitFor();
+        const bounds = await dialog.boundingBox();
+        assert.ok(bounds.x >= 0);
+        assert.ok(bounds.x + bounds.width <= 320);
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+        await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+        await dialog.waitFor({ state: "hidden" });
+      }
     });
 
     it("shows the recipient only for requests made on behalf of another user", async () => {
@@ -384,12 +517,12 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
     it("does not warn after new request fields are restored", async () => {
       await load();
       const reason = page.getByRole("textbox", { name: /Justification/ });
-      const amount = page.getByRole("textbox", { name: "Duration amount", exact: true });
       await reason.fill("Temporary draft");
-      await amount.fill("2");
+      await page.getByRole("button", { name: "4 hours", exact: true }).click();
       assert.equal(await warnsBeforeUnload(), true);
       await reason.fill("");
-      await amount.fill("1");
+      assert.equal(await warnsBeforeUnload(), true);
+      await page.getByRole("button", { name: "1 hour", exact: true }).click();
       assert.equal(await warnsBeforeUnload(), false);
       await page.getByRole("link", { name: "Settings", exact: true }).click();
       await page.getByRole("heading", { name: "Settings", exact: true }).waitFor();
@@ -433,6 +566,7 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
     it("submits a new request without a discard prompt", async () => {
       await load();
       await page.getByRole("button", { name: /Database/ }).click();
+      await page.getByRole("button", { name: "30 minutes", exact: true }).click();
       await page.getByRole("textbox", { name: /Justification/ }).fill("Investigating an incident");
       await page.getByRole("button", { name: "Submit Request", exact: true }).click();
       await page.getByRole("dialog", { name: "Submit this access request?", exact: true })
@@ -441,6 +575,9 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
       await page.getByRole("heading", { name: "default.database", exact: true }).waitFor();
       assert.equal(await discardDialog().count(), 0);
       assert.equal(await warnsBeforeUnload(), false);
+      const create = (await page.evaluate(() => window.calls)).find((call) => call.method === "createRequest");
+      assert.equal(create.request.spec.duration.type.oneofKind, "minutes");
+      assert.equal(create.request.spec.duration.type.minutes, 30);
     });
 
     it("keeps a failed submission protected", async () => {

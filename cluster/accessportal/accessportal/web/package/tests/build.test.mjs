@@ -84,6 +84,13 @@ describe("Production access portal", () => {
 
         await page.getByRole("button", { name: "Edit", exact: true }).click();
         const edit = page.getByRole("dialog", { name: "Edit pending request", exact: true });
+        await edit.getByRole("button", { name: "Custom duration", exact: true }).click();
+        const custom = page.getByRole("dialog", { name: "Custom duration", exact: true });
+        const amount = custom.getByRole("textbox", { name: "Duration amount", exact: true });
+        await amount.fill("6");
+        await amount.press("Enter");
+        await custom.waitFor({ state: "hidden" });
+        await edit.getByText("Custom duration: 6 hours", { exact: true }).waitFor();
         await edit.getByRole("textbox", { name: /Justification/ }).fill("Production draft");
         await edit.getByRole("button", { name: "Discard", exact: true }).click();
         await page.getByRole("dialog", { name: "Discard unsaved changes?", exact: true })
