@@ -292,13 +292,14 @@ const textEncoder = new TextEncoder();
 export const utf8Length = (value: string): number =>
   textEncoder.encode(value).length;
 
-const DURATION_UNITS = ["minutes", "hours", "days"] as const;
+const DURATION_UNITS = ["minutes", "hours", "days", "weeks"] as const;
 export type DurationUnit = (typeof DURATION_UNITS)[number];
 
 export const DURATION_UNIT_OPTIONS = [
   { value: "minutes", label: "Minutes" },
   { value: "hours", label: "Hours" },
   { value: "days", label: "Days" },
+  { value: "weeks", label: "Weeks" },
 ];
 
 const DURATION_UNIT_SECONDS: Record<string, number> = {
@@ -346,6 +347,8 @@ export const partsToDuration = (
       return MetaP.Duration.create({ type: { oneofKind: unit, hours: value } });
     case "days":
       return MetaP.Duration.create({ type: { oneofKind: unit, days: value } });
+    case "weeks":
+      return MetaP.Duration.create({ type: { oneofKind: unit, weeks: value } });
   }
 };
 

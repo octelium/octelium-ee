@@ -357,6 +357,37 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
       assert.equal(await custom.evaluate((element) => element === document.activeElement), true);
     });
 
+    for (const [label, kind] of [["Days", "days"], ["Weeks", "weeks"]]) {
+      it(`submits custom access durations in ${kind}`, async () => {
+        await load();
+        await page.getByRole("button", { name: /Database/ }).click();
+        const trigger = page.getByRole("button", { name: "Custom duration", exact: true });
+        const dialog = page.getByRole("dialog", { name: "Custom duration", exact: true });
+        const amount = dialog.getByRole("textbox", { name: "Duration amount", exact: true });
+        const unit = dialog.getByRole("combobox", { name: "Duration unit", exact: true });
+        await trigger.click();
+        await amount.fill("2");
+        await unit.click();
+        await page.getByRole("option", { name: label, exact: true }).click();
+        await dialog.getByText(`Access for 2 ${kind}`, { exact: true }).waitFor();
+        await dialog.getByRole("button", { name: "Apply duration", exact: true }).click();
+        await dialog.waitFor({ state: "hidden" });
+        await page.getByText(`Custom duration: 2 ${kind}`, { exact: true }).waitFor();
+        await trigger.click();
+        assert.equal(await amount.inputValue(), "2");
+        assert.equal(await unit.inputValue(), label);
+        await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+        await dialog.waitFor({ state: "hidden" });
+        await page.getByRole("button", { name: "Submit Request", exact: true }).click();
+        await page.getByRole("dialog", { name: "Submit this access request?", exact: true })
+          .getByRole("button", { name: "Submit request", exact: true }).click();
+        await page.getByText("Access request submitted", { exact: true }).waitFor();
+        const create = (await page.evaluate(() => window.calls)).find((call) => call.method === "createRequest");
+        assert.equal(create.request.spec.duration.type.oneofKind, kind);
+        assert.equal(create.request.spec.duration.type[kind], 2);
+      });
+    }
+
     it("edits existing custom durations without submitting the request form", async () => {
       await load("/user/requests/own-pending");
       await page.getByRole("button", { name: "Edit", exact: true }).click();
