@@ -197,6 +197,8 @@ To publish manually, run the workflow from GitHub Actions, select the branch or 
 
 Run `npm run test:publish` to check publishing version resolution.
 
+Pi's companion packages are pinned as direct dependencies because Workspace installs through `npx` do not use this repository's `package-lock.json`. Update the Pi packages together to keep their APIs compatible. After building, run `npm run test:package` to pack the agent, install it in a temporary directory and check the CLI and HTTP server startup. This check downloads dependencies from npm and runs before publishing.
+
 ## Development
 
 ```bash

@@ -37,6 +37,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test \"src/**/*.test.ts\"",
     "test:publish": "node --test scripts/publish-version.test.mjs",
+    "test:package": "node --test scripts/package.test.mjs",
     "fmt": "prettier --write src",
     "protoc": "mkdir -p ./apis && protoc --proto_path ../../ --include_imports --include_source_info --descriptor_set_out ./apis/octelium.binpb apis/protobuf/main/corev1/corev1.proto apis/protobuf/main/userv1/userv1.proto apis/protobuf/main/enterprisev1/enterprisev1.proto apis/protobuf/main/accessv1/accessv1.proto apis/protobuf/main/cordiumv1/cordiumv1.proto apis/protobuf/main/visibilityv1/visibilityv1.proto apis/protobuf/main/visibilityv1/core/vcorev1.proto apis/protobuf/main/visibilityv1/enterprise/venterprisev1.proto apis/protobuf/main/visibilityv1/access/vaccessv1.proto apis/protobuf/main/visibilityv1/cordium/vcordiumv1.proto apis/protobuf/main/visibilityv1/metrics/vmetricsv1.proto apis/protobuf/main/visibilityv1/llm/vllmv1.proto"
   },
@@ -44,8 +45,14 @@
     "@bufbuild/protobuf": "2.16.0",
     "@connectrpc/connect": "2.2.0",
     "@connectrpc/connect-node": "2.2.0",
+    "@earendil-works/chord": "1.0.1",
+    "@earendil-works/pi-agent-core": "1.0.1",
     "@earendil-works/pi-ai": "1.0.1",
+    "@earendil-works/pi-codemode": "1.0.1",
     "@earendil-works/pi-coding-agent": "1.0.1",
+    "@earendil-works/pi-mcp": "1.0.1",
+    "@earendil-works/pi-telemetry": "1.0.1",
+    "@earendil-works/pi-tui": "1.0.1",
     "typebox": "1.3.27"
   },
   "devDependencies": {
