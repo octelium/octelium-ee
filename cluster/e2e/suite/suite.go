@@ -50,6 +50,7 @@ func Phases() []suite.Phase {
 		{Name: "AccessReviewerMembership", Run: testAccessReviewerMembership},
 		{Name: "AccessCatalogResources", Run: testAccessCatalogResources},
 		{Name: "AccessUIDBinding", Run: testAccessUIDBinding},
+		{Name: "AccessPolicyPriority", Run: testAccessPolicyPriority},
 		{Name: "AccessAPIScoping", Run: testAccessAPIScoping},
 		{Name: "AccessActorTrail", Run: testAccessActorTrail},
 		{Name: "AccessPortal", Run: testAccessPortal},

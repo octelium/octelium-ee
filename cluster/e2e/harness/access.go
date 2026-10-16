@@ -100,6 +100,22 @@ func GroupSubject(grp *corev1.Group) *accessv1.Policy_Spec_Rule_Condition {
 	}
 }
 
+func UserRequester(usr *corev1.User) *accessv1.Policy_Spec_Rule_Condition {
+	return &accessv1.Policy_Spec_Rule_Condition{
+		Type: &accessv1.Policy_Spec_Rule_Condition_UserRef{
+			UserRef: umetav1.GetObjectReference(usr),
+		},
+	}
+}
+
+func CELMatch(exp string) *accessv1.Policy_Spec_Rule_Condition {
+	return &accessv1.Policy_Spec_Rule_Condition{
+		Type: &accessv1.Policy_Spec_Rule_Condition_Match{
+			Match: exp,
+		},
+	}
+}
+
 func AllOf(conds ...*accessv1.Policy_Spec_Rule_Condition) *accessv1.Policy_Spec_Rule_Condition {
 	return &accessv1.Policy_Spec_Rule_Condition{
 		Type: &accessv1.Policy_Spec_Rule_Condition_All_{
@@ -192,6 +208,13 @@ func (h *H) CreateAccessPolicy(t *testing.T,
 	rules ...*accessv1.Policy_Spec_Rule) *accessv1.Policy {
 	t.Helper()
 
+	return h.CreateNamedAccessPolicy(t, h.Name(), rules...)
+}
+
+func (h *H) CreateNamedAccessPolicy(t *testing.T, name string,
+	rules ...*accessv1.Policy_Spec_Rule) *accessv1.Policy {
+	t.Helper()
+
 	ctx, cancel := h.Ctx(t)
 	defer cancel()
 
@@ -200,7 +223,7 @@ func (h *H) CreateAccessPolicy(t *testing.T,
 	}
 
 	ret, err := h.AccessC().CreatePolicy(ctx, &accessv1.Policy{
-		Metadata: &metav1.Metadata{Name: h.Name()},
+		Metadata: &metav1.Metadata{Name: name},
 		Spec:     &accessv1.Policy_Spec{Rules: rules},
 	})
 	if err != nil {

@@ -134,7 +134,7 @@ func Run(ctx context.Context) error {
 	}
 
 	{
-		ctl, err := requests.NewController(ctx, octeliumC)
+		ctl, err := requests.NewController(ctx, octeliumC, celEngine)
 		if err != nil {
 			return err
 		}

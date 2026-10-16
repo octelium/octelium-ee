@@ -20,6 +20,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/celengine"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
@@ -35,7 +36,10 @@ func newControllerTest(t *testing.T) (context.Context, *Controller, octeliumc.Cl
 		tst.Destroy()
 	})
 
-	ctrl, err := NewController(ctx, tst.C.OcteliumC)
+	celEngine, err := celengine.New(ctx, nil)
+	assert.Nil(t, err)
+
+	ctrl, err := NewController(ctx, tst.C.OcteliumC, celEngine)
 	assert.Nil(t, err)
 
 	return ctx, ctrl, tst.C.OcteliumC
@@ -63,6 +67,26 @@ func fakeServiceRef() *metav1.ObjectReference {
 	return objRef("Service")
 }
 
+func createUserRef(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInterface) *metav1.ObjectReference {
+	usr, err := octeliumC.CoreC().CreateUser(ctx, &corev1.User{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec: &corev1.User_Spec{
+			Type: corev1.User_Spec_HUMAN,
+		},
+		Status: &corev1.User_Status{},
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	return &metav1.ObjectReference{
+		ApiVersion: "core/v1",
+		Kind:       "User",
+		Name:       usr.Metadata.Name,
+		Uid:        usr.Metadata.Uid,
+	}
+}
+
 func createService(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInterface) *corev1.Service {
 	svc, err := octeliumC.CoreC().CreateService(ctx, &corev1.Service{
 		Metadata: &metav1.Metadata{
@@ -79,6 +103,32 @@ func matchAny() *accessv1.Policy_Spec_Rule_Condition {
 	return &accessv1.Policy_Spec_Rule_Condition{
 		Type: &accessv1.Policy_Spec_Rule_Condition_MatchAny{
 			MatchAny: true,
+		},
+	}
+}
+
+func celMatch(exp string) *accessv1.Policy_Spec_Rule_Condition {
+	return &accessv1.Policy_Spec_Rule_Condition{
+		Type: &accessv1.Policy_Spec_Rule_Condition_Match{
+			Match: exp,
+		},
+	}
+}
+
+func requesterCondition(ref *metav1.ObjectReference) *accessv1.Policy_Spec_Rule_Condition {
+	return &accessv1.Policy_Spec_Rule_Condition{
+		Type: &accessv1.Policy_Spec_Rule_Condition_UserRef{
+			UserRef: ref,
+		},
+	}
+}
+
+func allOf(conds ...*accessv1.Policy_Spec_Rule_Condition) *accessv1.Policy_Spec_Rule_Condition {
+	return &accessv1.Policy_Spec_Rule_Condition{
+		Type: &accessv1.Policy_Spec_Rule_Condition_All_{
+			All: &accessv1.Policy_Spec_Rule_Condition_All{
+				Of: conds,
+			},
 		},
 	}
 }
@@ -142,9 +192,13 @@ func baseRequest(uref *metav1.ObjectReference, svcRef *metav1.ObjectReference) *
 }
 
 func createPolicy(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInterface, disabled bool, rules ...*accessv1.Policy_Spec_Rule) *accessv1.Policy {
+	return createNamedPolicy(t, ctx, octeliumC, utilrand.GetRandomStringCanonical(8), disabled, rules...)
+}
+
+func createNamedPolicy(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInterface, name string, disabled bool, rules ...*accessv1.Policy_Spec_Rule) *accessv1.Policy {
 	pol, err := octeliumC.AccessC().CreatePolicy(ctx, &accessv1.Policy{
 		Metadata: &metav1.Metadata{
-			Name: utilrand.GetRandomStringCanonical(8),
+			Name: name,
 		},
 		Spec: &accessv1.Policy_Spec{
 			IsDisabled: disabled,
@@ -444,6 +498,126 @@ func TestRequestPriorityOrder(t *testing.T) {
 	assert.Equal(t, accessv1.Policy_Spec_Rule_AUTO_APPROVE, reqG.Status.Rule.Effect)
 }
 
+func TestRequestPriorityAcrossPolicies(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	svc := createService(t, ctx, octeliumC)
+	requester := createUserRef(t, ctx, octeliumC)
+
+	defaultPol := createNamedPolicy(t, ctx, octeliumC,
+		fmt.Sprintf("a-%s", utilrand.GetRandomStringCanonical(6)), false,
+		&accessv1.Policy_Spec_Rule{
+			Name:      "default",
+			Effect:    accessv1.Policy_Spec_Rule_REVIEW,
+			Condition: matchAny(),
+			Action:    reviewAction(anyStep(userReviewer(objRef("User")))),
+		})
+
+	autoPol := createNamedPolicy(t, ctx, octeliumC,
+		fmt.Sprintf("z-%s", utilrand.GetRandomStringCanonical(6)), false,
+		&accessv1.Policy_Spec_Rule{
+			Name:     utilrand.GetRandomStringCanonical(6),
+			Effect:   accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+			Priority: -1,
+			Condition: allOf(
+				requesterCondition(requester),
+				celMatch(`time.isWeekdayInTZ(now(), "Africa/Cairo") || time.isWeekendInTZ(now(), "Africa/Cairo")`),
+			),
+		})
+
+	reqMatch := createRequest(t, ctx, octeliumC, baseRequest(requester, serviceRef(svc)))
+	reqMatchG := converge(t, ctx, ctrl, octeliumC, reqMatch.Metadata.Uid)
+
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqMatchG.Status.State.Status)
+	assert.Equal(t, autoPol.Metadata.Uid, reqMatchG.Status.PolicyRef.Uid)
+	assert.Equal(t, autoPol.Spec.Rules[0].Name, reqMatchG.Status.Rule.Name)
+	assert.Nil(t, reqMatchG.Status.Review)
+
+	reqMiss := createRequest(t, ctx, octeliumC, baseRequest(createUserRef(t, ctx, octeliumC), serviceRef(svc)))
+	reqMissG := converge(t, ctx, ctrl, octeliumC, reqMiss.Metadata.Uid)
+
+	assert.Equal(t, accessv1.Request_Status_State_PENDING, reqMissG.Status.State.Status)
+	assert.Equal(t, defaultPol.Metadata.Uid, reqMissG.Status.PolicyRef.Uid)
+	assert.Equal(t, "default", reqMissG.Status.Rule.Name)
+}
+
+func TestRequestPriorityTieBreak(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	svc := createService(t, ctx, octeliumC)
+
+	createNamedPolicy(t, ctx, octeliumC,
+		fmt.Sprintf("z-%s", utilrand.GetRandomStringCanonical(6)), false,
+		&accessv1.Policy_Spec_Rule{
+			Name:      "last-policy",
+			Effect:    accessv1.Policy_Spec_Rule_DENY,
+			Condition: matchAny(),
+		})
+
+	firstPol := createNamedPolicy(t, ctx, octeliumC,
+		fmt.Sprintf("a-%s", utilrand.GetRandomStringCanonical(6)), false,
+		&accessv1.Policy_Spec_Rule{
+			Name:      "first-rule",
+			Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+			Condition: matchAny(),
+		},
+		&accessv1.Policy_Spec_Rule{
+			Name:      "second-rule",
+			Effect:    accessv1.Policy_Spec_Rule_DENY,
+			Condition: matchAny(),
+		})
+
+	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), serviceRef(svc)))
+	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
+
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
+	assert.Equal(t, firstPol.Metadata.Uid, reqG.Status.PolicyRef.Uid)
+	assert.Equal(t, "first-rule", reqG.Status.Rule.Name)
+}
+
+func TestGetSortedPolicyRules(t *testing.T) {
+	newPol := func(name string, disabled bool, rules ...*accessv1.Policy_Spec_Rule) *accessv1.Policy {
+		return &accessv1.Policy{
+			Metadata: &metav1.Metadata{
+				Name: name,
+			},
+			Spec: &accessv1.Policy_Spec{
+				IsDisabled: disabled,
+				Rules:      rules,
+			},
+		}
+	}
+
+	newRule := func(name string, priority int32) *accessv1.Policy_Spec_Rule {
+		return &accessv1.Policy_Spec_Rule{
+			Name:     name,
+			Priority: priority,
+		}
+	}
+
+	rules := getSortedPolicyRules([]*accessv1.Policy{
+		newPol("default", false, newRule("default", 0)),
+		nil,
+		newPol("usr1-weekday-auto-approve", false,
+			newRule("usr1-weekdays-cairo", -1), nil, newRule("usr1-late", 5)),
+		newPol("disabled", true, newRule("disabled", -100)),
+		newPol("break-glass", false, newRule("deny-all", 0), newRule("deny-first", -10)),
+	})
+
+	var names []string
+	for _, itm := range rules {
+		names = append(names, fmt.Sprintf("%s/%s", itm.pol.Metadata.Name, itm.rule.Name))
+	}
+
+	assert.Equal(t, []string{
+		"break-glass/deny-first",
+		"usr1-weekday-auto-approve/usr1-weekdays-cairo",
+		"break-glass/deny-all",
+		"default/default",
+		"usr1-weekday-auto-approve/usr1-late",
+	}, names)
+}
+
 func TestRequestSubjectUserRefCondition(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
@@ -586,21 +760,91 @@ func TestRequestReviewCountZero(t *testing.T) {
 func TestRequestCELMatch(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
-		Name:   utilrand.GetRandomStringCanonical(6),
-		Effect: accessv1.Policy_Spec_Rule_AUTO_APPROVE,
-		Condition: &accessv1.Policy_Spec_Rule_Condition{
-			Type: &accessv1.Policy_Spec_Rule_Condition_Match{
-				Match: "true",
-			},
-		},
+	svc := createService(t, ctx, octeliumC)
+
+	pol := createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition: celMatch("true"),
 		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
 			Policies: []string{utilrand.GetRandomStringCanonical(6)},
 		},
 	})
 
+	req := createRequest(t, ctx, octeliumC, baseRequest(createUserRef(t, ctx, octeliumC), serviceRef(svc)))
+	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
+
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
+	assert.Equal(t, pol.Metadata.Uid, reqG.Status.PolicyRef.Uid)
+}
+
+func TestRequestCELMatchFallsThrough(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	createPolicy(t, ctx, octeliumC, false,
+		&accessv1.Policy_Spec_Rule{
+			Name:      utilrand.GetRandomStringCanonical(6),
+			Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+			Priority:  -1,
+			Condition: celMatch("false"),
+		},
+		&accessv1.Policy_Spec_Rule{
+			Name:      utilrand.GetRandomStringCanonical(6),
+			Effect:    accessv1.Policy_Spec_Rule_DENY,
+			Condition: matchAny(),
+		},
+	)
+
+	req := createRequest(t, ctx, octeliumC, baseRequest(createUserRef(t, ctx, octeliumC), fakeServiceRef()))
+	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
+
+	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqG.Status.State.Status)
+	assert.Equal(t, accessv1.Policy_Spec_Rule_DENY, reqG.Status.Rule.Effect)
+}
+
+func TestRequestCELMatchContext(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	svc := createService(t, ctx, octeliumC)
+
+	userRef := createUserRef(t, ctx, octeliumC)
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:   utilrand.GetRandomStringCanonical(6),
+		Effect: accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition: celMatch(fmt.Sprintf(
+			`ctx.user.metadata.name == "%s" && ctx.request.spec.resource.serviceRef.uid == "%s"`,
+			userRef.Name, svc.Metadata.Uid)),
+	})
+
+	reqMatch := createRequest(t, ctx, octeliumC, baseRequest(userRef, serviceRef(svc)))
+	reqMatchG := converge(t, ctx, ctrl, octeliumC, reqMatch.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqMatchG.Status.State.Status)
+
+	reqOtherSvc := createRequest(t, ctx, octeliumC, baseRequest(userRef, fakeServiceRef()))
+	reqOtherSvcG := converge(t, ctx, ctrl, octeliumC, reqOtherSvc.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqOtherSvcG.Status.State.Status)
+
+	reqOtherUser := createRequest(t, ctx, octeliumC, baseRequest(createUserRef(t, ctx, octeliumC), serviceRef(svc)))
+	reqOtherUserG := converge(t, ctx, ctrl, octeliumC, reqOtherUser.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqOtherUserG.Status.State.Status)
+	assert.Nil(t, reqOtherUserG.Status.Rule)
+}
+
+func TestRequestCELMatchInvalid(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition: celMatch("ctx.request.("),
+	})
+
 	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), fakeServiceRef()))
 	assert.NotNil(t, ctrl.OnAdd(ctx, req))
+
+	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Nil(t, reqG.Status.Rule)
 }
 
 func TestRequestExpire(t *testing.T) {

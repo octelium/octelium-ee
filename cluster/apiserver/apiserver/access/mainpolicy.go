@@ -19,6 +19,7 @@ import (
 	apisrvcommon "github.com/octelium/octelium/cluster/apiserver/apiserver/common"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/serr"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
+	"github.com/octelium/octelium/cluster/common/celengine"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
 	"github.com/octelium/octelium/cluster/common/vutils"
@@ -353,8 +354,25 @@ func (s *ServerMain) validatePolicyCondition(ctx context.Context,
 			return grpcutils.InvalidArg("CEL match expression cannot be empty")
 		}
 
+		if err := validatePolicyMatch(ctx, cond.GetMatch()); err != nil {
+			return err
+		}
+
 	default:
 		return grpcutils.InvalidArg("Condition type must be set")
+	}
+
+	return nil
+}
+
+func validatePolicyMatch(ctx context.Context, exp string) error {
+	engine, err := celengine.New(ctx, &celengine.Opts{})
+	if err != nil {
+		return grpcutils.InternalWithErr(err)
+	}
+
+	if err := engine.AddPolicy(ctx, exp); err != nil {
+		return grpcutils.InvalidArgWithErr(err)
 	}
 
 	return nil

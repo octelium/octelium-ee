@@ -386,3 +386,73 @@ func testAccessUIDBinding(t *testing.T, ch *harness.H) {
 	assert.NotEqual(t, c.alpha.Metadata.Uid, replacement.Metadata.Uid)
 	h.Probe(t, c.alice.User, replacement).MustStayDenied(t, settleWindow)
 }
+
+func testAccessPolicyPriority(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	c := newAccessCast(t, h)
+
+	reviewPolicy := h.CreateNamedAccessPolicy(t, "a-"+h.Name(),
+		serviceReviewRule("default", c.alpha,
+			userReviewStep(eeharness.UserReviewer(c.rita.User))))
+
+	neverRule := serviceAutoApproveRule("never", c.alpha)
+	neverRule.Effect = accessv1.Policy_Spec_Rule_DENY
+	neverRule.Authorization = nil
+	neverRule.Priority = -2
+	neverRule.Condition = eeharness.AllOf(
+		eeharness.ServiceResource(c.alpha),
+		eeharness.CELMatch(`ctx.user.metadata.name == "`+c.mallory.User.Metadata.Name+`"`))
+
+	autoRule := serviceAutoApproveRule("alice-any-day", c.alpha)
+	autoRule.Priority = -1
+	autoRule.Condition = eeharness.AllOf(
+		eeharness.ServiceResource(c.alpha),
+		eeharness.UserRequester(c.alice.User),
+		eeharness.CELMatch(`time.isWeekdayInTZ(now(), 'Africa/Cairo') || time.isWeekendInTZ(now(), 'Africa/Cairo')`))
+
+	autoPolicy := h.CreateNamedAccessPolicy(t, "z-"+h.Name(), neverRule, autoRule)
+
+	probe := h.Probe(t, c.alice.User, c.alpha)
+	probe.MustBeDenied(t)
+
+	aliceReq := h.CreateRequest(t, c.alice,
+		eeharness.ServiceRequest(c.alpha, eeharness.Minutes(5)))
+	bobReq := h.CreateRequest(t, c.bob,
+		eeharness.ServiceRequest(c.alpha, eeharness.Minutes(5)))
+
+	approved := h.WaitRequestState(t, aliceReq, accessv1.Request_Status_State_APPROVED,
+		eeharness.RequestBudget)
+	pending := h.WaitRequestState(t, bobReq, accessv1.Request_Status_State_PENDING,
+		eeharness.RequestBudget)
+
+	t.Run("TheHigherPriorityRuleWinsAcrossPolicies", func(t *testing.T) {
+		require.NotNil(t, approved.Status.PolicyRef)
+		assert.Equal(t, autoPolicy.Metadata.Uid, approved.Status.PolicyRef.Uid)
+		require.NotNil(t, approved.Status.Rule)
+		assert.Equal(t, "alice-any-day", approved.Status.Rule.Name)
+		assert.Nil(t, approved.Status.Review)
+	})
+
+	t.Run("TheDataPlaneGrantsAccess", func(t *testing.T) {
+		probe.MustBeAllowed(t)
+	})
+
+	t.Run("UnmatchedRequestsFallThroughToTheLowerPriorityRule", func(t *testing.T) {
+		require.NotNil(t, pending.Status.PolicyRef)
+		assert.Equal(t, reviewPolicy.Metadata.Uid, pending.Status.PolicyRef.Uid)
+		require.NotNil(t, pending.Status.Rule)
+		assert.Equal(t, "default", pending.Status.Rule.Name)
+	})
+
+	t.Run("AnInvalidCELExpressionIsRejected", func(t *testing.T) {
+		rule := serviceAutoApproveRule("invalid-cel", c.alpha)
+		rule.Condition = eeharness.CELMatch(`time.isWeekdayInTZ(now(), `)
+
+		_, err := h.AccessC().CreatePolicy(t.Context(), &accessv1.Policy{
+			Metadata: &metav1.Metadata{Name: h.Name()},
+			Spec:     &accessv1.Policy_Spec{Rules: []*accessv1.Policy_Spec_Rule{rule}},
+		})
+		require.NotNil(t, err)
+		assert.True(t, grpcerr.IsInvalidArg(err))
+	})
+}

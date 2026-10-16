@@ -20,6 +20,7 @@ import (
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
+	"github.com/octelium/octelium/cluster/common/celengine"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
@@ -35,12 +36,14 @@ const PolicyTriggerNamePrefix = "access-request-"
 
 type Controller struct {
 	octeliumC     octeliumc.ClientInterface
+	celEngine     *celengine.CELEngine
 	clusterDomain string
 }
 
 func NewController(
 	ctx context.Context,
 	octeliumC octeliumc.ClientInterface,
+	celEngine *celengine.CELEngine,
 ) (*Controller, error) {
 	cc, err := octeliumC.CoreV1Utils().GetClusterConfig(ctx)
 	if err != nil {
@@ -49,6 +52,7 @@ func NewController(
 
 	return &Controller{
 		octeliumC:     octeliumC,
+		celEngine:     celEngine,
 		clusterDomain: cc.Status.Domain,
 	}, nil
 }
@@ -189,45 +193,55 @@ func (c *Controller) matchPolicyRule(ctx context.Context, req *accessv1.Request)
 		return nil, nil, err
 	}
 
-	policies := append([]*accessv1.Policy{}, polList.Items...)
-	sort.SliceStable(policies, func(i, j int) bool {
-		return policies[i].Metadata.Name < policies[j].Metadata.Name
-	})
+	for _, itm := range getSortedPolicyRules(polList.Items) {
+		matched, err := c.matchCondition(ctx, req, itm.rule.Condition)
+		if err != nil {
+			return nil, nil, err
+		}
+		if !matched {
+			continue
+		}
+
+		return itm.pol, itm.rule, nil
+	}
+
+	return nil, nil, nil
+}
+
+type policyRule struct {
+	pol  *accessv1.Policy
+	rule *accessv1.Policy_Spec_Rule
+}
+
+func getSortedPolicyRules(policies []*accessv1.Policy) []policyRule {
+	var ret []policyRule
 
 	for _, pol := range policies {
 		if pol == nil || pol.Spec.IsDisabled {
 			continue
 		}
 
-		rules := append([]*accessv1.Policy_Spec_Rule{}, pol.Spec.Rules...)
-		sort.SliceStable(rules, func(i, j int) bool {
-			if rules[i] == nil || rules[j] == nil {
-				return false
-			}
-			if rules[i].Priority == rules[j].Priority {
-				return false
-			}
-			return rules[i].Priority < rules[j].Priority
-		})
-
-		for _, rule := range rules {
+		for _, rule := range pol.Spec.Rules {
 			if rule == nil {
 				continue
 			}
 
-			matched, err := c.matchCondition(ctx, req, rule.Condition)
-			if err != nil {
-				return nil, nil, err
-			}
-			if !matched {
-				continue
-			}
-
-			return pol, rule, nil
+			ret = append(ret, policyRule{
+				pol:  pol,
+				rule: rule,
+			})
 		}
 	}
 
-	return nil, nil, nil
+	sort.SliceStable(ret, func(i, j int) bool {
+		if ret[i].rule.Priority != ret[j].rule.Priority {
+			return ret[i].rule.Priority < ret[j].rule.Priority
+		}
+
+		return ret[i].pol.Metadata.Name < ret[j].pol.Metadata.Name
+	})
+
+	return ret
 }
 
 func (c *Controller) matchCondition(ctx context.Context, req *accessv1.Request, cond *accessv1.Policy_Spec_Rule_Condition) (bool, error) {
@@ -285,11 +299,33 @@ func (c *Controller) matchCondition(ctx context.Context, req *accessv1.Request, 
 		return refEqual(req.Status.UserRef, cond.GetUserRef()), nil
 
 	case *accessv1.Policy_Spec_Rule_Condition_Match:
-		return false, errors.Errorf("access request Policy CEL match conditions are not supported by this controller yet")
+		return c.matchCEL(ctx, req, cond.GetMatch())
 
 	default:
 		return false, nil
 	}
+}
+
+func (c *Controller) matchCEL(ctx context.Context, req *accessv1.Request, exp string) (bool, error) {
+	ctxMap := map[string]any{
+		"request": pbutils.MustConvertToMap(req),
+	}
+
+	if ref := req.Status.UserRef; ref != nil && ref.Uid != "" {
+		usr, err := c.octeliumC.CoreC().GetUser(ctx, &rmetav1.GetOptions{
+			Uid: ref.Uid,
+		})
+		switch {
+		case err == nil:
+			ctxMap["user"] = pbutils.MustConvertToMap(usr)
+		case !grpcerr.IsNotFound(err):
+			return false, err
+		}
+	}
+
+	return c.celEngine.EvalPolicy(ctx, exp, map[string]any{
+		"ctx": ctxMap,
+	})
 }
 
 func (c *Controller) matchSubject(

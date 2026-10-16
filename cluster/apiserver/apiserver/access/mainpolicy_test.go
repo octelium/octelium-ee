@@ -15,6 +15,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
@@ -216,4 +217,76 @@ func TestMainPolicy(t *testing.T) {
 		Uid: pol.Metadata.Uid,
 	})
 	assert.NotNil(t, err)
+}
+
+func TestMainPolicyMatch(t *testing.T) {
+	ctx := context.Background()
+
+	tst, err := tests.Initialize(nil)
+	assert.Nil(t, err)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
+
+	mainSrv := NewServerMain(tst.C.OcteliumC)
+
+	usr := tstCreateUser(ctx, t, tst.C.OcteliumC, "")
+
+	newPolicy := func(exp string) *accessv1.Policy {
+		return &accessv1.Policy{
+			Metadata: &metav1.Metadata{
+				Name: utilrand.GetRandomStringCanonical(8),
+			},
+			Spec: &accessv1.Policy_Spec{
+				Rules: []*accessv1.Policy_Spec_Rule{
+					{
+						Name:     utilrand.GetRandomStringCanonical(6),
+						Effect:   accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+						Priority: -1,
+						Condition: &accessv1.Policy_Spec_Rule_Condition{
+							Type: &accessv1.Policy_Spec_Rule_Condition_All_{
+								All: &accessv1.Policy_Spec_Rule_Condition_All{
+									Of: []*accessv1.Policy_Spec_Rule_Condition{
+										{
+											Type: &accessv1.Policy_Spec_Rule_Condition_UserRef{
+												UserRef: umetav1.GetObjectReference(usr),
+											},
+										},
+										{
+											Type: &accessv1.Policy_Spec_Rule_Condition_Match{
+												Match: exp,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	pol, err := mainSrv.CreatePolicy(ctx, newPolicy(`time.isWeekdayInTZ(now(), 'Africa/Cairo')`))
+	assert.Nil(t, err, "%+v", err)
+
+	_, err = mainSrv.CreatePolicy(ctx, newPolicy(`ctx.user.metadata.name == "usr1" && ctx.request.spec.urgency == "NORMAL"`))
+	assert.Nil(t, err, "%+v", err)
+
+	for _, exp := range []string{
+		`time.isWeekdayInTZ(now(), `,
+		`time.isWeekdayInTimezone(now(), 'Africa/Cairo')`,
+		`'Africa/Cairo'`,
+	} {
+		_, err = mainSrv.CreatePolicy(ctx, newPolicy(exp))
+		assert.NotNil(t, err, "%s", exp)
+		assert.True(t, grpcerr.IsInvalidArg(err), "%s: %+v", exp, err)
+	}
+
+	pol.Spec.Rules[0].Condition.GetAll().Of[1].Type = &accessv1.Policy_Spec_Rule_Condition_Match{
+		Match: `now(`,
+	}
+	_, err = mainSrv.UpdatePolicy(ctx, pol)
+	assert.NotNil(t, err)
+	assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
 }
