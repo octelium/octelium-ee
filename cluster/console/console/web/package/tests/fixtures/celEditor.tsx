@@ -9,23 +9,22 @@ import * as React from "react";
 import { createRoot } from "react-dom/client";
 import { CELEditor } from "@/components/Condition/Editor";
 import { schemaCompletionSource } from "@/components/Condition/celCompletion";
-import RequestContext from "@/jsonschema/core/RequestContext.json";
+import { celSchemas, type CELContext } from "@/components/Condition/celSchema";
 import themeMantine from "@/utils/theme/mantine";
 import cssVariablesResolver from "@/utils/theme/cssVariables";
 
 const params = new URLSearchParams(window.location.search);
-const requestSchema = RequestContext as JSONSchema7;
-const schema: JSONSchema7 = {
-  type: "object",
-  properties: { ctx: { $ref: requestSchema.$ref } },
-  definitions: requestSchema.definitions,
-};
+const context = (params.get("context") ?? "core") as CELContext;
 
 Object.assign(window, {
   celFixture: {
-    complete: async (doc: string, customSchema?: JSONSchema7) => {
+    complete: async (doc: string, customSchema?: JSONSchema7 | CELContext) => {
       const state = EditorState.create({ doc });
-      const result = await schemaCompletionSource(customSchema ?? schema)(
+      const schema =
+        typeof customSchema === "string"
+          ? celSchemas[customSchema]
+          : (customSchema ?? celSchemas[context]);
+      const result = await schemaCompletionSource(schema)(
         new CompletionContext(state, doc.length, true),
       );
       return result
@@ -48,6 +47,7 @@ const Form = () => {
         <label className="text-xs font-semibold text-slate-700">CEL expression</label>
         <CELEditor
           exp={expression}
+          context={context}
           invalid={params.get("invalid") === "true"}
           onChange={setExpression}
         />

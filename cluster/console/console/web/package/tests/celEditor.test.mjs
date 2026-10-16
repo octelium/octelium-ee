@@ -219,6 +219,56 @@ describe("CEL editor", () => {
     assert.ok(result.options.some((option) => option.label === '"WORKLOAD"'));
   });
 
+  it("suggests the core request context by default", async () => {
+    await load();
+    const result = await complete("ctx.", "core");
+    for (const label of ["request", "session", "user", "groups", "device", "service", "namespace"]) {
+      assert.ok(result.options.some((option) => option.label === label), label);
+    }
+    assert.ok((await complete("ctx.request.", "core")).options.some(
+      (option) => option.label === "http",
+    ));
+  });
+
+  it("suggests only the access Request context for access Policies", async () => {
+    await load({ context: "access" });
+    await content().fill("ctx.");
+    await content().press("Control+Space");
+    await menu().getByText("request", { exact: true }).waitFor();
+    assert.equal(await menu().getByText("session", { exact: true }).count(), 0);
+    await menu().getByText("request", { exact: true }).click();
+    assert.equal(await content().innerText(), "ctx.request");
+
+    const root = await complete("ctx.", "access");
+    assert.deepEqual(
+      root.options.map((option) => option.label).sort(),
+      ["request", "user"],
+    );
+    const request = await complete("ctx.request.", "access");
+    for (const label of ["apiVersion", "kind", "metadata", "spec", "status"]) {
+      assert.ok(request.options.some((option) => option.label === label), label);
+    }
+    const spec = await complete("ctx.request.spec.", "access");
+    for (const label of ["urgency", "resource", "subject", "justification", "deadline", "duration"]) {
+      assert.ok(spec.options.some((option) => option.label === label), label);
+    }
+    for (const expression of [
+      "ctx.request.spec.resource.serviceRef.",
+      "ctx.request.spec.subject.userRef.",
+      "ctx.request.status.userRef.",
+    ]) {
+      const result = await complete(expression, "access");
+      assert.ok(result.options.some((option) => option.label === "uid"), expression);
+    }
+    const urgency = await complete("ctx.request.spec.urgency == ", "access");
+    assert.ok(urgency.options.some((option) => option.label === '"NORMAL"'));
+    const user = await complete("ctx.user.spec.", "access");
+    assert.ok(user.options.some((option) => option.label === "email"));
+    for (const expression of ["ctx.session.", "ctx.request.http.", "ctx.service."]) {
+      assert.equal(await complete(expression, "access"), null, expression);
+    }
+  });
+
   it("traverses recursive references without flattening the entire schema", async () => {
     await load();
     const result = await complete("ctx.next.next.next.", {

@@ -19,27 +19,23 @@ import {
   placeholder,
   tooltips,
 } from "@codemirror/view";
-import type { JSONSchema7 } from "json-schema";
 import { Braces } from "lucide-react";
 import { useMemo, useRef } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { twMerge } from "@/lib/utils";
-import RequestContext from "@/jsonschema/core/RequestContext.json";
 import { schemaAutocomplete } from "./celCompletion";
+import { celSchemas, type CELContext } from "./celSchema";
 import { celHighlight, celLanguage, celTheme } from "./celTheme";
 
-const requestSchema = RequestContext as JSONSchema7;
-const completion = schemaAutocomplete({
-  type: "object",
-  properties: { ctx: { $ref: requestSchema.$ref } },
-  definitions: requestSchema.definitions,
-});
+const completions: Record<CELContext, Extension> = {
+  core: schemaAutocomplete(celSchemas.core),
+  access: schemaAutocomplete(celSchemas.access),
+};
 
 const baseExtensions: Extension[] = [
   celLanguage,
   celHighlight,
   celTheme,
-  completion,
   history(),
   drawSelection(),
   closeBrackets(),
@@ -59,12 +55,15 @@ export const CELEditor = (props: {
   exp: string;
   label?: string;
   invalid?: boolean;
+  context?: CELContext;
   onChange: (value: string) => void;
 }) => {
   const viewRef = useRef<EditorView | null>(null);
+  const context = props.context ?? "core";
   const extensions = useMemo(
     () => [
       ...baseExtensions,
+      completions[context],
       tooltips({
         parent: document.body,
         position: "fixed",
@@ -89,7 +88,7 @@ export const CELEditor = (props: {
         "aria-invalid": props.invalid ? "true" : "false",
       }),
     ],
-    [props.label, props.invalid],
+    [context, props.label, props.invalid],
   );
 
   const suggest = () => {

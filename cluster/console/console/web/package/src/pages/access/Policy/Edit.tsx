@@ -482,9 +482,10 @@ const ConditionEdit = (props: {
             (matchType) => (
               <Input.Wrapper
                 label="CEL Expression"
-                description="CEL expression that must evaluate to true for this condition to match."
+                description="CEL expression that must evaluate to true for this condition to match. Use ctx.request for the access Request and ctx.user for the User that created it."
               >
                 <CELEditor
+                  context="access"
                   exp={matchType.match}
                   onChange={(v: string) => {
                     matchType.match = v ?? "";
