@@ -60,6 +60,57 @@ describe("Console shared presentation and controls", () => {
       .searchParams;
   const settled = () =>
     page.waitForFunction(() => window.patterns.queryClient.isFetching() === 0);
+  const palette = () =>
+    page.evaluate(() => {
+      const probe = document.createElement("span");
+      document.body.append(probe);
+      const colors = Object.fromEntries(
+        [
+          "white",
+          "slate-50",
+          "slate-200",
+          "terminal",
+          "terminal-panel",
+          "terminal-text",
+          "code",
+          "code-border",
+        ].map((name) => {
+          probe.style.color = `var(--color-${name})`;
+          return [name, getComputedStyle(probe).color];
+        }),
+      );
+      probe.remove();
+      return colors;
+    });
+  const surface = (locator, border = "borderTopColor") =>
+    locator.evaluate((element, border) => {
+      const style = getComputedStyle(element);
+      return {
+        background: style.backgroundColor,
+        border: style[border],
+        color: style.color,
+      };
+    }, border);
+  const labelShape = (locator) =>
+    locator.evaluate((element) => {
+      const style = getComputedStyle(element);
+      let borders = 0;
+      for (
+        let parent = element;
+        parent && !parent.hasAttribute("data-kind");
+        parent = parent.parentElement
+      ) {
+        if (parseFloat(getComputedStyle(parent).borderTopWidth) > 0) borders++;
+      }
+      return {
+        borders,
+        height: element.getBoundingClientRect().height,
+        radius: style.borderRadius,
+        fontSize: style.fontSize,
+        fontWeight: style.fontWeight,
+        padding: style.padding,
+      };
+    });
 
   for (const [state, label, tone] of [
     [1, "Active", "emerald"],
@@ -73,7 +124,7 @@ describe("Console shared presentation and controls", () => {
           .locator(`[data-kind="${kind}"]`)
           .getByText(label, { exact: true });
         const style = await badge.getAttribute("class");
-        assert.ok(style.includes("rounded-full"));
+        assert.ok(style.includes("rounded-md"));
         assert.ok(style.includes(`text-${tone}-700`));
         assert.equal(await badge.locator('[aria-hidden="true"]').count(), 1);
       }
@@ -90,7 +141,10 @@ describe("Console shared presentation and controls", () => {
       "access-policy",
     ]) {
       assert.equal(
-        await page.locator(`[data-kind="${kind}"] .rounded-full`).count(),
+        await page
+          .locator(`[data-kind="${kind}"]`)
+          .getByText(/^(Active|Pending|Rejected|Disabled)$/)
+          .count(),
         0,
       );
     }
@@ -117,6 +171,116 @@ describe("Console shared presentation and controls", () => {
     assert.ok((await health.getAttribute("class")).includes("text-slate-500"));
     assert.equal(await health.locator('svg[aria-hidden="true"]').count(), 1);
   });
+
+  for (const theme of ["light", "dark"]) {
+    it(`matches list status labels to Connected without nested borders in ${theme} mode`, async () => {
+      for (const [state, label] of [
+        [1, "Active"],
+        [2, "Pending"],
+        [3, "Rejected"],
+      ]) {
+        await load("labels", { state: String(state), theme });
+        const connected = await labelShape(
+          page.locator('[data-kind="session"] .border').filter({
+            hasText: "Connected",
+          }),
+        );
+        assert.equal(connected.borders, 1);
+        for (const kind of ["session", "device"]) {
+          assert.deepEqual(
+            await labelShape(
+              page
+                .locator(`[data-kind="${kind}"]`)
+                .getByText(label, { exact: true }),
+            ),
+            connected,
+          );
+        }
+        for (const kind of ["user", "policy", "access-policy"]) {
+          assert.deepEqual(
+            await labelShape(
+              page
+                .locator(`[data-kind="${kind}"]`)
+                .getByText("Disabled", { exact: true }),
+            ),
+            connected,
+          );
+        }
+      }
+    });
+
+    it(`keeps the SSH replay frame and header dark in ${theme} mode`, async () => {
+      await load("replay", { theme, route: "/visibility/ssh/recording" });
+      const heading = page.getByRole("heading", { name: "Terminal replay" });
+      await heading.waitFor();
+      await page
+        .getByRole("button", { name: "Play replay", exact: true })
+        .waitFor();
+      const colors = await palette();
+      const frame = heading.locator("xpath=ancestor::section[1]");
+      const frameStyle = await surface(frame);
+      assert.equal(frameStyle.background, colors.terminal);
+      assert.equal(frameStyle.border, colors["code-border"]);
+      assert.deepEqual(await surface(heading.locator("..")), {
+        background: colors["terminal-panel"],
+        border: colors["code-border"],
+        color: colors["terminal-text"],
+      });
+      assert.equal(
+        await frame.locator(":scope > div").evaluate(
+          (element) => getComputedStyle(element).borderTopWidth,
+        ),
+        "0px",
+      );
+      for (const width of [390, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        assert.equal(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+          ),
+          true,
+        );
+      }
+    });
+
+    for (const kind of ["access", "authentication", "audit", "component"]) {
+      it(`themes the ${kind} log JSON drawer surfaces in ${theme} mode`, async () => {
+        await load("json", { kind, theme });
+        await page.getByRole("button", { name: "JSON", exact: true }).click();
+        const dialog = page.getByRole("dialog");
+        await dialog.locator(".cm-editor").waitFor();
+        const colors = await palette();
+        const content = await surface(dialog, "borderLeftColor");
+        assert.equal(content.background, colors.white);
+        assert.equal(content.border, colors["slate-200"]);
+        const header = await surface(
+          dialog.locator(".mantine-Drawer-header"),
+          "borderBottomColor",
+        );
+        assert.equal(header.background, colors.white);
+        assert.equal(header.border, colors["slate-200"]);
+        assert.equal(
+          (await surface(dialog.locator(".mantine-Drawer-body"))).background,
+          colors["slate-50"],
+        );
+        const editorFrame = await surface(
+          dialog.locator(".cm-theme").locator(".."),
+        );
+        assert.equal(editorFrame.background, colors.code);
+        assert.equal(editorFrame.border, colors["code-border"]);
+        assert.equal(
+          (await surface(dialog.locator(".cm-editor"))).background,
+          colors.code,
+        );
+        assert.equal(
+          await dialog
+            .getByRole("button", { name: "Copy JSON", exact: true })
+            .count(),
+          1,
+        );
+      });
+    }
+  }
 
   it("shares count formatting while preserving exact totals and generic fractional numbers", async () => {
     await load("counts");

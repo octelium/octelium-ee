@@ -1,9 +1,19 @@
 import "@/index.css";
 import "@mantine/core/styles.layer.css";
 import { Policy as AccessPolicy } from "@/apis/accessv1/accessv1";
-import { Device, Policy, Session, User, UserList } from "@/apis/corev1/corev1";
+import {
+  AccessLog,
+  ComponentLog,
+  Device,
+  Policy,
+  Session,
+  User,
+  UserList,
+} from "@/apis/corev1/corev1";
+import { AuditLog, AuthenticationLog } from "@/apis/enterprisev1/enterprisev1";
 import { Stats } from "@/apis/visibilityv1/llm/vllmv1";
 import { AccessLogList } from "@/components/AccessLogViewer";
+import LogEditor from "@/components/AccessLogViewer/Editor";
 import { NoLogFound } from "@/components/AccessLogViewer/utils";
 import AuditLogList from "@/components/AuditLogViewer";
 import { AuthenticationLogList } from "@/components/AuthenticationLogViewer";
@@ -31,11 +41,14 @@ import { LabelComponent as DeviceLabel } from "@/pages/core/Device/List";
 import { LabelComponent as PolicyLabel } from "@/pages/core/Policy/List";
 import { LabelComponent as SessionLabel } from "@/pages/core/Session/List";
 import { LabelComponent as UserLabel } from "@/pages/core/User/List";
+import SSHReplay from "@/pages/visibility/ssh/Terminal";
 import { ResourceComponentInfo } from "@/pages/utils/types";
 import store from "@/store";
 import { formatNumber } from "@/utils";
 import * as clients from "@/utils/client";
 import { formatCount } from "@/utils/format";
+import cssVariablesResolver from "@/utils/theme/cssVariables";
+import themeMantine from "@/utils/theme/mantine";
 import { MantineProvider } from "@mantine/core";
 import { RpcError } from "@protobuf-ts/runtime-rpc";
 import {
@@ -46,7 +59,13 @@ import {
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
-import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 
 const params = new URLSearchParams(window.location.search);
 const scenario = params.get("scenario") ?? "counts";
@@ -137,7 +156,12 @@ const Labels = () => {
   return (
     <>
       <div data-kind="session">
-        <SessionLabel item={Session.create({ spec: { state } })} />
+        <SessionLabel
+          item={Session.create({
+            spec: { state },
+            status: { isConnected: true },
+          })}
+        />
       </div>
       <div data-kind="device">
         <DeviceLabel item={Device.create({ spec: { state }, status: {} })} />
@@ -223,6 +247,23 @@ const Fixture = () => {
       </output>
       {scenario === "labels" ? (
         <Labels />
+      ) : scenario === "replay" ? (
+        <Routes>
+          <Route path="/visibility/ssh/:name" element={<SSHReplay />} />
+        </Routes>
+      ) : scenario === "json" ? (
+        <LogEditor
+          item={
+            {
+              access: AccessLog.create({ kind: "AccessLog" }),
+              authentication: AuthenticationLog.create({
+                kind: "AuthenticationLog",
+              }),
+              audit: AuditLog.create({ kind: "AuditLog" }),
+              component: ComponentLog.create({ kind: "ComponentLog" }),
+            }[kind]!
+          }
+        />
       ) : scenario === "resource" ? (
         <Resource />
       ) : scenario === "refresh" ? (
@@ -252,7 +293,11 @@ const Fixture = () => {
 
 createRoot(document.getElementById("root")!).render(
   <Provider store={store}>
-    <MantineProvider>
+    <MantineProvider
+      theme={themeMantine}
+      cssVariablesResolver={cssVariablesResolver}
+      forceColorScheme={params.get("theme") === "dark" ? "dark" : "light"}
+    >
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={[params.get("route") ?? "/core/users"]}>
           <Fixture />

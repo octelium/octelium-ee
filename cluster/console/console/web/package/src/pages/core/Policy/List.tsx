@@ -21,9 +21,7 @@ export const LabelComponent = (props: { item: Policy }) => {
   return (
     <ResourceListLabelWrap>
       {item.spec?.isDisabled && (
-        <ResourceListLabel>
-          <StatusBadge label="Disabled" tone="danger" compact />
-        </ResourceListLabel>
+        <StatusBadge label="Disabled" tone="danger" compact />
       )}
       {!!item.spec?.rules?.length && (
         <ResourceListLabel>{item.spec.rules.length} Rules</ResourceListLabel>

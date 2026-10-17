@@ -84,8 +84,8 @@ export default () => {
         <SSHSessionC item={qry.data} />
       </section>
 
-      <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-raised">
-        <header className="flex items-center gap-2 border-b border-slate-800 px-4 py-3 text-slate-200">
+      <section className="overflow-hidden rounded-xl border border-code-border bg-terminal shadow-raised">
+        <header className="flex items-center gap-2 border-b border-code-border bg-terminal-panel px-4 py-3 text-terminal-text">
           <SquareTerminal size={15} />
           <h2 className="text-xs font-semibold uppercase tracking-[0.06em]">
             Terminal replay
@@ -94,7 +94,7 @@ export default () => {
         <React.Suspense
           fallback={
             <div
-              className="h-[460px] motion-safe:animate-pulse bg-slate-900"
+              className="h-[460px] motion-safe:animate-pulse bg-terminal"
               aria-label="Loading terminal player"
             />
           }

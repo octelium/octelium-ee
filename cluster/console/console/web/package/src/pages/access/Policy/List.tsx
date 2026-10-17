@@ -59,9 +59,7 @@ export const LabelComponent = (props: { item: Policy }) => {
   return (
     <ResourceListLabelWrap>
       {item.spec?.isDisabled && (
-        <ResourceListLabel>
-          <StatusBadge label="Disabled" tone="danger" compact />
-        </ResourceListLabel>
+        <StatusBadge label="Disabled" tone="danger" compact />
       )}
       <ResourceListLabel>
         {rules === 0 ? "No rule" : `${rules} ${rules === 1 ? "rule" : "rules"}`}

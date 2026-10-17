@@ -96,7 +96,7 @@ export const LabelComponent = (props: { item: Session }) => {
           </ResourceListLabel>
         )}
       <ResourceListLabel>{getType(item)}</ResourceListLabel>
-      <ResourceListLabel>{getState(item)}</ResourceListLabel>
+      {getState(item)}
       {item.status?.isConnected && (
         <ResourceListLabel>
           <div className="flex items-center">

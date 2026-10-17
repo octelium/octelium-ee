@@ -54,19 +54,17 @@ export const LabelComponent = (props: { item: Device }) => {
 
   return (
     <ResourceListLabelWrap>
-      <ResourceListLabel>
-        {getState(item) && (
-          <StatusBadge
-            label={getState(item)}
-            tone={match(item.spec?.state)
-              .with(CoreP.Device_Spec_State.REJECTED, () => "danger" as const)
-              .with(CoreP.Device_Spec_State.ACTIVE, () => "success" as const)
-              .with(CoreP.Device_Spec_State.PENDING, () => "warning" as const)
-              .otherwise(() => "neutral" as const)}
-            compact
-          />
-        )}
-      </ResourceListLabel>
+      {getState(item) && (
+        <StatusBadge
+          label={getState(item)}
+          tone={match(item.spec?.state)
+            .with(CoreP.Device_Spec_State.REJECTED, () => "danger" as const)
+            .with(CoreP.Device_Spec_State.ACTIVE, () => "success" as const)
+            .with(CoreP.Device_Spec_State.PENDING, () => "warning" as const)
+            .otherwise(() => "neutral" as const)}
+          compact
+        />
+      )}
       <DeviceTypeLabel item={item} />
       {item.status?.hostname && (
         <ResourceListLabel label="Hostname">

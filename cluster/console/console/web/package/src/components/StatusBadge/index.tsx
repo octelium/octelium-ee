@@ -34,8 +34,10 @@ const StatusBadge = (props: {
   return (
     <span
       className={twMerge(
-        "inline-flex items-center gap-1.5 rounded-full border font-semibold leading-none",
-        props.compact ? "px-1.5 py-1 text-micro" : "px-2.5 py-1 text-xs",
+        "inline-flex items-center gap-1.5 border leading-none",
+        props.compact
+          ? "min-h-6 rounded-md px-2 py-1 text-xs font-normal leading-none shadow-card"
+          : "rounded-full px-2.5 py-1 text-xs font-semibold",
         TONE_CLASSES[tone],
         props.className,
       )}

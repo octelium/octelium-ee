@@ -376,7 +376,7 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
       : 0;
 
   return (
-    <div className="w-full flex flex-col rounded-xl overflow-hidden border border-code-border shadow-overlay">
+    <div className="w-full flex flex-col">
       <div
         ref={terminalRef}
         className="h-[min(60vh,640px)] min-h-[320px] max-h-[720px] bg-terminal"

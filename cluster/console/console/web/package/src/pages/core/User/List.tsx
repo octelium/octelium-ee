@@ -68,9 +68,7 @@ export const LabelComponent = (props: { item: User }) => {
       )}
 
       {item.spec?.isDisabled && (
-        <ResourceListLabel>
-          <StatusBadge label="Disabled" tone="danger" compact />
-        </ResourceListLabel>
+        <StatusBadge label="Disabled" tone="danger" compact />
       )}
 
     </ResourceListLabelWrap>
