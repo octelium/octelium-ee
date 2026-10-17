@@ -82,6 +82,16 @@ func (c *Controller) Reconcile(ctx context.Context, itm *accessv1.IntegrationBin
 	}
 	defer c.release(itm.Metadata.Uid)
 
+	itm, err := c.octeliumC.AccessC().GetIntegrationBinding(ctx, &rmetav1.GetOptions{
+		Uid: itm.Metadata.Uid,
+	})
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
 	if itm.Status.NextAttemptAt != nil && itm.Status.NextAttemptAt.IsValid() &&
 		itm.Status.NextAttemptAt.AsTime().After(time.Now()) {
 		return nil

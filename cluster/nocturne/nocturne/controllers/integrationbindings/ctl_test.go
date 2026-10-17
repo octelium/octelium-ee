@@ -16,6 +16,7 @@ import (
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/accessintg"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -26,6 +27,7 @@ import (
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 )
@@ -35,6 +37,7 @@ type slackFake struct {
 	updates      atomic.Int64
 	fail         atomic.Bool
 	lastChannel  atomic.Value
+	beforeUpdate atomic.Value
 }
 
 func (f *slackFake) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -54,6 +57,9 @@ func (f *slackFake) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{"ok":true,"ts":"1700000000.000100","channel":"C12345678"}`)
 	case "/chat.update":
 		f.updates.Add(1)
+		if fn, ok := f.beforeUpdate.Load().(func()); ok {
+			fn()
+		}
 		fmt.Fprint(w, `{"ok":true,"ts":"1700000000.000100","channel":"C12345678"}`)
 	case "/chat.getPermalink":
 		fmt.Fprint(w, `{"ok":true,"permalink":"https://example.slack.com/archives/C12345678/p1"}`)
@@ -487,4 +493,124 @@ func TestBindingIsDeliveredToTheIntegrationChannel(t *testing.T) {
 
 	assert.Equal(t, int64(1), b.slack.postMessages.Load())
 	assert.Equal(t, "C87654321", b.slack.lastChannel.Load())
+}
+
+func TestBindingReconcileStaleWatchEvent(t *testing.T) {
+	b := newBindingTest(t)
+
+	req := b.createRequest(t)
+	event := b.createBinding(t, req)
+
+	latest := b.getBinding(t, event.Metadata.Uid)
+	latest.Status.LastExternalEventIDs = []string{"slack-approval"}
+	_, err := b.octeliumC.AccessC().UpdateIntegrationBinding(b.ctx, latest)
+	assert.Nil(t, err, "%+v", err)
+
+	for range 5 {
+		assert.Nil(t, b.ctrl.Reconcile(b.ctx, event))
+	}
+
+	current := b.getBinding(t, event.Metadata.Uid)
+	assert.Equal(t, accessv1.IntegrationBinding_Status_READY, current.Status.State)
+	assert.Equal(t, []string{"slack-approval"}, current.Status.LastExternalEventIDs)
+	assert.Equal(t, int64(1), b.slack.postMessages.Load())
+}
+
+func TestBindingReconcileStaleWatchEventAfterApproval(t *testing.T) {
+	b := newBindingTest(t)
+
+	req := b.createRequest(t)
+	event := b.createBinding(t, req)
+	assert.Nil(t, b.ctrl.Reconcile(b.ctx, event))
+	event = b.getBinding(t, event.Metadata.Uid)
+
+	req.Status.State.Status = accessv1.Request_Status_State_APPROVED
+	_, err := b.octeliumC.AccessC().UpdateRequest(b.ctx, req)
+	assert.Nil(t, err, "%+v", err)
+
+	latest := b.getBinding(t, event.Metadata.Uid)
+	latest.Status.LastExternalEventIDs = []string{"slack-approval"}
+	_, err = b.octeliumC.AccessC().UpdateIntegrationBinding(b.ctx, latest)
+	assert.Nil(t, err, "%+v", err)
+
+	for range 5 {
+		assert.Nil(t, b.ctrl.Reconcile(b.ctx, event))
+	}
+
+	current := b.getBinding(t, event.Metadata.Uid)
+	assert.Equal(t, accessv1.IntegrationBinding_Status_CLOSED, current.Status.State)
+	assert.Equal(t, []string{"slack-approval"}, current.Status.LastExternalEventIDs)
+	assert.Equal(t, int64(1), b.slack.postMessages.Load())
+	assert.Equal(t, int64(1), b.slack.updates.Load())
+}
+
+func TestBindingReconcileDeletedBinding(t *testing.T) {
+	b := newBindingTest(t)
+
+	req := b.createRequest(t)
+	event := b.createBinding(t, req)
+
+	_, err := b.octeliumC.AccessC().DeleteIntegrationBinding(b.ctx, &rmetav1.DeleteOptions{
+		Uid: event.Metadata.Uid,
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	assert.Nil(t, b.ctrl.Reconcile(b.ctx, event))
+	assert.Equal(t, int64(0), b.slack.postMessages.Load())
+}
+
+func TestBindingReconcileUsesCurrentBackoff(t *testing.T) {
+	b := newBindingTest(t)
+
+	req := b.createRequest(t)
+	event := b.createBinding(t, req)
+
+	latest := b.getBinding(t, event.Metadata.Uid)
+	latest.Status.NextAttemptAt = pbutils.Timestamp(time.Now().Add(time.Hour))
+	_, err := b.octeliumC.AccessC().UpdateIntegrationBinding(b.ctx, latest)
+	assert.Nil(t, err, "%+v", err)
+
+	assert.Nil(t, b.ctrl.Reconcile(b.ctx, event))
+	assert.Equal(t, int64(0), b.slack.postMessages.Load())
+}
+
+func TestBindingReconcileConflictDuringDelivery(t *testing.T) {
+	b := newBindingTest(t)
+
+	req := b.createRequest(t)
+	event := b.createBinding(t, req)
+	assert.Nil(t, b.ctrl.Reconcile(b.ctx, event))
+	event = b.getBinding(t, event.Metadata.Uid)
+
+	req.Status.State.Status = accessv1.Request_Status_State_APPROVED
+	_, err := b.octeliumC.AccessC().UpdateRequest(b.ctx, req)
+	assert.Nil(t, err, "%+v", err)
+
+	var recorded atomic.Bool
+	b.slack.beforeUpdate.Store(func() {
+		if !recorded.CompareAndSwap(false, true) {
+			return
+		}
+
+		latest := b.getBinding(t, event.Metadata.Uid)
+		latest.Status.LastExternalEventIDs = []string{"slack-approval"}
+		_, err := b.octeliumC.AccessC().UpdateIntegrationBinding(b.ctx, latest)
+		assert.Nil(t, err, "%+v", err)
+	})
+
+	err = b.ctrl.Reconcile(b.ctx, event)
+	assert.True(t, grpcerr.IsResourceChanged(err), "%+v", err)
+	assert.Nil(t, b.ctrl.Reconcile(b.ctx, event))
+
+	current := b.getBinding(t, event.Metadata.Uid)
+	assert.Equal(t, accessv1.IntegrationBinding_Status_CLOSED, current.Status.State)
+	assert.Equal(t, []string{"slack-approval"}, current.Status.LastExternalEventIDs)
+	assert.Equal(t, int64(1), b.slack.postMessages.Load())
+	assert.Equal(t, int64(2), b.slack.updates.Load())
+
+	req, err = b.octeliumC.AccessC().GetRequest(b.ctx, &rmetav1.GetOptions{
+		Uid: req.Metadata.Uid,
+	})
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, req.Status.State.Status)
 }
