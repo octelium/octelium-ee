@@ -3,6 +3,7 @@ import {
   hasAccessLog,
   hasAuthenticationLog,
   hasLLMVisibility,
+  hasPlayground,
   hasSSHSessionLog,
   Resource,
 } from "@/utils/pb";
@@ -10,6 +11,7 @@ import { SegmentedControl } from "@mantine/core";
 import {
   BrainCircuit,
   ChartNoAxesCombined,
+  FlaskConical,
   Library,
   LayoutDashboard,
   Settings,
@@ -66,6 +68,13 @@ const LLM_TAB: Tab = {
   path: "llm",
 };
 
+const PLAYGROUND_TAB: Tab = {
+  value: "playground",
+  label: "Playground",
+  icon: FlaskConical,
+  path: "playground",
+};
+
 const SSH_TAB: Tab = {
   value: "ssh",
   label: "SSH Recordings",
@@ -90,6 +99,7 @@ const getActiveTab = (pathname: string): string => {
     .with("metrics", () => "metrics")
     .with("llm", () => "llm")
     .with("ssh", () => "ssh")
+    .with("playground", () => "playground")
     .with("auditlogs", () => "auditlogs")
     .otherwise(() => "main");
 };
@@ -107,6 +117,7 @@ const buildTabs = (resource: Resource): Tab[] => {
       path: "edit",
     });
   }
+  if (hasPlayground(resource)) tabs.push(PLAYGROUND_TAB);
   if (
     resource.apiVersion === "core/v1" &&
     (resource.kind === "Service" || resource.kind === "Namespace")

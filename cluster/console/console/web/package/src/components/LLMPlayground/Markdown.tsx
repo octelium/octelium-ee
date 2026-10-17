@@ -18,9 +18,9 @@ const CodeBlock = (props: { language?: string; code: string }) => {
   };
 
   return (
-    <div className="group relative my-3 overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
-      <div className="flex items-center justify-between border-b border-slate-800 px-3 py-1.5">
-        <span className="text-micro font-semibold uppercase tracking-[0.08em] text-slate-500">
+    <div className="group relative my-3 overflow-hidden rounded-xl border border-terminal-line bg-terminal">
+      <div className="flex items-center justify-between border-b border-terminal-line px-3 py-1.5">
+        <span className="text-micro font-semibold uppercase tracking-[0.08em] text-terminal-muted">
           {props.language || "code"}
         </span>
         <Tooltip label={copied ? "Copied" : "Copy code"} withArrow>
@@ -34,13 +34,13 @@ const CodeBlock = (props: { language?: string; code: string }) => {
             {copied ? (
               <Check size={13} className="text-emerald-400" />
             ) : (
-              <Copy size={13} className="text-slate-500" />
+              <Copy size={13} className="text-terminal-muted" />
             )}
           </ActionIcon>
         </Tooltip>
       </div>
       <pre className="overflow-x-auto px-3 py-3">
-        <code className="font-mono text-xs leading-6 text-slate-100">
+        <code className="font-mono text-xs leading-6 text-terminal-text">
           {props.code}
         </code>
       </pre>

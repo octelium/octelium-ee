@@ -9,6 +9,32 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import ResourceItemPage from "./ResourceItemPage";
 
+const drawerID = "resource-item-drawer";
+
+const isDrawerEscape = (event: KeyboardEvent) => {
+  const target = event.target;
+  if (
+    event.key !== "Escape" ||
+    event.defaultPrevented ||
+    event.isComposing ||
+    !(target instanceof Element) ||
+    target.getAttribute("data-mantine-stop-propagation") === "true"
+  ) {
+    return false;
+  }
+  return (
+    target === document.body ||
+    !!document.getElementById(drawerID)?.contains(target)
+  );
+};
+
+const confirmClose = (dirty: boolean) => {
+  if (!dirty) return true;
+  if (!window.confirm("Discard unsaved changes?")) return false;
+  approveNextNavigation();
+  return true;
+};
+
 const ResourceItemDrawer = () => {
   const [opened, setOpened] = useState(false);
   const location = useLocation();
@@ -37,17 +63,26 @@ const ResourceItemDrawer = () => {
   }, [resourcePath]);
 
   const requestClose = () => {
-    if (hasDirtyForm) {
-      if (!window.confirm("Discard unsaved changes?")) return;
-      approveNextNavigation();
-    }
-    setOpened(false);
+    if (confirmClose(hasDirtyForm)) setOpened(false);
   };
+
+  useEffect(() => {
+    if (!opened) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isDrawerEscape(event) && confirmClose(hasDirtyForm)) {
+        setOpened(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [opened, hasDirtyForm]);
 
   return (
     <Drawer
+      id={drawerID}
       opened={opened}
       onClose={requestClose}
+      closeOnEscape={false}
       position="right"
       size="min(960px, 100vw)"
       zIndex={200}
@@ -95,11 +130,13 @@ const ResourceItemDrawer = () => {
           minHeight: "56px",
         },
         body: {
-          minHeight: "calc(100dvh - 56px)",
+          flex: "1 0 auto",
           padding: "16px",
           backgroundColor: "var(--color-slate-50)",
         },
         content: {
+          display: "flex",
+          flexDirection: "column",
           borderLeftWidth: "1px",
           borderLeftStyle: "solid",
           borderLeftColor: "var(--color-slate-200)",

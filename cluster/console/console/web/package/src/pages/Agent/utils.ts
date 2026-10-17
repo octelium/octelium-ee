@@ -18,13 +18,13 @@ import {
 import { defaultUrlTransform } from "react-markdown";
 
 export { readStorage, writeStorage } from "./environment";
-
-export const formatBytes = (n: number): string => {
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
-  if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(n / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-};
+export { saveBlob, toFileName } from "./files";
+export {
+  formatBytes,
+  formatCount,
+  formatDuration,
+  formatElapsed,
+} from "./format";
 
 const consoleAPIs: API[] = ["core", "enterprise", "access"];
 
@@ -134,17 +134,6 @@ export const toJSON = (value: unknown): string => {
   if (value === undefined) return "";
   if (typeof value === "string") return value;
   return JSON.stringify(value, null, 2);
-};
-
-export const saveBlob = (blob: Blob, name: string) => {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 10000);
 };
 
 export const toCSV = (
@@ -287,27 +276,6 @@ export const conversationMarkdown = (
   return `${ret.join("\n\n")}\n`;
 };
 
-export const formatDuration = (ms: number): string => {
-  if (!Number.isFinite(ms) || ms < 0) return "";
-  if (ms < 1000) return `${Math.round(ms)}ms`;
-  if (ms < 10000) return `${(ms / 1000).toFixed(1)}s`;
-  const seconds = Math.floor(ms / 1000);
-  if (seconds < 60) return `${seconds}s`;
-  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
-};
-
-export const formatElapsed = (ms: number): string => {
-  const seconds = Math.max(0, Math.floor(ms / 1000));
-  if (seconds < 60) return `${seconds}s`;
-  return `${Math.floor(seconds / 60)}m ${String(seconds % 60).padStart(2, "0")}s`;
-};
-
-export const formatCount = (n: number): string => {
-  if (n < 1000) return String(n);
-  if (n < 1000000) return `${(n / 1000).toFixed(n < 10000 ? 1 : 0)}k`;
-  return `${(n / 1000000).toFixed(1)}M`;
-};
-
 export const toolDuration = (block: ToolBlock): number | undefined =>
   block.startedAt && block.completedAt
     ? new Date(block.completedAt).getTime() -
@@ -320,11 +288,3 @@ export const greeting = (date = new Date()): string => {
   if (hour >= 12 && hour < 18) return "Good afternoon";
   return "Good evening";
 };
-
-export const toFileName = (value: string, ext: string): string =>
-  `${
-    value
-      .trim()
-      .replace(/[^\w.-]+/g, "_")
-      .slice(0, 80) || "conversation"
-  }.${ext}`;

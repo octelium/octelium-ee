@@ -1,64 +1,92 @@
-import { Service, Service_Spec_Mode } from "@/apis/corev1/corev1";
+import type {
+  FileInfo,
+  Message as AgentMessage,
+} from "@/apis/consoleagent/protocol";
+import { Service } from "@/apis/corev1/corev1";
+import Composer, { type Upload } from "@/pages/Agent/Composer";
+import { readStorage, writeStorage } from "@/pages/Agent/environment";
+import { saveBlob, toFileName } from "@/pages/Agent/files";
+import { AgentMark, copyText, StatusDot } from "@/pages/Agent/ui";
+import { useTranscript } from "@/pages/Agent/useTranscript";
 import { getDomain } from "@/utils";
 import { getServicePublicURL } from "@/utils/octelium";
-import {
-  ActionIcon,
-  Badge,
-  Button,
-  Drawer,
-  NumberInput,
-  SegmentedControl,
-  Select,
-  Switch,
-  TextInput,
-  Textarea,
-  Tooltip,
-} from "@mantine/core";
+import { ActionIcon, Menu, Tooltip } from "@mantine/core";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  ArrowDown,
   Bot,
-  Check,
+  Brain,
   ChevronDown,
-  CircleAlert,
+  Code,
   Copy,
-  ImagePlus,
-  Paperclip,
-  RotateCcw,
-  Send,
-  Settings2,
+  Download,
+  Ellipsis,
+  ImageUp,
+  MessageCircle,
+  SlidersHorizontal,
   Sparkles,
-  Square,
-  X,
+  SquarePen,
+  Table,
 } from "lucide-react";
 import * as React from "react";
+import { toast } from "sonner";
 import { twMerge } from "@/lib/utils";
 import Message from "./Message";
 import { defaultEndpoint, messageText, supportsStreaming } from "./protocols";
 import { runCompletion } from "./runner";
+import Settings from "./Settings";
 import {
   Attachment,
   ChatMessage,
   Part,
   Protocol,
   PROTOCOL_LABELS,
-  PROTOCOL_MODEL_PLACEHOLDER,
   protocolFromEnum,
   RequestOptions,
+  Usage,
 } from "./types";
 
-const PROTOCOL_COLORS: Record<Protocol, string> = {
-  openai: "teal",
-  anthropic: "orange",
-  gemini: "blue",
-  bedrock: "grape",
+type Session = {
+  protocol: Protocol;
+  messages: ChatMessage[];
+  input: string;
+  endpoint: string;
+  options: RequestOptions;
 };
 
-const REASONING_HINT: Record<Protocol, string> = {
-  openai: "low / medium / high",
-  anthropic: "Thinking token budget",
-  gemini: "Thinking token budget",
-  bedrock: "Not supported for Converse",
-};
+const sessions = new Map<string, Session>();
+
+const settingsStorageKey = "octelium-console-llm-playground-settings";
+const settingsWidth = 300;
+const wideWidth = 720;
+const ease = [0.22, 1, 0.36, 1] as const;
+const noMessages: AgentMessage[] = [];
+
+const suggestions = [
+  {
+    icon: MessageCircle,
+    title: "Say hello",
+    prompt:
+      "Introduce yourself in two sentences and tell me which model you are.",
+  },
+  {
+    icon: Brain,
+    title: "Reason it out",
+    prompt:
+      "A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost?",
+  },
+  {
+    icon: Table,
+    title: "Format a table",
+    prompt: "Compare TCP and UDP in a short Markdown table.",
+  },
+  {
+    icon: Code,
+    title: "Write code",
+    prompt:
+      "Write a Go function that reverses a UTF-8 string, with a short test.",
+  },
+];
 
 const getLLMConfig = (service: Service) => {
   const type = service.spec?.config?.type;
@@ -70,6 +98,20 @@ const getConfiguredModel = (service: Service) => {
   return model?.type.oneofKind === "value" ? model.type.value : "";
 };
 
+const defaultOptions = (
+  service: Service,
+  protocol: Protocol,
+): RequestOptions => ({
+  model: getConfiguredModel(service),
+  systemPrompt: "",
+  temperature: "",
+  topP: "",
+  maxTokens: "",
+  reasoning: "",
+  stream: supportsStreaming(protocol),
+  apiShape: "chat",
+});
+
 const newMessage = (
   role: ChatMessage["role"],
   parts: Part[] = [],
@@ -79,6 +121,7 @@ const newMessage = (
   role,
   parts,
   attachments,
+  createdAt: Date.now(),
 });
 
 const readFile = (file: File) =>
@@ -95,74 +138,236 @@ const readFile = (file: File) =>
     reader.readAsDataURL(file);
   });
 
+const attachmentSize = (attachment: Attachment) =>
+  Math.floor(
+    ((attachment.dataURL.length - attachment.dataURL.indexOf(",") - 1) * 3) / 4,
+  );
+
 const getErrorMessage = (error: unknown) => {
-  if (error instanceof DOMException && error.name === "AbortError") {
-    return "The request was stopped.";
-  }
   if (error instanceof Error) return error.message;
   return "The inference request failed.";
 };
 
+const isAbort = (error: unknown) =>
+  error instanceof DOMException && error.name === "AbortError";
+
+const hasFiles = (event: React.DragEvent) =>
+  Array.from(event.dataTransfer.types).includes("Files");
+
+const findLastUser = (messages: ChatMessage[]) => {
+  for (let idx = messages.length - 1; idx >= 0; idx--) {
+    if (messages[idx].role === "user") return idx;
+  }
+  return -1;
+};
+
+const mergeUsage = (current: Usage | undefined, next: Usage): Usage => {
+  const ret: Usage = { ...current };
+  for (const [name, value] of Object.entries(next) as [keyof Usage, number][]) {
+    if (value !== undefined) ret[name] = value;
+  }
+  if (next.totalTokens === undefined && ret.inputTokens !== undefined) {
+    ret.totalTokens = ret.inputTokens + (ret.outputTokens ?? 0);
+  }
+  return ret;
+};
+
+const stopLast = (messages: ChatMessage[]) =>
+  messages.map((message, idx) =>
+    idx === messages.length - 1 &&
+    message.role === "assistant" &&
+    message.completedAt === undefined
+      ? { ...message, stopped: true, completedAt: Date.now() }
+      : message,
+  );
+
+const transcriptMarkdown = (arg: {
+  title: string;
+  endpoint: string;
+  options: RequestOptions;
+  messages: ChatMessage[];
+}) => {
+  const ret = [
+    `# ${arg.title}`,
+    [
+      `- Endpoint: ${arg.endpoint}`,
+      `- Model: ${arg.options.model || "unset"}`,
+      ...(arg.options.systemPrompt.trim()
+        ? [`- System prompt: ${arg.options.systemPrompt.trim()}`]
+        : []),
+    ].join("\n"),
+  ];
+  for (const message of arg.messages) {
+    const text = messageText(message);
+    ret.push(
+      `## ${message.role === "user" ? "You" : (message.model ?? "Assistant")}\n\n${text || (message.error ? `_${message.error}_` : "")}`,
+    );
+  }
+  return `${ret.join("\n\n")}\n`;
+};
+
+const useContainerWidth = () => {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const [width, setWidth] = React.useState(0);
+
+  React.useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    setWidth(el.clientWidth);
+    const observer = new ResizeObserver((entries) =>
+      setWidth(entries[0].contentRect.width),
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return { ref, width };
+};
+
+const ToolbarButton = (props: {
+  label: string;
+  onClick: () => void;
+  active?: boolean;
+  children: React.ReactNode;
+}) => (
+  <Tooltip label={props.label} withArrow>
+    <ActionIcon
+      variant={props.active ? "light" : "subtle"}
+      color="gray"
+      aria-label={props.label}
+      aria-pressed={props.active}
+      onClick={props.onClick}
+      className="relative"
+    >
+      {props.children}
+    </ActionIcon>
+  </Tooltip>
+);
+
 const LLMPlayground = (props: { service: Service }) => {
   const { service } = props;
+  const key = service.metadata?.uid || service.metadata?.name || "";
   const protocol = protocolFromEnum(getLLMConfig(service)?.protocol);
-  const isPublic = service.spec?.isPublic === true;
-  const canStream = supportsStreaming(protocol);
-
-  const [opened, setOpened] = React.useState(false);
-  const [messages, setMessages] = React.useState<ChatMessage[]>([]);
-  const [input, setInput] = React.useState("");
-  const [attachments, setAttachments] = React.useState<Attachment[]>([]);
-  const [pending, setPending] = React.useState(false);
-  const [error, setError] = React.useState<string>();
-  const [copied, setCopied] = React.useState(false);
-  const [advanced, setAdvanced] = React.useState(false);
-  const [endpoint, setEndpoint] = React.useState(() =>
-    defaultEndpoint(getServicePublicURL(service, getDomain()), protocol),
+  const serviceEndpoint = defaultEndpoint(
+    getServicePublicURL(service, getDomain()),
+    protocol,
   );
-  const [options, setOptions] = React.useState<RequestOptions>(() => ({
-    model: getConfiguredModel(service),
-    systemPrompt: "",
-    temperature: "",
-    topP: "",
-    maxTokens: "",
-    reasoning: "",
-    stream: supportsStreaming(protocol),
-    apiShape: "chat",
-  }));
+  const configuredModel = getConfiguredModel(service);
+  const title = service.metadata?.displayName || service.metadata?.name || "";
 
+  const [initial] = React.useState<Session>(() => {
+    const cached = sessions.get(key);
+    if (cached?.protocol === protocol) return cached;
+    return {
+      protocol,
+      messages: [],
+      input: "",
+      endpoint: serviceEndpoint,
+      options: defaultOptions(service, protocol),
+    };
+  });
+
+  const [messages, setMessages] = React.useState(initial.messages);
+  const [input, setInput] = React.useState(initial.input);
+  const [endpoint, setEndpoint] = React.useState(initial.endpoint);
+  const [options, setOptions] = React.useState(initial.options);
+  const [attachments, setAttachments] = React.useState<Attachment[]>([]);
+  const [uploads, setUploads] = React.useState<Upload[]>([]);
+  const [pending, setPending] = React.useState(false);
+  const [modelError, setModelError] = React.useState<string>();
+  const [pinned, setPinned] = React.useState(
+    () => readStorage(settingsStorageKey) !== "hidden",
+  );
+  const [overlay, setOverlay] = React.useState(false);
+  const [dragging, setDragging] = React.useState(false);
+
+  const { ref: rootRef, width } = useContainerWidth();
   const abortRef = React.useRef<AbortController | null>(null);
-  const transcriptRef = React.useRef<HTMLDivElement>(null);
-  const fileRef = React.useRef<HTMLInputElement>(null);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const modelRef = React.useRef<HTMLInputElement>(null);
+  const overlayRef = React.useRef<HTMLElement>(null);
+  const dragDepthRef = React.useRef(0);
 
-  React.useEffect(() => {
-    const nextProtocol = protocolFromEnum(getLLMConfig(service)?.protocol);
-    setEndpoint(
-      defaultEndpoint(getServicePublicURL(service, getDomain()), nextProtocol),
+  const wide = width >= wideWidth;
+  const settingsOpen = wide ? pinned : overlay;
+  const isEmpty = messages.length === 0;
+  const defaults = defaultOptions(service, protocol);
+  const customized =
+    endpoint !== serviceEndpoint ||
+    (Object.keys(defaults) as (keyof RequestOptions)[]).some(
+      (option) => option !== "model" && options[option] !== defaults[option],
     );
-    setOptions((current) => ({
-      ...current,
-      model: getConfiguredModel(service),
-      apiShape: "chat",
-      stream: supportsStreaming(nextProtocol),
-    }));
-    setMessages([]);
-    setInput("");
-    setAttachments([]);
-    setError(undefined);
-  }, [service]);
+
+  const {
+    scrollRef,
+    contentRef,
+    stickRef,
+    atBottom,
+    scrolled,
+    onScroll,
+    scrollToBottom,
+    reset: resetTranscript,
+  } = useTranscript({
+    mounted: !isEmpty,
+    awaitingApproval: false,
+    messages: noMessages,
+  });
 
   React.useEffect(() => {
-    transcriptRef.current?.scrollTo({
-      top: transcriptRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [messages, pending]);
+    sessions.set(key, { protocol, messages, input, endpoint, options });
+  }, [key, protocol, messages, input, endpoint, options]);
+
+  React.useEffect(
+    () => () => {
+      const controller = abortRef.current;
+      if (!controller) return;
+      controller.abort();
+      const snapshot = sessions.get(key);
+      if (snapshot) {
+        sessions.set(key, {
+          ...snapshot,
+          messages: stopLast(snapshot.messages),
+        });
+      }
+    },
+    [key],
+  );
+
+  React.useEffect(() => {
+    if (overlay) overlayRef.current?.focus();
+  }, [overlay]);
+
+  const focusComposer = () =>
+    requestAnimationFrame(() => textareaRef.current?.focus());
+
+  const openSettings = (focusModel = false) => {
+    if (wide) {
+      setPinned(true);
+      writeStorage(settingsStorageKey, "visible");
+    } else {
+      setOverlay(true);
+    }
+    if (focusModel) {
+      window.setTimeout(() => modelRef.current?.focus(), 320);
+    }
+  };
+
+  const closeSettings = () => {
+    if (wide) {
+      setPinned(false);
+      writeStorage(settingsStorageKey, "hidden");
+    } else {
+      setOverlay(false);
+    }
+  };
 
   const setOption = <K extends keyof RequestOptions>(
-    key: K,
+    option: K,
     value: RequestOptions[K],
-  ) => setOptions((current) => ({ ...current, [key]: value }));
+  ) => {
+    if (option === "model") setModelError(undefined);
+    setOptions((current) => ({ ...current, [option]: value }));
+  };
 
   const appendPart = (
     id: string,
@@ -175,12 +380,13 @@ const LLMPlayground = (props: { service: Service }) => {
         if (item.id !== id) return item;
         const parts = [...item.parts];
         const last = parts.at(-1);
+        const at = Date.now();
 
         if (kind === "tool") {
           if (last?.kind === "tool" && !name) {
             parts[parts.length - 1] = { ...last, input: last.input + text };
           } else {
-            parts.push({ kind: "tool", name: name ?? "tool", input: text });
+            parts.push({ kind: "tool", name: name ?? "tool", input: text, at });
           }
           return { ...item, parts };
         }
@@ -188,11 +394,7 @@ const LLMPlayground = (props: { service: Service }) => {
         if (last?.kind === kind) {
           parts[parts.length - 1] = { ...last, text: last.text + text };
         } else {
-          parts.push(
-            kind === "thinking"
-              ? { kind: "thinking", text }
-              : { kind: "text", text },
-          );
+          parts.push({ kind, text, at });
         }
         return { ...item, parts };
       }),
@@ -203,22 +405,26 @@ const LLMPlayground = (props: { service: Service }) => {
       items.map((item) => (item.id === id ? { ...item, ...patch } : item)),
     );
 
-  const run = async (history: ChatMessage[]) => {
-    if (!options.model.trim()) {
-      setError("Enter a model name before sending a request.");
-      setAdvanced(true);
-      return;
-    }
+  const ensureModel = () => {
+    if (options.model.trim()) return true;
+    setModelError("Enter the model to send the request to");
+    openSettings(true);
+    return false;
+  };
 
-    setError(undefined);
+  const run = async (history: ChatMessage[]) => {
     const assistant = newMessage("assistant");
     setMessages([...history, assistant]);
     setPending(true);
+    stickRef.current = true;
+    requestAnimationFrame(() => scrollToBottom("auto"));
 
     const controller = new AbortController();
     abortRef.current = controller;
     const startedAt = performance.now();
     let firstTokenAt: number | undefined;
+    let stopped = false;
+    let error: string | undefined;
 
     try {
       await runCompletion({
@@ -238,10 +444,22 @@ const LLMPlayground = (props: { service: Service }) => {
               appendPart(assistant.id, "thinking", event.text);
               break;
             case "tool":
-              appendPart(assistant.id, "tool", event.input, event.name || undefined);
+              firstTokenAt ??= performance.now();
+              appendPart(
+                assistant.id,
+                "tool",
+                event.input,
+                event.name || undefined,
+              );
               break;
             case "usage":
-              patchMessage(assistant.id, { usage: event.usage });
+              setMessages((items) =>
+                items.map((item) =>
+                  item.id === assistant.id
+                    ? { ...item, usage: mergeUsage(item.usage, event.usage) }
+                    : item,
+                ),
+              );
               break;
             case "model":
               patchMessage(assistant.id, { model: event.model });
@@ -253,46 +471,57 @@ const LLMPlayground = (props: { service: Service }) => {
         },
       });
     } catch (requestError) {
-      patchMessage(assistant.id, { error: getErrorMessage(requestError) });
-      setError(getErrorMessage(requestError));
+      if (isAbort(requestError)) {
+        stopped = true;
+      } else {
+        error = getErrorMessage(requestError);
+      }
     } finally {
       patchMessage(assistant.id, {
+        completedAt: Date.now(),
         latencyMs: performance.now() - startedAt,
         ...(firstTokenAt !== undefined
           ? { ttftMs: firstTokenAt - startedAt }
           : {}),
+        ...(stopped ? { stopped } : {}),
+        ...(error ? { error } : {}),
       });
-      abortRef.current = null;
-      setPending(false);
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+        setPending(false);
+      }
     }
   };
 
   const send = async () => {
     const value = input.trim();
     if ((!value && attachments.length === 0) || pending) return;
+    if (uploads.length > 0 || !ensureModel()) return;
 
-    const user = newMessage("user", [{ kind: "text", text: value }], attachments);
+    const user = newMessage(
+      "user",
+      [{ kind: "text", text: value }],
+      attachments,
+    );
     setInput("");
     setAttachments([]);
     await run([...messages, user]);
   };
 
   const regenerate = async () => {
-    if (pending) return;
-    const lastUser = [...messages]
-      .reverse()
-      .find((item) => item.role === "user");
-    if (!lastUser) return;
-    const index = messages.findIndex((item) => item.id === lastUser.id);
+    if (pending || !ensureModel()) return;
+    const index = findLastUser(messages);
+    if (index === -1) return;
     await run(messages.slice(0, index + 1));
   };
 
   const stop = () => abortRef.current?.abort();
 
-  const clear = () => {
-    if (pending) return;
+  const newChat = () => {
+    abortRef.current?.abort();
     setMessages([]);
-    setError(undefined);
+    resetTranscript();
+    focusComposer();
   };
 
   const copyTranscript = async () => {
@@ -302,429 +531,434 @@ const LLMPlayground = (props: { service: Service }) => {
           `${item.role === "user" ? "You" : "Assistant"}:\n${messageText(item)}`,
       )
       .join("\n\n");
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1200);
+    if (await copyText(text)) toast.success("The transcript is copied");
   };
 
-  const addFiles = async (files: FileList | File[] | null) => {
-    if (!files) return;
-    const loaded = await Promise.all(Array.from(files).map(readFile));
-    setAttachments((current) => [...current, ...loaded]);
+  const exportTranscript = () =>
+    saveBlob(
+      new Blob([transcriptMarkdown({ title, endpoint, options, messages })], {
+        type: "text/markdown",
+      }),
+      toFileName(`${title}-playground`, "md"),
+    );
+
+  const addFiles = async (files: File[]) => {
+    const images = files.filter((file) => file.type.startsWith("image/"));
+    if (images.length < files.length) {
+      toast.error("Only images can be attached to a prompt");
+    }
+    for (const file of images) {
+      const uploadKey = `${file.name}-${file.size}-${Math.random()}`;
+      setUploads((current) => [
+        ...current,
+        { key: uploadKey, name: file.name },
+      ]);
+      try {
+        const attachment = await readFile(file);
+        setAttachments((current) => [...current, attachment]);
+      } catch (err) {
+        toast.error(`Could not read ${file.name}: ${getErrorMessage(err)}`);
+      } finally {
+        setUploads((current) => current.filter((itm) => itm.key !== uploadKey));
+      }
+    }
   };
 
-  if (service.spec?.mode !== Service_Spec_Mode.LLM || !isPublic) return null;
+  const fileInfos = React.useMemo<FileInfo[]>(
+    () =>
+      attachments.map((attachment) => ({
+        id: attachment.id,
+        name: attachment.name,
+        mimeType: attachment.mime,
+        size: attachmentSize(attachment),
+        path: "",
+        createdAt: "",
+      })),
+    [attachments],
+  );
+
+  const previews = React.useMemo(
+    () =>
+      Object.fromEntries(
+        attachments.map((attachment) => [attachment.id, attachment.dataURL]),
+      ),
+    [attachments],
+  );
+
+  const lastUserIndex = findLastUser(messages);
+
+  const modelButton = (
+    <button
+      type="button"
+      aria-label="Change the model"
+      onClick={() => openSettings(true)}
+      className={twMerge(
+        "flex h-8 min-w-0 max-w-[220px] cursor-pointer items-center gap-1.5 rounded-full px-2.5 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900",
+        options.model.trim() ? "text-slate-600" : "text-amber-700",
+      )}
+    >
+      <Sparkles size={13} className="shrink-0" />
+      <span className="truncate text-xs font-semibold">
+        {options.model.trim() || "Set the model"}
+      </span>
+      <ChevronDown size={12} strokeWidth={2.5} className="shrink-0" />
+    </button>
+  );
+
+  const settings = (
+    <Settings
+      protocol={protocol}
+      options={options}
+      onOption={setOption}
+      endpoint={endpoint}
+      defaultEndpoint={serviceEndpoint}
+      onEndpoint={setEndpoint}
+      configuredModel={configuredModel}
+      modelError={modelError}
+      modelRef={modelRef}
+      onReset={() => {
+        setOptions(defaults);
+        setEndpoint(serviceEndpoint);
+        setModelError(undefined);
+      }}
+      onClose={closeSettings}
+    />
+  );
 
   return (
-    <>
-      <Button
-        type="button"
-        size="compact-xs"
-        variant="default"
-        leftSection={<Sparkles size={12} strokeWidth={2.5} />}
-        onClick={() => setOpened(true)}
-      >
-        LLM playground
-      </Button>
-      <Drawer
-        opened={opened}
-        onClose={() => setOpened(false)}
-        position="right"
-        size="min(880px, 100vw)"
-        title={
-          <div className="flex min-w-0 items-center gap-2">
-            <Bot size={15} className="shrink-0 text-slate-500" />
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
-              LLM playground
-            </span>
-            <span className="truncate text-sm font-semibold text-slate-800">
-              {service.metadata?.name}
-            </span>
-          </div>
-        }
-        overlayProps={{ backgroundOpacity: 0.2, blur: 1 }}
-        transitionProps={{
-          transition: "slide-left",
-          duration: 500,
-          exitDuration: 500,
+    <div
+      ref={rootRef}
+      className="relative flex h-[calc(100dvh-11.125rem)] min-h-[30rem] w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card"
+    >
+      <section
+        aria-label="Conversation"
+        className="relative flex min-w-0 flex-1 flex-col"
+        onDragEnter={(event) => {
+          if (!hasFiles(event)) return;
+          event.preventDefault();
+          dragDepthRef.current++;
+          setDragging(true);
         }}
-        styles={{
-          header: { borderBottom: "1px solid var(--color-slate-200)", minHeight: "56px" },
-          body: {
-            height: "calc(100dvh - 56px)",
-            padding: "16px",
-            backgroundColor: "var(--color-slate-50)",
-          },
-          content: { borderLeft: "1px solid var(--color-slate-200)" },
+        onDragOver={(event) => {
+          if (hasFiles(event)) event.preventDefault();
+        }}
+        onDragLeave={(event) => {
+          if (!hasFiles(event)) return;
+          dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+          if (dragDepthRef.current === 0) setDragging(false);
+        }}
+        onDrop={(event) => {
+          if (!hasFiles(event)) return;
+          event.preventDefault();
+          dragDepthRef.current = 0;
+          setDragging(false);
+          void addFiles(Array.from(event.dataTransfer.files));
         }}
       >
-        <div className="flex h-full flex-col gap-3">
-          <div className="shrink-0 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-card">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white">
-                <Sparkles size={16} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-body font-semibold text-slate-800">
-                  Talk to this LLM Service
-                </p>
-                <p className="mt-0.5 text-xs font-normal leading-5 text-slate-500">
-                  Requests go through Octelium, so the Policies, Plugins and
-                  guardrails of this Service apply. Provider credentials stay on
-                  the Cluster.
-                </p>
-              </div>
-              <Badge variant="light" color={PROTOCOL_COLORS[protocol]}>
-                {PROTOCOL_LABELS[protocol]}
-              </Badge>
-            </div>
-
-            <div className="mt-3 flex flex-wrap items-end gap-2">
-              <TextInput
-                size="xs"
-                className="min-w-[240px] flex-1"
-                label="Service endpoint"
-                value={endpoint}
-                onChange={(event) => setEndpoint(event.currentTarget.value)}
-              />
-              <TextInput
-                size="xs"
-                className="min-w-[190px]"
-                label="Model"
-                required
-                placeholder={PROTOCOL_MODEL_PLACEHOLDER[protocol]}
-                value={options.model}
-                onChange={(event) => setOption("model", event.currentTarget.value)}
-              />
-              {protocol === "openai" && (
-                <SegmentedControl
-                  size="xs"
-                  value={options.apiShape}
-                  onChange={(value) =>
-                    setOption("apiShape", value as RequestOptions["apiShape"])
-                  }
-                  data={[
-                    { label: "Chat", value: "chat" },
-                    { label: "Responses", value: "responses" },
-                  ]}
-                />
-              )}
-              <Tooltip
-                label={
-                  canStream
-                    ? "Stream the response"
-                    : "The Bedrock Converse route is served without streaming here"
-                }
-                withArrow
-              >
-                <div>
-                  <Switch
-                    size="xs"
-                    label="Stream"
-                    disabled={!canStream}
-                    checked={options.stream && canStream}
-                    onChange={(event) =>
-                      setOption("stream", event.currentTarget.checked)
-                    }
-                  />
-                </div>
-              </Tooltip>
-            </div>
-          </div>
-
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
-            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 px-4 py-2.5">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
-                  Conversation
-                </span>
-                {messages.length > 0 && (
-                  <Badge size="sm" variant="light" color="gray">
-                    {messages.length}
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                <Tooltip label={copied ? "Copied" : "Copy transcript"} withArrow>
-                  <ActionIcon
-                    variant="subtle"
-                    color="gray"
-                    aria-label="Copy transcript"
-                    onClick={copyTranscript}
-                    disabled={!messages.length}
-                  >
-                    {copied ? <Check size={15} /> : <Copy size={15} />}
-                  </ActionIcon>
-                </Tooltip>
-                <Tooltip label="Clear conversation" withArrow>
-                  <ActionIcon
-                    variant="subtle"
-                    color="gray"
-                    aria-label="Clear conversation"
-                    onClick={clear}
-                    disabled={!messages.length || pending}
-                  >
-                    <RotateCcw size={15} />
-                  </ActionIcon>
-                </Tooltip>
-              </div>
-            </div>
-
-            <div
-              ref={transcriptRef}
-              className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4"
+        <header
+          className={twMerge(
+            "relative z-10 flex h-12 shrink-0 items-center gap-1 border-b pl-3 pr-2 transition-colors duration-200",
+            scrolled && !isEmpty ? "border-slate-200/80" : "border-transparent",
+          )}
+        >
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <span className="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-micro font-semibold text-slate-600">
+              {PROTOCOL_LABELS[protocol]}
+              {protocol === "openai" &&
+                (options.apiShape === "responses"
+                  ? " · Responses"
+                  : " · Chat Completions")}
+            </span>
+            <span
+              className="hidden min-w-0 truncate font-mono text-micro text-slate-500 sm:block"
+              title={endpoint}
             >
-              {messages.length === 0 ? (
-                <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
-                    <Bot size={23} />
-                  </span>
-                  <p className="mt-3 text-sm font-bold text-slate-700">
-                    Start a conversation
-                  </p>
-                  <p className="mt-1 max-w-sm text-xs font-normal leading-5 text-slate-500">
-                    Ask a question or attach an image. Use the request options to
-                    set the sampling behavior and the reasoning budget.
-                  </p>
-                </div>
-              ) : (
-                messages.map((message, index) => (
+              {endpoint.replace(/^https?:\/\//, "")}
+            </span>
+            {pending && (
+              <span className="flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-micro font-semibold text-slate-600">
+                <StatusDot tone="blue" pulse />
+                <span className="hidden sm:inline">Generating</span>
+              </span>
+            )}
+          </div>
+          {!isEmpty && (
+            <>
+              <ToolbarButton label="New conversation" onClick={newChat}>
+                <SquarePen size={15} />
+              </ToolbarButton>
+              <Menu position="bottom-end" withinPortal>
+                <Menu.Target>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    aria-label="Conversation actions"
+                  >
+                    <Ellipsis size={16} />
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item
+                    leftSection={<Copy size={13} />}
+                    onClick={() => void copyTranscript()}
+                  >
+                    Copy the transcript
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<Download size={13} />}
+                    onClick={exportTranscript}
+                  >
+                    Export as Markdown
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            </>
+          )}
+          <ToolbarButton
+            label={
+              settingsOpen ? "Hide the request settings" : "Request settings"
+            }
+            onClick={() => (settingsOpen ? closeSettings() : openSettings())}
+            active={settingsOpen}
+          >
+            <SlidersHorizontal size={15} />
+            {customized && !settingsOpen && (
+              <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-blue-500" />
+            )}
+          </ToolbarButton>
+        </header>
+
+        <div
+          className={twMerge(
+            "relative flex min-h-0 flex-1 flex-col",
+            isEmpty &&
+              "justify-center-safe overflow-y-auto overscroll-contain px-3 py-6 sm:px-6",
+          )}
+        >
+          {isEmpty ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease }}
+              className="mx-auto mb-6 flex w-full max-w-3xl flex-col items-center text-center"
+            >
+              <AgentMark size="lg" icon={Bot} />
+              <h2 className="mt-4 max-w-full break-words text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                Chat with {title}
+              </h2>
+              <p className="mt-1.5 max-w-md text-body leading-6 text-slate-500">
+                Requests go through Octelium with your identity, so the
+                Policies, plugins and guardrails of this Service apply. The
+                provider credentials stay on the Cluster.
+              </p>
+            </motion.div>
+          ) : (
+            <div
+              ref={scrollRef}
+              onScroll={onScroll}
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]"
+            >
+              <div
+                ref={contentRef}
+                className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 pb-10 pt-4 sm:px-6"
+              >
+                {messages.map((message, idx) => (
                   <Message
                     key={message.id}
                     message={message}
-                    streaming={pending && index === messages.length - 1}
+                    streaming={pending && idx === messages.length - 1}
+                    isLast={idx === messages.length - 1}
                     onRegenerate={
                       !pending &&
                       message.role === "assistant" &&
-                      index === messages.length - 1
-                        ? regenerate
+                      idx === messages.length - 1 &&
+                      lastUserIndex !== -1
+                        ? () => void regenerate()
                         : undefined
                     }
                   />
-                ))
-              )}
-            </div>
-
-            {error && (
-              <div className="mx-4 mb-2 flex shrink-0 items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
-                <CircleAlert size={15} className="mt-0.5 shrink-0" />
-                <span className="min-w-0 break-words">{error}</span>
+                ))}
               </div>
-            )}
+            </div>
+          )}
 
-            <div className="shrink-0 border-t border-slate-100 p-3">
-              {attachments.length > 0 && (
-                <div className="mb-2 flex flex-wrap gap-1.5">
-                  {attachments.map((attachment) => (
-                    <span
-                      key={attachment.id}
-                      className="group relative inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 py-1 pl-1.5 pr-1 text-micro font-normal text-slate-600"
-                    >
-                      {attachment.mime.startsWith("image/") ? (
-                        <img
-                          src={attachment.dataURL}
-                          alt=""
-                          className="h-6 w-6 rounded object-cover"
-                        />
-                      ) : (
-                        <Paperclip size={11} />
-                      )}
-                      <span className="max-w-[140px] truncate">
-                        {attachment.name}
-                      </span>
-                      <button
-                        type="button"
-                        aria-label={`Remove ${attachment.name}`}
-                        onClick={() =>
-                          setAttachments((current) =>
-                            current.filter((item) => item.id !== attachment.id),
-                          )
-                        }
-                        className="flex h-4 w-4 cursor-pointer items-center justify-center rounded text-slate-500 transition-colors duration-200 hover:bg-slate-200 hover:text-slate-700"
-                      >
-                        <X size={10} strokeWidth={3} />
-                      </button>
+          <motion.div
+            layout="position"
+            layoutDependency={isEmpty}
+            transition={{ duration: 0.4, ease }}
+            className={twMerge(
+              "relative mx-auto w-full max-w-3xl",
+              !isEmpty && "px-3 pb-3 sm:px-6 sm:pb-4",
+            )}
+          >
+            <AnimatePresence>
+              {!isEmpty && !atBottom && (
+                <motion.button
+                  key="scroll"
+                  type="button"
+                  aria-label="Scroll to the latest message"
+                  initial={{ opacity: 0, y: 6, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.9 }}
+                  transition={{ duration: 0.18 }}
+                  onClick={() => scrollToBottom()}
+                  className="absolute -top-11 left-1/2 z-10 flex h-8 w-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-raised transition-colors hover:text-slate-900"
+                >
+                  <ArrowDown size={15} strokeWidth={2.25} />
+                  {pending && (
+                    <span className="absolute -right-0.5 -top-0.5">
+                      <StatusDot tone="blue" pulse />
                     </span>
-                  ))}
-                </div>
+                  )}
+                </motion.button>
               )}
-
-              <Textarea
-                aria-label="Message"
-                placeholder="Ask the model something…"
-                autosize
-                minRows={2}
-                maxRows={8}
-                value={input}
-                onChange={(event) => setInput(event.currentTarget.value)}
-                onPaste={(event) => {
-                  const files = Array.from(event.clipboardData.files);
-                  if (files.length > 0) {
-                    event.preventDefault();
-                    void addFiles(files);
-                  }
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    void send();
-                  }
-                }}
-              />
-
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-1">
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    hidden
-                    onChange={(event) => {
-                      void addFiles(event.currentTarget.files);
-                      event.currentTarget.value = "";
-                    }}
-                  />
-                  <Tooltip label="Attach an image" withArrow>
-                    <ActionIcon
-                      variant="subtle"
-                      color="gray"
-                      aria-label="Attach an image"
-                      onClick={() => fileRef.current?.click()}
-                    >
-                      <ImagePlus size={15} />
-                    </ActionIcon>
-                  </Tooltip>
-                  <Button
-                    type="button"
-                    variant="subtle"
-                    size="compact-xs"
-                    color="gray"
-                    leftSection={<Settings2 size={13} />}
-                    rightSection={
-                      <ChevronDown
-                        size={12}
-                        className={twMerge(
-                          "transition-transform duration-200",
-                          advanced && "rotate-180",
-                        )}
-                      />
-                    }
-                    onClick={() => setAdvanced((value) => !value)}
-                  >
-                    Request options
-                  </Button>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-micro font-normal text-slate-500">
-                    Enter to send · Shift + Enter for a new line
-                  </span>
-                  <Button
-                    type="button"
-                    size="sm"
-                    leftSection={
-                      pending ? <Square size={14} /> : <Send size={14} />
-                    }
-                    color={pending ? "red" : "dark"}
-                    onClick={pending ? stop : () => void send()}
-                  >
-                    {pending ? "Stop" : "Send"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <AnimatePresence initial={false}>
-            {advanced && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-                className="shrink-0 overflow-hidden"
-              >
-                <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-card">
-                  <div className="mb-2.5 flex items-center gap-2">
-                    <Settings2 size={14} className="text-slate-500" />
-                    <p className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-600">
-                      Request options
-                    </p>
-                  </div>
-                  <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-                    <Textarea
-                      size="xs"
-                      className="sm:col-span-2 lg:col-span-4"
-                      label="System prompt"
-                      placeholder="You are a concise assistant."
-                      autosize
-                      minRows={2}
-                      maxRows={5}
-                      value={options.systemPrompt}
-                      onChange={(event) =>
-                        setOption("systemPrompt", event.currentTarget.value)
-                      }
-                    />
-                    <NumberInput
-                      size="xs"
-                      label="Temperature"
-                      placeholder="Provider default"
-                      min={0}
-                      max={2}
-                      step={0.1}
-                      decimalScale={2}
-                      value={options.temperature}
-                      onChange={(value) => setOption("temperature", String(value ?? ""))}
-                    />
-                    <NumberInput
-                      size="xs"
-                      label="Top P"
-                      placeholder="Provider default"
-                      min={0}
-                      max={1}
-                      step={0.05}
-                      decimalScale={2}
-                      value={options.topP}
-                      onChange={(value) => setOption("topP", String(value ?? ""))}
-                    />
-                    <NumberInput
-                      size="xs"
-                      label="Max output tokens"
-                      placeholder={
-                        protocol === "anthropic" ? "4096" : "Provider default"
-                      }
-                      min={1}
-                      allowDecimal={false}
-                      value={options.maxTokens}
-                      onChange={(value) => setOption("maxTokens", String(value ?? ""))}
-                    />
-                    <Select
-                      size="xs"
-                      label="Reasoning effort"
-                      placeholder={REASONING_HINT[protocol]}
-                      disabled={protocol === "bedrock"}
-                      clearable
-                      searchable
-                      data={
-                        protocol === "openai"
-                          ? ["minimal", "low", "medium", "high"]
-                          : ["1024", "4096", "8192", "16384", "32768"]
-                      }
-                      value={options.reasoning || null}
-                      onChange={(value) => setOption("reasoning", value ?? "")}
-                    />
-                  </div>
-                  <p className="mt-2.5 text-micro font-normal text-slate-500">
-                    The Service's limits, Policies and guardrails still apply. Do
-                    not paste secrets into prompts.
-                  </p>
-                </div>
-              </motion.div>
+            </AnimatePresence>
+            {!isEmpty && (
+              <div className="pointer-events-none absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-white to-transparent" />
             )}
-          </AnimatePresence>
+            <Composer
+              value={input}
+              onChange={setInput}
+              attachments={fileInfos}
+              uploads={uploads}
+              previews={previews}
+              onAddFiles={(files) => void addFiles(files)}
+              onRemoveAttachment={(id) =>
+                setAttachments((current) =>
+                  current.filter((itm) => itm.id !== id),
+                )
+              }
+              onSend={() => void send()}
+              onStop={stop}
+              isActive={pending}
+              sending={false}
+              placeholder={
+                isEmpty ? "Send a prompt to the model…" : "Reply to the model…"
+              }
+              modelPicker={modelButton}
+              textareaRef={textareaRef}
+              accept="image/*"
+              attachLabel="Attach images"
+              className="shadow-card"
+            />
+          </motion.div>
+
+          {isEmpty && (
+            <div className="mx-auto mt-4 grid w-full max-w-3xl gap-2 sm:grid-cols-2">
+              {suggestions.map((suggestion, idx) => (
+                <motion.button
+                  key={suggestion.title}
+                  type="button"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.35,
+                    delay: 0.08 + idx * 0.05,
+                    ease,
+                  }}
+                  onClick={() => {
+                    setInput(suggestion.prompt);
+                    focusComposer();
+                  }}
+                  className="group flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left outline-none transition-[border-color,box-shadow,background-color] duration-200 hover:border-slate-300 hover:bg-slate-50/60 hover:shadow-raised focus-visible:ring-2 focus-visible:ring-slate-400"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500 transition-colors duration-200 group-hover:text-slate-800">
+                    <suggestion.icon size={14} strokeWidth={2.25} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-xs font-semibold text-slate-800">
+                      {suggestion.title}
+                    </span>
+                    <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-slate-500">
+                      {suggestion.prompt}
+                    </span>
+                  </span>
+                </motion.button>
+              ))}
+            </div>
+          )}
         </div>
-      </Drawer>
-    </>
+
+        <AnimatePresence>
+          {dragging && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="pointer-events-none absolute inset-2 z-20 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white/85 backdrop-blur-sm"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-raised">
+                <ImageUp size={20} />
+              </span>
+              <p className="mt-3 text-body font-semibold text-slate-800">
+                Drop images to attach them
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
+
+      {wide ? (
+        <motion.aside
+          initial={false}
+          animate={{ width: pinned ? settingsWidth : 0 }}
+          transition={{ duration: 0.3, ease }}
+          className="h-full shrink-0 overflow-hidden"
+          aria-label="Request settings"
+          aria-hidden={!pinned}
+          inert={!pinned}
+        >
+          <div
+            className="h-full border-l border-slate-200 bg-slate-50/70"
+            style={{ width: settingsWidth }}
+          >
+            {settings}
+          </div>
+        </motion.aside>
+      ) : (
+        <AnimatePresence>
+          {overlay && (
+            <>
+              <motion.div
+                key="backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setOverlay(false)}
+                className="absolute inset-0 z-30 bg-[rgba(15,23,42,0.28)] backdrop-blur-[1px]"
+              />
+              <motion.aside
+                key="settings"
+                ref={overlayRef}
+                tabIndex={-1}
+                aria-label="Request settings"
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ duration: 0.3, ease }}
+                onKeyDown={(event) => {
+                  if (
+                    event.key !== "Escape" ||
+                    event.defaultPrevented ||
+                    (event.target as HTMLElement).dataset
+                      .mantineStopPropagation === "true"
+                  ) {
+                    return;
+                  }
+                  event.preventDefault();
+                  setOverlay(false);
+                }}
+                className="absolute inset-y-0 right-0 z-40 w-[min(320px,92%)] border-l border-slate-200 bg-slate-50 shadow-overlay outline-none"
+              >
+                {settings}
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
+      )}
+    </div>
   );
 };
 

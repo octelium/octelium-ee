@@ -621,6 +621,18 @@ export const hasSSHSessionLog = (resource: Resource): boolean => {
     .otherwise(() => false);
 };
 
+export const hasPlayground = (resource: Resource): boolean => {
+  if (resource.apiVersion !== "core/v1" || resource.kind !== "Service") {
+    return false;
+  }
+  const spec = (resource as CoreP.Service).spec;
+  return (
+    spec?.isPublic === true &&
+    (spec.mode === CoreP.Service_Spec_Mode.LLM ||
+      spec.mode === CoreP.Service_Spec_Mode.MCP)
+  );
+};
+
 export const getRefName = (arg: Resource): string => {
   const kind = arg.kind;
   return `${kind.at(0)?.toLowerCase() ?? ""}${kind.slice(1)}Ref`;

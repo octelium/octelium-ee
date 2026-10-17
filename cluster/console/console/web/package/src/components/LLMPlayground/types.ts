@@ -12,9 +12,9 @@ export type Attachment = {
 };
 
 export type Part =
-  | { kind: "text"; text: string }
-  | { kind: "thinking"; text: string }
-  | { kind: "tool"; name: string; input: string };
+  | { kind: "text"; text: string; at?: number }
+  | { kind: "thinking"; text: string; at?: number }
+  | { kind: "tool"; name: string; input: string; at?: number };
 
 export type Usage = {
   inputTokens?: number;
@@ -30,12 +30,15 @@ export type ChatMessage = {
   role: Role;
   parts: Part[];
   attachments: Attachment[];
+  createdAt: number;
+  completedAt?: number;
   usage?: Usage;
   model?: string;
   finishReason?: string;
   latencyMs?: number;
   ttftMs?: number;
   error?: string;
+  stopped?: boolean;
   cached?: boolean;
 };
 

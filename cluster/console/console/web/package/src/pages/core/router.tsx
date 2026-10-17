@@ -53,6 +53,9 @@ const ServiceMetricsPage = React.lazy(
 const ServiceSSHPage = React.lazy(
   () => import("@/components/ResourceLayout/ServiceSSHPage"),
 );
+const ServicePlaygroundPage = React.lazy(
+  () => import("@/components/ResourceLayout/ServicePlaygroundPage"),
+);
 
 const LazyPage = (props: { children: React.ReactNode }) => (
   <React.Suspense fallback={<PageLoading />}>{props.children}</React.Suspense>
@@ -194,6 +197,14 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
       element: (
         <LazyPage>
           <ServiceSSHPage />
+        </LazyPage>
+      ),
+    });
+    children.push({
+      path: "playground",
+      element: (
+        <LazyPage>
+          <ServicePlaygroundPage />
         </LazyPage>
       ),
     });

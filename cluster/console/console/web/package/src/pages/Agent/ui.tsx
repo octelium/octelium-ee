@@ -1,5 +1,5 @@
 import { ActionIcon, Button, Modal, Tooltip } from "@mantine/core";
-import { Check, Copy, Sparkles, Trash2 } from "lucide-react";
+import { Check, Copy, Sparkles, Trash2, type LucideIcon } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { twMerge } from "@/lib/utils";
@@ -238,9 +238,11 @@ export const useNow = (active: boolean, intervalMs = 1000): number => {
 export const AgentMark = (props: {
   live?: boolean;
   size?: "sm" | "lg";
+  icon?: LucideIcon;
   className?: string;
 }) => {
   const large = props.size === "lg";
+  const Icon = props.icon ?? Sparkles;
   return (
     <span
       className={twMerge(
@@ -252,7 +254,7 @@ export const AgentMark = (props: {
       {props.live && (
         <span className="absolute -inset-1 rounded-[11px] border border-slate-300 motion-safe:animate-pulse" />
       )}
-      <Sparkles size={large ? 20 : 14} strokeWidth={2.2} />
+      <Icon size={large ? 20 : 14} strokeWidth={2.2} />
     </span>
   );
 };

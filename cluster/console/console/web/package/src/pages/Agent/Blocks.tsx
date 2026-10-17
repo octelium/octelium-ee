@@ -54,13 +54,8 @@ import {
   CircleAlert,
   CircleSlash,
   Download,
-  File,
-  FileArchive,
-  FileCode,
-  FileImage,
   FileOutput,
   FilePen,
-  FileSpreadsheet,
   FileText,
   FolderOpen,
   FolderSearch,
@@ -87,6 +82,7 @@ import * as React from "react";
 import { Link } from "react-router-dom";
 import { twMerge } from "@/lib/utils";
 import { AgentClient } from "./client";
+import { fileIcon } from "./files";
 import { CopyButton, Shimmer } from "./ui";
 import {
   formatBytes,
@@ -1337,24 +1333,6 @@ const ResourcesView = (props: { block: ResourcesBlock }) => {
       </ul>
     </div>
   );
-};
-
-export const fileIcon = (mimeType: string, name = ""): LucideIcon => {
-  if (mimeType.startsWith("image/")) return FileImage;
-  if (mimeType === "text/csv" || /\.(csv|tsv|xlsx?)$/i.test(name)) {
-    return FileSpreadsheet;
-  }
-  if (/(zip|tar|gzip|compressed)/.test(mimeType)) return FileArchive;
-  if (
-    /(json|yaml|xml|javascript|typescript)/.test(mimeType) ||
-    /\.(json|ya?ml|ts|js|go|py|sh|toml)$/i.test(name)
-  ) {
-    return FileCode;
-  }
-  if (mimeType.startsWith("text/") || mimeType === "application/pdf") {
-    return FileText;
-  }
-  return File;
 };
 
 const ArtifactView = (props: { block: ArtifactBlock; ctx: BlockContext }) => {

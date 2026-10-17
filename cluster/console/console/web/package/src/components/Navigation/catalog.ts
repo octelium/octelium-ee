@@ -399,6 +399,7 @@ const tabLabels: Record<string, string> = {
   metrics: "Metrics",
   llm: "LLM",
   ssh: "SSH Recordings",
+  playground: "Playground",
 };
 
 export interface ResourceCrumb {

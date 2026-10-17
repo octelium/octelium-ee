@@ -4,9 +4,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "@/lib/utils";
-import { fileIcon } from "./Blocks";
+import { fileIcon } from "./files";
+import { formatBytes } from "./format";
 import { Kbd } from "./ui";
-import { formatBytes } from "./utils";
 
 export interface Upload {
   key: string;
@@ -97,6 +97,8 @@ const Composer = (props: {
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   header?: React.ReactNode;
   className?: string;
+  accept?: string;
+  attachLabel?: string;
 }) => {
   const fileRef = React.useRef<HTMLInputElement>(null);
   const { textareaRef } = props;
@@ -229,6 +231,7 @@ const Composer = (props: {
             <input
               ref={fileRef}
               type="file"
+              accept={props.accept}
               multiple
               hidden
               onChange={(event) => {
@@ -236,13 +239,13 @@ const Composer = (props: {
                 event.currentTarget.value = "";
               }}
             />
-            <Tooltip label="Attach files" withArrow>
+            <Tooltip label={props.attachLabel ?? "Attach files"} withArrow>
               <ActionIcon
                 size={32}
                 radius="xl"
                 variant="subtle"
                 color="gray"
-                aria-label="Attach files"
+                aria-label={props.attachLabel ?? "Attach files"}
                 onClick={() => fileRef.current?.click()}
               >
                 <Paperclip size={15} />

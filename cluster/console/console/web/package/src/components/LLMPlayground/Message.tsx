@@ -1,285 +1,389 @@
+import { Timestamp } from "@/apis/google/protobuf/timestamp";
+import TimeAgo from "@/components/TimeAgo";
+import {
+  formatCount,
+  formatDuration,
+  formatElapsed,
+} from "@/pages/Agent/format";
+import { AgentMark, CopyButton, Shimmer, useNow } from "@/pages/Agent/ui";
 import { ActionIcon, Tooltip } from "@mantine/core";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Bot,
-  Brain,
-  Check,
-  ChevronDown,
   CircleAlert,
-  Copy,
   DatabaseZap,
-  RefreshCw,
-  User,
-  Wrench,
+  Paperclip,
+  RotateCcw,
 } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "@/lib/utils";
 import Markdown from "./Markdown";
 import { messageText } from "./protocols";
+import Steps, { Step } from "./Steps";
 import { ChatMessage, Usage } from "./types";
 
-const Typing = () => (
-  <span className="inline-flex items-center gap-1 py-1 text-slate-500">
-    <i className="h-1.5 w-1.5 motion-safe:animate-pulse rounded-full bg-current" />
-    <i className="h-1.5 w-1.5 motion-safe:animate-pulse rounded-full bg-current [animation-delay:150ms]" />
-    <i className="h-1.5 w-1.5 motion-safe:animate-pulse rounded-full bg-current [animation-delay:300ms]" />
-  </span>
-);
+type Group =
+  | { type: "steps"; id: string; steps: Step[] }
+  | { type: "text"; id: string; text: string };
 
-const Meta = (props: { children: React.ReactNode; title?: string }) => (
-  <span
-    title={props.title}
-    className="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-micro font-normal text-slate-500"
-  >
-    {props.children}
-  </span>
-);
+const longUserText = 700;
 
-const usageSummary = (usage?: Usage): string[] => {
-  if (!usage) return [];
-  const ret: string[] = [];
-  if (usage.inputTokens !== undefined) ret.push(`${usage.inputTokens} in`);
-  if (usage.outputTokens !== undefined) ret.push(`${usage.outputTokens} out`);
-  if (usage.reasoningTokens) ret.push(`${usage.reasoningTokens} reasoning`);
-  if (usage.cacheReadTokens) ret.push(`${usage.cacheReadTokens} cache read`);
-  if (usage.cacheWriteTokens) ret.push(`${usage.cacheWriteTokens} cache write`);
-  return ret;
+const truncatedReasons = new Set([
+  "length",
+  "max_tokens",
+  "max_output_tokens",
+  "MAX_TOKENS",
+  "incomplete",
+]);
+
+const filteredReasons = new Set([
+  "content_filter",
+  "SAFETY",
+  "RECITATION",
+  "PROHIBITED_CONTENT",
+  "refusal",
+  "guardrail_intervened",
+  "content_filtered",
+]);
+
+const finishNote = (reason?: string): string | undefined => {
+  if (!reason) return undefined;
+  if (truncatedReasons.has(reason)) return "Truncated at the output limit";
+  if (filteredReasons.has(reason)) return "Filtered";
+  return undefined;
 };
 
-const Thinking = (props: { text: string; streaming: boolean }) => {
-  const [opened, setOpened] = React.useState(false);
+const groupParts = (message: ChatMessage) => {
+  const groups: Group[] = [];
+
+  message.parts.forEach((part, idx) => {
+    const id = `${message.id}-${idx}`;
+    if (part.kind === "text") {
+      groups.push({ type: "text", id, text: part.text });
+      return;
+    }
+
+    const end = message.parts[idx + 1]?.at ?? message.completedAt;
+    const duration =
+      end !== undefined ? end - (part.at ?? message.createdAt) : undefined;
+    const step: Step =
+      part.kind === "thinking"
+        ? { kind: "thinking", id, text: part.text, duration }
+        : { kind: "tool", id, name: part.name, input: part.input, duration };
+
+    const last = groups.at(-1);
+    if (last?.type === "steps") {
+      last.steps.push(step);
+    } else {
+      groups.push({ type: "steps", id, steps: [step] });
+    }
+  });
+
+  return groups;
+};
+
+const totalTokens = (usage: Usage) =>
+  usage.totalTokens ?? (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0);
+
+const Typing = () => (
+  <span
+    className="inline-flex items-center gap-1 py-1 text-slate-400"
+    aria-label="Writing"
+  >
+    <i className="h-1.5 w-1.5 rounded-full bg-current motion-safe:animate-pulse" />
+    <i className="h-1.5 w-1.5 rounded-full bg-current motion-safe:animate-pulse [animation-delay:150ms]" />
+    <i className="h-1.5 w-1.5 rounded-full bg-current motion-safe:animate-pulse [animation-delay:300ms]" />
+  </span>
+);
+
+const Waiting = (props: { since: number }) => {
+  const now = useNow(true);
 
   return (
-    <div className="my-2 overflow-hidden rounded-xl border border-violet-200 bg-violet-50/60">
-      <button
-        type="button"
-        onClick={() => setOpened((value) => !value)}
-        aria-expanded={opened}
-        className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left outline-none transition-colors duration-200 hover:bg-violet-100/50"
-      >
-        <Brain size={13} strokeWidth={2.4} className="shrink-0 text-violet-600" />
-        <span className="flex-1 text-xs font-semibold uppercase tracking-[0.06em] text-violet-700">
-          {props.streaming ? "Thinking…" : "Reasoning"}
+    <p
+      className="flex h-7 min-w-0 items-center gap-2 text-xs font-semibold"
+      aria-live="polite"
+    >
+      <Shimmer className="min-w-0 truncate">Waiting for the model</Shimmer>
+      <span className="shrink-0 font-mono text-micro font-normal text-slate-400">
+        {formatElapsed(now - props.since)}
+      </span>
+    </p>
+  );
+};
+
+const UsageInfo = (props: { usage: Usage }) => {
+  const { usage } = props;
+  const rows = (
+    [
+      ["Input", usage.inputTokens],
+      ["Output", usage.outputTokens],
+      ["Reasoning", usage.reasoningTokens],
+      ["Cache read", usage.cacheReadTokens],
+      ["Cache write", usage.cacheWriteTokens],
+    ] as [string, number | undefined][]
+  ).filter((row): row is [string, number] => !!row[1]);
+
+  return (
+    <Tooltip
+      withArrow
+      multiline
+      label={
+        <span className="block text-micro leading-5">
+          {rows.map(([label, value]) => (
+            <span key={label} className="block">
+              {label}: {value.toLocaleString()}
+            </span>
+          ))}
         </span>
-        <span className="text-micro font-semibold text-violet-500">
-          {props.text.length.toLocaleString()} chars
-        </span>
-        <ChevronDown
-          size={13}
-          strokeWidth={2.4}
-          className={twMerge(
-            "shrink-0 text-violet-500 transition-transform duration-200",
-            opened && "rotate-180",
-          )}
-        />
-      </button>
-      <AnimatePresence initial={false}>
-        {opened && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden border-t border-violet-200"
-          >
-            <div className="max-h-[320px] overflow-y-auto px-3 py-2.5">
-              <p className="whitespace-pre-wrap text-body leading-6 text-violet-900/80">
-                {props.text}
-              </p>
-            </div>
-          </motion.div>
+      }
+    >
+      <span className="cursor-default tabular-nums">
+        {formatCount(totalTokens(usage))} tokens
+      </span>
+    </Tooltip>
+  );
+};
+
+const LatencyInfo = (props: { latencyMs: number; ttftMs?: number }) => (
+  <Tooltip
+    withArrow
+    multiline
+    label={
+      <span className="block text-micro leading-5">
+        {props.ttftMs !== undefined && (
+          <span className="block">
+            First token: {formatDuration(props.ttftMs)}
+          </span>
         )}
-      </AnimatePresence>
+        <span className="block">Total: {formatDuration(props.latencyMs)}</span>
+      </span>
+    }
+  >
+    <span className="cursor-default tabular-nums">
+      {formatDuration(props.latencyMs)}
+    </span>
+  </Tooltip>
+);
+
+const UserMessage = (props: { message: ChatMessage }) => {
+  const { message } = props;
+  const [expanded, setExpanded] = React.useState(false);
+  const text = messageText(message);
+  const isLong = text.length > longUserText || text.split("\n").length > 12;
+
+  return (
+    <div className="group/msg flex w-full flex-col items-end gap-1.5">
+      {message.attachments.length > 0 && (
+        <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5">
+          {message.attachments.map((attachment) =>
+            attachment.mime.startsWith("image/") ? (
+              <img
+                key={attachment.id}
+                src={attachment.dataURL}
+                alt={attachment.name}
+                className="h-20 w-20 rounded-xl border border-slate-200 object-cover shadow-card sm:h-24 sm:w-24"
+              />
+            ) : (
+              <span
+                key={attachment.id}
+                className="inline-flex max-w-[240px] items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-micro font-semibold text-slate-700 shadow-card"
+              >
+                <Paperclip size={12} className="shrink-0 text-slate-500" />
+                <span className="truncate">{attachment.name}</span>
+              </span>
+            ),
+          )}
+        </div>
+      )}
+      {text && (
+        <div className="relative max-w-[min(85%,40rem)] rounded-2xl rounded-br-md bg-slate-100 px-4 py-2.5">
+          <p
+            className={`text-body ${twMerge(
+              "whitespace-pre-wrap break-words leading-6 text-slate-800",
+              isLong && !expanded && "max-h-60 overflow-hidden",
+            )}`}
+          >
+            {text}
+          </p>
+          {isLong && (
+            <div
+              className={twMerge(
+                "flex justify-end",
+                !expanded &&
+                  "absolute inset-x-0 bottom-0 h-16 items-end rounded-b-2xl bg-gradient-to-t from-slate-100 via-slate-100/90 to-transparent px-4 pb-2",
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => setExpanded((value) => !value)}
+                className="cursor-pointer text-slate-600 hover:text-slate-900"
+              >
+                <span className="text-micro font-semibold">
+                  {expanded ? "Show less" : "Show more"}
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      <div className="flex h-6 items-center gap-1 text-micro text-slate-400 opacity-0 transition-opacity duration-150 group-hover/msg:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+        <TimeAgo rfc3339={Timestamp.fromDate(new Date(message.createdAt))} />
+        {text && <CopyButton value={() => text} label="Copy message" />}
+      </div>
     </div>
   );
 };
 
-const ToolCall = (props: { name: string; input: string }) => (
-  <div className="my-2 overflow-hidden rounded-xl border border-amber-200 bg-amber-50/60">
-    <div className="flex items-center gap-2 border-b border-amber-200 px-3 py-1.5">
-      <Wrench size={12} strokeWidth={2.5} className="shrink-0 text-amber-600" />
-      <span className="truncate font-mono text-xs font-semibold text-amber-800">
-        {props.name || "tool call"}
-      </span>
-    </div>
-    <pre className="max-h-[240px] overflow-auto px-3 py-2">
-      <code className="font-mono text-xs leading-5 text-amber-900/80">
-        {props.input || "{}"}
-      </code>
-    </pre>
-  </div>
-);
-
-const Message = (props: {
+const AssistantMessage = (props: {
   message: ChatMessage;
   streaming: boolean;
+  isLast: boolean;
   onRegenerate?: () => void;
 }) => {
-  const { message } = props;
-  const [copied, setCopied] = React.useState(false);
-  const isUser = message.role === "user";
-  const text = messageText(message);
-  const isEmpty = message.parts.length === 0 && !message.error;
-
-  const copy = async () => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1200);
-  };
+  const { message, streaming } = props;
+  const groups = React.useMemo(() => groupParts(message), [message]);
+  const text = streaming ? "" : messageText(message);
+  const last = message.parts.at(-1);
+  const note = finishNote(message.finishReason);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
-      className={twMerge(
-        "flex w-full gap-2.5",
-        isUser ? "justify-end" : "justify-start",
-      )}
-    >
-      {!isUser && (
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white">
-          <Bot size={14} strokeWidth={2.2} />
-        </span>
-      )}
-
-      <div
-        className={twMerge(
-          "flex min-w-0 max-w-[88%] flex-col gap-1",
-          isUser && "items-end",
-        )}
-      >
-        <div
-          className={twMerge(
-            "min-w-0 overflow-hidden rounded-2xl px-3.5 py-2.5",
-            isUser
-              ? "rounded-br-md bg-slate-900 text-white"
-              : "rounded-bl-md border border-slate-200 bg-white",
-          )}
-        >
-          {message.attachments.length > 0 && (
-            <div className="mb-2 flex flex-wrap gap-1.5">
-              {message.attachments.map((attachment) =>
-                attachment.mime.startsWith("image/") ? (
-                  <img
-                    key={attachment.id}
-                    src={attachment.dataURL}
-                    alt={attachment.name}
-                    className="h-20 w-20 rounded-lg border border-white/20 object-cover"
-                  />
-                ) : (
-                  <span
-                    key={attachment.id}
-                    className="rounded-lg bg-white/15 px-2 py-1 text-micro font-semibold"
-                  >
-                    {attachment.name}
-                  </span>
-                ),
-              )}
-            </div>
-          )}
-
-          {isUser ? (
-            <p className="whitespace-pre-wrap text-body leading-6">
-              {text}
-            </p>
-          ) : isEmpty && props.streaming ? (
-            <Typing />
+    <div className="group/msg flex w-full gap-3">
+      <AgentMark
+        icon={Bot}
+        live={streaming}
+        className="mt-0.5 hidden sm:flex"
+      />
+      <div className="min-w-0 flex-1">
+        {groups.map((group, idx) =>
+          group.type === "steps" ? (
+            <Steps
+              key={group.id}
+              steps={group.steps}
+              live={streaming && idx === groups.length - 1}
+            />
           ) : (
-            <div className="min-w-0">
-              {message.parts.map((part, index) => {
-                if (part.kind === "thinking") {
-                  return (
-                    <Thinking
-                      key={`thinking-${index}`}
-                      text={part.text}
-                      streaming={
-                        props.streaming && index === message.parts.length - 1
-                      }
-                    />
-                  );
-                }
-                if (part.kind === "tool") {
-                  return (
-                    <ToolCall
-                      key={`tool-${index}`}
-                      name={part.name}
-                      input={part.input}
-                    />
-                  );
-                }
-                return (
-                  <Markdown key={`text-${index}`}>{part.text}</Markdown>
-                );
-              })}
-              {message.error && (
-                <div className="mt-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 text-xs font-semibold text-red-700">
-                  <CircleAlert size={14} className="mt-0.5 shrink-0" />
-                  <span className="min-w-0 break-words">{message.error}</span>
-                </div>
-              )}
+            <div key={group.id} className="text-body break-words">
+              <Markdown>{group.text}</Markdown>
             </div>
-          )}
-        </div>
-
-        {!isUser && !props.streaming && !isEmpty && (
-          <div className="flex flex-wrap items-center gap-1.5 px-1">
-            {message.model && <Meta title="Model that answered">{message.model}</Meta>}
-            {message.cached && (
-              <Meta title="Served from the semantic cache">
-                <DatabaseZap size={9} strokeWidth={2.8} />
-                cached
-              </Meta>
-            )}
-            {usageSummary(message.usage).map((entry) => (
-              <Meta key={entry}>{entry}</Meta>
-            ))}
-            {message.latencyMs !== undefined && (
-              <Meta title="Round trip latency">
-                {Math.round(message.latencyMs)} ms
-              </Meta>
-            )}
-            {message.ttftMs !== undefined && (
-              <Meta title="Time to first token">
-                TTFT {Math.round(message.ttftMs)} ms
-              </Meta>
-            )}
-            {message.finishReason && <Meta>{message.finishReason}</Meta>}
-            <Tooltip label={copied ? "Copied" : "Copy response"} withArrow>
-              <ActionIcon
-                size="xs"
-                variant="subtle"
-                color="gray"
-                aria-label="Copy response"
-                onClick={copy}
-              >
-                {copied ? <Check size={12} /> : <Copy size={12} />}
-              </ActionIcon>
-            </Tooltip>
+          ),
+        )}
+        {streaming && !last && <Waiting since={message.createdAt} />}
+        {streaming && last?.kind === "text" && <Typing />}
+        {message.error && (
+          <div
+            role="alert"
+            className="my-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold leading-5 text-red-700"
+          >
+            <CircleAlert size={14} className="mt-0.5 shrink-0" />
+            <span className="min-w-0 break-words">{message.error}</span>
+          </div>
+        )}
+        {!streaming && message.stopped && (
+          <p className="mt-2 flex items-start gap-1.5 text-xs font-semibold text-slate-500">
+            <CircleAlert size={13} className="mt-0.5 shrink-0" />
+            Stopped
+          </p>
+        )}
+        {!streaming && (
+          <div
+            className={`text-micro ${twMerge(
+              "-ml-1 mt-1.5 flex h-7 items-center gap-0.5 text-slate-400 transition-opacity duration-150 focus-within:opacity-100 [@media(hover:none)]:opacity-100",
+              props.isLast
+                ? "opacity-100"
+                : "opacity-0 group-hover/msg:opacity-100",
+            )}`}
+          >
+            {text && <CopyButton value={() => text} label="Copy response" />}
             {props.onRegenerate && (
               <Tooltip label="Regenerate" withArrow>
                 <ActionIcon
-                  size="xs"
+                  size="sm"
                   variant="subtle"
                   color="gray"
                   aria-label="Regenerate"
                   onClick={props.onRegenerate}
                 >
-                  <RefreshCw size={12} />
+                  <RotateCcw size={13} />
                 </ActionIcon>
               </Tooltip>
             )}
+            <span className="ml-1.5 flex min-w-0 items-center gap-1.5 truncate">
+              {message.model && (
+                <>
+                  <span className="truncate">{message.model}</span>
+                  <span aria-hidden>·</span>
+                </>
+              )}
+              {message.cached && (
+                <>
+                  <span className="inline-flex shrink-0 items-center gap-1 text-emerald-700">
+                    <DatabaseZap size={11} />
+                    Cached
+                  </span>
+                  <span aria-hidden>·</span>
+                </>
+              )}
+              {message.latencyMs !== undefined ? (
+                <LatencyInfo
+                  latencyMs={message.latencyMs}
+                  ttftMs={message.ttftMs}
+                />
+              ) : (
+                <TimeAgo
+                  rfc3339={Timestamp.fromDate(new Date(message.createdAt))}
+                />
+              )}
+              {message.usage && totalTokens(message.usage) > 0 && (
+                <>
+                  <span aria-hidden>·</span>
+                  <UsageInfo usage={message.usage} />
+                </>
+              )}
+              {note && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span
+                    className="shrink-0 font-semibold text-amber-700"
+                    title={message.finishReason}
+                  >
+                    {note}
+                  </span>
+                </>
+              )}
+            </span>
           </div>
         )}
       </div>
-
-      {isUser && (
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-500">
-          <User size={14} strokeWidth={2.2} />
-        </span>
-      )}
-    </motion.div>
+    </div>
   );
 };
+
+const Message = React.memo(
+  (props: {
+    message: ChatMessage;
+    streaming: boolean;
+    isLast: boolean;
+    onRegenerate?: () => void;
+  }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+      data-message-id={props.message.id}
+    >
+      {props.message.role === "user" ? (
+        <UserMessage message={props.message} />
+      ) : (
+        <AssistantMessage
+          message={props.message}
+          streaming={props.streaming}
+          isLast={props.isLast}
+          onRegenerate={props.onRegenerate}
+        />
+      )}
+    </motion.div>
+  ),
+);
 
 export default Message;
