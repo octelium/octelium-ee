@@ -181,13 +181,21 @@ const Requests = () => {
   const group = searchParams.get("group") ?? "all";
   const [cancelName, setCancelName] = React.useState<string>();
 
+  const serverState =
+    group === "pending"
+      ? AccessP.Request_Status_State_Status.PENDING
+      : group === "active"
+        ? AccessP.Request_Status_State_Status.APPROVED
+        : undefined;
+
   const qry = useQuery({
-    queryKey: ["user", "listRequest", page],
+    queryKey: ["user", "listRequest", page, serverState ?? "all"],
     placeholderData: keepPreviousData,
     queryFn: async ({ signal }) => {
       const { response } = await getUserClient().listRequest(
         AccessP.ListUserRequestOptions.create({
           common: { page: page - 1, itemsPerPage: ITEMS_PER_PAGE },
+          ...(serverState !== undefined ? { state: serverState } : {}),
         }),
         { abort: signal },
       );
@@ -241,7 +249,9 @@ const Requests = () => {
       requestSubjectName(item).toLowerCase().includes(q) ||
       (item.spec?.justification ?? "").toLowerCase().includes(q);
     const matchesGroup =
-      group === "all" || statusMeta(item.status?.state?.status).group === group;
+      group === "all" ||
+      serverState !== undefined ||
+      statusMeta(item.status?.state?.status).group === group;
     return matchesQuery && matchesGroup;
   });
 
@@ -257,7 +267,7 @@ const Requests = () => {
     );
 
   const cancelTarget = items.find((item) => item.metadata!.name === cancelName);
-  const filtered = !!q || group !== "all";
+  const filtered = !!q || group === "closed";
 
   return (
     <div className="w-full">
@@ -299,9 +309,13 @@ const Requests = () => {
           ].map((option) => ({
             ...option,
             label:
-              singlePage && countOf(option.value) > 0
-                ? `${option.label} (${countOf(option.value)})`
-                : option.label,
+              serverState !== undefined
+                ? option.value === group && meta
+                  ? `${option.label} (${meta.totalCount})`
+                  : option.label
+                : singlePage && countOf(option.value) > 0
+                  ? `${option.label} (${countOf(option.value)})`
+                  : option.label,
           }))}
         />
       </Toolbar>

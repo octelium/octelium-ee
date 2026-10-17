@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/mail"
 	"net/url"
 	"strings"
 	"time"
@@ -41,6 +42,7 @@ type Provider struct {
 var _ accessintg.Provider = (*Provider)(nil)
 var _ accessintg.PresentationDeliverer = (*Provider)(nil)
 var _ accessintg.InboundHandler = (*Provider)(nil)
+var _ accessintg.IdentityResolver = (*Provider)(nil)
 
 type deliveryPayload struct {
 	Type         string                   `json:"type"`
@@ -95,6 +97,7 @@ func (p *Provider) Capabilities() []accessintg.Capability {
 	ret := []accessintg.Capability{
 		accessv1.Integration_Status_NOTIFICATION,
 		accessv1.Integration_Status_PRESENTATION_UPDATE,
+		accessv1.Integration_Status_IDENTITY_RESOLUTION,
 	}
 
 	if len(p.inboundSecret) > 0 {
@@ -110,6 +113,7 @@ func Capabilities(spec *accessv1.Integration_Spec_Webhook) []accessintg.Capabili
 	ret := []accessintg.Capability{
 		accessv1.Integration_Status_NOTIFICATION,
 		accessv1.Integration_Status_PRESENTATION_UPDATE,
+		accessv1.Integration_Status_IDENTITY_RESOLUTION,
 	}
 
 	if spec.GetInboundSecret().GetFromSecret() != "" {
@@ -144,6 +148,37 @@ func (p *Provider) Validate(ctx context.Context) (*accessintg.TenantInfo, error)
 		ID:   u.Host,
 		Name: u.Host,
 	}, nil
+}
+
+func (p *Provider) GetExternalUser(ctx context.Context,
+	externalID string) (*accessintg.ExternalUser, error) {
+	return toExternalUser(externalID), nil
+}
+
+func (p *Provider) GetExternalUserByEmail(ctx context.Context,
+	email string) (*accessintg.ExternalUser, error) {
+	return toExternalUser(email), nil
+}
+
+func toExternalUser(arg string) *accessintg.ExternalUser {
+	email := normalizeExternalActorID(arg)
+	if email == "" || !strings.Contains(email, "@") {
+		return nil
+	}
+
+	if addr, err := mail.ParseAddress(email); err != nil || addr.Address != email {
+		return nil
+	}
+
+	return &accessintg.ExternalUser{
+		ID:       email,
+		Username: email,
+		Email:    email,
+	}
+}
+
+func normalizeExternalActorID(arg string) string {
+	return strings.ToLower(strings.TrimSpace(arg))
 }
 
 func (p *Provider) CreatePresentation(ctx context.Context,

@@ -35,6 +35,7 @@ type doListReq struct {
 	version string
 	kind    string
 	common  *vmetav1.CommonListOptions
+	orderBy exp.OrderedExpression
 }
 
 const defaultItemsPerPage = 10
@@ -114,7 +115,11 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 		ds = ds.OrderAppend(getQueryRankExpr(normalizedQuery).Desc())
 	}
 
-	ds = ds.OrderAppend(getOrderByExpr(req.common.OrderBy))
+	if req.orderBy != nil {
+		ds = ds.OrderAppend(req.orderBy)
+	} else {
+		ds = ds.OrderAppend(getOrderByExpr(req.common.OrderBy))
+	}
 
 	sqln, sqlargs, err := ds.ToSQL()
 	if err != nil {

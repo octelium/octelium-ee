@@ -10,6 +10,7 @@ import {
   requestCreatedAt,
   reviewStepLabel,
   reviewSteps,
+  shortName,
   statusMeta,
   tsToMillis,
 } from "@/utils";
@@ -22,6 +23,18 @@ type Event = {
   tone?: Tone;
   icon?: React.ReactNode;
   description?: string;
+};
+
+const reviewDecisionTitle = (step: AccessP.Request_Status_Review_Step) => {
+  const reviewer = step.userRef?.name ? shortName(step.userRef.name) : "a reviewer";
+  switch (step.decision) {
+    case AccessP.Review_Spec_Decision.APPROVE:
+      return `Approved by ${reviewer}`;
+    case AccessP.Review_Spec_Decision.REJECT:
+      return `Rejected by ${reviewer}`;
+    default:
+      return "Reviewer decision recorded";
+  }
 };
 
 const RequestTimeline = (props: { request: AccessP.Request }) => {
@@ -55,9 +68,15 @@ const RequestTimeline = (props: { request: AccessP.Request }) => {
       key: `review-${index}`,
       at: step.setAt,
       millis: tsToMillis(step.setAt) ?? 0,
-      title: "Reviewer decision recorded",
+      title: reviewDecisionTitle(step),
+      tone:
+        step.decision === AccessP.Review_Spec_Decision.REJECT
+          ? "red"
+          : step.decision === AccessP.Review_Spec_Decision.APPROVE
+            ? "emerald"
+            : undefined,
       icon: <Gavel size={11} strokeWidth={2.25} />,
-      description: reviewStepLabel(steps[step.stepIndex], step.stepIndex),
+      description: step.stepName || reviewStepLabel(steps[step.stepIndex], step.stepIndex),
     });
   });
 

@@ -1,1324 +1,152 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import * as MetaP from "@/apis/metav1/metav1";
-import * as React from "react";
-
-import { CELEditor } from "@/components/Condition/Editor";
-import DurationPicker from "@/components/DurationPicker";
-import { Alert } from "@mantine/core";
-import EditItem from "@/components/EditItem";
-import ItemMessage from "@/components/ItemMessage";
-import PriorityPicker from "@/components/PriorityPicker";
-import SelectInlinePolicies from "@/components/ResourceLayout/SelectInlinePolicies";
-import SelectPolicies from "@/components/ResourceLayout/SelectPolicies";
-import SelectResource from "@/components/ResourceLayout/SelectResource";
-import { strToNum } from "@/utils/convert";
-import { getResourceRef } from "@/utils/pb";
-import {
-  Group,
-  Input,
-  NumberInput,
-  SegmentedControl,
-  Select,
-  Switch,
-  TextInput,
-} from "@mantine/core";
-import {
-  AlertTriangle,
-  Braces,
-  Check,
-  Combine,
-  Hash,
-  Library,
-  ListChecks,
-  Megaphone,
-  PanelTop,
-  User,
-  UserRoundSearch,
-  Users,
-  WandSparkles,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { match } from "ts-pattern";
 import { twMerge } from "@/lib/utils";
-import { useListKeys } from "@/utils/forms";
+import { Switch } from "@mantine/core";
+import { Ban, CircleCheck, FilePlus2, Info, Layers, ListOrdered, Plus, Users } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import * as React from "react";
+import { newCondition } from "./edit/Condition";
+import { RuleCard } from "./edit/Rule";
+import { newReviewStep } from "./edit/Step";
 
-const newCondition = (): AccessP.Policy_Spec_Rule_Condition =>
-  AccessP.Policy_Spec_Rule_Condition.create({
+const Effect = AccessP.Policy_Spec_Rule_Effect;
+
+const uniqueName = (rules: AccessP.Policy_Spec_Rule[], base: string) => {
+  const names = new Set(rules.map((rule) => rule.name));
+  if (!names.has(base)) return base;
+  for (let i = 2; ; i++) if (!names.has(`${base}-${i}`)) return `${base}-${i}`;
+};
+
+type Template = {
+  id: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  build: (rules: AccessP.Policy_Spec_Rule[]) => AccessP.Policy_Spec_Rule;
+};
+
+const reviewAction = (names: string[]) =>
+  AccessP.Policy_Spec_Rule_Action.create({
     type: {
-      oneofKind: "subject",
-      subject: AccessP.Policy_Spec_Rule_Condition_Subject.create({
-        type: {
-          oneofKind: "userRef",
-          userRef: MetaP.ObjectReference.create(),
-        },
+      oneofKind: "review",
+      review: AccessP.Policy_Spec_Rule_Action_Review.create({
+        steps: names.map((name) => newReviewStep(name)),
       }),
     },
   });
 
-const newSurface = (audience: AudienceChoice) =>
-  AccessP.Policy_Spec_Rule_Surface.create({
-    destination: AccessP.Policy_Spec_Rule_Surface_Destination.create({
-      integrationRef: MetaP.ObjectReference.create(),
-      audience: AccessP.Policy_Spec_Rule_Surface_Destination_Audience[audience],
-    }),
+const groupCondition = () =>
+  AccessP.Policy_Spec_Rule_Condition.create({
+    type: {
+      oneofKind: "subject",
+      subject: AccessP.Policy_Spec_Rule_Condition_Subject.create({
+        type: { oneofKind: "groupRef", groupRef: MetaP.ObjectReference.create() },
+      }),
+    },
   });
 
-const newReviewStep = () =>
-  AccessP.Policy_Spec_Rule_Action_Review_Step.create({
-    approvalRequirement:
-      AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement.ANY,
-    onTimeout:
-      AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout.REJECT,
+const catalogCondition = () =>
+  AccessP.Policy_Spec_Rule_Condition.create({
+    type: {
+      oneofKind: "resource",
+      resource: AccessP.Policy_Spec_Rule_Condition_Resource.create({
+        type: { oneofKind: "catalogRef", catalogRef: MetaP.ObjectReference.create() },
+      }),
+    },
   });
 
-type ConditionChoice =
-  | "matchAny"
-  | "subjectUser"
-  | "subjectGroup"
-  | "service"
-  | "catalog"
-  | "all"
-  | "any"
-  | "requester"
-  | "match";
-
-const conditionChoice = (
-  condition: AccessP.Policy_Spec_Rule_Condition,
-): ConditionChoice => {
-  if (condition.type.oneofKind === "subject") {
-    return condition.type.subject.type.oneofKind === "groupRef"
-      ? "subjectGroup"
-      : "subjectUser";
-  }
-  if (condition.type.oneofKind === "resource") {
-    return condition.type.resource.type.oneofKind === "catalogRef"
-      ? "catalog"
-      : "service";
-  }
-  if (condition.type.oneofKind === "userRef") return "requester";
-  return condition.type.oneofKind || "subjectUser";
-};
-
-const CONDITION_CHOICES: Array<{
-  value: ConditionChoice;
-  label: string;
-  description: string;
-  icon: LucideIcon;
-}> = [
+const TEMPLATES: Template[] = [
   {
-    value: "matchAny",
-    label: "Any request",
-    description: "Match without restrictions",
-    icon: WandSparkles,
-  },
-  {
-    value: "subjectUser",
-    label: "Subject user",
-    description: "Access is for this user",
-    icon: User,
-  },
-  {
-    value: "subjectGroup",
-    label: "Subject group",
-    description: "Subject belongs to this group",
+    id: "review",
+    label: "Require a review",
+    description: "Requests for a Catalog need one approval",
     icon: Users,
+    build: (rules) =>
+      AccessP.Policy_Spec_Rule.create({
+        name: uniqueName(rules, "review"),
+        condition: catalogCondition(),
+        effect: Effect.REVIEW,
+        action: reviewAction(["approval"]),
+      }),
   },
   {
-    value: "service",
-    label: "Service",
-    description: "Request targets this service",
-    icon: PanelTop,
+    id: "two-steps",
+    label: "Two-step review",
+    description: "A team lead, then security",
+    icon: Layers,
+    build: (rules) =>
+      AccessP.Policy_Spec_Rule.create({
+        name: uniqueName(rules, "two-step-review"),
+        condition: catalogCondition(),
+        effect: Effect.REVIEW,
+        action: reviewAction(["team-lead", "security"]),
+      }),
   },
   {
-    value: "catalog",
-    label: "Catalog",
-    description: "Request targets this catalog",
-    icon: Library,
+    id: "auto",
+    label: "Auto-approve a Group",
+    description: "Trusted people get access at once",
+    icon: CircleCheck,
+    build: (rules) =>
+      AccessP.Policy_Spec_Rule.create({
+        name: uniqueName(rules, "auto-approve"),
+        condition: groupCondition(),
+        effect: Effect.AUTO_APPROVE,
+        priority: -1,
+      }),
   },
   {
-    value: "requester",
-    label: "Requester",
-    description: "Request was made by this user",
-    icon: UserRoundSearch,
+    id: "deny",
+    label: "Deny guardrail",
+    description: "Always reject, checked first",
+    icon: Ban,
+    build: (rules) =>
+      AccessP.Policy_Spec_Rule.create({
+        name: uniqueName(rules, "deny"),
+        condition: groupCondition(),
+        effect: Effect.DENY,
+        priority: -4,
+      }),
   },
   {
-    value: "all",
-    label: "All conditions",
-    description: "Every nested condition matches",
-    icon: ListChecks,
-  },
-  {
-    value: "any",
-    label: "Any condition",
-    description: "One nested condition matches",
-    icon: Combine,
-  },
-  {
-    value: "match",
-    label: "CEL expression",
-    description: "Use an advanced expression",
-    icon: Braces,
+    id: "blank",
+    label: "Blank rule",
+    description: "Start from scratch",
+    icon: FilePlus2,
+    build: (rules) =>
+      AccessP.Policy_Spec_Rule.create({
+        name: uniqueName(rules, "rule"),
+        condition: newCondition(),
+      }),
   },
 ];
 
-const setConditionChoice = (
-  condition: AccessP.Policy_Spec_Rule_Condition,
-  choice: ConditionChoice,
-) => {
-  condition.type = match(choice)
-    .with("matchAny", () => ({
-      oneofKind: "matchAny" as const,
-      matchAny: true,
-    }))
-    .with("subjectUser", () => ({
-      oneofKind: "subject" as const,
-      subject: AccessP.Policy_Spec_Rule_Condition_Subject.create({
-        type: {
-          oneofKind: "userRef",
-          userRef: MetaP.ObjectReference.create(),
-        },
-      }),
-    }))
-    .with("subjectGroup", () => ({
-      oneofKind: "subject" as const,
-      subject: AccessP.Policy_Spec_Rule_Condition_Subject.create({
-        type: {
-          oneofKind: "groupRef",
-          groupRef: MetaP.ObjectReference.create(),
-        },
-      }),
-    }))
-    .with("service", () => ({
-      oneofKind: "resource" as const,
-      resource: AccessP.Policy_Spec_Rule_Condition_Resource.create({
-        type: {
-          oneofKind: "serviceRef",
-          serviceRef: MetaP.ObjectReference.create(),
-        },
-      }),
-    }))
-    .with("catalog", () => ({
-      oneofKind: "resource" as const,
-      resource: AccessP.Policy_Spec_Rule_Condition_Resource.create({
-        type: {
-          oneofKind: "catalogRef",
-          catalogRef: MetaP.ObjectReference.create(),
-        },
-      }),
-    }))
-    .with("all", () => ({
-      oneofKind: "all" as const,
-      all: AccessP.Policy_Spec_Rule_Condition_All.create(),
-    }))
-    .with("any", () => ({
-      oneofKind: "any" as const,
-      any: AccessP.Policy_Spec_Rule_Condition_Any.create(),
-    }))
-    .with("requester", () => ({
-      oneofKind: "userRef" as const,
-      userRef: MetaP.ObjectReference.create(),
-    }))
-    .otherwise(() => ({
-      oneofKind: "match" as const,
-      match: "",
-    }));
-};
-
-const ConditionTypePicker = (props: {
-  condition: AccessP.Policy_Spec_Rule_Condition;
-  onChange: (choice: ConditionChoice) => void;
-}) => {
-  const selected = conditionChoice(props.condition);
-
-  return (
-    <div>
-      <div className="mb-2">
-        <p className="text-xs font-semibold text-slate-700">
-          What should this rule match?
-        </p>
-        <p className="mt-0.5 text-micro font-normal text-slate-500">
-          Choose a condition and configure its value directly below.
-        </p>
-      </div>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {CONDITION_CHOICES.map(({ value, label, description, icon: Icon }) => {
-          const active = selected === value;
-          return (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={active}
-              onClick={() => {
-                if (!active) props.onChange(value);
-              }}
-              className={twMerge(
-                "flex min-w-0 items-start gap-2.5 rounded-xl border px-3 py-2.5 text-left outline-none transition-[border-color,background-color,box-shadow] duration-200 focus-visible:ring-2 focus-visible:ring-blue-500/30",
-                active
-                  ? "border-slate-700 bg-slate-800 text-white shadow-sm"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50/70",
-              )}
-            >
-              <Icon
-                size={15}
-                strokeWidth={2.2}
-                className={twMerge(
-                  "mt-0.5 shrink-0",
-                  active ? "text-slate-200" : "text-slate-500",
-                )}
-              />
-              <span className="min-w-0">
-                <span className="block text-xs font-semibold">{label}</span>
-                <span
-                  className={twMerge(
-                    "mt-0.5 block text-micro font-normal leading-4",
-                    active ? "text-slate-300" : "text-slate-500",
-                  )}
-                >
-                  {description}
-                </span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-const ConditionEdit = (props: {
-  condition: AccessP.Policy_Spec_Rule_Condition;
-  onUpdate: () => void;
-}) => {
-  const rows = useListKeys();
-  const { condition, onUpdate } = props;
-
-  return (
-    <div className="w-full">
-      <ConditionTypePicker
-        condition={condition}
-        onChange={(choice) => {
-          setConditionChoice(condition, choice);
-          onUpdate();
-        }}
-      />
-
-      <div className="mt-3">
-        {match(condition.type)
-          .when(
-            (x) => x.oneofKind === "matchAny",
-            () => (
-              <div className="rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2.5 text-xs font-semibold text-blue-700">
-                This rule applies to every access request that reaches it.
-              </div>
-            ),
-          )
-          .when(
-            (x) => x.oneofKind === "subject",
-            (subject) => (
-              <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3">
-                {subject.subject.type.oneofKind === "userRef" && (
-                  <SelectResource
-                    api="core"
-                    kind="User"
-                    label="User"
-                    description="Select the specific User who is the request subject."
-                    defaultValue={subject.subject.type.userRef.name}
-                    onChange={(v) => {
-                      if (subject.subject.type.oneofKind === "userRef") {
-                        v
-                          ? (subject.subject.type.userRef = getResourceRef(v))
-                          : (subject.subject.type.userRef =
-                              MetaP.ObjectReference.create());
-                        onUpdate();
-                      }
-                    }}
-                  />
-                )}
-                {subject.subject.type.oneofKind === "groupRef" && (
-                  <SelectResource
-                    api="core"
-                    kind="Group"
-                    label="Group"
-                    description="Select the Group whose members are request subjects."
-                    defaultValue={subject.subject.type.groupRef.name}
-                    onChange={(v) => {
-                      if (subject.subject.type.oneofKind === "groupRef") {
-                        subject.subject.type.groupRef = v
-                          ? getResourceRef(v)
-                          : MetaP.ObjectReference.create();
-                        onUpdate();
-                      }
-                    }}
-                  />
-                )}
-              </div>
-            ),
-          )
-          .when(
-            (x) => x.oneofKind === "resource",
-            (resource) => (
-              <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3">
-                {resource.resource.type.oneofKind === "serviceRef" && (
-                  <SelectResource
-                    api="core"
-                    kind="Service"
-                    label="Service"
-                    description="Select the Service targeted by the access request."
-                    defaultValue={resource.resource.type.serviceRef.name}
-                    onChange={(v) => {
-                      if (resource.resource.type.oneofKind === "serviceRef") {
-                        resource.resource.type.serviceRef = v
-                          ? getResourceRef(v)
-                          : MetaP.ObjectReference.create();
-                        onUpdate();
-                      }
-                    }}
-                  />
-                )}
-                {resource.resource.type.oneofKind === "catalogRef" && (
-                  <SelectResource
-                    api="access"
-                    kind="Catalog"
-                    label="Catalog"
-                    description="Select the Catalog targeted by the access request."
-                    defaultValue={resource.resource.type.catalogRef.name}
-                    onChange={(v) => {
-                      if (resource.resource.type.oneofKind === "catalogRef") {
-                        resource.resource.type.catalogRef = v
-                          ? getResourceRef(v)
-                          : MetaP.ObjectReference.create();
-                        onUpdate();
-                      }
-                    }}
-                  />
-                )}
-              </div>
-            ),
-          )
-          .when(
-            (x) => x.oneofKind === "all",
-            (all) => (
-              <ItemMessage
-                title="All of"
-                obj={all.all.of}
-                isList
-                onSet={() => {
-                  all.all.of = [newCondition()];
-                  onUpdate();
-                }}
-                onAddListItem={() => {
-                  all.all.of.push(newCondition());
-                  onUpdate();
-                }}
-              >
-                {all.all.of.map((sub, idx) => (
-                  <EditItem
-                    key={rows.keyAt("all", idx)}
-                    obj={sub}
-                    onUnset={() => {
-                      rows.removeAt("all", idx);
-                      all.all.of.splice(idx, 1);
-                      onUpdate();
-                    }}
-                  >
-                    <ConditionEdit condition={sub} onUpdate={onUpdate} />
-                  </EditItem>
-                ))}
-              </ItemMessage>
-            ),
-          )
-          .when(
-            (x) => x.oneofKind === "any",
-            (any) => (
-              <ItemMessage
-                title="Any of"
-                obj={any.any.of}
-                isList
-                onSet={() => {
-                  any.any.of = [newCondition()];
-                  onUpdate();
-                }}
-                onAddListItem={() => {
-                  any.any.of.push(newCondition());
-                  onUpdate();
-                }}
-              >
-                {any.any.of.map((sub, idx) => (
-                  <EditItem
-                    key={rows.keyAt("any", idx)}
-                    obj={sub}
-                    onUnset={() => {
-                      rows.removeAt("any", idx);
-                      any.any.of.splice(idx, 1);
-                      onUpdate();
-                    }}
-                  >
-                    <ConditionEdit condition={sub} onUpdate={onUpdate} />
-                  </EditItem>
-                ))}
-              </ItemMessage>
-            ),
-          )
-          .when(
-            (x) => x.oneofKind === "userRef",
-            (userRef) => (
-              <SelectResource
-                api="core"
-                kind="User"
-                label="Requester User"
-                description="Match the User who created the request, rather than its subject."
-                defaultValue={userRef.userRef.name}
-                onChange={(v) => {
-                  userRef.userRef = v
-                    ? getResourceRef(v)
-                    : MetaP.ObjectReference.create();
-                  onUpdate();
-                }}
-              />
-            ),
-          )
-          .when(
-            (x) => x.oneofKind === "match",
-            (matchType) => (
-              <Input.Wrapper
-                label="CEL Expression"
-                description="CEL expression that must evaluate to true for this condition to match. Use ctx.request for the access Request and ctx.user for the User that created it."
-              >
-                <CELEditor
-                  context="access"
-                  exp={matchType.match}
-                  onChange={(v: string) => {
-                    matchType.match = v ?? "";
-                    onUpdate();
-                  }}
-                />
-              </Input.Wrapper>
-            ),
-          )
-          .otherwise(() => (
-            <></>
-          ))}
-      </div>
-    </div>
-  );
-};
-
-const ChoiceButtonGrid = <T extends string,>(props: {
-  label: string;
-  description: string;
-  value?: T;
-  columns: 2 | 3;
-  options: Array<{
-    value: T;
-    label: string;
-    description: string;
-    icon: LucideIcon;
-  }>;
-  onChange: (value: T) => void;
-}) => (
-  <div>
-    <div className="mb-2">
-      <p className="text-xs font-semibold text-slate-700">{props.label}</p>
-      <p className="mt-0.5 text-micro font-normal text-slate-500">
-        {props.description}
-      </p>
-    </div>
-    <div
-      role="radiogroup"
-      aria-label={props.label}
-      className={twMerge(
-        "grid grid-cols-1 gap-2",
-        props.columns === 2 ? "sm:grid-cols-2" : "sm:grid-cols-3",
-      )}
-    >
-      {props.options.map(({ value, label, description, icon: Icon }) => {
-        const active = props.value === value;
-        return (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            onClick={() => {
-              if (!active) props.onChange(value);
-            }}
-            className={twMerge(
-              "flex min-w-0 items-start gap-2.5 rounded-xl border px-3 py-2.5 text-left outline-none transition-[border-color,background-color,box-shadow] duration-200 focus-visible:ring-2 focus-visible:ring-blue-500/30",
-              active
-                ? "border-slate-700 bg-slate-800 text-white shadow-sm"
-                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50/70",
-            )}
-          >
-            <Icon
-              size={15}
-              strokeWidth={2.2}
-              className={twMerge(
-                "mt-0.5 shrink-0",
-                active ? "text-slate-200" : "text-slate-500",
-              )}
-            />
-            <span className="min-w-0">
-              <span className="block text-xs font-semibold">{label}</span>
-              <span
-                className={twMerge(
-                  "mt-0.5 block text-micro font-normal leading-4",
-                  active ? "text-slate-300" : "text-slate-500",
-                )}
-              >
-                {description}
-              </span>
-            </span>
-          </button>
-        );
-      })}
-    </div>
+const TemplateGrid = (props: { onPick: (template: Template) => void; prominent?: boolean }) => (
+  <div
+    className={twMerge(
+      "grid grid-cols-1 gap-2",
+      props.prominent ? "sm:grid-cols-2 lg:grid-cols-5" : "sm:grid-cols-3 lg:grid-cols-5",
+    )}
+  >
+    {TEMPLATES.map((template) => {
+      const Icon = template.icon;
+      return (
+        <button
+          key={template.id}
+          type="button"
+          onClick={() => props.onPick(template)}
+          className="group flex min-w-0 cursor-pointer items-start gap-2 rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2 text-left outline-none transition-colors duration-150 hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-slate-400"
+        >
+          <Icon size={14} className="mt-0.5 shrink-0 text-slate-500 group-hover:text-slate-800" />
+          <span className="flex min-w-0 flex-col">
+            <span className="text-xs font-semibold text-slate-800">{template.label}</span>
+            <span className="text-micro leading-4 text-slate-500">{template.description}</span>
+          </span>
+        </button>
+      );
+    })}
   </div>
 );
-
-type AudienceChoice = "SHARED" | "REVIEWERS" | "REQUESTER" | "SUBJECT";
-
-const AUDIENCE_SHARED = {
-  value: "SHARED" as const,
-  label: "Shared destination",
-  description: "Deliver to the Integration's own channel",
-  icon: Megaphone,
-};
-
-const REVIEW_AUDIENCES: Array<{
-  value: AudienceChoice;
-  label: string;
-  description: string;
-  icon: LucideIcon;
-}> = [
-  AUDIENCE_SHARED,
-  {
-    value: "REVIEWERS",
-    label: "Reviewers",
-    description: "Deliver to every eligible reviewer",
-    icon: Users,
-  },
-];
-
-const NOTIFICATION_AUDIENCES: Array<{
-  value: AudienceChoice;
-  label: string;
-  description: string;
-  icon: LucideIcon;
-}> = [
-  AUDIENCE_SHARED,
-  {
-    value: "REQUESTER",
-    label: "Requester",
-    description: "Deliver to the User who created the request",
-    icon: UserRoundSearch,
-  },
-  {
-    value: "SUBJECT",
-    label: "Subject",
-    description: "Deliver to the User the access is for",
-    icon: User,
-  },
-];
-
-const SurfaceEdit = (props: {
-  surface: AccessP.Policy_Spec_Rule_Surface;
-  isReviewSurface: boolean;
-  onUpdate: () => void;
-}) => {
-  const { surface, isReviewSurface, onUpdate } = props;
-
-  const destination = () => {
-    if (!surface.destination) {
-      surface.destination =
-        AccessP.Policy_Spec_Rule_Surface_Destination.create({
-          integrationRef: MetaP.ObjectReference.create(),
-        });
-    }
-    return surface.destination;
-  };
-
-  const audience = surface.destination?.audience;
-
-  return (
-    <div className="w-full">
-      <SelectResource
-        api="access"
-        kind="Integration"
-        required
-        label="Integration"
-        description="Integration that delivers this surface."
-        defaultValue={surface.destination?.integrationRef?.name}
-        onChange={(v) => {
-          destination().integrationRef = v
-            ? getResourceRef(v)
-            : MetaP.ObjectReference.create();
-          onUpdate();
-        }}
-      />
-
-      <div className="mt-4">
-        <ChoiceButtonGrid
-          label="Audience"
-          description={
-            isReviewSurface
-              ? "Choose who the request is presented to at this step"
-              : "Choose who the outcome of the request is delivered to"
-          }
-          columns={isReviewSurface ? 2 : 3}
-          value={
-            audience !== undefined && audience !== 0
-              ? (AccessP.Policy_Spec_Rule_Surface_Destination_Audience[
-                  audience
-                ] as AudienceChoice)
-              : undefined
-          }
-          options={isReviewSurface ? REVIEW_AUDIENCES : NOTIFICATION_AUDIENCES}
-          onChange={(value) => {
-            destination().audience =
-              AccessP.Policy_Spec_Rule_Surface_Destination_Audience[value];
-            onUpdate();
-          }}
-        />
-      </div>
-
-      {audience ===
-        AccessP.Policy_Spec_Rule_Surface_Destination_Audience.SHARED && (
-        <p className="mt-2 text-micro font-normal leading-4 text-slate-500">
-          The Integration must have a shared destination set (i.e. its Slack
-          channel, its Jira project or its webhook URL).
-        </p>
-      )}
-      {(audience ===
-        AccessP.Policy_Spec_Rule_Surface_Destination_Audience.REVIEWERS ||
-        audience ===
-          AccessP.Policy_Spec_Rule_Surface_Destination_Audience.REQUESTER ||
-        audience ===
-          AccessP.Policy_Spec_Rule_Surface_Destination_Audience.SUBJECT) && (
-        <p className="mt-2 text-micro font-normal leading-4 text-slate-500">
-          Each targeted User is only delivered to once the Cluster resolves it
-          to an external actor of the Integration.
-        </p>
-      )}
-
-      {isReviewSurface && (
-        <div className="mt-4">
-          <Input.Wrapper
-            label="Interaction mode"
-            description="How much the external provider is trusted to act on the presented request."
-          >
-            <SegmentedControl
-              fullWidth
-              value={
-                AccessP.Policy_Spec_Rule_Surface_InteractionMode[
-                  surface.interactionMode
-                ] === "INTERACTION_MODE_UNSET"
-                  ? "DEEP_LINK_ONLY"
-                  : AccessP.Policy_Spec_Rule_Surface_InteractionMode[
-                      surface.interactionMode
-                    ]
-              }
-              data={[
-                { label: "Deep link only", value: "DEEP_LINK_ONLY" },
-                { label: "Interactive", value: "INTERACTIVE" },
-              ]}
-              onChange={(value) => {
-                surface.interactionMode =
-                  value === "INTERACTIVE"
-                    ? AccessP.Policy_Spec_Rule_Surface_InteractionMode
-                        .INTERACTIVE
-                    : AccessP.Policy_Spec_Rule_Surface_InteractionMode
-                        .DEEP_LINK_ONLY;
-                onUpdate();
-              }}
-            />
-          </Input.Wrapper>
-
-          {surface.interactionMode ===
-            AccessP.Policy_Spec_Rule_Surface_InteractionMode.INTERACTIVE && (
-            <Alert
-              className="mt-3"
-              color="amber"
-              icon={<AlertTriangle size={15} />}
-              title="The provider may submit decisions"
-            >
-              Every decision is still authenticated by the Integration and
-              authorized by the Cluster exactly like one submitted through the
-              access portal. The Integration must support interactive reviews.
-            </Alert>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const SurfacesEdit = (props: {
-  title: string;
-  description: string;
-  surfaces: AccessP.Policy_Spec_Rule_Surface[];
-  isReviewSurface: boolean;
-  listKey: string;
-  rows: ReturnType<typeof useListKeys>;
-  onSet: (surfaces: AccessP.Policy_Spec_Rule_Surface[]) => void;
-  onUpdate: () => void;
-}) => {
-  const { surfaces, rows, listKey } = props;
-
-  return (
-    <ItemMessage
-      title={props.title}
-      description={props.description}
-      obj={surfaces}
-      isList
-      onSet={() => {
-        props.onSet([newSurface("SHARED")]);
-        props.onUpdate();
-      }}
-      onAddListItem={() => {
-        surfaces.push(newSurface("SHARED"));
-        props.onUpdate();
-      }}
-    >
-      {surfaces.map((surface, idx) => (
-        <EditItem
-          key={rows.keyAt(listKey, idx)}
-          obj={surface}
-          onUnset={() => {
-            rows.removeAt(listKey, idx);
-            surfaces.splice(idx, 1);
-            props.onUpdate();
-          }}
-        >
-          <SurfaceEdit
-            surface={surface}
-            isReviewSurface={props.isReviewSurface}
-            onUpdate={props.onUpdate}
-          />
-        </EditItem>
-      ))}
-    </ItemMessage>
-  );
-};
-
-const ReviewStepEdit = (props: {
-  step: AccessP.Policy_Spec_Rule_Action_Review_Step;
-  onUpdate: () => void;
-}) => {
-  const rows = useListKeys();
-  const { step, onUpdate } = props;
-
-  return (
-    <div className="w-full">
-      <ItemMessage
-        title="Reviewers"
-        obj={step.reviewers}
-        isList
-        onSet={() => {
-          step.reviewers = [
-            AccessP.Policy_Spec_Rule_Action_Review_Step_Reviewer.create({
-              type: {
-                oneofKind: "user",
-                user: { userRef: MetaP.ObjectReference.create() },
-              },
-            }),
-          ];
-          onUpdate();
-        }}
-        onAddListItem={() => {
-          step.reviewers.push(
-            AccessP.Policy_Spec_Rule_Action_Review_Step_Reviewer.create({
-              type: {
-                oneofKind: "user",
-                user: { userRef: MetaP.ObjectReference.create() },
-              },
-            }),
-          );
-          onUpdate();
-        }}
-      >
-        {step.reviewers.map((reviewer, idx) => (
-          <EditItem
-            key={rows.keyAt("reviewers", idx)}
-            obj={reviewer}
-            onUnset={() => {
-              rows.removeAt("reviewers", idx);
-              step.reviewers.splice(idx, 1);
-              onUpdate();
-            }}
-          >
-            <ChoiceButtonGrid
-              label="Reviewer type"
-              description="Choose whether a User or any member of a Group can review"
-              columns={2}
-              value={reviewer.type.oneofKind || undefined}
-              options={[
-                {
-                  value: "user",
-                  label: "User",
-                  description: "Assign one specific reviewer",
-                  icon: User,
-                },
-                {
-                  value: "group",
-                  label: "Group",
-                  description: "Allow a reviewer group",
-                  icon: Users,
-                },
-              ]}
-              onChange={(value) => {
-                reviewer.type =
-                  value === "group"
-                    ? {
-                        oneofKind: "group",
-                        group: { groupRef: MetaP.ObjectReference.create() },
-                      }
-                    : {
-                        oneofKind: "user",
-                        user: { userRef: MetaP.ObjectReference.create() },
-                      };
-                onUpdate();
-              }}
-            />
-            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/50 p-3">
-              {reviewer.type.oneofKind === "user" && (
-                <SelectResource
-                  api="core"
-                  kind="User"
-                  label="User"
-                  description="Select the User allowed to approve this step."
-                  defaultValue={reviewer.type.user.userRef?.name}
-                  onChange={(v) => {
-                    if (reviewer.type.oneofKind === "user") {
-                      v
-                        ? (reviewer.type.user.userRef = getResourceRef(v))
-                        : (reviewer.type.user.userRef = undefined);
-                      onUpdate();
-                    }
-                  }}
-                />
-              )}
-              {reviewer.type.oneofKind === "group" && (
-                <SelectResource
-                  api="core"
-                  kind="Group"
-                  label="Group"
-                  description="Select the Group whose members may approve this step."
-                  defaultValue={reviewer.type.group.groupRef?.name}
-                  onChange={(v) => {
-                    if (reviewer.type.oneofKind === "group") {
-                      v
-                        ? (reviewer.type.group.groupRef = getResourceRef(v))
-                        : (reviewer.type.group.groupRef = undefined);
-                      onUpdate();
-                    }
-                  }}
-                />
-              )}
-            </div>
-          </EditItem>
-        ))}
-      </ItemMessage>
-
-      <div className="mt-4">
-        <ChoiceButtonGrid
-          label="Approval requirement"
-          description="Choose how many assigned reviewers must approve this step"
-          columns={3}
-          value={
-            AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement[
-              step.approvalRequirement
-            ]
-          }
-          options={[
-            {
-              value: "ANY",
-              label: "Any reviewer",
-              description: "One approval completes the step",
-              icon: Check,
-            },
-            {
-              value: "ALL",
-              label: "All reviewers",
-              description: "Every reviewer must approve",
-              icon: Users,
-            },
-            {
-              value: "COUNT",
-              label: "Required count",
-              description: "Use a specific approval threshold",
-              icon: Hash,
-            },
-          ]}
-          onChange={(value) => {
-            step.approvalRequirement =
-              value === "ALL"
-                ? AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement
-                    .ALL
-                : value === "COUNT"
-                  ? AccessP
-                      .Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement
-                      .COUNT
-                  : AccessP
-                      .Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement
-                      .ANY;
-            if (value !== "COUNT") step.approvalCount = 0;
-            onUpdate();
-          }}
-        />
-
-        {step.approvalRequirement ===
-          AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement
-            .COUNT && (
-          <div className="mt-3 max-w-sm rounded-xl border border-slate-200 bg-slate-50/50 p-3">
-            <NumberInput
-              label="Required approvals"
-              description="Set the number of approvals needed to complete this step"
-              min={1}
-              max={Math.max(1, step.reviewers.length)}
-              value={step.approvalCount}
-              onChange={(v) => {
-                step.approvalCount = strToNum(v);
-                onUpdate();
-              }}
-            />
-          </div>
-        )}
-
-        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <Select
-            label="On Timeout"
-            description="Set the behavior when the step times out"
-            data={[
-              {
-                label: "Go to next step",
-                value:
-                  AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout[
-                    AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout
-                      .GOTO_NEXT_STEP
-                  ],
-              },
-              {
-                label: "Reject",
-                value:
-                  AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout[
-                    AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout.REJECT
-                  ],
-              },
-            ]}
-            value={
-              AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout[
-                step.onTimeout
-              ]
-            }
-            onChange={(v) => {
-              if (!v) return;
-              step.onTimeout =
-                AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout[
-                  v as "REJECT"
-                ];
-              onUpdate();
-            }}
-          />
-
-          <DurationPicker
-            value={step.timeout}
-            title="Timeout"
-            description="How long this step may wait for a review decision before the timeout action runs."
-            onChange={(v) => {
-              step.timeout = v;
-              onUpdate();
-            }}
-          />
-        </div>
-      </div>
-
-      <SurfacesEdit
-        title="Review surfaces"
-        description="External Integration surfaces on which the requests reaching this step are presented to their reviewers. The Cluster's own access portal is always available regardless of this list."
-        surfaces={step.surfaces}
-        isReviewSurface
-        listKey="surfaces"
-        rows={rows}
-        onSet={(surfaces) => {
-          step.surfaces = surfaces;
-        }}
-        onUpdate={onUpdate}
-      />
-
-      <EditItem
-        title="Separation of duties"
-        description="Whether the Users involved in a request may review it themselves. Both are denied by default."
-        obj={step.separationOfDuties}
-        onUnset={() => {
-          step.separationOfDuties = undefined;
-          onUpdate();
-        }}
-        onSet={() => {
-          step.separationOfDuties =
-            AccessP.Policy_Spec_Rule_SeparationOfDuties.create();
-          onUpdate();
-        }}
-      >
-        {step.separationOfDuties && (
-          <div className="flex flex-col gap-3">
-            <Switch
-              label="Allow the requester to review"
-              description="Let the User who created the request review it at this step."
-              checked={step.separationOfDuties.allowRequesterReview}
-              onChange={(v) => {
-                step.separationOfDuties!.allowRequesterReview =
-                  v.target.checked;
-                onUpdate();
-              }}
-            />
-            <Switch
-              label="Allow the subject to review"
-              description="Let the User the access is requested for review it at this step."
-              checked={step.separationOfDuties.allowSubjectReview}
-              onChange={(v) => {
-                step.separationOfDuties!.allowSubjectReview = v.target.checked;
-                onUpdate();
-              }}
-            />
-          </div>
-        )}
-      </EditItem>
-    </div>
-  );
-};
-
-const RuleEdit = (props: {
-  rule: AccessP.Policy_Spec_Rule;
-  onUpdate: () => void;
-}) => {
-  const rows = useListKeys();
-  const { rule, onUpdate } = props;
-
-  return (
-    <div className="w-full">
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(320px,1.25fr)]">
-        <TextInput
-          label="Name"
-          description="Unique name for this rule within the Policy."
-          placeholder="my-rule"
-          value={rule.name}
-          onChange={(v) => {
-            rule.name = v.target.value;
-            onUpdate();
-          }}
-        />
-        <Input.Wrapper
-          label="Effect"
-          required
-          description="Effect applied when this rule’s condition matches the request."
-        >
-          <SegmentedControl
-            fullWidth
-            value={AccessP.Policy_Spec_Rule_Effect[rule.effect]}
-            data={[
-              {
-                label: "Deny",
-                value:
-                  AccessP.Policy_Spec_Rule_Effect[
-                    AccessP.Policy_Spec_Rule_Effect.DENY
-                  ],
-              },
-              {
-                label: "Review",
-                value:
-                  AccessP.Policy_Spec_Rule_Effect[
-                    AccessP.Policy_Spec_Rule_Effect.REVIEW
-                  ],
-              },
-              {
-                label: "Auto approve",
-                value:
-                  AccessP.Policy_Spec_Rule_Effect[
-                    AccessP.Policy_Spec_Rule_Effect.AUTO_APPROVE
-                  ],
-              },
-            ]}
-            onChange={(value) => {
-              const effect = match(value)
-                .with(
-                  "REVIEW",
-                  () => AccessP.Policy_Spec_Rule_Effect.REVIEW,
-                )
-                .with(
-                  "AUTO_APPROVE",
-                  () => AccessP.Policy_Spec_Rule_Effect.AUTO_APPROVE,
-                )
-                .otherwise(() => AccessP.Policy_Spec_Rule_Effect.DENY);
-              rule.effect = effect;
-              if (effect !== AccessP.Policy_Spec_Rule_Effect.REVIEW) {
-                rule.action = undefined;
-              }
-              if (effect === AccessP.Policy_Spec_Rule_Effect.DENY) {
-                rule.authorization = undefined;
-              }
-              onUpdate();
-            }}
-          />
-        </Input.Wrapper>
-      </div>
-
-      <div className="mt-4">
-        <PriorityPicker
-          label="Priority"
-          description="Lower values are evaluated before higher values."
-          value={rule.priority}
-          onChange={(value) => {
-            rule.priority = value;
-            onUpdate();
-          }}
-        />
-      </div>
-
-      <EditItem
-        title="Condition"
-        description="Condition that must match for this rule to apply."
-        onUnset={() => {
-          rule.condition = undefined;
-          onUpdate();
-        }}
-        obj={rule.condition}
-        onSet={() => {
-          rule.condition = newCondition();
-          onUpdate();
-        }}
-      >
-        {rule.condition && (
-          <ConditionEdit condition={rule.condition} onUpdate={onUpdate} />
-        )}
-      </EditItem>
-
-      {rule.effect === AccessP.Policy_Spec_Rule_Effect.REVIEW && (
-        <EditItem
-          title="Review workflow"
-          description="Review action required when this rule matches."
-          onUnset={() => {
-            rule.action = undefined;
-            onUpdate();
-          }}
-          obj={rule.action}
-          onSet={() => {
-            rule.action = AccessP.Policy_Spec_Rule_Action.create({
-              type: {
-                oneofKind: "review",
-                review: AccessP.Policy_Spec_Rule_Action_Review.create({
-                  steps: [newReviewStep()],
-                }),
-              },
-            });
-            onUpdate();
-          }}
-        >
-          {rule.action &&
-            match(rule.action.type)
-              .when(
-                (x) => x.oneofKind === "review",
-                (review) => (
-                  <ItemMessage
-                    title="Review steps"
-                    obj={review.review.steps}
-                    isList
-                    onSet={() => {
-                      review.review.steps = [
-                        newReviewStep(),
-                      ];
-                      onUpdate();
-                    }}
-                    onAddListItem={() => {
-                      review.review.steps.push(
-                        newReviewStep(),
-                      );
-                      onUpdate();
-                    }}
-                  >
-                    {review.review.steps.map((step, idx) => (
-                      <EditItem
-                        key={rows.keyAt("reviewSteps", idx)}
-                        obj={step}
-                        onUnset={() => {
-                          rows.removeAt("reviewSteps", idx);
-                          review.review.steps.splice(idx, 1);
-                          onUpdate();
-                        }}
-                      >
-                        <ReviewStepEdit step={step} onUpdate={onUpdate} />
-                      </EditItem>
-                    ))}
-                  </ItemMessage>
-                ),
-              )
-              .otherwise(() => null)}
-        </EditItem>
-      )}
-
-      <SurfacesEdit
-        title="Outcome notifications"
-        description="External Integration surfaces on which the outcome of the matched requests is delivered. Unlike the review surfaces of a step, these are purely informational and they never carry any action."
-        surfaces={rule.notifications}
-        isReviewSurface={false}
-        listKey="notifications"
-        rows={rows}
-        onSet={(surfaces) => {
-          rule.notifications = surfaces;
-        }}
-        onUpdate={onUpdate}
-      />
-
-      {(rule.effect === AccessP.Policy_Spec_Rule_Effect.REVIEW ||
-        rule.effect === AccessP.Policy_Spec_Rule_Effect.AUTO_APPROVE) && (
-        <EditItem
-          title="Granted access"
-          description="Policies and maximum duration granted after the request is approved."
-          onUnset={() => {
-            rule.authorization = undefined;
-            onUpdate();
-          }}
-          obj={rule.authorization}
-          onSet={() => {
-            rule.authorization = AccessP.Policy_Spec_Rule_Authorization.create({
-              policies: [],
-            });
-            onUpdate();
-          }}
-        >
-          {rule.authorization && (
-            <div>
-              <SelectPolicies
-                policies={rule.authorization.policies}
-                onUpdate={(v) => {
-                  rule.authorization!.policies = v ?? [];
-                  onUpdate();
-                }}
-              />
-
-              <SelectInlinePolicies
-                inlinePolicies={rule.authorization.inlinePolicies}
-                onUpdate={(v) => {
-                  rule.authorization!.inlinePolicies = v;
-                  onUpdate();
-                }}
-              />
-
-              <DurationPicker
-                value={rule.authorization.maxAccessDuration}
-                title="Maximum access duration"
-                description="Upper bound on the access duration requested by the requester. Defaults to 24 hours when unset."
-                onChange={(v) => {
-                  rule.authorization!.maxAccessDuration = v;
-                  onUpdate();
-                }}
-              />
-            </div>
-          )}
-        </EditItem>
-      )}
-    </div>
-  );
-};
 
 const Edit = (props: {
   item: AccessP.Policy;
@@ -1326,15 +154,16 @@ const Edit = (props: {
 }) => {
   const { item, onUpdate } = props;
   const [req, setReq] = React.useState(AccessP.Policy.clone(item));
-  const ruleKeys = React.useRef(
-    item.spec?.rules.map(() => crypto.randomUUID()) ?? [],
+  const ruleKeys = React.useRef(item.spec?.rules.map(() => crypto.randomUUID()) ?? []);
+  const openKeys = React.useRef(
+    new Set<string>((item.spec?.rules.length ?? 0) <= 1 ? ruleKeys.current : []),
   );
   const itemKey = item.metadata?.uid || item.apiVersion || item.kind;
 
   React.useEffect(() => {
     setReq(AccessP.Policy.clone(item));
-    ruleKeys.current =
-      item.spec?.rules.map(() => crypto.randomUUID()) ?? [];
+    ruleKeys.current = item.spec?.rules.map(() => crypto.randomUUID()) ?? [];
+    openKeys.current = new Set((item.spec?.rules.length ?? 0) <= 1 ? ruleKeys.current : []);
   }, [itemKey]);
 
   const updateReq = () => {
@@ -1343,57 +172,120 @@ const Edit = (props: {
     onUpdate(AccessP.Policy.clone(next));
   };
 
+  if (!req.spec) req.spec = AccessP.Policy_Spec.create();
+  const rules = req.spec.rules;
+
+  const addRule = (rule: AccessP.Policy_Spec_Rule) => {
+    const key = crypto.randomUUID();
+    rules.push(rule);
+    ruleKeys.current.push(key);
+    openKeys.current.add(key);
+    updateReq();
+  };
+
   return (
-    <div className="w-full">
-      <Group grow>
+    <div className="flex w-full flex-col gap-4">
+      <div
+        className={twMerge(
+          "flex items-start gap-3 rounded-xl border px-4 py-3",
+          req.spec.isDisabled ? "border-amber-200 bg-amber-50/60" : "border-slate-200 bg-white",
+        )}
+      >
         <Switch
-          label="Disabled"
-          description="Skip this Policy entirely when access requests are evaluated."
-          checked={req.spec!.isDisabled}
-          onChange={(v) => {
-            req.spec!.isDisabled = v.target.checked;
+          checked={!req.spec.isDisabled}
+          aria-label="Policy enabled"
+          onChange={(event) => {
+            req.spec!.isDisabled = !event.target.checked;
             updateReq();
           }}
         />
-      </Group>
+        <span className="flex min-w-0 flex-col">
+          <span className="text-body font-semibold text-slate-800">
+            {req.spec.isDisabled ? "Disabled" : "Enabled"}
+          </span>
+          <span className="text-xs leading-5 text-slate-500">
+            {req.spec.isDisabled
+              ? "Its rules are skipped: matching requests fall through to the rules of other Policies, or are rejected when nothing matches."
+              : "Its rules take part in deciding every new access request."}
+          </span>
+        </span>
+      </div>
 
-      <ItemMessage
-        title="Rules"
-        obj={req.spec!.rules}
-        isList
-        onSet={() => {
-          req.spec!.rules = [
-            AccessP.Policy_Spec_Rule.create({
-              condition: newCondition(),
-            }),
-          ];
-          ruleKeys.current = [crypto.randomUUID()];
-          updateReq();
-        }}
-        onAddListItem={() => {
-          req.spec!.rules.push(
-            AccessP.Policy_Spec_Rule.create({
-              condition: newCondition(),
-            }),
-          );
-          ruleKeys.current.push(crypto.randomUUID());
-          updateReq();
-        }}
-      >
-        {req.spec!.rules.map((rule, idx) => (
-          <EditItem
-            key={ruleKeys.current[idx]}
-            obj={rule}
-            onUnset={() => {
-              req.spec!.rules.splice(idx, 1);
-              ruleKeys.current.splice(idx, 1);
+      <div className="flex items-start gap-2.5 rounded-xl border border-blue-100 bg-blue-50/50 px-4 py-3 text-xs leading-5 text-slate-700">
+        <Info size={14} className="mt-0.5 shrink-0 text-blue-700" />
+        <span>
+          When a request is created, the rules of every enabled Policy are
+          checked from the highest priority to the lowest (then by Policy name,
+          then in the order below). <b>The first rule that matches decides</b>.
+          A request that matches no rule is rejected.
+        </span>
+      </div>
+
+      <section className="flex flex-col gap-3">
+        <header className="flex items-center gap-2">
+          <ListOrdered size={14} className="text-slate-500" />
+          <h3 className="text-body font-semibold text-slate-900">
+            Rules
+            <span className="ml-1.5 font-normal text-slate-500">{rules.length}</span>
+          </h3>
+        </header>
+
+        {rules.length === 0 && (
+          <div className="flex flex-col gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 px-4 py-5">
+            <span className="flex flex-col">
+              <span className="text-body font-semibold text-slate-800">Start with a rule</span>
+              <span className="text-xs leading-5 text-slate-500">
+                A Policy without rules decides nothing. Pick a starting point;
+                every field can be changed afterwards.
+              </span>
+            </span>
+            <TemplateGrid prominent onPick={(template) => addRule(template.build(rules))} />
+          </div>
+        )}
+
+        {rules.map((rule, index) => (
+          <RuleCard
+            key={ruleKeys.current[index]}
+            rule={rule}
+            index={index}
+            rules={rules}
+            defaultOpen={openKeys.current.has(ruleKeys.current[index])}
+            onUpdate={updateReq}
+            onMove={(delta) => {
+              const target = index + delta;
+              if (target < 0 || target >= rules.length) return;
+              const [moved] = rules.splice(index, 1);
+              rules.splice(target, 0, moved);
+              const [key] = ruleKeys.current.splice(index, 1);
+              ruleKeys.current.splice(target, 0, key);
               updateReq();
             }}
-          >
-            <RuleEdit rule={rule} onUpdate={updateReq} />
-          </EditItem>
+            onDuplicate={() => {
+              const copy = AccessP.Policy_Spec_Rule.clone(rule);
+              copy.name = uniqueName(rules, `${rule.name || "rule"}-copy`);
+              const key = crypto.randomUUID();
+              rules.splice(index + 1, 0, copy);
+              ruleKeys.current.splice(index + 1, 0, key);
+              openKeys.current.add(key);
+              updateReq();
+            }}
+            onRemove={() => {
+              rules.splice(index, 1);
+              ruleKeys.current.splice(index, 1);
+              updateReq();
+            }}
+          />
         ))}
-      </ItemMessage>
+
+        {rules.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <span className="flex items-center gap-1.5 text-micro font-semibold uppercase tracking-[0.06em] text-slate-500">
+              <Plus size={11} strokeWidth={2.6} /> Add a rule
+            </span>
+            <TemplateGrid onPick={(template) => addRule(template.build(rules))} />
+          </div>
+        )}
+      </section>
     </div>
   );
 };

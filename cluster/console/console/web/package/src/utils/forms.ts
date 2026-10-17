@@ -91,6 +91,13 @@ export const useListKeys = () => {
       removeAt: (path: string, index: number) => {
         store.current.get(path)?.splice(index, 1);
       },
+      move: (path: string, from: number, to: number) => {
+        const keys = store.current.get(path);
+        if (!keys) return;
+        while (keys.length <= Math.max(from, to)) keys.push(newRowKey());
+        const [key] = keys.splice(from, 1);
+        keys.splice(to, 0, key);
+      },
     }),
     [],
   );

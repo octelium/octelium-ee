@@ -57,11 +57,9 @@ const (
 	MainService_DeleteIntegration_FullMethodName          = "/octelium.api.main.access.v1.MainService/DeleteIntegration"
 	MainService_ListIntegration_FullMethodName            = "/octelium.api.main.access.v1.MainService/ListIntegration"
 	MainService_SynchronizeIntegration_FullMethodName     = "/octelium.api.main.access.v1.MainService/SynchronizeIntegration"
-	MainService_GetIntegrationIdentity_FullMethodName     = "/octelium.api.main.access.v1.MainService/GetIntegrationIdentity"
-	MainService_ListIntegrationIdentity_FullMethodName    = "/octelium.api.main.access.v1.MainService/ListIntegrationIdentity"
 	MainService_ResolveIntegrationIdentity_FullMethodName = "/octelium.api.main.access.v1.MainService/ResolveIntegrationIdentity"
-	MainService_GetIntegrationBinding_FullMethodName      = "/octelium.api.main.access.v1.MainService/GetIntegrationBinding"
-	MainService_ListIntegrationBinding_FullMethodName     = "/octelium.api.main.access.v1.MainService/ListIntegrationBinding"
+	MainService_GetClusterConfig_FullMethodName           = "/octelium.api.main.access.v1.MainService/GetClusterConfig"
+	MainService_UpdateClusterConfig_FullMethodName        = "/octelium.api.main.access.v1.MainService/UpdateClusterConfig"
 )
 
 // MainServiceClient is the client API for MainService service.
@@ -135,14 +133,6 @@ type MainServiceClient interface {
 	// SynchronizeIntegration requests a refresh of the Integration's external
 	// tenant information and of its health.
 	SynchronizeIntegration(ctx context.Context, in *SynchronizeIntegrationRequest, opts ...grpc.CallOption) (*SynchronizeIntegrationResponse, error)
-	// GetIntegrationIdentity retrieves a specific IntegrationIdentity.
-	// IntegrationIdentities are entirely managed by the Cluster and can only be
-	// read.
-	GetIntegrationIdentity(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*IntegrationIdentity, error)
-	// ListIntegrationIdentity lists IntegrationIdentities.
-	// IntegrationIdentities are entirely managed by the Cluster and can only be
-	// read.
-	ListIntegrationIdentity(ctx context.Context, in *ListIntegrationIdentityOptions, opts ...grpc.CallOption) (*IntegrationIdentityList, error)
 	// ResolveIntegrationIdentity reports how an external actor of an
 	// Integration is currently resolved to a Cluster User. It is a diagnostic
 	// method that does not change the access state of the Cluster. It does,
@@ -150,10 +140,10 @@ type MainServiceClient interface {
 	// refreshes the IntegrationIdentity of a successful resolution exactly like
 	// the Cluster does on its own.
 	ResolveIntegrationIdentity(ctx context.Context, in *ResolveIntegrationIdentityRequest, opts ...grpc.CallOption) (*ResolveIntegrationIdentityResponse, error)
-	// GetIntegrationBinding retrieves a specific IntegrationBinding
-	GetIntegrationBinding(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*IntegrationBinding, error)
-	// ListIntegrationBinding lists IntegrationBindings
-	ListIntegrationBinding(ctx context.Context, in *ListIntegrationBindingOptions, opts ...grpc.CallOption) (*IntegrationBindingList, error)
+	// GetClusterConfig retrieves the access ClusterConfig
+	GetClusterConfig(ctx context.Context, in *GetClusterConfigRequest, opts ...grpc.CallOption) (*ClusterConfig, error)
+	// UpdateClusterConfig updates the access ClusterConfig
+	UpdateClusterConfig(ctx context.Context, in *ClusterConfig, opts ...grpc.CallOption) (*ClusterConfig, error)
 }
 
 type mainServiceClient struct {
@@ -444,26 +434,6 @@ func (c *mainServiceClient) SynchronizeIntegration(ctx context.Context, in *Sync
 	return out, nil
 }
 
-func (c *mainServiceClient) GetIntegrationIdentity(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*IntegrationIdentity, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(IntegrationIdentity)
-	err := c.cc.Invoke(ctx, MainService_GetIntegrationIdentity_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *mainServiceClient) ListIntegrationIdentity(ctx context.Context, in *ListIntegrationIdentityOptions, opts ...grpc.CallOption) (*IntegrationIdentityList, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(IntegrationIdentityList)
-	err := c.cc.Invoke(ctx, MainService_ListIntegrationIdentity_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *mainServiceClient) ResolveIntegrationIdentity(ctx context.Context, in *ResolveIntegrationIdentityRequest, opts ...grpc.CallOption) (*ResolveIntegrationIdentityResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ResolveIntegrationIdentityResponse)
@@ -474,20 +444,20 @@ func (c *mainServiceClient) ResolveIntegrationIdentity(ctx context.Context, in *
 	return out, nil
 }
 
-func (c *mainServiceClient) GetIntegrationBinding(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*IntegrationBinding, error) {
+func (c *mainServiceClient) GetClusterConfig(ctx context.Context, in *GetClusterConfigRequest, opts ...grpc.CallOption) (*ClusterConfig, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(IntegrationBinding)
-	err := c.cc.Invoke(ctx, MainService_GetIntegrationBinding_FullMethodName, in, out, cOpts...)
+	out := new(ClusterConfig)
+	err := c.cc.Invoke(ctx, MainService_GetClusterConfig_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *mainServiceClient) ListIntegrationBinding(ctx context.Context, in *ListIntegrationBindingOptions, opts ...grpc.CallOption) (*IntegrationBindingList, error) {
+func (c *mainServiceClient) UpdateClusterConfig(ctx context.Context, in *ClusterConfig, opts ...grpc.CallOption) (*ClusterConfig, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(IntegrationBindingList)
-	err := c.cc.Invoke(ctx, MainService_ListIntegrationBinding_FullMethodName, in, out, cOpts...)
+	out := new(ClusterConfig)
+	err := c.cc.Invoke(ctx, MainService_UpdateClusterConfig_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -565,14 +535,6 @@ type MainServiceServer interface {
 	// SynchronizeIntegration requests a refresh of the Integration's external
 	// tenant information and of its health.
 	SynchronizeIntegration(context.Context, *SynchronizeIntegrationRequest) (*SynchronizeIntegrationResponse, error)
-	// GetIntegrationIdentity retrieves a specific IntegrationIdentity.
-	// IntegrationIdentities are entirely managed by the Cluster and can only be
-	// read.
-	GetIntegrationIdentity(context.Context, *metav1.GetOptions) (*IntegrationIdentity, error)
-	// ListIntegrationIdentity lists IntegrationIdentities.
-	// IntegrationIdentities are entirely managed by the Cluster and can only be
-	// read.
-	ListIntegrationIdentity(context.Context, *ListIntegrationIdentityOptions) (*IntegrationIdentityList, error)
 	// ResolveIntegrationIdentity reports how an external actor of an
 	// Integration is currently resolved to a Cluster User. It is a diagnostic
 	// method that does not change the access state of the Cluster. It does,
@@ -580,10 +542,10 @@ type MainServiceServer interface {
 	// refreshes the IntegrationIdentity of a successful resolution exactly like
 	// the Cluster does on its own.
 	ResolveIntegrationIdentity(context.Context, *ResolveIntegrationIdentityRequest) (*ResolveIntegrationIdentityResponse, error)
-	// GetIntegrationBinding retrieves a specific IntegrationBinding
-	GetIntegrationBinding(context.Context, *metav1.GetOptions) (*IntegrationBinding, error)
-	// ListIntegrationBinding lists IntegrationBindings
-	ListIntegrationBinding(context.Context, *ListIntegrationBindingOptions) (*IntegrationBindingList, error)
+	// GetClusterConfig retrieves the access ClusterConfig
+	GetClusterConfig(context.Context, *GetClusterConfigRequest) (*ClusterConfig, error)
+	// UpdateClusterConfig updates the access ClusterConfig
+	UpdateClusterConfig(context.Context, *ClusterConfig) (*ClusterConfig, error)
 	mustEmbedUnimplementedMainServiceServer()
 }
 
@@ -678,20 +640,14 @@ func (UnimplementedMainServiceServer) ListIntegration(context.Context, *ListInte
 func (UnimplementedMainServiceServer) SynchronizeIntegration(context.Context, *SynchronizeIntegrationRequest) (*SynchronizeIntegrationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SynchronizeIntegration not implemented")
 }
-func (UnimplementedMainServiceServer) GetIntegrationIdentity(context.Context, *metav1.GetOptions) (*IntegrationIdentity, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetIntegrationIdentity not implemented")
-}
-func (UnimplementedMainServiceServer) ListIntegrationIdentity(context.Context, *ListIntegrationIdentityOptions) (*IntegrationIdentityList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListIntegrationIdentity not implemented")
-}
 func (UnimplementedMainServiceServer) ResolveIntegrationIdentity(context.Context, *ResolveIntegrationIdentityRequest) (*ResolveIntegrationIdentityResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResolveIntegrationIdentity not implemented")
 }
-func (UnimplementedMainServiceServer) GetIntegrationBinding(context.Context, *metav1.GetOptions) (*IntegrationBinding, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetIntegrationBinding not implemented")
+func (UnimplementedMainServiceServer) GetClusterConfig(context.Context, *GetClusterConfigRequest) (*ClusterConfig, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetClusterConfig not implemented")
 }
-func (UnimplementedMainServiceServer) ListIntegrationBinding(context.Context, *ListIntegrationBindingOptions) (*IntegrationBindingList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListIntegrationBinding not implemented")
+func (UnimplementedMainServiceServer) UpdateClusterConfig(context.Context, *ClusterConfig) (*ClusterConfig, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateClusterConfig not implemented")
 }
 func (UnimplementedMainServiceServer) mustEmbedUnimplementedMainServiceServer() {}
 func (UnimplementedMainServiceServer) testEmbeddedByValue()                     {}
@@ -1218,42 +1174,6 @@ func _MainService_SynchronizeIntegration_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MainService_GetIntegrationIdentity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(metav1.GetOptions)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MainServiceServer).GetIntegrationIdentity(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MainService_GetIntegrationIdentity_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MainServiceServer).GetIntegrationIdentity(ctx, req.(*metav1.GetOptions))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MainService_ListIntegrationIdentity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListIntegrationIdentityOptions)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MainServiceServer).ListIntegrationIdentity(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MainService_ListIntegrationIdentity_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MainServiceServer).ListIntegrationIdentity(ctx, req.(*ListIntegrationIdentityOptions))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _MainService_ResolveIntegrationIdentity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResolveIntegrationIdentityRequest)
 	if err := dec(in); err != nil {
@@ -1272,38 +1192,38 @@ func _MainService_ResolveIntegrationIdentity_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MainService_GetIntegrationBinding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(metav1.GetOptions)
+func _MainService_GetClusterConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetClusterConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MainServiceServer).GetIntegrationBinding(ctx, in)
+		return srv.(MainServiceServer).GetClusterConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MainService_GetIntegrationBinding_FullMethodName,
+		FullMethod: MainService_GetClusterConfig_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MainServiceServer).GetIntegrationBinding(ctx, req.(*metav1.GetOptions))
+		return srv.(MainServiceServer).GetClusterConfig(ctx, req.(*GetClusterConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MainService_ListIntegrationBinding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListIntegrationBindingOptions)
+func _MainService_UpdateClusterConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClusterConfig)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MainServiceServer).ListIntegrationBinding(ctx, in)
+		return srv.(MainServiceServer).UpdateClusterConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MainService_ListIntegrationBinding_FullMethodName,
+		FullMethod: MainService_UpdateClusterConfig_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MainServiceServer).ListIntegrationBinding(ctx, req.(*ListIntegrationBindingOptions))
+		return srv.(MainServiceServer).UpdateClusterConfig(ctx, req.(*ClusterConfig))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1428,24 +1348,16 @@ var MainService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MainService_SynchronizeIntegration_Handler,
 		},
 		{
-			MethodName: "GetIntegrationIdentity",
-			Handler:    _MainService_GetIntegrationIdentity_Handler,
-		},
-		{
-			MethodName: "ListIntegrationIdentity",
-			Handler:    _MainService_ListIntegrationIdentity_Handler,
-		},
-		{
 			MethodName: "ResolveIntegrationIdentity",
 			Handler:    _MainService_ResolveIntegrationIdentity_Handler,
 		},
 		{
-			MethodName: "GetIntegrationBinding",
-			Handler:    _MainService_GetIntegrationBinding_Handler,
+			MethodName: "GetClusterConfig",
+			Handler:    _MainService_GetClusterConfig_Handler,
 		},
 		{
-			MethodName: "ListIntegrationBinding",
-			Handler:    _MainService_ListIntegrationBinding_Handler,
+			MethodName: "UpdateClusterConfig",
+			Handler:    _MainService_UpdateClusterConfig_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

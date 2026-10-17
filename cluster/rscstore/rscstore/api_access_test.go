@@ -111,6 +111,93 @@ func TestAccessListFilters(t *testing.T) {
 		assert.Len(t, resp.Items, 0)
 	}
 
+	catalogRef := &metav1.ObjectReference{Name: "catalog-nested", Uid: vutils.UUIDv4()}
+	insertRscStoreObject(t, env, &accessv1.Policy{
+		ApiVersion: uaccessv1.APIVersion,
+		Kind:       uaccessv1.KindPolicy,
+		Metadata:   newRscStoreMetadata("nested-policy", now.Add(2*time.Second)),
+		Spec: &accessv1.Policy_Spec{
+			Rules: []*accessv1.Policy_Spec_Rule{
+				{
+					Effect: accessv1.Policy_Spec_Rule_REVIEW,
+					Condition: &accessv1.Policy_Spec_Rule_Condition{
+						Type: &accessv1.Policy_Spec_Rule_Condition_All_{
+							All: &accessv1.Policy_Spec_Rule_Condition_All{
+								Of: []*accessv1.Policy_Spec_Rule_Condition{
+									{
+										Type: &accessv1.Policy_Spec_Rule_Condition_Subject_{
+											Subject: &accessv1.Policy_Spec_Rule_Condition_Subject{
+												Type: &accessv1.Policy_Spec_Rule_Condition_Subject_GroupRef{GroupRef: groupRef},
+											},
+										},
+									},
+									{
+										Type: &accessv1.Policy_Spec_Rule_Condition_Any_{
+											Any: &accessv1.Policy_Spec_Rule_Condition_Any{
+												Of: []*accessv1.Policy_Spec_Rule_Condition{
+													{
+														Type: &accessv1.Policy_Spec_Rule_Condition_Resource_{
+															Resource: &accessv1.Policy_Spec_Rule_Condition_Resource{
+																Type: &accessv1.Policy_Spec_Rule_Condition_Resource_CatalogRef{CatalogRef: catalogRef},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Effect: accessv1.Policy_Spec_Rule_DENY,
+					Condition: &accessv1.Policy_Spec_Rule_Condition{
+						Type: &accessv1.Policy_Spec_Rule_Condition_UserRef{UserRef: otherUserRef},
+					},
+				},
+			},
+		},
+		Status: &accessv1.Policy_Status{},
+	})
+
+	{
+		resp, err := srv.ListPolicy(env.ctx, &vaccessv1.ListPolicyOptions{GroupRef: groupRef})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 1)
+		assert.Equal(t, "nested-policy", resp.Items[0].Metadata.Name)
+	}
+
+	{
+		resp, err := srv.ListPolicy(env.ctx, &vaccessv1.ListPolicyOptions{CatalogRef: catalogRef})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 1)
+		assert.Equal(t, "nested-policy", resp.Items[0].Metadata.Name)
+	}
+
+	{
+		resp, err := srv.ListPolicy(env.ctx, &vaccessv1.ListPolicyOptions{
+			CatalogRef: &metav1.ObjectReference{Name: "catalog-nested"},
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 1)
+	}
+
+	{
+		resp, err := srv.ListPolicy(env.ctx, &vaccessv1.ListPolicyOptions{
+			CatalogRef: &metav1.ObjectReference{Name: "catalog-nest"},
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 0)
+	}
+
+	{
+		resp, err := srv.ListPolicy(env.ctx, &vaccessv1.ListPolicyOptions{UserRef: otherUserRef})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 0)
+	}
+
 	insertRscStoreObject(t, env, &accessv1.Catalog{
 		ApiVersion: uaccessv1.APIVersion,
 		Kind:       uaccessv1.KindCatalog,

@@ -106,8 +106,6 @@ export const functionGroups: FunctionGroup[] = [
     icon: Plug,
     items: [
       item("/access/integrations"),
-      item("/access/integrationidentities"),
-      item("/access/integrationbindings"),
       item("/enterprise/collectorexporters"),
       item("/enterprise/secretstores"),
     ],
@@ -119,6 +117,7 @@ export const functionGroups: FunctionGroup[] = [
     items: [
       item("/core/clusterconfig", "Core configuration"),
       item("/enterprise/clusterconfig", "Enterprise configuration"),
+      item("/access/clusterconfig", "Access configuration"),
       item("/core/secrets", "Core secrets"),
       item("/enterprise/secrets", "Enterprise secrets"),
       item("/access/secrets", "Access secrets"),

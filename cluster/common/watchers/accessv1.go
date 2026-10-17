@@ -28,6 +28,14 @@ func NewAccessV1(octeliumC octeliumc.ClientInterface) *AccessV1Watcher {
 	}
 }
 
+func (c *AccessV1Watcher) ClusterConfig(
+	ctx context.Context,
+	opts *watchers.Opts,
+	onUpdate func(ctx context.Context, new, old *accessv1.ClusterConfig) error,
+) error {
+	return runWatcherAccessV1(ctx, c.octeliumC, opts, uaccessv1.KindClusterConfig, nil, onUpdate, nil)
+}
+
 func (c *AccessV1Watcher) Catalog(
 	ctx context.Context,
 	opts *watchers.Opts,

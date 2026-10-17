@@ -10,6 +10,7 @@ package access
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium/apis/main/accessv1"
@@ -80,16 +81,36 @@ func (s *ServerUser) ListRequest(ctx context.Context, req *accessv1.ListUserRequ
 		return nil, err
 	}
 
-	listOpts := urscsrv.GetPublicListOptions(req, urscsrv.FilterStatusUserUID(i.User.Metadata.Uid))
-	listOpts.OrderBy = []*rmetav1.ListOptions_OrderBy{
-		{
-			Type: rmetav1.ListOptions_OrderBy_TYPE_CREATED_AT,
-			Mode: rmetav1.ListOptions_OrderBy_MODE_DESC,
-		},
+	filters := []*rmetav1.ListOptions_Filter{
+		urscsrv.FilterStatusUserUID(i.User.Metadata.Uid),
+	}
+
+	if req.State != accessv1.Request_Status_State_STATUS_UNKNOWN {
+		filters = append(filters,
+			urscsrv.FilterFieldEQValStr("status.state.status", req.State.String()))
+	}
+
+	if req.Urgency != accessv1.Request_Spec_URGENCY_UNSET {
+		filters = append(filters,
+			urscsrv.FilterFieldEQValStr("spec.urgency", req.Urgency.String()))
+	}
+
+	filters, err = appendRefFilter(filters, "spec.resource.serviceRef", req.ServiceRef,
+		&apivalidation.CheckGetOptionsOpts{
+			ParentsMax: 1,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	filters, err = appendRefFilter(filters, "spec.resource.catalog.catalogRef", req.CatalogRef,
+		&apivalidation.CheckGetOptionsOpts{})
+	if err != nil {
+		return nil, err
 	}
 
 	itemList, err := s.octeliumC.AccessC().ListRequest(ctx,
-		listOpts)
+		withDefaultOrder(urscsrv.GetPublicListOptions(req, filters...)))
 	if err != nil {
 		return nil, serr.InternalWithErr(err)
 	}
@@ -188,6 +209,39 @@ func (s *ServerUser) CancelRequest(ctx context.Context, req *accessv1.CancelRequ
 	}
 
 	return &metav1.OperationResult{}, nil
+}
+
+func appendRefFilter(filters []*rmetav1.ListOptions_Filter,
+	field string, ref *metav1.ObjectReference,
+	opts *apivalidation.CheckGetOptionsOpts) ([]*rmetav1.ListOptions_Filter, error) {
+	if ref == nil || (ref.Uid == "" && ref.Name == "") {
+		return filters, nil
+	}
+
+	if err := apivalidation.CheckObjectRef(ref, opts); err != nil {
+		return nil, err
+	}
+
+	if ref.Uid != "" {
+		return append(filters, urscsrv.FilterFieldEQValStr(fmt.Sprintf("%s.uid", field), ref.Uid)), nil
+	}
+
+	return append(filters, urscsrv.FilterFieldEQValStr(fmt.Sprintf("%s.name", field), ref.Name)), nil
+}
+
+func withDefaultOrder(listOpts *rmetav1.ListOptions) *rmetav1.ListOptions {
+	if len(listOpts.OrderBy) > 0 {
+		return listOpts
+	}
+
+	listOpts.OrderBy = []*rmetav1.ListOptions_OrderBy{
+		{
+			Type: rmetav1.ListOptions_OrderBy_TYPE_CREATED_AT,
+			Mode: rmetav1.ListOptions_OrderBy_MODE_DESC,
+		},
+	}
+
+	return listOpts
 }
 
 func checkUserOwnsRequest(userUID string, req *accessv1.Request) error {

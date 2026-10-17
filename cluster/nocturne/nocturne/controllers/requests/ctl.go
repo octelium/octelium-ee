@@ -21,15 +21,19 @@ import (
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/celengine"
+	"github.com/octelium/octelium/cluster/common/urscsrv"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 const maxRequestStateHistory = 100
-const defaultAccessRequestAllowPriority = -1
+const defaultAccessRequestAllowPriority int32 = -1
+const minAccessRequestAllowPriority int32 = -4
+const maxAccessRequestAllowPriority int32 = 0
 const defaultMaxAccessDuration = 24 * time.Hour
 
 const PolicyTriggerNamePrefix = "access-request-"
@@ -63,6 +67,31 @@ func (c *Controller) OnAdd(ctx context.Context, itm *accessv1.Request) error {
 
 func (c *Controller) OnUpdate(ctx context.Context, new, old *accessv1.Request) error {
 	return c.reconcile(ctx, new)
+}
+
+func (c *Controller) OnClusterConfigUpdate(ctx context.Context, new, old *accessv1.ClusterConfig) error {
+	if getAccessRequestAllowPriority(new) == getAccessRequestAllowPriority(old) {
+		return nil
+	}
+
+	itemList, err := c.octeliumC.AccessC().ListRequest(ctx, &rmetav1.ListOptions{
+		Filters: []*rmetav1.ListOptions_Filter{
+			urscsrv.FilterFieldEQValStr("status.state.status",
+				accessv1.Request_Status_State_APPROVED.String()),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, itm := range itemList.Items {
+		if err := c.reconcile(ctx, itm); err != nil {
+			zap.L().Warn("Could not reconcile the approved Request after a ClusterConfig update",
+				zap.String("name", itm.Metadata.Name), zap.Error(err))
+		}
+	}
+
+	return nil
 }
 
 func (c *Controller) OnDelete(ctx context.Context, itm *accessv1.Request) error {
@@ -512,9 +541,14 @@ func (c *Controller) buildPolicyTrigger(
 		})
 	}
 
+	priority, err := c.getAccessRequestAllowPriority(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	policies := []string{}
 	inlinePolicies := []*corev1.InlinePolicy{
-		buildDefaultAccessRequestInlinePolicy(),
+		buildDefaultAccessRequestInlinePolicy(priority),
 	}
 
 	if authz != nil {
@@ -871,7 +905,35 @@ func validateReviewAction(review *accessv1.Policy_Spec_Rule_Action_Review) error
 	return nil
 }
 
-func buildDefaultAccessRequestInlinePolicy() *corev1.InlinePolicy {
+func (c *Controller) getAccessRequestAllowPriority(ctx context.Context) (int32, error) {
+	cc, err := c.octeliumC.AccessV1Utils().GetClusterConfig(ctx)
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return defaultAccessRequestAllowPriority, nil
+		}
+		return 0, err
+	}
+
+	return getAccessRequestAllowPriority(cc), nil
+}
+
+func getAccessRequestAllowPriority(cc *accessv1.ClusterConfig) int32 {
+	authz := cc.GetSpec().GetAuthorization()
+	if authz == nil || authz.Priority == nil {
+		return defaultAccessRequestAllowPriority
+	}
+
+	switch {
+	case authz.GetPriority() < minAccessRequestAllowPriority:
+		return minAccessRequestAllowPriority
+	case authz.GetPriority() > maxAccessRequestAllowPriority:
+		return maxAccessRequestAllowPriority
+	default:
+		return authz.GetPriority()
+	}
+}
+
+func buildDefaultAccessRequestInlinePolicy(priority int32) *corev1.InlinePolicy {
 	return &corev1.InlinePolicy{
 		Name: "access-request-default",
 		Spec: &corev1.Policy_Spec{
@@ -883,7 +945,7 @@ func buildDefaultAccessRequestInlinePolicy() *corev1.InlinePolicy {
 							MatchAny: true,
 						},
 					},
-					Priority: defaultAccessRequestAllowPriority,
+					Priority: priority,
 				},
 			},
 		},

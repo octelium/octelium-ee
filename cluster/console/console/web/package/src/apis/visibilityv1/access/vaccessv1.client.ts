@@ -13,6 +13,11 @@
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { ResourceService } from "./vaccessv1";
+import type { ListReviewTopRequest } from "./vaccessv1";
+import type { ListTopResponse } from "./vaccessv1";
+import type { ListRequestTopRequest } from "./vaccessv1";
+import type { GetRequestDataPointResponse } from "./vaccessv1";
+import type { GetRequestDataPointRequest } from "./vaccessv1";
 import type { IntegrationBindingList } from "../../accessv1/accessv1";
 import type { ListIntegrationBindingOptions } from "./vaccessv1";
 import type { IntegrationIdentityList } from "../../accessv1/accessv1";
@@ -116,6 +121,18 @@ export interface IResourceServiceClient {
      * @generated from protobuf rpc: ListIntegrationBinding
      */
     listIntegrationBinding(input: ListIntegrationBindingOptions, options?: RpcOptions): UnaryCall<ListIntegrationBindingOptions, IntegrationBindingList>;
+    /**
+     * @generated from protobuf rpc: GetRequestDataPoint
+     */
+    getRequestDataPoint(input: GetRequestDataPointRequest, options?: RpcOptions): UnaryCall<GetRequestDataPointRequest, GetRequestDataPointResponse>;
+    /**
+     * @generated from protobuf rpc: ListRequestTop
+     */
+    listRequestTop(input: ListRequestTopRequest, options?: RpcOptions): UnaryCall<ListRequestTopRequest, ListTopResponse>;
+    /**
+     * @generated from protobuf rpc: ListReviewTop
+     */
+    listReviewTop(input: ListReviewTopRequest, options?: RpcOptions): UnaryCall<ListReviewTopRequest, ListTopResponse>;
 }
 /**
  * @generated from protobuf service octelium.api.main.visibility.access.v1.ResourceService
@@ -237,5 +254,26 @@ export class ResourceServiceClient implements IResourceServiceClient, ServiceInf
     listIntegrationBinding(input: ListIntegrationBindingOptions, options?: RpcOptions): UnaryCall<ListIntegrationBindingOptions, IntegrationBindingList> {
         const method = this.methods[15], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListIntegrationBindingOptions, IntegrationBindingList>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: GetRequestDataPoint
+     */
+    getRequestDataPoint(input: GetRequestDataPointRequest, options?: RpcOptions): UnaryCall<GetRequestDataPointRequest, GetRequestDataPointResponse> {
+        const method = this.methods[16], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetRequestDataPointRequest, GetRequestDataPointResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: ListRequestTop
+     */
+    listRequestTop(input: ListRequestTopRequest, options?: RpcOptions): UnaryCall<ListRequestTopRequest, ListTopResponse> {
+        const method = this.methods[17], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListRequestTopRequest, ListTopResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: ListReviewTop
+     */
+    listReviewTop(input: ListReviewTopRequest, options?: RpcOptions): UnaryCall<ListReviewTopRequest, ListTopResponse> {
+        const method = this.methods[18], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListReviewTopRequest, ListTopResponse>("unary", this._transport, method, opt, input);
     }
 }

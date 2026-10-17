@@ -78,3 +78,15 @@ func (s *ServerResourceAccess) ListIntegrationIdentity(ctx context.Context, req 
 func (s *ServerResourceAccess) ListIntegrationBinding(ctx context.Context, req *vaccessv1.ListIntegrationBindingOptions) (*accessv1.IntegrationBindingList, error) {
 	return s.accessC.ListIntegrationBinding(ctx, req)
 }
+
+func (s *ServerResourceAccess) GetRequestDataPoint(ctx context.Context, req *vaccessv1.GetRequestDataPointRequest) (*vaccessv1.GetRequestDataPointResponse, error) {
+	return s.accessC.GetRequestDataPoint(ctx, req)
+}
+
+func (s *ServerResourceAccess) ListRequestTop(ctx context.Context, req *vaccessv1.ListRequestTopRequest) (*vaccessv1.ListTopResponse, error) {
+	return s.accessC.ListRequestTop(ctx, req)
+}
+
+func (s *ServerResourceAccess) ListReviewTop(ctx context.Context, req *vaccessv1.ListReviewTopRequest) (*vaccessv1.ListTopResponse, error) {
+	return s.accessC.ListReviewTop(ctx, req)
+}

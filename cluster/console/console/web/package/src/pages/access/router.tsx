@@ -7,9 +7,8 @@ import { getResourcePathFromAPIKind } from "@/utils/pb";
 import { ResourceComponentInfo } from "../utils/types";
 
 import catalogRouter from "./Catalog/router";
+import clusterConfigRouter from "./ClusterConfig/router";
 import integrationRouter from "./Integration/router";
-import integrationBindingRouter from "./IntegrationBinding/router";
-import integrationIdentityRouter from "./IntegrationIdentity/router";
 import policyRouter from "./Policy/router";
 import requestRouter from "./Request/router";
 import reviewRouter from "./Review/router";
@@ -42,8 +41,6 @@ export const resourceList = [
   reviewRouter,
   catalogRouter,
   integrationRouter,
-  integrationIdentityRouter,
-  integrationBindingRouter,
   secretRouter,
 ];
 
@@ -57,7 +54,7 @@ export default (): RouteObject => {
     ),
     children: resourceList
       .map((x) => getResourceChildrenRouter(x))
-      .concat([{ path: "", element: <MainPage /> }]),
+      .concat([clusterConfigRouter(), { path: "", element: <MainPage /> }]),
   };
 
   return ret;

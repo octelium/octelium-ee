@@ -374,7 +374,7 @@
                 "inboundSecret": {
                     "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Spec.Webhook.InboundSecret",
                     "additionalProperties": false,
-                    "description": "InboundSecret is the secret that the external system signs its requests to the Cluster with using the same canonical string, headers and 5-minute skew of the outbound deliveries. It is required in order to accept any inbound request."
+                    "description": "InboundSecret is the secret that the external system signs its requests to the Cluster with using the same canonical string, headers and 5-minute skew of the outbound deliveries. It is required in order to accept any inbound request. The external actors of the inbound requests are identified by their emails (i.e. `externalActorID`) which are matched against the `spec.email` of the Cluster's Users."
                 },
                 "name": {
                     "type": "string",

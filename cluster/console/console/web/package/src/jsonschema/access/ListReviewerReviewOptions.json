@@ -7,7 +7,22 @@
                 "common": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.CommonListOptions",
                     "additionalProperties": false,
-                    "description": "Common is the common list options."
+                    "description": "Common is the common list options. The list is ordered by the creation date, the most recent first, unless `common.orderBy` is set."
+                },
+                "decision": {
+                    "enum": [
+                        "DECISION_UNSET",
+                        "DECISION_APPROVE",
+                        "DECISION_REJECT"
+                    ],
+                    "type": "string",
+                    "title": "Decision",
+                    "description": "Decision is the reviewer's decision on the Request"
+                },
+                "requestRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "RequestRef only lists the Reviews of a specific Request. It lets a reviewer find out whether, and how, they have already reviewed a Request."
                 }
             },
             "additionalProperties": false,
@@ -63,6 +78,34 @@
             "type": "object",
             "title": "Order By",
             "description": "OrderBy sets the ordering of the returned list"
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
         }
     }
 }

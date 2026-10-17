@@ -6,13 +6,13 @@ import {
 import Meta from "@/components/Meta";
 import { motion } from "framer-motion";
 import * as React from "react";
-import Grants from "./Grants";
+import Activity from "./Activity";
+import Attention from "./Attention";
+import Governance from "./Governance";
 import Integrations from "./Integrations";
 import Inventory from "./Inventory";
-import Queue from "./Queue";
-import Requests from "./Requests";
+import { LiveAccess, Pending } from "./Queues";
 import Signals from "./Signals";
-import Workflow from "./Workflow";
 
 const Dashboard = () => {
   const { periodMinutes, setPeriodMinutes } = useDashboardRange();
@@ -40,23 +40,26 @@ const Dashboard = () => {
         </Deferred>
 
         <Deferred eager>
-          <Queue periodMinutes={periodMinutes} />
+          <Attention periodMinutes={periodMinutes} />
         </Deferred>
 
-        <Deferred height={620}>
-          <Requests periodMinutes={periodMinutes} />
+        <Deferred eager>
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+            <Pending periodMinutes={periodMinutes} />
+            <LiveAccess periodMinutes={periodMinutes} />
+          </div>
         </Deferred>
 
-        <Deferred height={620}>
-          <Workflow periodMinutes={periodMinutes} />
+        <Deferred height={760}>
+          <Activity periodMinutes={periodMinutes} />
         </Deferred>
 
-        <Deferred height={620}>
-          <Integrations periodMinutes={periodMinutes} />
+        <Deferred height={560}>
+          <Governance periodMinutes={periodMinutes} />
         </Deferred>
 
         <Deferred height={420}>
-          <Grants periodMinutes={periodMinutes} />
+          <Integrations periodMinutes={periodMinutes} />
         </Deferred>
 
         <Deferred height={280}>

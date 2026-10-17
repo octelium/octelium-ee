@@ -169,6 +169,7 @@ func TestAccessSummaries(t *testing.T) {
 		assert.EqualValues(t, 1, resp.TotalUrgencyLow)
 		assert.EqualValues(t, 1, resp.TotalWithDeadline)
 		assert.EqualValues(t, 1, resp.TotalDeadlinePassed)
+		assert.EqualValues(t, 0, resp.TotalPendingDeadlinePassed)
 	}
 
 	requestRef := &metav1.ObjectReference{Name: "active-request", Uid: vutils.UUIDv4()}

@@ -27,6 +27,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium-ee/cluster/policyportal/policyportal"
 	"github.com/octelium/octelium-ee/cluster/rscstore/rscstore"
+	"github.com/octelium/octelium-ee/pkg/apiutils/uaccessv1"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/authv1"
 	"github.com/octelium/octelium/apis/main/corev1"
@@ -211,6 +212,25 @@ func Run(ctx context.Context) error {
 			}
 
 			_, err = rscSrv.CreateResource(ctx, clusterCfg, "enterprise", "v1", "ClusterConfig")
+			if err != nil {
+				return err
+			}
+		}
+
+		{
+			clusterCfg := &accessv1.ClusterConfig{
+				ApiVersion: uaccessv1.APIVersion,
+				Kind:       uaccessv1.KindClusterConfig,
+				Metadata: &metav1.Metadata{
+					Uid:             uuid.New().String(),
+					ResourceVersion: uuid.New().String(),
+					Name:            "default",
+				},
+				Spec:   &accessv1.ClusterConfig_Spec{},
+				Status: &accessv1.ClusterConfig_Status{},
+			}
+
+			_, err = rscSrv.CreateResource(ctx, clusterCfg, uaccessv1.API, uaccessv1.Version, uaccessv1.KindClusterConfig)
 			if err != nil {
 				return err
 			}

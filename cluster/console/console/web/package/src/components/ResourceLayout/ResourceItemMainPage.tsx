@@ -30,7 +30,7 @@ import ResourceStatus from "./ResourceStatus";
 import { useContextResource } from "./utils";
 
 const METADATA_GROUP = "Metadata";
-type OverviewSection = "details" | "metadata" | "yaml";
+type OverviewSection = string;
 type YAMLSection = "content" | "schema";
 const ResourceSchemaContent = React.lazy(() =>
   import("../ResourceSchema").then((module) => ({
@@ -93,12 +93,42 @@ const SectionHeading = ({ title }: { title: string }) => (
   </div>
 );
 
+const StackedCell = ({
+  label,
+  hint,
+  children,
+  className,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <div className={twMerge("flex min-w-0 flex-col gap-2 px-4 py-3.5", className)}>
+    {(label || hint) && (
+      <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+        {label && (
+          <span className="text-xs font-semibold text-slate-700">{label}</span>
+        )}
+        {hint && (
+          <span className="text-xs font-normal leading-4 text-slate-500">
+            {hint}
+          </span>
+        )}
+      </div>
+    )}
+    <div className="min-w-0 text-sm font-normal leading-6 text-slate-800">
+      {children}
+    </div>
+  </div>
+);
+
 const InfoGrid = ({ items }: { items: ResourceInfoMainItem[] }) => {
   let column = 0;
   let row = 0;
 
   const cells = items.map((item) => {
-    const full = item.span === "full";
+    const full = item.span === "full" || item.layout === "stacked";
     if (full && column === 1) {
       row += 1;
       column = 0;
@@ -115,21 +145,36 @@ const InfoGrid = ({ items }: { items: ResourceInfoMainItem[] }) => {
 
   return (
     <div className="grid grid-cols-1 @2xl:grid-cols-2">
-      {cells.map(({ item, full, isLeft, row: cellRow }, index) => (
-        <InfoCell
-          key={item.label}
-          label={item.label}
-          hint={item.hint}
-          className={twMerge(
-            index > 0 && "border-t border-slate-100",
-            full && "@2xl:col-span-2",
-            isLeft && "@2xl:border-r @2xl:border-slate-100",
-            index > 0 && cellRow === 0 && "@2xl:border-t-0",
-          )}
-        >
-          {item.value}
-        </InfoCell>
-      ))}
+      {cells.map(({ item, full, isLeft, row: cellRow }, index) =>
+        item.layout === "stacked" ? (
+          <StackedCell
+            key={item.label}
+            label={item.label}
+            hint={item.hint}
+            className={twMerge(
+              index > 0 && "border-t border-slate-100",
+              "@2xl:col-span-2",
+              index > 0 && cellRow === 0 && "@2xl:border-t-0",
+            )}
+          >
+            {item.value}
+          </StackedCell>
+        ) : (
+          <InfoCell
+            key={item.label}
+            label={item.label}
+            hint={item.hint}
+            className={twMerge(
+              index > 0 && "border-t border-slate-100",
+              full && "@2xl:col-span-2",
+              isLeft && "@2xl:border-r @2xl:border-slate-100",
+              index > 0 && cellRow === 0 && "@2xl:border-t-0",
+            )}
+          >
+            {item.value}
+          </InfoCell>
+        ),
+      )}
     </div>
   );
 };
@@ -458,8 +503,16 @@ const ResourceOverview = (props: {
 }) => {
   const { resource: item, info } = props;
   const md = item.metadata!;
-  const [section, setSection] = React.useState<OverviewSection>("details");
+  const location = useLocation();
+  const sections = info.sections ?? [];
+  const [section, setSection] = React.useState<OverviewSection>(() => {
+    const initial = (location.state as { section?: string } | null)?.section;
+    return initial && sections.some((entry) => entry.value === initial)
+      ? initial
+      : "details";
+  });
   const [yamlSection, setYAMLSection] = React.useState<YAMLSection>("content");
+  const activeSection = sections.find((entry) => entry.value === section);
 
   const specificItems = (info.items ?? []).filter(
     (entry) => !isEmptyValue(entry.value),
@@ -581,6 +634,20 @@ const ResourceOverview = (props: {
                   </span>
                 ),
               },
+              ...sections.map((entry) => {
+                const Icon = entry.icon;
+                return {
+                  value: entry.value,
+                  label: Icon ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Icon size={13} />
+                      {entry.label}
+                    </span>
+                  ) : (
+                    entry.label
+                  ),
+                };
+              }),
               { value: "metadata", label: "Metadata" },
               {
                 value: "yaml",
@@ -597,6 +664,7 @@ const ResourceOverview = (props: {
 
         {section === "details" && (
           <>
+            {info.header}
             {primaryItems.length > 0 && <PrimaryTiles items={primaryItems} />}
             {groups.map((group) => (
               <React.Fragment key={group.title}>
@@ -604,13 +672,15 @@ const ResourceOverview = (props: {
                 <InfoGrid items={group.items} />
               </React.Fragment>
             ))}
-            {primaryItems.length === 0 && groups.length === 0 && (
+            {primaryItems.length === 0 && groups.length === 0 && !info.header && (
               <div className="px-4 py-10 text-center text-sm text-slate-500">
                 No kind-specific details are available for this resource.
               </div>
             )}
           </>
         )}
+
+        {activeSection && <div>{activeSection.content}</div>}
 
         {section === "metadata" && (
           <div>

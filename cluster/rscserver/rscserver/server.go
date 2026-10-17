@@ -12,7 +12,9 @@ import (
 	"context"
 
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
+	"github.com/octelium/octelium-ee/pkg/apiutils/uaccessv1"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
+	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/raccessv1"
@@ -102,6 +104,30 @@ func (s *Server) setInitResources(ctx context.Context) error {
 		}
 
 	}
+
+	if _, err := s.GetResource(ctx, &rmetav1.GetOptions{
+		Name: "default",
+	}, uaccessv1.API, uaccessv1.Version, uaccessv1.KindClusterConfig); err != nil {
+		if !grpcerr.IsNotFound(err) {
+			return err
+		}
+
+		zap.L().Debug("Initializing a default cluster-config for access")
+
+		if _, err := s.CreateResource(ctx, &accessv1.ClusterConfig{
+			ApiVersion: uaccessv1.APIVersion,
+			Kind:       uaccessv1.KindClusterConfig,
+			Metadata: &metav1.Metadata{
+				Name: "default",
+			},
+			Spec:   &accessv1.ClusterConfig_Spec{},
+			Status: &accessv1.ClusterConfig_Status{},
+		},
+			uaccessv1.API, uaccessv1.Version, uaccessv1.KindClusterConfig); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

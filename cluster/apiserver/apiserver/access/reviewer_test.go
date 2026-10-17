@@ -12,6 +12,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/accessv1"
@@ -212,6 +213,41 @@ func TestReviewerReview(t *testing.T) {
 	reviewListOther, err := srv.ListReview(other.Ctx(), &accessv1.ListReviewerReviewOptions{})
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(reviewListOther.Items))
+
+	{
+		itemList, err := srv.ListReview(reviewer.Ctx(), &accessv1.ListReviewerReviewOptions{
+			Decision: accessv1.Review_Spec_DECISION_APPROVE,
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, 1, len(itemList.Items))
+	}
+
+	{
+		itemList, err := srv.ListReview(reviewer.Ctx(), &accessv1.ListReviewerReviewOptions{
+			Decision: accessv1.Review_Spec_DECISION_REJECT,
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, 0, len(itemList.Items))
+	}
+
+	{
+		itemList, err := srv.ListReview(reviewer.Ctx(), &accessv1.ListReviewerReviewOptions{
+			RequestRef: umetav1.GetObjectReference(req),
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, 1, len(itemList.Items))
+		assert.Equal(t, review.Metadata.Uid, itemList.Items[0].Metadata.Uid)
+	}
+
+	{
+		itemList, err := srv.ListReview(reviewer.Ctx(), &accessv1.ListReviewerReviewOptions{
+			RequestRef: &metav1.ObjectReference{
+				Uid: uuid.New().String(),
+			},
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, 0, len(itemList.Items))
+	}
 
 	review.Spec.Decision = accessv1.Review_Spec_DECISION_REJECT
 	review.Spec.Justification = utilrand.GetRandomString(20)

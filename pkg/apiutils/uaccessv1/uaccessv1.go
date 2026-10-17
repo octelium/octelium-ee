@@ -16,6 +16,8 @@ import (
 )
 
 const (
+	KindClusterConfig = "ClusterConfig"
+
 	KindCatalog = "Catalog"
 	KindPolicy  = "Policy"
 	KindRequest = "Request"
@@ -28,7 +30,7 @@ const (
 )
 
 type ResourceObjectRefG interface {
-	*accessv1.Catalog | *accessv1.Policy | *accessv1.Request | *accessv1.Review |
+	*accessv1.ClusterConfig | *accessv1.Catalog | *accessv1.Policy | *accessv1.Request | *accessv1.Review |
 		*accessv1.Secret | *accessv1.Integration |
 		*accessv1.IntegrationIdentity | *accessv1.IntegrationBinding
 }
@@ -140,10 +142,6 @@ func NewObjectListOptions(kind string) (proto.Message, error) {
 		return &accessv1.ListSecretOptions{}, nil
 	case KindIntegration:
 		return &accessv1.ListIntegrationOptions{}, nil
-	case KindIntegrationIdentity:
-		return &accessv1.ListIntegrationIdentityOptions{}, nil
-	case KindIntegrationBinding:
-		return &accessv1.ListIntegrationBindingOptions{}, nil
 	default:
 		return nil, errors.Errorf("Invalid kind: %s", kind)
 	}
@@ -152,6 +150,8 @@ func NewObjectListOptions(kind string) (proto.Message, error) {
 func NewObject(kind string) (umetav1.ResourceObjectI, error) {
 
 	switch kind {
+	case KindClusterConfig:
+		return &accessv1.ClusterConfig{}, nil
 	case KindCatalog:
 		return &accessv1.Catalog{}, nil
 	case KindPolicy:

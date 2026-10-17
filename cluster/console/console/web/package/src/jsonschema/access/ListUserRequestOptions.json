@@ -7,7 +7,45 @@
                 "common": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.CommonListOptions",
                     "additionalProperties": false,
-                    "description": "Common is the common list options."
+                    "description": "Common is the common list options. The list is ordered by the creation date, the most recent first, unless `common.orderBy` is set."
+                },
+                "state": {
+                    "enum": [
+                        "STATUS_UNKNOWN",
+                        "PENDING",
+                        "APPROVED",
+                        "REJECTED",
+                        "REVOKED",
+                        "EXPIRED",
+                        "CANCELLED"
+                    ],
+                    "type": "string",
+                    "title": "Status",
+                    "description": "Status is the state of the Request"
+                },
+                "urgency": {
+                    "enum": [
+                        "URGENCY_UNSET",
+                        "VERY_LOW",
+                        "LOW",
+                        "NORMAL",
+                        "HIGH",
+                        "VERY_HIGH",
+                        "HIGHEST"
+                    ],
+                    "type": "string",
+                    "title": "Urgency",
+                    "description": "Urgency is how urgent the requester considers the Request to be"
+                },
+                "serviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ServiceRef only lists the Requests for the access to a specific Service."
+                },
+                "catalogRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "CatalogRef only lists the Requests for the access to a specific Catalog."
                 }
             },
             "additionalProperties": false,
@@ -63,6 +101,34 @@
             "type": "object",
             "title": "Order By",
             "description": "OrderBy sets the ordering of the returned list"
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
         }
     }
 }

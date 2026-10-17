@@ -122,6 +122,42 @@ export const logAppError = (error: unknown, context: ErrorContext) => {
   return report;
 };
 
+const CHUNK_LOAD_ERROR_PATTERNS = [
+  /error loading dynamically imported module/i,
+  /failed to fetch dynamically imported module/i,
+  /importing a module script failed/i,
+  /failed to load module script/i,
+  /unable to preload css/i,
+];
+
+export const isChunkLoadMessage = (message: string) =>
+  CHUNK_LOAD_ERROR_PATTERNS.some((pattern) => pattern.test(message));
+
+export const isChunkLoadError = (error: unknown) => {
+  const described = describeError(error);
+  return (
+    described.name === "ChunkLoadError" || isChunkLoadMessage(described.message)
+  );
+};
+
+const CHUNK_RELOAD_KEY = "octelium-console:chunk-reload-at";
+const CHUNK_RELOAD_INTERVAL = 30_000;
+
+export const reloadForNewVersion = () => {
+  if (typeof window === "undefined") return false;
+
+  try {
+    const last = Number(window.sessionStorage.getItem(CHUNK_RELOAD_KEY) ?? 0);
+    if (Date.now() - last < CHUNK_RELOAD_INTERVAL) return false;
+    window.sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+  } catch {
+    return false;
+  }
+
+  window.location.reload();
+  return true;
+};
+
 let installed = false;
 
 export const installGlobalErrorLogging = () => {
@@ -134,5 +170,12 @@ export const installGlobalErrorLogging = () => {
 
   window.addEventListener("unhandledrejection", (event) => {
     logAppError(event.reason, { source: "unhandledrejection" });
+  });
+
+  window.addEventListener("vite:preloadError", (event) => {
+    logAppError((event as Event & { payload?: unknown }).payload, {
+      source: "vite:preloadError",
+    });
+    reloadForNewVersion();
   });
 };

@@ -15,7 +15,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
+	"github.com/octelium/octelium-ee/pkg/apiutils/uaccessv1"
 	"github.com/octelium/octelium-ee/pkg/apiutils/ucordiumv1"
+	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/cordiumv1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
@@ -113,6 +115,16 @@ The initial SecretStore powered by the Kubernetes Cluster of the default Region
 		})
 
 	}
+
+	rscs = append(rscs, &accessv1.ClusterConfig{
+		ApiVersion: uaccessv1.APIVersion,
+		Kind:       uaccessv1.KindClusterConfig,
+		Metadata: &metav1.Metadata{
+			Name: "default",
+		},
+		Spec:   &accessv1.ClusterConfig_Spec{},
+		Status: &accessv1.ClusterConfig_Status{},
+	})
 
 	rscs = append(rscs, &cordiumv1.ClusterConfig{
 		ApiVersion: ucordiumv1.APIVersion,

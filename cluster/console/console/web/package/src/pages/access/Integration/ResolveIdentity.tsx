@@ -17,8 +17,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
 import { CircleCheck, CircleX, Link2, X } from "lucide-react";
 import * as React from "react";
-import { getSourceLabel } from "../IntegrationIdentity/utils";
-import { hasCapability } from "./utils";
+import { getIdentitySourceLabel, hasCapability } from "./utils";
 
 type Direction = "externalID" | "userRef";
 
@@ -76,8 +75,8 @@ const ResolveIdentity = (props: { item: AccessC.Integration }) => {
       <Button
         type="button"
         variant="default"
-        size="sm"
-        leftSection={<Link2 size={13} />}
+        size="compact-xs"
+        leftSection={<Link2 size={12} />}
         onClick={open}
       >
         Resolve identity
@@ -121,9 +120,8 @@ const ResolveIdentity = (props: { item: AccessC.Integration }) => {
           <div className="space-y-4 px-5 py-5">
             {!canResolve && (
               <Alert color="amber" title="No identity resolution">
-                This Integration does not advertise the identity resolution
-                capability, so only the already established
-                IntegrationIdentities can be looked up.
+                This Integration cannot look people up by itself, so only
+                the accounts that are already linked can be resolved.
               </Alert>
             )}
 
@@ -195,27 +193,13 @@ const ResolveIdentity = (props: { item: AccessC.Integration }) => {
                     />
                   )}
                   {result.externalID && (
-                    <ResourceListLabel label="External actor">
+                    <ResourceListLabel label="Linked account">
                       {result.externalID}
                     </ResourceListLabel>
                   )}
-                  {(result.integrationIdentityRef?.name ||
-                    result.integrationIdentityRef?.uid) && (
-                    <ResourceListLabel
-                      itemRef={ObjectReference.create({
-                        ...result.integrationIdentityRef,
-                        apiVersion:
-                          result.integrationIdentityRef.apiVersion ||
-                          "access/v1",
-                        kind:
-                          result.integrationIdentityRef.kind ||
-                          "IntegrationIdentity",
-                      })}
-                    />
-                  )}
                   {result.isResolved && (
                     <Label size="sm" tone="info">
-                      {getSourceLabel(result.source)}
+                      {getIdentitySourceLabel(result.source)}
                     </Label>
                   )}
                 </div>

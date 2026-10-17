@@ -28,6 +28,7 @@ import { UnknownFieldHandler } from "@protobuf-ts/runtime";
 import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
+import { Duration } from "../../metav1/metav1";
 import { Policy_Spec_Rule_Surface_InteractionMode } from "../../accessv1/accessv1";
 import { Policy_Spec_Rule_Surface_Destination_Audience } from "../../accessv1/accessv1";
 import { IntegrationBinding_Status_Purpose } from "../../accessv1/accessv1";
@@ -38,11 +39,14 @@ import { Integration_Status_Synchronization_State } from "../../accessv1/accessv
 import { Integration_Status_State } from "../../accessv1/accessv1";
 import { Integration_Status_Type } from "../../accessv1/accessv1";
 import { Review_Spec_Decision } from "../../accessv1/accessv1";
+import { CommonListOptions_OrderBy_Mode } from "../meta/vmetav1";
+import { Origin_Type } from "../../accessv1/accessv1";
 import { Request_Spec_Urgency } from "../../accessv1/accessv1";
 import { Request_Status_State_Status } from "../../accessv1/accessv1";
-import { ObjectReference } from "../../metav1/metav1";
 import { Policy_Spec_Rule_Effect } from "../../accessv1/accessv1";
 import { CommonListOptions } from "../meta/vmetav1";
+import { Timestamp } from "../../google/protobuf/timestamp";
+import { ObjectReference } from "../../metav1/metav1";
 import { CommonSummaryOptions } from "../meta/vmetav1";
 /**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.GetPolicySummaryRequest
@@ -70,6 +74,37 @@ export interface GetRequestSummaryRequest {
      * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
      */
     common?: CommonSummaryOptions;
+    /**
+     * PolicyRef only counts the Requests that matched a Rule of a specific
+     * Policy.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference policyRef = 2
+     */
+    policyRef?: ObjectReference;
+    /**
+     * CatalogRef only counts the Requests for the access to a specific Catalog.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference catalogRef = 3
+     */
+    catalogRef?: ObjectReference;
+    /**
+     * ServiceRef only counts the Requests for the access to a specific Service.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference serviceRef = 4
+     */
+    serviceRef?: ObjectReference;
+    /**
+     * UserRef only counts the Requests that were created by a specific User.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 5
+     */
+    userRef?: ObjectReference;
+    /**
+     * SubjectUserRef only counts the Requests whose subject is a specific User.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference subjectUserRef = 6
+     */
+    subjectUserRef?: ObjectReference;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.GetReviewSummaryRequest
@@ -79,6 +114,18 @@ export interface GetReviewSummaryRequest {
      * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
      */
     common?: CommonSummaryOptions;
+    /**
+     * UserRef only counts the Reviews of a specific reviewer.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 2
+     */
+    userRef?: ObjectReference;
+    /**
+     * RequestRef only counts the Reviews of a specific Request.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 3
+     */
+    requestRef?: ObjectReference;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.GetSecretSummaryRequest
@@ -106,6 +153,13 @@ export interface GetIntegrationIdentitySummaryRequest {
      * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
      */
     common?: CommonSummaryOptions;
+    /**
+     * IntegrationRef only counts the IntegrationIdentities of a specific
+     * Integration.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 2
+     */
+    integrationRef?: ObjectReference;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryRequest
@@ -115,6 +169,19 @@ export interface GetIntegrationBindingSummaryRequest {
      * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1
      */
     common?: CommonSummaryOptions;
+    /**
+     * IntegrationRef only counts the IntegrationBindings of a specific
+     * Integration.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 2
+     */
+    integrationRef?: ObjectReference;
+    /**
+     * RequestRef only counts the IntegrationBindings of a specific Request.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 3
+     */
+    requestRef?: ObjectReference;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.GetPolicySummaryResponse
@@ -167,6 +234,27 @@ export interface GetPolicySummaryResponse {
      * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetPolicySummaryResponse previous = 11
      */
     previous?: GetPolicySummaryResponse;
+    /**
+     * TotalRuleNotification is the number of the Rules that deliver the
+     * outcome of their Requests to at least one Integration.
+     *
+     * @generated from protobuf field: uint64 totalRuleNotification = 12
+     */
+    totalRuleNotification: number;
+    /**
+     * TotalReviewSurface is the number of the Integration surfaces of the
+     * review Steps.
+     *
+     * @generated from protobuf field: uint64 totalReviewSurface = 13
+     */
+    totalReviewSurface: number;
+    /**
+     * TotalInteractiveSurface is the number of the INTERACTIVE Integration
+     * surfaces of the review Steps.
+     *
+     * @generated from protobuf field: uint64 totalInteractiveSurface = 14
+     */
+    totalInteractiveSurface: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.GetCatalogSummaryResponse
@@ -287,6 +375,120 @@ export interface GetRequestSummaryResponse {
      * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetRequestSummaryResponse previous = 22
      */
     previous?: GetRequestSummaryResponse;
+    /**
+     * TotalAutoApproved is the number of the Requests that matched an
+     * AUTO_APPROVE Rule.
+     *
+     * @generated from protobuf field: uint64 totalAutoApproved = 23
+     */
+    totalAutoApproved: number;
+    /**
+     * TotalReviewed is the number of the Requests that matched a REVIEW Rule.
+     *
+     * @generated from protobuf field: uint64 totalReviewed = 24
+     */
+    totalReviewed: number;
+    /**
+     * TotalDenied is the number of the Requests that matched a DENY Rule.
+     *
+     * @generated from protobuf field: uint64 totalDenied = 25
+     */
+    totalDenied: number;
+    /**
+     * TotalUnmatched is the number of the Requests that were rejected because
+     * no Rule of any enabled Policy matched them.
+     *
+     * @generated from protobuf field: uint64 totalUnmatched = 26
+     */
+    totalUnmatched: number;
+    /**
+     * TotalOnBehalf is the number of the Requests whose subject is not the User
+     * that created them.
+     *
+     * @generated from protobuf field: uint64 totalOnBehalf = 27
+     */
+    totalOnBehalf: number;
+    /**
+     * TotalFromIntegration is the number of the Requests that were created by
+     * an external actor of an Integration.
+     *
+     * @generated from protobuf field: uint64 totalFromIntegration = 28
+     */
+    totalFromIntegration: number;
+    /**
+     * TotalExpiringSoon is the number of the active Requests whose granted
+     * access ends within the next hour.
+     *
+     * @generated from protobuf field: uint64 totalExpiringSoon = 29
+     */
+    totalExpiringSoon: number;
+    /**
+     * TotalPendingStale is the number of the pending Requests that have been
+     * waiting for a decision for more than 24 hours.
+     *
+     * @generated from protobuf field: uint64 totalPendingStale = 30
+     */
+    totalPendingStale: number;
+    /**
+     * OldestPendingAt is the time at which the longest waiting pending Request
+     * started waiting for a decision.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp oldestPendingAt = 31
+     */
+    oldestPendingAt?: Timestamp;
+    /**
+     * DecisionTime is the distribution of the time that the Requests matching
+     * a REVIEW Rule took to be approved or rejected by their reviewers.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.DecisionTime decisionTime = 32
+     */
+    decisionTime?: DecisionTime;
+    /**
+     * TotalPendingDeadlinePassed is the number of the pending Requests whose
+     * deadline has already passed.
+     *
+     * @generated from protobuf field: uint64 totalPendingDeadlinePassed = 33
+     */
+    totalPendingDeadlinePassed: number;
+    /**
+     * TotalGranted is the number of the Requests that have been approved at
+     * some point, including the ones whose access has since ended or has been
+     * revoked.
+     *
+     * @generated from protobuf field: uint64 totalGranted = 34
+     */
+    totalGranted: number;
+}
+/**
+ * DecisionTime is the distribution of the time between the moment that a
+ * Request started waiting for a decision (i.e. `status.approvalStartAt`) and
+ * the moment it was approved or rejected (i.e. `status.approvalEndAt`).
+ *
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.DecisionTime
+ */
+export interface DecisionTime {
+    /**
+     * Count is the number of the measured Requests.
+     *
+     * @generated from protobuf field: uint64 count = 1
+     */
+    count: number;
+    /**
+     * @generated from protobuf field: double averageSeconds = 2
+     */
+    averageSeconds: number;
+    /**
+     * @generated from protobuf field: double p50Seconds = 3
+     */
+    p50Seconds: number;
+    /**
+     * @generated from protobuf field: double p90Seconds = 4
+     */
+    p90Seconds: number;
+    /**
+     * @generated from protobuf field: double maxSeconds = 5
+     */
+    maxSeconds: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.GetReviewSummaryResponse
@@ -327,6 +529,13 @@ export interface GetReviewSummaryResponse {
      * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetReviewSummaryResponse previous = 8
      */
     previous?: GetReviewSummaryResponse;
+    /**
+     * TotalFromIntegration is the number of the Reviews whose current
+     * decision was submitted by an external actor of an Integration.
+     *
+     * @generated from protobuf field: uint64 totalFromIntegration = 9
+     */
+    totalFromIntegration: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.GetSecretSummaryResponse
@@ -654,6 +863,97 @@ export interface ListRequestOptions {
      * @generated from protobuf field: bool isDeadlinePassed = 13
      */
     isDeadlinePassed: boolean;
+    /**
+     * Effect only lists the Requests that matched a Rule of a specific effect.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Effect effect = 14
+     */
+    effect: Policy_Spec_Rule_Effect;
+    /**
+     * IsUnmatched only lists the Requests that were rejected because no Rule
+     * of any enabled Policy matched them.
+     *
+     * @generated from protobuf field: bool isUnmatched = 15
+     */
+    isUnmatched: boolean;
+    /**
+     * IsExpiringSoon only lists the active Requests whose granted access ends
+     * within the next hour.
+     *
+     * @generated from protobuf field: bool isExpiringSoon = 16
+     */
+    isExpiringSoon: boolean;
+    /**
+     * IsPendingStale only lists the pending Requests that have been waiting
+     * for a decision for more than 24 hours.
+     *
+     * @generated from protobuf field: bool isPendingStale = 17
+     */
+    isPendingStale: boolean;
+    /**
+     * IsOnBehalf only lists the Requests whose subject is not the User that
+     * created them.
+     *
+     * @generated from protobuf field: bool isOnBehalf = 18
+     */
+    isOnBehalf: boolean;
+    /**
+     * OriginType only lists the Requests that were created from a specific
+     * origin.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Origin.Type originType = 19
+     */
+    originType: Origin_Type;
+    /**
+     * OrderBy overrides `common.orderBy` when its type is set.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.ListRequestOptions.OrderBy orderBy = 20
+     */
+    orderBy?: ListRequestOptions_OrderBy;
+}
+/**
+ * OrderBy orders the list by a Request specific field
+ *
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.ListRequestOptions.OrderBy
+ */
+export interface ListRequestOptions_OrderBy {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.ListRequestOptions.OrderBy.Type type = 1
+     */
+    type: ListRequestOptions_OrderBy_Type;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.Mode mode = 2
+     */
+    mode: CommonListOptions_OrderBy_Mode;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.visibility.access.v1.ListRequestOptions.OrderBy.Type
+ */
+export enum ListRequestOptions_OrderBy_Type {
+    /**
+     * @generated from protobuf enum value: TYPE_UNSET = 0;
+     */
+    TYPE_UNSET = 0,
+    /**
+     * ACCESS_ENDS_AT orders the list by the time at which the granted
+     * access ends.
+     *
+     * @generated from protobuf enum value: ACCESS_ENDS_AT = 1;
+     */
+    ACCESS_ENDS_AT = 1,
+    /**
+     * APPROVAL_START_AT orders the list by the time at which the Requests
+     * started waiting for a decision.
+     *
+     * @generated from protobuf enum value: APPROVAL_START_AT = 2;
+     */
+    APPROVAL_START_AT = 2,
+    /**
+     * DEADLINE orders the list by the Requests' deadlines.
+     *
+     * @generated from protobuf enum value: DEADLINE = 3;
+     */
+    DEADLINE = 3
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.ListReviewOptions
@@ -679,6 +979,13 @@ export interface ListReviewOptions {
      * @generated from protobuf field: bool isDecided = 5
      */
     isDecided: boolean;
+    /**
+     * OriginType only lists the Reviews whose current decision was set from a
+     * specific origin.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Origin.Type originType = 6
+     */
+    originType: Origin_Type;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.access.v1.ListSecretOptions
@@ -798,6 +1105,346 @@ export interface ListIntegrationBindingOptions {
      */
     isFailing: boolean;
 }
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.GetRequestDataPointRequest
+ */
+export interface GetRequestDataPointRequest {
+    /**
+     * From and To restrict the Requests to the ones that were created within
+     * the window. Every Request is counted at its creation time.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp from = 1
+     */
+    from?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp to = 2
+     */
+    to?: Timestamp;
+    /**
+     * Interval is the width of every datapoint. It is automatically set from
+     * the window when it is unset.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration interval = 3
+     */
+    interval?: Duration;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.GetRequestDataPointRequest.GroupBy groupBy = 4
+     */
+    groupBy: GetRequestDataPointRequest_GroupBy;
+    /**
+     * LimitSeries caps the number of the returned series to the top ones by
+     * total count. It is only used with `groupBy`. It defaults to 8 and it
+     * cannot exceed 25.
+     *
+     * @generated from protobuf field: uint32 limitSeries = 5
+     */
+    limitSeries: number;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference policyRef = 6
+     */
+    policyRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference catalogRef = 7
+     */
+    catalogRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference serviceRef = 8
+     */
+    serviceRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 9
+     */
+    userRef?: ObjectReference;
+}
+/**
+ * GroupBy is the dimension by which the Requests are split into separate
+ * series. When it is unset, a single, ungrouped series is returned in the
+ * `datapoints` field of the response.
+ *
+ * @generated from protobuf enum octelium.api.main.visibility.access.v1.GetRequestDataPointRequest.GroupBy
+ */
+export enum GetRequestDataPointRequest_GroupBy {
+    /**
+     * @generated from protobuf enum value: GROUP_BY_UNSET = 0;
+     */
+    GROUP_BY_UNSET = 0,
+    /**
+     * STATE splits the Requests by their current state.
+     *
+     * @generated from protobuf enum value: STATE = 1;
+     */
+    STATE = 1,
+    /**
+     * URGENCY splits the Requests by their urgency.
+     *
+     * @generated from protobuf enum value: URGENCY = 2;
+     */
+    URGENCY = 2,
+    /**
+     * EFFECT splits the Requests by the effect of their matched Rule.
+     *
+     * @generated from protobuf enum value: EFFECT = 3;
+     */
+    EFFECT = 3,
+    /**
+     * ORIGIN splits the Requests by the type of their origin.
+     *
+     * @generated from protobuf enum value: ORIGIN = 4;
+     */
+    ORIGIN = 4,
+    /**
+     * POLICY splits the Requests by their matched Policy.
+     *
+     * @generated from protobuf enum value: POLICY = 5;
+     */
+    POLICY = 5
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.GetRequestDataPointResponse
+ */
+export interface GetRequestDataPointResponse {
+    /**
+     * Datapoints are the ungrouped datapoints. They are always set regardless
+     * of the request's `groupBy`.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.visibility.access.v1.GetRequestDataPointResponse.DataPoint datapoints = 1
+     */
+    datapoints: GetRequestDataPointResponse_DataPoint[];
+    /**
+     * Series are the per-dimension series. They are only set when the request
+     * sets a `groupBy`.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.visibility.access.v1.GetRequestDataPointResponse.Series series = 2
+     */
+    series: GetRequestDataPointResponse_Series[];
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.GetRequestDataPointResponse.DataPoint
+ */
+export interface GetRequestDataPointResponse_DataPoint {
+    /**
+     * @generated from protobuf field: int64 count = 1
+     */
+    count: number;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp timestamp = 2
+     */
+    timestamp?: Timestamp;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.GetRequestDataPointResponse.Series
+ */
+export interface GetRequestDataPointResponse_Series {
+    /**
+     * Key is the raw value of the grouped dimension (e.g. `APPROVED` or the
+     * UID of a Policy).
+     *
+     * @generated from protobuf field: string key = 1
+     */
+    key: string;
+    /**
+     * DisplayName is a human readable name of the series when the Cluster
+     * can resolve it (e.g. the name of the Policy).
+     *
+     * @generated from protobuf field: string displayName = 2
+     */
+    displayName: string;
+    /**
+     * Total is the sum of the counts of the series' datapoints.
+     *
+     * @generated from protobuf field: int64 total = 3
+     */
+    total: number;
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.visibility.access.v1.GetRequestDataPointResponse.DataPoint datapoints = 4
+     */
+    datapoints: GetRequestDataPointResponse_DataPoint[];
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.ListRequestTopRequest
+ */
+export interface ListRequestTopRequest {
+    /**
+     * Dimension is what the Requests are counted by. Required.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.ListRequestTopRequest.Dimension dimension = 1
+     */
+    dimension: ListRequestTopRequest_Dimension;
+    /**
+     * From and To restrict the Requests to the ones that were created within
+     * the window.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp from = 2
+     */
+    from?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp to = 3
+     */
+    to?: Timestamp;
+    /**
+     * State only counts the Requests whose current state is set to it.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.State.Status state = 4
+     */
+    state: Request_Status_State_Status;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference policyRef = 5
+     */
+    policyRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference catalogRef = 6
+     */
+    catalogRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference serviceRef = 7
+     */
+    serviceRef?: ObjectReference;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 100.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
+}
+/**
+ * Dimension is what the Requests are counted by
+ *
+ * @generated from protobuf enum octelium.api.main.visibility.access.v1.ListRequestTopRequest.Dimension
+ */
+export enum ListRequestTopRequest_Dimension {
+    /**
+     * @generated from protobuf enum value: DIMENSION_UNSET = 0;
+     */
+    DIMENSION_UNSET = 0,
+    /**
+     * REQUESTER counts the Requests per User that created them.
+     *
+     * @generated from protobuf enum value: REQUESTER = 1;
+     */
+    REQUESTER = 1,
+    /**
+     * SUBJECT counts the Requests per User that the access is requested for.
+     *
+     * @generated from protobuf enum value: SUBJECT = 2;
+     */
+    SUBJECT = 2,
+    /**
+     * RESOURCE counts the Requests per requested Service or Catalog.
+     *
+     * @generated from protobuf enum value: RESOURCE = 3;
+     */
+    RESOURCE = 3,
+    /**
+     * POLICY counts the Requests per matched Policy.
+     *
+     * @generated from protobuf enum value: POLICY = 4;
+     */
+    POLICY = 4
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.ListReviewTopRequest
+ */
+export interface ListReviewTopRequest {
+    /**
+     * Dimension is what the Reviews are counted by. Required.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.access.v1.ListReviewTopRequest.Dimension dimension = 1
+     */
+    dimension: ListReviewTopRequest_Dimension;
+    /**
+     * From and To restrict the Reviews to the ones that were created within
+     * the window.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp from = 2
+     */
+    from?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp to = 3
+     */
+    to?: Timestamp;
+    /**
+     * Decision only counts the Reviews whose current decision is set to it.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Review.Spec.Decision decision = 4
+     */
+    decision: Review_Spec_Decision;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 100.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
+}
+/**
+ * Dimension is what the Reviews are counted by
+ *
+ * @generated from protobuf enum octelium.api.main.visibility.access.v1.ListReviewTopRequest.Dimension
+ */
+export enum ListReviewTopRequest_Dimension {
+    /**
+     * @generated from protobuf enum value: DIMENSION_UNSET = 0;
+     */
+    DIMENSION_UNSET = 0,
+    /**
+     * REVIEWER counts the Reviews per reviewer.
+     *
+     * @generated from protobuf enum value: REVIEWER = 1;
+     */
+    REVIEWER = 1
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.ListTopResponse
+ */
+export interface ListTopResponse {
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.visibility.access.v1.ListTopResponse.Item items = 1
+     */
+    items: ListTopResponse_Item[];
+    /**
+     * TotalCount is the number of the distinct items that matched, of which
+     * only the top `limit` ones are returned.
+     *
+     * @generated from protobuf field: uint64 totalCount = 100
+     */
+    totalCount: number;
+    /**
+     * TotalOther is the sum of the counts of the matching items that are not
+     * returned.
+     *
+     * @generated from protobuf field: uint64 totalOther = 101
+     */
+    totalOther: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.access.v1.ListTopResponse.Item
+ */
+export interface ListTopResponse_Item {
+    /**
+     * Ref is the reference of the counted resource (e.g. a User, a Service,
+     * a Catalog or a Policy).
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference ref = 1
+     */
+    ref?: ObjectReference;
+    /**
+     * DisplayName is the display name of the counted resource, if any.
+     *
+     * @generated from protobuf field: string displayName = 2
+     */
+    displayName: string;
+    /**
+     * PicURL is the picture URL of the counted resource, if any.
+     *
+     * @generated from protobuf field: string picURL = 3
+     */
+    picURL: string;
+    /**
+     * @generated from protobuf field: uint64 count = 4
+     */
+    count: number;
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class GetPolicySummaryRequest$Type extends MessageType<GetPolicySummaryRequest> {
     constructor() {
@@ -894,7 +1541,12 @@ export const GetCatalogSummaryRequest = new GetCatalogSummaryRequest$Type();
 class GetRequestSummaryRequest$Type extends MessageType<GetRequestSummaryRequest> {
     constructor() {
         super("octelium.api.main.visibility.access.v1.GetRequestSummaryRequest", [
-            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions },
+            { no: 2, name: "policyRef", kind: "message", T: () => ObjectReference },
+            { no: 3, name: "catalogRef", kind: "message", T: () => ObjectReference },
+            { no: 4, name: "serviceRef", kind: "message", T: () => ObjectReference },
+            { no: 5, name: "userRef", kind: "message", T: () => ObjectReference },
+            { no: 6, name: "subjectUserRef", kind: "message", T: () => ObjectReference }
         ]);
     }
     create(value?: PartialMessage<GetRequestSummaryRequest>): GetRequestSummaryRequest {
@@ -911,6 +1563,21 @@ class GetRequestSummaryRequest$Type extends MessageType<GetRequestSummaryRequest
                 case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
                     message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
                     break;
+                case /* octelium.api.main.meta.v1.ObjectReference policyRef */ 2:
+                    message.policyRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.policyRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference catalogRef */ 3:
+                    message.catalogRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.catalogRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference serviceRef */ 4:
+                    message.serviceRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.serviceRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 5:
+                    message.userRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.userRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference subjectUserRef */ 6:
+                    message.subjectUserRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.subjectUserRef);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -926,6 +1593,21 @@ class GetRequestSummaryRequest$Type extends MessageType<GetRequestSummaryRequest
         /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
         if (message.common)
             CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference policyRef = 2; */
+        if (message.policyRef)
+            ObjectReference.internalBinaryWrite(message.policyRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference catalogRef = 3; */
+        if (message.catalogRef)
+            ObjectReference.internalBinaryWrite(message.catalogRef, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference serviceRef = 4; */
+        if (message.serviceRef)
+            ObjectReference.internalBinaryWrite(message.serviceRef, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 5; */
+        if (message.userRef)
+            ObjectReference.internalBinaryWrite(message.userRef, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference subjectUserRef = 6; */
+        if (message.subjectUserRef)
+            ObjectReference.internalBinaryWrite(message.subjectUserRef, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -940,7 +1622,9 @@ export const GetRequestSummaryRequest = new GetRequestSummaryRequest$Type();
 class GetReviewSummaryRequest$Type extends MessageType<GetReviewSummaryRequest> {
     constructor() {
         super("octelium.api.main.visibility.access.v1.GetReviewSummaryRequest", [
-            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions },
+            { no: 2, name: "userRef", kind: "message", T: () => ObjectReference },
+            { no: 3, name: "requestRef", kind: "message", T: () => ObjectReference }
         ]);
     }
     create(value?: PartialMessage<GetReviewSummaryRequest>): GetReviewSummaryRequest {
@@ -957,6 +1641,12 @@ class GetReviewSummaryRequest$Type extends MessageType<GetReviewSummaryRequest> 
                 case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
                     message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
                     break;
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 2:
+                    message.userRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.userRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference requestRef */ 3:
+                    message.requestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requestRef);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -972,6 +1662,12 @@ class GetReviewSummaryRequest$Type extends MessageType<GetReviewSummaryRequest> 
         /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
         if (message.common)
             CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 2; */
+        if (message.userRef)
+            ObjectReference.internalBinaryWrite(message.userRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference requestRef = 3; */
+        if (message.requestRef)
+            ObjectReference.internalBinaryWrite(message.requestRef, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1078,7 +1774,8 @@ export const GetIntegrationSummaryRequest = new GetIntegrationSummaryRequest$Typ
 class GetIntegrationIdentitySummaryRequest$Type extends MessageType<GetIntegrationIdentitySummaryRequest> {
     constructor() {
         super("octelium.api.main.visibility.access.v1.GetIntegrationIdentitySummaryRequest", [
-            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions },
+            { no: 2, name: "integrationRef", kind: "message", T: () => ObjectReference }
         ]);
     }
     create(value?: PartialMessage<GetIntegrationIdentitySummaryRequest>): GetIntegrationIdentitySummaryRequest {
@@ -1095,6 +1792,9 @@ class GetIntegrationIdentitySummaryRequest$Type extends MessageType<GetIntegrati
                 case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
                     message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
                     break;
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 2:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1110,6 +1810,9 @@ class GetIntegrationIdentitySummaryRequest$Type extends MessageType<GetIntegrati
         /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
         if (message.common)
             CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 2; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1124,7 +1827,9 @@ export const GetIntegrationIdentitySummaryRequest = new GetIntegrationIdentitySu
 class GetIntegrationBindingSummaryRequest$Type extends MessageType<GetIntegrationBindingSummaryRequest> {
     constructor() {
         super("octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryRequest", [
-            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions }
+            { no: 1, name: "common", kind: "message", T: () => CommonSummaryOptions },
+            { no: 2, name: "integrationRef", kind: "message", T: () => ObjectReference },
+            { no: 3, name: "requestRef", kind: "message", T: () => ObjectReference }
         ]);
     }
     create(value?: PartialMessage<GetIntegrationBindingSummaryRequest>): GetIntegrationBindingSummaryRequest {
@@ -1141,6 +1846,12 @@ class GetIntegrationBindingSummaryRequest$Type extends MessageType<GetIntegratio
                 case /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common */ 1:
                     message.common = CommonSummaryOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
                     break;
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 2:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference requestRef */ 3:
+                    message.requestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requestRef);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1156,6 +1867,12 @@ class GetIntegrationBindingSummaryRequest$Type extends MessageType<GetIntegratio
         /* octelium.api.main.visibility.meta.v1.CommonSummaryOptions common = 1; */
         if (message.common)
             CommonSummaryOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 2; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference requestRef = 3; */
+        if (message.requestRef)
+            ObjectReference.internalBinaryWrite(message.requestRef, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1180,7 +1897,10 @@ class GetPolicySummaryResponse$Type extends MessageType<GetPolicySummaryResponse
             { no: 8, name: "totalRuleMaxAccessDuration", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 9, name: "totalReviewStep", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 10, name: "totalReviewer", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 11, name: "previous", kind: "message", T: () => GetPolicySummaryResponse }
+            { no: 11, name: "previous", kind: "message", T: () => GetPolicySummaryResponse },
+            { no: 12, name: "totalRuleNotification", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 13, name: "totalReviewSurface", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 14, name: "totalInteractiveSurface", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<GetPolicySummaryResponse>): GetPolicySummaryResponse {
@@ -1195,6 +1915,9 @@ class GetPolicySummaryResponse$Type extends MessageType<GetPolicySummaryResponse
         message.totalRuleMaxAccessDuration = 0;
         message.totalReviewStep = 0;
         message.totalReviewer = 0;
+        message.totalRuleNotification = 0;
+        message.totalReviewSurface = 0;
+        message.totalInteractiveSurface = 0;
         if (value !== undefined)
             reflectionMergePartial<GetPolicySummaryResponse>(this, message, value);
         return message;
@@ -1236,6 +1959,15 @@ class GetPolicySummaryResponse$Type extends MessageType<GetPolicySummaryResponse
                     break;
                 case /* octelium.api.main.visibility.access.v1.GetPolicySummaryResponse previous */ 11:
                     message.previous = GetPolicySummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
+                    break;
+                case /* uint64 totalRuleNotification */ 12:
+                    message.totalRuleNotification = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalReviewSurface */ 13:
+                    message.totalReviewSurface = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalInteractiveSurface */ 14:
+                    message.totalInteractiveSurface = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1282,6 +2014,15 @@ class GetPolicySummaryResponse$Type extends MessageType<GetPolicySummaryResponse
         /* octelium.api.main.visibility.access.v1.GetPolicySummaryResponse previous = 11; */
         if (message.previous)
             GetPolicySummaryResponse.internalBinaryWrite(message.previous, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalRuleNotification = 12; */
+        if (message.totalRuleNotification !== 0)
+            writer.tag(12, WireType.Varint).uint64(message.totalRuleNotification);
+        /* uint64 totalReviewSurface = 13; */
+        if (message.totalReviewSurface !== 0)
+            writer.tag(13, WireType.Varint).uint64(message.totalReviewSurface);
+        /* uint64 totalInteractiveSurface = 14; */
+        if (message.totalInteractiveSurface !== 0)
+            writer.tag(14, WireType.Varint).uint64(message.totalInteractiveSurface);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1387,7 +2128,19 @@ class GetRequestSummaryResponse$Type extends MessageType<GetRequestSummaryRespon
             { no: 19, name: "totalUrgencyHighest", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 20, name: "totalWithDeadline", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 21, name: "totalDeadlinePassed", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 22, name: "previous", kind: "message", T: () => GetRequestSummaryResponse }
+            { no: 22, name: "previous", kind: "message", T: () => GetRequestSummaryResponse },
+            { no: 23, name: "totalAutoApproved", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 24, name: "totalReviewed", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 25, name: "totalDenied", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 26, name: "totalUnmatched", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 27, name: "totalOnBehalf", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 28, name: "totalFromIntegration", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 29, name: "totalExpiringSoon", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 30, name: "totalPendingStale", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 31, name: "oldestPendingAt", kind: "message", T: () => Timestamp },
+            { no: 32, name: "decisionTime", kind: "message", T: () => DecisionTime },
+            { no: 33, name: "totalPendingDeadlinePassed", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 34, name: "totalGranted", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<GetRequestSummaryResponse>): GetRequestSummaryResponse {
@@ -1413,6 +2166,16 @@ class GetRequestSummaryResponse$Type extends MessageType<GetRequestSummaryRespon
         message.totalUrgencyHighest = 0;
         message.totalWithDeadline = 0;
         message.totalDeadlinePassed = 0;
+        message.totalAutoApproved = 0;
+        message.totalReviewed = 0;
+        message.totalDenied = 0;
+        message.totalUnmatched = 0;
+        message.totalOnBehalf = 0;
+        message.totalFromIntegration = 0;
+        message.totalExpiringSoon = 0;
+        message.totalPendingStale = 0;
+        message.totalPendingDeadlinePassed = 0;
+        message.totalGranted = 0;
         if (value !== undefined)
             reflectionMergePartial<GetRequestSummaryResponse>(this, message, value);
         return message;
@@ -1487,6 +2250,42 @@ class GetRequestSummaryResponse$Type extends MessageType<GetRequestSummaryRespon
                     break;
                 case /* octelium.api.main.visibility.access.v1.GetRequestSummaryResponse previous */ 22:
                     message.previous = GetRequestSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
+                    break;
+                case /* uint64 totalAutoApproved */ 23:
+                    message.totalAutoApproved = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalReviewed */ 24:
+                    message.totalReviewed = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalDenied */ 25:
+                    message.totalDenied = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalUnmatched */ 26:
+                    message.totalUnmatched = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOnBehalf */ 27:
+                    message.totalOnBehalf = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalFromIntegration */ 28:
+                    message.totalFromIntegration = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalExpiringSoon */ 29:
+                    message.totalExpiringSoon = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalPendingStale */ 30:
+                    message.totalPendingStale = reader.uint64().toNumber();
+                    break;
+                case /* google.protobuf.Timestamp oldestPendingAt */ 31:
+                    message.oldestPendingAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.oldestPendingAt);
+                    break;
+                case /* octelium.api.main.visibility.access.v1.DecisionTime decisionTime */ 32:
+                    message.decisionTime = DecisionTime.internalBinaryRead(reader, reader.uint32(), options, message.decisionTime);
+                    break;
+                case /* uint64 totalPendingDeadlinePassed */ 33:
+                    message.totalPendingDeadlinePassed = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalGranted */ 34:
+                    message.totalGranted = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1566,6 +2365,42 @@ class GetRequestSummaryResponse$Type extends MessageType<GetRequestSummaryRespon
         /* octelium.api.main.visibility.access.v1.GetRequestSummaryResponse previous = 22; */
         if (message.previous)
             GetRequestSummaryResponse.internalBinaryWrite(message.previous, writer.tag(22, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalAutoApproved = 23; */
+        if (message.totalAutoApproved !== 0)
+            writer.tag(23, WireType.Varint).uint64(message.totalAutoApproved);
+        /* uint64 totalReviewed = 24; */
+        if (message.totalReviewed !== 0)
+            writer.tag(24, WireType.Varint).uint64(message.totalReviewed);
+        /* uint64 totalDenied = 25; */
+        if (message.totalDenied !== 0)
+            writer.tag(25, WireType.Varint).uint64(message.totalDenied);
+        /* uint64 totalUnmatched = 26; */
+        if (message.totalUnmatched !== 0)
+            writer.tag(26, WireType.Varint).uint64(message.totalUnmatched);
+        /* uint64 totalOnBehalf = 27; */
+        if (message.totalOnBehalf !== 0)
+            writer.tag(27, WireType.Varint).uint64(message.totalOnBehalf);
+        /* uint64 totalFromIntegration = 28; */
+        if (message.totalFromIntegration !== 0)
+            writer.tag(28, WireType.Varint).uint64(message.totalFromIntegration);
+        /* uint64 totalExpiringSoon = 29; */
+        if (message.totalExpiringSoon !== 0)
+            writer.tag(29, WireType.Varint).uint64(message.totalExpiringSoon);
+        /* uint64 totalPendingStale = 30; */
+        if (message.totalPendingStale !== 0)
+            writer.tag(30, WireType.Varint).uint64(message.totalPendingStale);
+        /* google.protobuf.Timestamp oldestPendingAt = 31; */
+        if (message.oldestPendingAt)
+            Timestamp.internalBinaryWrite(message.oldestPendingAt, writer.tag(31, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.access.v1.DecisionTime decisionTime = 32; */
+        if (message.decisionTime)
+            DecisionTime.internalBinaryWrite(message.decisionTime, writer.tag(32, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalPendingDeadlinePassed = 33; */
+        if (message.totalPendingDeadlinePassed !== 0)
+            writer.tag(33, WireType.Varint).uint64(message.totalPendingDeadlinePassed);
+        /* uint64 totalGranted = 34; */
+        if (message.totalGranted !== 0)
+            writer.tag(34, WireType.Varint).uint64(message.totalGranted);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1577,6 +2412,85 @@ class GetRequestSummaryResponse$Type extends MessageType<GetRequestSummaryRespon
  */
 export const GetRequestSummaryResponse = new GetRequestSummaryResponse$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class DecisionTime$Type extends MessageType<DecisionTime> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.DecisionTime", [
+            { no: 1, name: "count", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "averageSeconds", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ },
+            { no: 3, name: "p50Seconds", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ },
+            { no: 4, name: "p90Seconds", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ },
+            { no: 5, name: "maxSeconds", kind: "scalar", T: 1 /*ScalarType.DOUBLE*/ }
+        ]);
+    }
+    create(value?: PartialMessage<DecisionTime>): DecisionTime {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.count = 0;
+        message.averageSeconds = 0;
+        message.p50Seconds = 0;
+        message.p90Seconds = 0;
+        message.maxSeconds = 0;
+        if (value !== undefined)
+            reflectionMergePartial<DecisionTime>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DecisionTime): DecisionTime {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint64 count */ 1:
+                    message.count = reader.uint64().toNumber();
+                    break;
+                case /* double averageSeconds */ 2:
+                    message.averageSeconds = reader.double();
+                    break;
+                case /* double p50Seconds */ 3:
+                    message.p50Seconds = reader.double();
+                    break;
+                case /* double p90Seconds */ 4:
+                    message.p90Seconds = reader.double();
+                    break;
+                case /* double maxSeconds */ 5:
+                    message.maxSeconds = reader.double();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DecisionTime, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint64 count = 1; */
+        if (message.count !== 0)
+            writer.tag(1, WireType.Varint).uint64(message.count);
+        /* double averageSeconds = 2; */
+        if (message.averageSeconds !== 0)
+            writer.tag(2, WireType.Bit64).double(message.averageSeconds);
+        /* double p50Seconds = 3; */
+        if (message.p50Seconds !== 0)
+            writer.tag(3, WireType.Bit64).double(message.p50Seconds);
+        /* double p90Seconds = 4; */
+        if (message.p90Seconds !== 0)
+            writer.tag(4, WireType.Bit64).double(message.p90Seconds);
+        /* double maxSeconds = 5; */
+        if (message.maxSeconds !== 0)
+            writer.tag(5, WireType.Bit64).double(message.maxSeconds);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.DecisionTime
+ */
+export const DecisionTime = new DecisionTime$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class GetReviewSummaryResponse$Type extends MessageType<GetReviewSummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.access.v1.GetReviewSummaryResponse", [
@@ -1587,7 +2501,8 @@ class GetReviewSummaryResponse$Type extends MessageType<GetReviewSummaryResponse
             { no: 5, name: "totalRevised", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 6, name: "totalUser", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 7, name: "totalRequest", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 8, name: "previous", kind: "message", T: () => GetReviewSummaryResponse }
+            { no: 8, name: "previous", kind: "message", T: () => GetReviewSummaryResponse },
+            { no: 9, name: "totalFromIntegration", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<GetReviewSummaryResponse>): GetReviewSummaryResponse {
@@ -1599,6 +2514,7 @@ class GetReviewSummaryResponse$Type extends MessageType<GetReviewSummaryResponse
         message.totalRevised = 0;
         message.totalUser = 0;
         message.totalRequest = 0;
+        message.totalFromIntegration = 0;
         if (value !== undefined)
             reflectionMergePartial<GetReviewSummaryResponse>(this, message, value);
         return message;
@@ -1631,6 +2547,9 @@ class GetReviewSummaryResponse$Type extends MessageType<GetReviewSummaryResponse
                     break;
                 case /* octelium.api.main.visibility.access.v1.GetReviewSummaryResponse previous */ 8:
                     message.previous = GetReviewSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
+                    break;
+                case /* uint64 totalFromIntegration */ 9:
+                    message.totalFromIntegration = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1668,6 +2587,9 @@ class GetReviewSummaryResponse$Type extends MessageType<GetReviewSummaryResponse
         /* octelium.api.main.visibility.access.v1.GetReviewSummaryResponse previous = 8; */
         if (message.previous)
             GetReviewSummaryResponse.internalBinaryWrite(message.previous, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalFromIntegration = 9; */
+        if (message.totalFromIntegration !== 0)
+            writer.tag(9, WireType.Varint).uint64(message.totalFromIntegration);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2340,7 +3262,14 @@ class ListRequestOptions$Type extends MessageType<ListRequestOptions> {
             { no: 10, name: "urgency", kind: "enum", T: () => ["octelium.api.main.access.v1.Request.Spec.Urgency", Request_Spec_Urgency] },
             { no: 11, name: "isActive", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 12, name: "hasDeadline", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 13, name: "isDeadlinePassed", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 13, name: "isDeadlinePassed", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 14, name: "effect", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Effect", Policy_Spec_Rule_Effect] },
+            { no: 15, name: "isUnmatched", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 16, name: "isExpiringSoon", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 17, name: "isPendingStale", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 18, name: "isOnBehalf", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 19, name: "originType", kind: "enum", T: () => ["octelium.api.main.access.v1.Origin.Type", Origin_Type] },
+            { no: 20, name: "orderBy", kind: "message", T: () => ListRequestOptions_OrderBy }
         ]);
     }
     create(value?: PartialMessage<ListRequestOptions>): ListRequestOptions {
@@ -2350,6 +3279,12 @@ class ListRequestOptions$Type extends MessageType<ListRequestOptions> {
         message.isActive = false;
         message.hasDeadline = false;
         message.isDeadlinePassed = false;
+        message.effect = 0;
+        message.isUnmatched = false;
+        message.isExpiringSoon = false;
+        message.isPendingStale = false;
+        message.isOnBehalf = false;
+        message.originType = 0;
         if (value !== undefined)
             reflectionMergePartial<ListRequestOptions>(this, message, value);
         return message;
@@ -2397,6 +3332,27 @@ class ListRequestOptions$Type extends MessageType<ListRequestOptions> {
                     break;
                 case /* bool isDeadlinePassed */ 13:
                     message.isDeadlinePassed = reader.bool();
+                    break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Effect effect */ 14:
+                    message.effect = reader.int32();
+                    break;
+                case /* bool isUnmatched */ 15:
+                    message.isUnmatched = reader.bool();
+                    break;
+                case /* bool isExpiringSoon */ 16:
+                    message.isExpiringSoon = reader.bool();
+                    break;
+                case /* bool isPendingStale */ 17:
+                    message.isPendingStale = reader.bool();
+                    break;
+                case /* bool isOnBehalf */ 18:
+                    message.isOnBehalf = reader.bool();
+                    break;
+                case /* octelium.api.main.access.v1.Origin.Type originType */ 19:
+                    message.originType = reader.int32();
+                    break;
+                case /* octelium.api.main.visibility.access.v1.ListRequestOptions.OrderBy orderBy */ 20:
+                    message.orderBy = ListRequestOptions_OrderBy.internalBinaryRead(reader, reader.uint32(), options, message.orderBy);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2449,6 +3405,27 @@ class ListRequestOptions$Type extends MessageType<ListRequestOptions> {
         /* bool isDeadlinePassed = 13; */
         if (message.isDeadlinePassed !== false)
             writer.tag(13, WireType.Varint).bool(message.isDeadlinePassed);
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Effect effect = 14; */
+        if (message.effect !== 0)
+            writer.tag(14, WireType.Varint).int32(message.effect);
+        /* bool isUnmatched = 15; */
+        if (message.isUnmatched !== false)
+            writer.tag(15, WireType.Varint).bool(message.isUnmatched);
+        /* bool isExpiringSoon = 16; */
+        if (message.isExpiringSoon !== false)
+            writer.tag(16, WireType.Varint).bool(message.isExpiringSoon);
+        /* bool isPendingStale = 17; */
+        if (message.isPendingStale !== false)
+            writer.tag(17, WireType.Varint).bool(message.isPendingStale);
+        /* bool isOnBehalf = 18; */
+        if (message.isOnBehalf !== false)
+            writer.tag(18, WireType.Varint).bool(message.isOnBehalf);
+        /* octelium.api.main.access.v1.Origin.Type originType = 19; */
+        if (message.originType !== 0)
+            writer.tag(19, WireType.Varint).int32(message.originType);
+        /* octelium.api.main.visibility.access.v1.ListRequestOptions.OrderBy orderBy = 20; */
+        if (message.orderBy)
+            ListRequestOptions_OrderBy.internalBinaryWrite(message.orderBy, writer.tag(20, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2460,6 +3437,61 @@ class ListRequestOptions$Type extends MessageType<ListRequestOptions> {
  */
 export const ListRequestOptions = new ListRequestOptions$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class ListRequestOptions_OrderBy$Type extends MessageType<ListRequestOptions_OrderBy> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.ListRequestOptions.OrderBy", [
+            { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.visibility.access.v1.ListRequestOptions.OrderBy.Type", ListRequestOptions_OrderBy_Type] },
+            { no: 2, name: "mode", kind: "enum", T: () => ["octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.Mode", CommonListOptions_OrderBy_Mode] }
+        ]);
+    }
+    create(value?: PartialMessage<ListRequestOptions_OrderBy>): ListRequestOptions_OrderBy {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.mode = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListRequestOptions_OrderBy>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListRequestOptions_OrderBy): ListRequestOptions_OrderBy {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.access.v1.ListRequestOptions.OrderBy.Type type */ 1:
+                    message.type = reader.int32();
+                    break;
+                case /* octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.Mode mode */ 2:
+                    message.mode = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListRequestOptions_OrderBy, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.access.v1.ListRequestOptions.OrderBy.Type type = 1; */
+        if (message.type !== 0)
+            writer.tag(1, WireType.Varint).int32(message.type);
+        /* octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.Mode mode = 2; */
+        if (message.mode !== 0)
+            writer.tag(2, WireType.Varint).int32(message.mode);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.ListRequestOptions.OrderBy
+ */
+export const ListRequestOptions_OrderBy = new ListRequestOptions_OrderBy$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class ListReviewOptions$Type extends MessageType<ListReviewOptions> {
     constructor() {
         super("octelium.api.main.visibility.access.v1.ListReviewOptions", [
@@ -2467,13 +3499,15 @@ class ListReviewOptions$Type extends MessageType<ListReviewOptions> {
             { no: 2, name: "userRef", kind: "message", T: () => ObjectReference },
             { no: 3, name: "requestRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "decision", kind: "enum", T: () => ["octelium.api.main.access.v1.Review.Spec.Decision", Review_Spec_Decision, "DECISION_"] },
-            { no: 5, name: "isDecided", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 5, name: "isDecided", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 6, name: "originType", kind: "enum", T: () => ["octelium.api.main.access.v1.Origin.Type", Origin_Type] }
         ]);
     }
     create(value?: PartialMessage<ListReviewOptions>): ListReviewOptions {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.decision = 0;
         message.isDecided = false;
+        message.originType = 0;
         if (value !== undefined)
             reflectionMergePartial<ListReviewOptions>(this, message, value);
         return message;
@@ -2497,6 +3531,9 @@ class ListReviewOptions$Type extends MessageType<ListReviewOptions> {
                     break;
                 case /* bool isDecided */ 5:
                     message.isDecided = reader.bool();
+                    break;
+                case /* octelium.api.main.access.v1.Origin.Type originType */ 6:
+                    message.originType = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2525,6 +3562,9 @@ class ListReviewOptions$Type extends MessageType<ListReviewOptions> {
         /* bool isDecided = 5; */
         if (message.isDecided !== false)
             writer.tag(5, WireType.Varint).bool(message.isDecided);
+        /* octelium.api.main.access.v1.Origin.Type originType = 6; */
+        if (message.originType !== 0)
+            writer.tag(6, WireType.Varint).int32(message.originType);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2858,6 +3898,598 @@ class ListIntegrationBindingOptions$Type extends MessageType<ListIntegrationBind
  * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.ListIntegrationBindingOptions
  */
 export const ListIntegrationBindingOptions = new ListIntegrationBindingOptions$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetRequestDataPointRequest$Type extends MessageType<GetRequestDataPointRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.GetRequestDataPointRequest", [
+            { no: 1, name: "from", kind: "message", T: () => Timestamp },
+            { no: 2, name: "to", kind: "message", T: () => Timestamp },
+            { no: 3, name: "interval", kind: "message", T: () => Duration },
+            { no: 4, name: "groupBy", kind: "enum", T: () => ["octelium.api.main.visibility.access.v1.GetRequestDataPointRequest.GroupBy", GetRequestDataPointRequest_GroupBy] },
+            { no: 5, name: "limitSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 6, name: "policyRef", kind: "message", T: () => ObjectReference },
+            { no: 7, name: "catalogRef", kind: "message", T: () => ObjectReference },
+            { no: 8, name: "serviceRef", kind: "message", T: () => ObjectReference },
+            { no: 9, name: "userRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<GetRequestDataPointRequest>): GetRequestDataPointRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.groupBy = 0;
+        message.limitSeries = 0;
+        if (value !== undefined)
+            reflectionMergePartial<GetRequestDataPointRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetRequestDataPointRequest): GetRequestDataPointRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* google.protobuf.Timestamp from */ 1:
+                    message.from = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.from);
+                    break;
+                case /* google.protobuf.Timestamp to */ 2:
+                    message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* octelium.api.main.meta.v1.Duration interval */ 3:
+                    message.interval = Duration.internalBinaryRead(reader, reader.uint32(), options, message.interval);
+                    break;
+                case /* octelium.api.main.visibility.access.v1.GetRequestDataPointRequest.GroupBy groupBy */ 4:
+                    message.groupBy = reader.int32();
+                    break;
+                case /* uint32 limitSeries */ 5:
+                    message.limitSeries = reader.uint32();
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference policyRef */ 6:
+                    message.policyRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.policyRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference catalogRef */ 7:
+                    message.catalogRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.catalogRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference serviceRef */ 8:
+                    message.serviceRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.serviceRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 9:
+                    message.userRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.userRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetRequestDataPointRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* google.protobuf.Timestamp from = 1; */
+        if (message.from)
+            Timestamp.internalBinaryWrite(message.from, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp to = 2; */
+        if (message.to)
+            Timestamp.internalBinaryWrite(message.to, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration interval = 3; */
+        if (message.interval)
+            Duration.internalBinaryWrite(message.interval, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.access.v1.GetRequestDataPointRequest.GroupBy groupBy = 4; */
+        if (message.groupBy !== 0)
+            writer.tag(4, WireType.Varint).int32(message.groupBy);
+        /* uint32 limitSeries = 5; */
+        if (message.limitSeries !== 0)
+            writer.tag(5, WireType.Varint).uint32(message.limitSeries);
+        /* octelium.api.main.meta.v1.ObjectReference policyRef = 6; */
+        if (message.policyRef)
+            ObjectReference.internalBinaryWrite(message.policyRef, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference catalogRef = 7; */
+        if (message.catalogRef)
+            ObjectReference.internalBinaryWrite(message.catalogRef, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference serviceRef = 8; */
+        if (message.serviceRef)
+            ObjectReference.internalBinaryWrite(message.serviceRef, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 9; */
+        if (message.userRef)
+            ObjectReference.internalBinaryWrite(message.userRef, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.GetRequestDataPointRequest
+ */
+export const GetRequestDataPointRequest = new GetRequestDataPointRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetRequestDataPointResponse$Type extends MessageType<GetRequestDataPointResponse> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.GetRequestDataPointResponse", [
+            { no: 1, name: "datapoints", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetRequestDataPointResponse_DataPoint },
+            { no: 2, name: "series", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetRequestDataPointResponse_Series }
+        ]);
+    }
+    create(value?: PartialMessage<GetRequestDataPointResponse>): GetRequestDataPointResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.datapoints = [];
+        message.series = [];
+        if (value !== undefined)
+            reflectionMergePartial<GetRequestDataPointResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetRequestDataPointResponse): GetRequestDataPointResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated octelium.api.main.visibility.access.v1.GetRequestDataPointResponse.DataPoint datapoints */ 1:
+                    message.datapoints.push(GetRequestDataPointResponse_DataPoint.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated octelium.api.main.visibility.access.v1.GetRequestDataPointResponse.Series series */ 2:
+                    message.series.push(GetRequestDataPointResponse_Series.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetRequestDataPointResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated octelium.api.main.visibility.access.v1.GetRequestDataPointResponse.DataPoint datapoints = 1; */
+        for (let i = 0; i < message.datapoints.length; i++)
+            GetRequestDataPointResponse_DataPoint.internalBinaryWrite(message.datapoints[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.visibility.access.v1.GetRequestDataPointResponse.Series series = 2; */
+        for (let i = 0; i < message.series.length; i++)
+            GetRequestDataPointResponse_Series.internalBinaryWrite(message.series[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.GetRequestDataPointResponse
+ */
+export const GetRequestDataPointResponse = new GetRequestDataPointResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetRequestDataPointResponse_DataPoint$Type extends MessageType<GetRequestDataPointResponse_DataPoint> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.GetRequestDataPointResponse.DataPoint", [
+            { no: 1, name: "count", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "timestamp", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<GetRequestDataPointResponse_DataPoint>): GetRequestDataPointResponse_DataPoint {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.count = 0;
+        if (value !== undefined)
+            reflectionMergePartial<GetRequestDataPointResponse_DataPoint>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetRequestDataPointResponse_DataPoint): GetRequestDataPointResponse_DataPoint {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* int64 count */ 1:
+                    message.count = reader.int64().toNumber();
+                    break;
+                case /* google.protobuf.Timestamp timestamp */ 2:
+                    message.timestamp = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.timestamp);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetRequestDataPointResponse_DataPoint, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* int64 count = 1; */
+        if (message.count !== 0)
+            writer.tag(1, WireType.Varint).int64(message.count);
+        /* google.protobuf.Timestamp timestamp = 2; */
+        if (message.timestamp)
+            Timestamp.internalBinaryWrite(message.timestamp, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.GetRequestDataPointResponse.DataPoint
+ */
+export const GetRequestDataPointResponse_DataPoint = new GetRequestDataPointResponse_DataPoint$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetRequestDataPointResponse_Series$Type extends MessageType<GetRequestDataPointResponse_Series> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.GetRequestDataPointResponse.Series", [
+            { no: 1, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "displayName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "total", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "datapoints", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetRequestDataPointResponse_DataPoint }
+        ]);
+    }
+    create(value?: PartialMessage<GetRequestDataPointResponse_Series>): GetRequestDataPointResponse_Series {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.key = "";
+        message.displayName = "";
+        message.total = 0;
+        message.datapoints = [];
+        if (value !== undefined)
+            reflectionMergePartial<GetRequestDataPointResponse_Series>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetRequestDataPointResponse_Series): GetRequestDataPointResponse_Series {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string key */ 1:
+                    message.key = reader.string();
+                    break;
+                case /* string displayName */ 2:
+                    message.displayName = reader.string();
+                    break;
+                case /* int64 total */ 3:
+                    message.total = reader.int64().toNumber();
+                    break;
+                case /* repeated octelium.api.main.visibility.access.v1.GetRequestDataPointResponse.DataPoint datapoints */ 4:
+                    message.datapoints.push(GetRequestDataPointResponse_DataPoint.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetRequestDataPointResponse_Series, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string key = 1; */
+        if (message.key !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.key);
+        /* string displayName = 2; */
+        if (message.displayName !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.displayName);
+        /* int64 total = 3; */
+        if (message.total !== 0)
+            writer.tag(3, WireType.Varint).int64(message.total);
+        /* repeated octelium.api.main.visibility.access.v1.GetRequestDataPointResponse.DataPoint datapoints = 4; */
+        for (let i = 0; i < message.datapoints.length; i++)
+            GetRequestDataPointResponse_DataPoint.internalBinaryWrite(message.datapoints[i], writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.GetRequestDataPointResponse.Series
+ */
+export const GetRequestDataPointResponse_Series = new GetRequestDataPointResponse_Series$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListRequestTopRequest$Type extends MessageType<ListRequestTopRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.ListRequestTopRequest", [
+            { no: 1, name: "dimension", kind: "enum", T: () => ["octelium.api.main.visibility.access.v1.ListRequestTopRequest.Dimension", ListRequestTopRequest_Dimension] },
+            { no: 2, name: "from", kind: "message", T: () => Timestamp },
+            { no: 3, name: "to", kind: "message", T: () => Timestamp },
+            { no: 4, name: "state", kind: "enum", T: () => ["octelium.api.main.access.v1.Request.Status.State.Status", Request_Status_State_Status] },
+            { no: 5, name: "policyRef", kind: "message", T: () => ObjectReference },
+            { no: 6, name: "catalogRef", kind: "message", T: () => ObjectReference },
+            { no: 7, name: "serviceRef", kind: "message", T: () => ObjectReference },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListRequestTopRequest>): ListRequestTopRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.dimension = 0;
+        message.state = 0;
+        message.limit = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListRequestTopRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListRequestTopRequest): ListRequestTopRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.access.v1.ListRequestTopRequest.Dimension dimension */ 1:
+                    message.dimension = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp from */ 2:
+                    message.from = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.from);
+                    break;
+                case /* google.protobuf.Timestamp to */ 3:
+                    message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* octelium.api.main.access.v1.Request.Status.State.Status state */ 4:
+                    message.state = reader.int32();
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference policyRef */ 5:
+                    message.policyRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.policyRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference catalogRef */ 6:
+                    message.catalogRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.catalogRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference serviceRef */ 7:
+                    message.serviceRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.serviceRef);
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListRequestTopRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.access.v1.ListRequestTopRequest.Dimension dimension = 1; */
+        if (message.dimension !== 0)
+            writer.tag(1, WireType.Varint).int32(message.dimension);
+        /* google.protobuf.Timestamp from = 2; */
+        if (message.from)
+            Timestamp.internalBinaryWrite(message.from, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp to = 3; */
+        if (message.to)
+            Timestamp.internalBinaryWrite(message.to, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Request.Status.State.Status state = 4; */
+        if (message.state !== 0)
+            writer.tag(4, WireType.Varint).int32(message.state);
+        /* octelium.api.main.meta.v1.ObjectReference policyRef = 5; */
+        if (message.policyRef)
+            ObjectReference.internalBinaryWrite(message.policyRef, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference catalogRef = 6; */
+        if (message.catalogRef)
+            ObjectReference.internalBinaryWrite(message.catalogRef, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference serviceRef = 7; */
+        if (message.serviceRef)
+            ObjectReference.internalBinaryWrite(message.serviceRef, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.ListRequestTopRequest
+ */
+export const ListRequestTopRequest = new ListRequestTopRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListReviewTopRequest$Type extends MessageType<ListReviewTopRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.ListReviewTopRequest", [
+            { no: 1, name: "dimension", kind: "enum", T: () => ["octelium.api.main.visibility.access.v1.ListReviewTopRequest.Dimension", ListReviewTopRequest_Dimension] },
+            { no: 2, name: "from", kind: "message", T: () => Timestamp },
+            { no: 3, name: "to", kind: "message", T: () => Timestamp },
+            { no: 4, name: "decision", kind: "enum", T: () => ["octelium.api.main.access.v1.Review.Spec.Decision", Review_Spec_Decision, "DECISION_"] },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListReviewTopRequest>): ListReviewTopRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.dimension = 0;
+        message.decision = 0;
+        message.limit = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListReviewTopRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListReviewTopRequest): ListReviewTopRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.access.v1.ListReviewTopRequest.Dimension dimension */ 1:
+                    message.dimension = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp from */ 2:
+                    message.from = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.from);
+                    break;
+                case /* google.protobuf.Timestamp to */ 3:
+                    message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* octelium.api.main.access.v1.Review.Spec.Decision decision */ 4:
+                    message.decision = reader.int32();
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListReviewTopRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.access.v1.ListReviewTopRequest.Dimension dimension = 1; */
+        if (message.dimension !== 0)
+            writer.tag(1, WireType.Varint).int32(message.dimension);
+        /* google.protobuf.Timestamp from = 2; */
+        if (message.from)
+            Timestamp.internalBinaryWrite(message.from, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp to = 3; */
+        if (message.to)
+            Timestamp.internalBinaryWrite(message.to, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Review.Spec.Decision decision = 4; */
+        if (message.decision !== 0)
+            writer.tag(4, WireType.Varint).int32(message.decision);
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.ListReviewTopRequest
+ */
+export const ListReviewTopRequest = new ListReviewTopRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListTopResponse$Type extends MessageType<ListTopResponse> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.ListTopResponse", [
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListTopResponse_Item },
+            { no: 100, name: "totalCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 101, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListTopResponse>): ListTopResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.items = [];
+        message.totalCount = 0;
+        message.totalOther = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListTopResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListTopResponse): ListTopResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated octelium.api.main.visibility.access.v1.ListTopResponse.Item items */ 1:
+                    message.items.push(ListTopResponse_Item.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 totalCount */ 100:
+                    message.totalCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 101:
+                    message.totalOther = reader.uint64().toNumber();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListTopResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated octelium.api.main.visibility.access.v1.ListTopResponse.Item items = 1; */
+        for (let i = 0; i < message.items.length; i++)
+            ListTopResponse_Item.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCount = 100; */
+        if (message.totalCount !== 0)
+            writer.tag(100, WireType.Varint).uint64(message.totalCount);
+        /* uint64 totalOther = 101; */
+        if (message.totalOther !== 0)
+            writer.tag(101, WireType.Varint).uint64(message.totalOther);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.ListTopResponse
+ */
+export const ListTopResponse = new ListTopResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListTopResponse_Item$Type extends MessageType<ListTopResponse_Item> {
+    constructor() {
+        super("octelium.api.main.visibility.access.v1.ListTopResponse.Item", [
+            { no: 1, name: "ref", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "displayName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "picURL", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "count", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListTopResponse_Item>): ListTopResponse_Item {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.displayName = "";
+        message.picURL = "";
+        message.count = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListTopResponse_Item>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListTopResponse_Item): ListTopResponse_Item {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference ref */ 1:
+                    message.ref = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.ref);
+                    break;
+                case /* string displayName */ 2:
+                    message.displayName = reader.string();
+                    break;
+                case /* string picURL */ 3:
+                    message.picURL = reader.string();
+                    break;
+                case /* uint64 count */ 4:
+                    message.count = reader.uint64().toNumber();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListTopResponse_Item, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference ref = 1; */
+        if (message.ref)
+            ObjectReference.internalBinaryWrite(message.ref, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string displayName = 2; */
+        if (message.displayName !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.displayName);
+        /* string picURL = 3; */
+        if (message.picURL !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.picURL);
+        /* uint64 count = 4; */
+        if (message.count !== 0)
+            writer.tag(4, WireType.Varint).uint64(message.count);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.access.v1.ListTopResponse.Item
+ */
+export const ListTopResponse_Item = new ListTopResponse_Item$Type();
 /**
  * @generated ServiceType for protobuf service octelium.api.main.visibility.access.v1.ResourceService
  */
@@ -2877,5 +4509,8 @@ export const ResourceService = new ServiceType("octelium.api.main.visibility.acc
     { name: "ListSecret", options: {}, I: ListSecretOptions, O: SecretList },
     { name: "ListIntegration", options: {}, I: ListIntegrationOptions, O: IntegrationList },
     { name: "ListIntegrationIdentity", options: {}, I: ListIntegrationIdentityOptions, O: IntegrationIdentityList },
-    { name: "ListIntegrationBinding", options: {}, I: ListIntegrationBindingOptions, O: IntegrationBindingList }
+    { name: "ListIntegrationBinding", options: {}, I: ListIntegrationBindingOptions, O: IntegrationBindingList },
+    { name: "GetRequestDataPoint", options: {}, I: GetRequestDataPointRequest, O: GetRequestDataPointResponse },
+    { name: "ListRequestTop", options: {}, I: ListRequestTopRequest, O: ListTopResponse },
+    { name: "ListReviewTop", options: {}, I: ListReviewTopRequest, O: ListTopResponse }
 ]);

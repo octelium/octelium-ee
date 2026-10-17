@@ -1,296 +1,327 @@
 import * as AccessC from "@/apis/accessv1/accessv1";
-import { ObjectReference } from "@/apis/metav1/metav1";
+import { Timestamp } from "@/apis/google/protobuf/timestamp";
+import { CommonSummaryOptions } from "@/apis/visibilityv1/meta/vmetav1";
 import InfoItem from "@/components/InfoItem";
-import Label from "@/components/Label";
-import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
-import { ResourceListLabel } from "@/components/ResourceList";
-import { useUpdateResource } from "@/pages/utils/resource";
-import { ResourceMainInfo } from "@/pages/utils/types";
-import { Switch } from "@mantine/core";
 import { twMerge } from "@/lib/utils";
-import {
-  getAudienceLabel,
-  getInteractionModeLabel,
-} from "../Integration/utils";
+import { ResourceMainInfo } from "@/pages/utils/types";
+import { getClientVisibilityAccess } from "@/utils/client";
+import { getResourceRef } from "@/utils/pb";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowUpRight, BellRing, Filter, KeyRound, ListOrdered, Zap } from "lucide-react";
+import * as React from "react";
+import { Link } from "react-router-dom";
+import { EFFECT_META, EffectBadge, EffectKey, getEffectKey, normalizeRef, RefChip } from "../common";
+import { ConditionView, GrantSummary, StepTimeline, SurfaceChip } from "../rules";
 
-const effectMeta = (effect: AccessC.Policy_Spec_Rule_Effect) => {
-  switch (effect) {
-    case AccessC.Policy_Spec_Rule_Effect.DENY:
-      return { label: "Deny", className: "border-red-200 bg-red-50 text-red-700" };
-    case AccessC.Policy_Spec_Rule_Effect.REVIEW:
-      return { label: "Review", className: "border-blue-200 bg-blue-50 text-blue-700" };
-    case AccessC.Policy_Spec_Rule_Effect.AUTO_APPROVE:
-      return {
-        label: "Auto approve",
-        className: "border-emerald-200 bg-emerald-50 text-emerald-700",
-      };
-    default:
-      return { label: "Unset", className: "border-slate-200 bg-slate-50 text-slate-500" };
-  }
-};
+const WINDOW_DAYS = 30;
 
-const conditionLabel = (condition?: AccessC.Policy_Spec_Rule_Condition) => {
-  if (!condition) return "No condition";
-  if (condition.type.oneofKind === "subject") {
-    return condition.type.subject.type.oneofKind === "groupRef"
-      ? "Subject group"
-      : "Subject user";
-  }
-  if (condition.type.oneofKind === "resource") {
-    return condition.type.resource.type.oneofKind === "catalogRef"
-      ? "Catalog"
-      : "Service";
-  }
-  if (condition.type.oneofKind === "matchAny") return "Any request";
-  if (condition.type.oneofKind === "userRef") return "Requester";
-  if (condition.type.oneofKind === "all") return "All conditions";
-  if (condition.type.oneofKind === "any") return "Any condition";
-  if (condition.type.oneofKind === "match") return "CEL expression";
-  return "No condition";
-};
-
-const reviewSurfaces = (rule: AccessC.Policy_Spec_Rule) =>
-  rule.action?.type.oneofKind === "review"
-    ? rule.action.type.review.steps.reduce(
-        (total, step) => total + step.surfaces.length,
-        0,
-      )
-    : 0;
-
-const surfaceCount = (rule: AccessC.Policy_Spec_Rule) =>
-  reviewSurfaces(rule) + rule.notifications.length;
-
-const integrationRefOf = (surface: AccessC.Policy_Spec_Rule_Surface) => {
-  const itemRef = surface.destination?.integrationRef;
-  if (!itemRef?.name && !itemRef?.uid) return undefined;
-  return ObjectReference.create({
-    ...itemRef,
-    apiVersion: itemRef.apiVersion || "access/v1",
-    kind: itemRef.kind || "Integration",
-  });
-};
-
-const SurfaceChips = (props: {
-  surfaces: AccessC.Policy_Spec_Rule_Surface[];
-  isReviewSurface: boolean;
-}) => (
-  <div className="flex flex-col gap-1.5">
-    {props.surfaces.map((surface, index) => {
-      const itemRef = integrationRefOf(surface);
+const usePolicyActivity = (item: AccessC.Policy) =>
+  useQuery({
+    queryKey: ["access", "policy", item.metadata?.uid, "activity", WINDOW_DAYS],
+    enabled: !!item.metadata?.uid,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    queryFn: async ({ signal }) => {
+      const to = new Date();
+      const from = new Date(to.getTime() - WINDOW_DAYS * 24 * 3600 * 1000);
       return (
-        <div
-          key={`surface-${index}`}
-          className="flex flex-wrap items-center gap-1.5"
-        >
-          {itemRef ? (
-            <ResourceListLabel itemRef={itemRef} />
-          ) : (
-            <span className="text-micro font-normal text-slate-500">
-              No Integration set
-            </span>
-          )}
-          <Label size="sm" outlined>
-            {getAudienceLabel(surface.destination?.audience)}
-          </Label>
-          {props.isReviewSurface && (
-            <Label
-              size="sm"
-              tone={
-                surface.interactionMode ===
-                AccessC.Policy_Spec_Rule_Surface_InteractionMode.INTERACTIVE
-                  ? "warning"
-                  : "neutral"
-              }
-            >
-              {getInteractionModeLabel(surface.interactionMode)}
-            </Label>
-          )}
-        </div>
-      );
-    })}
-  </div>
-);
-
-const SurfaceOverview = (props: { rules: AccessC.Policy_Spec_Rule[] }) => {
-  const entries: Array<{
-    title: string;
-    surfaces: AccessC.Policy_Spec_Rule_Surface[];
-    isReviewSurface: boolean;
-  }> = [];
-
-  props.rules.forEach((rule, ruleIndex) => {
-    const ruleName = rule.name || `Rule ${ruleIndex + 1}`;
-    if (rule.action?.type.oneofKind === "review") {
-      rule.action.type.review.steps.forEach((step, stepIndex) => {
-        if (step.surfaces.length === 0) return;
-        entries.push({
-          title: `${ruleName} · ${step.name || `Step ${stepIndex + 1}`}`,
-          surfaces: step.surfaces,
-          isReviewSurface: true,
-        });
-      });
-    }
-    if (rule.notifications.length > 0) {
-      entries.push({
-        title: `${ruleName} · Outcome notifications`,
-        surfaces: rule.notifications,
-        isReviewSurface: false,
-      });
-    }
+        await getClientVisibilityAccess().getRequestSummary(
+          {
+            common: CommonSummaryOptions.create({
+              from: Timestamp.fromDate(from),
+              to: Timestamp.fromDate(to),
+            }),
+            policyRef: getResourceRef(item),
+          },
+          { abort: signal },
+        )
+      ).response;
+    },
   });
 
-  return (
-    <div className="flex w-full flex-col gap-2">
-      {entries.map((entry) => (
-        <div
-          key={entry.title}
-          className="rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2.5"
-        >
-          <div className="text-body font-semibold text-slate-700">
-            {entry.title}
-          </div>
-          <div className="mt-1.5">
-            <SurfaceChips
-              surfaces={entry.surfaces}
-              isReviewSurface={entry.isReviewSurface}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const RuleOverview = (props: { rules: AccessC.Policy_Spec_Rule[] }) => (
-  <div className="flex w-full flex-col gap-2">
-    {props.rules.map((rule, index) => {
-      const effect = effectMeta(rule.effect);
-      const reviewSteps =
-        rule.action?.type.oneofKind === "review"
-          ? rule.action.type.review.steps.length
-          : 0;
-      return (
-        <div
-          key={`${rule.name || "rule"}-${index}`}
-          className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="truncate text-body font-semibold text-slate-700">
-                {rule.name || `Rule ${index + 1}`}
-              </span>
-              <span
-                className={twMerge(
-                  "rounded-md border px-1.5 py-0.5 text-micro font-semibold",
-                  effect.className,
-                )}
-              >
-                {effect.label}
-              </span>
-            </div>
-            <p className="mt-1 text-micro font-normal text-slate-500">
-              {conditionLabel(rule.condition)}
-              {reviewSteps > 0
-                ? ` · ${reviewSteps} review ${reviewSteps === 1 ? "step" : "steps"}`
-                : ""}
-              {surfaceCount(rule) > 0
-                ? ` · ${surfaceCount(rule)} Integration ${surfaceCount(rule) === 1 ? "surface" : "surfaces"}`
-                : ""}
-            </p>
-          </div>
-          <span className="shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-micro font-normal text-slate-500">
-            Priority {rule.priority > 0 ? `+${rule.priority}` : rule.priority}
-          </span>
-        </div>
-      );
-    })}
-  </div>
-);
-
-export const ItemInfo = (props: { item: AccessC.Policy }) => {
-  const { item } = props;
-  const mutationUpdate = useUpdateResource();
-  return (
+const Stat = (props: {
+  label: string;
+  value?: number | string;
+  to?: string;
+  tone?: "success" | "danger" | "warning";
+  loading?: boolean;
+}) => {
+  const body = (
     <>
-      <InfoItem title="Active">
-        <div className="w-full flex items-center">
-          <span
-            className={twMerge(
-              item.spec!.isDisabled ? `text-red-500` : undefined,
-            )}
-          >
-            {item.spec!.isDisabled ? `No` : `Yes`}
-          </span>
-          <Switch
-            className="ml-2"
-            checked={!item.spec!.isDisabled}
-            onChange={(v) => {
-              item.spec!.isDisabled = !v.currentTarget.checked;
-              mutationUpdate.mutate(item);
-            }}
-          />
-        </div>
-      </InfoItem>
-
-      <InfoItem title="Rules">
-        <span>{item.spec!.rules.length}</span>
-      </InfoItem>
+      <span className="text-micro font-semibold uppercase tracking-[0.06em] text-slate-500">
+        {props.label}
+      </span>
+      <span
+        className={twMerge(
+          "text-lg font-bold tabular-nums text-slate-900",
+          props.tone === "success" && "text-emerald-700",
+          props.tone === "danger" && "text-red-700",
+          props.tone === "warning" && "text-amber-700",
+        )}
+      >
+        {props.loading ? (
+          <span className="block h-6 w-10 motion-safe:animate-pulse rounded bg-slate-100" />
+        ) : (
+          (props.value ?? "—")
+        )}
+      </span>
     </>
   );
+  const className =
+    "flex min-w-0 flex-col gap-0.5 rounded-lg border border-slate-200 bg-white px-3 py-2";
+  return props.to ? (
+    <Link
+      to={props.to}
+      className={twMerge(
+        className,
+        "outline-none transition-colors duration-150 hover:border-slate-300 focus-visible:ring-2 focus-visible:ring-slate-400",
+      )}
+    >
+      {body}
+    </Link>
+  ) : (
+    <div className={className}>{body}</div>
+  );
 };
 
-export default (props: { item: AccessC.Policy }) => {
-  const { item } = props;
+const Activity = (props: { item: AccessC.Policy }) => {
+  const query = usePolicyActivity(props.item);
+  const data = query.data;
+  const name = props.item.metadata?.name ?? "";
+  const base = `/access/requests?policyRef.name=${encodeURIComponent(name)}`;
+  const median = data?.decisionTime?.p50Seconds;
+
   return (
-    <div className="w-full">
-      <ItemInfo item={item} />
+    <div className="flex flex-col gap-2 border-b border-slate-200 bg-white px-4 py-4">
+      <span className="flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold text-slate-700">
+          Requests decided by this Policy · last {WINDOW_DAYS} days
+        </span>
+        <Link
+          to={base}
+          className="inline-flex items-center gap-0.5 text-micro font-semibold text-blue-700 hover:text-blue-800"
+        >
+          All its requests <ArrowUpRight size={11} strokeWidth={2.5} />
+        </Link>
+      </span>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+        <Stat label="Requests" value={data ? Number(data.totalNumber) : undefined} loading={query.isLoading} to={base} />
+        <Stat label="Auto-approved" value={data ? Number(data.totalAutoApproved) : undefined} loading={query.isLoading} tone="success" />
+        <Stat label="Reviewed" value={data ? Number(data.totalReviewed) : undefined} loading={query.isLoading} />
+        <Stat label="Denied by a rule" value={data ? Number(data.totalDenied) : undefined} loading={query.isLoading} tone={data && data.totalDenied > 0 ? "danger" : undefined} />
+        <Stat
+          label="Pending now"
+          value={data ? Number(data.totalPending) : undefined}
+          loading={query.isLoading}
+          tone={data && data.totalPending > 0 ? "warning" : undefined}
+          to={`${base}&state=PENDING`}
+        />
+        <Stat
+          label="Median decision"
+          value={median ? formatMedian(Number(median)) : undefined}
+          loading={query.isLoading}
+        />
+      </div>
     </div>
   );
 };
+
+const formatMedian = (seconds: number) => {
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
+  if (seconds < 86400) return `${(seconds / 3600).toFixed(1).replace(/\.0$/, "")}h`;
+  return `${(seconds / 86400).toFixed(1).replace(/\.0$/, "")}d`;
+};
+
+const RuleBlock = (props: {
+  icon: typeof Filter;
+  label: string;
+  children: React.ReactNode;
+}) => {
+  const Icon = props.icon;
+  return (
+    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-[110px_minmax(0,1fr)] sm:gap-3">
+      <span className="flex items-center gap-1.5 self-start pt-0.5 text-micro font-semibold uppercase tracking-[0.06em] text-slate-500">
+        <Icon size={11} strokeWidth={2.4} />
+        {props.label}
+      </span>
+      <div className="min-w-0 text-xs text-slate-700">{props.children}</div>
+    </div>
+  );
+};
+
+const RuleCard = (props: {
+  rule: AccessC.Policy_Spec_Rule;
+  index: number;
+}) => {
+  const { rule } = props;
+  const key = getEffectKey(rule.effect);
+  const steps =
+    rule.action?.type.oneofKind === "review" ? rule.action.type.review.steps : [];
+
+  return (
+    <li className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-micro font-bold text-slate-600">
+          {props.index + 1}
+        </span>
+        <span className="text-body font-semibold text-slate-900">
+          {rule.name || `Rule ${props.index + 1}`}
+        </span>
+        <EffectBadge effect={rule.effect} />
+        <span className="ml-auto rounded-md border border-slate-200 px-1.5 py-px text-micro font-semibold tabular-nums text-slate-500">
+          priority {rule.priority > 0 ? `+${rule.priority}` : rule.priority}
+        </span>
+      </div>
+
+      <RuleBlock icon={Filter} label="When">
+        <ConditionView condition={rule.condition} />
+      </RuleBlock>
+
+      <RuleBlock icon={Zap} label="Then">
+        {key ? (
+          <span className="text-slate-600">{EFFECT_META[key].description}</span>
+        ) : (
+          <span className="text-amber-700">No effect is set: the rule cannot be saved like this.</span>
+        )}
+      </RuleBlock>
+
+      {key === "REVIEW" && steps.length > 0 && (
+        <RuleBlock icon={ListOrdered} label="Review">
+          <StepTimeline steps={steps} showSurfaces />
+        </RuleBlock>
+      )}
+
+      {(key === "REVIEW" || key === "AUTO_APPROVE") && (
+        <RuleBlock icon={KeyRound} label="Grants">
+          <GrantSummary authorization={rule.authorization} />
+        </RuleBlock>
+      )}
+
+      {rule.notifications.length > 0 && (
+        <RuleBlock icon={BellRing} label="Announces">
+          <span className="flex flex-wrap gap-1.5">
+            {rule.notifications.map((surface, index) => (
+              <SurfaceChip key={index} surface={surface} isNotification />
+            ))}
+          </span>
+        </RuleBlock>
+      )}
+    </li>
+  );
+};
+
+const Integrations = (props: { rules: AccessC.Policy_Spec_Rule[] }) => {
+  const refs = new Map<string, ReturnType<typeof normalizeRef>>();
+  props.rules.forEach((rule) => {
+    const surfaces = [
+      ...rule.notifications,
+      ...(rule.action?.type.oneofKind === "review"
+        ? rule.action.type.review.steps.flatMap((step) => step.surfaces)
+        : []),
+    ];
+    surfaces.forEach((surface) => {
+      const ref = normalizeRef(surface.destination?.integrationRef, "access/v1", "Integration");
+      if (ref) refs.set(ref.name || ref.uid, ref);
+    });
+  });
+
+  if (refs.size === 0) return <span className="text-slate-500">Access portal only</span>;
+
+  return (
+    <span className="flex flex-wrap gap-1.5">
+      {[...refs.values()].map((ref) => ref && <RefChip key={ref.name || ref.uid} itemRef={ref} />)}
+    </span>
+  );
+};
+
+const effectMix = (rules: AccessC.Policy_Spec_Rule[]) => {
+  const counts = new Map<EffectKey, number>();
+  rules.forEach((rule) => {
+    const key = getEffectKey(rule.effect);
+    if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
+  });
+  return (["AUTO_APPROVE", "REVIEW", "DENY"] as EffectKey[])
+    .filter((key) => counts.has(key))
+    .map((key) => ({ key, count: counts.get(key)! }));
+};
+
+export const ItemInfo = (props: { item: AccessC.Policy }) => (
+  <>
+    <InfoItem title="Rules">
+      <span>{props.item.spec?.rules.length ?? 0}</span>
+    </InfoItem>
+  </>
+);
+
+export default (props: { item: AccessC.Policy }) => (
+  <div className="w-full">
+    <ItemInfo item={props.item} />
+  </div>
+);
 
 export const MainInfo = (props: { item: AccessC.Policy }): ResourceMainInfo => {
   const { item } = props;
+  const rules = item.spec?.rules ?? [];
+  const sorted = rules
+    .map((rule, index) => ({ rule, index }))
+    .sort((a, b) => a.rule.priority - b.rule.priority || a.index - b.index);
+  const mix = effectMix(rules);
 
   return {
+    header: <Activity item={item} />,
+    groupOrder: ["Rules"],
     items: [
       {
         label: "Rules",
-        value: (
-          <span className="text-body font-semibold text-slate-700">
-            {item.spec!.rules.length}
-          </span>
-        ),
+        primary: true,
+        value: <span className="font-semibold">{rules.length}</span>,
       },
       {
-        label: "Integration surfaces",
-        value: (
-          <span className="text-body font-semibold text-slate-700">
-            {item.spec!.rules.reduce(
-              (total, rule) => total + surfaceCount(rule),
-              0,
-            )}
-          </span>
-        ),
-        hint: "The Cluster's own access portal is always available regardless of the configured surfaces.",
+        label: "Effects",
+        primary: true,
+        value:
+          mix.length === 0 ? (
+            "None"
+          ) : (
+            <span className="flex flex-wrap gap-1">
+              {mix.map(({ key, count }) => (
+                <span key={key} className="inline-flex items-center gap-1">
+                  <EffectBadge effect={EFFECT_META[key].value} />
+                  {count > 1 && <span className="text-micro text-slate-500">×{count}</span>}
+                </span>
+              ))}
+            </span>
+          ),
       },
-      ...(item.spec!.rules.length > 0
-        ? [
-            {
-              label: "Rule evaluation",
-              value: <RuleOverview rules={item.spec!.rules} />,
-              span: "full" as const,
-            },
-          ]
-        : []),
-      ...(item.spec!.rules.some((rule) => surfaceCount(rule) > 0)
-        ? [
-            {
-              label: "Surface delivery",
-              value: <SurfaceOverview rules={item.spec!.rules} />,
-              span: "full" as const,
-            },
-          ]
-        : []),
+      {
+        label: "Presented on",
+        primary: true,
+        value: <Integrations rules={rules} />,
+      },
+      {
+        label: "",
+        group: "Rules",
+        layout: "stacked" as const,
+        value:
+          rules.length === 0 ? (
+            <span className="text-xs text-slate-500">
+              This Policy has no rule yet, so it decides nothing.
+            </span>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <span className="text-micro leading-4 text-slate-500">
+                In evaluation order. Rules of other Policies are interleaved by
+                priority; the first rule that matches decides.
+              </span>
+              <ol className="flex flex-col gap-2">
+                {sorted.map(({ rule, index }, position) => (
+                  <RuleCard key={`${rule.name}-${index}`} rule={rule} index={position} />
+                ))}
+              </ol>
+            </div>
+          ),
+      },
     ],
   };
 };

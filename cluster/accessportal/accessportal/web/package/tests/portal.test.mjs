@@ -463,6 +463,41 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
       assert.equal(await page.getByText("Stopped here", { exact: true }).count(), 0);
     });
 
+    it("names the reviewer and the decision of each applied step", async () => {
+      await load("/user/requests/expired-after-approval");
+      const workflow = page.locator("section", { hasText: "Review workflow" });
+      await workflow.getByText("Approved", { exact: true }).waitFor();
+      await workflow.getByText("carol", { exact: true }).waitFor();
+      assert.equal(await page.getByText("Decision recorded", { exact: false }).count(), 0);
+      await page.getByText("Approved by carol", { exact: true }).waitFor();
+    });
+
+    it("filters pending and active requests on the server", async () => {
+      await load("/user/requests?group=pending");
+      await page.getByRole("radio", { name: "Pending (2)" }).waitFor({ state: "attached" });
+      const states = (await page.evaluate(() => window.calls))
+        .filter((call) => call.method === "listRequest" && call.request.common?.itemsPerPage !== 500)
+        .map((call) => call.request.state ?? 0);
+      assert.ok(states.includes(1));
+      assert.deepEqual(
+        (await page.locator('a[href^="/user/requests/"]').evaluateAll((links) =>
+          links.map((link) => link.getAttribute("href")))).sort(),
+        ["/user/requests/behalf-pending", "/user/requests/own-pending"],
+      );
+      assert.equal(await page.getByText("Search and filters apply", { exact: false }).count(), 0);
+    });
+
+    it("reloads once and offers a reload when a page chunk of an older build is gone", async () => {
+      let loads = 0;
+      page.on("load", () => loads++);
+      await page.goto(`${origin}?${new URLSearchParams({ path: "/broken", chunkError: "1" })}`);
+      await page.getByText("A newer version of the access portal is available", { exact: true }).waitFor();
+      assert.equal(loads, 2);
+      assert.ok(await page.evaluate(() => sessionStorage.getItem("octelium-accessportal:chunk-reload-at")));
+      await page.getByRole("button", { name: "Reload", exact: true }).waitFor();
+      assert.equal(await page.getByText("This page hit an unexpected error", { exact: true }).count(), 0);
+    });
+
     it("shows unknown pages and missing requests without retrying", async () => {
       await load("/nope");
       assert.equal(await page.getByRole("heading", { level: 1 }).textContent(), "Page not found");

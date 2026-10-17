@@ -220,6 +220,7 @@ const ProportionBar = (props: {
 export const StatTile = (props: {
   label: string;
   value: number;
+  valueLabel?: string;
   badge?: string;
   footer: React.ReactNode;
   trend?: { cur: number; prev: number; upIsGood: boolean; rangeLabel: string };
@@ -267,9 +268,9 @@ export const StatTile = (props: {
         ) : (
           <span
             className="text-3xl font-bold leading-none tracking-[-0.03em] tabular-nums text-slate-900"
-            title={exact(props.value)}
+            title={props.valueLabel ?? exact(props.value)}
           >
-            {compact(props.value)}
+            {props.valueLabel ?? compact(props.value)}
           </span>
         )}
         {!unavailable && props.badge && (

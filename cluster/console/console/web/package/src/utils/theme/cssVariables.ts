@@ -20,7 +20,7 @@ const cssVariablesResolver: CSSVariablesResolver = () => ({
     "--mantine-color-ink-light": "var(--color-slate-100)",
     "--mantine-color-ink-light-hover": "var(--color-slate-200)",
     "--mantine-color-ink-light-color": "var(--color-slate-800)",
-    "--mantine-color-ink-outline": "var(--color-slate-300)",
+    "--mantine-color-ink-outline": "var(--color-slate-700)",
 
     "--mantine-primary-color-light": "var(--color-slate-100)",
     "--mantine-primary-color-light-hover": "var(--color-slate-200)",

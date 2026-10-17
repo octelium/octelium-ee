@@ -203,6 +203,9 @@ func TestReviewSingleStepAnyApprove(t *testing.T) {
 	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
 	assert.Equal(t, 1, len(reqG.Status.Review.LastSteps))
 	assert.Equal(t, int32(0), reqG.Status.Review.LastSteps[0].StepIndex)
+	assert.Equal(t, accessv1.Review_Spec_DECISION_APPROVE, reqG.Status.Review.LastSteps[0].Decision)
+	assert.Equal(t, userA.Uid, reqG.Status.Review.LastSteps[0].UserRef.Uid)
+	assert.Equal(t, "step-1", reqG.Status.Review.LastSteps[0].StepName)
 }
 
 func TestReviewSingleStepReject(t *testing.T) {
@@ -315,6 +318,42 @@ func TestReviewMultiStep(t *testing.T) {
 	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqAfterB.Status.State.Status)
 }
 
+func TestReviewAppliedStepDetails(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	userA := newUserRef(t, ctx, octeliumC)
+	userB := newUserRef(t, ctx, octeliumC)
+
+	first := anyStep(userReviewer(userA))
+	first.Name = "team-lead"
+	second := anyStep(userReviewer(userB))
+	second.Name = "security"
+
+	req := createPendingRequest(t, ctx, octeliumC, reviewRule(first, second), 0)
+	reqRef := umetav1.GetObjectReference(req)
+
+	revA := createReview(t, ctx, octeliumC, reqRef, userA, 0, accessv1.Review_Spec_DECISION_APPROVE)
+	assert.Nil(t, ctrl.OnAdd(ctx, revA))
+
+	revB := createReview(t, ctx, octeliumC, reqRef, userB, 1, accessv1.Review_Spec_DECISION_REJECT)
+	assert.Nil(t, ctrl.OnAdd(ctx, revB))
+
+	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqG.Status.State.Status)
+	assert.Equal(t, 2, len(reqG.Status.Review.LastSteps))
+
+	assert.Equal(t, revA.Metadata.Uid, reqG.Status.Review.LastSteps[0].ReviewRef.Uid)
+	assert.Equal(t, "team-lead", reqG.Status.Review.LastSteps[0].StepName)
+	assert.Equal(t, accessv1.Review_Spec_DECISION_APPROVE, reqG.Status.Review.LastSteps[0].Decision)
+	assert.Equal(t, userA.Uid, reqG.Status.Review.LastSteps[0].UserRef.Uid)
+
+	assert.Equal(t, revB.Metadata.Uid, reqG.Status.Review.LastSteps[1].ReviewRef.Uid)
+	assert.Equal(t, int32(1), reqG.Status.Review.LastSteps[1].StepIndex)
+	assert.Equal(t, "security", reqG.Status.Review.LastSteps[1].StepName)
+	assert.Equal(t, accessv1.Review_Spec_DECISION_REJECT, reqG.Status.Review.LastSteps[1].Decision)
+	assert.Equal(t, userB.Uid, reqG.Status.Review.LastSteps[1].UserRef.Uid)
+}
+
 func TestReviewMultiStepMixed(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
@@ -398,6 +437,8 @@ func TestReviewForceFlipToReject(t *testing.T) {
 
 	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqG.Status.State.Status)
+	assert.Equal(t, 1, len(reqG.Status.Review.LastSteps))
+	assert.Equal(t, accessv1.Review_Spec_DECISION_REJECT, reqG.Status.Review.LastSteps[0].Decision)
 }
 
 func TestReviewRequestNotPending(t *testing.T) {

@@ -16,71 +16,12 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/accessintg/registry"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/metav1"
-	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/serr"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
-	"github.com/octelium/octelium/cluster/common/urscsrv"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/grpcerr"
 )
-
-func (s *ServerMain) GetIntegrationIdentity(ctx context.Context,
-	req *metav1.GetOptions) (*accessv1.IntegrationIdentity, error) {
-	if err := apivalidation.CheckGetOptions(req, &apivalidation.CheckGetOptionsOpts{}); err != nil {
-		return nil, err
-	}
-
-	item, err := s.octeliumC.AccessC().GetIntegrationIdentity(ctx,
-		apivalidation.GetOptionsToRGetOptions(req))
-	if err != nil {
-		return nil, serr.K8sNotFoundOrInternalWithErr(err)
-	}
-
-	return item, nil
-}
-
-func (s *ServerMain) ListIntegrationIdentity(ctx context.Context,
-	req *accessv1.ListIntegrationIdentityOptions) (*accessv1.IntegrationIdentityList, error) {
-	if req == nil {
-		req = &accessv1.ListIntegrationIdentityOptions{}
-	}
-
-	var filters []*rmetav1.ListOptions_Filter
-
-	if req.IntegrationRef != nil {
-		integration, err := s.getIntegrationRef(ctx, req.IntegrationRef)
-		if err != nil {
-			return nil, err
-		}
-		filters = append(filters,
-			urscsrv.FilterFieldEQValStr("status.integrationRef.uid", integration.Metadata.Uid))
-	}
-
-	if req.UserRef != nil {
-		if err := apivalidation.CheckObjectRef(req.UserRef,
-			&apivalidation.CheckGetOptionsOpts{}); err != nil {
-			return nil, err
-		}
-
-		usr, err := s.octeliumC.CoreC().GetUser(ctx,
-			apivalidation.ObjectReferenceToRGetOptions(req.UserRef))
-		if err != nil {
-			return nil, serr.K8sNotFoundOrInternalWithErr(err)
-		}
-
-		filters = append(filters,
-			urscsrv.FilterFieldEQValStr("status.userRef.uid", usr.Metadata.Uid))
-	}
-
-	itemList, err := s.octeliumC.AccessC().ListIntegrationIdentity(ctx,
-		urscsrv.GetPublicListOptions(req, filters...))
-	if err != nil {
-		return nil, serr.InternalWithErr(err)
-	}
-
-	return itemList, nil
-}
 
 func (s *ServerMain) ResolveIntegrationIdentity(ctx context.Context,
 	req *accessv1.ResolveIntegrationIdentityRequest) (*accessv1.ResolveIntegrationIdentityResponse, error) {

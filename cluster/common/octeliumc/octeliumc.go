@@ -14,6 +14,7 @@ import (
 	"os"
 
 	"github.com/octelium/octelium-ee/cluster/common/components"
+	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/cordiumv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
@@ -43,7 +44,8 @@ type Client struct {
 	coreV1UtilsC       *coreV1UtilsC
 	enterpriseV1UtilsC *enterpriseV1UtilsC
 
-	accessC raccessv1.ResourceServiceClient
+	accessC        raccessv1.ResourceServiceClient
+	accessV1UtilsC *accessV1UtilsC
 
 	cordiumC        rcordiumv1.ResourceServiceClient
 	cordiumV1UtilsC *cordiumV1UtilsC
@@ -55,6 +57,10 @@ type CoreV1Utils interface {
 
 type EnterpriseV1Utils interface {
 	GetClusterConfig(ctx context.Context) (*enterprisev1.ClusterConfig, error)
+}
+
+type AccessV1Utils interface {
+	GetClusterConfig(ctx context.Context) (*accessv1.ClusterConfig, error)
 }
 
 type CordiumV1Utils interface {
@@ -138,11 +144,13 @@ func NewClient(ctx context.Context, opts *Opts) (*Client, error) {
 		coreV1UtilsC: &coreV1UtilsC{},
 
 		enterpriseV1UtilsC: &enterpriseV1UtilsC{},
+		accessV1UtilsC:     &accessV1UtilsC{},
 		cordiumV1UtilsC:    &cordiumV1UtilsC{},
 	}
 
 	ret.coreV1UtilsC.c = ret.coreC
 	ret.enterpriseV1UtilsC.c = ret.enterpriseC
+	ret.accessV1UtilsC.c = ret.accessC
 	ret.cordiumV1UtilsC.c = ret.cordiumC
 
 	return ret, nil
@@ -188,6 +196,10 @@ func (c *Client) EnterpriseV1Utils() EnterpriseV1Utils {
 	return c.enterpriseV1UtilsC
 }
 
+func (c *Client) AccessV1Utils() AccessV1Utils {
+	return c.accessV1UtilsC
+}
+
 func (c *Client) CordiumV1Utils() CordiumV1Utils {
 	return c.cordiumV1UtilsC
 }
@@ -198,6 +210,7 @@ type ClientInterface interface {
 	EnterpriseC() renterprisev1.ResourceServiceClient
 	EnterpriseV1Utils() EnterpriseV1Utils
 	AccessC() raccessv1.ResourceServiceClient
+	AccessV1Utils() AccessV1Utils
 	CordiumC() rcordiumv1.ResourceServiceClient
 	CordiumV1Utils() CordiumV1Utils
 }
@@ -217,6 +230,16 @@ type enterpriseV1UtilsC struct {
 }
 
 func (c *enterpriseV1UtilsC) GetClusterConfig(ctx context.Context) (*enterprisev1.ClusterConfig, error) {
+	return c.c.GetClusterConfig(ctx, &rmetav1.GetOptions{
+		Name: "default",
+	})
+}
+
+type accessV1UtilsC struct {
+	c raccessv1.ResourceServiceClient
+}
+
+func (c *accessV1UtilsC) GetClusterConfig(ctx context.Context) (*accessv1.ClusterConfig, error) {
 	return c.c.GetClusterConfig(ctx, &rmetav1.GetOptions{
 		Name: "default",
 	})

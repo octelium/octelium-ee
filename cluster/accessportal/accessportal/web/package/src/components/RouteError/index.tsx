@@ -1,14 +1,57 @@
 import { Button } from "@mantine/core";
-import { House, RefreshCw, TriangleAlert } from "lucide-react";
+import { House, RefreshCw, Sparkles, TriangleAlert } from "lucide-react";
+import * as React from "react";
 import { Link, useRouteError } from "react-router-dom";
 
 import { Card, DocumentTitle, NotFoundState } from "@/ui";
+import { isChunkLoadError, reloadForNewVersion } from "@/utils/chunkError";
 import { describeRpcError } from "@/utils/rpcError";
+
+const NewVersion = () => (
+  <Card className="p-8">
+    <DocumentTitle title="Update available" />
+    <div
+      role="alert"
+      className="flex w-full flex-col items-center justify-center text-center"
+    >
+      <div
+        aria-hidden
+        className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 text-blue-600"
+      >
+        <Sparkles size={18} strokeWidth={2} />
+      </div>
+      <p className="text-body font-semibold text-slate-800">
+        A newer version of the access portal is available
+      </p>
+      <p className="mt-1 max-w-md text-xs font-normal leading-5 text-slate-500">
+        The portal was updated while this tab was open. Reload to continue
+        where you were.
+      </p>
+      <div className="mt-4">
+        <Button
+          variant="filled"
+          color="ink"
+          leftSection={<RefreshCw size={13} strokeWidth={2.25} />}
+          onClick={() => window.location.reload()}
+        >
+          Reload
+        </Button>
+      </div>
+    </div>
+  </Card>
+);
 
 export const RouteError = () => {
   const error = useRouteError();
+  const isNewVersion = isChunkLoadError(error);
   const message =
     error instanceof Error ? error.message : describeRpcError(error).message;
+
+  React.useEffect(() => {
+    if (isNewVersion) reloadForNewVersion();
+  }, [isNewVersion]);
+
+  if (isNewVersion) return <NewVersion />;
 
   return (
     <Card className="p-8">

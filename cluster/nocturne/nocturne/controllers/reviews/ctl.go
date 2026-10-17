@@ -147,7 +147,12 @@ func (c *Controller) reconcile(ctx context.Context, rev *accessv1.Review, force 
 			ReviewRef: umetav1.GetObjectReference(rev),
 			SetAt:     reviewSetAt(rev),
 			StepIndex: rev.Status.StepIndex,
+			Decision:  rev.Spec.Decision,
+			UserRef:   pbutils.Clone(rev.Status.UserRef).(*metav1.ObjectReference),
+			StepName:  accesscmd.StepName(step, rev.Status.StepIndex),
 		})
+	} else {
+		updateAppliedReviewStep(next.Status.Review, rev)
 	}
 
 	switch rev.Spec.Decision {
@@ -517,6 +522,18 @@ func findAppliedReviewStep(reqReview *accessv1.Request_Status_Review, rev *acces
 	}
 
 	return false, 0
+}
+
+func updateAppliedReviewStep(reqReview *accessv1.Request_Status_Review, rev *accessv1.Review) {
+	for _, step := range reqReview.LastSteps {
+		if step.ReviewRef != nil &&
+			step.ReviewRef.Uid != "" &&
+			step.ReviewRef.Uid == rev.Metadata.Uid {
+			step.Decision = rev.Spec.Decision
+			step.SetAt = reviewSetAt(rev)
+			return
+		}
+	}
 }
 
 func reviewSetAt(rev *accessv1.Review) *timestamppb.Timestamp {

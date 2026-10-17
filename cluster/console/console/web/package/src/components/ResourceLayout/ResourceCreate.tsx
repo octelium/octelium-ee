@@ -45,9 +45,12 @@ const ResourceCreatePage = (props: {
   const apiKind = getAPIKindFromPath(loc.pathname)!;
   const cloneUID = searchParams.get("cloneRef.uid") ?? undefined;
 
-  const [seed, setSeed] = React.useState<Resource>(() =>
-    props.createResource ? props.createResource() : blankResource(apiKind),
-  );
+  const [seed, setSeed] = React.useState<Resource>(() => {
+    const seedYAML = (loc.state as { seedYAML?: string } | null)?.seedYAML;
+    const seeded = seedYAML ? resourceFromYAML(seedYAML) : undefined;
+    if (seeded && seeded.kind === apiKind.kind) return seeded;
+    return props.createResource ? props.createResource() : blankResource(apiKind);
+  });
 
   const cloneQuery = useQuery({
     queryKey: ["resourceClone", apiKind.api, apiKind.kind, cloneUID],

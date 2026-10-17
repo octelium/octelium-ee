@@ -59,6 +59,8 @@ func (p *Provider) DecodeInbound(ctx context.Context,
 		return nil, errors.Errorf("Could not unmarshal the inbound payload")
 	}
 
+	payload.ExternalActorID = normalizeExternalActorID(payload.ExternalActorID)
+
 	if payload.ExternalActorID == "" {
 		return nil, errors.Errorf("The inbound payload has no externalActorID")
 	}

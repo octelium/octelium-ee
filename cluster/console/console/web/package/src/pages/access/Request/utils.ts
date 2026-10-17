@@ -71,3 +71,50 @@ export const getUrgencyColor = (
     .with(AccessP.Request_Spec_Urgency.VERY_HIGH, () => "var(--color-orange-600)")
     .with(AccessP.Request_Spec_Urgency.HIGHEST, () => "var(--color-red-600)")
     .otherwise(() => "var(--color-slate-400)");
+
+export const getStatusTone = (
+  status?: AccessP.Request_Status_State_Status,
+): "neutral" | "success" | "warning" | "danger" | "info" =>
+  match(status)
+    .with(AccessP.Request_Status_State_Status.PENDING, () => "warning" as const)
+    .with(AccessP.Request_Status_State_Status.APPROVED, () => "success" as const)
+    .with(AccessP.Request_Status_State_Status.REJECTED, () => "danger" as const)
+    .with(AccessP.Request_Status_State_Status.REVOKED, () => "danger" as const)
+    .otherwise(() => "neutral" as const);
+
+export const getApprovalRequirementLabel = (
+  step: AccessP.Policy_Spec_Rule_Action_Review_Step,
+): string =>
+  match(step.approvalRequirement)
+    .with(
+      AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement.ANY,
+      () => "One approval needed",
+    )
+    .with(
+      AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement.ALL,
+      () => "Every reviewer must approve",
+    )
+    .with(
+      AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement.COUNT,
+      () =>
+        `${step.approvalCount} approval${step.approvalCount === 1 ? "" : "s"} needed`,
+    )
+    .otherwise(() => "No approval requirement");
+
+export const getOnTimeoutLabel = (
+  step: AccessP.Policy_Spec_Rule_Action_Review_Step,
+  isLast?: boolean,
+): string =>
+  match(step.onTimeout)
+    .with(
+      AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout.GOTO_NEXT_STEP,
+      () =>
+        isLast
+          ? "then the request expires"
+          : "then moves to the next step",
+    )
+    .with(
+      AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout.REJECT,
+      () => "then the request is rejected",
+    )
+    .otherwise(() => "then the request expires");

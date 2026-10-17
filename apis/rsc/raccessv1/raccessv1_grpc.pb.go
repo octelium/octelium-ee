@@ -29,6 +29,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	ResourceService_GetClusterConfig_FullMethodName          = "/octelium.api.rsc.access.v1.ResourceService/GetClusterConfig"
+	ResourceService_UpdateClusterConfig_FullMethodName       = "/octelium.api.rsc.access.v1.ResourceService/UpdateClusterConfig"
+	ResourceService_WatchClusterConfig_FullMethodName        = "/octelium.api.rsc.access.v1.ResourceService/WatchClusterConfig"
 	ResourceService_CreateCatalog_FullMethodName             = "/octelium.api.rsc.access.v1.ResourceService/CreateCatalog"
 	ResourceService_UpdateCatalog_FullMethodName             = "/octelium.api.rsc.access.v1.ResourceService/UpdateCatalog"
 	ResourceService_GetCatalog_FullMethodName                = "/octelium.api.rsc.access.v1.ResourceService/GetCatalog"
@@ -83,6 +86,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ResourceServiceClient interface {
+	GetClusterConfig(ctx context.Context, in *rmetav1.GetOptions, opts ...grpc.CallOption) (*accessv1.ClusterConfig, error)
+	UpdateClusterConfig(ctx context.Context, in *accessv1.ClusterConfig, opts ...grpc.CallOption) (*accessv1.ClusterConfig, error)
+	WatchClusterConfig(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error)
 	CreateCatalog(ctx context.Context, in *accessv1.Catalog, opts ...grpc.CallOption) (*accessv1.Catalog, error)
 	UpdateCatalog(ctx context.Context, in *accessv1.Catalog, opts ...grpc.CallOption) (*accessv1.Catalog, error)
 	GetCatalog(ctx context.Context, in *rmetav1.GetOptions, opts ...grpc.CallOption) (*accessv1.Catalog, error)
@@ -141,6 +147,45 @@ func NewResourceServiceClient(cc grpc.ClientConnInterface) ResourceServiceClient
 	return &resourceServiceClient{cc}
 }
 
+func (c *resourceServiceClient) GetClusterConfig(ctx context.Context, in *rmetav1.GetOptions, opts ...grpc.CallOption) (*accessv1.ClusterConfig, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(accessv1.ClusterConfig)
+	err := c.cc.Invoke(ctx, ResourceService_GetClusterConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) UpdateClusterConfig(ctx context.Context, in *accessv1.ClusterConfig, opts ...grpc.CallOption) (*accessv1.ClusterConfig, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(accessv1.ClusterConfig)
+	err := c.cc.Invoke(ctx, ResourceService_UpdateClusterConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) WatchClusterConfig(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[0], ResourceService_WatchClusterConfig_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[rmetav1.WatchOptions, rmetav1.WatchEvent]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ResourceService_WatchClusterConfigClient = grpc.ServerStreamingClient[rmetav1.WatchEvent]
+
 func (c *resourceServiceClient) CreateCatalog(ctx context.Context, in *accessv1.Catalog, opts ...grpc.CallOption) (*accessv1.Catalog, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(accessv1.Catalog)
@@ -193,7 +238,7 @@ func (c *resourceServiceClient) DeleteCatalog(ctx context.Context, in *rmetav1.D
 
 func (c *resourceServiceClient) WatchCatalog(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[0], ResourceService_WatchCatalog_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[1], ResourceService_WatchCatalog_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +307,7 @@ func (c *resourceServiceClient) DeletePolicy(ctx context.Context, in *rmetav1.De
 
 func (c *resourceServiceClient) WatchPolicy(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[1], ResourceService_WatchPolicy_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[2], ResourceService_WatchPolicy_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -331,7 +376,7 @@ func (c *resourceServiceClient) DeleteRequest(ctx context.Context, in *rmetav1.D
 
 func (c *resourceServiceClient) WatchRequest(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[2], ResourceService_WatchRequest_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[3], ResourceService_WatchRequest_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +445,7 @@ func (c *resourceServiceClient) DeleteReview(ctx context.Context, in *rmetav1.De
 
 func (c *resourceServiceClient) WatchReview(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[3], ResourceService_WatchReview_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[4], ResourceService_WatchReview_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -469,7 +514,7 @@ func (c *resourceServiceClient) DeleteSecret(ctx context.Context, in *rmetav1.De
 
 func (c *resourceServiceClient) WatchSecret(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[4], ResourceService_WatchSecret_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[5], ResourceService_WatchSecret_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -538,7 +583,7 @@ func (c *resourceServiceClient) DeleteIntegration(ctx context.Context, in *rmeta
 
 func (c *resourceServiceClient) WatchIntegration(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[5], ResourceService_WatchIntegration_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[6], ResourceService_WatchIntegration_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -607,7 +652,7 @@ func (c *resourceServiceClient) DeleteIntegrationIdentity(ctx context.Context, i
 
 func (c *resourceServiceClient) WatchIntegrationIdentity(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[6], ResourceService_WatchIntegrationIdentity_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[7], ResourceService_WatchIntegrationIdentity_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -676,7 +721,7 @@ func (c *resourceServiceClient) DeleteIntegrationBinding(ctx context.Context, in
 
 func (c *resourceServiceClient) WatchIntegrationBinding(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[7], ResourceService_WatchIntegrationBinding_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[8], ResourceService_WatchIntegrationBinding_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -697,6 +742,9 @@ type ResourceService_WatchIntegrationBindingClient = grpc.ServerStreamingClient[
 // All implementations must embed UnimplementedResourceServiceServer
 // for forward compatibility.
 type ResourceServiceServer interface {
+	GetClusterConfig(context.Context, *rmetav1.GetOptions) (*accessv1.ClusterConfig, error)
+	UpdateClusterConfig(context.Context, *accessv1.ClusterConfig) (*accessv1.ClusterConfig, error)
+	WatchClusterConfig(*rmetav1.WatchOptions, grpc.ServerStreamingServer[rmetav1.WatchEvent]) error
 	CreateCatalog(context.Context, *accessv1.Catalog) (*accessv1.Catalog, error)
 	UpdateCatalog(context.Context, *accessv1.Catalog) (*accessv1.Catalog, error)
 	GetCatalog(context.Context, *rmetav1.GetOptions) (*accessv1.Catalog, error)
@@ -755,6 +803,15 @@ type ResourceServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedResourceServiceServer struct{}
 
+func (UnimplementedResourceServiceServer) GetClusterConfig(context.Context, *rmetav1.GetOptions) (*accessv1.ClusterConfig, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetClusterConfig not implemented")
+}
+func (UnimplementedResourceServiceServer) UpdateClusterConfig(context.Context, *accessv1.ClusterConfig) (*accessv1.ClusterConfig, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateClusterConfig not implemented")
+}
+func (UnimplementedResourceServiceServer) WatchClusterConfig(*rmetav1.WatchOptions, grpc.ServerStreamingServer[rmetav1.WatchEvent]) error {
+	return status.Errorf(codes.Unimplemented, "method WatchClusterConfig not implemented")
+}
 func (UnimplementedResourceServiceServer) CreateCatalog(context.Context, *accessv1.Catalog) (*accessv1.Catalog, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateCatalog not implemented")
 }
@@ -919,6 +976,53 @@ func RegisterResourceServiceServer(s grpc.ServiceRegistrar, srv ResourceServiceS
 	}
 	s.RegisterService(&ResourceService_ServiceDesc, srv)
 }
+
+func _ResourceService_GetClusterConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(rmetav1.GetOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).GetClusterConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_GetClusterConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).GetClusterConfig(ctx, req.(*rmetav1.GetOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_UpdateClusterConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(accessv1.ClusterConfig)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).UpdateClusterConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_UpdateClusterConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).UpdateClusterConfig(ctx, req.(*accessv1.ClusterConfig))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_WatchClusterConfig_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(rmetav1.WatchOptions)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ResourceServiceServer).WatchClusterConfig(m, &grpc.GenericServerStream[rmetav1.WatchOptions, rmetav1.WatchEvent]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ResourceService_WatchClusterConfigServer = grpc.ServerStreamingServer[rmetav1.WatchEvent]
 
 func _ResourceService_CreateCatalog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(accessv1.Catalog)
@@ -1736,6 +1840,14 @@ var ResourceService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ResourceServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "GetClusterConfig",
+			Handler:    _ResourceService_GetClusterConfig_Handler,
+		},
+		{
+			MethodName: "UpdateClusterConfig",
+			Handler:    _ResourceService_UpdateClusterConfig_Handler,
+		},
+		{
 			MethodName: "CreateCatalog",
 			Handler:    _ResourceService_CreateCatalog_Handler,
 		},
@@ -1897,6 +2009,11 @@ var ResourceService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "WatchClusterConfig",
+			Handler:       _ResourceService_WatchClusterConfig_Handler,
+			ServerStreams: true,
+		},
 		{
 			StreamName:    "WatchCatalog",
 			Handler:       _ResourceService_WatchCatalog_Handler,

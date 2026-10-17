@@ -142,6 +142,9 @@ func Run(ctx context.Context) error {
 			ctl.OnAdd, ctl.OnUpdate, ctl.OnDelete); err != nil {
 			return err
 		}
+		if err := aWatcher.ClusterConfig(ctx, nil, ctl.OnClusterConfigUpdate); err != nil {
+			return err
+		}
 	}
 
 	{

@@ -912,6 +912,25 @@
                 "stepIndex": {
                     "type": "integer",
                     "description": "StepIndex is the zero-based index of the review Step that the Review was applied to."
+                },
+                "decision": {
+                    "enum": [
+                        "DECISION_UNSET",
+                        "DECISION_APPROVE",
+                        "DECISION_REJECT"
+                    ],
+                    "type": "string",
+                    "title": "Decision",
+                    "description": "Decision is the reviewer's decision on the Request"
+                },
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "UserRef is the reference of the reviewer (i.e. the User that created the applied Review)."
+                },
+                "stepName": {
+                    "type": "string",
+                    "description": "StepName is the name of the review Step that the Review was applied to."
                 }
             },
             "additionalProperties": false,

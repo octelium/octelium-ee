@@ -146,15 +146,23 @@ func (s *ServerReviewer) ListReview(ctx context.Context, req *accessv1.ListRevie
 		return nil, err
 	}
 
-	listOpts := urscsrv.GetPublicListOptions(req, urscsrv.FilterStatusUserUID(i.User.Metadata.Uid))
-	listOpts.OrderBy = []*rmetav1.ListOptions_OrderBy{
-		{
-			Type: rmetav1.ListOptions_OrderBy_TYPE_CREATED_AT,
-			Mode: rmetav1.ListOptions_OrderBy_MODE_DESC,
-		},
+	filters := []*rmetav1.ListOptions_Filter{
+		urscsrv.FilterStatusUserUID(i.User.Metadata.Uid),
 	}
 
-	itemList, err := s.octeliumC.AccessC().ListReview(ctx, listOpts)
+	if req.Decision != accessv1.Review_Spec_DECISION_UNSET {
+		filters = append(filters,
+			urscsrv.FilterFieldEQValStr("spec.decision", req.Decision.String()))
+	}
+
+	filters, err = appendRefFilter(filters, "status.requestRef", req.RequestRef,
+		&apivalidation.CheckGetOptionsOpts{})
+	if err != nil {
+		return nil, err
+	}
+
+	itemList, err := s.octeliumC.AccessC().ListReview(ctx,
+		withDefaultOrder(urscsrv.GetPublicListOptions(req, filters...)))
 	if err != nil {
 		return nil, serr.InternalWithErr(err)
 	}

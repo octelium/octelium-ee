@@ -117,6 +117,7 @@ const request = (
     accessEndsIn?: number;
     approvalEndAgo?: number;
     lastStates?: AccessP.Request_Status_State_Status[];
+    applied?: { reviewer: string; decision: AccessP.Review_Spec_Decision }[];
   } = {},
 ) =>
   AccessP.Request.create({
@@ -147,7 +148,18 @@ const request = (
           }
         : undefined,
       review: extra.steps
-        ? { currentStep: extra.currentStep ?? 0, currentStepStartedAt: at(-30) }
+        ? {
+            currentStep: extra.currentStep ?? 0,
+            currentStepStartedAt: at(-30),
+            lastSteps: (extra.applied ?? []).map((applied, index) => ({
+              reviewRef: { name: `rv${index}.${name}` },
+              setAt: at(-90),
+              stepIndex: index,
+              decision: applied.decision,
+              userRef: { name: applied.reviewer },
+              stepName: extra.steps![index],
+            })),
+          }
         : undefined,
     },
   });
@@ -164,6 +176,7 @@ const myRequests = [
   request("expired-after-approval", S.EXPIRED, {
     steps: ["team-lead"],
     lastStates: [S.APPROVED, S.PENDING],
+    applied: [{ reviewer: "carol", decision: AccessP.Review_Spec_Decision.APPROVE }],
   }),
 ];
 
@@ -204,12 +217,15 @@ const notFound = () => {
 };
 
 stub(getUserClient(), "listCatalog", () => AccessP.CatalogList.create({ items: catalogs }));
-stub(getUserClient(), "listRequest", () =>
-  AccessP.RequestList.create({
-    items: myRequests,
-    listResponseMeta: { totalCount: myRequests.length, itemsPerPage: 20 },
-  }),
-);
+stub(getUserClient(), "listRequest", (options: AccessP.ListUserRequestOptions) => {
+  const items = myRequests.filter(
+    (item) => !options.state || item.status?.state?.status === options.state,
+  );
+  return AccessP.RequestList.create({
+    items,
+    listResponseMeta: { totalCount: items.length, itemsPerPage: 20 },
+  });
+});
 stub(getUserClient(), "getRequest", (options: MetaP.GetOptions) =>
   myRequests.find((item) => item.metadata?.name === options.name) ?? notFound(),
 );
@@ -259,9 +275,20 @@ const initialPath = params.get("path") ?? "/user/new";
 if (params.has("browserHistory")) {
   window.history.replaceState(null, "", initialPath);
 }
+const root = routes();
+if (params.has("chunkError")) {
+  root.children![0].children!.unshift({
+    path: "broken",
+    lazy: async () => {
+      throw new TypeError(
+        "error loading dynamically imported module: /assets/List-CSEuO6kJ.js",
+      );
+    },
+  });
+}
 const router = params.has("browserHistory")
-  ? createBrowserRouter([routes()])
-  : createMemoryRouter([routes()], { initialEntries: [initialPath] });
+  ? createBrowserRouter([root])
+  : createMemoryRouter([root], { initialEntries: [initialPath] });
 window.portalRouter = router;
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

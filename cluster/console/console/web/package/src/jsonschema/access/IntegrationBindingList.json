@@ -60,7 +60,7 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Integration Binding",
-            "description": "IntegrationBinding is the Cluster-managed link between an access Request and one external object that represents it inside an Integration (e.g. a Slack message or a Jira issue). It is the durable desired state of that external object: the access workflow only declares that a Request has to be presented somewhere while the Cluster reconciles the external object itself, retries the failed deliveries and closes the outstanding presentations once the Request reaches a final state. A provider outage therefore never blocks, and never silently decides, an access Request."
+            "description": "IntegrationBinding is the Cluster-managed link between an access Request and one external object that represents it inside an Integration (e.g. a Slack message or a Jira issue). It is the durable desired state of that external object: the access workflow only declares that a Request has to be presented somewhere while the Cluster reconciles the external object itself, retries the failed deliveries and closes the outstanding presentations once the Request reaches a final state. A provider outage therefore never blocks, and never silently decides, an access Request. It is an internal resource that is not exposed by the MainService. Its name is, however, the identifier of the presentation that a generic webhook Integration receives and refers to in its inbound decisions."
         },
         "octelium.api.main.access.v1.IntegrationBinding.Spec": {
             "additionalProperties": false,

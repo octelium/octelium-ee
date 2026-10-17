@@ -13,13 +13,18 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
+	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uaccessv1"
+	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
+	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (s *Server) doSummaryAccessPolicy(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vaccessv1.GetPolicySummaryResponse, error) {
@@ -80,6 +85,33 @@ func (s *Server) doSummaryAccessPolicy(ctx context.Context, common *vmetav1.Comm
 					))
 				))
 			), 0) AS count_reviewers`),
+			goqu.L(`COALESCE(SUM(
+				len(list_filter(
+					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
+					x -> COALESCE(json_array_length(x, '$.notifications'), 0) > 0
+				))
+			), 0) AS count_rules_notification`),
+			goqu.L(`COALESCE(SUM(
+				list_sum(list_transform(
+					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
+					x -> list_sum(list_transform(
+						COALESCE(CAST(json_extract(x, '$.action.review.steps') AS JSON[]), []),
+						y -> COALESCE(json_array_length(y, '$.surfaces'), 0)
+					))
+				))
+			), 0) AS count_review_surfaces`),
+			goqu.L(`COALESCE(SUM(
+				list_sum(list_transform(
+					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
+					x -> list_sum(list_transform(
+						COALESCE(CAST(json_extract(x, '$.action.review.steps') AS JSON[]), []),
+						y -> len(list_filter(
+							COALESCE(CAST(json_extract(y, '$.surfaces') AS JSON[]), []),
+							z -> json_extract_string(z, '$.interactionMode') = 'INTERACTIVE'
+						))
+					))
+				))
+			), 0) AS count_interactive_surfaces`),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -103,7 +135,8 @@ func (s *Server) doSummaryAccessPolicy(ctx context.Context, common *vmetav1.Comm
 			&ret.TotalRule,
 			&ret.TotalRuleDeny, &ret.TotalRuleReview, &ret.TotalRuleAutoApprove,
 			&ret.TotalRuleAuthorization, &ret.TotalRuleMaxAccessDuration,
-			&ret.TotalReviewStep, &ret.TotalReviewer)
+			&ret.TotalReviewStep, &ret.TotalReviewer,
+			&ret.TotalRuleNotification, &ret.TotalReviewSurface, &ret.TotalInteractiveSurface)
 		if err != nil {
 			return nil, err
 		}
@@ -158,15 +191,19 @@ func (s *Server) doSummaryAccessCatalog(ctx context.Context, common *vmetav1.Com
 	return ret, nil
 }
 
-func (s *Server) doSummaryAccessRequest(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vaccessv1.GetRequestSummaryResponse, error) {
+func (s *Server) doSummaryAccessRequest(ctx context.Context, common *vmetav1.CommonSummaryOptions,
+	refFilters []exp.Expression) (*vaccessv1.GetRequestSummaryResponse, error) {
 
 	ret := &vaccessv1.GetRequestSummaryResponse{}
 	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindRequest, common)
 	if err != nil {
 		return nil, err
 	}
+	filters = append(filters, refFilters...)
 
 	now := time.Now().UTC()
+	decided := getRequestDecidedExpr()
+	decisionSeconds := fmt.Sprintf(`(epoch(%s) - epoch(%s))`, colStatusApprovalEndAt, colStatusApprovalStartAt)
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
@@ -192,6 +229,26 @@ func (s *Server) doSummaryAccessRequest(ctx context.Context, common *vmetav1.Com
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'HIGHEST') AS count_urgency_highest`, colSpecUrgency)),
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(%s, 'deadline')) AS count_with_deadline`, colSpecKeys)),
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s < ?) AS count_deadline_passed`, colSpecDeadline), now),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'AUTO_APPROVE') AS count_auto_approved`, colStatusRuleEffect)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'REVIEW') AS count_reviewed`, colStatusRuleEffect)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'DENY') AS count_denied`, colStatusRuleEffect)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s) AS count_unmatched`, getRequestUnmatchedExpr())),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s) AS count_on_behalf`, getRequestOnBehalfExpr())),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'INTEGRATION') AS count_from_integration`, colStatusOriginType)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s) AS count_expiring_soon`, getRequestExpiringSoonExpr()),
+				now, now.Add(requestExpiringSoonDuration)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s) AS count_pending_stale`, getRequestPendingStaleExpr()),
+				now.Add(-requestPendingStaleDuration)),
+			goqu.L(fmt.Sprintf(`MIN(%s) FILTER (WHERE %s = 'PENDING') AS oldest_pending_at`,
+				colStatusApprovalStartAt, colStatusStateStatus)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s) AS count_decided`, decided)),
+			goqu.L(fmt.Sprintf(`COALESCE(AVG(%s) FILTER (WHERE %s), 0) AS decision_avg`, decisionSeconds, decided)),
+			goqu.L(fmt.Sprintf(`COALESCE(quantile_cont(%s, 0.5) FILTER (WHERE %s), 0) AS decision_p50`, decisionSeconds, decided)),
+			goqu.L(fmt.Sprintf(`COALESCE(quantile_cont(%s, 0.9) FILTER (WHERE %s), 0) AS decision_p90`, decisionSeconds, decided)),
+			goqu.L(fmt.Sprintf(`COALESCE(MAX(%s) FILTER (WHERE %s), 0) AS decision_max`, decisionSeconds, decided)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'PENDING' AND %s < ?) AS count_pending_deadline_passed`,
+				colStatusStateStatus, colSpecDeadline), now),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s) AS count_granted`, getRequestGrantedExpr())),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -210,15 +267,33 @@ func (s *Server) doSummaryAccessRequest(ctx context.Context, common *vmetav1.Com
 	defer rows.Close()
 
 	for rows.Next() {
+		var oldestPendingAt sql.NullTime
+		decisionTime := &vaccessv1.DecisionTime{}
+
 		err := rows.Scan(&ret.TotalNumber,
 			&ret.TotalPending, &ret.TotalApproved, &ret.TotalRejected, &ret.TotalRevoked,
 			&ret.TotalExpired, &ret.TotalCancelled, &ret.TotalActive,
 			&ret.TotalUser, &ret.TotalSubjectUser, &ret.TotalService, &ret.TotalCatalog, &ret.TotalPolicy,
 			&ret.TotalUrgencyVeryLow, &ret.TotalUrgencyLow, &ret.TotalUrgencyNormal,
 			&ret.TotalUrgencyHigh, &ret.TotalUrgencyVeryHigh, &ret.TotalUrgencyHighest,
-			&ret.TotalWithDeadline, &ret.TotalDeadlinePassed)
+			&ret.TotalWithDeadline, &ret.TotalDeadlinePassed,
+			&ret.TotalAutoApproved, &ret.TotalReviewed, &ret.TotalDenied, &ret.TotalUnmatched,
+			&ret.TotalOnBehalf, &ret.TotalFromIntegration,
+			&ret.TotalExpiringSoon, &ret.TotalPendingStale,
+			&oldestPendingAt,
+			&decisionTime.Count, &decisionTime.AverageSeconds,
+			&decisionTime.P50Seconds, &decisionTime.P90Seconds, &decisionTime.MaxSeconds,
+			&ret.TotalPendingDeadlinePassed, &ret.TotalGranted)
 		if err != nil {
 			return nil, err
+		}
+
+		if oldestPendingAt.Valid {
+			ret.OldestPendingAt = timestamppb.New(oldestPendingAt.Time)
+		}
+
+		if decisionTime.Count > 0 {
+			ret.DecisionTime = decisionTime
 		}
 	}
 	if err := rows.Err(); err != nil {
@@ -228,13 +303,15 @@ func (s *Server) doSummaryAccessRequest(ctx context.Context, common *vmetav1.Com
 	return ret, nil
 }
 
-func (s *Server) doSummaryAccessReview(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vaccessv1.GetReviewSummaryResponse, error) {
+func (s *Server) doSummaryAccessReview(ctx context.Context, common *vmetav1.CommonSummaryOptions,
+	refFilters []exp.Expression) (*vaccessv1.GetReviewSummaryResponse, error) {
 
 	ret := &vaccessv1.GetReviewSummaryResponse{}
 	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindReview, common)
 	if err != nil {
 		return nil, err
 	}
+	filters = append(filters, refFilters...)
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
@@ -245,6 +322,7 @@ func (s *Server) doSummaryAccessReview(ctx context.Context, common *vmetav1.Comm
 			goqu.L(`COUNT(*) FILTER (WHERE json_array_length(rsc, '$.status.lastRevisions') > 0) AS count_revised`),
 			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_user`, colUserUID)),
 			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_request`, colRequestUID)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'INTEGRATION') AS count_from_integration`, colStatusOriginType)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -265,7 +343,7 @@ func (s *Server) doSummaryAccessReview(ctx context.Context, common *vmetav1.Comm
 	for rows.Next() {
 		err := rows.Scan(&ret.TotalNumber,
 			&ret.TotalPending, &ret.TotalApproved, &ret.TotalRejected, &ret.TotalRevised,
-			&ret.TotalUser, &ret.TotalRequest)
+			&ret.TotalUser, &ret.TotalRequest, &ret.TotalFromIntegration)
 		if err != nil {
 			return nil, err
 		}
@@ -382,13 +460,15 @@ func (s *Server) doSummaryAccessIntegration(ctx context.Context, common *vmetav1
 	return ret, nil
 }
 
-func (s *Server) doSummaryAccessIntegrationIdentity(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vaccessv1.GetIntegrationIdentitySummaryResponse, error) {
+func (s *Server) doSummaryAccessIntegrationIdentity(ctx context.Context, common *vmetav1.CommonSummaryOptions,
+	refFilters []exp.Expression) (*vaccessv1.GetIntegrationIdentitySummaryResponse, error) {
 
 	ret := &vaccessv1.GetIntegrationIdentitySummaryResponse{}
 	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindIntegrationIdentity, common)
 	if err != nil {
 		return nil, err
 	}
+	filters = append(filters, refFilters...)
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
@@ -427,13 +507,15 @@ func (s *Server) doSummaryAccessIntegrationIdentity(ctx context.Context, common 
 	return ret, nil
 }
 
-func (s *Server) doSummaryAccessIntegrationBinding(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vaccessv1.GetIntegrationBindingSummaryResponse, error) {
+func (s *Server) doSummaryAccessIntegrationBinding(ctx context.Context, common *vmetav1.CommonSummaryOptions,
+	refFilters []exp.Expression) (*vaccessv1.GetIntegrationBindingSummaryResponse, error) {
 
 	ret := &vaccessv1.GetIntegrationBindingSummaryResponse{}
 	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindIntegrationBinding, common)
 	if err != nil {
 		return nil, err
 	}
+	filters = append(filters, refFilters...)
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
@@ -498,11 +580,36 @@ func (s *Server) getSummaryAccessCatalog(ctx context.Context, req *vaccessv1.Get
 }
 
 func (s *Server) getSummaryAccessRequest(ctx context.Context, req *vaccessv1.GetRequestSummaryRequest) (*vaccessv1.GetRequestSummaryResponse, error) {
-	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryAccessRequest)
+	refFilters, err := getAccessRefFilters([]*accessRefFilter{
+		{ref: req.GetPolicyRef(), pth: "status.policyRef"},
+		{ref: req.GetCatalogRef(), pth: "spec.resource.catalog.catalogRef"},
+		{ref: req.GetServiceRef(), pth: "spec.resource.serviceRef", opts: serviceRefCheckOpts()},
+		{ref: req.GetUserRef(), pth: "status.userRef"},
+		{ref: req.GetSubjectUserRef(), pth: "spec.subject.userRef"},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return withSummaryComparison(ctx, req.GetCommon(),
+		func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vaccessv1.GetRequestSummaryResponse, error) {
+			return s.doSummaryAccessRequest(ctx, common, refFilters)
+		})
 }
 
 func (s *Server) getSummaryAccessReview(ctx context.Context, req *vaccessv1.GetReviewSummaryRequest) (*vaccessv1.GetReviewSummaryResponse, error) {
-	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryAccessReview)
+	refFilters, err := getAccessRefFilters([]*accessRefFilter{
+		{ref: req.GetUserRef(), pth: "status.userRef"},
+		{ref: req.GetRequestRef(), pth: "status.requestRef"},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return withSummaryComparison(ctx, req.GetCommon(),
+		func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vaccessv1.GetReviewSummaryResponse, error) {
+			return s.doSummaryAccessReview(ctx, common, refFilters)
+		})
 }
 
 func (s *Server) getSummaryAccessSecret(ctx context.Context, req *vaccessv1.GetSecretSummaryRequest) (*vaccessv1.GetSecretSummaryResponse, error) {
@@ -514,9 +621,100 @@ func (s *Server) getSummaryAccessIntegration(ctx context.Context, req *vaccessv1
 }
 
 func (s *Server) getSummaryAccessIntegrationIdentity(ctx context.Context, req *vaccessv1.GetIntegrationIdentitySummaryRequest) (*vaccessv1.GetIntegrationIdentitySummaryResponse, error) {
-	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryAccessIntegrationIdentity)
+	refFilters, err := getAccessRefFilters([]*accessRefFilter{
+		{ref: req.GetIntegrationRef(), pth: "status.integrationRef"},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return withSummaryComparison(ctx, req.GetCommon(),
+		func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vaccessv1.GetIntegrationIdentitySummaryResponse, error) {
+			return s.doSummaryAccessIntegrationIdentity(ctx, common, refFilters)
+		})
 }
 
 func (s *Server) getSummaryAccessIntegrationBinding(ctx context.Context, req *vaccessv1.GetIntegrationBindingSummaryRequest) (*vaccessv1.GetIntegrationBindingSummaryResponse, error) {
-	return withSummaryComparison(ctx, req.GetCommon(), s.doSummaryAccessIntegrationBinding)
+	refFilters, err := getAccessRefFilters([]*accessRefFilter{
+		{ref: req.GetIntegrationRef(), pth: "status.integrationRef"},
+		{ref: req.GetRequestRef(), pth: "status.requestRef"},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return withSummaryComparison(ctx, req.GetCommon(),
+		func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vaccessv1.GetIntegrationBindingSummaryResponse, error) {
+			return s.doSummaryAccessIntegrationBinding(ctx, common, refFilters)
+		})
+}
+
+type accessRefFilter struct {
+	ref  *metav1.ObjectReference
+	pth  string
+	opts *apivalidation.CheckGetOptionsOpts
+}
+
+func getAccessRefFilters(items []*accessRefFilter) ([]exp.Expression, error) {
+	var ret []exp.Expression
+	var err error
+
+	for _, itm := range items {
+		ret, err = appendRefFilter(ret, itm.ref, itm.opts, itm.pth)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return ret, nil
+}
+
+func serviceRefCheckOpts() *apivalidation.CheckGetOptionsOpts {
+	return &apivalidation.CheckGetOptionsOpts{
+		ParentsMax: 1,
+	}
+}
+
+const requestExpiringSoonDuration = time.Hour
+const requestPendingStaleDuration = 24 * time.Hour
+
+func getRequestDecidedExpr() string {
+	return fmt.Sprintf(`(%s = 'REVIEW' AND %s IS NOT NULL AND %s IS NOT NULL AND (%s IN ('APPROVED', 'REJECTED') OR list_has_any(COALESCE(TRY_CAST(json_extract_string(rsc, '$.status.lastStates[*].status') AS VARCHAR[]), []), ['APPROVED', 'REJECTED'])))`,
+		colStatusRuleEffect, colStatusApprovalStartAt, colStatusApprovalEndAt, colStatusStateStatus)
+}
+
+func getRequestGrantedExpr() string {
+	return fmt.Sprintf(`(%s = 'APPROVED' OR list_contains(COALESCE(TRY_CAST(json_extract_string(rsc, '$.status.lastStates[*].status') AS VARCHAR[]), []), 'APPROVED'))`,
+		colStatusStateStatus)
+}
+
+func getRequestUnmatchedExpr() string {
+	return fmt.Sprintf(`(%s = 'REJECTED' AND %s IS NULL)`, colStatusStateStatus, colStatusRuleEffect)
+}
+
+func getRequestOnBehalfExpr() string {
+	return fmt.Sprintf(`(%s IS NOT NULL AND %s IS NOT NULL AND %s != %s)`,
+		colSpecSubjectUserUID, colUserUID, colSpecSubjectUserUID, colUserUID)
+}
+
+func getRequestExpiringSoonExpr() string {
+	return fmt.Sprintf(`(%s = 'APPROVED' AND %s > ? AND %s <= ?)`,
+		colStatusStateStatus, colStatusAccessEndsAt, colStatusAccessEndsAt)
+}
+
+func getRequestPendingStaleExpr() string {
+	return fmt.Sprintf(`(%s = 'PENDING' AND %s < ?)`, colStatusStateStatus, colStatusApprovalStartAt)
+}
+
+func getPolicyRuleConditionRefFilter(ref *metav1.ObjectReference, parent, field string) exp.Expression {
+	key, val := "uid", ref.Uid
+	if val == "" {
+		key, val = "name", ref.Name
+	}
+
+	pattern := fmt.Sprintf(`"%s"\s*:\s*\{\s*"%s"\s*:\s*\{[^{}]*"%s"\s*:\s*"%s"`,
+		parent, field, key, regexp.QuoteMeta(val))
+
+	return goqu.L(`len(list_filter(CAST(json_extract(rsc, '$.spec.rules') AS JSON[]), x -> regexp_matches(CAST(json_extract(x, '$.condition') AS VARCHAR), ?))) > 0`,
+		pattern)
 }

@@ -11,10 +11,8 @@ import {
   Inbox,
   KeyRound,
   Layers,
-  Link2,
   LucideIcon,
   Plug,
-  Send,
   Shield,
 } from "lucide-react";
 import { useAccessCreated, useAccessTotals } from "./queries";
@@ -41,7 +39,7 @@ const ROWS: Row[] = [
       { label: "pending ", value: n(access?.request?.totalPending) },
       {
         label: "overdue ",
-        value: n(access?.request?.totalDeadlinePassed),
+        value: n(access?.request?.totalPendingDeadlinePassed),
         tone: "critical",
       },
     ],
@@ -84,32 +82,6 @@ const ROWS: Row[] = [
       {
         label: "failing ",
         value: n(access?.integration?.totalError),
-        tone: "critical",
-      },
-    ],
-  },
-  {
-    kind: "IntegrationIdentity",
-    label: "Integration Identities",
-    to: "/access/integrationidentities",
-    icon: Link2,
-    pick: (access) => access?.integrationIdentity,
-  },
-  {
-    kind: "IntegrationBinding",
-    label: "Integration Bindings",
-    to: "/access/integrationbindings",
-    icon: Send,
-    pick: (access) => access?.integrationBinding,
-    attention: (access) => [
-      {
-        label: "out of date ",
-        value: n(access?.integrationBinding?.totalOutOfDate),
-        tone: "warning",
-      },
-      {
-        label: "failing ",
-        value: n(access?.integrationBinding?.totalFailing),
         tone: "critical",
       },
     ],

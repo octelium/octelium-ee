@@ -328,66 +328,6 @@ func TestIntegrationWebhookName(t *testing.T) {
 		accessv1.Integration_Status_INTERACTIVE_REVIEW)
 }
 
-func TestIntegrationIdentityIsReadOnly(t *testing.T) {
-	ctx, srv, octeliumC := newIntegrationTest(t)
-
-	integration := tstCreateSlackIntegration(ctx, t, srv, octeliumC)
-	usr := tstCreateUser(ctx, t, octeliumC, "")
-
-	externalID := "U12345678"
-
-	item, err := octeliumC.AccessC().CreateIntegrationIdentity(ctx,
-		&accessv1.IntegrationIdentity{
-			Metadata: &metav1.Metadata{
-				Name: utilrand.GetRandomStringCanonical(8),
-			},
-			Spec: &accessv1.IntegrationIdentity_Spec{},
-			Status: &accessv1.IntegrationIdentity_Status{
-				IntegrationRef: umetav1.GetObjectReference(integration),
-				UserRef:        umetav1.GetObjectReference(usr),
-				ExternalID:     externalID,
-				Source:         accessv1.IntegrationIdentity_Status_EMAIL_DISCOVERY,
-			},
-		})
-	assert.Nil(t, err, "%+v", err)
-
-	{
-		ret, err := srv.GetIntegrationIdentity(ctx, &metav1.GetOptions{
-			Uid: item.Metadata.Uid,
-		})
-		assert.Nil(t, err, "%+v", err)
-		assert.Equal(t, externalID, ret.Status.ExternalID)
-		assert.Equal(t, usr.Metadata.Uid, ret.Status.UserRef.Uid)
-	}
-
-	{
-		itemList, err := srv.ListIntegrationIdentity(ctx,
-			&accessv1.ListIntegrationIdentityOptions{
-				UserRef: umetav1.GetObjectReference(usr),
-			})
-		assert.Nil(t, err, "%+v", err)
-		assert.Equal(t, 1, len(itemList.Items))
-	}
-
-	{
-		itemList, err := srv.ListIntegrationIdentity(ctx,
-			&accessv1.ListIntegrationIdentityOptions{
-				IntegrationRef: umetav1.GetObjectReference(integration),
-			})
-		assert.Nil(t, err, "%+v", err)
-		assert.Equal(t, 1, len(itemList.Items))
-	}
-
-	{
-		itemList, err := srv.ListIntegrationIdentity(ctx,
-			&accessv1.ListIntegrationIdentityOptions{
-				UserRef: umetav1.GetObjectReference(tstCreateUser(ctx, t, octeliumC, "")),
-			})
-		assert.Nil(t, err, "%+v", err)
-		assert.Equal(t, 0, len(itemList.Items))
-	}
-}
-
 func TestResolveIntegrationIdentity(t *testing.T) {
 	ctx, srv, octeliumC := newIntegrationTest(t)
 

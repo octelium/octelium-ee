@@ -129,3 +129,59 @@ func TestCapabilitiesWithoutInboundSecret(t *testing.T) {
 	assert.NotContains(t, capabilities, accessv1.Integration_Status_INTERACTIVE_REVIEW)
 	assert.NotContains(t, capabilities, accessv1.Integration_Status_REQUEST_CREATION)
 }
+
+func TestCapabilitiesIdentityResolution(t *testing.T) {
+	spec := &accessv1.Integration_Spec_Webhook{
+		Url: "https://example.com/hook",
+	}
+
+	assert.Contains(t, Capabilities(spec), accessv1.Integration_Status_IDENTITY_RESOLUTION)
+	assert.Contains(t, tstProvider().Capabilities(), accessv1.Integration_Status_IDENTITY_RESOLUTION)
+}
+
+func TestExternalUserFromEmail(t *testing.T) {
+	ctx := context.Background()
+	p := tstProvider()
+
+	for _, tt := range []struct {
+		arg  string
+		want string
+	}{
+		{"alice@example.com", "alice@example.com"},
+		{"  Alice@Example.COM ", "alice@example.com"},
+		{"alice", ""},
+		{"", ""},
+		{"Alice <alice@example.com>", ""},
+		{"@example.com", ""},
+	} {
+		usr, err := p.GetExternalUser(ctx, tt.arg)
+		assert.Nil(t, err)
+
+		usrByEmail, err := p.GetExternalUserByEmail(ctx, tt.arg)
+		assert.Nil(t, err)
+
+		if tt.want == "" {
+			assert.Nil(t, usr, tt.arg)
+			assert.Nil(t, usrByEmail, tt.arg)
+			continue
+		}
+
+		assert.NotNil(t, usr, tt.arg)
+		assert.Equal(t, tt.want, usr.ID)
+		assert.Equal(t, tt.want, usr.Email)
+		assert.Equal(t, usr, usrByEmail)
+	}
+}
+
+func TestDecodeNormalizesExternalActorID(t *testing.T) {
+	ctx := context.Background()
+	p := tstProvider()
+	now := time.Now()
+
+	in := tstRequest(p, now,
+		`{"action":"setReviewDecision","externalActorID":" Bob@Example.com ","bindingName":"b1","decision":"approve"}`)
+
+	res, err := p.DecodeInbound(ctx, in)
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, "bob@example.com", res.Action.ExternalActorID)
+}

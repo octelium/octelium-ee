@@ -35,14 +35,10 @@ import type { CancelRequestRequest } from "./accessv1";
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { MainService } from "./accessv1";
-import type { IntegrationBindingList } from "./accessv1";
-import type { ListIntegrationBindingOptions } from "./accessv1";
-import type { IntegrationBinding } from "./accessv1";
+import type { ClusterConfig } from "./accessv1";
+import type { GetClusterConfigRequest } from "./accessv1";
 import type { ResolveIntegrationIdentityResponse } from "./accessv1";
 import type { ResolveIntegrationIdentityRequest } from "./accessv1";
-import type { IntegrationIdentityList } from "./accessv1";
-import type { ListIntegrationIdentityOptions } from "./accessv1";
-import type { IntegrationIdentity } from "./accessv1";
 import type { SynchronizeIntegrationResponse } from "./accessv1";
 import type { SynchronizeIntegrationRequest } from "./accessv1";
 import type { IntegrationList } from "./accessv1";
@@ -254,22 +250,6 @@ export interface IMainServiceClient {
      */
     synchronizeIntegration(input: SynchronizeIntegrationRequest, options?: RpcOptions): UnaryCall<SynchronizeIntegrationRequest, SynchronizeIntegrationResponse>;
     /**
-     * GetIntegrationIdentity retrieves a specific IntegrationIdentity.
-     * IntegrationIdentities are entirely managed by the Cluster and can only be
-     * read.
-     *
-     * @generated from protobuf rpc: GetIntegrationIdentity
-     */
-    getIntegrationIdentity(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, IntegrationIdentity>;
-    /**
-     * ListIntegrationIdentity lists IntegrationIdentities.
-     * IntegrationIdentities are entirely managed by the Cluster and can only be
-     * read.
-     *
-     * @generated from protobuf rpc: ListIntegrationIdentity
-     */
-    listIntegrationIdentity(input: ListIntegrationIdentityOptions, options?: RpcOptions): UnaryCall<ListIntegrationIdentityOptions, IntegrationIdentityList>;
-    /**
      * ResolveIntegrationIdentity reports how an external actor of an
      * Integration is currently resolved to a Cluster User. It is a diagnostic
      * method that does not change the access state of the Cluster. It does,
@@ -281,17 +261,17 @@ export interface IMainServiceClient {
      */
     resolveIntegrationIdentity(input: ResolveIntegrationIdentityRequest, options?: RpcOptions): UnaryCall<ResolveIntegrationIdentityRequest, ResolveIntegrationIdentityResponse>;
     /**
-     * GetIntegrationBinding retrieves a specific IntegrationBinding
+     * GetClusterConfig retrieves the access ClusterConfig
      *
-     * @generated from protobuf rpc: GetIntegrationBinding
+     * @generated from protobuf rpc: GetClusterConfig
      */
-    getIntegrationBinding(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, IntegrationBinding>;
+    getClusterConfig(input: GetClusterConfigRequest, options?: RpcOptions): UnaryCall<GetClusterConfigRequest, ClusterConfig>;
     /**
-     * ListIntegrationBinding lists IntegrationBindings
+     * UpdateClusterConfig updates the access ClusterConfig
      *
-     * @generated from protobuf rpc: ListIntegrationBinding
+     * @generated from protobuf rpc: UpdateClusterConfig
      */
-    listIntegrationBinding(input: ListIntegrationBindingOptions, options?: RpcOptions): UnaryCall<ListIntegrationBindingOptions, IntegrationBindingList>;
+    updateClusterConfig(input: ClusterConfig, options?: RpcOptions): UnaryCall<ClusterConfig, ClusterConfig>;
 }
 /**
  * MainService is the management API of the Octelium access API which provides
@@ -566,28 +546,6 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<SynchronizeIntegrationRequest, SynchronizeIntegrationResponse>("unary", this._transport, method, opt, input);
     }
     /**
-     * GetIntegrationIdentity retrieves a specific IntegrationIdentity.
-     * IntegrationIdentities are entirely managed by the Cluster and can only be
-     * read.
-     *
-     * @generated from protobuf rpc: GetIntegrationIdentity
-     */
-    getIntegrationIdentity(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, IntegrationIdentity> {
-        const method = this.methods[28], opt = this._transport.mergeOptions(options);
-        return stackIntercept<GetOptions, IntegrationIdentity>("unary", this._transport, method, opt, input);
-    }
-    /**
-     * ListIntegrationIdentity lists IntegrationIdentities.
-     * IntegrationIdentities are entirely managed by the Cluster and can only be
-     * read.
-     *
-     * @generated from protobuf rpc: ListIntegrationIdentity
-     */
-    listIntegrationIdentity(input: ListIntegrationIdentityOptions, options?: RpcOptions): UnaryCall<ListIntegrationIdentityOptions, IntegrationIdentityList> {
-        const method = this.methods[29], opt = this._transport.mergeOptions(options);
-        return stackIntercept<ListIntegrationIdentityOptions, IntegrationIdentityList>("unary", this._transport, method, opt, input);
-    }
-    /**
      * ResolveIntegrationIdentity reports how an external actor of an
      * Integration is currently resolved to a Cluster User. It is a diagnostic
      * method that does not change the access state of the Cluster. It does,
@@ -598,26 +556,26 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
      * @generated from protobuf rpc: ResolveIntegrationIdentity
      */
     resolveIntegrationIdentity(input: ResolveIntegrationIdentityRequest, options?: RpcOptions): UnaryCall<ResolveIntegrationIdentityRequest, ResolveIntegrationIdentityResponse> {
-        const method = this.methods[30], opt = this._transport.mergeOptions(options);
+        const method = this.methods[28], opt = this._transport.mergeOptions(options);
         return stackIntercept<ResolveIntegrationIdentityRequest, ResolveIntegrationIdentityResponse>("unary", this._transport, method, opt, input);
     }
     /**
-     * GetIntegrationBinding retrieves a specific IntegrationBinding
+     * GetClusterConfig retrieves the access ClusterConfig
      *
-     * @generated from protobuf rpc: GetIntegrationBinding
+     * @generated from protobuf rpc: GetClusterConfig
      */
-    getIntegrationBinding(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, IntegrationBinding> {
-        const method = this.methods[31], opt = this._transport.mergeOptions(options);
-        return stackIntercept<GetOptions, IntegrationBinding>("unary", this._transport, method, opt, input);
+    getClusterConfig(input: GetClusterConfigRequest, options?: RpcOptions): UnaryCall<GetClusterConfigRequest, ClusterConfig> {
+        const method = this.methods[29], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetClusterConfigRequest, ClusterConfig>("unary", this._transport, method, opt, input);
     }
     /**
-     * ListIntegrationBinding lists IntegrationBindings
+     * UpdateClusterConfig updates the access ClusterConfig
      *
-     * @generated from protobuf rpc: ListIntegrationBinding
+     * @generated from protobuf rpc: UpdateClusterConfig
      */
-    listIntegrationBinding(input: ListIntegrationBindingOptions, options?: RpcOptions): UnaryCall<ListIntegrationBindingOptions, IntegrationBindingList> {
-        const method = this.methods[32], opt = this._transport.mergeOptions(options);
-        return stackIntercept<ListIntegrationBindingOptions, IntegrationBindingList>("unary", this._transport, method, opt, input);
+    updateClusterConfig(input: ClusterConfig, options?: RpcOptions): UnaryCall<ClusterConfig, ClusterConfig> {
+        const method = this.methods[30], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ClusterConfig, ClusterConfig>("unary", this._transport, method, opt, input);
     }
 }
 /**

@@ -36,14 +36,13 @@ export type ResourceEnterpriseName =
   | "DirectoryProvider";
 
 export type ResourceAccessName =
+  | "ClusterConfig"
   | "Catalog"
   | "Policy"
   | "Request"
   | "Review"
   | "Secret"
-  | "Integration"
-  | "IntegrationIdentity"
-  | "IntegrationBinding";
+  | "Integration";
 
 export type ResourceCordiumName =
   | "Workspace"
@@ -91,8 +90,6 @@ const accessResourcePathMap = new Map<string, ResourceAccessName>([
   ["reviews", "Review"],
   ["secrets", "Secret"],
   ["integrations", "Integration"],
-  ["integrationidentities", "IntegrationIdentity"],
-  ["integrationbindings", "IntegrationBinding"],
 ]);
 
 const cordiumResourcePathMap = new Map<string, ResourceCordiumName>([

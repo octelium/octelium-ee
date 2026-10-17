@@ -2,7 +2,10 @@ import {
   buildErrorReport,
   ErrorReport,
   formatErrorReport,
+  isChunkLoadError,
+  isChunkLoadMessage,
   logAppError,
+  reloadForNewVersion,
 } from "@/utils/errors";
 import { Button } from "@mantine/core";
 import {
@@ -12,6 +15,7 @@ import {
   Home,
   RefreshCw,
   RotateCcw,
+  Sparkles,
   TriangleAlert,
 } from "lucide-react";
 import * as React from "react";
@@ -58,21 +62,48 @@ export const ErrorScreen = (props: {
   const [expanded, setExpanded] = React.useState(false);
   const navigate = useNavigate();
   const rpcError = describeRpcError(props.report.message);
+  const isNewVersion = isChunkLoadMessage(props.report.message);
 
   return (
     <div className="flex w-full flex-col gap-4 py-4" role="alert">
-      <section className="overflow-hidden rounded-xl border border-red-200 bg-white shadow-card">
-        <header className="flex items-start gap-3 border-b border-red-100 bg-red-50/60 px-4 py-4 sm:px-5">
-          <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-white text-red-600">
-            <TriangleAlert size={18} strokeWidth={2.2} />
+      <section
+        className={twMerge(
+          "overflow-hidden rounded-xl border bg-white shadow-card",
+          isNewVersion ? "border-blue-200" : "border-red-200",
+        )}
+      >
+        <header
+          className={twMerge(
+            "flex items-start gap-3 border-b px-4 py-4 sm:px-5",
+            isNewVersion
+              ? "border-blue-100 bg-blue-50/60"
+              : "border-red-100 bg-red-50/60",
+          )}
+        >
+          <span
+            className={twMerge(
+              "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-white",
+              isNewVersion
+                ? "border-blue-200 text-blue-600"
+                : "border-red-200 text-red-600",
+            )}
+          >
+            {isNewVersion ? (
+              <Sparkles size={18} strokeWidth={2.2} />
+            ) : (
+              <TriangleAlert size={18} strokeWidth={2.2} />
+            )}
           </span>
           <div className="min-w-0 flex-1">
             <h1 className="text-base font-bold tracking-[-0.01em] text-slate-950">
-              This page hit an unexpected error
+              {isNewVersion
+                ? "A newer version of the Console is available"
+                : "This page hit an unexpected error"}
             </h1>
             <p className="mt-1 text-xs font-normal leading-5 text-slate-600">
-              The rest of the Console still works. The full report below is also
-              printed to the browser console.
+              {isNewVersion
+                ? "The Console was updated while this tab was open, so part of this page could not be loaded. Reload to continue with the latest version."
+                : "The rest of the Console still works. The full report below is also printed to the browser console."}
             </p>
           </div>
         </header>
@@ -89,7 +120,7 @@ export const ErrorScreen = (props: {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {props.onRetry && (
+            {props.onRetry && !isNewVersion && (
               <Button
                 variant="filled"
                 color="ink"
@@ -101,7 +132,8 @@ export const ErrorScreen = (props: {
               </Button>
             )}
             <Button
-              variant="default"
+              variant={isNewVersion ? "filled" : "default"}
+              color={isNewVersion ? "ink" : undefined}
               size="compact-sm"
               leftSection={<RefreshCw size={12} strokeWidth={2.5} />}
               onClick={() => window.location.reload()}
@@ -164,6 +196,8 @@ class Boundary extends React.Component<BoundaryProps, BoundaryState> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
+    if (isChunkLoadError(error)) reloadForNewVersion();
+
     this.setState({
       report: logAppError(error, {
         source: "react",
@@ -212,6 +246,7 @@ export const RouteErrorBoundary = () => {
 
   React.useEffect(() => {
     logAppError(error, { source: "react-router" });
+    if (isChunkLoadError(error)) reloadForNewVersion();
   }, [error]);
 
   return (

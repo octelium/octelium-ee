@@ -44,6 +44,9 @@ const (
 	ResourceService_ListIntegration_FullMethodName               = "/octelium.api.main.visibility.access.v1.ResourceService/ListIntegration"
 	ResourceService_ListIntegrationIdentity_FullMethodName       = "/octelium.api.main.visibility.access.v1.ResourceService/ListIntegrationIdentity"
 	ResourceService_ListIntegrationBinding_FullMethodName        = "/octelium.api.main.visibility.access.v1.ResourceService/ListIntegrationBinding"
+	ResourceService_GetRequestDataPoint_FullMethodName           = "/octelium.api.main.visibility.access.v1.ResourceService/GetRequestDataPoint"
+	ResourceService_ListRequestTop_FullMethodName                = "/octelium.api.main.visibility.access.v1.ResourceService/ListRequestTop"
+	ResourceService_ListReviewTop_FullMethodName                 = "/octelium.api.main.visibility.access.v1.ResourceService/ListReviewTop"
 )
 
 // ResourceServiceClient is the client API for ResourceService service.
@@ -66,6 +69,9 @@ type ResourceServiceClient interface {
 	ListIntegration(ctx context.Context, in *ListIntegrationOptions, opts ...grpc.CallOption) (*accessv1.IntegrationList, error)
 	ListIntegrationIdentity(ctx context.Context, in *ListIntegrationIdentityOptions, opts ...grpc.CallOption) (*accessv1.IntegrationIdentityList, error)
 	ListIntegrationBinding(ctx context.Context, in *ListIntegrationBindingOptions, opts ...grpc.CallOption) (*accessv1.IntegrationBindingList, error)
+	GetRequestDataPoint(ctx context.Context, in *GetRequestDataPointRequest, opts ...grpc.CallOption) (*GetRequestDataPointResponse, error)
+	ListRequestTop(ctx context.Context, in *ListRequestTopRequest, opts ...grpc.CallOption) (*ListTopResponse, error)
+	ListReviewTop(ctx context.Context, in *ListReviewTopRequest, opts ...grpc.CallOption) (*ListTopResponse, error)
 }
 
 type resourceServiceClient struct {
@@ -236,6 +242,36 @@ func (c *resourceServiceClient) ListIntegrationBinding(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *resourceServiceClient) GetRequestDataPoint(ctx context.Context, in *GetRequestDataPointRequest, opts ...grpc.CallOption) (*GetRequestDataPointResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRequestDataPointResponse)
+	err := c.cc.Invoke(ctx, ResourceService_GetRequestDataPoint_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) ListRequestTop(ctx context.Context, in *ListRequestTopRequest, opts ...grpc.CallOption) (*ListTopResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTopResponse)
+	err := c.cc.Invoke(ctx, ResourceService_ListRequestTop_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) ListReviewTop(ctx context.Context, in *ListReviewTopRequest, opts ...grpc.CallOption) (*ListTopResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTopResponse)
+	err := c.cc.Invoke(ctx, ResourceService_ListReviewTop_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ResourceServiceServer is the server API for ResourceService service.
 // All implementations must embed UnimplementedResourceServiceServer
 // for forward compatibility.
@@ -256,6 +292,9 @@ type ResourceServiceServer interface {
 	ListIntegration(context.Context, *ListIntegrationOptions) (*accessv1.IntegrationList, error)
 	ListIntegrationIdentity(context.Context, *ListIntegrationIdentityOptions) (*accessv1.IntegrationIdentityList, error)
 	ListIntegrationBinding(context.Context, *ListIntegrationBindingOptions) (*accessv1.IntegrationBindingList, error)
+	GetRequestDataPoint(context.Context, *GetRequestDataPointRequest) (*GetRequestDataPointResponse, error)
+	ListRequestTop(context.Context, *ListRequestTopRequest) (*ListTopResponse, error)
+	ListReviewTop(context.Context, *ListReviewTopRequest) (*ListTopResponse, error)
 	mustEmbedUnimplementedResourceServiceServer()
 }
 
@@ -313,6 +352,15 @@ func (UnimplementedResourceServiceServer) ListIntegrationIdentity(context.Contex
 }
 func (UnimplementedResourceServiceServer) ListIntegrationBinding(context.Context, *ListIntegrationBindingOptions) (*accessv1.IntegrationBindingList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListIntegrationBinding not implemented")
+}
+func (UnimplementedResourceServiceServer) GetRequestDataPoint(context.Context, *GetRequestDataPointRequest) (*GetRequestDataPointResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRequestDataPoint not implemented")
+}
+func (UnimplementedResourceServiceServer) ListRequestTop(context.Context, *ListRequestTopRequest) (*ListTopResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRequestTop not implemented")
+}
+func (UnimplementedResourceServiceServer) ListReviewTop(context.Context, *ListReviewTopRequest) (*ListTopResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListReviewTop not implemented")
 }
 func (UnimplementedResourceServiceServer) mustEmbedUnimplementedResourceServiceServer() {}
 func (UnimplementedResourceServiceServer) testEmbeddedByValue()                         {}
@@ -623,6 +671,60 @@ func _ResourceService_ListIntegrationBinding_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ResourceService_GetRequestDataPoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRequestDataPointRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).GetRequestDataPoint(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_GetRequestDataPoint_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).GetRequestDataPoint(ctx, req.(*GetRequestDataPointRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_ListRequestTop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRequestTopRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).ListRequestTop(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_ListRequestTop_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).ListRequestTop(ctx, req.(*ListRequestTopRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_ListReviewTop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListReviewTopRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).ListReviewTop(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_ListReviewTop_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).ListReviewTop(ctx, req.(*ListReviewTopRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ResourceService_ServiceDesc is the grpc.ServiceDesc for ResourceService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -693,6 +795,18 @@ var ResourceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListIntegrationBinding",
 			Handler:    _ResourceService_ListIntegrationBinding_Handler,
+		},
+		{
+			MethodName: "GetRequestDataPoint",
+			Handler:    _ResourceService_GetRequestDataPoint_Handler,
+		},
+		{
+			MethodName: "ListRequestTop",
+			Handler:    _ResourceService_ListRequestTop_Handler,
+		},
+		{
+			MethodName: "ListReviewTop",
+			Handler:    _ResourceService_ListReviewTop_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

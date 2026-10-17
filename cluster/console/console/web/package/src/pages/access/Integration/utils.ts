@@ -175,22 +175,62 @@ export const integrationSecretNames = (item: AccessP.Integration): string[] => {
   return [...new Set(names.filter((name): name is string => !!name))];
 };
 
+export type InboundEndpoint = {
+  key: string;
+  label: string;
+  url: string;
+  hint: string;
+  isOptional?: boolean;
+};
+
 export const getInboundEndpoints = (
   item: AccessP.Integration,
   domain: string,
-): string[] => {
+): InboundEndpoint[] => {
   const id = item.status?.id;
   const segment = getProviderSegment(item);
   if (!id || !segment) return [];
   const base = `https://public.octelium.${domain}/integration/v1/callback/${id}/${segment}`;
   return match(segment)
     .with("slack", () => [
-      `${base}/interactions`,
-      `${base}/commands`,
-      `${base}/events`,
+      {
+        key: "interactions",
+        label: "Interactivity request URL",
+        url: `${base}/interactions`,
+        hint: "Slack app → Interactivity & Shortcuts → Request URL. Required for the Approve and Reject buttons.",
+      },
+      {
+        key: "commands",
+        label: "Slash command request URL",
+        url: `${base}/commands`,
+        hint: "Slack app → Slash Commands → your command → Request URL. Lets people request access from Slack.",
+        isOptional: true,
+      },
+      {
+        key: "events",
+        label: "Event subscriptions request URL",
+        url: `${base}/events`,
+        hint: "Slack app → Event Subscriptions → Request URL. Not needed for reviews.",
+        isOptional: true,
+      },
     ])
-    .with("jira", () => [`${base}/webhook`])
-    .otherwise(() => [base]);
+    .with("jira", () => [
+      {
+        key: "webhook",
+        label: "Jira webhook URL",
+        url: `${base}/webhook`,
+        hint: "Jira settings → System → WebHooks → URL. Required to accept decisions made by transitioning issues.",
+      },
+    ])
+    .otherwise(() => [
+      {
+        key: "inbound",
+        label: "Inbound URL",
+        url: base,
+        hint: "Your system POSTs signed decisions and requests to this URL. Requires an inbound secret.",
+        isOptional: true,
+      },
+    ]);
 };
 
 const syncTime = (item: AccessP.Integration_Status_Synchronization) => {
@@ -233,3 +273,56 @@ export const getIntegrationPresentation = (item: AccessP.Integration) => {
     isSynchronizing,
   };
 };
+
+export const getDeliveryStateMeta = (
+  state?: AccessP.IntegrationBinding_Status_State,
+): { label: string; tone: ResourceStatusTone } =>
+  match(state)
+    .with(AccessP.IntegrationBinding_Status_State.PENDING, () => ({
+      label: "Pending",
+      tone: "warning" as const,
+    }))
+    .with(AccessP.IntegrationBinding_Status_State.READY, () => ({
+      label: "Delivered",
+      tone: "success" as const,
+    }))
+    .with(AccessP.IntegrationBinding_Status_State.DEGRADED, () => ({
+      label: "Failing",
+      tone: "danger" as const,
+    }))
+    .with(AccessP.IntegrationBinding_Status_State.CLOSED, () => ({
+      label: "Closed",
+      tone: "neutral" as const,
+    }))
+    .otherwise(() => ({ label: "Unknown", tone: "neutral" as const }));
+
+export const getDeliveryPurposeLabel = (
+  purpose?: AccessP.IntegrationBinding_Status_Purpose,
+): string =>
+  match(purpose)
+    .with(
+      AccessP.IntegrationBinding_Status_Purpose.REVIEW_SURFACE,
+      () => "Review request",
+    )
+    .with(
+      AccessP.IntegrationBinding_Status_Purpose.NOTIFICATION,
+      () => "Outcome notification",
+    )
+    .otherwise(() => "Delivery");
+
+export const isDeliveryOutOfDate = (item: AccessP.IntegrationBinding) =>
+  !!item.status &&
+  item.status.desiredRevision !== item.status.appliedRevision;
+
+export const isDeliveryFailing = (item: AccessP.IntegrationBinding) =>
+  (item.status?.attempts ?? 0) > 0;
+
+export const getIdentitySourceLabel = (
+  source?: AccessP.IntegrationIdentity_Status_Source,
+): string =>
+  match(source)
+    .with(
+      AccessP.IntegrationIdentity_Status_Source.EMAIL_DISCOVERY,
+      () => "Matched by email",
+    )
+    .otherwise(() => "Unknown");

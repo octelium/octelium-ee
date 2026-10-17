@@ -28,6 +28,7 @@ import (
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcordiumv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
 )
@@ -1094,68 +1095,25 @@ func (s *srvAccess) ListPolicy(ctx context.Context, req *vaccessv1.ListPolicyOpt
 				req.Effect.String()))
 	}
 
-	if req.UserRef != nil && (req.UserRef.Uid != "" || req.UserRef.Name != "") {
-		if err := apivalidation.CheckObjectRef(req.UserRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+	for _, itm := range []struct {
+		ref    *metav1.ObjectReference
+		parent string
+		field  string
+	}{
+		{ref: req.UserRef, parent: "subject", field: "userRef"},
+		{ref: req.GroupRef, parent: "subject", field: "groupRef"},
+		{ref: req.ServiceRef, parent: "resource", field: "serviceRef"},
+		{ref: req.CatalogRef, parent: "resource", field: "catalogRef"},
+	} {
+		if itm.ref == nil || (itm.ref.Uid == "" && itm.ref.Name == "") {
+			continue
+		}
+
+		if err := apivalidation.CheckObjectRef(itm.ref, &apivalidation.CheckGetOptionsOpts{}); err != nil {
 			return nil, err
 		}
 
-		val := req.UserRef.Uid
-		pth := "$.condition.subject.userRef.uid"
-		if val == "" {
-			val = req.UserRef.Name
-			pth = "$.condition.subject.userRef.name"
-		}
-
-		doListReq.filters = append(doListReq.filters,
-			goqu.L(fmt.Sprintf(`len(list_filter(CAST(json_extract(rsc, '$.spec.rules') AS JSON[]), x -> json_extract_string(x, '%s') = ?)) > 0`, pth), val))
-	}
-
-	if req.GroupRef != nil && (req.GroupRef.Uid != "" || req.GroupRef.Name != "") {
-		if err := apivalidation.CheckObjectRef(req.GroupRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
-			return nil, err
-		}
-
-		val := req.GroupRef.Uid
-		pth := "$.condition.subject.groupRef.uid"
-		if val == "" {
-			val = req.GroupRef.Name
-			pth = "$.condition.subject.groupRef.name"
-		}
-
-		doListReq.filters = append(doListReq.filters,
-			goqu.L(fmt.Sprintf(`len(list_filter(CAST(json_extract(rsc, '$.spec.rules') AS JSON[]), x -> json_extract_string(x, '%s') = ?)) > 0`, pth), val))
-	}
-
-	if req.ServiceRef != nil && (req.ServiceRef.Uid != "" || req.ServiceRef.Name != "") {
-		if err := apivalidation.CheckObjectRef(req.ServiceRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
-			return nil, err
-		}
-
-		val := req.ServiceRef.Uid
-		pth := "$.condition.resource.serviceRef.uid"
-		if val == "" {
-			val = req.ServiceRef.Name
-			pth = "$.condition.resource.serviceRef.name"
-		}
-
-		doListReq.filters = append(doListReq.filters,
-			goqu.L(fmt.Sprintf(`len(list_filter(CAST(json_extract(rsc, '$.spec.rules') AS JSON[]), x -> json_extract_string(x, '%s') = ?)) > 0`, pth), val))
-	}
-
-	if req.CatalogRef != nil && (req.CatalogRef.Uid != "" || req.CatalogRef.Name != "") {
-		if err := apivalidation.CheckObjectRef(req.CatalogRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
-			return nil, err
-		}
-
-		val := req.CatalogRef.Uid
-		pth := "$.condition.resource.catalogRef.uid"
-		if val == "" {
-			val = req.CatalogRef.Name
-			pth = "$.condition.resource.catalogRef.name"
-		}
-
-		doListReq.filters = append(doListReq.filters,
-			goqu.L(fmt.Sprintf(`len(list_filter(CAST(json_extract(rsc, '$.spec.rules') AS JSON[]), x -> json_extract_string(x, '%s') = ?)) > 0`, pth), val))
+		doListReq.filters = append(doListReq.filters, getPolicyRuleConditionRefFilter(itm.ref, itm.parent, itm.field))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)
@@ -1217,7 +1175,7 @@ func (s *srvAccess) ListRequest(ctx context.Context, req *vaccessv1.ListRequestO
 	if err != nil {
 		return nil, err
 	}
-	doListReq.filters, err = appendRefFilter(doListReq.filters, req.ServiceRef, nil, "spec.resource.serviceRef")
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.ServiceRef, serviceRefCheckOpts(), "spec.resource.serviceRef")
 	if err != nil {
 		return nil, err
 	}
@@ -1282,6 +1240,37 @@ func (s *srvAccess) ListRequest(ctx context.Context, req *vaccessv1.ListRequestO
 			goqu.L(fmt.Sprintf(`%s < ?`, colSpecDeadline), time.Now().UTC()))
 	}
 
+	if req.Effect != accessv1.Policy_Spec_Rule_EFFECT_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusRuleEffect).Eq(req.Effect.String()))
+	}
+
+	if req.IsUnmatched {
+		doListReq.filters = append(doListReq.filters, goqu.L(getRequestUnmatchedExpr()))
+	}
+
+	if req.IsExpiringSoon {
+		now := time.Now().UTC()
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(getRequestExpiringSoonExpr(), now, now.Add(requestExpiringSoonDuration)))
+	}
+
+	if req.IsPendingStale {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(getRequestPendingStaleExpr(), time.Now().UTC().Add(-requestPendingStaleDuration)))
+	}
+
+	if req.IsOnBehalf {
+		doListReq.filters = append(doListReq.filters, goqu.L(getRequestOnBehalfExpr()))
+	}
+
+	if req.OriginType != accessv1.Origin_TYPE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusOriginType).Eq(req.OriginType.String()))
+	}
+
+	doListReq.orderBy = getRequestOrderByExpr(req.OrderBy)
+
 	ret, err := s.s.doList(ctx, doListReq)
 	if err != nil {
 		return nil, err
@@ -1307,6 +1296,11 @@ func (s *srvAccess) ListReview(ctx context.Context, req *vaccessv1.ListReviewOpt
 	doListReq.filters, err = appendRefFilter(doListReq.filters, req.RequestRef, nil, "status.requestRef")
 	if err != nil {
 		return nil, err
+	}
+
+	if req.OriginType != accessv1.Origin_TYPE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusOriginType).Eq(req.OriginType.String()))
 	}
 
 	if req.Decision != accessv1.Review_Spec_DECISION_UNSET {
@@ -1482,6 +1476,38 @@ func (s *srvAccess) ListIntegrationBinding(ctx context.Context, req *vaccessv1.L
 	}
 
 	return ret.(*accessv1.IntegrationBindingList), nil
+}
+
+func getRequestOrderByExpr(orderBy *vaccessv1.ListRequestOptions_OrderBy) exp.OrderedExpression {
+	var column string
+	switch orderBy.GetType() {
+	case vaccessv1.ListRequestOptions_OrderBy_ACCESS_ENDS_AT:
+		column = colStatusAccessEndsAt
+	case vaccessv1.ListRequestOptions_OrderBy_APPROVAL_START_AT:
+		column = colStatusApprovalStartAt
+	case vaccessv1.ListRequestOptions_OrderBy_DEADLINE:
+		column = colSpecDeadline
+	default:
+		return nil
+	}
+
+	if orderBy.GetMode() == vmetav1.CommonListOptions_OrderBy_DESC {
+		return goqu.L(column).Desc().NullsLast()
+	}
+
+	return goqu.L(column).Asc().NullsLast()
+}
+
+func (s *srvAccess) GetRequestDataPoint(ctx context.Context, req *vaccessv1.GetRequestDataPointRequest) (*vaccessv1.GetRequestDataPointResponse, error) {
+	return s.s.getRequestDataPoint(ctx, req)
+}
+
+func (s *srvAccess) ListRequestTop(ctx context.Context, req *vaccessv1.ListRequestTopRequest) (*vaccessv1.ListTopResponse, error) {
+	return s.s.listRequestTop(ctx, req)
+}
+
+func (s *srvAccess) ListReviewTop(ctx context.Context, req *vaccessv1.ListReviewTopRequest) (*vaccessv1.ListTopResponse, error) {
+	return s.s.listReviewTop(ctx, req)
 }
 
 type srvClusterAccess struct {

@@ -1,512 +1,677 @@
 import * as AccessC from "@/apis/accessv1/accessv1";
-import { ObjectReference } from "@/apis/metav1/metav1";
-import { ListIntegrationBindingOptions } from "@/apis/visibilityv1/access/vaccessv1";
+import { Timestamp } from "@/apis/google/protobuf/timestamp";
+import {
+  ListIntegrationBindingOptions,
+  ListReviewOptions,
+} from "@/apis/visibilityv1/access/vaccessv1";
 import { CommonListOptions } from "@/apis/visibilityv1/meta/vmetav1";
 import InfoItem from "@/components/InfoItem";
-import Label from "@/components/Label";
-import { ResourceListLabel } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
+import { twMerge } from "@/lib/utils";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { getClientVisibilityAccess } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
-import { twMerge } from "@/lib/utils";
-import { getAudienceLabel } from "../Integration/utils";
 import {
-  getPurposeLabel,
-  getStateMeta as getBindingStateMeta,
-} from "../IntegrationBinding/utils";
+  AlertTriangle,
+  ArrowUpRight,
+  Ban,
+  BellRing,
+  CalendarClock,
+  Check,
+  CircleSlash,
+  Clock3,
+  Hourglass,
+  Inbox,
+  KeyRound,
+  Layers,
+  Server,
+  Shield,
+  User,
+  X,
+} from "lucide-react";
+import * as React from "react";
+import {
+  EffectBadge,
+  EmptyNote,
+  formatDurationShort,
+  formatSeconds,
+  normalizeRef,
+  RefChip,
+  TONE_SOFT,
+  ToneBadge,
+} from "../common";
+import {
+  getAudienceLabel,
+  getDeliveryPurposeLabel,
+  getDeliveryStateMeta,
+  isDeliveryFailing,
+} from "../Integration/utils";
 import { OriginValue, hasOrigin } from "../Origin";
-import { formatDuration, getStatusMeta, getUrgencyLabel } from "./utils";
+import { GrantSummary, StepDecision, StepState, StepTimeline } from "../rules";
+import {
+  getApprovalRequirementLabel,
+  getStatusMeta,
+  getStatusTone,
+  getUrgencyColor,
+  getUrgencyLabel,
+} from "./utils";
 
-const PRESENTATION_ITEMS = 25;
+const toDate = (ts?: Timestamp) => (ts ? Timestamp.toDate(ts) : undefined);
 
-const effectLabel = (effect?: AccessC.Policy_Spec_Rule_Effect): string =>
-  effect === AccessC.Policy_Spec_Rule_Effect.DENY
-    ? "Deny"
-    : effect === AccessC.Policy_Spec_Rule_Effect.REVIEW
-      ? "Review"
-      : effect === AccessC.Policy_Spec_Rule_Effect.AUTO_APPROVE
-        ? "Auto approve"
-        : "Unset";
+const useNow = () => {
+  const [now, setNow] = React.useState(() => Date.now());
+  React.useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  return now;
+};
 
-const ruleSurfaceCount = (rule: AccessC.Policy_Spec_Rule): number =>
-  rule.notifications.length +
-  (rule.action?.type.oneofKind === "review"
-    ? rule.action.type.review.steps.reduce(
-        (total, step) => total + step.surfaces.length,
-        0,
-      )
-    : 0);
+const reviewSteps = (item: AccessC.Request) =>
+  item.status?.rule?.action?.type.oneofKind === "review"
+    ? item.status.rule.action.type.review.steps
+    : [];
 
-const Presentations = (props: { item: AccessC.Request }) => {
-  const identity = props.item.metadata?.uid || props.item.metadata?.name;
-  const query = useQuery({
-    queryKey: ["access.integrationBinding.request", identity],
-    queryFn: async () =>
+const wasApproved = (item: AccessC.Request) =>
+  item.status?.state?.status === AccessC.Request_Status_State_Status.APPROVED ||
+  (item.status?.lastStates ?? []).some(
+    (state) => state.status === AccessC.Request_Status_State_Status.APPROVED,
+  );
+
+const resourceRefOf = (item: AccessC.Request) => {
+  const type = item.spec?.resource?.type;
+  if (type?.oneofKind === "serviceRef")
+    return normalizeRef(type.serviceRef, "core/v1", "Service");
+  if (type?.oneofKind === "catalog")
+    return normalizeRef(type.catalog.catalogRef, "access/v1", "Catalog");
+  return undefined;
+};
+
+const subjectRefOf = (item: AccessC.Request) =>
+  item.spec?.subject?.type.oneofKind === "userRef"
+    ? normalizeRef(item.spec.subject.type.userRef, "core/v1", "User")
+    : undefined;
+
+const useRequestReviews = (item: AccessC.Request) =>
+  useQuery({
+    queryKey: ["access", "request", item.metadata?.uid, "reviews"],
+    enabled: !!item.metadata?.uid,
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
+    queryFn: async ({ signal }) =>
+      (
+        await getClientVisibilityAccess().listReview(
+          ListReviewOptions.create({
+            common: CommonListOptions.create({ itemsPerPage: 100 }),
+            requestRef: getResourceRef(item),
+          }),
+          { abort: signal },
+        )
+      ).response,
+  });
+
+const useRequestDeliveries = (item: AccessC.Request) =>
+  useQuery({
+    queryKey: ["access", "request", item.metadata?.uid, "deliveries"],
+    enabled: !!item.metadata?.uid,
+    staleTime: 15_000,
+    refetchOnWindowFocus: false,
+    queryFn: async ({ signal }) =>
       (
         await getClientVisibilityAccess().listIntegrationBinding(
           ListIntegrationBindingOptions.create({
-            common: CommonListOptions.create({
-              itemsPerPage: PRESENTATION_ITEMS,
-            }),
-            requestRef: getResourceRef(props.item),
+            common: CommonListOptions.create({ itemsPerPage: 50 }),
+            requestRef: getResourceRef(item),
           }),
+          { abort: signal },
         )
       ).response,
-    enabled: !!identity,
-    staleTime: 15_000,
-    refetchOnWindowFocus: false,
   });
 
-  if (query.isError) {
-    return (
-      <span className="text-xs font-normal text-slate-500">
-        The Integration presentations could not be loaded
-      </span>
-    );
-  }
-  if (query.isLoading) {
-    return <span className="text-xs font-normal text-slate-500">Loading…</span>;
-  }
+const StatusHero = (props: { item: AccessC.Request }) => {
+  const { item } = props;
+  const now = useNow();
+  const status = item.status;
+  const state = status?.state?.status;
+  const tone = getStatusTone(state);
+  const meta = getStatusMeta(state);
+  const steps = reviewSteps(item);
+  const currentIndex = Math.min(status?.review?.currentStep ?? 0, Math.max(steps.length - 1, 0));
+  const current = steps[currentIndex];
+  const lastSteps = status?.review?.lastSteps ?? [];
 
-  const items = query.data?.items ?? [];
-  if (items.length === 0) {
-    return (
-      <span className="text-xs font-normal text-slate-500">
-        This Request has not been presented on any Integration
-      </span>
-    );
+  let icon = <Clock3 size={18} strokeWidth={2.2} />;
+  let title: React.ReactNode = meta.label;
+  let detail: React.ReactNode = null;
+  let progress: number | undefined;
+
+  switch (state) {
+    case AccessC.Request_Status_State_Status.PENDING: {
+      icon = <Hourglass size={18} strokeWidth={2.2} />;
+      if (current) {
+        const startedAt = toDate(status?.review?.currentStepStartedAt);
+        const timeoutSeconds = current.timeout
+          ? formatDurationShort(current.timeout)
+          : undefined;
+        title = (
+          <>
+            Waiting on {current.name || `step ${currentIndex + 1}`}
+            {steps.length > 1 && (
+              <span className="font-normal text-slate-500">
+                {" "}
+                · step {currentIndex + 1} of {steps.length}
+              </span>
+            )}
+          </>
+        );
+        detail = (
+          <>
+            {getApprovalRequirementLabel(current)}
+            {startedAt && (
+              <>
+                {" · "}waiting for{" "}
+                {formatSeconds((now - startedAt.getTime()) / 1000)}
+              </>
+            )}
+            {timeoutSeconds && ` · times out after ${timeoutSeconds}`}
+          </>
+        );
+      } else {
+        title = "Being evaluated";
+        detail = "The Cluster is matching the request against the access Policies.";
+      }
+      break;
+    }
+    case AccessC.Request_Status_State_Status.APPROVED: {
+      icon = <KeyRound size={18} strokeWidth={2.2} />;
+      const endsAt = toDate(status?.accessEndsAt);
+      const startAt = toDate(status?.approvalEndAt ?? status?.state?.createdAt);
+      title = "Access granted";
+      if (endsAt) {
+        const left = (endsAt.getTime() - now) / 1000;
+        detail = (
+          <>
+            {left > 0 ? `${formatSeconds(left)} left` : "Ending now"} · until{" "}
+            {endsAt.toLocaleString()}
+          </>
+        );
+        if (startAt) {
+          const total = endsAt.getTime() - startAt.getTime();
+          progress =
+            total > 0
+              ? Math.max(0, Math.min(100, ((endsAt.getTime() - now) / total) * 100))
+              : 0;
+        }
+      } else {
+        detail = "No end is set for this access.";
+      }
+      break;
+    }
+    case AccessC.Request_Status_State_Status.REJECTED: {
+      icon = <X size={18} strokeWidth={2.4} />;
+      const rejected = lastSteps.find(
+        (step) => step.decision === AccessC.Review_Spec_Decision.REJECT,
+      );
+      if (!status?.rule) {
+        title = "Rejected · no matching rule";
+        detail = "No rule of any enabled access Policy matched this request.";
+      } else if (status.rule.effect === AccessC.Policy_Spec_Rule_Effect.DENY) {
+        title = "Denied by a rule";
+        detail = `The rule ${status.rule.name} rejects such requests.`;
+      } else if (rejected) {
+        title = (
+          <>
+            Rejected by {rejected.userRef?.name ?? "a reviewer"}
+            {rejected.stepName && (
+              <span className="font-normal text-slate-500">
+                {" "}
+                · step {rejected.stepName}
+              </span>
+            )}
+          </>
+        );
+      } else {
+        title = "Rejected";
+        detail = "The review step timed out or was rejected.";
+      }
+      break;
+    }
+    case AccessC.Request_Status_State_Status.EXPIRED:
+      icon = <CalendarClock size={18} strokeWidth={2.2} />;
+      title = wasApproved(item) ? "Access ended" : "Expired before a decision";
+      detail = wasApproved(item)
+        ? "The granted access reached its end."
+        : "The deadline or a review step timeout passed.";
+      break;
+    case AccessC.Request_Status_State_Status.REVOKED:
+      icon = <Ban size={18} strokeWidth={2.2} />;
+      title = "Revoked";
+      detail = "An administrator revoked this request; any granted access was removed.";
+      break;
+    case AccessC.Request_Status_State_Status.CANCELLED:
+      icon = <CircleSlash size={18} strokeWidth={2.2} />;
+      title = "Cancelled by the requester";
+      break;
   }
 
   return (
-    <div className="w-full overflow-hidden rounded-lg border border-slate-200">
-      {items.map((binding) => {
-        const meta = getBindingStateMeta(binding.status?.state);
-        const integrationRef = binding.status?.integrationRef;
-        return (
-          <div
-            key={binding.metadata!.uid}
-            className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-white px-3 py-2 last:border-0"
-          >
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-              <ResourceListLabel itemRef={getResourceRef(binding)} />
-              {(integrationRef?.name || integrationRef?.uid) && (
-                <ResourceListLabel
-                  itemRef={ObjectReference.create({
-                    ...integrationRef,
-                    apiVersion: integrationRef.apiVersion || "access/v1",
-                    kind: integrationRef.kind || "Integration",
-                  })}
-                />
-              )}
-              <Label size="sm" outlined>
-                {getPurposeLabel(binding.status?.purpose)}
-              </Label>
-              <Label size="sm" outlined>
-                {getAudienceLabel(binding.status?.audience)}
-              </Label>
-            </div>
-            <span className={twMerge("text-xs font-semibold", meta.className)}>
-              {meta.label}
+    <div className="flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-4">
+      <div className="flex items-start gap-3">
+        <span
+          className={twMerge(
+            "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border",
+            TONE_SOFT[tone],
+          )}
+        >
+          {icon}
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="text-base font-bold text-slate-900">{title}</span>
+          {detail && (
+            <span className="text-xs font-normal leading-5 text-slate-600">
+              {detail}
             </span>
-          </div>
-        );
-      })}
+          )}
+          {progress !== undefined && (
+            <span
+              role="progressbar"
+              aria-label="Access time left"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(progress)}
+              className="mt-1 h-1.5 w-full max-w-md overflow-hidden rounded-full bg-slate-100"
+            >
+              <span
+                className="block h-full rounded-full bg-emerald-500"
+                style={{ width: `${progress}%` }}
+              />
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
 
-export const ItemInfo = (props: { item: AccessC.Request }) => {
+const PeopleValue = (props: { item: AccessC.Request }) => {
+  const requester = normalizeRef(props.item.status?.userRef, "core/v1", "User");
+  const subject = subjectRefOf(props.item);
+  const onBehalf = subject && requester && subject.uid !== requester.uid && subject.name !== requester.name;
+  return (
+    <span className="flex flex-wrap items-center gap-1.5">
+      {requester ? <RefChip itemRef={requester} icon={User} /> : <span>Unknown</span>}
+      {onBehalf && (
+        <>
+          <span className="text-xs text-slate-500">for</span>
+          <RefChip itemRef={subject} icon={User} />
+        </>
+      )}
+    </span>
+  );
+};
+
+const Workflow = (props: { item: AccessC.Request }) => {
   const { item } = props;
-  const meta = getStatusMeta(item.status?.state?.status);
+  const reviews = useRequestReviews(item);
+  const steps = reviewSteps(item);
+  const state = item.status?.state?.status;
+  const pending = state === AccessC.Request_Status_State_Status.PENDING;
+  const approved = wasApproved(item);
+  const current = item.status?.review?.currentStep ?? 0;
+
+  const stateOf = (index: number): StepState => {
+    if (approved || index < current) return "done";
+    if (index === current) return pending ? "current" : "stopped";
+    return pending ? "upcoming" : "unreached";
+  };
+
+  const decisionsOf = (index: number): StepDecision[] => {
+    const items = (reviews.data?.items ?? []).filter(
+      (review) => review.status?.stepIndex === index,
+    );
+    if (items.length > 0) {
+      return items.map((review) => ({
+        reviewerRef: normalizeRef(review.status?.userRef, "core/v1", "User"),
+        decision: review.spec?.decision ?? AccessC.Review_Spec_Decision.UNSET,
+        setAt: review.status?.setAt,
+        justification: review.spec?.justification,
+        viaIntegration:
+          review.status?.origin?.type === AccessC.Origin_Type.INTEGRATION
+            ? review.status.origin.integrationRef?.name
+            : undefined,
+      }));
+    }
+    return (item.status?.review?.lastSteps ?? [])
+      .filter((step) => step.stepIndex === index)
+      .map((step) => ({
+        reviewerRef: normalizeRef(step.userRef, "core/v1", "User"),
+        decision: step.decision,
+        setAt: step.setAt,
+      }));
+  };
+
+  return (
+    <StepTimeline
+      steps={steps}
+      stateOf={stateOf}
+      decisionsOf={decisionsOf}
+      showSurfaces
+    />
+  );
+};
+
+const Deliveries = (props: { item: AccessC.Request }) => {
+  const query = useRequestDeliveries(props.item);
+
+  if (query.isLoading)
+    return <span className="block h-10 motion-safe:animate-pulse rounded-lg bg-slate-100" />;
+  if (query.isError)
+    return <EmptyNote>The deliveries could not be loaded.</EmptyNote>;
+
+  const items = query.data?.items ?? [];
+  if (items.length === 0)
+    return (
+      <EmptyNote>
+        This request was not presented on any Integration. The access portal
+        always shows it to its reviewers.
+      </EmptyNote>
+    );
+
+  return (
+    <ul className="flex flex-col divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200">
+      {items.map((binding) => {
+        const status = binding.status;
+        const meta = getDeliveryStateMeta(status?.state);
+        const integrationRef = normalizeRef(status?.integrationRef, "access/v1", "Integration");
+        const failing = isDeliveryFailing(binding);
+        return (
+          <li
+            key={binding.metadata?.uid}
+            className={twMerge("flex flex-col gap-1 px-3 py-2", failing && "bg-red-50/40")}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              {status?.purpose === AccessC.IntegrationBinding_Status_Purpose.NOTIFICATION ? (
+                <BellRing size={12} className="text-slate-500" />
+              ) : (
+                <Inbox size={12} className="text-slate-500" />
+              )}
+              {integrationRef && <RefChip itemRef={integrationRef} />}
+              <span className="text-xs text-slate-600">
+                {getDeliveryPurposeLabel(status?.purpose)} · {getAudienceLabel(status?.audience)}
+                {status?.stepName && ` · step ${status.stepName}`}
+              </span>
+              <span className="ml-auto flex items-center gap-2">
+                {status?.externalURL && (
+                  <a
+                    href={status.externalURL}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="inline-flex items-center gap-0.5 text-micro font-semibold text-blue-700 hover:text-blue-800"
+                  >
+                    Open {status.externalID}
+                    <ArrowUpRight size={11} strokeWidth={2.5} />
+                  </a>
+                )}
+                <ToneBadge tone={meta.tone}>{meta.label}</ToneBadge>
+              </span>
+            </div>
+            {failing && (
+              <span className="flex items-start gap-1.5 pl-5 text-micro text-red-700">
+                <AlertTriangle size={11} className="mt-px shrink-0" />
+                {status?.lastError || "The last delivery failed"} · {status?.attempts} attempts
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+};
+
+const History = (props: { item: AccessC.Request }) => {
+  const status = props.item.status;
+  const states = [...(status?.lastStates ?? [])].reverse();
+  if (status?.state) states.push(status.state);
+  const created = props.item.metadata?.createdAt;
+
+  return (
+    <ol className="flex flex-col gap-1.5">
+      {created && (
+        <li className="flex items-center gap-2 text-xs text-slate-600">
+          <span className="h-2 w-2 rounded-full bg-slate-300" />
+          Created
+          <span className="text-micro text-slate-500">
+            <TimeAgo rfc3339={created} />
+          </span>
+        </li>
+      )}
+      {states.map((state, index) => {
+        const tone = getStatusTone(state.status);
+        return (
+          <li key={`${state.createdAt?.seconds ?? 0}-${index}`} className="flex items-center gap-2 text-xs text-slate-600">
+            <span
+              className={twMerge(
+                "h-2 w-2 rounded-full",
+                tone === "success"
+                  ? "bg-emerald-500"
+                  : tone === "danger"
+                    ? "bg-red-500"
+                    : tone === "warning"
+                      ? "bg-amber-500"
+                      : "bg-slate-400",
+              )}
+            />
+            {getStatusMeta(state.status).label}
+            {state.createdAt && (
+              <span className="text-micro text-slate-500">
+                <TimeAgo rfc3339={state.createdAt} />
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+};
+
+export const ItemInfo = (props: { item: AccessC.Request }) => {
+  const meta = getStatusMeta(props.item.status?.state?.status);
   return (
     <>
       <InfoItem title="State">
         <span className={meta.className}>{meta.label}</span>
       </InfoItem>
       <InfoItem title="Urgency">
-        <span>{getUrgencyLabel(item.spec?.urgency)}</span>
+        <span>{getUrgencyLabel(props.item.spec?.urgency)}</span>
       </InfoItem>
     </>
   );
 };
 
-export default (props: { item: AccessC.Request }) => {
-  const { item } = props;
-  return (
-    <div className="w-full">
-      <ItemInfo item={item} />
-    </div>
-  );
-};
+export default (props: { item: AccessC.Request }) => (
+  <div className="w-full">
+    <ItemInfo item={props.item} />
+  </div>
+);
 
 export const MainInfo = (props: {
   item: AccessC.Request;
 }): ResourceMainInfo => {
   const { item } = props;
   const status = item.status;
-  const meta = getStatusMeta(status?.state?.status);
-  const requesterRef = status?.userRef
-    ? ObjectReference.create({
-        ...status.userRef,
-        apiVersion: status.userRef.apiVersion || "core/v1",
-        kind: status.userRef.kind || "User",
-      })
-    : undefined;
-  const policyRef = status?.policyRef
-    ? ObjectReference.create({
-        ...status.policyRef,
-        apiVersion: status.policyRef.apiVersion || "access/v1",
-        kind: status.policyRef.kind || "Policy",
-      })
-    : undefined;
-  const subjectRef =
-    item.spec?.subject?.type?.oneofKind === "userRef"
-      ? item.spec.subject.type.userRef
-      : undefined;
-  const resourceRef =
-    item.spec?.resource?.type?.oneofKind === "serviceRef"
-      ? ObjectReference.create({
-          ...item.spec.resource.type.serviceRef,
-          apiVersion:
-            item.spec.resource.type.serviceRef.apiVersion || "core/v1",
-          kind: item.spec.resource.type.serviceRef.kind || "Service",
-        })
-      : item.spec?.resource?.type?.oneofKind === "catalog"
-        ? ObjectReference.create({
-            ...item.spec.resource.type.catalog.catalogRef,
-            apiVersion:
-              item.spec.resource.type.catalog.catalogRef?.apiVersion ||
-              "access/v1",
-            kind:
-              item.spec.resource.type.catalog.catalogRef?.kind || "Catalog",
-          })
-        : undefined;
+  const resourceRef = resourceRefOf(item);
+  const policyRef = normalizeRef(status?.policyRef, "access/v1", "Policy");
+  const urgency = item.spec?.urgency ?? AccessC.Request_Spec_Urgency.URGENCY_UNSET;
+  const steps = reviewSteps(item);
+  const deadline = toDate(item.spec?.deadline);
+  const overdue =
+    !!deadline &&
+    deadline.getTime() < Date.now() &&
+    status?.state?.status === AccessC.Request_Status_State_Status.PENDING;
+  const policyTriggerRef = normalizeRef(status?.policyTriggerRef, "core/v1", "PolicyTrigger");
 
   return {
+    status: {
+      label: getStatusMeta(status?.state?.status).label,
+      tone: getStatusTone(status?.state?.status),
+    },
+    header: <StatusHero item={item} />,
+    groupOrder: ["Request", "Review workflow", "Decision", "Delivered to", "History"],
     items: [
       {
-        label: "State",
+        label: "Who",
+        primary: true,
+        value: <PeopleValue item={item} />,
+      },
+      {
+        label: "Resource",
+        primary: true,
+        value: resourceRef ? (
+          <RefChip
+            itemRef={resourceRef}
+            icon={resourceRef.kind === "Catalog" ? Layers : Server}
+          />
+        ) : (
+          "Unknown"
+        ),
+      },
+      {
+        label: "Duration",
+        primary: true,
         value: (
-          <span className="flex items-center gap-2">
-            <span className={twMerge("text-sm font-semibold", meta.className)}>
-              {meta.label}
+          <span className="flex flex-wrap items-baseline gap-1.5">
+            <span className="font-semibold">
+              {formatDurationShort(status?.effectiveDuration ?? item.spec?.duration, "Default")}
             </span>
-            {status?.state?.createdAt && (
-              <span className="text-xs font-normal text-slate-500">
-                <TimeAgo rfc3339={status.state.createdAt} />
-              </span>
-            )}
+            {item.spec?.duration &&
+              status?.effectiveDuration &&
+              formatDurationShort(item.spec.duration) !==
+                formatDurationShort(status.effectiveDuration) && (
+                <span className="text-xs text-slate-500">
+                  capped from {formatDurationShort(item.spec.duration)}
+                </span>
+              )}
           </span>
         ),
       },
-
       {
         label: "Urgency",
+        primary: true,
         value: (
-          <span className="text-sm font-semibold text-slate-700">
-            {getUrgencyLabel(item.spec?.urgency)}
+          <span className="inline-flex items-center gap-1.5 font-semibold" style={{ color: getUrgencyColor(urgency) }}>
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: getUrgencyColor(urgency) }}
+            />
+            {getUrgencyLabel(urgency)}
           </span>
         ),
       },
-
-      ...(requesterRef?.name || requesterRef?.uid
-        ? [
-            {
-              label: "Requester",
-              value: (
-                <ResourceListLabel
-                  label="User"
-                  itemRef={requesterRef}
-                ></ResourceListLabel>
-              ),
-            },
-          ]
-        : []),
-
-      ...(subjectRef?.name || subjectRef?.uid
-        ? [
-            {
-              label: "Subject",
-              value: (
-                <ResourceListLabel
-                  label="User"
-                  itemRef={ObjectReference.create({
-                    ...subjectRef,
-                    apiVersion: subjectRef.apiVersion || "core/v1",
-                    kind: subjectRef.kind || "User",
-                  })}
-                />
-              ),
-            },
-          ]
-        : []),
-
-      ...(resourceRef?.name || resourceRef?.uid
-        ? [
-            {
-              label: "Requested resource",
-              value: <ResourceListLabel itemRef={resourceRef} />,
-            },
-          ]
-        : []),
-
-      ...(policyRef?.name || policyRef?.uid
-        ? [
-            {
-              label: "Policy",
-              value: (
-                <ResourceListLabel
-                  itemRef={policyRef}
-                ></ResourceListLabel>
-              ),
-            },
-          ]
-        : []),
 
       ...(item.spec?.justification
         ? [
             {
               label: "Justification",
+              group: "Request",
               span: "full" as const,
               value: (
-                <span className="text-body font-semibold text-slate-700">
+                <span className="whitespace-pre-wrap break-words text-slate-700">
                   {item.spec.justification}
                 </span>
               ),
             },
           ]
         : []),
-
-      ...(item.spec?.deadline
+      ...(deadline
         ? [
             {
               label: "Deadline",
+              group: "Request",
               value: (
-                <span className="text-sm font-semibold text-slate-700">
-                  <TimeAgo rfc3339={item.spec.deadline} />
+                <span className={twMerge("inline-flex items-center gap-1.5", overdue && "font-semibold text-red-700")}>
+                  {overdue && <AlertTriangle size={13} />}
+                  <TimeAgo rfc3339={item.spec!.deadline!} />
                 </span>
               ),
             },
           ]
         : []),
-
-      ...(status?.approvalStartAt
-        ? [
-            {
-              label: "Approval start",
-              value: (
-                <span className="text-sm font-semibold text-slate-700">
-                  <TimeAgo rfc3339={status.approvalStartAt} />
-                </span>
-              ),
-            },
-          ]
-        : []),
-
-      ...(status?.approvalEndAt
-        ? [
-            {
-              label: "Approval end",
-              value: (
-                <span className="text-sm font-semibold text-slate-700">
-                  <TimeAgo rfc3339={status.approvalEndAt} />
-                </span>
-              ),
-            },
-          ]
-        : []),
-
-      ...(status?.accessEndsAt
-        ? [
-            {
-              label: "Access ends",
-              value: (
-                <span className="text-sm font-semibold text-slate-700">
-                  <TimeAgo rfc3339={status.accessEndsAt} />
-                </span>
-              ),
-            },
-          ]
-        : []),
-
-      ...(status?.review
-        ? [
-            {
-              label: "Current review step",
-              value: (
-                <span className="text-sm font-semibold text-slate-700">
-                  {status.review.currentStep}
-                  {status.review.lastSteps.length > 0 && (
-                    <span className="ml-1.5 text-xs font-normal text-slate-500">
-                      {status.review.lastSteps.length} decided
-                    </span>
-                  )}
-                </span>
-              ),
-            },
-          ]
-        : []),
-
-      ...(status?.review?.currentStepStartedAt
-        ? [
-            {
-              label: "Current step started",
-              value: (
-                <span className="text-sm font-semibold text-slate-700">
-                  <TimeAgo rfc3339={status.review.currentStepStartedAt} />
-                </span>
-              ),
-            },
-          ]
-        : []),
-
-      ...(item.spec?.duration
-        ? [
-            {
-              label: "Requested duration",
-              value: (
-                <span className="text-sm font-semibold text-slate-700">
-                  {formatDuration(item.spec.duration)}
-                </span>
-              ),
-            },
-          ]
-        : []),
-
-      ...(status?.effectiveDuration
-        ? [
-            {
-              label: "Effective duration",
-              value: (
-                <span className="text-sm font-semibold text-slate-700">
-                  {formatDuration(status.effectiveDuration)}
-                </span>
-              ),
-              hint: "The requested duration capped by the maximum access duration of the matched Rule.",
-            },
-          ]
-        : []),
-
-      ...(status?.policyTriggerRef?.name || status?.policyTriggerRef?.uid
-        ? [
-            {
-              label: "Policy trigger",
-              value: (
-                <ResourceListLabel
-                  label="PolicyTrigger"
-                  itemRef={ObjectReference.create({
-                    ...status.policyTriggerRef,
-                    apiVersion:
-                      status.policyTriggerRef.apiVersion || "core/v1",
-                    kind: status.policyTriggerRef.kind || "PolicyTrigger",
-                  })}
-                />
-              ),
-              hint: "Hidden PolicyTrigger that the Cluster creates in order to grant the access of an approved Request.",
-            },
-          ]
-        : []),
-
       ...(hasOrigin(status?.origin)
         ? [
             {
               label: "Created from",
-              span: "full" as const,
+              group: "Request",
               value: <OriginValue origin={status!.origin!} />,
-              hint: "Where the Request was created from. It is entirely set by the Cluster from the authenticated transport of the creation itself.",
             },
           ]
         : []),
 
-      ...(status?.rule
+      ...(steps.length > 0
         ? [
             {
-              label: "Matched rule",
-              span: "full" as const,
-              hint: "Copy of the Policy Rule that matched the Request when it was evaluated. The subsequent changes to the Policy do not affect it.",
-              value: (
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Label size="sm" outlined>
-                    {status.rule.name || "Unnamed rule"}
-                  </Label>
-                  <Label
-                    size="sm"
-                    tone={
-                      status.rule.effect ===
-                      AccessC.Policy_Spec_Rule_Effect.DENY
-                        ? "danger"
-                        : status.rule.effect ===
-                            AccessC.Policy_Spec_Rule_Effect.AUTO_APPROVE
-                          ? "success"
-                          : "info"
-                    }
-                  >
-                    {effectLabel(status.rule.effect)}
-                  </Label>
-                  {status.rule.action?.type.oneofKind === "review" && (
-                    <Label size="sm" outlined>
-                      {status.rule.action.type.review.steps.length} review
-                      {status.rule.action.type.review.steps.length === 1
-                        ? " step"
-                        : " steps"}
-                    </Label>
-                  )}
-                  {ruleSurfaceCount(status.rule) > 0 && (
-                    <Label size="sm" outlined>
-                      {ruleSurfaceCount(status.rule)} Integration
-                      {ruleSurfaceCount(status.rule) === 1
-                        ? " surface"
-                        : " surfaces"}
-                    </Label>
-                  )}
-                </div>
-              ),
+              label: "",
+              group: "Review workflow",
+              layout: "stacked" as const,
+              value: <Workflow item={item} />,
             },
           ]
         : []),
 
-      ...((status?.lastStates ?? []).length > 0
+      {
+        label: "Matched rule",
+        group: "Decision",
+        span: "full" as const,
+        value: status?.rule ? (
+          <span className="flex flex-wrap items-center gap-1.5">
+            {policyRef && <RefChip itemRef={policyRef} icon={Shield} />}
+            <span className="text-xs font-semibold text-slate-700">{status.rule.name}</span>
+            <EffectBadge effect={status.rule.effect} />
+          </span>
+        ) : (
+          <span className="text-xs text-slate-500">
+            {status?.state?.status === AccessC.Request_Status_State_Status.REJECTED
+              ? "None: no rule of an enabled Policy matched"
+              : "Not evaluated yet"}
+          </span>
+        ),
+      },
+      ...(status?.rule && status.rule.effect !== AccessC.Policy_Spec_Rule_Effect.DENY
         ? [
             {
-              label: "State history",
+              label: "Grants",
+              group: "Decision",
               span: "full" as const,
+              value: <GrantSummary authorization={status.rule.authorization} />,
+            },
+          ]
+        : []),
+      ...(policyTriggerRef
+        ? [
+            {
+              label: "Enforced by",
+              group: "Decision",
               value: (
-                <div className="w-full overflow-hidden rounded-lg border border-slate-200">
-                  {status!.lastStates.map((state, index) => {
-                    const stateMeta = getStatusMeta(state.status);
-                    return (
-                      <div
-                        key={`${state.createdAt?.seconds ?? 0}-${index}`}
-                        className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-white px-3 py-2 last:border-0"
-                      >
-                        <span
-                          className={twMerge(
-                            "text-xs font-semibold",
-                            stateMeta.className,
-                          )}
-                        >
-                          {stateMeta.label}
-                        </span>
-                        {state.createdAt && (
-                          <span className="text-xs font-normal text-slate-500">
-                            <TimeAgo rfc3339={state.createdAt} />
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                <span className="flex flex-wrap items-center gap-1.5">
+                  <RefChip itemRef={policyTriggerRef} icon={Check} />
+                  <span className="text-micro text-slate-500">hidden PolicyTrigger</span>
+                </span>
               ),
             },
           ]
         : []),
 
       {
-        label: "Integration presentations",
-        span: "full" as const,
-        value: <Presentations item={item} />,
+        label: "",
+        group: "Delivered to",
+        layout: "stacked" as const,
+        value: <Deliveries item={item} />,
+      },
+      {
+        label: "",
+        group: "History",
+        layout: "stacked" as const,
+        value: <History item={item} />,
       },
     ],
   };

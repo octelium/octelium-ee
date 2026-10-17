@@ -1133,3 +1133,122 @@ func TestRequestRefsHaveNoResourceVersion(t *testing.T) {
 	assert.Empty(t, all.Of[0].GetUserRef().ResourceVersion)
 	assert.Empty(t, all.Of[1].GetServiceRef().ResourceVersion)
 }
+
+func policyTriggerAllowPriority(t *testing.T, ctx context.Context,
+	octeliumC octeliumc.ClientInterface, req *accessv1.Request) int32 {
+
+	pt, err := octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
+		Name: fmt.Sprintf("access-request-%s", req.Metadata.Uid),
+	})
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, "access-request-default", pt.Status.InlinePolicies[0].Name)
+	assert.Equal(t, 1, len(pt.Status.InlinePolicies[0].Spec.Rules))
+
+	return pt.Status.InlinePolicies[0].Spec.Rules[0].Priority
+}
+
+func setAccessRequestAllowPriority(t *testing.T, ctx context.Context,
+	octeliumC octeliumc.ClientInterface, priority *int32) (*accessv1.ClusterConfig, *accessv1.ClusterConfig) {
+
+	old, err := octeliumC.AccessV1Utils().GetClusterConfig(ctx)
+	assert.Nil(t, err, "%+v", err)
+
+	next := pbutils.Clone(old).(*accessv1.ClusterConfig)
+	next.Spec.Authorization = &accessv1.ClusterConfig_Spec_Authorization{
+		Priority: priority,
+	}
+
+	next, err = octeliumC.AccessC().UpdateClusterConfig(ctx, next)
+	assert.Nil(t, err, "%+v", err)
+
+	return next, old
+}
+
+func TestRequestPolicyTriggerDefaultPriority(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	reqG := autoApprovedRequest(t, ctx, ctrl, octeliumC)
+
+	assert.Equal(t, int32(-1), policyTriggerAllowPriority(t, ctx, octeliumC, reqG))
+}
+
+func TestRequestPolicyTriggerClusterConfigPriority(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	priority := int32(-3)
+	setAccessRequestAllowPriority(t, ctx, octeliumC, &priority)
+
+	reqG := autoApprovedRequest(t, ctx, ctrl, octeliumC)
+	assert.Equal(t, int32(-3), policyTriggerAllowPriority(t, ctx, octeliumC, reqG))
+
+	zero := int32(0)
+	next, old := setAccessRequestAllowPriority(t, ctx, octeliumC, &zero)
+	assert.Nil(t, ctrl.OnClusterConfigUpdate(ctx, next, old))
+	assert.Equal(t, int32(0), policyTriggerAllowPriority(t, ctx, octeliumC, reqG))
+
+	next, old = setAccessRequestAllowPriority(t, ctx, octeliumC, nil)
+	assert.Nil(t, ctrl.OnClusterConfigUpdate(ctx, next, old))
+	assert.Equal(t, int32(-1), policyTriggerAllowPriority(t, ctx, octeliumC, reqG))
+
+	reqG = getRequest(t, ctx, octeliumC, reqG.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
+}
+
+func TestRequestClusterConfigUpdateSkipsSamePriority(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	reqG := autoApprovedRequest(t, ctx, ctrl, octeliumC)
+
+	pt, err := octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
+		Uid: reqG.Status.PolicyTriggerRef.Uid,
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	priority := int32(-1)
+	next, old := setAccessRequestAllowPriority(t, ctx, octeliumC, &priority)
+	assert.Nil(t, ctrl.OnClusterConfigUpdate(ctx, next, old))
+
+	ptG, err := octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
+		Uid: reqG.Status.PolicyTriggerRef.Uid,
+	})
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, pt.Metadata.ResourceVersion, ptG.Metadata.ResourceVersion)
+}
+
+func TestGetAccessRequestAllowPriority(t *testing.T) {
+	priority := func(v int32) *accessv1.ClusterConfig {
+		return &accessv1.ClusterConfig{
+			Spec: &accessv1.ClusterConfig_Spec{
+				Authorization: &accessv1.ClusterConfig_Spec_Authorization{
+					Priority: &v,
+				},
+			},
+		}
+	}
+
+	tests := []struct {
+		name string
+		cc   *accessv1.ClusterConfig
+		want int32
+	}{
+		{"nil", nil, -1},
+		{"no spec", &accessv1.ClusterConfig{}, -1},
+		{"no authorization", &accessv1.ClusterConfig{Spec: &accessv1.ClusterConfig_Spec{}}, -1},
+		{"no priority", &accessv1.ClusterConfig{
+			Spec: &accessv1.ClusterConfig_Spec{
+				Authorization: &accessv1.ClusterConfig_Spec_Authorization{},
+			},
+		}, -1},
+		{"zero", priority(0), 0},
+		{"highest", priority(-4), -4},
+		{"middle", priority(-2), -2},
+		{"below range", priority(-9), -4},
+		{"above range", priority(3), 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, getAccessRequestAllowPriority(tt.cc))
+		})
+	}
+}

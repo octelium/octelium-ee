@@ -604,6 +604,10 @@ The initial SecretStore powered by the Kubernetes Cluster of the default Region
 		return err
 	}
 
+	if err := genAccessResources(ctx, octeliumC, adminSrv); err != nil {
+		return err
+	}
+
 	zap.L().Debug("Done generating resources")
 
 	return nil

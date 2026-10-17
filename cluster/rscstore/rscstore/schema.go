@@ -82,6 +82,10 @@ const (
 	colStatusDesiredRevision  = "status_desired_revision"
 	colStatusAppliedRevision  = "status_applied_revision"
 	colStatusCapabilities     = "status_capabilities"
+	colStatusApprovalStartAt  = "status_approval_start_at"
+	colStatusApprovalEndAt    = "status_approval_end_at"
+	colStatusRuleEffect       = "status_rule_effect"
+	colStatusOriginType       = "status_origin_type"
 
 	colStatusIsBuild             = "status_is_build"
 	colStatusSpaceType           = "status_space_type"
@@ -244,6 +248,10 @@ func getResourceColumns() []*resourceColumn {
 		{name: colStatusExternalTenantID, kind: kindVarchar, path: "$.status.externalTenantID"},
 		{name: colStatusDesiredRevision, kind: kindVarchar, path: "$.status.desiredRevision"},
 		{name: colStatusAppliedRevision, kind: kindVarchar, path: "$.status.appliedRevision"},
+		{name: colStatusApprovalStartAt, kind: kindTimestamp, path: "$.status.approvalStartAt"},
+		{name: colStatusApprovalEndAt, kind: kindTimestamp, path: "$.status.approvalEndAt"},
+		{name: colStatusRuleEffect, kind: kindVarchar, path: "$.status.rule.effect"},
+		{name: colStatusOriginType, kind: kindVarchar, path: "$.status.origin.type"},
 		{name: colStatusIsBuild, kind: kindBoolean, path: "$.status.isBuild"},
 		{name: colStatusSpaceType, kind: kindVarchar, path: "$.status.spaceType"},
 		{name: colStatusStoppingReason, kind: kindVarchar, path: "$.status.stoppingReason"},

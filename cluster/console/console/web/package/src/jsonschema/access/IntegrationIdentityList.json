@@ -60,7 +60,7 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Integration Identity",
-            "description": "IntegrationIdentity is the link between an external actor of an Integration and the Cluster User that it acts as. It is the only trust boundary of the inbound integration requests: the Cluster never takes the identity of an actor from the payloads of the provider itself. It is entirely managed by the Cluster which discovers it by matching the email that the provider reports for an external actor against the `spec.email` of the Cluster's Users. It is therefore never set by the Cluster's managers and it carries no specification of its own."
+            "description": "IntegrationIdentity is the link between an external actor of an Integration and the Cluster User that it acts as. It is the only trust boundary of the inbound integration requests: the Cluster never takes the identity of an actor from the payloads of the provider itself. It is entirely managed by the Cluster which discovers it by matching the email that the provider reports for an external actor against the `spec.email` of the Cluster's Users. It is therefore never set by the Cluster's managers and it carries no specification of its own. It is an internal resource that is not exposed by the MainService. The ResolveIntegrationIdentity method reports how an external actor is currently resolved."
         },
         "octelium.api.main.access.v1.IntegrationIdentity.Spec": {
             "additionalProperties": false,

@@ -29,13 +29,11 @@ import {
   LayoutDashboard,
   LayoutTemplate,
   Library,
-  Link2,
   LockKeyhole,
   LockOpen,
   PanelTop,
   Plug,
   Scroll,
-  Send,
   Settings,
   Settings2,
   Shield,
@@ -201,17 +199,13 @@ export const itemsAccess: NavItem[] = [
     icon: Plug,
     keywords: ["slack", "teams", "jira"],
   },
-  {
-    title: "Integration Identities",
-    url: "/access/integrationidentities",
-    icon: Link2,
-  },
-  {
-    title: "Integration Bindings",
-    url: "/access/integrationbindings",
-    icon: Send,
-  },
   { title: "Secrets", url: "/access/secrets", icon: KeyRound },
+  {
+    title: "ClusterConfig",
+    url: "/access/clusterconfig",
+    icon: Settings2,
+    keywords: ["access configuration", "settings", "priority"],
+  },
 ];
 
 export const itemsCordium: NavItem[] = [
@@ -313,9 +307,14 @@ export const navSections: NavSection[] = [
         icon: CalendarClock,
       },
       {
-        title: "Failing Integration Bindings",
-        url: "/access/integrationbindings?isFailing=true",
-        icon: Send,
+        title: "Live access",
+        url: "/access/requests?isActive=true",
+        icon: KeyRound,
+      },
+      {
+        title: "Integrations with problems",
+        url: "/access/integrations?state=DEGRADED",
+        icon: AlertTriangle,
       },
     ],
     keywords: ["just-in-time"],

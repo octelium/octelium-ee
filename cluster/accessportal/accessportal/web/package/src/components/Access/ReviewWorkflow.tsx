@@ -58,6 +58,38 @@ const ReviewerChip = (props: { reviewer: ReviewerRef }) => {
   );
 };
 
+const DecisionLine = (props: { decision: AccessP.Request_Status_Review_Step }) => {
+  const { decision } = props;
+  const reviewer = decision.userRef?.name;
+  const query = useSubjectUser(reviewer);
+  const label = query.data?.displayName || (reviewer ? shortName(reviewer) : undefined);
+  const verdict =
+    decision.decision === AccessP.Review_Spec_Decision.APPROVE
+      ? { label: "Approved", tone: "emerald" as Tone }
+      : decision.decision === AccessP.Review_Spec_Decision.REJECT
+        ? { label: "Rejected", tone: "red" as Tone }
+        : undefined;
+
+  return (
+    <li className="flex flex-wrap items-center gap-1.5 text-xs font-normal text-slate-500">
+      {verdict ? (
+        <Badge tone={verdict.tone}>{verdict.label}</Badge>
+      ) : (
+        <span aria-hidden className="h-1 w-1 rounded-full bg-slate-400" />
+      )}
+      {label ? (
+        <span className="inline-flex items-center gap-1 font-medium text-slate-700">
+          <Avatar src={query.data?.picURL} name={label} size="xs" />
+          {label}
+        </span>
+      ) : (
+        <span>Decision recorded</span>
+      )}
+      <TimeAgo rfc3339={decision.setAt} />
+    </li>
+  );
+};
+
 const StepRow = (props: {
   step: AccessP.Policy_Spec_Rule_Action_Review_Step;
   index: number;
@@ -144,15 +176,12 @@ const StepRow = (props: {
         )}
 
         {props.decisions.length > 0 && (
-          <ul className="mt-2 flex flex-col gap-0.5">
+          <ul className="mt-2 flex flex-col gap-1">
             {props.decisions.map((decision, index) => (
-              <li
+              <DecisionLine
                 key={`${decision.reviewRef?.uid ?? decision.reviewRef?.name}-${index}`}
-                className="flex items-center gap-1.5 text-xs font-normal text-slate-500"
-              >
-                <span aria-hidden className="h-1 w-1 rounded-full bg-slate-400" />
-                Decision recorded <TimeAgo rfc3339={decision.setAt} />
-              </li>
+                decision={decision}
+              />
             ))}
           </ul>
         )}

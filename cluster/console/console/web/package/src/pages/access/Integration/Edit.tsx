@@ -1,11 +1,49 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
-import EditItem from "@/components/EditItem";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
-import { Alert, SegmentedControl, Switch, TextInput } from "@mantine/core";
-import { AlertTriangle, MessageSquare, SquareKanban, Webhook } from "lucide-react";
+import { twMerge } from "@/lib/utils";
+import { Collapse, Switch, TextInput } from "@mantine/core";
+import {
+  AlertTriangle,
+  Check,
+  ChevronRight,
+  KeyRound,
+  LucideIcon,
+  MessageSquareText,
+  Settings2,
+  UsersRound,
+  Vote,
+} from "lucide-react";
 import * as React from "react";
+import { Link } from "react-router-dom";
+import { Callout, ProviderKind, ProviderMark } from "../common";
 
 type IntegrationType = AccessP.Integration_Spec["type"];
+
+const PROVIDERS: Array<{
+  value: ProviderKind;
+  label: string;
+  description: string;
+  features: string[];
+}> = [
+  {
+    value: "slack",
+    label: "Slack",
+    description: "Approve or reject from a channel or DMs.",
+    features: ["Channel & DMs", "Buttons", "Slash command"],
+  },
+  {
+    value: "jira",
+    label: "Jira",
+    description: "One issue per request, decided by its status.",
+    features: ["Issues", "Status transitions"],
+  },
+  {
+    value: "webhook",
+    label: "Webhook",
+    description: "Signed JSON to any system you run.",
+    features: ["Any system", "Signed both ways"],
+  },
+];
 
 const createType = (kind: IntegrationType["oneofKind"]): IntegrationType => {
   if (kind === "jira") {
@@ -57,6 +95,60 @@ const isValidURL = (value: string) => {
 const isValidEmail = (value: string) =>
   !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
+const FormSection = (props: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) => {
+  const Icon = props.icon;
+  return (
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <header className="flex items-start gap-3 border-b border-slate-100 px-4 py-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500">
+          <Icon size={14} strokeWidth={2.2} />
+        </span>
+        <div className="min-w-0">
+          <h3 className="text-body font-semibold text-slate-900">
+            {props.title}
+          </h3>
+          <p className="text-xs font-normal leading-5 text-slate-500">
+            {props.description}
+          </p>
+        </div>
+      </header>
+      <div className="flex flex-col gap-4 px-4 py-4">{props.children}</div>
+    </section>
+  );
+};
+
+const Advanced = (props: { children: React.ReactNode }) => {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className="rounded-lg border border-dashed border-slate-200">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        className="flex w-full cursor-pointer items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-600 outline-none transition-colors duration-150 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400"
+      >
+        <ChevronRight
+          size={13}
+          strokeWidth={2.5}
+          className={twMerge(
+            "transition-transform duration-150",
+            open && "rotate-90",
+          )}
+        />
+        Advanced settings
+      </button>
+      <Collapse expanded={open}>
+        <div className="grid gap-4 px-3 pb-3 md:grid-cols-2">{props.children}</div>
+      </Collapse>
+    </div>
+  );
+};
+
 const SecretSelect = (props: {
   label: string;
   description: string;
@@ -74,6 +166,24 @@ const SecretSelect = (props: {
     defaultValue={props.value}
     onChange={(secret) => props.onChange(secret?.metadata?.name ?? "")}
   />
+);
+
+const fromSecretValue = (
+  arg?: { type: { oneofKind: "fromSecret"; fromSecret: string } | { oneofKind: undefined } },
+) => (arg?.type.oneofKind === "fromSecret" ? arg.type.fromSecret : undefined);
+
+const SecretsHint = () => (
+  <p className="text-xs font-normal leading-5 text-slate-500">
+    Credentials are never stored in the Integration itself. Pick existing
+    access Secrets, or{" "}
+    <Link
+      to="/access/secrets/create"
+      className="font-semibold text-blue-700 underline decoration-blue-300 underline-offset-2 hover:text-blue-800"
+    >
+      create a Secret
+    </Link>{" "}
+    first. The Setup guide tab explains where each value comes from.
+  </p>
 );
 
 const Edit = (props: {
@@ -107,407 +217,444 @@ const Edit = (props: {
   if (!req.spec) return null;
   const type = req.spec.type;
 
-  const changeType = (value: string) => {
+  const changeType = (value: ProviderKind) => {
     if (isExisting) return;
-    if (!req.spec || !["slack", "jira", "webhook"].includes(value)) return;
+    if (!req.spec) return;
     const currentKind = req.spec.type.oneofKind;
+    if (currentKind === value) return;
     if (currentKind) {
       configurations.current[currentKind] = structuredClone(req.spec.type);
     }
     req.spec.type = structuredClone(
-      configurations.current[value] ??
-        createType(value as IntegrationType["oneofKind"]),
+      configurations.current[value] ?? createType(value),
     );
     updateReq();
   };
 
+  const emailMatching = !req.spec.identityResolution?.disableEmailDiscovery;
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-4">
+      <section className="flex flex-col gap-2">
         <div>
-          <div className="text-xs font-semibold text-slate-700">
-            Integration status
-          </div>
-          <div className="mt-0.5 text-xs font-normal text-slate-500">
-            A disabled Integration neither delivers anything nor accepts any
-            inbound request.
-          </div>
+          <h3 className="text-body font-semibold text-slate-900">Provider</h3>
+          <p className="text-xs font-normal text-slate-500">
+            {isExisting
+              ? "The provider of an existing Integration cannot be changed. Create a new Integration to use another one."
+              : "Where access requests are presented and decided."}
+          </p>
         </div>
+        <div
+          role="radiogroup"
+          aria-label="Provider"
+          className="grid grid-cols-1 gap-2 sm:grid-cols-3"
+        >
+          {PROVIDERS.map((provider) => {
+            const active = type.oneofKind === provider.value;
+            return (
+              <button
+                key={provider.value}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                disabled={isExisting && !active}
+                onClick={() => changeType(provider.value)}
+                className={twMerge(
+                  "relative flex min-w-0 cursor-pointer flex-col gap-2 rounded-xl border bg-white px-3.5 py-3 text-left outline-none transition-[border-color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-50",
+                  active
+                    ? "border-slate-800 shadow-raised ring-1 ring-slate-800"
+                    : "border-slate-200 hover:border-slate-300",
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  <ProviderMark provider={provider.value} size={18} />
+                  <span className="text-body font-semibold text-slate-900">
+                    {provider.label}
+                  </span>
+                  {active && (
+                    <span className="ml-auto flex h-4 w-4 items-center justify-center rounded-full bg-slate-800 text-white">
+                      <Check size={10} strokeWidth={3} />
+                    </span>
+                  )}
+                </span>
+                <span className="text-xs font-normal leading-5 text-slate-500">
+                  {provider.description}
+                </span>
+                <span className="flex flex-wrap gap-1">
+                  {provider.features.map((feature) => (
+                    <span
+                      key={feature}
+                      className="rounded-full border border-slate-200 bg-slate-50 px-1.5 py-px text-micro font-medium text-slate-600"
+                    >
+                      {feature}
+                    </span>
+                  ))}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {type.oneofKind === "slack" && (
+        <>
+          <FormSection
+            icon={KeyRound}
+            title="Slack app credentials"
+            description="From your Slack app: OAuth & Permissions and Basic Information."
+          >
+            <SecretsHint />
+            <div className="grid gap-4 md:grid-cols-2">
+              <SecretSelect
+                required
+                label="Bot token"
+                description="Secret holding the Bot User OAuth Token (xoxb-…)."
+                value={fromSecretValue(type.slack.botToken)}
+                onChange={(name) => {
+                  type.slack.botToken = {
+                    type: { oneofKind: "fromSecret", fromSecret: name },
+                  };
+                  updateReq();
+                }}
+              />
+              <SecretSelect
+                required
+                label="Signing secret"
+                description="Secret holding the app's Signing Secret. Verifies every click."
+                value={fromSecretValue(type.slack.signingSecret)}
+                onChange={(name) => {
+                  type.slack.signingSecret = {
+                    type: { oneofKind: "fromSecret", fromSecret: name },
+                  };
+                  updateReq();
+                }}
+              />
+            </div>
+          </FormSection>
+
+          <FormSection
+            icon={MessageSquareText}
+            title="Where requests are posted"
+            description="Shared deliveries go to one channel. Reviewer and requester DMs need no channel."
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <TextInput
+                label="Channel ID"
+                description="The review channel, e.g. C05ACCESS42. Invite the bot to it."
+                placeholder="C01ABC234DE"
+                value={type.slack.channelID}
+                error={
+                  type.slack.channelID &&
+                  !/^[CG][A-Z0-9]{6,}$/.test(type.slack.channelID)
+                    ? "Use the channel ID (C…), not its name"
+                    : undefined
+                }
+                onChange={(event) => {
+                  type.slack.channelID = event.target.value.trim();
+                  updateReq();
+                }}
+              />
+              <TextInput
+                label="Mention user group"
+                description="Optional. A Slack user group ID (S…) mentioned in every shared message."
+                placeholder="S01ABC234DE"
+                value={type.slack.mentionUserGroupID}
+                onChange={(event) => {
+                  type.slack.mentionUserGroupID = event.target.value.trim();
+                  updateReq();
+                }}
+              />
+            </div>
+            <Advanced>
+              <TextInput
+                label="Workspace ID"
+                description="Discovered from the bot token when empty. Set it to pin the workspace (T…)."
+                placeholder="T01ABC234DE"
+                value={type.slack.teamID}
+                onChange={(event) => {
+                  type.slack.teamID = event.target.value.trim();
+                  updateReq();
+                }}
+              />
+              <TextInput
+                type="url"
+                label="API base URL"
+                description="Only for a Slack API proxy. Not the Octelium callback URL."
+                placeholder="https://slack.com/api"
+                value={type.slack.baseURL}
+                error={
+                  isValidURL(type.slack.baseURL)
+                    ? undefined
+                    : "Enter a valid HTTP or HTTPS URL"
+                }
+                onChange={(event) => {
+                  type.slack.baseURL = event.target.value;
+                  updateReq();
+                }}
+              />
+            </Advanced>
+          </FormSection>
+        </>
+      )}
+
+      {type.oneofKind === "jira" && (
+        <>
+          <FormSection
+            icon={KeyRound}
+            title="Jira Cloud account"
+            description="Octelium uses this account's API token to create and update issues."
+          >
+            <SecretsHint />
+            <div className="grid gap-4 md:grid-cols-2">
+              <TextInput
+                required
+                type="url"
+                label="Site URL"
+                description="Your Jira Cloud site."
+                placeholder="https://example.atlassian.net"
+                value={type.jira.url}
+                error={
+                  isValidURL(type.jira.url)
+                    ? undefined
+                    : "Enter a valid HTTP or HTTPS URL"
+                }
+                onChange={(event) => {
+                  type.jira.url = event.target.value.trim();
+                  updateReq();
+                }}
+              />
+              <TextInput
+                required
+                type="email"
+                label="Account email"
+                description="The Atlassian account that owns the API token."
+                placeholder="octelium-bot@example.com"
+                value={type.jira.email}
+                error={
+                  isValidEmail(type.jira.email)
+                    ? undefined
+                    : "Enter a valid email address"
+                }
+                onChange={(event) => {
+                  type.jira.email = event.target.value.trim();
+                  updateReq();
+                }}
+              />
+              <SecretSelect
+                required
+                label="API token"
+                description="Secret holding the account's API token."
+                value={fromSecretValue(type.jira.apiToken)}
+                onChange={(name) => {
+                  type.jira.apiToken = {
+                    type: { oneofKind: "fromSecret", fromSecret: name },
+                  };
+                  updateReq();
+                }}
+              />
+            </div>
+          </FormSection>
+
+          <FormSection
+            icon={MessageSquareText}
+            title="Where issues are created"
+            description="Every presented request becomes one issue of this project."
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <TextInput
+                label="Project key"
+                description="For example ACCESS. Required to create issues."
+                placeholder="ACCESS"
+                value={type.jira.projectKey}
+                onChange={(event) => {
+                  type.jira.projectKey = event.target.value.trim().toUpperCase();
+                  updateReq();
+                }}
+              />
+              <TextInput
+                label="Issue type"
+                description="Must exist in the project. Task when empty."
+                placeholder="Task"
+                value={type.jira.issueTypeName}
+                onChange={(event) => {
+                  type.jira.issueTypeName = event.target.value;
+                  updateReq();
+                }}
+              />
+            </div>
+          </FormSection>
+
+          <FormSection
+            icon={Vote}
+            title="Decisions from Jira"
+            description="Reviewers decide by moving the issue to one of these statuses. Leave empty to decide in the access portal only."
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <TextInput
+                label="Approving status"
+                description="Moving an issue to it approves the review step."
+                placeholder="Approved"
+                value={type.jira.approveStatus}
+                onChange={(event) => {
+                  type.jira.approveStatus = event.target.value;
+                  updateReq();
+                }}
+              />
+              <TextInput
+                label="Rejecting status"
+                description="Moving an issue to it rejects the request."
+                placeholder="Declined"
+                value={type.jira.rejectStatus}
+                error={
+                  type.jira.approveStatus &&
+                  type.jira.approveStatus.trim().toLowerCase() ===
+                    type.jira.rejectStatus.trim().toLowerCase()
+                    ? "The approving and the rejecting statuses must differ"
+                    : undefined
+                }
+                onChange={(event) => {
+                  type.jira.rejectStatus = event.target.value;
+                  updateReq();
+                }}
+              />
+              <SecretSelect
+                label="Webhook secret"
+                description="Secret shared with the Jira webhook. Required to accept any decision from Jira."
+                value={fromSecretValue(type.jira.webhookSecret)}
+                onChange={(name) => {
+                  type.jira.webhookSecret = name
+                    ? { type: { oneofKind: "fromSecret", fromSecret: name } }
+                    : undefined;
+                  updateReq();
+                }}
+              />
+            </div>
+            {(type.jira.approveStatus || type.jira.rejectStatus) &&
+              !type.jira.webhookSecret && (
+                <Callout tone="warning" icon={AlertTriangle} title="No webhook secret">
+                  Decision statuses are set, but without a webhook secret the
+                  Cluster rejects every Jira delivery, so moving an issue
+                  decides nothing.
+                </Callout>
+              )}
+          </FormSection>
+        </>
+      )}
+
+      {type.oneofKind === "webhook" && (
+        <>
+          <FormSection
+            icon={MessageSquareText}
+            title="Delivery endpoint"
+            description="Octelium POSTs a signed JSON document for every presentation change."
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <TextInput
+                required
+                type="url"
+                label="Delivery URL"
+                description="Your HTTPS endpoint."
+                placeholder="https://example.com/octelium/access"
+                value={type.webhook.url}
+                error={
+                  isValidURL(type.webhook.url)
+                    ? undefined
+                    : "Enter a valid HTTP or HTTPS URL"
+                }
+                onChange={(event) => {
+                  type.webhook.url = event.target.value.trim();
+                  updateReq();
+                }}
+              />
+              <TextInput
+                label="Name"
+                description="Included in every payload so your system can route it."
+                placeholder="access-requests"
+                value={type.webhook.name}
+                onChange={(event) => {
+                  type.webhook.name = event.target.value;
+                  updateReq();
+                }}
+              />
+            </div>
+          </FormSection>
+
+          <FormSection
+            icon={KeyRound}
+            title="Signatures"
+            description="HMAC-SHA256 over {timestamp}:{body}, in the X-Octelium-Signature header."
+          >
+            <SecretsHint />
+            <div className="grid gap-4 md:grid-cols-2">
+              <SecretSelect
+                required
+                label="Signing secret"
+                description="Signs the deliveries sent to your endpoint."
+                value={fromSecretValue(type.webhook.signingSecret)}
+                onChange={(name) => {
+                  type.webhook.signingSecret = {
+                    type: { oneofKind: "fromSecret", fromSecret: name },
+                  };
+                  updateReq();
+                }}
+              />
+              <SecretSelect
+                label="Inbound secret"
+                description="Optional. Lets your system submit decisions and requests back. Calls are rejected without it."
+                value={fromSecretValue(type.webhook.inboundSecret)}
+                onChange={(name) => {
+                  type.webhook.inboundSecret = name
+                    ? { type: { oneofKind: "fromSecret", fromSecret: name } }
+                    : undefined;
+                  updateReq();
+                }}
+              />
+            </div>
+          </FormSection>
+        </>
+      )}
+
+      <FormSection
+        icon={UsersRound}
+        title="People"
+        description="Decisions and DMs need to know which Cluster User a provider account belongs to."
+      >
         <Switch
-          label="Disabled"
-          description="Disable every delivery and every inbound request of this Integration."
+          label="Match provider accounts to Users by email"
+          description="The account's email must equal the email of exactly one User. Matches are remembered as linked accounts."
+          checked={emailMatching}
+          onChange={(event) => {
+            const checked = event.currentTarget.checked;
+            req.spec!.identityResolution = checked
+              ? undefined
+              : AccessP.Integration_Spec_IdentityResolution.create({
+                  disableEmailDiscovery: true,
+                });
+            updateReq();
+          }}
+        />
+        {!emailMatching && (
+          <Callout tone="warning" icon={AlertTriangle} title="Only already linked accounts work">
+            Nobody new can be matched, so new people can neither receive DMs
+            nor submit decisions from the provider.
+          </Callout>
+        )}
+      </FormSection>
+
+      <FormSection
+        icon={Settings2}
+        title="Status"
+        description="A disabled Integration keeps its configuration but delivers nothing and rejects every inbound call."
+      >
+        <Switch
+          label="Disable this Integration"
           checked={req.spec.isDisabled}
           onChange={(event) => {
             req.spec!.isDisabled = event.currentTarget.checked;
             updateReq();
           }}
         />
-      </div>
-
-      <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3">
-        <div className="mb-2 text-xs font-semibold text-slate-700">
-          Provider
-        </div>
-        <SegmentedControl
-          fullWidth
-          disabled={isExisting}
-          value={type.oneofKind ?? "slack"}
-          onChange={changeType}
-          data={[
-            { label: "Slack", value: "slack" },
-            { label: "Jira", value: "jira" },
-            { label: "Webhook", value: "webhook" },
-          ]}
-        />
-        {isExisting && (
-          <p className="mt-2 text-micro font-normal leading-4 text-slate-500">
-            The provider of an existing Integration cannot be changed. Create a
-            new Integration to use a different one.
-          </p>
-        )}
-      </div>
-
-      {type.oneofKind === "slack" && (
-        <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
-          <div className="flex items-center gap-2 text-body font-semibold text-slate-800">
-            <MessageSquare size={15} /> Slack
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <SecretSelect
-              required
-              label="Bot token Secret"
-              description="access Secret containing the bot token (i.e. xoxb-…) of the Slack app."
-              value={
-                type.slack.botToken?.type.oneofKind === "fromSecret"
-                  ? type.slack.botToken.type.fromSecret
-                  : undefined
-              }
-              onChange={(name) => {
-                type.slack.botToken = {
-                  type: { oneofKind: "fromSecret", fromSecret: name },
-                };
-                updateReq();
-              }}
-            />
-            <SecretSelect
-              required
-              label="Signing secret Secret"
-              description="access Secret containing the signing secret used to verify the requests that Slack sends to the Cluster."
-              value={
-                type.slack.signingSecret?.type.oneofKind === "fromSecret"
-                  ? type.slack.signingSecret.type.fromSecret
-                  : undefined
-              }
-              onChange={(name) => {
-                type.slack.signingSecret = {
-                  type: { oneofKind: "fromSecret", fromSecret: name },
-                };
-                updateReq();
-              }}
-            />
-            <TextInput
-              label="Channel ID"
-              description="Slack channel (i.e. C…) that the shared presentations are delivered to. Required by the shared Surfaces."
-              placeholder="C01ABC234DE"
-              value={type.slack.channelID}
-              onChange={(event) => {
-                type.slack.channelID = event.target.value;
-                updateReq();
-              }}
-            />
-            <TextInput
-              label="Workspace ID"
-              description="Slack workspace (i.e. T…) that this Integration is bound to. It is discovered by the Cluster when it is unset."
-              placeholder="T01ABC234DE"
-              value={type.slack.teamID}
-              onChange={(event) => {
-                type.slack.teamID = event.target.value;
-                updateReq();
-              }}
-            />
-            <TextInput
-              label="Mention user group ID"
-              description="Slack user group (i.e. S…) that is mentioned in the shared presentations."
-              placeholder="S01ABC234DE"
-              value={type.slack.mentionUserGroupID}
-              onChange={(event) => {
-                type.slack.mentionUserGroupID = event.target.value;
-                updateReq();
-              }}
-            />
-            <TextInput
-              type="url"
-              label="API base URL"
-              description="Override the base URL of the Slack API. The public API URL is used when it is unset."
-              placeholder="https://slack.com/api"
-              value={type.slack.baseURL}
-              error={
-                isValidURL(type.slack.baseURL)
-                  ? undefined
-                  : "Enter a valid HTTP or HTTPS URL"
-              }
-              onChange={(event) => {
-                type.slack.baseURL = event.target.value;
-                updateReq();
-              }}
-            />
-          </div>
-        </section>
-      )}
-
-      {type.oneofKind === "jira" && (
-        <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
-          <div className="flex items-center gap-2 text-body font-semibold text-slate-800">
-            <SquareKanban size={15} /> Jira
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <TextInput
-              required
-              type="url"
-              label="Site URL"
-              description="Base URL of the Jira site."
-              placeholder="https://example.atlassian.net"
-              value={type.jira.url}
-              error={
-                isValidURL(type.jira.url)
-                  ? undefined
-                  : "Enter a valid HTTP or HTTPS URL"
-              }
-              onChange={(event) => {
-                type.jira.url = event.target.value;
-                updateReq();
-              }}
-            />
-            <TextInput
-              required
-              type="email"
-              label="Account email"
-              description="Email of the Atlassian account whose API token accesses the Jira REST API."
-              placeholder="automation@example.com"
-              value={type.jira.email}
-              error={
-                isValidEmail(type.jira.email)
-                  ? undefined
-                  : "Enter a valid email address"
-              }
-              onChange={(event) => {
-                type.jira.email = event.target.value;
-                updateReq();
-              }}
-            />
-            <SecretSelect
-              required
-              label="API token Secret"
-              description="access Secret containing the API token of the Atlassian account."
-              value={
-                type.jira.apiToken?.type.oneofKind === "fromSecret"
-                  ? type.jira.apiToken.type.fromSecret
-                  : undefined
-              }
-              onChange={(name) => {
-                type.jira.apiToken = {
-                  type: { oneofKind: "fromSecret", fromSecret: name },
-                };
-                updateReq();
-              }}
-            />
-            <SecretSelect
-              label="Webhook secret Secret"
-              description="access Secret containing the shared secret that Jira signs its webhook deliveries with. It is required in order to accept any inbound Jira request."
-              value={
-                type.jira.webhookSecret?.type.oneofKind === "fromSecret"
-                  ? type.jira.webhookSecret.type.fromSecret
-                  : undefined
-              }
-              onChange={(name) => {
-                type.jira.webhookSecret = name
-                  ? { type: { oneofKind: "fromSecret", fromSecret: name } }
-                  : undefined;
-                updateReq();
-              }}
-            />
-            <TextInput
-              label="Project key"
-              description="Jira project that the issues are created in. Required by the shared Surfaces."
-              placeholder="ACCESS"
-              value={type.jira.projectKey}
-              onChange={(event) => {
-                type.jira.projectKey = event.target.value;
-                updateReq();
-              }}
-            />
-            <TextInput
-              label="Issue type"
-              description="Jira issue type of the created issues. It defaults to Task."
-              placeholder="Task"
-              value={type.jira.issueTypeName}
-              onChange={(event) => {
-                type.jira.issueTypeName = event.target.value;
-                updateReq();
-              }}
-            />
-            <TextInput
-              label="Approving status"
-              description="Jira status which, once an issue transitions to it, submits an approving decision. Only used by the interactive Surfaces."
-              placeholder="Approved"
-              value={type.jira.approveStatus}
-              onChange={(event) => {
-                type.jira.approveStatus = event.target.value;
-                updateReq();
-              }}
-            />
-            <TextInput
-              label="Rejecting status"
-              description="Jira status which, once an issue transitions to it, submits a rejecting decision. It must differ from the approving status."
-              placeholder="Rejected"
-              value={type.jira.rejectStatus}
-              error={
-                type.jira.approveStatus &&
-                type.jira.approveStatus.trim().toLowerCase() ===
-                  type.jira.rejectStatus.trim().toLowerCase()
-                  ? "The approving and the rejecting statuses must differ"
-                  : undefined
-              }
-              onChange={(event) => {
-                type.jira.rejectStatus = event.target.value;
-                updateReq();
-              }}
-            />
-          </div>
-
-          {!type.jira.webhookSecret && (
-            <Alert
-              color="amber"
-              icon={<AlertTriangle size={15} />}
-              title="Inbound requests are rejected"
-            >
-              Without a webhook secret the Cluster cannot verify the Jira
-              deliveries, so no decision can be submitted from Jira.
-            </Alert>
-          )}
-        </section>
-      )}
-
-      {type.oneofKind === "webhook" && (
-        <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
-          <div className="flex items-center gap-2 text-body font-semibold text-slate-800">
-            <Webhook size={15} /> Webhook
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <TextInput
-              required
-              type="url"
-              label="Delivery URL"
-              description="URL that the Cluster delivers its presentations to."
-              placeholder="https://example.com/octelium/access"
-              value={type.webhook.url}
-              error={
-                isValidURL(type.webhook.url)
-                  ? undefined
-                  : "Enter a valid HTTP or HTTPS URL"
-              }
-              onChange={(event) => {
-                type.webhook.url = event.target.value;
-                updateReq();
-              }}
-            />
-            <TextInput
-              label="Name"
-              description="Opaque label that is included in the delivered payloads so that the receiving system can route them."
-              placeholder="access-requests"
-              value={type.webhook.name}
-              onChange={(event) => {
-                type.webhook.name = event.target.value;
-                updateReq();
-              }}
-            />
-            <SecretSelect
-              required
-              label="Signing secret Secret"
-              description="access Secret containing the secret that the Cluster signs its outbound deliveries with."
-              value={
-                type.webhook.signingSecret?.type.oneofKind === "fromSecret"
-                  ? type.webhook.signingSecret.type.fromSecret
-                  : undefined
-              }
-              onChange={(name) => {
-                type.webhook.signingSecret = {
-                  type: { oneofKind: "fromSecret", fromSecret: name },
-                };
-                updateReq();
-              }}
-            />
-            <SecretSelect
-              label="Inbound secret Secret"
-              description="access Secret containing the secret that the external system signs its requests to the Cluster with. It is required in order to accept any inbound request."
-              value={
-                type.webhook.inboundSecret?.type.oneofKind === "fromSecret"
-                  ? type.webhook.inboundSecret.type.fromSecret
-                  : undefined
-              }
-              onChange={(name) => {
-                type.webhook.inboundSecret = name
-                  ? { type: { oneofKind: "fromSecret", fromSecret: name } }
-                  : undefined;
-                updateReq();
-              }}
-            />
-          </div>
-
-          {!type.webhook.inboundSecret && (
-            <Alert
-              color="amber"
-              icon={<AlertTriangle size={15} />}
-              title="Inbound requests are rejected"
-            >
-              Without an inbound secret the Cluster cannot verify the requests
-              of the external system, so it only delivers to it.
-            </Alert>
-          )}
-        </section>
-      )}
-
-      <EditItem
-        title="Identity resolution"
-        description="How the external actors of this Integration are resolved to the Cluster Users."
-        obj={req.spec.identityResolution}
-        onUnset={() => {
-          req.spec!.identityResolution = undefined;
-          updateReq();
-        }}
-        onSet={() => {
-          req.spec!.identityResolution =
-            AccessP.Integration_Spec_IdentityResolution.create();
-          updateReq();
-        }}
-      >
-        {req.spec.identityResolution && (
-          <div className="space-y-3">
-            <Switch
-              label="Disable email discovery"
-              description="Stop resolving an external actor from the email that the provider reports for it."
-              checked={req.spec.identityResolution.disableEmailDiscovery}
-              onChange={(event) => {
-                req.spec!.identityResolution!.disableEmailDiscovery =
-                  event.currentTarget.checked;
-                updateReq();
-              }}
-            />
-            {req.spec.identityResolution.disableEmailDiscovery && (
-              <Alert
-                color="amber"
-                icon={<AlertTriangle size={15} />}
-                title="No new external actor is resolved"
-              >
-                Email discovery is the only way the Cluster establishes an
-                IntegrationIdentity. The already established ones keep working,
-                but no new external actor can be resolved, so it can neither be
-                delivered to directly nor submit a decision.
-              </Alert>
-            )}
-          </div>
-        )}
-      </EditItem>
+      </FormSection>
     </div>
   );
 };

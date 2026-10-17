@@ -77,14 +77,13 @@ export type ResourceEnterprise =
   | EnterpriseP.DirectoryProvider;
 
 export type ResourceAccess =
+  | AccessP.ClusterConfig
   | AccessP.Catalog
   | AccessP.Policy
   | AccessP.Request
   | AccessP.Review
   | AccessP.Secret
-  | AccessP.Integration
-  | AccessP.IntegrationIdentity
-  | AccessP.IntegrationBinding;
+  | AccessP.Integration;
 
 export type ResourceCordium =
   | CordiumP.Workspace
@@ -126,9 +125,7 @@ export type ResourceAccessList =
   | AccessP.RequestList
   | AccessP.ReviewList
   | AccessP.SecretList
-  | AccessP.IntegrationList
-  | AccessP.IntegrationIdentityList
-  | AccessP.IntegrationBindingList;
+  | AccessP.IntegrationList;
 
 export type ResourceCordiumList =
   | CordiumP.WorkspaceList
