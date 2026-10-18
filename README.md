@@ -43,3 +43,15 @@ And you can upgrade the Octelium enterprise package as follows:
 ```bash
 octops install-package <DOMAIN> --package octeliumee --upgrade
 ```
+
+## End-to-end tests
+
+Enable the `spiffe` input when running the `tests-e2e` GitHub Actions workflow to install SPIRE and enable the SPIFFE CSI driver for any Enterprise scenario. The `k3s-flannel-ee-spire` and `k3s-flannel-ee-full` scenarios always enable SPIFFE.
+
+To provision a local environment and run the tests with SPIFFE enabled:
+
+```bash
+make e2e E2E_SPIFFE=true
+```
+
+When running `./bin/octeliumee-e2e` directly, set `OCTELIUM_E2E_SPIFFE=true` for each phase. SPIRE and the Cluster use the same trust domain, which defaults to `octelium.local` and can be overridden with `OCTELIUM_SPIFFE_TRUST_DOMAIN`.

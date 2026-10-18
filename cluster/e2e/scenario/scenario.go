@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/octelium/octelium/cluster/e2e/scenario"
@@ -31,6 +32,7 @@ const Package = "octeliumee"
 const (
 	EnvCoreVersion    = "OCTELIUM_E2E_CORE_VERSION"
 	EnvPackageVersion = "OCTELIUM_E2E_PACKAGE_VERSION"
+	EnvSPIFFE         = "OCTELIUM_E2E_SPIFFE"
 )
 
 const VersionLatest = "latest"
@@ -66,19 +68,17 @@ func register(id string, o opts) {
 	packageVersions[id] = packageVersion()
 
 	scenario.Register(id, func() *scenario.Scenario {
-		ret := scenario.MustGet("k3s-flannel")
+		base := "k3s-flannel"
+		spiffe, _ := strconv.ParseBool(os.Getenv(EnvSPIFFE))
+		if o.spire || spiffe {
+			base += "-spiffe"
+		}
+		ret := scenario.MustGet(base)
 
 		ret.Description = o.description
 		ret.Components = Components
 		ret.Install.Version = coreVersion(o.coreVersion)
 		ret.Install.OTelCollector = false
-
-		if o.spire {
-			ret.Install.EnableSPIFFECSI = true
-			ret.Caps = append(ret.Caps, scenario.CapSPIFFE)
-			ret.Hooks.PostPrepare = append(ret.Hooks.PostPrepare,
-				scenario.Step{Name: "spire/install", Run: stepSPIRE})
-		}
 
 		if o.fixtures {
 			withFixtures(ret)
@@ -171,15 +171,6 @@ var Deployments = []string{
 	"svc-dirsync-octelium",
 	"svc-console-octelium",
 	"svc-access-octelium",
-}
-
-func stepSPIRE(ctx context.Context, r *scenario.Runner) error {
-	return r.Bash(ctx, `
-helm repo add spire https://spiffe.github.io/helm-charts-hardened/
-helm repo update spire
-helm upgrade --install spire-crds spire/spire-crds --namespace spire --create-namespace
-helm upgrade --install spire spire/spire --namespace spire --wait --timeout 10m
-`)
 }
 
 func stepInstallPackage(ctx context.Context, r *scenario.Runner) error {
