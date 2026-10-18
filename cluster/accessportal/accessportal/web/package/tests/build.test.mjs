@@ -54,9 +54,18 @@ describe("Production access portal", () => {
         const requested = new Set();
         page.on("pageerror", (error) => errors.push(error.message));
         page.on("request", (request) => requested.add(new URL(request.url()).pathname));
+        await page.addInitScript(() => {
+          window.__OCTELIUM_GLOBALS__ = { cluster: { domain: "example.test" } };
+          document.cookie = "octelium_domain=namespace.example.test; path=/";
+        });
         await page.goto(`${origin}?path=/user/requests`);
         await page.getByRole("heading", { name: "My Requests", exact: true }).waitFor()
           .catch((error) => assert.fail(`${error.message}\nBrowser errors: ${errors.join("\n")}`));
+
+        assert.equal(
+          await page.getByRole("link", { name: "Authenticators", exact: true }).getAttribute("href"),
+          "https://example.test/authenticators",
+        );
 
         const routes = [
           ["/user/new", "New Request", "src/pages/user/Request/new.tsx"],

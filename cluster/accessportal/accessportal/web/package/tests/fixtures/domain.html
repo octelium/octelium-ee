@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+  <body>
+    <script type="module">
+      import { getDomain, isDev } from "/src/utils";
+      import { getUserMainClient, getTransport } from "/src/utils/client";
+
+      window.portalDomain = {
+        getDomain,
+        isDev,
+        transportOptions: () => getTransport().mergeOptions({}),
+        requestStatus: () => getUserMainClient().getStatus({}),
+      };
+    </script>
+  </body>
+</html>
