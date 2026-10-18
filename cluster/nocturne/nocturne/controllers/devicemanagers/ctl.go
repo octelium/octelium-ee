@@ -34,6 +34,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"k8s.io/client-go/util/retry"
 )
 
 const (
@@ -287,25 +288,36 @@ func (c *Controller) setStatus(
 	state enterprisev1.DeviceManager_Status_State,
 	errMsg string,
 ) {
-	if dm.Status == nil {
-		dm.Status = &enterprisev1.DeviceManager_Status{}
-	}
+	err := retry.OnError(retry.DefaultRetry, grpcerr.IsResourceChanged, func() error {
+		cur, err := c.octeliumC.EnterpriseC().GetDeviceManager(ctx, &rmetav1.GetOptions{
+			Uid: dm.GetMetadata().GetUid(),
+		})
+		if err != nil {
+			return err
+		}
 
-	if dm.Status.Type == getStatusType(dm) &&
-		dm.Status.State == state &&
-		dm.Status.GetCollection().GetLastError() == errMsg {
-		return
-	}
+		if cur.Status == nil {
+			cur.Status = &enterprisev1.DeviceManager_Status{}
+		}
 
-	dm.Status.Type = getStatusType(dm)
-	dm.Status.State = state
+		if cur.Status.Type == getStatusType(cur) &&
+			cur.Status.State == state &&
+			cur.Status.GetCollection().GetLastError() == errMsg {
+			return nil
+		}
 
-	if dm.Status.Collection == nil {
-		dm.Status.Collection = &enterprisev1.DeviceManager_Status_Collection{}
-	}
-	dm.Status.Collection.LastError = errMsg
+		cur.Status.Type = getStatusType(cur)
+		cur.Status.State = state
 
-	if _, err := c.octeliumC.EnterpriseC().UpdateDeviceManager(ctx, dm); err != nil {
+		if cur.Status.Collection == nil {
+			cur.Status.Collection = &enterprisev1.DeviceManager_Status_Collection{}
+		}
+		cur.Status.Collection.LastError = errMsg
+
+		_, err = c.octeliumC.EnterpriseC().UpdateDeviceManager(ctx, cur)
+		return err
+	})
+	if err != nil {
 		zap.L().Warn("Could not update DeviceManager status",
 			zap.String("deviceManager", dm.GetMetadata().GetName()),
 			zap.Error(err))

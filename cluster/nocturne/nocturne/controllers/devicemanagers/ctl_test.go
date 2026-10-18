@@ -21,11 +21,13 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/renterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
 )
 
 type tstNudger struct {
@@ -87,6 +89,30 @@ type tstEnv struct {
 	resetter  *tstResetter
 	nudger    *tstNudger
 	octeliumC octeliumc.ClientInterface
+}
+
+type tstStatusClient struct {
+	octeliumc.ClientInterface
+	enterpriseC *tstStatusEnterpriseClient
+}
+
+func (c *tstStatusClient) EnterpriseC() renterprisev1.ResourceServiceClient {
+	return c.enterpriseC
+}
+
+type tstStatusEnterpriseClient struct {
+	renterprisev1.ResourceServiceClient
+	beforeUpdate func()
+	updateCalls  int
+}
+
+func (c *tstStatusEnterpriseClient) UpdateDeviceManager(ctx context.Context,
+	dm *enterprisev1.DeviceManager, opts ...grpc.CallOption) (*enterprisev1.DeviceManager, error) {
+	c.updateCalls++
+	if c.beforeUpdate != nil {
+		c.beforeUpdate()
+	}
+	return c.ResourceServiceClient.UpdateDeviceManager(ctx, dm, opts...)
 }
 
 func newTstEnv(t *testing.T) *tstEnv {
@@ -336,6 +362,77 @@ func TestDeviceManagerBuildFailure(t *testing.T) {
 
 	{
 		assert.NotNil(t, env.ctrl.OnAdd(env.ctx, &enterprisev1.DeviceManager{}))
+	}
+}
+
+func TestDeviceManagerSetStatus(t *testing.T) {
+	for _, concurrent := range []bool{false, true} {
+		name := "StaleResource"
+		if concurrent {
+			name = "ConcurrentUpdate"
+		}
+		t.Run(name, func(t *testing.T) {
+			env := newTstEnv(t)
+			dm := env.createDeviceManager(t, utilrand.GetRandomStringCanonical(8))
+			successAt := pbutils.Now()
+			linking := &enterprisev1.DeviceManager_Status_Linking{
+				LastSweepAt:   pbutils.Now(),
+				LinkedDevices: 3,
+			}
+
+			cur := env.getDeviceManager(t, dm)
+			cur.Status.Collection = &enterprisev1.DeviceManager_Status_Collection{
+				LastSuccessAt:  successAt,
+				ManagedDevices: 7,
+				LastError:      "FleetDM request failed",
+			}
+			_, err := env.octeliumC.EnterpriseC().UpdateDeviceManager(env.ctx, cur)
+			assert.Nil(t, err)
+
+			updateLinking := func() {
+				cur := env.getDeviceManager(t, dm)
+				cur.Spec.GetFleetDM().TeamID = 42
+				cur.Status.Linking = linking
+				_, err := env.octeliumC.EnterpriseC().UpdateDeviceManager(env.ctx, cur)
+				assert.Nil(t, err)
+			}
+
+			client := &tstStatusEnterpriseClient{
+				ResourceServiceClient: env.octeliumC.EnterpriseC(),
+			}
+			if concurrent {
+				client.beforeUpdate = func() {
+					if client.updateCalls == 1 {
+						updateLinking()
+					}
+				}
+			} else {
+				updateLinking()
+			}
+			env.ctrl.octeliumC = &tstStatusClient{
+				ClientInterface: env.octeliumC,
+				enterpriseC:     client,
+			}
+
+			env.ctrl.setStatus(env.ctx, dm, enterprisev1.DeviceManager_Status_ERROR, "Secret does not exist")
+
+			cur = env.getDeviceManager(t, dm)
+			assert.Equal(t, enterprisev1.DeviceManager_Status_ERROR, cur.Status.State)
+			assert.Equal(t, enterprisev1.DeviceManager_Status_FLEETDM, cur.Status.Type)
+			assert.Equal(t, "Secret does not exist", cur.Status.Collection.LastError)
+			assert.True(t, pbutils.IsEqual(successAt, cur.Status.Collection.LastSuccessAt))
+			assert.Equal(t, uint32(7), cur.Status.Collection.ManagedDevices)
+			assert.True(t, pbutils.IsEqual(linking, cur.Status.Linking))
+			assert.Equal(t, uint32(42), cur.Spec.GetFleetDM().TeamID)
+			calls := 1
+			if concurrent {
+				calls++
+			}
+			assert.Equal(t, calls, client.updateCalls)
+
+			env.ctrl.setStatus(env.ctx, dm, enterprisev1.DeviceManager_Status_ERROR, "Secret does not exist")
+			assert.Equal(t, calls, client.updateCalls)
+		})
 	}
 }
 
