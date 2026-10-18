@@ -15,6 +15,7 @@ import {
   Library,
   LayoutDashboard,
   Settings,
+  ShieldCheck,
   ShieldEllipsis,
   ShieldUser,
   Terminal,
@@ -28,6 +29,7 @@ import {
   ResourceOverviewSkeleton,
 } from "./ResourceItemMainPage";
 import { useContextResource } from "./utils";
+import { getResourceAccessSections } from "./resourceAccess";
 
 interface Tab {
   value: string;
@@ -91,6 +93,7 @@ const AUDIT_LOG_TAB: Tab = {
 
 const getActiveTab = (pathname: string): string => {
   const segments = pathname.split("/").filter(Boolean);
+  if (segments[3] === "access") return "access";
   const last = segments.at(-1) ?? "";
   return match(last)
     .with("edit", () => "edit")
@@ -132,6 +135,18 @@ const buildTabs = (resource: Resource): Tab[] => {
     tabs.push(SSH_TAB);
   }
   if (hasLLMVisibility(resource)) tabs.push(LLM_TAB);
+  const accessSections = getResourceAccessSections(
+    resource.apiVersion,
+    resource.kind,
+  );
+  if (accessSections.length > 0) {
+    tabs.push({
+      value: "access",
+      label: "Access",
+      icon: ShieldCheck,
+      path: `access/${accessSections[0].value}`,
+    });
+  }
   if (hasAccessLog(resource)) tabs.push(ACCESS_LOG_TAB);
   if (hasAuthenticationLog(resource)) tabs.push(AUTH_LOG_TAB);
   tabs.push(AUDIT_LOG_TAB);
@@ -157,7 +172,8 @@ const ResourceMainBar = (props: { resource: Resource }) => {
         onChange={(v) => {
           const tab = tabs.find((t) => t.value === v);
           if (tab) {
-            const search = loc.search;
+            const search =
+              activeTab === "access" || v === "access" ? "" : loc.search;
             navigate(`${resourcePath}${tab.path ? `/${tab.path}` : ""}${search}`, {
               state: loc.state,
               preventScrollReset: true,

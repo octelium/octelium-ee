@@ -34,6 +34,7 @@ const SearchList = (props: {
       const search = next.toString();
       navigate(`${location.pathname}${search ? `?${search}` : ""}`, {
         replace: true,
+        state: location.state,
         preventScrollReset: true,
       });
     }, 250);
@@ -43,6 +44,7 @@ const SearchList = (props: {
     currentQuery,
     location.pathname,
     location.search,
+    location.state,
     navigate,
     query,
     props.trimQuery,

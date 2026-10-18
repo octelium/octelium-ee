@@ -88,6 +88,7 @@ import ResourceListToolbar, {
 } from "./ResourceListToolbar";
 
 const LazyResourceYAML = React.lazy(() => import("../ResourceYAML"));
+const AccessListFilters = React.lazy(() => import("@/pages/access/ListFilters"));
 
 type ResourceItemAction = {
   type: "yaml" | "clone" | "delete";
@@ -882,7 +883,7 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
   const listPathname = `/${pathSegments.slice(0, 2).join("/")}`;
   const isDrawerOpen = pathSegments.length > 2;
   const stateReturnTo = (loc.state as { returnTo?: unknown } | null)?.returnTo;
-  let listSearch = loc.search;
+  let listSearch = isDrawerOpen && pathSegments[3] === "access" ? "" : loc.search;
   if (isDrawerOpen && typeof stateReturnTo === "string") {
     try {
       const returnURL = new URL(stateReturnTo, window.location.origin);
@@ -1029,6 +1030,13 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
         onClearSelection={() => setSelected(new Set())}
         onDeleteSelection={() => setDeleteModalOpened(true)}
         onAskSelection={() => pinnedResources(selectedItems)}
+        filters={
+          apiKind.api === "access" && !isDrawerOpen && (
+            <React.Suspense fallback={null}>
+              <AccessListFilters kind={kindName} />
+            </React.Suspense>
+          )
+        }
       />
 
       <BulkDeleteModal

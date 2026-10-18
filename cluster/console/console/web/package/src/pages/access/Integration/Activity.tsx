@@ -60,13 +60,21 @@ const Count = (props: {
   </div>
 );
 
-const DeliveryRow = (props: { item: AccessP.IntegrationBinding }) => {
+export const DeliveryRow = (props: {
+  item: AccessP.IntegrationBinding;
+  showIntegration?: boolean;
+}) => {
   const status = props.item.status;
   const meta = getDeliveryStateMeta(status?.state);
   const failing = isDeliveryFailing(props.item);
   const outOfDate = isDeliveryOutOfDate(props.item);
   const requestRef = normalizeRef(status?.requestRef, "access/v1", "Request");
   const userRef = normalizeRef(status?.userRef, "core/v1", "User");
+  const integrationRef = normalizeRef(
+    status?.integrationRef,
+    "access/v1",
+    "Integration",
+  );
   const PurposeIcon =
     status?.purpose === AccessP.IntegrationBinding_Status_Purpose.NOTIFICATION
       ? BellRing
@@ -90,6 +98,9 @@ const DeliveryRow = (props: { item: AccessP.IntegrationBinding }) => {
           {getDeliveryPurposeLabel(status?.purpose)}
         </span>
         {requestRef && <RefChip itemRef={requestRef} icon={Inbox} />}
+        {props.showIntegration && integrationRef && (
+          <RefChip itemRef={integrationRef} />
+        )}
         <span className="text-micro font-normal text-slate-500">
           {getAudienceLabel(status?.audience)}
           {userRef?.name && ` · ${userRef.name}`}
@@ -154,12 +165,23 @@ const DeliveryRow = (props: { item: AccessP.IntegrationBinding }) => {
   );
 };
 
-const IdentityRow = (props: { item: AccessP.IntegrationIdentity }) => {
+export const IdentityRow = (props: {
+  item: AccessP.IntegrationIdentity;
+  showIntegration?: boolean;
+}) => {
   const status = props.item.status;
   const userRef = normalizeRef(status?.userRef, "core/v1", "User");
+  const integrationRef = normalizeRef(
+    status?.integrationRef,
+    "access/v1",
+    "Integration",
+  );
 
   return (
     <li className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-slate-100 px-3.5 py-2.5 last:border-0">
+      {props.showIntegration && integrationRef && (
+        <RefChip itemRef={integrationRef} />
+      )}
       {userRef ? (
         <RefChip itemRef={userRef} icon={UserRound} />
       ) : (

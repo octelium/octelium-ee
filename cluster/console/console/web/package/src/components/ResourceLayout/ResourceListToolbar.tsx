@@ -215,6 +215,7 @@ const ResourceListToolbar = (props: {
   onClearSelection?: () => void;
   onDeleteSelection?: () => void;
   onAskSelection?: () => PinnedContext;
+  filters?: React.ReactNode;
 }) => {
   const {
     searchParams,
@@ -342,6 +343,8 @@ const ResourceListToolbar = (props: {
         />
 
       </div>
+
+      {props.filters}
 
       {hasSelection ? (
         <SelectionBar

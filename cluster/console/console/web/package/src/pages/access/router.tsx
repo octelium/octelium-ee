@@ -16,10 +16,14 @@ import secretRouter from "./Secret/router";
 
 import ResourceItemActionsPage from "@/components/ResourceLayout/ResourceActions";
 import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
+import { getResourceAccessSections } from "@/components/ResourceLayout/resourceAccess";
 import MainPage from "./index";
 
 const ResourceEditPage = React.lazy(
   () => import("@/components/ResourceLayout/ResourceEdit"),
+);
+const ResourceAccess = React.lazy(
+  () => import("@/components/ResourceLayout/ResourceAccess"),
 );
 const ResourceCreateRoute = React.lazy(
   () => import("@/components/ResourceLayout/ResourceCreateRoute"),
@@ -89,6 +93,17 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
       element: <ResourceItemActionsPage />,
     },
   ];
+
+  if (getResourceAccessSections(`${arg.API}/v1`, arg.Kind).length > 0) {
+    children.push({
+      path: "access/:section?",
+      element: (
+        <LazyPage>
+          <ResourceAccess />
+        </LazyPage>
+      ),
+    });
+  }
 
   children.push({
     path: "auditlogs",

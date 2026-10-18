@@ -26,6 +26,10 @@ import MainPage from "./index";
 
 import ResourceItemActionsPage from "@/components/ResourceLayout/ResourceActions";
 import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
+import { getResourceAccessSections } from "@/components/ResourceLayout/resourceAccess";
+const ResourceAccess = React.lazy(
+  () => import("@/components/ResourceLayout/ResourceAccess"),
+);
 const ResourceItemAccessLogsPage = React.lazy(
   () => import("@/components/ResourceLayout/ResourceAccessLogs"),
 );
@@ -128,6 +132,17 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
       element: <ResourceItemActionsPage />,
     },
   ];
+
+  if (getResourceAccessSections(`${arg.API}/v1`, arg.Kind).length > 0) {
+    children.push({
+      path: "access/:section?",
+      element: (
+        <LazyPage>
+          <ResourceAccess />
+        </LazyPage>
+      ),
+    });
+  }
 
   if (
     match(arg.Kind)
