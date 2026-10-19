@@ -211,7 +211,7 @@ const Integrations = (props: { periodMinutes: number }) => {
                 color: STATUS_COLORS.warning,
               },
               {
-                label: "Failing",
+                label: "Degraded",
                 value: n(deliveries?.totalDegraded),
                 color: STATUS_COLORS.critical,
               },

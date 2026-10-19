@@ -1,8 +1,8 @@
-import { ListCertificateOptions } from "@/apis/visibilityv1/enterprise/venterprisev1";
 import {
-  CommonListOptions_OrderBy_Mode,
-  CommonListOptions_OrderBy_Type,
-} from "@/apis/visibilityv1/meta/vmetav1";
+  ListCertificateOptions,
+  ListCertificateOptions_OrderBy_Type,
+} from "@/apis/visibilityv1/enterprise/venterprisev1";
+import { CommonListOptions_OrderBy_Mode } from "@/apis/visibilityv1/meta/vmetav1";
 import { GetClusterSummaryRequest_Kind } from "@/apis/visibilityv1/visibilityv1";
 import {
   ClusterScope,
@@ -12,7 +12,7 @@ import { dashboardKeys, useDashboardQuery } from "@/components/Dashboard/utils";
 import { getClientVisibilityEnterprise } from "@/utils/client";
 import { QUERY_PRIORITY } from "@/utils/visibility/queue";
 
-const QUEUE_ITEMS = 25;
+const QUEUE_ITEMS = 8;
 
 export const ENTERPRISE_SCOPE: ClusterScope = {
   name: "Enterprise",
@@ -46,14 +46,11 @@ export const useExpiringCertificates = (
       (
         await getClientVisibilityEnterprise().listCertificate(
           ListCertificateOptions.create({
-            common: {
-              itemsPerPage: QUEUE_ITEMS,
-              orderBy: {
-                type: CommonListOptions_OrderBy_Type.CREATED_AT,
-                mode: CommonListOptions_OrderBy_Mode.DESC,
-              },
+            common: { itemsPerPage: QUEUE_ITEMS },
+            orderBy: {
+              type: ListCertificateOptions_OrderBy_Type.EXPIRES_AT,
+              mode: CommonListOptions_OrderBy_Mode.ASC,
             },
-            isExpiringSoon: true,
           }),
           { abort: signal },
         )

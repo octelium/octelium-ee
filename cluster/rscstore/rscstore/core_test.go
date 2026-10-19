@@ -291,7 +291,7 @@ func TestCoreSummaryCountsComprehensive(t *testing.T) {
 		map[string]any{"state": "REJECTED"},
 		map[string]any{"type": "CLIENT", "userRef": map[string]any{"uid": user2}}))
 
-	serviceModes := []string{"TCP", "UDP", "HTTP", "SSH", "KUBERNETES", "POSTGRES", "MYSQL", "DNS", "GRPC", "WEB", "SOCKS5", "RDP_WEB", "MCP", "LLM"}
+	serviceModes := []string{"TCP", "UDP", "HTTP", "SSH", "KUBERNETES", "POSTGRES", "MYSQL", "DNS", "GRPC", "WEB", "SOCKS5", "RDP_WEB", "MCP", "LLM", "RDP"}
 	for idx, mode := range serviceModes {
 		insertRawRscStoreResource(t, env, ucorev1.KindService, newRawRscStoreResource(ucorev1.KindService,
 			fmt.Sprintf("service-%02d", idx), false,
@@ -406,7 +406,7 @@ func TestCoreSummaryCountsComprehensive(t *testing.T) {
 	{
 		resp, err := env.srv.getSummaryCoreService(env.ctx, &vcorev1.GetServiceSummaryRequest{})
 		assert.Nil(t, err, "%+v", err)
-		assert.Equal(t, uint64(14), resp.TotalNumber)
+		assert.Equal(t, uint64(15), resp.TotalNumber)
 		assert.Equal(t, uint64(3), resp.TotalPublic)
 		assert.Equal(t, uint64(1), resp.TotalAnonymous)
 		assert.Equal(t, uint64(1), resp.TotalTCP)
@@ -421,6 +421,7 @@ func TestCoreSummaryCountsComprehensive(t *testing.T) {
 		assert.Equal(t, uint64(1), resp.TotalWeb)
 		assert.Equal(t, uint64(1), resp.TotalSOCKS5)
 		assert.Equal(t, uint64(1), resp.TotalRDPWeb)
+		assert.Equal(t, uint64(1), resp.TotalRDP)
 		assert.Equal(t, uint64(1), resp.TotalMCP)
 		assert.Equal(t, uint64(1), resp.TotalLLM)
 		assert.Equal(t, uint64(1), resp.TotalDisabled)

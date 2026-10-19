@@ -1,4 +1,5 @@
 import { AccessLog_Entry_Common_Status } from "@/apis/corev1/corev1";
+import { GetClusterSummaryRequest_Kind } from "@/apis/visibilityv1/visibilityv1";
 import {
   seriesColor,
   STATUS_COLORS,
@@ -19,6 +20,7 @@ import {
   useClusterSummary,
   useComponentDataPoint,
   useComponentSummary,
+  summaryTileState,
 } from "@/components/Dashboard/queries";
 import { compact } from "@/components/Dashboard/utils";
 
@@ -146,9 +148,10 @@ const Signals = (props: { periodMinutes: number }) => {
         }}
         color={seriesColor(2)}
         to="/core/sessions?isConnected=true"
-        isLoading={cluster.isLoading}
-        isError={cluster.isError}
-        hasData={cluster.data !== undefined}
+        {...summaryTileState(
+          cluster,
+          GetClusterSummaryRequest_Kind.CORE_SESSION,
+        )}
       />
 
       <StatTile
@@ -163,9 +166,10 @@ const Signals = (props: { periodMinutes: number }) => {
         }}
         color={seriesColor(4)}
         to="/access/requests"
-        isLoading={clusterRange.isLoading}
-        isError={clusterRange.isError}
-        hasData={clusterRange.data !== undefined}
+        {...summaryTileState(
+          clusterRange,
+          GetClusterSummaryRequest_Kind.ACCESS_REQUEST,
+        )}
       />
 
       <StatTile

@@ -1,6 +1,6 @@
 import { Service_Spec_Mode } from "@/apis/corev1/corev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
-import { Duration } from "@/apis/metav1/metav1";
+import { Duration, GetOptions } from "@/apis/metav1/metav1";
 import {
   AttributeFilter,
   ComponentSelector,
@@ -19,16 +19,17 @@ import MetricChart, {
   POINTS_PER_SERIES_LIMIT,
   TOTAL_POINTS_LIMIT,
   counterOp,
-  durationToMillis,
   eqBoolFilter,
   eqFilter,
   gaugeOp,
   histogramOp,
+  latestMetricValue,
   retryMetricQuery,
 } from "@/components/Charts/MetricChart";
 import { useInView } from "@/hooks/use-in-view";
 import { usePeriodRange } from "@/hooks/use-period-range";
 import PeriodSelector from "@/components/LogWidget/PeriodSelector";
+import Meta from "@/components/Meta";
 import RefreshButton from "@/components/RefreshButton";
 import {
   PageActions,
@@ -36,6 +37,7 @@ import {
 } from "@/components/PageHeader/context";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
 import {
+  getClientCore,
   getClientVisibilityMetrics,
   refetchIntervalChart,
 } from "@/utils/client";
@@ -58,6 +60,8 @@ import {
   Gauge,
   ServerCog,
   ShieldCheck,
+  ShieldX,
+  TriangleAlert,
   Waypoints,
 } from "lucide-react";
 import * as React from "react";
@@ -168,23 +172,6 @@ const aggregation = (operation: QueryOperation) => {
     : QueryMetricsRequest_SeriesAggregation.SUM;
 };
 
-const numericValue = (point?: {
-  value:
-    | { oneofKind: "asDouble"; asDouble: number }
-    | { oneofKind: "asInt"; asInt: number }
-    | { oneofKind: undefined };
-}) =>
-  point?.value.oneofKind === "asDouble"
-    ? point.value.asDouble
-    : point?.value.oneofKind === "asInt"
-      ? Number(point.value.asInt)
-      : undefined;
-
-const timestampMillis = (timestamp?: Timestamp) =>
-  timestamp
-    ? Number(timestamp.seconds) * 1_000 + Math.floor(timestamp.nanos / 1e6)
-    : undefined;
-
 const formatValue = (value: number | undefined, unit: string): string => {
   if (value === undefined || !Number.isFinite(value)) return "—";
   if (unit === "bytes") {
@@ -277,32 +264,10 @@ const MetricStat = ({
     retry: retryMetricQuery,
     placeholderData: keepPreviousData,
   });
-  const value = React.useMemo(() => {
-    const points = query.data?.series[0]?.points;
-    if (points?.oneofKind !== "number") return undefined;
-    const values = points.number.points
-      .map(numericValue)
-      .filter((item): item is number => item !== undefined);
-    if (
-      operation.type.oneofKind === "counter" &&
-      operation.type.counter.function === CounterOperation_Function.INCREASE
-    ) {
-      return values.reduce((sum, item) => sum + item, 0);
-    }
-    const latestPoint = points.number.points.at(-1);
-    const latestAt = timestampMillis(latestPoint?.timestamp);
-    const snapshotAt = timestampMillis(query.data?.snapshotTime);
-    const stepMillis = durationToMillis(query.data?.step ?? step);
-    if (
-      latestAt !== undefined &&
-      snapshotAt !== undefined &&
-      stepMillis !== undefined &&
-      snapshotAt - latestAt > stepMillis * 1.5
-    ) {
-      return operation.type.oneofKind === "counter" ? 0 : undefined;
-    }
-    return values.at(-1);
-  }, [query.data, operation, step]);
+  const value = React.useMemo(
+    () => latestMetricValue(query.data, operation, step),
+    [query.data, operation, step],
+  );
 
   return (
     <div ref={ref} className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-card">
@@ -352,7 +317,19 @@ const Metrics = () => {
   const componentNamespace =
     searchParams.get("metrics.componentNamespace") || null;
   const serviceName = searchParams.get("metrics.service") || undefined;
-  const [serviceMode, setServiceMode] = React.useState<Service_Spec_Mode>();
+  const serviceQuery = useQuery({
+    queryKey: ["visibility", "metrics", "service", serviceName],
+    enabled: !!serviceName,
+    staleTime: 60_000,
+    queryFn: async ({ signal }) =>
+      (
+        await getClientCore().getService(
+          GetOptions.create({ name: serviceName }),
+          { abort: signal },
+        )
+      ).response,
+  });
+  const serviceMode = serviceName ? serviceQuery.data?.spec?.mode : undefined;
   const trafficDetail = fromParam(
     searchParams.get("metrics.trafficDetail"),
     TRAFFIC_DETAILS,
@@ -481,6 +458,7 @@ const Metrics = () => {
 
   return (
     <div className="space-y-4 pb-8">
+      <Meta title="Metrics" />
       <PageActions>
         <Switch
           size="xs"
@@ -585,15 +563,11 @@ const Metrics = () => {
               label="Vigil service"
               clearable
               defaultValue={serviceName}
-              onChange={(item) => {
+              onChange={(item) =>
                 patchParams({
                   "metrics.service": item?.metadata?.name ?? null,
-                });
-                setServiceMode(
-                  (item as { spec?: { mode?: Service_Spec_Mode } } | undefined)
-                    ?.spec?.mode,
-                );
-              }}
+                })
+              }
             />
           )}
         </div>
@@ -770,7 +744,7 @@ const Metrics = () => {
               metric="req.total"
               operation={counterOp(CounterOperation_Function.RATE)}
               unit="requests/s"
-              icon={<ServerCog size={16} />}
+              icon={<ShieldX size={16} />}
               lookbackSeconds={lookbackSeconds}
               step={step}
               component={vigil}
@@ -1204,7 +1178,7 @@ const Metrics = () => {
               metric="req.total"
               operation={counterOp(CounterOperation_Function.RATE)}
               unit="requests/s"
-              icon={<ServerCog size={16} />}
+              icon={<TriangleAlert size={16} />}
               lookbackSeconds={lookbackSeconds}
               step={step}
               component={rscserver}

@@ -70,6 +70,7 @@ const AccessLeaders = (props: { periodMinutes: number }) => {
           totalOther={n(users.data?.totalOther)}
           to="/core/users"
           isLoading={users.isLoading}
+          isError={users.isError}
           unit="requests"
           emptyLabel={`No identity made a request in the last ${rangeLabel}.`}
         />
@@ -87,6 +88,7 @@ const AccessLeaders = (props: { periodMinutes: number }) => {
           totalOther={n(services.data?.totalOther)}
           to="/core/services"
           isLoading={services.isLoading}
+          isError={services.isError}
           unit="requests"
           emptyLabel={`No Service was reached in the last ${rangeLabel}.`}
         />
@@ -104,6 +106,7 @@ const AccessLeaders = (props: { periodMinutes: number }) => {
           totalOther={n(policies.data?.totalOther)}
           to="/core/policies"
           isLoading={policies.isLoading}
+          isError={policies.isError}
           unit="decisions"
           emptyLabel={`No Policy matched a request in the last ${rangeLabel}.`}
         />
@@ -121,6 +124,7 @@ const AccessLeaders = (props: { periodMinutes: number }) => {
           totalOther={n(sessions.data?.totalOther)}
           to="/core/sessions"
           isLoading={sessions.isLoading}
+          isError={sessions.isError}
           unit="requests"
           emptyLabel={`No Session made a request in the last ${rangeLabel}.`}
         />
@@ -134,6 +138,7 @@ const AccessLeaders = (props: { periodMinutes: number }) => {
             totalOther={n(denials.data?.totalOther)}
             to="/visibility/accesslogs?status=DENIED"
             isLoading={denials.isLoading}
+            isError={denials.isError}
             unit="denials"
             emptyLabel={`Nothing was denied in the last ${rangeLabel}.`}
           />

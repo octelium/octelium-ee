@@ -37,6 +37,7 @@ const IdentityLeaders = (props: { periodMinutes: number }) => {
           totalOther={n(users.data?.totalOther)}
           to="/core/users"
           isLoading={users.isLoading}
+          isError={users.isError}
           unit="logins"
           emptyLabel={`Nobody authenticated in the last ${rangeLabel}.`}
         />
@@ -54,6 +55,7 @@ const IdentityLeaders = (props: { periodMinutes: number }) => {
           totalOther={n(providers.data?.totalOther)}
           to="/core/identityproviders"
           isLoading={providers.isLoading}
+          isError={providers.isError}
           unit="logins"
           emptyLabel={`No IdentityProvider was used in the last ${rangeLabel}.`}
         />
@@ -71,6 +73,7 @@ const IdentityLeaders = (props: { periodMinutes: number }) => {
           totalOther={n(credentials.data?.totalOther)}
           to="/core/credentials"
           isLoading={credentials.isLoading}
+          isError={credentials.isError}
           unit="logins"
           emptyLabel={`No Credential was used in the last ${rangeLabel}.`}
         />

@@ -35,7 +35,9 @@ export const subjectOf = (item: Request): ObjectReference | undefined => {
 export const TopRefList = (props: {
   title: string;
   items?: ListTopResponse["items"];
+  totalCount?: number;
   totalOther?: number;
+  unit: string;
   icon: LucideIcon;
   isLoading?: boolean;
   emptyLabel: string;
@@ -136,7 +138,9 @@ export const TopRefList = (props: {
           })}
           {(props.totalOther ?? 0) > 0 && (
             <li className="px-1 text-micro font-normal text-slate-500">
-              + {compact(props.totalOther ?? 0)} more
+              + {compact(props.totalOther ?? 0)} {props.unit}
+              {(props.totalCount ?? 0) > items.length &&
+                ` from ${compact((props.totalCount ?? 0) - items.length)} more`}
             </li>
           )}
         </ol>

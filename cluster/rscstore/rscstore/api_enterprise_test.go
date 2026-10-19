@@ -16,6 +16,7 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -210,6 +211,48 @@ func TestEnterpriseListFilters(t *testing.T) {
 		assert.Nil(t, err, "%+v", err)
 		assert.Len(t, resp.Items, 1)
 		assert.Equal(t, "expiring-soon-cert", resp.Items[0].Metadata.Name)
+	}
+
+	insertRscStoreObject(t, env, &enterprisev1.Certificate{
+		ApiVersion: uenterprisev1.APIVersion,
+		Kind:       uenterprisev1.KindCertificate,
+		Metadata:   newRscStoreMetadata("unissued-cert", now.Add(2*time.Second)),
+		Spec:       &enterprisev1.Certificate_Spec{Mode: enterprisev1.Certificate_Spec_MANAGED},
+		Status:     &enterprisev1.Certificate_Status{},
+	})
+
+	for _, tc := range []struct {
+		orderBy *venterprisev1.ListCertificateOptions_OrderBy
+		names   []string
+	}{
+		{
+			names: []string{"unissued-cert", "expiring-soon-cert", "expired-cert"},
+		},
+		{
+			orderBy: &venterprisev1.ListCertificateOptions_OrderBy{
+				Type: venterprisev1.ListCertificateOptions_OrderBy_EXPIRES_AT,
+			},
+			names: []string{"expired-cert", "expiring-soon-cert", "unissued-cert"},
+		},
+		{
+			orderBy: &venterprisev1.ListCertificateOptions_OrderBy{
+				Type: venterprisev1.ListCertificateOptions_OrderBy_EXPIRES_AT,
+				Mode: vmetav1.CommonListOptions_OrderBy_DESC,
+			},
+			names: []string{"expiring-soon-cert", "expired-cert", "unissued-cert"},
+		},
+	} {
+		resp, err := srv.ListCertificate(env.ctx, &venterprisev1.ListCertificateOptions{
+			OrderBy: tc.orderBy,
+		})
+		if !assert.Nil(t, err, "%+v", err) {
+			continue
+		}
+		var names []string
+		for _, item := range resp.Items {
+			names = append(names, item.Metadata.Name)
+		}
+		assert.Equal(t, tc.names, names)
 	}
 
 	insertRscStoreObject(t, env, &enterprisev1.CertificateIssuer{

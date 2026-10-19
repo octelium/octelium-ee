@@ -27,7 +27,11 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Panel } from "@/components/Dashboard/components";
-import { useClusterSummary } from "@/components/Dashboard/queries";
+import {
+  isKindAvailable,
+  summaryKindOf,
+  useClusterSummary,
+} from "@/components/Dashboard/queries";
 import { compact, exact } from "@/components/Dashboard/utils";
 
 type Api = "core" | "access" | "enterprise" | "cordium";
@@ -229,6 +233,7 @@ const GROUPS: Group[] = [
 ];
 
 const Row = (props: {
+  api: Api;
   entry: Entry;
   total?: GetClusterSummaryResponse;
   created?: GetClusterSummaryResponse;
@@ -236,6 +241,10 @@ const Row = (props: {
 }) => {
   const { entry } = props;
   const Icon = entry.icon;
+  const unavailable = !isKindAvailable(
+    props.total,
+    summaryKindOf(props.api, entry.kind),
+  );
 
   const totalCount = n(entry.pick(props.total)?.totalNumber);
   const createdCount = entry.withRange
@@ -255,7 +264,7 @@ const Row = (props: {
         {entry.label}
       </span>
 
-      {createdCount > 0 && (
+      {!unavailable && createdCount > 0 && (
         <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-px text-micro font-semibold tabular-nums text-emerald-700">
           +{compact(createdCount)}
         </span>
@@ -263,6 +272,13 @@ const Row = (props: {
 
       {props.isLoading ? (
         <span className="h-4 w-10 shrink-0 motion-safe:animate-pulse rounded bg-slate-100" />
+      ) : unavailable ? (
+        <span
+          className="shrink-0 text-sm font-bold text-slate-400"
+          title="Currently unavailable"
+        >
+          —
+        </span>
       ) : (
         <span
           className="shrink-0 text-sm font-bold tabular-nums text-slate-900"
@@ -327,6 +343,7 @@ const Inventory = (props: { periodMinutes: number }) => {
                 {group.entries.map((entry) => (
                   <Row
                     key={`${group.api}-${entry.kind}`}
+                    api={group.api}
                     entry={entry}
                     total={cluster.data}
                     created={clusterRange.data}

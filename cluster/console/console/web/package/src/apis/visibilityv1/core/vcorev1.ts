@@ -406,6 +406,10 @@ export interface GetServiceSummaryResponse {
      * @generated from protobuf field: octelium.api.main.visibility.core.v1.GetServiceSummaryResponse previous = 19
      */
     previous?: GetServiceSummaryResponse;
+    /**
+     * @generated from protobuf field: uint64 totalRDP = 20
+     */
+    totalRDP: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetCredentialSummaryResponse
@@ -2119,7 +2123,8 @@ class GetServiceSummaryResponse$Type extends MessageType<GetServiceSummaryRespon
             { no: 16, name: "totalDisabled", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 17, name: "totalMCP", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 18, name: "totalLLM", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 19, name: "previous", kind: "message", T: () => GetServiceSummaryResponse }
+            { no: 19, name: "previous", kind: "message", T: () => GetServiceSummaryResponse },
+            { no: 20, name: "totalRDP", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<GetServiceSummaryResponse>): GetServiceSummaryResponse {
@@ -2142,6 +2147,7 @@ class GetServiceSummaryResponse$Type extends MessageType<GetServiceSummaryRespon
         message.totalDisabled = 0;
         message.totalMCP = 0;
         message.totalLLM = 0;
+        message.totalRDP = 0;
         if (value !== undefined)
             reflectionMergePartial<GetServiceSummaryResponse>(this, message, value);
         return message;
@@ -2207,6 +2213,9 @@ class GetServiceSummaryResponse$Type extends MessageType<GetServiceSummaryRespon
                     break;
                 case /* octelium.api.main.visibility.core.v1.GetServiceSummaryResponse previous */ 19:
                     message.previous = GetServiceSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
+                    break;
+                case /* uint64 totalRDP */ 20:
+                    message.totalRDP = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2277,6 +2286,9 @@ class GetServiceSummaryResponse$Type extends MessageType<GetServiceSummaryRespon
         /* octelium.api.main.visibility.core.v1.GetServiceSummaryResponse previous = 19; */
         if (message.previous)
             GetServiceSummaryResponse.internalBinaryWrite(message.previous, writer.tag(19, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalRDP = 20; */
+        if (message.totalRDP !== 0)
+            writer.tag(20, WireType.Varint).uint64(message.totalRDP);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

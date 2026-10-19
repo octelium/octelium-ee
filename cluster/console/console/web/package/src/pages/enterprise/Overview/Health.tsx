@@ -1,4 +1,7 @@
-import { GetClusterHealthResponse_Subsystem_Type } from "@/apis/visibilityv1/visibilityv1";
+import {
+  GetClusterHealthResponse_Status,
+  GetClusterHealthResponse_Subsystem_Type,
+} from "@/apis/visibilityv1/visibilityv1";
 import { EmptyHint, Panel } from "@/components/Dashboard/components";
 import { StatusBadge, SubsystemGrid } from "@/components/Dashboard/health";
 import { useClusterHealth } from "@/components/Dashboard/queries";
@@ -13,6 +16,12 @@ const SUBSYSTEMS = [
   GetClusterHealthResponse_Subsystem_Type.DEVICE_MANAGERS,
 ];
 
+const STATUS_RANK: Record<number, number> = {
+  [GetClusterHealthResponse_Status.CRITICAL]: 3,
+  [GetClusterHealthResponse_Status.DEGRADED]: 2,
+  [GetClusterHealthResponse_Status.UNKNOWN]: 1,
+};
+
 const Health = (props: { periodMinutes: number }) => {
   const { periodMinutes } = props;
   const rangeLabel = periodLabel(periodMinutes);
@@ -23,8 +32,11 @@ const Health = (props: { periodMinutes: number }) => {
   );
 
   const worst = subsystems.reduce(
-    (status, item) => Math.max(status, item.status),
-    0,
+    (status, item) =>
+      (STATUS_RANK[item.status] ?? 0) > (STATUS_RANK[status] ?? 0)
+        ? item.status
+        : status,
+    GetClusterHealthResponse_Status.OK,
   );
 
   return (

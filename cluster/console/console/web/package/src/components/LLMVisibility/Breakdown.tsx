@@ -16,6 +16,7 @@ import {
   DRILLDOWN_DIMENSIONS,
   METRIC_ACCESSORS,
   metricAccessor,
+  MULTI_VALUED_DIMENSIONS,
 } from "./utils";
 
 const Breakdown = (props: {
@@ -88,6 +89,7 @@ const Breakdown = (props: {
           totalCount={qry.data?.totalCount}
           accessor={accessor}
           colored={props.colored}
+          overlapping={MULTI_VALUED_DIMENSIONS.has(props.dimension)}
           onSelect={
             canDrilldown
               ? (item) =>

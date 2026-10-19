@@ -34,6 +34,7 @@ import Trend from "./Trend";
 import {
   applyDrilldowns,
   buildFilter,
+  conflictsWith,
   dimensionLabel,
   Drilldown,
   drilldownID,
@@ -120,7 +121,10 @@ const LLMVisibility = (props: {
     setDrilldowns((current) =>
       current.some((item) => drilldownID(item) === drilldownID(drilldown))
         ? current
-        : [...current, drilldown],
+        : [
+            ...current.filter((item) => !conflictsWith(item, drilldown)),
+            drilldown,
+          ],
     );
 
   const removeDrilldown = (drilldown: Drilldown) =>
@@ -146,11 +150,12 @@ const LLMVisibility = (props: {
         drilldowns={drilldowns}
         onRemoveDrilldown={removeDrilldown}
         onClearDrilldowns={() => setDrilldowns([])}
-        onRefresh={() =>
+        onRefresh={() => {
+          if (minutes !== undefined) setRange(rangeFromMinutes(minutes));
           queryClient.invalidateQueries({
             queryKey: ["visibility", "llm"],
-          })
-        }
+          });
+        }}
       />
 
       <Panel

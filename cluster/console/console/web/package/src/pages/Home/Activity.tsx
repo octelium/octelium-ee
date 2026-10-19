@@ -127,9 +127,12 @@ const Activity = (props: { periodMinutes: number }) => {
         count: item.count,
       })),
     },
-  ].filter(
-    (list) => list.items.length > 0 && list.items.every((x) => x.resource),
-  );
+  ]
+    .map((list) => ({
+      ...list,
+      items: list.items.filter((item) => !!item.resource),
+    }))
+    .filter((list) => list.items.length > 0);
 
   return (
     <Panel

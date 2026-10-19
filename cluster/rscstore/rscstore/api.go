@@ -824,6 +824,8 @@ func (s *srvEnterprise) ListCertificate(ctx context.Context, req *venterprisev1.
 		}
 	}
 
+	doListReq.orderBy = getCertificateOrderByExpr(req.OrderBy)
+
 	ret, err := s.s.doList(ctx, doListReq)
 	if err != nil {
 		return nil, err
@@ -1497,6 +1499,18 @@ func getRequestOrderByExpr(orderBy *vaccessv1.ListRequestOptions_OrderBy) exp.Or
 	}
 
 	return goqu.L(column).Asc().NullsLast()
+}
+
+func getCertificateOrderByExpr(orderBy *venterprisev1.ListCertificateOptions_OrderBy) exp.OrderedExpression {
+	if orderBy.GetType() != venterprisev1.ListCertificateOptions_OrderBy_EXPIRES_AT {
+		return nil
+	}
+
+	if orderBy.GetMode() == vmetav1.CommonListOptions_OrderBy_DESC {
+		return goqu.L(colStatusIssuanceExpiry).Desc().NullsLast()
+	}
+
+	return goqu.L(colStatusIssuanceExpiry).Asc().NullsLast()
 }
 
 func (s *srvAccess) GetRequestDataPoint(ctx context.Context, req *vaccessv1.GetRequestDataPointRequest) (*vaccessv1.GetRequestDataPointResponse, error) {

@@ -10,7 +10,7 @@ import { compact } from "@/components/Dashboard/utils";
 import { CompositionBar } from "@/components/ResourceInventory/InventoryTable";
 import TimeAgo from "@/components/TimeAgo";
 import { STATUS_COLORS, useChartColorScheme } from "@/utils/charts/palette";
-import { n, periodLabel } from "@/utils/visibility";
+import { n } from "@/utils/visibility";
 import { QUERY_PRIORITY } from "@/utils/visibility/queue";
 import {
   Boxes,
@@ -24,14 +24,13 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import { useEnterpriseTotals, useExpiringCertificates } from "./queries";
 
-const SHOWN = 8;
+const RENEWAL_WINDOW_SECONDS = 30 * 24 * 60 * 60;
 
 const expiresAt = (item: Certificate) =>
-  item.status?.info?.notAfter?.seconds ?? 0;
+  item.status?.issuance?.expiresAt ?? item.status?.info?.notAfter;
 
 const Certificates = (props: { periodMinutes: number }) => {
   const { periodMinutes } = props;
-  const rangeLabel = periodLabel(periodMinutes);
   useChartColorScheme();
 
   const location = useLocation();
@@ -43,15 +42,18 @@ const Certificates = (props: { periodMinutes: number }) => {
   const data = totals.data?.enterprise?.certificate;
   const issuers = totals.data?.enterprise?.certificateIssuer;
 
-  const items = [...(expiring.data?.items ?? [])]
-    .sort((a, b) => expiresAt(a) - expiresAt(b))
-    .slice(0, SHOWN);
+  const now = Date.now() / 1000;
+  const items = (expiring.data?.items ?? []).filter((item) => {
+    const at = expiresAt(item);
+    return !!at && Number(at.seconds) < now + RENEWAL_WINDOW_SECONDS;
+  });
+  const expired = n(data?.totalExpired);
 
   return (
     <Panel
       icon={ShieldCheck}
       title="Certificates"
-      description={`Issuance and expiry of the Cluster's TLS Certificates over the last ${rangeLabel}`}
+      description="Current issuance and expiry state of the Cluster's TLS Certificates"
       to="/enterprise/certificates"
       toLabel="All Certificates"
     >
@@ -201,22 +203,40 @@ const Certificates = (props: { periodMinutes: number }) => {
               />
             ))}
           </div>
+        ) : items.length === 0 && expiring.isError ? (
+          <EmptyHint>The renewal queue could not be loaded.</EmptyHint>
         ) : items.length === 0 ? (
-          <EmptyHint>No Certificate expires within the next 30 days.</EmptyHint>
+          <EmptyHint>
+            No Certificate is expired or expires within the next 30 days.
+          </EmptyHint>
         ) : (
-          <div className="flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50/40 px-3.5 py-3">
+          <div
+            className={
+              expired > 0
+                ? "flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50/40 px-3.5 py-3"
+                : "flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50/40 px-3.5 py-3"
+            }
+          >
             <div className="flex items-baseline justify-between gap-2">
-              <span className="inline-flex items-center gap-2 text-micro font-semibold uppercase tracking-[0.07em] text-amber-700">
+              <span
+                className={
+                  expired > 0
+                    ? "inline-flex items-center gap-2 text-micro font-semibold uppercase tracking-[0.07em] text-red-700"
+                    : "inline-flex items-center gap-2 text-micro font-semibold uppercase tracking-[0.07em] text-amber-700"
+                }
+              >
                 <CalendarX2 size={12} strokeWidth={2.3} />
                 Renew these first
               </span>
               <span className="text-micro font-normal tabular-nums text-slate-500">
+                {expired > 0 && `${compact(expired)} expired · `}
                 {compact(n(data?.totalExpiringSoon))} expiring
               </span>
             </div>
 
             {items.map((item) => {
               const md = item.metadata!;
+              const isExpired = Number(expiresAt(item)?.seconds) < now;
               return (
                 <Link
                   key={md.uid}
@@ -237,8 +257,15 @@ const Certificates = (props: { periodMinutes: number }) => {
                     </span>
                   </span>
 
-                  <span className="shrink-0 text-micro font-semibold text-amber-700">
-                    expires <TimeAgo rfc3339={item.status?.info?.notAfter} />
+                  <span
+                    className={
+                      isExpired
+                        ? "shrink-0 text-micro font-semibold text-red-700"
+                        : "shrink-0 text-micro font-semibold text-amber-700"
+                    }
+                  >
+                    {isExpired ? "expired" : "expires"}{" "}
+                    <TimeAgo rfc3339={expiresAt(item)} />
                   </span>
 
                   <ChevronRight

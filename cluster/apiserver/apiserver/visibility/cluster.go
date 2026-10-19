@@ -569,9 +569,10 @@ func (s *ServerCluster) GetClusterHealth(ctx context.Context,
 
 		res, err := s.componentLogC.ListComponentLogTopComponent(ctx,
 			&pb.ListComponentLogTopComponentRequest{
-				From:  fromPB,
-				To:    toPB,
-				Limit: maxUnhealthyComponents,
+				From:    fromPB,
+				To:      toPB,
+				OrderBy: pb.ListComponentLogTopComponentRequest_SEVERITY,
+				Limit:   maxUnhealthyComponents,
 			})
 		if err != nil {
 			unknownSubsystem(pb.GetClusterHealthResponse_Subsystem_COMPONENTS, err)
@@ -793,19 +794,13 @@ func (s *ServerCluster) GetClusterHealth(ctx context.Context,
 			return
 		}
 
-		reviews, err := s.accessC.GetReviewSummary(ctx, &vaccessv1.GetReviewSummaryRequest{})
-		if err != nil {
-			unknownSubsystem(pb.GetClusterHealthResponse_Subsystem_ACCESS_REQUESTS, err)
-			return
-		}
-
 		addSubsystem(&pb.GetClusterHealthResponse_Subsystem{
 			Type:   pb.GetClusterHealthResponse_Subsystem_ACCESS_REQUESTS,
-			Status: healthStatus(requests.TotalDeadlinePassed, requests.TotalPending+reviews.TotalPending),
-			Message: fmt.Sprintf("%d access requests are pending, %d are past their deadline, %d reviews are open",
-				requests.TotalPending, requests.TotalDeadlinePassed, reviews.TotalPending),
+			Status: healthStatus(requests.TotalPendingDeadlinePassed, requests.TotalPending),
+			Message: fmt.Sprintf("%d access requests are pending, %d of which are past their deadline",
+				requests.TotalPending, requests.TotalPendingDeadlinePassed),
 			Total:     requests.TotalNumber,
-			Unhealthy: requests.TotalPending + requests.TotalDeadlinePassed,
+			Unhealthy: requests.TotalPending,
 		})
 	}()
 

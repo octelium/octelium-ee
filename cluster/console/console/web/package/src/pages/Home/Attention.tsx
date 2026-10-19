@@ -7,9 +7,9 @@ import {
   CalendarClock,
   CalendarX2,
   CheckCircle2,
-  ClipboardCheck,
   Crown,
   Folder,
+  Hourglass,
   Inbox,
   LaptopMinimal,
   LockKeyhole,
@@ -151,7 +151,6 @@ const Attention = (props: { periodMinutes: number }) => {
     unhealthySubsystems.length > 0;
 
   const requests = cluster.data?.access?.request;
-  const reviews = cluster.data?.access?.review;
   const sessions = cluster.data?.core?.session;
   const devices = cluster.data?.core?.device;
   const authenticators = cluster.data?.core?.authenticator;
@@ -172,21 +171,21 @@ const Attention = (props: { periodMinutes: number }) => {
     },
     {
       id: "requestsDeadline",
-      count: n(requests?.totalDeadlinePassed),
+      count: n(requests?.totalPendingDeadlinePassed),
       label: "Access requests past their deadline",
       scope: "Access",
       severity: "critical",
-      to: "/access/requests?isDeadlinePassed=true",
+      to: "/access/requests?isDeadlinePassed=true&state=PENDING",
       icon: CalendarClock,
     },
     {
-      id: "reviewsPending",
-      count: n(reviews?.totalPending),
-      label: "Reviews waiting on a reviewer",
+      id: "requestsStale",
+      count: n(requests?.totalPendingStale),
+      label: "Access requests waiting for more than a day",
       scope: "Access",
       severity: "warning",
-      to: "/access/reviews?isDecided=false",
-      icon: ClipboardCheck,
+      to: "/access/requests?isPendingStale=true",
+      icon: Hourglass,
     },
     {
       id: "sessionsPending",

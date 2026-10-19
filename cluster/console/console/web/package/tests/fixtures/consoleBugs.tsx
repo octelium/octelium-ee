@@ -17,6 +17,7 @@ import {
   GetClusterHealthResponse_Subsystem_Type,
   GetClusterSummaryRequest_Kind,
   GetClusterSummaryResponse,
+  GetAccessLogDataPointResponse,
   GetComponentLogSummaryResponse,
   GetAuditLogSummaryResponse,
   ListAccessLogResponse,
@@ -38,6 +39,12 @@ import Sidebar from "@/components/SideBar";
 import TopBar from "@/components/TopBar";
 import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
 import Attention from "@/pages/Home/Attention";
+import AccessAttention from "@/pages/access/Overview/Attention";
+import EnterpriseHealth from "@/pages/enterprise/Overview/Health";
+import VisibilityBreakdown from "@/pages/visibility/Main/Breakdown";
+import StatBars from "@/components/LLMVisibility/StatBars";
+import { metricAccessor } from "@/components/LLMVisibility/utils";
+import { Metric } from "@/apis/visibilityv1/llm/vllmv1";
 import LineChart from "@/components/Charts/LineChart";
 import SeriesChart from "@/components/Charts/SeriesChart";
 import MetricChart, { gaugeOp } from "@/components/Charts/MetricChart";
@@ -108,6 +115,7 @@ const points = [
 const cluster = Object.getPrototypeOf(getClientVisibilityCluster());
 cluster.getClusterSummary = async (request: any) => {
   calls.push({ name: "summary", request });
+  if (scenario === "access-error") throw new Error("Summary unavailable");
   return {
     response: GetClusterSummaryResponse.create({
       unavailables:
@@ -115,13 +123,37 @@ cluster.getClusterSummary = async (request: any) => {
           ? [{ kind: GetClusterSummaryRequest_Kind.CORE_DEVICE, message: "unavailable" }]
           : [],
       access: {
-        request: { totalDeadlinePassed: scenario === "deadline" ? 3 : 0 },
+        request: {
+          totalDeadlinePassed:
+            scenario === "deadline" || scenario === "decided-deadline" ? 5 : 0,
+          totalPendingDeadlinePassed: scenario === "deadline" ? 3 : 0,
+        },
+        review: { totalPending: scenario === "decided-deadline" ? 2 : 0 },
       },
     }),
   };
 };
 cluster.getClusterHealth = async () => {
   if (scenario === "health-error") throw new Error("Health unavailable");
+  if (scenario === "enterprise-health") {
+    return {
+      response: GetClusterHealthResponse.create({
+        status: GetClusterHealthResponse_Status.CRITICAL,
+        subsystems: [
+          {
+            type: GetClusterHealthResponse_Subsystem_Type.CERTIFICATES,
+            status: GetClusterHealthResponse_Status.CRITICAL,
+            message: "1 expired",
+          },
+          {
+            type: GetClusterHealthResponse_Subsystem_Type.SECRET_STORES,
+            status: GetClusterHealthResponse_Status.UNKNOWN,
+            message: "Not evaluated",
+          },
+        ],
+      }),
+    };
+  }
   const status =
     scenario === "critical"
       ? GetClusterHealthResponse_Status.CRITICAL
@@ -146,6 +178,13 @@ cluster.getClusterHealth = async () => {
 ).getComponentLogSummary = async () => {
   if (scenario === "source-error") throw new Error("Logs unavailable");
   return { response: GetComponentLogSummaryResponse.create() };
+};
+
+(
+  Object.getPrototypeOf(getClientVisibilityAccessLog()) as any
+).getAccessLogDataPoint = async (request: any) => {
+  calls.push({ name: "getAccessLogDataPoint", request });
+  return { response: GetAccessLogDataPointResponse.create() };
 };
 
 for (const [client, method, response] of [
@@ -279,6 +318,26 @@ const Fixture = () => (
                   bar={{ value: 81, total: 81, label: "sessions" }}
                 />
               </>
+            ) : scenario === "enterprise-health" ? (
+              <EnterpriseHealth periodMinutes={60} />
+            ) : scenario === "access-error" ? (
+              <AccessAttention periodMinutes={60} />
+            ) : scenario === "breakdown" ? (
+              <VisibilityBreakdown periodMinutes={60} />
+            ) : scenario === "statbars" ? (
+              <StatBars
+                accessor={metricAccessor(Metric.LATENCY_P95)}
+                items={[
+                  {
+                    key: "fast",
+                    stats: { latency: { p95Ms: 200 } } as any,
+                  },
+                  {
+                    key: "slow",
+                    stats: { latency: { p95Ms: 800 } } as any,
+                  },
+                ]}
+              />
             ) : (
               <Attention periodMinutes={60} />
             )}

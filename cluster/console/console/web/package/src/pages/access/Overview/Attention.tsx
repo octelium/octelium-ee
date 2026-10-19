@@ -132,7 +132,7 @@ const Attention = (props: { periodMinutes: number }) => {
       label: "Deliveries failing",
       hint: "Messages or issues that could not be created or updated.",
       severity: "critical",
-      to: "/access/integrations?state=DEGRADED",
+      to: "/access/integrations",
       icon: Send,
     },
     {
@@ -191,6 +191,11 @@ const Attention = (props: { periodMinutes: number }) => {
     );
   const critical = items.filter((item) => item.severity === "critical").length;
   const isLoading = totals.isLoading || created.isLoading;
+  const incomplete =
+    !totals.data ||
+    !created.data ||
+    totals.data.unavailables.length > 0 ||
+    created.data.unavailables.length > 0;
 
   return (
     <Panel
@@ -199,9 +204,11 @@ const Attention = (props: { periodMinutes: number }) => {
       description={
         isLoading
           ? "Checking requests, integrations and policies"
-          : items.length === 0
-            ? "No overdue request, failing integration or policy gap"
-            : `${items.length} signal${items.length === 1 ? "" : "s"}${critical > 0 ? ` · ${critical} critical` : ""}`
+          : items.length === 0 && incomplete
+            ? "Some signals are unavailable; the assessment is incomplete"
+            : items.length === 0
+              ? "No overdue request, failing integration or policy gap"
+              : `${items.length} signal${items.length === 1 ? "" : "s"}${critical > 0 ? ` · ${critical} critical` : ""}`
       }
     >
       {isLoading && items.length === 0 ? (
@@ -212,6 +219,13 @@ const Attention = (props: { periodMinutes: number }) => {
               className="h-[104px] motion-safe:animate-pulse rounded-xl border border-slate-200 bg-slate-50"
             />
           ))}
+        </div>
+      ) : items.length === 0 && incomplete ? (
+        <div
+          role="status"
+          className="rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-4 text-body text-amber-700"
+        >
+          Incomplete assessment
         </div>
       ) : items.length === 0 ? (
         <div className="flex min-h-20 items-center justify-center gap-3 rounded-xl border border-dashed border-emerald-200 bg-emerald-50/50 px-6 py-5 text-center">
@@ -227,7 +241,7 @@ const Attention = (props: { periodMinutes: number }) => {
           ))}
         </div>
       )}
-      {(totals.data?.unavailables.length ?? 0) > 0 && (
+      {!isLoading && incomplete && (
         <p role="alert" className="mt-3 text-micro font-semibold text-amber-700">
           Some summaries could not be loaded, so this list may be incomplete.
         </p>

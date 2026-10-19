@@ -103,7 +103,7 @@ const StatsOverview = (props: { stats?: Stats }) => {
       <StatCard
         label="Tool calls"
         value={formatCount(num(stats?.toolCalls))}
-        hint={`${formatCount(num(stats?.distinctToolsCalled))} distinct tools`}
+        hint={`${formatCount(num(requests?.withToolCalls))} requests with tool calls`}
         icon={Wrench}
       />
       <StatCard

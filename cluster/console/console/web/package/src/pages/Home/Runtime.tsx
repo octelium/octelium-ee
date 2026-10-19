@@ -17,6 +17,7 @@ import MetricChart, {
   counterOp,
   gaugeOp,
   histogramOp,
+  latestMetricValue,
   POINTS_PER_SERIES_LIMIT,
   retryMetricQuery,
   TOTAL_POINTS_LIMIT,
@@ -71,18 +72,6 @@ const formatValue = (value: number | undefined, unit: string): string => {
   if (unit.endsWith("/s")) return `${value.toFixed(value < 10 ? 2 : 1)}`;
   return Math.round(value).toLocaleString();
 };
-
-const numericValue = (point?: {
-  value:
-    | { oneofKind: "asDouble"; asDouble: number }
-    | { oneofKind: "asInt"; asInt: number }
-    | { oneofKind: undefined };
-}) =>
-  point?.value.oneofKind === "asDouble"
-    ? point.value.asDouble
-    : point?.value.oneofKind === "asInt"
-      ? Number(point.value.asInt)
-      : undefined;
 
 const MetricStat = (props: {
   label: string;
@@ -141,14 +130,10 @@ const MetricStat = (props: {
     },
   });
 
-  const value = React.useMemo(() => {
-    const points = query.data?.series[0]?.points;
-    if (points?.oneofKind !== "number") return undefined;
-    return points.number.points
-      .map(numericValue)
-      .filter(Number.isFinite)
-      .at(-1);
-  }, [query.data]);
+  const value = React.useMemo(
+    () => latestMetricValue(query.data, props.operation, step),
+    [query.data, props.operation, step],
+  );
 
   return (
     <div className="flex min-w-0 flex-col gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3.5">

@@ -1,4 +1,7 @@
-import { ComponentLog_Entry_Level } from "@/apis/corev1/corev1";
+import {
+  AccessLog_Entry_Common_Status,
+  ComponentLog_Entry_Level,
+} from "@/apis/corev1/corev1";
 import {
   DataPointSeries,
   GetAccessLogDataPointRequest,
@@ -10,6 +13,7 @@ import {
   GetComponentLogDataPointRequest,
   GetComponentLogDataPointRequest_GroupBy,
   ListComponentLogTopComponentRequest,
+  ListComponentLogTopComponentRequest_OrderBy,
 } from "@/apis/visibilityv1/visibilityv1";
 import { POINT_REFETCH, useDashboardQuery } from "@/components/Dashboard/utils";
 import {
@@ -63,7 +67,12 @@ export const STREAMS: StreamMeta[] = [
   },
 ];
 
-export type Dimension = { value: string; label: string; groupBy: number };
+export type Dimension = {
+  value: string;
+  label: string;
+  groupBy: number;
+  status?: AccessLog_Entry_Common_Status;
+};
 
 export const DIMENSIONS: Record<StreamKey, Dimension[]> = {
   access: [
@@ -101,6 +110,7 @@ export const DIMENSIONS: Record<StreamKey, Dimension[]> = {
       value: "reason",
       label: "Deny reason",
       groupBy: GetAccessLogDataPointRequest_GroupBy.REASON,
+      status: AccessLog_Entry_Common_Status.DENIED,
     },
     {
       value: "region",
@@ -206,7 +216,6 @@ export const useBreakdown = (
   dimension: Dimension,
   periodMinutes: number,
 ) => {
-  const { curFrom, curTo } = buildTimestamps(periodMinutes);
   const interval = getAutoInterval(periodMinutes);
 
   return useDashboardQuery<BreakdownResponse>({
@@ -220,6 +229,7 @@ export const useBreakdown = (
     priority: QUERY_PRIORITY.normal,
     refetchMillis: POINT_REFETCH,
     fetch: async (signal) => {
+      const { curFrom, curTo } = buildTimestamps(periodMinutes);
       const common = {
         from: toTs(curFrom),
         to: toTs(curTo),
@@ -253,7 +263,10 @@ export const useBreakdown = (
         default:
           return (
             await getClientVisibilityAccessLog().getAccessLogDataPoint(
-              GetAccessLogDataPointRequest.create(common as any),
+              GetAccessLogDataPointRequest.create({
+                ...common,
+                status: dimension.status,
+              }),
               { abort: signal },
             )
           ).response;
@@ -265,28 +278,31 @@ export const useBreakdown = (
 export const useComponentLeaderboard = (
   periodMinutes: number,
   level: ComponentLog_Entry_Level | undefined,
+  orderBy: ListComponentLogTopComponentRequest_OrderBy,
 ) => {
-  const { curFrom, curTo } = buildTimestamps(periodMinutes);
-
   return useDashboardQuery({
     queryKey: [
       "componentLogTopComponent",
       periodMinutes,
       level ?? null,
+      orderBy,
       COMPONENT_LIMIT,
     ],
     priority: QUERY_PRIORITY.normal,
-    fetch: async (signal) =>
-      (
+    fetch: async (signal) => {
+      const { curFrom, curTo } = buildTimestamps(periodMinutes);
+      return (
         await getClientVisibilityComponentLog().listComponentLogTopComponent(
           ListComponentLogTopComponentRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
             level,
+            orderBy,
             limit: COMPONENT_LIMIT,
           }),
           { abort: signal },
         )
-      ).response,
+      ).response;
+    },
   });
 };

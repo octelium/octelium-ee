@@ -518,6 +518,7 @@ export type InventoryEntry = {
   total: number;
   created?: number;
   attention?: InventoryAttention[];
+  unavailable?: boolean;
 };
 
 const InventoryCard = (props: {
@@ -549,18 +550,24 @@ const InventoryCard = (props: {
           </span>
         </span>
 
-        {entry.created !== undefined && entry.created > 0 && (
-          <span
-            className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-px text-micro font-semibold tabular-nums text-emerald-700"
-            title={`${exact(entry.created)} created in the last ${props.rangeLabel}`}
-          >
-            +{compact(entry.created)}
-          </span>
-        )}
+        {!entry.unavailable &&
+          entry.created !== undefined &&
+          entry.created > 0 && (
+            <span
+              className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-px text-micro font-semibold tabular-nums text-emerald-700"
+              title={`${exact(entry.created)} created in the last ${props.rangeLabel}`}
+            >
+              +{compact(entry.created)}
+            </span>
+          )}
       </div>
 
       {props.isLoading ? (
         <span className="block h-6 w-14 motion-safe:animate-pulse rounded bg-slate-100" />
+      ) : entry.unavailable ? (
+        <span className="text-2xl font-bold leading-none text-slate-400">
+          —
+        </span>
       ) : (
         <span
           className="text-2xl font-bold leading-none tracking-[-0.03em] tabular-nums text-slate-900"
@@ -570,7 +577,11 @@ const InventoryCard = (props: {
         </span>
       )}
 
-      {attention.length > 0 ? (
+      {entry.unavailable ? (
+        <span className="text-micro font-normal text-slate-500">
+          Currently unavailable
+        </span>
+      ) : attention.length > 0 ? (
         <span className="flex flex-wrap gap-1">
           {attention.map((item) => (
             <span

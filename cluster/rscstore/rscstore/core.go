@@ -168,6 +168,7 @@ func (s *Server) doSummaryCoreService(ctx context.Context, common *vmetav1.Commo
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_public`, colSpecIsPublic)),
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_anonymous`, colSpecIsAnonymous)),
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_disabled`, colSpecIsDisabled)),
+			getModeCount(corev1.Service_Spec_RDP),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -194,7 +195,8 @@ func (s *Server) doSummaryCoreService(ctx context.Context, common *vmetav1.Commo
 			&ret.TotalDNS, &ret.TotalGRPC, &ret.TotalWeb,
 			&ret.TotalSOCKS5, &ret.TotalRDPWeb,
 			&ret.TotalMCP, &ret.TotalLLM,
-			&ret.TotalPublic, &ret.TotalAnonymous, &ret.TotalDisabled)
+			&ret.TotalPublic, &ret.TotalAnonymous, &ret.TotalDisabled,
+			&ret.TotalRDP)
 		if err != nil {
 			return nil, err
 		}

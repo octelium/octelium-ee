@@ -375,6 +375,19 @@ const DoSummary = (props: {
           RDP Web
         </SummaryItemCount>
         <SummaryItemCount
+          count={resp.totalRDP}
+          to={toURLWithQry(`/core/services`, {
+            mode: Service_Spec_Mode[Service_Spec_Mode.RDP],
+          })}
+          active={
+            searchParams.get(`mode`) ===
+            Service_Spec_Mode[Service_Spec_Mode.RDP]
+          }
+          icon={Monitor}
+        >
+          RDP
+        </SummaryItemCount>
+        <SummaryItemCount
           count={resp.totalMCP}
           to={toURLWithQry(`/core/services`, {
             mode: Service_Spec_Mode[Service_Spec_Mode.MCP],

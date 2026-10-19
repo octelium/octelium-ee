@@ -35,6 +35,7 @@ import { DeviceManager_Status_State } from "../../enterprisev1/enterprisev1";
 import { DeviceManager_Status_Type } from "../../enterprisev1/enterprisev1";
 import { DirectoryProvider_Status_Synchronization_State } from "../../enterprisev1/enterprisev1";
 import { CertificateIssuer_Status_State } from "../../enterprisev1/enterprisev1";
+import { CommonListOptions_OrderBy_Mode } from "../meta/vmetav1";
 import { ObjectReference } from "../../metav1/metav1";
 import { Certificate_Status_Issuance_State } from "../../enterprisev1/enterprisev1";
 import { Certificate_Spec_Mode } from "../../enterprisev1/enterprisev1";
@@ -736,6 +737,36 @@ export interface ListCertificateOptions {
      * @generated from protobuf field: bool isExpiringSoon = 8
      */
     isExpiringSoon: boolean;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.ListCertificateOptions.OrderBy orderBy = 9
+     */
+    orderBy?: ListCertificateOptions_OrderBy;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.ListCertificateOptions.OrderBy
+ */
+export interface ListCertificateOptions_OrderBy {
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.ListCertificateOptions.OrderBy.Type type = 1
+     */
+    type: ListCertificateOptions_OrderBy_Type;
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.Mode mode = 2
+     */
+    mode: CommonListOptions_OrderBy_Mode;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.visibility.enterprise.v1.ListCertificateOptions.OrderBy.Type
+ */
+export enum ListCertificateOptions_OrderBy_Type {
+    /**
+     * @generated from protobuf enum value: TYPE_UNSET = 0;
+     */
+    TYPE_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: EXPIRES_AT = 1;
+     */
+    EXPIRES_AT = 1
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.ListCertificateIssuerOptions
@@ -2707,7 +2738,8 @@ class ListCertificateOptions$Type extends MessageType<ListCertificateOptions> {
             { no: 5, name: "namespaceRef", kind: "message", T: () => ObjectReference },
             { no: 6, name: "serviceRef", kind: "message", T: () => ObjectReference },
             { no: 7, name: "isExpired", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 8, name: "isExpiringSoon", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 8, name: "isExpiringSoon", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 9, name: "orderBy", kind: "message", T: () => ListCertificateOptions_OrderBy }
         ]);
     }
     create(value?: PartialMessage<ListCertificateOptions>): ListCertificateOptions {
@@ -2749,6 +2781,9 @@ class ListCertificateOptions$Type extends MessageType<ListCertificateOptions> {
                 case /* bool isExpiringSoon */ 8:
                     message.isExpiringSoon = reader.bool();
                     break;
+                case /* octelium.api.main.visibility.enterprise.v1.ListCertificateOptions.OrderBy orderBy */ 9:
+                    message.orderBy = ListCertificateOptions_OrderBy.internalBinaryRead(reader, reader.uint32(), options, message.orderBy);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -2785,6 +2820,9 @@ class ListCertificateOptions$Type extends MessageType<ListCertificateOptions> {
         /* bool isExpiringSoon = 8; */
         if (message.isExpiringSoon !== false)
             writer.tag(8, WireType.Varint).bool(message.isExpiringSoon);
+        /* octelium.api.main.visibility.enterprise.v1.ListCertificateOptions.OrderBy orderBy = 9; */
+        if (message.orderBy)
+            ListCertificateOptions_OrderBy.internalBinaryWrite(message.orderBy, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2795,6 +2833,61 @@ class ListCertificateOptions$Type extends MessageType<ListCertificateOptions> {
  * @generated MessageType for protobuf message octelium.api.main.visibility.enterprise.v1.ListCertificateOptions
  */
 export const ListCertificateOptions = new ListCertificateOptions$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListCertificateOptions_OrderBy$Type extends MessageType<ListCertificateOptions_OrderBy> {
+    constructor() {
+        super("octelium.api.main.visibility.enterprise.v1.ListCertificateOptions.OrderBy", [
+            { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.visibility.enterprise.v1.ListCertificateOptions.OrderBy.Type", ListCertificateOptions_OrderBy_Type] },
+            { no: 2, name: "mode", kind: "enum", T: () => ["octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.Mode", CommonListOptions_OrderBy_Mode] }
+        ]);
+    }
+    create(value?: PartialMessage<ListCertificateOptions_OrderBy>): ListCertificateOptions_OrderBy {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.mode = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListCertificateOptions_OrderBy>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListCertificateOptions_OrderBy): ListCertificateOptions_OrderBy {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.enterprise.v1.ListCertificateOptions.OrderBy.Type type */ 1:
+                    message.type = reader.int32();
+                    break;
+                case /* octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.Mode mode */ 2:
+                    message.mode = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListCertificateOptions_OrderBy, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.enterprise.v1.ListCertificateOptions.OrderBy.Type type = 1; */
+        if (message.type !== 0)
+            writer.tag(1, WireType.Varint).int32(message.type);
+        /* octelium.api.main.visibility.meta.v1.CommonListOptions.OrderBy.Mode mode = 2; */
+        if (message.mode !== 0)
+            writer.tag(2, WireType.Varint).int32(message.mode);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.enterprise.v1.ListCertificateOptions.OrderBy
+ */
+export const ListCertificateOptions_OrderBy = new ListCertificateOptions_OrderBy$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class ListCertificateIssuerOptions$Type extends MessageType<ListCertificateIssuerOptions> {
     constructor() {

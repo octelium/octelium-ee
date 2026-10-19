@@ -186,7 +186,9 @@ const Governance = (props: { periodMinutes: number }) => {
             icon={UserCheck}
             avatars
             items={reviewers.data?.items}
+            totalCount={n(reviewers.data?.totalCount)}
             totalOther={n(reviewers.data?.totalOther)}
+            unit="reviews"
             isLoading={reviewers.isLoading}
             emptyLabel={`No review in the last ${rangeLabel}`}
           />
@@ -194,7 +196,9 @@ const Governance = (props: { periodMinutes: number }) => {
             title="Policies that matched"
             icon={Shield}
             items={policiesTop.data?.items}
+            totalCount={n(policiesTop.data?.totalCount)}
             totalOther={n(policiesTop.data?.totalOther)}
+            unit="requests"
             isLoading={policiesTop.isLoading}
             emptyLabel={`No request matched a Policy in the last ${rangeLabel}`}
           />

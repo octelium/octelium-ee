@@ -1,4 +1,5 @@
 import { ComponentLog_Entry_Level } from "@/apis/corev1/corev1";
+import { ListComponentLogTopComponentRequest_OrderBy } from "@/apis/visibilityv1/visibilityv1";
 import { Panel } from "@/components/Dashboard/components";
 import { compact } from "@/components/Dashboard/utils";
 import {
@@ -21,6 +22,12 @@ const LEVELS: Record<LevelFilter, ComponentLog_Entry_Level | undefined> = {
   warn: ComponentLog_Entry_Level.WARN,
   error: ComponentLog_Entry_Level.ERROR,
 };
+
+const ORDER_BY: Record<SortMode, ListComponentLogTopComponentRequest_OrderBy> =
+  {
+    volume: ListComponentLogTopComponentRequest_OrderBy.COUNT,
+    severity: ListComponentLogTopComponentRequest_OrderBy.SEVERITY,
+  };
 
 const Chip = (props: {
   label: string;
@@ -50,42 +57,40 @@ const Components = (props: { periodMinutes: number }) => {
   const [level, setLevel] = React.useState<LevelFilter>("all");
   const [sort, setSort] = React.useState<SortMode>("volume");
 
-  const query = useComponentLeaderboard(periodMinutes, LEVELS[level]);
+  const query = useComponentLeaderboard(
+    periodMinutes,
+    LEVELS[level],
+    ORDER_BY[sort],
+  );
 
   const raw = query.data?.items ?? [];
   const severityOf = (item: (typeof raw)[number]) =>
     n(item.countError) + n(item.countPanic) + n(item.countFatal);
 
-  const items: LeaderboardItem[] = [...raw]
-    .sort((a, b) =>
-      sort === "severity"
-        ? severityOf(b) - severityOf(a) || n(b.count) - n(a.count)
-        : n(b.count) - n(a.count),
-    )
-    .map((item) => {
-      const errors = severityOf(item);
-      const type = item.component?.type ?? "unknown";
-      const namespace = item.component?.namespace ?? "";
-      const params = new URLSearchParams();
-      if (type) params.set("component.type", type);
-      if (namespace) params.set("component.namespace", namespace);
-      if (level !== "all") params.set("level", level.toUpperCase());
+  const items: LeaderboardItem[] = raw.map((item) => {
+    const errors = severityOf(item);
+    const type = item.component?.type ?? "unknown";
+    const namespace = item.component?.namespace ?? "";
+    const params = new URLSearchParams();
+    if (type) params.set("component.type", type);
+    if (namespace) params.set("component.namespace", namespace);
+    if (level !== "all") params.set("level", level.toUpperCase());
 
-      return {
-        id: `${namespace}/${type}`,
-        name: type,
-        sub: namespace || undefined,
-        count: n(item.count),
-        to: `/visibility/componentlogs?${params.toString()}`,
-        accent: errors > 0 ? STATUS_COLORS.critical : seriesColor(2),
-        trailing: (
-          <>
-            <Chip label="warn" value={n(item.countWarn)} tone="warn" />
-            <Chip label="err" value={errors} tone="error" />
-          </>
-        ),
-      };
-    });
+    return {
+      id: `${namespace}/${type}`,
+      name: type,
+      sub: namespace || undefined,
+      count: n(item.count),
+      to: `/visibility/componentlogs?${params.toString()}`,
+      accent: errors > 0 ? STATUS_COLORS.critical : seriesColor(2),
+      trailing: (
+        <>
+          <Chip label="warn" value={n(item.countWarn)} tone="warn" />
+          <Chip label="err" value={errors} tone="error" />
+        </>
+      ),
+    };
+  });
 
   return (
     <Panel
@@ -126,6 +131,7 @@ const Components = (props: { periodMinutes: number }) => {
         totalOther={n(query.data?.totalOther)}
         to="/visibility/componentlogs"
         isLoading={query.isLoading}
+        isError={query.isError}
         unit="entries"
         emptyLabel={`No component emitted a ${level === "all" ? "" : `${level} `}log entry in the last ${rangeLabel}.`}
       />

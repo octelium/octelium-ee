@@ -168,7 +168,7 @@ const Directories = (props: { periodMinutes: number }) => {
             icon={UserRound}
           />
           <DeltaStat
-            label="Newly linked users"
+            label="New users · linked"
             value={n(freshUsers?.totalUser)}
             prev={n(freshUsers?.previous?.totalUser)}
             rangeLabel={rangeLabel}
@@ -183,7 +183,7 @@ const Directories = (props: { periodMinutes: number }) => {
             icon={UsersRound}
           />
           <DeltaStat
-            label="Newly linked groups"
+            label="New groups · linked"
             value={n(freshGroups?.totalGroup)}
             prev={n(freshGroups?.previous?.totalGroup)}
             rangeLabel={rangeLabel}

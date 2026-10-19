@@ -580,6 +580,42 @@ export const applyDrilldowns = (
   return filter;
 };
 
+const MODEL_FIELDS: Partial<Record<Dimension, ModelField>> = {
+  [Dimension.MODEL]: ModelField.EFFECTIVE,
+  [Dimension.MODEL_REQUESTED]: ModelField.REQUESTED,
+  [Dimension.MODEL_REPORTED]: ModelField.REPORTED,
+  [Dimension.SEMANTIC_ROUTER_MODEL]: ModelField.EFFECTIVE,
+};
+
+const SINGLE_VALUE_DIMENSIONS = new Set<Dimension>([
+  Dimension.STATUS,
+  Dimension.IS_STREAM,
+  Dimension.IS_UPSTREAM_INVOKED,
+  Dimension.HAS_IMAGE_INPUT,
+  Dimension.HAS_AUDIO_INPUT,
+]);
+
+export const MULTI_VALUED_DIMENSIONS = new Set<Dimension>([
+  Dimension.GUARDRAIL_RESULT,
+  Dimension.GUARDRAIL_PLUGIN,
+  Dimension.GUARDRAIL_LEG,
+  Dimension.TOOL,
+  Dimension.CALLED_TOOL,
+  Dimension.REMOVED_TOOL,
+]);
+
+export const conflictsWith = (current: Drilldown, next: Drilldown) => {
+  const currentField = MODEL_FIELDS[current.dimension];
+  const nextField = MODEL_FIELDS[next.dimension];
+  if (currentField !== undefined && nextField !== undefined) {
+    return currentField !== nextField;
+  }
+  return (
+    current.dimension === next.dimension &&
+    SINGLE_VALUE_DIMENSIONS.has(next.dimension)
+  );
+};
+
 export const drilldownLabel = (drilldown: Drilldown): string =>
   `${dimensionLabel(drilldown.dimension)}: ${prettyKey(drilldown.key)}`;
 

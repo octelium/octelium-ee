@@ -1,4 +1,6 @@
+import { GetClusterSummaryRequest_Kind } from "@/apis/visibilityv1/visibilityv1";
 import { StatTile } from "@/components/Dashboard/components";
+import { summaryTileState } from "@/components/Dashboard/queries";
 import { compact } from "@/components/Dashboard/utils";
 import {
   seriesColor,
@@ -26,10 +28,8 @@ const Signals = (props: { periodMinutes: number }) => {
 
   const newDirectoryUsers = created.data?.enterprise?.directoryProviderUser;
 
-  const managerIssues =
-    n(managers?.totalError) +
-    n(managers?.totalDegraded) +
-    n(managers?.totalFailedUpdates);
+  const managerIssues = n(managers?.totalError) + n(managers?.totalDegraded);
+  const failedUpdates = n(managers?.totalFailedUpdates);
 
   return (
     <section
@@ -56,9 +56,10 @@ const Signals = (props: { periodMinutes: number }) => {
             : STATUS_COLORS.good
         }
         to="/enterprise/certificates?isExpiringSoon=true"
-        isLoading={totals.isLoading}
-        isError={totals.isError}
-        hasData={totals.data !== undefined}
+        {...summaryTileState(
+          totals,
+          GetClusterSummaryRequest_Kind.ENTERPRISE_CERTIFICATE,
+        )}
       />
 
       <StatTile
@@ -72,9 +73,11 @@ const Signals = (props: { periodMinutes: number }) => {
         }}
         color={STATUS_COLORS.critical}
         to="/enterprise/certificates?issuanceState=FAILED"
-        isLoading={totals.isLoading}
-        isError={totals.isError}
-        hasData={totals.data !== undefined}
+        {...summaryTileState(
+          totals,
+          GetClusterSummaryRequest_Kind.ENTERPRISE_CERTIFICATE,
+          GetClusterSummaryRequest_Kind.ENTERPRISE_CERTIFICATE_ISSUER,
+        )}
       />
 
       <StatTile
@@ -93,9 +96,10 @@ const Signals = (props: { periodMinutes: number }) => {
         }}
         color={STATUS_COLORS.critical}
         to="/enterprise/directoryproviders?synchronizationState=FAILED"
-        isLoading={totals.isLoading}
-        isError={totals.isError}
-        hasData={totals.data !== undefined}
+        {...summaryTileState(
+          totals,
+          GetClusterSummaryRequest_Kind.ENTERPRISE_DIRECTORY_PROVIDER,
+        )}
       />
 
       <StatTile
@@ -109,18 +113,21 @@ const Signals = (props: { periodMinutes: number }) => {
         }}
         color={STATUS_COLORS.critical}
         to="/enterprise/secretstores?synchronizationState=FAILED"
-        isLoading={totals.isLoading}
-        isError={totals.isError}
-        hasData={totals.data !== undefined}
+        {...summaryTileState(
+          totals,
+          GetClusterSummaryRequest_Kind.ENTERPRISE_SECRET_STORE,
+        )}
       />
 
       <StatTile
         label="Device managers"
         value={managerIssues}
         badge={
-          n(managers?.totalAmbiguous) > 0
-            ? `${compact(n(managers?.totalAmbiguous))} ambiguous`
-            : undefined
+          failedUpdates > 0
+            ? `${compact(failedUpdates)} failed updates`
+            : n(managers?.totalAmbiguous) > 0
+              ? `${compact(n(managers?.totalAmbiguous))} ambiguous`
+              : undefined
         }
         footer={`${compact(n(managers?.totalLinkedDevices))} of ${compact(n(managers?.totalManagedDevices))} devices linked`}
         bar={{
@@ -128,10 +135,15 @@ const Signals = (props: { periodMinutes: number }) => {
           total: n(managers?.totalNumber),
           label: "reporting a problem",
         }}
-        color={managerIssues > 0 ? STATUS_COLORS.serious : STATUS_COLORS.good}
-        isLoading={totals.isLoading}
-        isError={totals.isError}
-        hasData={totals.data !== undefined}
+        color={
+          managerIssues > 0 || failedUpdates > 0
+            ? STATUS_COLORS.serious
+            : STATUS_COLORS.good
+        }
+        {...summaryTileState(
+          totals,
+          GetClusterSummaryRequest_Kind.ENTERPRISE_DEVICE_MANAGER,
+        )}
       />
 
       <StatTile
@@ -150,9 +162,11 @@ const Signals = (props: { periodMinutes: number }) => {
         }}
         color={seriesColor(4)}
         to="/enterprise/directoryproviders"
-        isLoading={totals.isLoading}
-        isError={totals.isError}
-        hasData={totals.data !== undefined}
+        {...summaryTileState(
+          totals,
+          GetClusterSummaryRequest_Kind.ENTERPRISE_DIRECTORY_PROVIDER_USER,
+          GetClusterSummaryRequest_Kind.ENTERPRISE_DIRECTORY_PROVIDER_GROUP,
+        )}
       />
     </section>
   );

@@ -397,3 +397,70 @@ func TestComponentAndAuditLogBreakdowns(t *testing.T) {
 		assert.Equal(t, 4, len(resp.Series))
 	}
 }
+
+func TestComponentLogTopComponentOrderBy(t *testing.T) {
+	ts := newTestServer(t)
+	if ts == nil {
+		return
+	}
+
+	now := time.Now().UTC().Truncate(time.Second)
+	current := now.Add(-10 * time.Minute)
+
+	for idx := range 6 {
+		insertLogJSON(t, ts.srv, "component_logs", marshalLog(t,
+			newComponentLogFor(current.Add(time.Duration(idx)*time.Second),
+				corev1.ComponentLog_Entry_INFO, "octelium", "apiserver")))
+	}
+	for idx := range 2 {
+		insertLogJSON(t, ts.srv, "component_logs", marshalLog(t,
+			newComponentLogFor(current.Add(time.Duration(idx)*time.Second),
+				corev1.ComponentLog_Entry_WARN, "octelium", "nocturne")))
+	}
+	insertLogJSON(t, ts.srv, "component_logs", marshalLog(t,
+		newComponentLogFor(current, corev1.ComponentLog_Entry_FATAL, "octelium", "vigil")))
+
+	types := func(resp *visibilityv1.ListComponentLogTopComponentResponse) []string {
+		var ret []string
+		for _, item := range resp.Items {
+			ret = append(ret, item.Component.Type)
+		}
+		return ret
+	}
+
+	{
+		resp, err := ts.srv.listComponentLogTopComponent(ts.ctx,
+			&visibilityv1.ListComponentLogTopComponentRequest{
+				From: pbutils.Timestamp(now.Add(-60 * time.Minute)),
+				To:   pbutils.Timestamp(now),
+			})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, []string{"apiserver", "nocturne", "vigil"}, types(resp))
+	}
+
+	{
+		resp, err := ts.srv.listComponentLogTopComponent(ts.ctx,
+			&visibilityv1.ListComponentLogTopComponentRequest{
+				From:    pbutils.Timestamp(now.Add(-60 * time.Minute)),
+				To:      pbutils.Timestamp(now),
+				OrderBy: visibilityv1.ListComponentLogTopComponentRequest_SEVERITY,
+			})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, []string{"vigil", "nocturne", "apiserver"}, types(resp))
+	}
+
+	{
+		resp, err := ts.srv.listComponentLogTopComponent(ts.ctx,
+			&visibilityv1.ListComponentLogTopComponentRequest{
+				From:    pbutils.Timestamp(now.Add(-60 * time.Minute)),
+				To:      pbutils.Timestamp(now),
+				OrderBy: visibilityv1.ListComponentLogTopComponentRequest_SEVERITY,
+				Limit:   1,
+			})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, []string{"vigil"}, types(resp))
+		assert.Equal(t, uint64(1), resp.Items[0].CountFatal)
+		assert.Equal(t, uint64(3), resp.TotalCount)
+		assert.Equal(t, uint64(8), resp.TotalOther)
+	}
+}

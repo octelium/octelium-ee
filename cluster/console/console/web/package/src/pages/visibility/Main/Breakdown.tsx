@@ -162,7 +162,11 @@ const Breakdown = (props: { periodMinutes: number }) => {
           })}
         />
 
-        {series.length === 0 && !query.isLoading ? (
+        {series.length === 0 && query.isError ? (
+          <EmptyHint>
+            The {meta.label.toLowerCase()} breakdown could not be loaded.
+          </EmptyHint>
+        ) : series.length === 0 && !query.isLoading ? (
           <EmptyHint>
             The {meta.label.toLowerCase()} stream produced no entries grouped by{" "}
             {dimension.label.toLowerCase()} in the last {rangeLabel}.

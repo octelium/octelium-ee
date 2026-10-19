@@ -76,6 +76,7 @@ const TopTools = (props: {
           totalCount={qry.data?.totalCount}
           accessor={accessor}
           colored
+          overlapping
           onSelect={
             props.onSelect
               ? (item) => props.onSelect?.(item.key, scope)

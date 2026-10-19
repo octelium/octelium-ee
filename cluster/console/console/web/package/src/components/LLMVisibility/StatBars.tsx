@@ -27,6 +27,7 @@ const StatBars = (props: {
   other?: Stats;
   totalCount?: number;
   colored?: boolean;
+  overlapping?: boolean;
   onSelect?: (item: StatBarItem) => void;
   renderLabel?: (item: StatBarItem) => React.ReactNode;
 }) => {
@@ -67,7 +68,10 @@ const StatBars = (props: {
   ) => {
     const isOther = row.item.key === "__other__";
     const width = peak <= 0 ? 0 : Math.max(1.5, (row.value / peak) * 100);
-    const share = ratio(row.value, total);
+    const share =
+      props.overlapping || props.accessor.kind === "duration"
+        ? undefined
+        : ratio(row.value, total);
     const color = props.colored
       ? seriesColor(index)
       : seriesColor(0);
@@ -107,9 +111,11 @@ const StatBars = (props: {
           <span className="text-xs font-semibold tabular-nums text-slate-800">
             {formatMetricValue(props.accessor.kind, row.value)}
           </span>
-          <span className="w-11 text-right text-micro font-normal tabular-nums text-slate-500">
-            {share.toFixed(1)}%
-          </span>
+          {share !== undefined && (
+            <span className="w-11 text-right text-micro font-normal tabular-nums text-slate-500">
+              {share.toFixed(1)}%
+            </span>
+          )}
         </span>
       </>
     );

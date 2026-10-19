@@ -242,13 +242,17 @@ export const Pending = (props: { periodMinutes: number }) => {
       description={
         total > 0
           ? `${compact(total)} pending · longest wait first`
-          : "Nothing is waiting for a reviewer"
+          : totals.data
+            ? "Nothing is waiting for a reviewer"
+            : "Requests waiting for a decision, longest wait first"
       }
       to="/access/requests?state=PENDING"
       toLabel="All pending"
     >
       {pending.isLoading ? (
         <Skeleton />
+      ) : items.length === 0 && pending.isError ? (
+        <EmptyHint>The pending requests could not be loaded.</EmptyHint>
       ) : items.length === 0 ? (
         <EmptyHint>No request is waiting for a decision.</EmptyHint>
       ) : (
@@ -282,13 +286,17 @@ export const LiveAccess = (props: { periodMinutes: number }) => {
       description={
         total > 0
           ? `${compact(total)} grant${total === 1 ? "" : "s"} in effect · ending soonest first`
-          : "Nobody holds just-in-time access right now"
+          : totals.data
+            ? "Nobody holds just-in-time access right now"
+            : "Just-in-time access in effect, ending soonest first"
       }
       to="/access/requests?isActive=true"
       toLabel="All live access"
     >
       {live.isLoading ? (
         <Skeleton />
+      ) : items.length === 0 && live.isError ? (
+        <EmptyHint>The live access grants could not be loaded.</EmptyHint>
       ) : items.length === 0 ? (
         <EmptyHint>No approved request currently grants access.</EmptyHint>
       ) : (

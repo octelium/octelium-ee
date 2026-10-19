@@ -808,7 +808,7 @@ func (s *Server) listComponentLogTopComponent(ctx context.Context,
 		Where(goqu.L(fmt.Sprintf(`%s IS NOT NULL`, jsonComponentType))).
 		Where(filters...).
 		GroupBy(goqu.L("namespace"), goqu.L("type")).
-		Order(goqu.L("count").Desc()).
+		Order(getComponentTopOrder(req.OrderBy)...).
 		Limit(uint(limit))
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -859,4 +859,16 @@ func (s *Server) listComponentLogTopComponent(ctx context.Context,
 	}
 
 	return ret, nil
+}
+
+func getComponentTopOrder(orderBy visibilityv1.ListComponentLogTopComponentRequest_OrderBy) []exp.OrderedExpression {
+	if orderBy == visibilityv1.ListComponentLogTopComponentRequest_SEVERITY {
+		return []exp.OrderedExpression{
+			goqu.L("count_error + count_panic + count_fatal").Desc(),
+			goqu.L("count_warn").Desc(),
+			goqu.L("count").Desc(),
+		}
+	}
+
+	return []exp.OrderedExpression{goqu.L("count").Desc()}
 }

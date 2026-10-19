@@ -15,6 +15,7 @@ import {
   QueryMetricsRequest,
   QueryMetricsRequest_LimitBehavior,
   QueryMetricsRequest_SeriesAggregation,
+  QueryMetricsResponse,
   QueryOperation,
   TimeRange,
   TimeSeries,
@@ -194,6 +195,48 @@ export const durationToMillis = (duration?: Duration): number | undefined => {
     default:
       return undefined;
   }
+};
+
+const numericPointValue = (point?: NumberPoint) =>
+  point?.value.oneofKind === "asDouble"
+    ? point.value.asDouble
+    : point?.value.oneofKind === "asInt"
+      ? Number(point.value.asInt)
+      : undefined;
+
+const timestampMillis = (timestamp?: Timestamp) =>
+  timestamp
+    ? Number(timestamp.seconds) * 1_000 + Math.floor(timestamp.nanos / 1e6)
+    : undefined;
+
+export const latestMetricValue = (
+  data: QueryMetricsResponse | undefined,
+  operation: QueryOperation,
+  step: Duration,
+): number | undefined => {
+  const points = data?.series[0]?.points;
+  if (points?.oneofKind !== "number") return undefined;
+  const values = points.number.points
+    .map(numericPointValue)
+    .filter((item): item is number => item !== undefined);
+  if (
+    operation.type.oneofKind === "counter" &&
+    operation.type.counter.function === CounterOperation_Function.INCREASE
+  ) {
+    return values.reduce((sum, item) => sum + item, 0);
+  }
+  const latestAt = timestampMillis(points.number.points.at(-1)?.timestamp);
+  const snapshotAt = timestampMillis(data?.snapshotTime);
+  const stepMillis = durationToMillis(data?.step ?? step);
+  if (
+    latestAt !== undefined &&
+    snapshotAt !== undefined &&
+    stepMillis !== undefined &&
+    snapshotAt - latestAt > stepMillis * 1.5
+  ) {
+    return operation.type.oneofKind === "counter" ? 0 : undefined;
+  }
+  return values.at(-1);
 };
 
 export const normalizeMetricStep = (duration: Duration, rangeMillis: number) => {

@@ -276,15 +276,161 @@ describe("Console bug regressions", () => {
 
   it("links the overdue request count to the deadline filter", async () => {
     await load("deadline");
+    const link = page.getByRole("link", {
+      name: /Access requests past their deadline/,
+    });
+    await link.waitFor();
+    assert.equal(
+      await link.getAttribute("href"),
+      "/access/requests?isDeadlinePassed=true&state=PENDING",
+    );
+    assert.match(await link.innerText(), /^3\b/m);
+  });
+
+  it("ignores decided past-deadline requests and withdrawn reviews", async () => {
+    await load("decided-deadline");
     await page
-      .getByRole("link", { name: /Access requests past their deadline/ })
+      .getByText("Nothing needs your attention", { exact: true })
       .waitFor();
     assert.equal(
       await page
         .getByRole("link", { name: /Access requests past their deadline/ })
-        .getAttribute("href"),
-      "/access/requests?isDeadlinePassed=true",
+        .count(),
+      0,
     );
+    assert.equal(await page.getByText(/Reviews waiting/).count(), 0);
+  });
+
+  it("ranks critical above unknown in the enterprise health badge", async () => {
+    await load("enterprise-health");
+    await page.getByText("Not evaluated", { exact: true }).waitFor();
+    assert.equal(
+      await page.getByText("Critical", { exact: true }).count(),
+      2,
+    );
+    assert.equal(await page.getByText("Unknown", { exact: true }).count(), 1);
+  });
+
+  it("does not claim a healthy access workflow when summaries fail", async () => {
+    await load("access-error");
+    await page.getByText("Incomplete assessment", { exact: true }).waitFor();
+    assert.equal(
+      await page
+        .getByText("The access workflow is healthy", { exact: true })
+        .count(),
+      0,
+    );
+  });
+
+  it("does not show shares for non-additive LLM rankings", async () => {
+    await load("statbars");
+    await page.getByText("800 ms", { exact: true }).waitFor();
+    assert.equal(await page.getByText(/%$/).count(), 0);
+  });
+
+  it("moves the breakdown window on every refresh", async () => {
+    await page.clock.install({ time: new Date("2026-10-19T12:00:00Z") });
+    await load("breakdown");
+    const windows = () =>
+      page.evaluate(() =>
+        window.calls
+          .filter((call) => call.name === "getAccessLogDataPoint")
+          .map((call) => Number(call.request.to.seconds)),
+      );
+    await page.waitForFunction(() =>
+      window.calls.some((call) => call.name === "getAccessLogDataPoint"),
+    );
+    await page.clock.runFor(31_000);
+    await page.waitForFunction(
+      () =>
+        window.calls.filter((call) => call.name === "getAccessLogDataPoint")
+          .length > 1,
+    );
+    const [first, second] = await windows();
+    assert.ok(second - first >= 30, `${first} -> ${second}`);
+  });
+
+  it("maps resource kinds and drilldown conflicts", async () => {
+    await load();
+    const result = await page.evaluate(async () => {
+      const { summaryKindOf } = await import(
+        "/src/components/Dashboard/queries.ts"
+      );
+      const { conflictsWith } = await import(
+        "/src/components/LLMVisibility/utils.ts"
+      );
+      const { Dimension } = await import(
+        "/src/apis/visibilityv1/llm/vllmv1.ts"
+      );
+      const { GetClusterSummaryRequest_Kind } = await import(
+        "/src/apis/visibilityv1/visibilityv1.ts"
+      );
+      return [
+        summaryKindOf("enterprise", "DNSProvider") ===
+          GetClusterSummaryRequest_Kind.ENTERPRISE_DNSPROVIDER,
+        summaryKindOf("core", "IdentityProvider") ===
+          GetClusterSummaryRequest_Kind.CORE_IDENTITY_PROVIDER,
+        summaryKindOf("enterprise", "DirectoryProviderUser") ===
+          GetClusterSummaryRequest_Kind.ENTERPRISE_DIRECTORY_PROVIDER_USER,
+        conflictsWith(
+          { dimension: Dimension.MODEL_REQUESTED, key: "a" },
+          { dimension: Dimension.MODEL_REPORTED, key: "b" },
+        ),
+        conflictsWith(
+          { dimension: Dimension.MODEL, key: "a" },
+          { dimension: Dimension.SEMANTIC_ROUTER_MODEL, key: "b" },
+        ),
+        conflictsWith(
+          { dimension: Dimension.IS_STREAM, key: "true" },
+          { dimension: Dimension.IS_STREAM, key: "false" },
+        ),
+        conflictsWith(
+          { dimension: Dimension.TOOL, key: "a" },
+          { dimension: Dimension.TOOL, key: "b" },
+        ),
+      ];
+    });
+    assert.deepEqual(result, [true, true, true, true, false, true, false]);
+  });
+
+  it("treats stale counter samples as idle in metric scalars", async () => {
+    await load();
+    const result = await page.evaluate(async () => {
+      const { latestMetricValue, counterOp, gaugeOp } = await import(
+        "/src/components/Charts/MetricChart.tsx"
+      );
+      const {
+        CounterOperation_Function,
+        GaugeOperation_Function,
+      } = await import("/src/apis/visibilityv1/metrics/vmetricsv1.ts");
+      const step = { type: { oneofKind: "minutes", minutes: 1 } };
+      const data = (snapshot, values) => ({
+        snapshotTime: { seconds: snapshot, nanos: 0 },
+        series: [
+          {
+            points: {
+              oneofKind: "number",
+              number: {
+                points: values.map((value, index) => ({
+                  timestamp: { seconds: index * 60, nanos: 0 },
+                  value: { oneofKind: "asDouble", asDouble: value },
+                })),
+              },
+            },
+          },
+        ],
+      });
+      const rate = counterOp(CounterOperation_Function.RATE);
+      const increase = counterOp(CounterOperation_Function.INCREASE);
+      const last = gaugeOp(GaugeOperation_Function.LAST);
+      return [
+        latestMetricValue(data(120, [1, 2, 3]), rate, step),
+        latestMetricValue(data(600, [1, 2, 3]), rate, step),
+        latestMetricValue(data(600, [1, 2, 3]), last, step) ?? null,
+        latestMetricValue(data(600, [1, 2, 3]), increase, step),
+      ];
+    });
+    assert.deepEqual(result, [3, 0, null, 6]);
   });
 
   for (const path of ["/", "/agent", "/settings"]) {

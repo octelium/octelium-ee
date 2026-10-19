@@ -9,6 +9,7 @@ import {
   CircleX,
   ClipboardCheck,
   Clock3,
+  Hourglass,
   Inbox,
   Layers,
   Shield,
@@ -48,7 +49,6 @@ const Governance = (props: { periodMinutes: number }) => {
   );
 
   const requests = cluster.data?.access?.request;
-  const reviews = cluster.data?.access?.review;
   const policies = cluster.data?.access?.policy;
   const catalogs = cluster.data?.access?.catalog;
   const newRequests = clusterRange.data?.access?.request;
@@ -113,6 +113,11 @@ const Governance = (props: { periodMinutes: number }) => {
       value: n(data?.totalUrgencyLow),
       color: getUrgencyColor(Request_Spec_Urgency.LOW),
     },
+    {
+      label: "Very low",
+      value: n(data?.totalUrgencyVeryLow),
+      color: getUrgencyColor(Request_Spec_Urgency.VERY_LOW),
+    },
   ];
 
   return (
@@ -140,17 +145,20 @@ const Governance = (props: { periodMinutes: number }) => {
             to="/access/requests?isActive=true"
           />
           <MiniStat
-            label="Reviews open"
-            value={n(reviews?.totalPending)}
-            tone={n(reviews?.totalPending) > 0 ? "warning" : "default"}
-            icon={ClipboardCheck}
-            to="/access/reviews?isDecided=false"
+            label="Waiting > 24h"
+            value={n(data?.totalPendingStale)}
+            tone={n(data?.totalPendingStale) > 0 ? "warning" : "default"}
+            icon={Hourglass}
+            to="/access/requests?isPendingStale=true"
           />
           <MiniStat
             label="Past deadline"
-            value={n(data?.totalDeadlinePassed)}
-            tone={n(data?.totalDeadlinePassed) > 0 ? "critical" : "default"}
+            value={n(data?.totalPendingDeadlinePassed)}
+            tone={
+              n(data?.totalPendingDeadlinePassed) > 0 ? "critical" : "default"
+            }
             icon={CalendarClock}
+            to="/access/requests?isDeadlinePassed=true&state=PENDING"
           />
           <MiniStat
             label="Policies"

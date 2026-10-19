@@ -155,6 +155,7 @@ const Leaderboard = (props: {
   totalOther?: number;
   to?: string;
   isLoading?: boolean;
+  isError?: boolean;
   emptyLabel: string;
   unit?: string;
 }) => {
@@ -202,9 +203,15 @@ const Leaderboard = (props: {
         </div>
       ) : props.items.length === 0 ? (
         <div className="flex min-h-24 items-center justify-center px-4 py-6 text-center">
-          <p className="text-xs font-normal text-slate-500">
-            {props.emptyLabel}
-          </p>
+          {props.isError ? (
+            <p role="alert" className="text-xs font-semibold text-amber-700">
+              This ranking could not be loaded.
+            </p>
+          ) : (
+            <p className="text-xs font-normal text-slate-500">
+              {props.emptyLabel}
+            </p>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-1.5 p-3">

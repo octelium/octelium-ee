@@ -11,7 +11,9 @@ import {
   GetClusterHealthRequest,
   GetClusterSummaryRequest,
   GetClusterSummaryRequest_Kind,
+  GetClusterSummaryResponse,
   GetComponentLogDataPointRequest,
+  GetComponentLogDataPointRequest_GroupBy,
   GetComponentLogSummaryRequest,
   ListAccessLogTopDenyReasonRequest,
   ListAccessLogTopPolicyRequest,
@@ -57,6 +59,12 @@ const AUDIT_REFS = {
 
 const TOP_LIMIT = 10;
 
+const SEVERE_LEVELS = [
+  ComponentLog_Entry_Level[ComponentLog_Entry_Level.ERROR],
+  ComponentLog_Entry_Level[ComponentLog_Entry_Level.PANIC],
+  ComponentLog_Entry_Level[ComponentLog_Entry_Level.FATAL],
+];
+
 export type ClusterScope = {
   name: string;
   kinds: GetClusterSummaryRequest_Kind[];
@@ -101,6 +109,35 @@ export const useClusterSummary = (
       ).response;
     },
   });
+};
+
+export const isKindAvailable = (
+  summary: GetClusterSummaryResponse | undefined,
+  ...kinds: GetClusterSummaryRequest_Kind[]
+) => !summary?.unavailables.some((item) => kinds.includes(item.kind));
+
+export const summaryKindOf = (
+  api: "core" | "access" | "enterprise" | "cordium",
+  kind: string,
+) =>
+  GetClusterSummaryRequest_Kind[
+    `${api.toUpperCase()}_${kind.replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase()}` as keyof typeof GetClusterSummaryRequest_Kind
+  ];
+
+export const summaryTileState = (
+  query: {
+    data?: GetClusterSummaryResponse;
+    isLoading: boolean;
+    isError: boolean;
+  },
+  ...kinds: GetClusterSummaryRequest_Kind[]
+) => {
+  const available = isKindAvailable(query.data, ...kinds);
+  return {
+    isLoading: query.isLoading,
+    isError: query.isError || !available,
+    hasData: query.data !== undefined && available,
+  };
 };
 
 export const useClusterHealth = (periodMinutes: number, priority: number) => {
@@ -349,18 +386,39 @@ export const useComponentDataPoint = (
     refetchMillis: POINT_REFETCH,
     fetch: async (signal) => {
       const { curFrom, curTo } = buildTimestamps(periodMinutes);
-      return (
+      const response = (
         await getClientVisibilityComponentLog().getComponentLogDataPoint(
           GetComponentLogDataPointRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
             interval,
-            level:
-              level === "error" ? ComponentLog_Entry_Level.ERROR : undefined,
+            groupBy:
+              level === "error"
+                ? GetComponentLogDataPointRequest_GroupBy.LEVEL
+                : undefined,
           }),
           { abort: signal },
         )
       ).response;
+      if (level !== "error") return response;
+
+      const counts = new Map<string, number>();
+      response.series
+        .filter((item) => SEVERE_LEVELS.includes(item.key))
+        .forEach((item) =>
+          item.datapoints.forEach((point) => {
+            const key = `${point.timestamp?.seconds}`;
+            counts.set(key, (counts.get(key) ?? 0) + Number(point.count));
+          }),
+        );
+
+      return {
+        ...response,
+        datapoints: response.datapoints.map((point) => ({
+          ...point,
+          count: counts.get(`${point.timestamp?.seconds}`) ?? 0,
+        })),
+      };
     },
   });
 };

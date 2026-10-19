@@ -104,7 +104,9 @@ const Attention = (props: { periodMinutes: number }) => {
       description={
         totalFailed > 0
           ? `${compact(totalFailed)} Workspace${totalFailed === 1 ? "" : "s"} whose last run failed · most recent failures first`
-          : "No Workspace run is currently failing"
+          : totals.data
+            ? "No Workspace run is currently failing"
+            : "Workspaces whose last run failed"
       }
       to="/cordium/workspaces?isFailed=true"
       toLabel="All failures"
@@ -129,6 +131,13 @@ const Attention = (props: { periodMinutes: number }) => {
                 className="h-[54px] motion-safe:animate-pulse rounded-lg border border-slate-200 bg-slate-50"
               />
             ))}
+          </div>
+        ) : items.length === 0 && failed.isError ? (
+          <div
+            role="status"
+            className="rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-4 text-body text-amber-700"
+          >
+            The failed Workspaces could not be loaded.
           </div>
         ) : items.length === 0 ? (
           <div className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-200 bg-emerald-50/50 px-6 py-6 text-center">

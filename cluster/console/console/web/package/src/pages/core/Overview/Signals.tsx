@@ -1,6 +1,8 @@
+import { GetClusterSummaryRequest_Kind } from "@/apis/visibilityv1/visibilityv1";
 import { StatTile, toPoints } from "@/components/Dashboard/components";
 import { compact } from "@/components/Dashboard/utils";
 import {
+  summaryTileState,
   useAuthDataPoint,
   useAuthSummary,
 } from "@/components/Dashboard/queries";
@@ -41,6 +43,14 @@ const Signals = (props: { periodMinutes: number }) => {
     n(sessions?.totalPending) +
     n(devices?.totalPending) +
     n(authenticators?.totalPending);
+  const pendingTo = [
+    { to: "/core/devices?state=PENDING", value: n(devices?.totalPending) },
+    { to: "/core/sessions?state=PENDING", value: n(sessions?.totalPending) },
+    {
+      to: "/core/authenticators?state=PENDING",
+      value: n(authenticators?.totalPending),
+    },
+  ].reduce((top, item) => (item.value > top.value ? item : top)).to;
   const enrollable =
     n(sessions?.totalNumber) +
     n(devices?.totalNumber) +
@@ -66,9 +76,10 @@ const Signals = (props: { periodMinutes: number }) => {
         }}
         color={seriesColor(2)}
         to="/core/sessions?isConnected=true"
-        isLoading={totals.isLoading}
-        isError={totals.isError}
-        hasData={totals.data !== undefined}
+        {...summaryTileState(
+          totals,
+          GetClusterSummaryRequest_Kind.CORE_SESSION,
+        )}
       />
 
       <StatTile
@@ -88,9 +99,10 @@ const Signals = (props: { periodMinutes: number }) => {
         }}
         color={seriesColor(0)}
         to="/core/sessions"
-        isLoading={created.isLoading}
-        isError={created.isError}
-        hasData={created.data !== undefined}
+        {...summaryTileState(
+          created,
+          GetClusterSummaryRequest_Kind.CORE_SESSION,
+        )}
       />
 
       <StatTile
@@ -98,7 +110,7 @@ const Signals = (props: { periodMinutes: number }) => {
         value={logins}
         badge={
           logins > 0
-            ? `${Math.round((strongLogins / logins) * 100)}% MFA`
+            ? `${Math.round((strongLogins / logins) * 100)}% AAL2+`
             : undefined
         }
         footer={`${compact(n(auth.data?.totalUser))} users · ${compact(n(auth.data?.totalReauthentication))} re-auths`}
@@ -132,9 +144,7 @@ const Signals = (props: { periodMinutes: number }) => {
         }}
         color={seriesColor(3)}
         to="/core/users"
-        isLoading={totals.isLoading}
-        isError={totals.isError}
-        hasData={totals.data !== undefined}
+        {...summaryTileState(totals, GetClusterSummaryRequest_Kind.CORE_USER)}
       />
 
       <StatTile
@@ -153,9 +163,7 @@ const Signals = (props: { periodMinutes: number }) => {
         }}
         color={seriesColor(6)}
         to="/core/devices"
-        isLoading={totals.isLoading}
-        isError={totals.isError}
-        hasData={totals.data !== undefined}
+        {...summaryTileState(totals, GetClusterSummaryRequest_Kind.CORE_DEVICE)}
       />
 
       <StatTile
@@ -168,10 +176,13 @@ const Signals = (props: { periodMinutes: number }) => {
           label: "of all enrolments",
         }}
         color={pending > 0 ? STATUS_COLORS.warning : STATUS_COLORS.good}
-        to="/core/devices?state=PENDING"
-        isLoading={totals.isLoading}
-        isError={totals.isError}
-        hasData={totals.data !== undefined}
+        to={pendingTo}
+        {...summaryTileState(
+          totals,
+          GetClusterSummaryRequest_Kind.CORE_SESSION,
+          GetClusterSummaryRequest_Kind.CORE_DEVICE,
+          GetClusterSummaryRequest_Kind.CORE_AUTHENTICATOR,
+        )}
       />
     </section>
   );

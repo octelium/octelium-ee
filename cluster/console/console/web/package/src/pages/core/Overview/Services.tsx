@@ -49,10 +49,11 @@ const Services = (props: { periodMinutes: number }) => {
     { label: "UDP", value: n(services?.totalUDP) },
     { label: "DNS", value: n(services?.totalDNS) },
     { label: "SOCKS5", value: n(services?.totalSOCKS5) },
-    { label: "RDP", value: n(services?.totalRDPWeb) },
+    { label: "RDP", value: n(services?.totalRDP) },
+    { label: "RDP Web", value: n(services?.totalRDPWeb) },
     { label: "LLM", value: n(services?.totalLLM) },
     { label: "MCP", value: n(services?.totalMCP) },
-  ].filter((mode) => mode.value > 0);
+  ];
 
   const traffic = Object.entries(access.data?.totalByMode ?? {})
     .map(([label, value]) => ({ label, value: n(value) }))
@@ -117,7 +118,7 @@ const Services = (props: { periodMinutes: number }) => {
             title="Services by mode"
             note={`${compact(n(services?.totalNumber))} published`}
           >
-            {modes.length > 0 ? (
+            {modes.some((mode) => mode.value > 0) ? (
               <CompositionBar
                 segments={modes}
                 total={n(services?.totalNumber)}

@@ -7,7 +7,12 @@ export const CompositionBar = (props: {
   total: number;
 }) => {
   useChartColorScheme();
-  const shown = props.segments.filter((segment) => segment.value > 0);
+  const shown = props.segments
+    .map((segment, index) => ({
+      ...segment,
+      color: segment.color ?? seriesColor(index),
+    }))
+    .filter((segment) => segment.value > 0);
   if (shown.length === 0 || props.total === 0) {
     return <span className="text-micro font-normal text-slate-500">—</span>;
   }
@@ -18,13 +23,13 @@ export const CompositionBar = (props: {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
       <div className="flex h-1.5 w-full gap-0.5 overflow-hidden rounded-full">
-        {shown.map((segment, index) => (
+        {shown.map((segment) => (
           <span
             key={segment.label}
             className="h-full rounded-full"
             style={{
               width: `${(segment.value / props.total) * 100}%`,
-              backgroundColor: segment.color ?? seriesColor(index),
+              backgroundColor: segment.color,
             }}
           />
         ))}
@@ -37,14 +42,14 @@ export const CompositionBar = (props: {
       </div>
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        {shown.map((segment, index) => (
+        {shown.map((segment) => (
           <span
             key={segment.label}
             className="inline-flex items-center gap-1.5 text-micro font-normal text-slate-600"
           >
             <span
               className="h-2 w-2 shrink-0 rounded-full"
-              style={{ backgroundColor: segment.color ?? seriesColor(index) }}
+              style={{ backgroundColor: segment.color }}
             />
             {segment.label}
             <span className="font-semibold tabular-nums text-slate-800">

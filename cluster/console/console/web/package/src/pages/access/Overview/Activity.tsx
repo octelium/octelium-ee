@@ -208,7 +208,9 @@ const Activity = (props: { periodMinutes: number }) => {
             icon={UserRound}
             avatars
             items={topRequesters.data?.items}
+            totalCount={n(topRequesters.data?.totalCount)}
             totalOther={n(topRequesters.data?.totalOther)}
+            unit="requests"
             isLoading={topRequesters.isLoading}
             emptyLabel={`No request in the last ${rangeLabel}`}
           />
@@ -216,7 +218,9 @@ const Activity = (props: { periodMinutes: number }) => {
             title="Most requested"
             icon={Layers}
             items={topResources.data?.items}
+            totalCount={n(topResources.data?.totalCount)}
             totalOther={n(topResources.data?.totalOther)}
+            unit="requests"
             isLoading={topResources.isLoading}
             emptyLabel={`No request in the last ${rangeLabel}`}
           />

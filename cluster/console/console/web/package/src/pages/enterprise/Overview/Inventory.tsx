@@ -4,6 +4,7 @@ import {
   InventoryRail,
   Panel,
 } from "@/components/Dashboard/components";
+import { isKindAvailable, summaryKindOf } from "@/components/Dashboard/queries";
 import { n, periodLabel } from "@/utils/visibility";
 import { QUERY_PRIORITY } from "@/utils/visibility/queue";
 import {
@@ -178,6 +179,10 @@ const Inventory = (props: { periodMinutes: number }) => {
     total: n(row.pick(totals.data?.enterprise)?.totalNumber),
     created: n(row.pick(created.data?.enterprise)?.totalNumber),
     attention: row.attention?.(totals.data?.enterprise),
+    unavailable: !isKindAvailable(
+      totals.data,
+      summaryKindOf("enterprise", row.kind),
+    ),
   }));
 
   const unavailable = totals.data?.unavailables ?? [];

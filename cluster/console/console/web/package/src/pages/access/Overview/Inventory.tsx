@@ -4,6 +4,7 @@ import {
   InventoryRail,
   Panel,
 } from "@/components/Dashboard/components";
+import { isKindAvailable, summaryKindOf } from "@/components/Dashboard/queries";
 import { n, periodLabel } from "@/utils/visibility";
 import { QUERY_PRIORITY } from "@/utils/visibility/queue";
 import {
@@ -50,9 +51,6 @@ const ROWS: Row[] = [
     to: "/access/reviews",
     icon: ClipboardCheck,
     pick: (access) => access?.review,
-    attention: (access) => [
-      { label: "pending ", value: n(access?.review?.totalPending) },
-    ],
   },
   {
     kind: "Policy",
@@ -110,6 +108,10 @@ const Inventory = (props: { periodMinutes: number }) => {
     total: n(row.pick(totals.data?.access)?.totalNumber),
     created: n(row.pick(created.data?.access)?.totalNumber),
     attention: row.attention?.(totals.data?.access),
+    unavailable: !isKindAvailable(
+      totals.data,
+      summaryKindOf("access", row.kind),
+    ),
   }));
 
   const unavailable = totals.data?.unavailables ?? [];

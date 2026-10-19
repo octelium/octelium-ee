@@ -1,6 +1,8 @@
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { GetRequestDataPointRequest_GroupBy } from "@/apis/visibilityv1/access/vaccessv1";
+import { GetClusterSummaryRequest_Kind } from "@/apis/visibilityv1/visibilityv1";
 import { StatTile, toPoints } from "@/components/Dashboard/components";
+import { summaryTileState } from "@/components/Dashboard/queries";
 import { compact } from "@/components/Dashboard/utils";
 import {
   seriesColor,
@@ -78,9 +80,10 @@ const Signals = (props: { periodMinutes: number }) => {
         }}
         color={stale > 0 ? STATUS_COLORS.serious : STATUS_COLORS.warning}
         to="/access/requests?state=PENDING"
-        isLoading={totals.isLoading}
-        isError={totals.isError}
-        hasData={totals.data !== undefined}
+        {...summaryTileState(
+          totals,
+          GetClusterSummaryRequest_Kind.ACCESS_REQUEST,
+        )}
       />
 
       <StatTile
@@ -99,9 +102,10 @@ const Signals = (props: { periodMinutes: number }) => {
         }}
         color={seriesColor(2)}
         to="/access/requests?isActive=true"
-        isLoading={totals.isLoading}
-        isError={totals.isError}
-        hasData={totals.data !== undefined}
+        {...summaryTileState(
+          totals,
+          GetClusterSummaryRequest_Kind.ACCESS_REQUEST,
+        )}
       />
 
       <StatTile
@@ -117,9 +121,10 @@ const Signals = (props: { periodMinutes: number }) => {
         footer={`${compact(n(fresh?.totalUser))} requesters · ${compact(n(fresh?.totalOnBehalf))} on behalf of others`}
         color={seriesColor(0)}
         to="/access/requests"
-        isLoading={created.isLoading}
-        isError={created.isError}
-        hasData={created.data !== undefined}
+        {...summaryTileState(
+          created,
+          GetClusterSummaryRequest_Kind.ACCESS_REQUEST,
+        )}
       />
 
       <StatTile
@@ -145,9 +150,10 @@ const Signals = (props: { periodMinutes: number }) => {
         bar={{ value: approved, total: decided, label: "of the decisions" }}
         color={STATUS_COLORS.good}
         to="/access/requests?state=REJECTED"
-        isLoading={created.isLoading}
-        isError={created.isError}
-        hasData={created.data !== undefined}
+        {...summaryTileState(
+          created,
+          GetClusterSummaryRequest_Kind.ACCESS_REQUEST,
+        )}
       />
 
       <StatTile
@@ -168,7 +174,7 @@ const Signals = (props: { periodMinutes: number }) => {
         footer={
           decision
             ? `p90 ${formatSeconds(decision.p90Seconds)} · ${compact(n(decision.count))} reviewed requests`
-            : "No reviewed request was decided in this window"
+            : "No reviewed request created in this window was decided yet"
         }
         bar={{
           value: n(fresh?.totalReviewed),
@@ -177,9 +183,10 @@ const Signals = (props: { periodMinutes: number }) => {
         }}
         color={seriesColor(4)}
         to="/access/requests?effect=REVIEW"
-        isLoading={created.isLoading}
-        isError={created.isError}
-        hasData={created.data !== undefined}
+        {...summaryTileState(
+          created,
+          GetClusterSummaryRequest_Kind.ACCESS_REQUEST,
+        )}
       />
 
       <StatTile
@@ -213,9 +220,11 @@ const Signals = (props: { periodMinutes: number }) => {
             : STATUS_COLORS.good
         }
         to="/access/integrations"
-        isLoading={totals.isLoading}
-        isError={totals.isError}
-        hasData={totals.data !== undefined}
+        {...summaryTileState(
+          totals,
+          GetClusterSummaryRequest_Kind.ACCESS_INTEGRATION,
+          GetClusterSummaryRequest_Kind.ACCESS_INTEGRATION_BINDING,
+        )}
       />
     </section>
   );

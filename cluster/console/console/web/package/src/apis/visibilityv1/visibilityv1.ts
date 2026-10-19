@@ -2043,12 +2043,33 @@ export interface ListComponentLogTopComponentRequest {
      */
     component?: ComponentSelector;
     /**
+     * @generated from protobuf field: octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.OrderBy orderBy = 7
+     */
+    orderBy: ListComponentLogTopComponentRequest_OrderBy;
+    /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
      *
      * @generated from protobuf field: uint32 limit = 100
      */
     limit: number;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.OrderBy
+ */
+export enum ListComponentLogTopComponentRequest_OrderBy {
+    /**
+     * @generated from protobuf enum value: ORDER_BY_UNSET = 0;
+     */
+    ORDER_BY_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: COUNT = 1;
+     */
+    COUNT = 1,
+    /**
+     * @generated from protobuf enum value: SEVERITY = 2;
+     */
+    SEVERITY = 2
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse
@@ -8302,12 +8323,14 @@ class ListComponentLogTopComponentRequest$Type extends MessageType<ListComponent
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
             { no: 2, name: "level", kind: "enum", T: () => ["octelium.api.main.core.v1.ComponentLog.Entry.Level", ComponentLog_Entry_Level] },
             { no: 6, name: "component", kind: "message", T: () => ComponentSelector },
+            { no: 7, name: "orderBy", kind: "enum", T: () => ["octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.OrderBy", ListComponentLogTopComponentRequest_OrderBy] },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<ListComponentLogTopComponentRequest>): ListComponentLogTopComponentRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.level = 0;
+        message.orderBy = 0;
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListComponentLogTopComponentRequest>(this, message, value);
@@ -8329,6 +8352,9 @@ class ListComponentLogTopComponentRequest$Type extends MessageType<ListComponent
                     break;
                 case /* octelium.api.main.visibility.v1.ComponentSelector component */ 6:
                     message.component = ComponentSelector.internalBinaryRead(reader, reader.uint32(), options, message.component);
+                    break;
+                case /* octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.OrderBy orderBy */ 7:
+                    message.orderBy = reader.int32();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -8357,6 +8383,9 @@ class ListComponentLogTopComponentRequest$Type extends MessageType<ListComponent
         /* octelium.api.main.visibility.v1.ComponentSelector component = 6; */
         if (message.component)
             ComponentSelector.internalBinaryWrite(message.component, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.OrderBy orderBy = 7; */
+        if (message.orderBy !== 0)
+            writer.tag(7, WireType.Varint).int32(message.orderBy);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);

@@ -45,6 +45,7 @@ const ChangeLeaders = (props: { periodMinutes: number }) => {
             totalOther={n(users.data?.totalOther)}
             to="/core/users"
             isLoading={users.isLoading}
+            isError={users.isError}
             unit="calls"
             emptyLabel={`Nobody changed the Cluster in the last ${rangeLabel}.`}
           />
@@ -62,6 +63,7 @@ const ChangeLeaders = (props: { periodMinutes: number }) => {
             totalOther={n(sessions.data?.totalOther)}
             to="/core/sessions"
             isLoading={sessions.isLoading}
+            isError={sessions.isError}
             unit="calls"
             emptyLabel={`No Session issued an API call in the last ${rangeLabel}.`}
           />
