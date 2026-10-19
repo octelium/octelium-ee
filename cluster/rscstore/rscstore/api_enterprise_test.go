@@ -109,7 +109,7 @@ func TestEnterpriseListFilters(t *testing.T) {
 
 	issuerRef := &metav1.ObjectReference{Name: "issuer-one", Uid: vutils.UUIDv4()}
 	otherIssuerRef := &metav1.ObjectReference{Name: "issuer-two", Uid: vutils.UUIDv4()}
-	serviceRef := &metav1.ObjectReference{Name: "svc-one", Uid: vutils.UUIDv4()}
+	serviceRef := &metav1.ObjectReference{Name: "svc-one.ns-one", Uid: vutils.UUIDv4()}
 	namespaceRef := &metav1.ObjectReference{Name: "ns-one", Uid: vutils.UUIDv4()}
 
 	insertRscStoreObject(t, env, &enterprisev1.Certificate{
@@ -159,12 +159,20 @@ func TestEnterpriseListFilters(t *testing.T) {
 		assert.Equal(t, "expired-cert", resp.Items[0].Metadata.Name)
 	}
 
-	{
+	for _, ref := range []*metav1.ObjectReference{
+		{Name: serviceRef.Name},
+		{Uid: serviceRef.Uid},
+		serviceRef,
+	} {
 		resp, err := srv.ListCertificate(env.ctx, &venterprisev1.ListCertificateOptions{
-			ServiceRef: serviceRef,
+			ServiceRef: ref,
 		})
-		assert.Nil(t, err, "%+v", err)
-		assert.Len(t, resp.Items, 1)
+		if !assert.Nil(t, err, "%+v", err) {
+			continue
+		}
+		if !assert.Len(t, resp.Items, 1) {
+			continue
+		}
 		assert.Equal(t, "expired-cert", resp.Items[0].Metadata.Name)
 	}
 

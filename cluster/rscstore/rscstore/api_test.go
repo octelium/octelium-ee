@@ -9,6 +9,7 @@
 package rscstore
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -16,14 +17,71 @@ import (
 
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+func TestListInvalidServiceReferences(t *testing.T) {
+	ctx := context.Background()
+	access := &srvAccess{}
+	enterprise := &srvEnterprise{}
+
+	for _, tst := range []struct {
+		name string
+		list func(*metav1.ObjectReference) error
+	}{
+		{
+			name: "policy",
+			list: func(ref *metav1.ObjectReference) error {
+				_, err := access.ListPolicy(ctx, &vaccessv1.ListPolicyOptions{ServiceRef: ref})
+				return err
+			},
+		},
+		{
+			name: "catalog",
+			list: func(ref *metav1.ObjectReference) error {
+				_, err := access.ListCatalog(ctx, &vaccessv1.ListCatalogOptions{ServiceRef: ref})
+				return err
+			},
+		},
+		{
+			name: "request",
+			list: func(ref *metav1.ObjectReference) error {
+				_, err := access.ListRequest(ctx, &vaccessv1.ListRequestOptions{ServiceRef: ref})
+				return err
+			},
+		},
+		{
+			name: "certificate",
+			list: func(ref *metav1.ObjectReference) error {
+				_, err := enterprise.ListCertificate(ctx, &venterprisev1.ListCertificateOptions{ServiceRef: ref})
+				return err
+			},
+		},
+	} {
+		t.Run(tst.name, func(t *testing.T) {
+			for _, ref := range []*metav1.ObjectReference{
+				{Name: "invalid name"},
+				{Name: ".default"},
+				{Name: "service."},
+				{Name: "service..default"},
+				{Name: "service.namespace.parent"},
+				{Name: "service.default", Uid: "not-a-uid"},
+			} {
+				err := tst.list(ref)
+				assert.True(t, grpcerr.IsInvalidArg(err), "%+v: %+v", ref, err)
+			}
+		})
+	}
+}
 
 func TestDoListCommonOptionsComprehensive(t *testing.T) {
 	env := newRscStoreTestEnv(t)
@@ -224,7 +282,7 @@ func TestCoreListResourceSpecificFilters(t *testing.T) {
 	insertRscStoreObject(t, env, &corev1.Service{
 		ApiVersion: ucorev1.APIVersion,
 		Kind:       ucorev1.KindService,
-		Metadata:   newRscStoreMetadata("public-http", now),
+		Metadata:   newRscStoreMetadata("public-http.namespace-one", now),
 		Spec: &corev1.Service_Spec{
 			Mode:        corev1.Service_Spec_HTTP,
 			IsPublic:    true,
@@ -355,7 +413,7 @@ func TestCoreListResourceSpecificFilters(t *testing.T) {
 		})
 		assert.Nil(t, err, "%+v", err)
 		assert.Len(t, resp.Items, 1)
-		assert.Equal(t, "public-http", resp.Items[0].Metadata.Name)
+		assert.Equal(t, "public-http.namespace-one", resp.Items[0].Metadata.Name)
 	}
 
 	{
@@ -484,7 +542,7 @@ func TestCoreSimpleListMethodsAndPolicyFilter(t *testing.T) {
 	insertRscStoreObject(t, env, &corev1.Policy{
 		ApiVersion: ucorev1.APIVersion,
 		Kind:       ucorev1.KindPolicy,
-		Metadata:   newRscStoreMetadata("disabled-policy", now.Add(time.Second)),
+		Metadata:   newRscStoreMetadata("disabled-policy.parent.root", now.Add(time.Second)),
 		Spec:       &corev1.Policy_Spec{IsDisabled: true},
 		Status:     &corev1.Policy_Status{},
 	})
@@ -528,7 +586,7 @@ func TestCoreSimpleListMethodsAndPolicyFilter(t *testing.T) {
 		resp, err := srvCore.ListPolicy(env.ctx, &vcorev1.ListPolicyOptions{IsDisabled: true})
 		assert.Nil(t, err, "%+v", err)
 		assert.Len(t, resp.Items, 1)
-		assert.Equal(t, "disabled-policy", resp.Items[0].Metadata.Name)
+		assert.Equal(t, "disabled-policy.parent.root", resp.Items[0].Metadata.Name)
 	}
 }
 

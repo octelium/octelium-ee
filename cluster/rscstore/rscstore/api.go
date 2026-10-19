@@ -804,7 +804,7 @@ func (s *srvEnterprise) ListCertificate(ctx context.Context, req *venterprisev1.
 	if err != nil {
 		return nil, err
 	}
-	doListReq.filters, err = appendRefFilter(doListReq.filters, req.ServiceRef, nil, "status.serviceRef")
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.ServiceRef, serviceRefCheckOpts(), "status.serviceRef")
 	if err != nil {
 		return nil, err
 	}
@@ -1099,17 +1099,18 @@ func (s *srvAccess) ListPolicy(ctx context.Context, req *vaccessv1.ListPolicyOpt
 		ref    *metav1.ObjectReference
 		parent string
 		field  string
+		opts   *apivalidation.CheckGetOptionsOpts
 	}{
 		{ref: req.UserRef, parent: "subject", field: "userRef"},
 		{ref: req.GroupRef, parent: "subject", field: "groupRef"},
-		{ref: req.ServiceRef, parent: "resource", field: "serviceRef"},
+		{ref: req.ServiceRef, parent: "resource", field: "serviceRef", opts: serviceRefCheckOpts()},
 		{ref: req.CatalogRef, parent: "resource", field: "catalogRef"},
 	} {
 		if itm.ref == nil || (itm.ref.Uid == "" && itm.ref.Name == "") {
 			continue
 		}
 
-		if err := apivalidation.CheckObjectRef(itm.ref, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+		if err := apivalidation.CheckObjectRef(itm.ref, itm.opts); err != nil {
 			return nil, err
 		}
 
@@ -1134,7 +1135,7 @@ func (s *srvAccess) ListCatalog(ctx context.Context, req *vaccessv1.ListCatalogO
 	}
 
 	if req.ServiceRef != nil && req.ServiceRef.Name != "" {
-		if err := apivalidation.CheckObjectRef(req.ServiceRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+		if err := apivalidation.CheckObjectRef(req.ServiceRef, serviceRefCheckOpts()); err != nil {
 			return nil, err
 		}
 		doListReq.filters = append(doListReq.filters,

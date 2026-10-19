@@ -33,7 +33,7 @@ func TestAccessListFilters(t *testing.T) {
 	userRef := &metav1.ObjectReference{Name: "user-one", Uid: vutils.UUIDv4()}
 	otherUserRef := &metav1.ObjectReference{Name: "user-two", Uid: vutils.UUIDv4()}
 	groupRef := &metav1.ObjectReference{Name: "group-one", Uid: vutils.UUIDv4()}
-	serviceRef := &metav1.ObjectReference{Name: "svc-one", Uid: vutils.UUIDv4()}
+	serviceRef := &metav1.ObjectReference{Name: "svc-one.default", Uid: vutils.UUIDv4()}
 
 	insertRscStoreObject(t, env, &accessv1.Policy{
 		ApiVersion: uaccessv1.APIVersion,
@@ -98,10 +98,18 @@ func TestAccessListFilters(t *testing.T) {
 		assert.Equal(t, "disabled-policy", resp.Items[0].Metadata.Name)
 	}
 
-	{
-		resp, err := srv.ListPolicy(env.ctx, &vaccessv1.ListPolicyOptions{ServiceRef: serviceRef})
-		assert.Nil(t, err, "%+v", err)
-		assert.Len(t, resp.Items, 1)
+	for _, ref := range []*metav1.ObjectReference{
+		{Name: serviceRef.Name},
+		{Uid: serviceRef.Uid},
+		serviceRef,
+	} {
+		resp, err := srv.ListPolicy(env.ctx, &vaccessv1.ListPolicyOptions{ServiceRef: ref})
+		if !assert.Nil(t, err, "%+v", err) {
+			continue
+		}
+		if !assert.Len(t, resp.Items, 1) {
+			continue
+		}
 		assert.Equal(t, "service-policy", resp.Items[0].Metadata.Name)
 	}
 
@@ -205,7 +213,7 @@ func TestAccessListFilters(t *testing.T) {
 		Spec: &accessv1.Catalog_Spec{
 			ResourceCollection: &accessv1.Catalog_Spec_ResourceCollection{
 				Service: &accessv1.Catalog_Spec_ResourceCollection_Service{
-					Services:   []string{"svc-alpha"},
+					Services:   []string{"svc-alpha.default"},
 					Namespaces: []string{"ns-alpha"},
 				},
 			},
@@ -220,13 +228,29 @@ func TestAccessListFilters(t *testing.T) {
 		Status:     &accessv1.Catalog_Status{},
 	})
 
-	{
+	for _, ref := range []*metav1.ObjectReference{
+		{Name: "svc-alpha.default"},
+		{Name: "svc-alpha.default", Uid: vutils.UUIDv4()},
+	} {
 		resp, err := srv.ListCatalog(env.ctx, &vaccessv1.ListCatalogOptions{
-			ServiceRef: &metav1.ObjectReference{Name: "svc-alpha"},
+			ServiceRef: ref,
 		})
-		assert.Nil(t, err, "%+v", err)
-		assert.Len(t, resp.Items, 1)
+		if !assert.Nil(t, err, "%+v", err) {
+			continue
+		}
+		if !assert.Len(t, resp.Items, 1) {
+			continue
+		}
 		assert.Equal(t, "catalog-one", resp.Items[0].Metadata.Name)
+	}
+
+	for _, name := range []string{"svc-alpha", "svc-alpha.other", "svc-alph.default"} {
+		resp, err := srv.ListCatalog(env.ctx, &vaccessv1.ListCatalogOptions{
+			ServiceRef: &metav1.ObjectReference{Name: name},
+		})
+		if assert.Nil(t, err, "%+v", err) {
+			assert.Empty(t, resp.Items)
+		}
 	}
 
 	{
@@ -301,10 +325,18 @@ func TestAccessListFilters(t *testing.T) {
 		assert.Equal(t, "active-request", resp.Items[0].Metadata.Name)
 	}
 
-	{
-		resp, err := srv.ListRequest(env.ctx, &vaccessv1.ListRequestOptions{ServiceRef: serviceRef})
-		assert.Nil(t, err, "%+v", err)
-		assert.Len(t, resp.Items, 1)
+	for _, ref := range []*metav1.ObjectReference{
+		{Name: serviceRef.Name},
+		{Uid: serviceRef.Uid},
+		serviceRef,
+	} {
+		resp, err := srv.ListRequest(env.ctx, &vaccessv1.ListRequestOptions{ServiceRef: ref})
+		if !assert.Nil(t, err, "%+v", err) {
+			continue
+		}
+		if !assert.Len(t, resp.Items, 1) {
+			continue
+		}
 		assert.Equal(t, "active-request", resp.Items[0].Metadata.Name)
 	}
 
@@ -348,7 +380,7 @@ func TestAccessListFilters(t *testing.T) {
 	insertRscStoreObject(t, env, &accessv1.Review{
 		ApiVersion: uaccessv1.APIVersion,
 		Kind:       uaccessv1.KindReview,
-		Metadata:   newRscStoreMetadata("approved-review", now),
+		Metadata:   newRscStoreMetadata("approved-review.active-request", now),
 		Spec:       &accessv1.Review_Spec{Decision: accessv1.Review_Spec_DECISION_APPROVE},
 		Status: &accessv1.Review_Status{
 			UserRef:    userRef,
@@ -358,7 +390,7 @@ func TestAccessListFilters(t *testing.T) {
 	insertRscStoreObject(t, env, &accessv1.Review{
 		ApiVersion: uaccessv1.APIVersion,
 		Kind:       uaccessv1.KindReview,
-		Metadata:   newRscStoreMetadata("pending-review", now.Add(time.Second)),
+		Metadata:   newRscStoreMetadata("pending-review.pending-request", now.Add(time.Second)),
 		Spec:       &accessv1.Review_Spec{},
 		Status: &accessv1.Review_Status{
 			UserRef: otherUserRef,
@@ -369,27 +401,27 @@ func TestAccessListFilters(t *testing.T) {
 		resp, err := srv.ListReview(env.ctx, &vaccessv1.ListReviewOptions{UserRef: userRef})
 		assert.Nil(t, err, "%+v", err)
 		assert.Len(t, resp.Items, 1)
-		assert.Equal(t, "approved-review", resp.Items[0].Metadata.Name)
+		assert.Equal(t, "approved-review.active-request", resp.Items[0].Metadata.Name)
 	}
 
 	{
 		resp, err := srv.ListReview(env.ctx, &vaccessv1.ListReviewOptions{RequestRef: requestRef})
 		assert.Nil(t, err, "%+v", err)
 		assert.Len(t, resp.Items, 1)
-		assert.Equal(t, "approved-review", resp.Items[0].Metadata.Name)
+		assert.Equal(t, "approved-review.active-request", resp.Items[0].Metadata.Name)
 	}
 
 	{
 		resp, err := srv.ListReview(env.ctx, &vaccessv1.ListReviewOptions{Decision: accessv1.Review_Spec_DECISION_APPROVE})
 		assert.Nil(t, err, "%+v", err)
 		assert.Len(t, resp.Items, 1)
-		assert.Equal(t, "approved-review", resp.Items[0].Metadata.Name)
+		assert.Equal(t, "approved-review.active-request", resp.Items[0].Metadata.Name)
 	}
 
 	{
 		resp, err := srv.ListReview(env.ctx, &vaccessv1.ListReviewOptions{IsDecided: true})
 		assert.Nil(t, err, "%+v", err)
 		assert.Len(t, resp.Items, 1)
-		assert.Equal(t, "approved-review", resp.Items[0].Metadata.Name)
+		assert.Equal(t, "approved-review.active-request", resp.Items[0].Metadata.Name)
 	}
 }
