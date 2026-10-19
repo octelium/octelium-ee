@@ -9,6 +9,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import { Session } from "@/apis/corev1/corev1";
 import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
+import { LabelComponent } from "@/pages/core/Session/List";
 import sessionInfo from "@/pages/core/Session/router";
 import { queryClient } from "@/utils";
 import themeMantine from "@/utils/theme/mantine";
@@ -56,7 +57,9 @@ const extensions: Record<string, JsonObject> = {
   enterprise: { enterprise: { isEnabled: true } },
 };
 
-const scenario = new URLSearchParams(window.location.search).get("scenario");
+const params = new URLSearchParams(window.location.search);
+const scenario = params.get("scenario");
+const isList = params.get("view") === "list";
 const item = Session.fromJson({
   apiVersion: "core/v1",
   kind: "Session",
@@ -80,7 +83,11 @@ const item = Session.fromJson({
 queryClient.setQueryData(["core.getSession", item.metadata!.name], {
   response: item,
 });
-window.history.replaceState(null, "", `/core/sessions/${item.metadata!.name}`);
+window.history.replaceState(
+  null,
+  "",
+  isList ? "/core/sessions" : `/core/sessions/${item.metadata!.name}`,
+);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -88,6 +95,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <Routes>
+            <Route
+              path="/core/sessions"
+              element={<LabelComponent item={item} />}
+            />
             <Route
               path="/core/sessions/:name"
               element={

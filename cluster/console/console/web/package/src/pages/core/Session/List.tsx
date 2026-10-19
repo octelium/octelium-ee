@@ -35,6 +35,8 @@ import {
   Wifi,
 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+import { workspaceRefOf } from "@/pages/cordium/utils";
+import { getCordiumSessionInfo } from "./utils";
 
 export const getType = (svc: Session) => {
   return match(svc.status?.type)
@@ -76,6 +78,7 @@ const getState = (svc: Session) => {
 
 export const LabelComponent = (props: { item: Session }) => {
   const { item } = props;
+  const workspaceRef = workspaceRefOf(getCordiumSessionInfo(item)?.workspaceRef);
 
   return (
     <ResourceListLabelWrap>
@@ -113,7 +116,7 @@ export const LabelComponent = (props: { item: Session }) => {
       {(item.status?.deviceRef?.name || item.status?.deviceRef?.uid) && (
         <ResourceListLabel itemRef={item.status!.deviceRef}></ResourceListLabel>
       )}
-
+      {workspaceRef && <ResourceListLabel itemRef={workspaceRef} />}
     </ResourceListLabelWrap>
   );
 };
