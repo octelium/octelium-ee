@@ -1,28 +1,46 @@
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
+import {
+  registerAgentSection,
+  useAgentAsk,
+  type PinnedContext,
+} from "@/components/AgentDock/context";
 import Sparkline from "@/components/Charts/Sparkline";
 import PeriodSelector from "@/components/LogWidget/PeriodSelector";
 import RefreshButton from "@/components/RefreshButton";
-import { PageActions, usePageDetails } from "@/components/PageHeader/context";
+import {
+  PageActions,
+  usePageDetails,
+  usePageDetailsValue,
+} from "@/components/PageHeader/context";
 import { useInView } from "@/hooks/use-in-view";
 import { deltaPct, periodLabel } from "@/utils/visibility";
-import { Switch } from "@mantine/core";
+import { ActionIcon, Menu, Switch, Tooltip } from "@mantine/core";
 import { useIsFetching, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUpRight,
+  ChevronsDownUp,
+  Ellipsis,
+  EyeOff,
+  Link2,
   LucideIcon,
   Minus,
+  SlidersHorizontal,
+  Sparkles,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
 import * as React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 import { twMerge } from "@/lib/utils";
+import { snapshotSection } from "./snapshot";
 import {
   compact,
   dashboardQueryFilters,
   DashboardVisibilityContext,
   exact,
 } from "./utils";
+import { useWidget } from "./widget";
 
 export const PILL =
   "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-px text-micro font-semibold leading-[1.45]";
@@ -46,6 +64,113 @@ export const seriesPoints = (
   key: string,
 ): Point[] => toPoints(series?.find((item) => item.key === key)?.datapoints);
 
+export const PanelMenu = (props: { title: string; onAsk?: () => void }) => {
+  const widget = useWidget();
+  if (!props.onAsk && !widget) return null;
+
+  const copyLink = async () => {
+    const url = `${window.location.href.split("#")[0]}#section-${widget!.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast("Link copied");
+    } catch {
+      toast.error("The link could not be copied");
+    }
+  };
+
+  return (
+    <Menu position="bottom-end" width={220} withinPortal>
+      <Menu.Target>
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          aria-label={`${props.title} actions`}
+          className="opacity-0 transition-opacity duration-150 focus-visible:opacity-100 group-hover/panel:opacity-100 group-focus-within/panel:opacity-100 data-[expanded]:opacity-100 [@media(hover:none)]:opacity-100"
+        >
+          <Ellipsis size={15} />
+        </ActionIcon>
+      </Menu.Target>
+      <Menu.Dropdown>
+        {props.onAsk && (
+          <Menu.Item leftSection={<Sparkles size={14} />} onClick={props.onAsk}>
+            Ask the agent about this
+          </Menu.Item>
+        )}
+        {widget && (
+          <>
+            <Menu.Item
+              leftSection={<Link2 size={14} />}
+              onClick={() => void copyLink()}
+            >
+              Copy link
+            </Menu.Item>
+            <Menu.Divider />
+            {!widget.locked && (
+              <>
+                <Menu.Item
+                  leftSection={<ChevronsDownUp size={14} />}
+                  onClick={widget.collapse}
+                >
+                  Collapse section
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<EyeOff size={14} />}
+                  onClick={widget.hide}
+                >
+                  Hide section
+                </Menu.Item>
+              </>
+            )}
+            <Menu.Item
+              leftSection={<SlidersHorizontal size={14} />}
+              onClick={widget.customize}
+            >
+              Customize page…
+            </Menu.Item>
+          </>
+        )}
+      </Menu.Dropdown>
+    </Menu>
+  );
+};
+
+export const useAgentSection = (title: string, description?: string) => {
+  const ref = React.useRef<HTMLElement>(null);
+  const widget = useWidget();
+  const details = usePageDetailsValue();
+  const { pathname, search } = useLocation();
+  const { available, ask } = useAgentAsk();
+  const widgetID = widget?.id;
+
+  const pinned = React.useCallback(
+    (): PinnedContext => ({
+      label: title,
+      items: ref.current
+        ? [
+            snapshotSection(ref.current, {
+              id: widgetID,
+              title,
+              description,
+              path: `${pathname}${search}`,
+              details,
+            }),
+          ]
+        : [],
+    }),
+    [title, description, widgetID, pathname, search, details],
+  );
+
+  React.useEffect(() => {
+    if (!available || !ref.current) return;
+    return registerAgentSection(ref.current, pinned);
+  }, [available, pinned]);
+
+  return {
+    ref,
+    onAsk: available ? () => ask({ pinned: pinned(), fresh: true }) : undefined,
+  };
+};
+
 export const Panel = (props: {
   icon: LucideIcon;
   title: string;
@@ -57,11 +182,14 @@ export const Panel = (props: {
   className?: string;
 }) => {
   const Icon = props.icon;
+  const { ref, onAsk } = useAgentSection(props.title, props.description);
 
   return (
     <section
+      ref={ref}
+      data-agent-section=""
       className={twMerge(
-        "overflow-hidden rounded-xl border border-slate-200 bg-white",
+        "group/panel overflow-hidden rounded-xl border border-slate-200 bg-white",
         props.className,
       )}
     >
@@ -97,6 +225,7 @@ export const Panel = (props: {
               />
             </Link>
           )}
+          <PanelMenu title={props.title} onAsk={onAsk} />
         </div>
       </header>
 
@@ -238,6 +367,17 @@ export const StatTile = (props: {
   return (
     <Wrap
       to={props.to!}
+      data-agent-label={props.label}
+      data-agent-value={
+        unavailable
+          ? "unavailable"
+          : props.isLoading
+            ? "loading"
+            : (props.valueLabel ?? String(props.value))
+      }
+      data-agent-previous={
+        props.trend && !unavailable ? String(props.trend.prev) : undefined
+      }
       className={twMerge(
         "relative flex flex-col gap-2.5 rounded-xl border border-slate-200 bg-white px-4 py-4",
         props.to &&
@@ -355,12 +495,23 @@ export const MiniStat = (props: {
 
   const className =
     "flex min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2.5";
+  const agent = {
+    "data-agent-label": props.label,
+    "data-agent-value": String(props.value),
+  };
 
-  if (!props.to) return <div className={className}>{content}</div>;
+  if (!props.to) {
+    return (
+      <div className={className} {...agent}>
+        {content}
+      </div>
+    );
+  }
 
   return (
     <Link
       to={props.to}
+      {...agent}
       className={twMerge(
         className,
         "outline-none transition-colors duration-150 hover:border-slate-300 hover:bg-white focus-visible:ring-2 focus-visible:ring-slate-400",
@@ -430,12 +581,25 @@ export const DeltaStat = (props: {
 
   const className =
     "flex min-w-0 flex-col gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5";
+  const agent = {
+    "data-agent-label": props.label,
+    "data-agent-value": String(props.value),
+    "data-agent-previous":
+      props.prev === undefined ? undefined : String(props.prev),
+  };
 
-  if (!props.to) return <div className={className}>{content}</div>;
+  if (!props.to) {
+    return (
+      <div className={className} {...agent}>
+        {content}
+      </div>
+    );
+  }
 
   return (
     <Link
       to={props.to}
+      {...agent}
       className={twMerge(
         className,
         "outline-none transition-[border-color,box-shadow] duration-150 hover:border-slate-300 hover:shadow-raised focus-visible:ring-2 focus-visible:ring-slate-400",
@@ -534,6 +698,14 @@ const InventoryCard = (props: {
   return (
     <Wrap
       to={entry.to!}
+      data-agent-label={entry.label}
+      data-agent-value={
+        entry.unavailable
+          ? "unavailable"
+          : props.isLoading
+            ? "loading"
+            : String(entry.total)
+      }
       className={twMerge(
         "flex min-w-0 flex-col gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-3",
         entry.to &&
@@ -629,6 +801,7 @@ export const DashboardControls = (props: {
   onPeriodChange: (value: number) => void;
   autoRefresh: boolean;
   onAutoRefreshChange: (value: boolean) => void;
+  onCustomize?: () => void;
 }) => {
   const queryClient = useQueryClient();
   const fetching = useIsFetching(dashboardQueryFilters);
@@ -655,6 +828,20 @@ export const DashboardControls = (props: {
         loading={fetching > 0}
         onClick={() => queryClient.invalidateQueries(dashboardQueryFilters)}
       />
+
+      {props.onCustomize && (
+        <Tooltip label="Customize this page" withArrow>
+          <ActionIcon
+            type="button"
+            variant="default"
+            size="sm"
+            aria-label="Customize this page"
+            onClick={props.onCustomize}
+          >
+            <SlidersHorizontal size={12} strokeWidth={2.5} />
+          </ActionIcon>
+        </Tooltip>
+      )}
     </PageActions>
   );
 };

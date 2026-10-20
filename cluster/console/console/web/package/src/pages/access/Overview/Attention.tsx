@@ -1,4 +1,5 @@
 import { Panel } from "@/components/Dashboard/components";
+import { usePageConditions } from "@/components/PageHeader/context";
 import { compact, exact } from "@/components/Dashboard/utils";
 import { twMerge } from "@/lib/utils";
 import { n, periodLabel } from "@/utils/visibility";
@@ -191,6 +192,9 @@ const Attention = (props: { periodMinutes: number }) => {
     );
   const critical = items.filter((item) => item.severity === "critical").length;
   const isLoading = totals.isLoading || created.isLoading;
+  usePageConditions(
+    items.map((item) => ({ label: item.label, count: item.count, to: item.to })),
+  );
   const incomplete =
     !totals.data ||
     !created.data ||

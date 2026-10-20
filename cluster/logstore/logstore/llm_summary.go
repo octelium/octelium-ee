@@ -20,6 +20,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/pkg/errors"
+	"google.golang.org/protobuf/proto"
 )
 
 func (s *Server) getLLMSummary(ctx context.Context, req *vllmv1.GetSummaryRequest) (*vllmv1.GetSummaryResponse, error) {
@@ -46,6 +47,27 @@ func (s *Server) getLLMSummary(ctx context.Context, req *vllmv1.GetSummaryReques
 	ret := &vllmv1.GetSummaryResponse{
 		Stats:         stats.toPB(),
 		Cardinalities: cardinalities,
+	}
+
+	if req.CompareFrom != nil || req.CompareTo != nil {
+		prevFilter := &vllmv1.Filter{}
+		if req.Filter != nil {
+			prevFilter = proto.Clone(req.Filter).(*vllmv1.Filter)
+		}
+		prevFilter.From = req.CompareFrom
+		prevFilter.To = req.CompareTo
+
+		prevFilters, err := getLLMAggregateFilters(prevFilter)
+		if err != nil {
+			return nil, err
+		}
+
+		prev, err := s.getLLMStats(ctx, prevFilters, req.IncludeQuantiles)
+		if err != nil {
+			return nil, grpcutils.InternalWithErr(err)
+		}
+
+		ret.Previous = prev.toPB()
 	}
 
 	seen := make(map[vllmv1.Dimension]struct{})

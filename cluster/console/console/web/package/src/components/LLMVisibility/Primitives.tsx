@@ -1,4 +1,5 @@
 import { Loader } from "@mantine/core";
+import { PanelMenu, useAgentSection } from "@/components/Dashboard/components";
 import EmptyState from "@/components/EmptyState";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
@@ -14,13 +15,16 @@ export const Panel = (props: {
   className?: string;
 }) => {
   const Icon = props.icon;
+  const { ref, onAsk } = useAgentSection(props.title, props.description);
   return (
     <motion.section
+      ref={ref}
+      data-agent-section=""
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.24, ease: "easeOut" }}
       className={twMerge(
-        "w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card",
+        "group/panel w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card",
         props.className,
       )}
     >
@@ -42,7 +46,10 @@ export const Panel = (props: {
             )}
           </div>
         </div>
-        {props.action}
+        <div className="flex shrink-0 items-center gap-2">
+          {props.action}
+          <PanelMenu title={props.title} onAsk={onAsk} />
+        </div>
       </div>
       <div className="px-4 py-4">{props.children}</div>
     </motion.section>
@@ -134,6 +141,7 @@ export const StatCard = (props: {
   label: string;
   value: string;
   hint?: string;
+  trend?: React.ReactNode;
   tone?: "default" | "positive" | "warning" | "danger";
   icon?: React.ElementType<{ size?: number; strokeWidth?: number }>;
   onClick?: () => void;
@@ -151,8 +159,11 @@ export const StatCard = (props: {
           <Icon size={54} strokeWidth={1.4} />
         </span>
       )}
-      <span className="relative z-10 truncate text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
-        {props.label}
+      <span className="relative z-10 flex min-w-0 items-center justify-between gap-2">
+        <span className="truncate text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
+          {props.label}
+        </span>
+        {props.trend}
       </span>
       <span
         className={twMerge(

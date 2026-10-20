@@ -54,6 +54,8 @@ func (s *Server) listAccessLogTopUser(ctx context.Context, req *visibilityv1.Lis
 
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
 
+	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
+
 	filters = appendTimeFilters(filters, req.From, req.To)
 
 	res, err := s.getTop(ctx, "access_logs", getTopLimit(req.Limit), colUserUID, "entry.common.userRef", filters)
@@ -119,6 +121,8 @@ func (s *Server) listAccessLogTopService(ctx context.Context, req *visibilityv1.
 	filters = appendAccessStatusFilter(filters, req.Status)
 
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
+
+	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
 
 	filters = appendTimeFilters(filters, req.From, req.To)
 
@@ -188,6 +192,8 @@ func (s *Server) listAccessLogTopPolicy(ctx context.Context, req *visibilityv1.L
 	filters = appendAccessStatusFilter(filters, req.Status)
 
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
+
+	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
 
 	filters = appendTimeFilters(filters, req.From, req.To)
 
@@ -260,6 +266,8 @@ func (s *Server) listAccessLogTopSession(ctx context.Context, req *visibilityv1.
 	filters = appendAccessStatusFilter(filters, req.Status)
 
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
+
+	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
 
 	filters = appendTimeFilters(filters, req.From, req.To)
 
@@ -697,6 +705,8 @@ func (s *Server) listAccessLogTopDenyReason(ctx context.Context,
 
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
 
+	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
+
 	filters = appendTimeFilters(filters, req.From, req.To)
 
 	filters = append(filters, goqu.L(colStatus).Eq(corev1.AccessLog_Entry_Common_DENIED.String()))
@@ -787,8 +797,9 @@ func (s *Server) listComponentLogTopComponent(ctx context.Context,
 		return nil, err
 	}
 
-	if req.Level != corev1.ComponentLog_Entry_LEVEL_UNSET {
-		filters = append(filters, goqu.L(colLevel).Eq(req.Level.String()))
+	filters, err = appendComponentLevelFilter(filters, req.Level, req.Levels)
+	if err != nil {
+		return nil, err
 	}
 
 	filters = appendTimeFilters(filters, req.From, req.To)

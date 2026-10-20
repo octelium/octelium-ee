@@ -1,7 +1,12 @@
 import SeriesChart from "@/components/Charts/SeriesChart";
 import { EmptyHint, Panel, toPoints } from "@/components/Dashboard/components";
 import { compact, exact } from "@/components/Dashboard/utils";
-import { seriesColors, useChartColorScheme } from "@/utils/charts/palette";
+import {
+  CHART_INK,
+  STATUS_COLORS,
+  seriesColors,
+  useChartColorScheme,
+} from "@/utils/charts/palette";
 import { n, periodLabel } from "@/utils/visibility";
 import { SegmentedControl, Select } from "@mantine/core";
 import { ChartSpline } from "lucide-react";
@@ -14,6 +19,13 @@ import {
   STREAMS,
   useBreakdown,
 } from "./queries";
+
+const keyColor = (dimension: string, key: string) => {
+  if (dimension !== "status") return undefined;
+  if (key === "ALLOWED") return STATUS_COLORS.good;
+  if (key === "DENIED") return STATUS_COLORS.critical;
+  return undefined;
+};
 
 const isStream = (value: string | null): value is StreamKey =>
   STREAMS.some((item) => item.key === value);
@@ -101,16 +113,46 @@ const Breakdown = (props: { periodMinutes: number }) => {
 
   const palette = seriesColors();
 
-  const series = React.useMemo(
-    () =>
-      (query.data?.series ?? []).map((item, index) => ({
-        name: item.displayName || item.key || "Unknown",
-        total: n(item.total),
-        color: palette[index % palette.length],
-        points: toPoints(item.datapoints),
+  const series = React.useMemo(() => {
+    const ret = (query.data?.series ?? []).map((item, index) => ({
+      name: item.displayName || item.key || "Unknown",
+      total: n(item.total),
+      color:
+        keyColor(dimension.value, item.key) ?? palette[index % palette.length],
+      points: toPoints(item.datapoints),
+    }));
+    if (ret.length === 0) return ret;
+
+    const grouped = new Map<string, number>();
+    (query.data?.series ?? []).forEach((item) =>
+      item.datapoints.forEach((point) => {
+        const key = `${point.timestamp?.seconds}`;
+        grouped.set(key, (grouped.get(key) ?? 0) + n(point.count));
+      }),
+    );
+    const other = toPoints(
+      (query.data?.datapoints ?? []).map((point) => ({
+        timestamp: point.timestamp,
+        count: Math.max(
+          n(point.count) - (grouped.get(`${point.timestamp?.seconds}`) ?? 0),
+          0,
+        ),
       })),
-    [query.data, palette],
-  );
+    );
+    const otherTotal = other.reduce((sum, point) => sum + point.value, 0);
+
+    return otherTotal > 0
+      ? [
+          ...ret,
+          {
+            name: "Other",
+            total: otherTotal,
+            color: CHART_INK.muted,
+            points: other,
+          },
+        ]
+      : ret;
+  }, [query.data, palette, dimension.value]);
 
   const overall = (query.data?.datapoints ?? []).reduce(
     (sum, point) => sum + n(point.count),

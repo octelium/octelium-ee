@@ -50,7 +50,7 @@ export const SUBSYSTEM: Record<
   [GetClusterHealthResponse_Subsystem_Type.COMPONENTS]: {
     label: "Components",
     icon: ScrollText,
-    to: "/visibility/componentlogs?level=ERROR",
+    to: "/visibility/componentlogs?levels=ERROR,PANIC,FATAL",
   },
   [GetClusterHealthResponse_Subsystem_Type.AUTHORIZATION]: {
     label: "Authorization",

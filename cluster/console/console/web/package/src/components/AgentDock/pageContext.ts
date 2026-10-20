@@ -4,6 +4,7 @@ import type {
   RunContext,
 } from "@/apis/consoleagent/protocol";
 import type { Crumb } from "@/components/Navigation/catalog";
+import type { PageCondition } from "@/components/PageHeader/context";
 import type { PinnedContext } from "./context";
 
 export const trailTitle = (trail: Crumb[]): string =>
@@ -24,6 +25,23 @@ export const routeResources = (trail: Crumb[]): ResourceRef[] =>
         ]
       : [],
   );
+
+const DETAIL_MAX = 250;
+
+export const withConditions = (
+  details: Record<string, string> | undefined,
+  conditions: PageCondition[],
+) => {
+  if (conditions.length === 0) return details;
+  const value = conditions
+    .map((item) => `${item.count} × ${item.label}`)
+    .join("; ");
+  return {
+    ...details,
+    "Needs attention":
+      value.length > DETAIL_MAX ? `${value.slice(0, DETAIL_MAX - 1)}…` : value,
+  };
+};
 
 export const buildPageContext = (args: {
   pathname: string;

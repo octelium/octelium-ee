@@ -824,6 +824,16 @@ func (s *srvEnterprise) ListCertificate(ctx context.Context, req *venterprisev1.
 		}
 	}
 
+	if req.ExpiresBefore != nil {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`%s < ?`, colStatusIssuanceExpiry), req.ExpiresBefore.AsTime().UTC()))
+	}
+
+	if req.ExpiresAfter != nil {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`%s >= ?`, colStatusIssuanceExpiry), req.ExpiresAfter.AsTime().UTC()))
+	}
+
 	doListReq.orderBy = getCertificateOrderByExpr(req.OrderBy)
 
 	ret, err := s.s.doList(ctx, doListReq)

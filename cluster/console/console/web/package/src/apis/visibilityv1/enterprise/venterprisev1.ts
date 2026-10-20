@@ -36,6 +36,7 @@ import { DeviceManager_Status_Type } from "../../enterprisev1/enterprisev1";
 import { DirectoryProvider_Status_Synchronization_State } from "../../enterprisev1/enterprisev1";
 import { CertificateIssuer_Status_State } from "../../enterprisev1/enterprisev1";
 import { CommonListOptions_OrderBy_Mode } from "../meta/vmetav1";
+import { Timestamp } from "../../google/protobuf/timestamp";
 import { ObjectReference } from "../../metav1/metav1";
 import { Certificate_Status_Issuance_State } from "../../enterprisev1/enterprisev1";
 import { Certificate_Spec_Mode } from "../../enterprisev1/enterprisev1";
@@ -741,6 +742,14 @@ export interface ListCertificateOptions {
      * @generated from protobuf field: octelium.api.main.visibility.enterprise.v1.ListCertificateOptions.OrderBy orderBy = 9
      */
     orderBy?: ListCertificateOptions_OrderBy;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp expiresBefore = 10
+     */
+    expiresBefore?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp expiresAfter = 11
+     */
+    expiresAfter?: Timestamp;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.enterprise.v1.ListCertificateOptions.OrderBy
@@ -2739,7 +2748,9 @@ class ListCertificateOptions$Type extends MessageType<ListCertificateOptions> {
             { no: 6, name: "serviceRef", kind: "message", T: () => ObjectReference },
             { no: 7, name: "isExpired", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 8, name: "isExpiringSoon", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 9, name: "orderBy", kind: "message", T: () => ListCertificateOptions_OrderBy }
+            { no: 9, name: "orderBy", kind: "message", T: () => ListCertificateOptions_OrderBy },
+            { no: 10, name: "expiresBefore", kind: "message", T: () => Timestamp },
+            { no: 11, name: "expiresAfter", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<ListCertificateOptions>): ListCertificateOptions {
@@ -2784,6 +2795,12 @@ class ListCertificateOptions$Type extends MessageType<ListCertificateOptions> {
                 case /* octelium.api.main.visibility.enterprise.v1.ListCertificateOptions.OrderBy orderBy */ 9:
                     message.orderBy = ListCertificateOptions_OrderBy.internalBinaryRead(reader, reader.uint32(), options, message.orderBy);
                     break;
+                case /* google.protobuf.Timestamp expiresBefore */ 10:
+                    message.expiresBefore = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.expiresBefore);
+                    break;
+                case /* google.protobuf.Timestamp expiresAfter */ 11:
+                    message.expiresAfter = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.expiresAfter);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -2823,6 +2840,12 @@ class ListCertificateOptions$Type extends MessageType<ListCertificateOptions> {
         /* octelium.api.main.visibility.enterprise.v1.ListCertificateOptions.OrderBy orderBy = 9; */
         if (message.orderBy)
             ListCertificateOptions_OrderBy.internalBinaryWrite(message.orderBy, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp expiresBefore = 10; */
+        if (message.expiresBefore)
+            Timestamp.internalBinaryWrite(message.expiresBefore, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp expiresAfter = 11; */
+        if (message.expiresAfter)
+            Timestamp.internalBinaryWrite(message.expiresAfter, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

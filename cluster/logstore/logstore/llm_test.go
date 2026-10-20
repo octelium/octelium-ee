@@ -1332,3 +1332,92 @@ func TestLLMListAccessLog(t *testing.T) {
 		assert.NotNil(t, err)
 	}
 }
+
+func TestLLMSummaryComparison(t *testing.T) {
+	ts := newTestServer(t)
+	if ts == nil {
+		return
+	}
+
+	now := time.Now().UTC().Truncate(time.Second)
+	base := now.Add(-2 * time.Hour)
+
+	userRef := randomObjectReference()
+	serviceRef := randomObjectReference()
+	sessionRef := randomObjectReference()
+
+	insertLLMSummaryAccessLogs(t, ts, base, userRef, serviceRef, sessionRef)
+
+	for idx := range 3 {
+		insertLLMAccessLog(t, ts, &llmAccessLogOptions{
+			CreatedAt:      now.Add(-30*time.Minute + time.Duration(idx)*time.Second),
+			Duration:       200 * time.Millisecond,
+			Status:         corev1.AccessLog_Entry_Common_ALLOWED,
+			UserRef:        userRef,
+			ServiceRef:     serviceRef,
+			SessionRef:     sessionRef,
+			ModelEffective: "gpt-5",
+			HasUsage:       true,
+			InputTokens:    10,
+			OutputTokens:   5,
+			TotalTokens:    15,
+		})
+	}
+
+	{
+		resp, err := ts.srv.getLLMSummary(ts.ctx, &vllmv1.GetSummaryRequest{
+			Filter: &vllmv1.Filter{
+				From: pbutils.Timestamp(now.Add(-1 * time.Hour)),
+				To:   pbutils.Timestamp(now),
+			},
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint64(3), resp.Stats.Requests.Total)
+		assert.Nil(t, resp.Previous)
+	}
+
+	{
+		resp, err := ts.srv.getLLMSummary(ts.ctx, &vllmv1.GetSummaryRequest{
+			Filter: &vllmv1.Filter{
+				From:    pbutils.Timestamp(now.Add(-1 * time.Hour)),
+				To:      pbutils.Timestamp(now),
+				UserRef: userRef,
+			},
+			CompareFrom: pbutils.Timestamp(now.Add(-3 * time.Hour)),
+			CompareTo:   pbutils.Timestamp(now.Add(-1 * time.Hour)),
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint64(3), resp.Stats.Requests.Total)
+		assert.Equal(t, uint64(3*15), resp.Stats.Tokens.Total)
+		if assert.NotNil(t, resp.Previous) {
+			assert.Equal(t, uint64(40), resp.Previous.Requests.Total)
+			assert.Equal(t, uint64(4), resp.Previous.Requests.Denied)
+		}
+	}
+
+	{
+		resp, err := ts.srv.getLLMSummary(ts.ctx, &vllmv1.GetSummaryRequest{
+			Filter: &vllmv1.Filter{
+				From:    pbutils.Timestamp(now.Add(-1 * time.Hour)),
+				To:      pbutils.Timestamp(now),
+				UserRef: randomObjectReference(),
+			},
+			CompareFrom: pbutils.Timestamp(now.Add(-3 * time.Hour)),
+			CompareTo:   pbutils.Timestamp(now.Add(-1 * time.Hour)),
+		})
+		assert.Nil(t, err, "%+v", err)
+		if assert.NotNil(t, resp.Previous) {
+			assert.Equal(t, uint64(0), resp.Previous.Requests.Total)
+		}
+	}
+
+	{
+		_, err := ts.srv.getLLMSummary(ts.ctx, &vllmv1.GetSummaryRequest{
+			Filter: &vllmv1.Filter{
+				EntryScope: vllmv1.EntryScope_ALL,
+			},
+			CompareFrom: pbutils.Timestamp(now.Add(-3 * time.Hour)),
+		})
+		assert.NotNil(t, err)
+	}
+}

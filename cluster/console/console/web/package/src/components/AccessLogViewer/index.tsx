@@ -942,6 +942,8 @@ const DoAccessLogViewer = (props: {
   itemsPerPage?: number;
   from?: Timestamp;
   status?: AccessLogStatusFilter;
+  reason?: AccessLog_Entry_Common_Reason_Type;
+  mode?: Service_Spec_Mode;
   query?: string;
   page?: number;
   onPageChange?: (page: number) => void;
@@ -975,6 +977,8 @@ const DoAccessLogViewer = (props: {
         },
         from: props.from,
         status: accessLogStatusValue(props.status ?? "all"),
+        reason: props.reason,
+        mode: props.mode,
       });
       const { response } =
         await getClientVisibilityAccessLog().listAccessLog(req);
@@ -1095,6 +1099,8 @@ const AccessLogViewer = (props: {
   page?: number;
   onPageChange?: (page: number) => void;
   status?: AccessLogStatusFilter;
+  reason?: AccessLog_Entry_Common_Reason_Type;
+  mode?: Service_Spec_Mode;
   query?: string;
 }) => {
   const [from, setFrom] = React.useState<Timestamp>(
@@ -1126,6 +1132,8 @@ const AccessLogViewer = (props: {
             regionRef={props.regionRef}
             policyRef={props.policyRef}
             deviceRef={props.deviceRef}
+            reason={props.reason}
+            mode={props.mode}
             from={from}
           />
         </CompactSummary>
@@ -1141,6 +1149,8 @@ const AccessLogViewer = (props: {
         deviceRef={props.deviceRef}
         from={from}
         status={props.status}
+        reason={props.reason}
+        mode={props.mode}
         query={props.query}
         itemsPerPage={props.itemsPerPage}
         page={props.page}

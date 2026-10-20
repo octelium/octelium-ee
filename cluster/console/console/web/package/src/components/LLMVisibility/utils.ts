@@ -32,6 +32,16 @@ export const rangeFromMinutes = (minutes: number): LLMRange => ({
   to: undefined,
 });
 
+export const comparisonRange = (range: LLMRange) => {
+  if (!range.from) return {};
+  const from = Timestamp.toDate(range.from).getTime();
+  const to = range.to ? Timestamp.toDate(range.to).getTime() : Date.now();
+  return {
+    compareFrom: Timestamp.fromDate(new Date(2 * from - to)),
+    compareTo: range.from,
+  };
+};
+
 export const intervalForMinutes = (minutes: number): Duration => {
   if (minutes <= 60) return { type: { oneofKind: "minutes", minutes: 2 } };
   if (minutes <= 360) return { type: { oneofKind: "minutes", minutes: 10 } };

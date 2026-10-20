@@ -228,6 +228,8 @@ func (s *Server) listAccessLog(ctx context.Context, req *visibilityv1.ListAccess
 
 	filters = appendAccessStatusFilter(filters, req.Status)
 
+	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
+
 	filters = appendTimeFilters(filters, req.From, req.To)
 
 	totalCount, err := s.countLogs(ctx, "access_logs", filters)
@@ -684,6 +686,8 @@ func (s *Server) doSummaryAccessLog(ctx context.Context, req *visibilityv1.GetAc
 	filters = appendAccessStatusFilter(filters, req.Status)
 
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
+
+	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
 
 	filters = appendTimeFilters(filters, from, to)
 
@@ -1177,11 +1181,12 @@ func (s *Server) listComponentLog(ctx context.Context, req *visibilityv1.ListCom
 
 	filters = appendTimeFilters(filters, req.From, req.To)
 
-	if req.Level != corev1.ComponentLog_Entry_LEVEL_UNSET {
-		filters = append(filters, goqu.L(colLevel).Eq(req.Level.String()))
+	filters, err := appendComponentLevelFilter(filters, req.Level, req.Levels)
+	if err != nil {
+		return nil, err
 	}
 
-	filters, err := appendComponentFilter(filters, req.Component)
+	filters, err = appendComponentFilter(filters, req.Component)
 	if err != nil {
 		return nil, err
 	}

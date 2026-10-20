@@ -350,6 +350,202 @@ describe("Console bug regressions", () => {
     assert.ok(second - first >= 30, `${first} -> ${second}`);
   });
 
+  it("adds the remainder of a truncated breakdown and colors the decisions", async () => {
+    await load("breakdown-other", "/?by=status");
+    await page.getByText("Other", { exact: true }).waitFor();
+    const legend = await page.evaluate(() => {
+      const normalize = (color) => {
+        const probe = document.createElement("span");
+        probe.style.backgroundColor = color;
+        return probe.style.backgroundColor;
+      };
+      return {
+        rows: Array.from(
+          document.querySelectorAll('span[aria-hidden="true"].rounded-full'),
+        ).map((dot) => ({
+          name: dot.nextElementSibling?.textContent,
+          total: dot.nextElementSibling?.nextElementSibling?.textContent,
+          share: dot.parentElement?.lastElementChild?.textContent,
+          color: dot.style.backgroundColor,
+        })),
+        colors: Object.fromEntries(
+          Object.entries(window.statusColors).map(([key, value]) => [
+            key,
+            normalize(value),
+          ]),
+        ),
+      };
+    });
+    assert.deepEqual(legend.rows, [
+      { name: "ALLOWED", total: "9", share: "30%", color: legend.colors.good },
+      {
+        name: "DENIED",
+        total: "6",
+        share: "20%",
+        color: legend.colors.critical,
+      },
+      { name: "Other", total: "15", share: "50%", color: legend.colors.muted },
+    ]);
+  });
+
+  it("filters the component logs by several levels", async () => {
+    await load(
+      "componentlogs",
+      "/visibility/componentlogs?levels=ERROR,PANIC,FATAL",
+    );
+    const lastRequest = () =>
+      page.evaluate(
+        () =>
+          window.calls.filter((call) => call.name === "listComponentLog").at(-1)
+            ?.request,
+      );
+    const search = () =>
+      page
+        .locator("[data-search]")
+        .textContent()
+        .then((value) => decodeURIComponent(value ?? ""));
+    await page.waitForFunction(() =>
+      window.calls.some((call) => call.name === "listComponentLog"),
+    );
+    assert.deepEqual((await lastRequest()).levels, [4, 5, 6]);
+    const severity = page.locator(
+      'input[aria-label="Component log severity"]',
+    );
+    assert.equal(await severity.inputValue(), "Error or worse");
+    await page.getByText("ERROR,PANIC,FATAL", { exact: true }).waitFor();
+
+    await severity.click();
+    await page.getByRole("option", { name: "Panic or fatal" }).click();
+    await page.waitForFunction(() =>
+      decodeURIComponent(
+        document.querySelector("[data-search]")?.textContent ?? "",
+      ).includes("levels=PANIC,FATAL"),
+    );
+    assert.equal(await search(), "?levels=PANIC,FATAL");
+    await page.waitForFunction(
+      () =>
+        window.calls
+          .filter((call) => call.name === "listComponentLog")
+          .at(-1)
+          ?.request.levels.join(",") === "5,6",
+    );
+
+    await severity.click();
+    await page.getByRole("option", { name: "Error", exact: true }).click();
+    await page.waitForFunction(
+      () =>
+        document.querySelector("[data-search]")?.textContent === "?level=ERROR",
+    );
+    await page.waitForFunction(
+      () =>
+        window.calls
+          .filter((call) => call.name === "listComponentLog")
+          .at(-1)
+          ?.request.levels.join(",") === "4",
+    );
+  });
+
+  it("filters the access logs by reason and mode", async () => {
+    await load(
+      "accesslogs",
+      "/visibility/accesslogs?status=DENIED&reason=NO_POLICY_MATCH&mode=SSH",
+    );
+    await page.waitForFunction(
+      () =>
+        window.calls.some((call) => call.name === "listAccessLog") &&
+        window.calls.some((call) => call.name === "getAccessLogSummary"),
+    );
+    const requests = await page.evaluate(() =>
+      Object.fromEntries(
+        window.calls
+          .filter((call) =>
+            ["listAccessLog", "getAccessLogSummary"].includes(call.name),
+          )
+          .map((call) => [
+            call.name,
+            { reason: call.request.reason, mode: call.request.mode },
+          ]),
+      ),
+    );
+    assert.deepEqual(requests, {
+      listAccessLog: { reason: 6, mode: 4 },
+      getAccessLogSummary: { reason: 6, mode: 4 },
+    });
+    assert.equal(
+      await page.getByRole("link", { name: /Denied/ }).getAttribute("href"),
+      "/visibility/accesslogs?status=DENIED&reason=NO_POLICY_MATCH&mode=SSH",
+    );
+  });
+
+  it("links the deny reasons to the matching access logs", async () => {
+    await load("access-leaders");
+    const link = page.getByRole("link", { name: /No policy match/ });
+    await link.waitFor();
+    assert.equal(
+      await link.getAttribute("href"),
+      "/visibility/accesslogs?status=DENIED&reason=NO_POLICY_MATCH&policyRef.uid=p-1",
+    );
+    assert.equal(
+      await page
+        .getByRole("link", { name: /Session expired/ })
+        .getAttribute("href"),
+      "/visibility/accesslogs?status=DENIED&reason=SESSION_EXPIRED",
+    );
+  });
+
+  it("filters the component leaderboard by errors, panics and fatals", async () => {
+    await load("components");
+    const link = page.getByRole("link", { name: /vigil/ });
+    await link.waitFor();
+    await page.getByText("Error", { exact: true }).click();
+    await page.waitForFunction(
+      () =>
+        window.calls
+          .filter((call) => call.name === "listComponentLogTopComponent")
+          .at(-1)
+          ?.request.levels.join(",") === "4,5,6",
+    );
+    await page.waitForFunction(() =>
+      decodeURIComponent(
+        document.querySelector('a[href*="vigil"]')?.getAttribute("href") ?? "",
+      ).endsWith("levels=ERROR,PANIC,FATAL"),
+    );
+    assert.equal(
+      decodeURIComponent(await link.getAttribute("href")),
+      "/visibility/componentlogs?component.type=vigil&component.namespace=octelium&levels=ERROR,PANIC,FATAL",
+    );
+  });
+
+  it("compares the LLM stats with the previous window", async () => {
+    await load("llm-stats");
+    await page.getByText("+20%", { exact: true }).waitFor();
+    assert.equal(await page.getByText("-50%", { exact: true }).count(), 1);
+    assert.equal(await page.getByText("+100%", { exact: true }).count(), 1);
+    assert.equal(await page.getByText("Flat", { exact: true }).count(), 1);
+    const range = await page.evaluate(async () => {
+      const { comparisonRange } = await import(
+        "/src/components/LLMVisibility/utils.ts"
+      );
+      const { Timestamp } = await import(
+        "/src/apis/google/protobuf/timestamp.ts"
+      );
+      const ret = comparisonRange({
+        from: Timestamp.fromDate(new Date("2026-10-19T10:00:00Z")),
+        to: Timestamp.fromDate(new Date("2026-10-19T12:00:00Z")),
+      });
+      return {
+        empty: comparisonRange({}),
+        from: Timestamp.toDate(ret.compareFrom).toISOString(),
+        to: Timestamp.toDate(ret.compareTo).toISOString(),
+      };
+    });
+    assert.deepEqual(range, {
+      empty: {},
+      from: "2026-10-19T08:00:00.000Z",
+      to: "2026-10-19T10:00:00.000Z",
+    });
+  });
+
   it("maps resource kinds and drilldown conflicts", async () => {
     await load();
     const result = await page.evaluate(async () => {

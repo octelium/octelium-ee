@@ -29,6 +29,10 @@ describe("system prompt", () => {
     assert.match(prompt, /# Console context\n/);
     assert.match(prompt, /<console_context> block/);
     assert.match(prompt, /\/visibility\/accesslogs\?serviceRef\.name=/);
+    assert.match(prompt, /kind DashboardSection is a snapshot/);
+    assert.match(prompt, /"Needs attention"/);
+    assert.match(prompt, /reason=<the reason type/);
+    assert.match(prompt, /levels=ERROR,PANIC,FATAL/);
     assert.match(prompt, /# Current date\n2026-10-03/);
     assert.match(
       prompt,

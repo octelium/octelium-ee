@@ -11,11 +11,20 @@ export default () => {
   const req = useLogListReq();
   const [searchParams, setSearchParams] = useSearchParams();
   const pagination = useLogPageParams();
-  const level = req?.level
-    ? ComponentLog_Entry_Level[
-        req.level.toUpperCase() as keyof typeof ComponentLog_Entry_Level
-      ]
-    : undefined;
+  const levels = [
+    ...(req?.level ? [req.level] : []),
+    ...(searchParams.get("levels")?.split(",") ?? []),
+  ]
+    .map(
+      (itm) =>
+        ComponentLog_Entry_Level[
+          itm.trim().toUpperCase() as keyof typeof ComponentLog_Entry_Level
+        ],
+    )
+    .filter(
+      (itm, idx, arr): itm is ComponentLog_Entry_Level =>
+        typeof itm === "number" && itm > 0 && arr.indexOf(itm) === idx,
+    );
   return (
     <LogPageShell title="Component logs">
       <ComponentLogViewer
@@ -28,12 +37,20 @@ export default () => {
               })
             : undefined
         }
-        level={typeof level === "number" ? level : undefined}
-        onLevelChange={(nextLevel) => {
+        levels={levels}
+        onLevelsChange={(nextLevels) => {
           const next = new URLSearchParams(searchParams);
           next.delete("common.page");
-          if (nextLevel === undefined) next.delete("level");
-          else next.set("level", ComponentLog_Entry_Level[nextLevel]);
+          next.delete("level");
+          next.delete("levels");
+          if (nextLevels.length === 1) {
+            next.set("level", ComponentLog_Entry_Level[nextLevels[0]]);
+          } else if (nextLevels.length > 1) {
+            next.set(
+              "levels",
+              nextLevels.map((itm) => ComponentLog_Entry_Level[itm]).join(","),
+            );
+          }
           setSearchParams(next, {
             replace: true,
             preventScrollReset: true,

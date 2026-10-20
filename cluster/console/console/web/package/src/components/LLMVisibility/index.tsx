@@ -1,11 +1,14 @@
 import * as CoreP from "@/apis/corev1/corev1";
+import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import {
   Dimension,
   EntryScope,
   GetSummaryRequest,
   Metric,
 } from "@/apis/visibilityv1/llm/vllmv1";
+import { usePageDetails } from "@/components/PageHeader/context";
 import { getClientVisibilityLLM } from "@/utils/client";
+import { periodLabel } from "@/utils/visibility";
 import { Badge } from "@mantine/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -34,10 +37,12 @@ import Trend from "./Trend";
 import {
   applyDrilldowns,
   buildFilter,
+  comparisonRange,
   conflictsWith,
   dimensionLabel,
   Drilldown,
   drilldownID,
+  drilldownLabel,
   intervalForMinutes,
   LLMRange,
   LLMScope,
@@ -101,6 +106,20 @@ const LLMVisibility = (props: {
     [defaultMinutes, minutes],
   );
 
+  usePageDetails({
+    "Time range": minutes
+      ? `last ${periodLabel(minutes)}`
+      : [range.from, range.to]
+          .map((itm) => (itm ? Timestamp.toDate(itm).toISOString() : "now"))
+          .join(" to "),
+    ...(status !== CoreP.AccessLog_Entry_Common_Status.STATUS_UNSET && {
+      Decision: CoreP.AccessLog_Entry_Common_Status[status],
+    }),
+    ...(drilldowns.length > 0 && {
+      Filters: drilldowns.map(drilldownLabel).join(", ").slice(0, 250),
+    }),
+  });
+
   const summaryQry = useQuery({
     queryKey: ["visibility", "llm", "summary", { filter }],
     queryFn: async () => {
@@ -109,6 +128,7 @@ const LLMVisibility = (props: {
           filter,
           includeQuantiles: true,
           cardinalities: visible(CARDINALITY_DIMENSIONS),
+          ...comparisonRange(range),
         }),
       );
       return response;
@@ -190,7 +210,11 @@ const LLMVisibility = (props: {
           }
           minHeight={190}
         >
-          <StatsOverview stats={summaryQry.data?.stats} />
+          <StatsOverview
+            stats={summaryQry.data?.stats}
+            previous={summaryQry.data?.previous}
+            rangeLabel={minutes ? periodLabel(minutes) : "range"}
+          />
         </QueryState>
       </Panel>
 

@@ -5,7 +5,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { MantineProvider } from "@mantine/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Activity, ScrollText, ShieldAlert } from "lucide-react";
+import { Provider } from "react-redux";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { Toaster } from "sonner";
 
 import type {
   AgentEvent,
@@ -17,6 +20,7 @@ import type {
   Run,
   RunInput,
 } from "@/apis/consoleagent/protocol";
+import { GetStatusResponse } from "@/apis/userv1/userv1";
 import { AgentDockHost } from "@/components/AgentDock";
 import { AskAgentButton } from "@/components/AgentDock/AskButtons";
 import { AgentProvider } from "@/components/AgentDock/provider";
@@ -28,11 +32,27 @@ import {
 import { useTrackVisits } from "@/components/CommandPalette/track";
 import PageHeader from "@/components/PageHeader";
 import {
+  DashboardControls,
+  MiniStat,
+  Panel,
+  StatTile,
+} from "@/components/Dashboard/components";
+import {
+  DashboardLayout,
+  DashboardWidget,
+  resolveLayout,
+  toStoredLayout,
+} from "@/components/Dashboard/layout";
+import {
   PageActions,
   PageHeaderProvider,
   PageTitleAddon,
+  usePageConditions,
   usePageDetails,
 } from "@/components/PageHeader/context";
+import { parseLayouts } from "@/features/dashboardLayout/slice";
+import { setStatus } from "@/features/settings/slice";
+import store from "@/store";
 import themeMantine from "@/utils/theme/mantine";
 
 interface Call {
@@ -45,6 +65,12 @@ declare global {
   interface Window {
     agentCalls: Call[];
     finishAgentUpload?: () => void;
+    mounted: Set<string>;
+    layoutUtils: {
+      resolveLayout: typeof resolveLayout;
+      toStoredLayout: typeof toStoredLayout;
+      parseLayouts: typeof parseLayouts;
+    };
   }
 }
 
@@ -330,6 +356,131 @@ const Page = () => {
   );
 };
 
+window.mounted = new Set();
+window.layoutUtils = { resolveLayout, toStoredLayout, parseLayouts };
+
+store.dispatch(
+  setStatus({
+    status: GetStatusResponse.create({
+      domain: "example.test",
+      user: { metadata: { name: "alice", uid: "u-1" } },
+    }),
+  }),
+);
+
+const Mounted = (props: { id: string; children: React.ReactNode }) => {
+  React.useEffect(() => {
+    window.mounted.add(props.id);
+    return () => {
+      window.mounted.delete(props.id);
+    };
+  }, [props.id]);
+  return <>{props.children}</>;
+};
+
+const AttentionWidget = () => {
+  usePageConditions([
+    {
+      label: "Access requests past their deadline",
+      count: 3,
+      to: "/access/requests?isDeadlinePassed=true&state=PENDING",
+    },
+  ]);
+  return (
+    <Panel icon={ShieldAlert} title="Needs attention">
+      <p>3 access requests are past their deadline</p>
+    </Panel>
+  );
+};
+
+const widgets: DashboardWidget[] = [
+  {
+    id: "attention",
+    title: "Needs attention",
+    description: "Conditions to act on",
+    icon: ShieldAlert,
+    eager: true,
+    locked: true,
+    render: () => (
+      <Mounted id="attention">
+        <AttentionWidget />
+      </Mounted>
+    ),
+  },
+  {
+    id: "errors",
+    title: "Errors",
+    description: "Component errors",
+    icon: ScrollText,
+    eager: true,
+    render: () => (
+      <Mounted id="errors">
+        <Panel
+          icon={ScrollText}
+          title="Errors"
+          description="Component errors in the last 1h"
+        >
+          <MiniStat
+            label="Errors"
+            value={12}
+            to="/visibility/componentlogs?levels=ERROR,PANIC,FATAL"
+          />
+        </Panel>
+      </Mounted>
+    ),
+  },
+  {
+    id: "requests",
+    title: "Requests",
+    description: "Access log entries",
+    icon: Activity,
+    eager: true,
+    render: () => (
+      <Mounted id="requests">
+        <Panel icon={Activity} title="Requests">
+          <StatTile
+            label="Requests"
+            value={1234}
+            footer="Access log entries"
+            trend={{ cur: 1234, prev: 1000, upIsGood: true, rangeLabel: "1h" }}
+            bar={{ value: 1, total: 2, label: "allowed" }}
+            color="#334155"
+            to="/visibility/accesslogs"
+          />
+        </Panel>
+      </Mounted>
+    ),
+  },
+];
+
+const DashboardPage = () => {
+  const location = useLocation();
+  const [customizing, setCustomizing] = React.useState(false);
+  return (
+    <main>
+      <DashboardControls
+        periodMinutes={60}
+        onPeriodChange={() => {}}
+        autoRefresh={false}
+        onAutoRefreshChange={() => {}}
+        onCustomize={() => setCustomizing(true)}
+      />
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <DashboardLayout
+          page="test"
+          widgets={widgets}
+          customizing={customizing}
+          onCustomizingChange={setCustomizing}
+        />
+      </div>
+      <output data-testid="location">
+        {location.pathname}
+        {location.search}
+      </output>
+    </main>
+  );
+};
+
 const Tracker = () => {
   useTrackVisits();
   return null;
@@ -341,28 +492,40 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <MantineProvider theme={themeMantine}>
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={[initialPath]}>
-          <PageHeaderProvider>
-            <AgentProvider>
-              <CommandPaletteProvider>
-                <Tracker />
-                <header style={{ display: "flex", height: 60 }}>
-                  <CommandPaletteTrigger />
-                </header>
-                <div style={{ padding: 16 }}>
-                  <PageHeader />
-                  <Routes>
-                    <Route path="*" element={<Page />} />
-                  </Routes>
-                </div>
-                <AgentDockHost />
-              </CommandPaletteProvider>
-            </AgentProvider>
-          </PageHeaderProvider>
-        </MemoryRouter>
-      </QueryClientProvider>
-    </MantineProvider>
+    <Provider store={store}>
+      <MantineProvider theme={themeMantine}>
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={[initialPath]}>
+            <PageHeaderProvider>
+              <AgentProvider>
+                <CommandPaletteProvider>
+                  <Tracker />
+                  <header style={{ display: "flex", height: 60 }}>
+                    <CommandPaletteTrigger />
+                  </header>
+                  <div style={{ padding: 16 }}>
+                    <PageHeader />
+                    <Routes>
+                      <Route
+                        path="*"
+                        element={
+                          scenario === "dashboard" ? (
+                            <DashboardPage />
+                          ) : (
+                            <Page />
+                          )
+                        }
+                      />
+                    </Routes>
+                  </div>
+                  <AgentDockHost />
+                  <Toaster />
+                </CommandPaletteProvider>
+              </AgentProvider>
+            </PageHeaderProvider>
+          </MemoryRouter>
+        </QueryClientProvider>
+      </MantineProvider>
+    </Provider>
   </React.StrictMode>,
 );

@@ -179,7 +179,7 @@ const Signals = (props: { periodMinutes: number }) => {
         trend={{ cur: errors, prev: errorsPrev, upIsGood: false, rangeLabel }}
         points={toPoints(componentErrorPoints.data?.datapoints)}
         color={STATUS_COLORS.critical}
-        to="/visibility/componentlogs?level=ERROR"
+        to="/visibility/componentlogs?levels=ERROR,PANIC,FATAL"
         isLoading={component.isLoading}
         isError={component.isError}
         hasData={component.data !== undefined}

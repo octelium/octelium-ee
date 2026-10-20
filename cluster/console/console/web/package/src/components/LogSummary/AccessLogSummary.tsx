@@ -1,3 +1,7 @@
+import {
+  AccessLog_Entry_Common_Reason_Type,
+  Service_Spec_Mode,
+} from "@/apis/corev1/corev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { ObjectReference } from "@/apis/metav1/metav1";
 import {
@@ -19,6 +23,8 @@ const AccessLogSummary = (props: {
   regionRef?: ObjectReference;
   deviceRef?: ObjectReference;
   policyRef?: ObjectReference;
+  reason?: AccessLog_Entry_Common_Reason_Type;
+  mode?: Service_Spec_Mode;
   from?: Timestamp;
   to?: Timestamp;
 }) => {
@@ -39,6 +45,10 @@ const AccessLogSummary = (props: {
   const accessLogsPath = (status?: "ALLOWED" | "DENIED") => {
     const params = new URLSearchParams();
     if (status) params.set("status", status);
+    if (props.reason) {
+      params.set("reason", AccessLog_Entry_Common_Reason_Type[props.reason]);
+    }
+    if (props.mode) params.set("mode", Service_Spec_Mode[props.mode]);
 
     const refs: Array<[string, ObjectReference | undefined]> = [
       ["userRef", props.userRef],

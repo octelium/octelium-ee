@@ -77,3 +77,20 @@ export const useAgent = (): AgentContextValue => {
 export const useAgentAsk = () => React.useContext(AgentAskContext);
 
 export const useOptionalAgent = () => React.useContext(AgentContext);
+
+const sections = new WeakMap<Element, () => PinnedContext>();
+
+export const registerAgentSection = (
+  element: Element,
+  pinned: () => PinnedContext,
+) => {
+  sections.set(element, pinned);
+  return () => {
+    sections.delete(element);
+  };
+};
+
+export const pinnedForElement = (element: Element | null) => {
+  const section = element?.closest("[data-agent-section]");
+  return section ? sections.get(section)?.() : undefined;
+};

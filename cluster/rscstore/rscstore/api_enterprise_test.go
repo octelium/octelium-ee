@@ -255,6 +255,49 @@ func TestEnterpriseListFilters(t *testing.T) {
 		assert.Equal(t, tc.names, names)
 	}
 
+	for _, tc := range []struct {
+		req   *venterprisev1.ListCertificateOptions
+		names []string
+	}{
+		{
+			req: &venterprisev1.ListCertificateOptions{
+				ExpiresBefore: timestamppb.New(now.Add(30 * 24 * time.Hour)),
+			},
+			names: []string{"expired-cert", "expiring-soon-cert"},
+		},
+		{
+			req: &venterprisev1.ListCertificateOptions{
+				ExpiresBefore: timestamppb.New(now),
+			},
+			names: []string{"expired-cert"},
+		},
+		{
+			req: &venterprisev1.ListCertificateOptions{
+				ExpiresAfter: timestamppb.New(now),
+			},
+			names: []string{"expiring-soon-cert"},
+		},
+		{
+			req: &venterprisev1.ListCertificateOptions{
+				ExpiresAfter:  timestamppb.New(now.Add(24 * time.Hour)),
+				ExpiresBefore: timestamppb.New(now.Add(5 * 24 * time.Hour)),
+			},
+		},
+	} {
+		tc.req.OrderBy = &venterprisev1.ListCertificateOptions_OrderBy{
+			Type: venterprisev1.ListCertificateOptions_OrderBy_EXPIRES_AT,
+		}
+		resp, err := srv.ListCertificate(env.ctx, tc.req)
+		if !assert.Nil(t, err, "%+v", err) {
+			continue
+		}
+		var names []string
+		for _, item := range resp.Items {
+			names = append(names, item.Metadata.Name)
+		}
+		assert.Equal(t, tc.names, names)
+	}
+
 	insertRscStoreObject(t, env, &enterprisev1.CertificateIssuer{
 		ApiVersion: uenterprisev1.APIVersion,
 		Kind:       uenterprisev1.KindCertificateIssuer,

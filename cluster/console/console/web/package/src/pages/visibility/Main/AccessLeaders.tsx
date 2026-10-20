@@ -23,6 +23,18 @@ const reasonLabel = (reason: number) =>
     .replace(/_/g, " ")
     .replace(/^./, (character) => character.toUpperCase());
 
+const denialsPath = (item: {
+  reason: AccessLog_Entry_Common_Reason_Type;
+  policyRef?: { uid: string };
+}) => {
+  const params = new URLSearchParams({ status: "DENIED" });
+  if (item.reason) {
+    params.set("reason", AccessLog_Entry_Common_Reason_Type[item.reason]);
+  }
+  if (item.policyRef?.uid) params.set("policyRef.uid", item.policyRef.uid);
+  return `/visibility/accesslogs?${params.toString()}`;
+};
+
 const AccessLeaders = (props: { periodMinutes: number }) => {
   const { periodMinutes } = props;
   const rangeLabel = periodLabel(periodMinutes);
@@ -44,6 +56,7 @@ const AccessLeaders = (props: { periodMinutes: number }) => {
       name: reasonLabel(item.reason),
       sub: item.policyRef?.name ? `via ${item.policyRef.name}` : undefined,
       count: n(item.count),
+      to: denialsPath(item),
       accent: STATUS_COLORS.critical,
     }),
   );

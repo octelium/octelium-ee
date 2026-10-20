@@ -1219,6 +1219,14 @@ export interface GetSummaryRequest {
      * @generated from protobuf field: repeated octelium.api.main.visibility.llm.v1.Dimension cardinalities = 4
      */
     cardinalities: Dimension[];
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp compareFrom = 5
+     */
+    compareFrom?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp compareTo = 6
+     */
+    compareTo?: Timestamp;
 }
 /**
  * GetSummaryResponse is the response of the GetSummary method.
@@ -1246,6 +1254,10 @@ export interface GetSummaryResponse {
      * @generated from protobuf field: repeated octelium.api.main.visibility.llm.v1.Breakdown breakdowns = 3
      */
     breakdowns: Breakdown[];
+    /**
+     * @generated from protobuf field: octelium.api.main.visibility.llm.v1.Stats previous = 4
+     */
+    previous?: Stats;
 }
 /**
  * GetDataPointRequest is the request of the GetDataPoint method.
@@ -4500,7 +4512,9 @@ class GetSummaryRequest$Type extends MessageType<GetSummaryRequest> {
             { no: 1, name: "filter", kind: "message", T: () => Filter },
             { no: 2, name: "includeQuantiles", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 3, name: "breakdowns", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => BreakdownRequest },
-            { no: 4, name: "cardinalities", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.visibility.llm.v1.Dimension", Dimension] }
+            { no: 4, name: "cardinalities", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.visibility.llm.v1.Dimension", Dimension] },
+            { no: 5, name: "compareFrom", kind: "message", T: () => Timestamp },
+            { no: 6, name: "compareTo", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<GetSummaryRequest>): GetSummaryRequest {
@@ -4533,6 +4547,12 @@ class GetSummaryRequest$Type extends MessageType<GetSummaryRequest> {
                     else
                         message.cardinalities.push(reader.int32());
                     break;
+                case /* google.protobuf.Timestamp compareFrom */ 5:
+                    message.compareFrom = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.compareFrom);
+                    break;
+                case /* google.protobuf.Timestamp compareTo */ 6:
+                    message.compareTo = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.compareTo);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -4561,6 +4581,12 @@ class GetSummaryRequest$Type extends MessageType<GetSummaryRequest> {
                 writer.int32(message.cardinalities[i]);
             writer.join();
         }
+        /* google.protobuf.Timestamp compareFrom = 5; */
+        if (message.compareFrom)
+            Timestamp.internalBinaryWrite(message.compareFrom, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp compareTo = 6; */
+        if (message.compareTo)
+            Timestamp.internalBinaryWrite(message.compareTo, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4577,7 +4603,8 @@ class GetSummaryResponse$Type extends MessageType<GetSummaryResponse> {
         super("octelium.api.main.visibility.llm.v1.GetSummaryResponse", [
             { no: 1, name: "stats", kind: "message", T: () => Stats },
             { no: 2, name: "cardinalities", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => CardinalityItem },
-            { no: 3, name: "breakdowns", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Breakdown }
+            { no: 3, name: "breakdowns", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Breakdown },
+            { no: 4, name: "previous", kind: "message", T: () => Stats }
         ]);
     }
     create(value?: PartialMessage<GetSummaryResponse>): GetSummaryResponse {
@@ -4602,6 +4629,9 @@ class GetSummaryResponse$Type extends MessageType<GetSummaryResponse> {
                 case /* repeated octelium.api.main.visibility.llm.v1.Breakdown breakdowns */ 3:
                     message.breakdowns.push(Breakdown.internalBinaryRead(reader, reader.uint32(), options));
                     break;
+                case /* octelium.api.main.visibility.llm.v1.Stats previous */ 4:
+                    message.previous = Stats.internalBinaryRead(reader, reader.uint32(), options, message.previous);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -4623,6 +4653,9 @@ class GetSummaryResponse$Type extends MessageType<GetSummaryResponse> {
         /* repeated octelium.api.main.visibility.llm.v1.Breakdown breakdowns = 3; */
         for (let i = 0; i < message.breakdowns.length; i++)
             Breakdown.internalBinaryWrite(message.breakdowns[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.visibility.llm.v1.Stats previous = 4; */
+        if (message.previous)
+            Stats.internalBinaryWrite(message.previous, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

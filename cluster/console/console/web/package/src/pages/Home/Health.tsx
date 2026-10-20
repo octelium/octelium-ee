@@ -49,7 +49,7 @@ const Health = (props: { periodMinutes: number }) => {
                   {components.map((item) => (
                     <Link
                       key={`${item.component?.namespace}/${item.component?.type}`}
-                      to={`/visibility/componentlogs?level=ERROR&component.type=${item.component?.type ?? ""}`}
+                      to={`/visibility/componentlogs?levels=ERROR,PANIC,FATAL&component.type=${item.component?.type ?? ""}`}
                       className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 outline-none transition-colors duration-150 hover:border-slate-300 focus-visible:ring-2 focus-visible:ring-slate-400"
                     >
                       <span className="min-w-0 flex-1 truncate text-body font-semibold text-slate-700">

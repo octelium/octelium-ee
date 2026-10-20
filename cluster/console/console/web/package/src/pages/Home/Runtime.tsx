@@ -316,7 +316,7 @@ const Runtime = (props: { periodMinutes: number }) => {
                     ? "critical"
                     : "default"
                 }
-                to="/visibility/componentlogs?level=PANIC"
+                to="/visibility/componentlogs?levels=PANIC,FATAL"
               />
             </div>
           </div>

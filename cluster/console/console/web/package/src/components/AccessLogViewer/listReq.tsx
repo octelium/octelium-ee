@@ -37,6 +37,7 @@ export const useLogListReq = () => {
     deviceRef?: objectRef;
     policyRef?: objectRef;
     status?: string;
+    reason?: string;
     level?: string;
     component?: {
       namespace?: string;

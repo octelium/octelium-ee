@@ -134,6 +134,8 @@ func (s *Server) getAccessLogDataPoint(ctx context.Context, req *visibilityv1.Ge
 
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
 
+	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
+
 	interval := s.getDataPointInterval(req.Interval)
 
 	dps, err := s.getDataPoints(ctx, "access_logs", from, to, interval, filters)
@@ -332,8 +334,9 @@ func (s *Server) getComponentLogDataPoint(ctx context.Context, req *visibilityv1
 	var filters []exp.Expression
 	var err error
 
-	if req.Level != corev1.ComponentLog_Entry_LEVEL_UNSET {
-		filters = append(filters, goqu.L(`rsc->>'$.entry.level'`).Eq(req.Level.String()))
+	filters, err = appendComponentLevelFilter(filters, req.Level, req.Levels)
+	if err != nil {
+		return nil, err
 	}
 
 	filters, err = appendComponentFilter(filters, req.Component)

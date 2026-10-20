@@ -1971,7 +1971,9 @@ type GetSummaryRequest struct {
 	// alongside the summary. Each of them is a `COUNT(DISTINCT ...)` of its own,
 	// so a page asks only for the counts that it renders. An empty list returns
 	// none at all.
-	Cardinalities []Dimension `protobuf:"varint,4,rep,packed,name=cardinalities,proto3,enum=octelium.api.main.visibility.llm.v1.Dimension" json:"cardinalities,omitempty"`
+	Cardinalities []Dimension            `protobuf:"varint,4,rep,packed,name=cardinalities,proto3,enum=octelium.api.main.visibility.llm.v1.Dimension" json:"cardinalities,omitempty"`
+	CompareFrom   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=compareFrom,proto3" json:"compareFrom,omitempty"`
+	CompareTo     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=compareTo,proto3" json:"compareTo,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2034,6 +2036,20 @@ func (x *GetSummaryRequest) GetCardinalities() []Dimension {
 	return nil
 }
 
+func (x *GetSummaryRequest) GetCompareFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CompareFrom
+	}
+	return nil
+}
+
+func (x *GetSummaryRequest) GetCompareTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CompareTo
+	}
+	return nil
+}
+
 // GetSummaryResponse is the response of the GetSummary method.
 type GetSummaryResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -2045,6 +2061,7 @@ type GetSummaryResponse struct {
 	// Breakdowns is the ranking of each of the dimensions that the request
 	// named, in the order in which it named them
 	Breakdowns    []*Breakdown `protobuf:"bytes,3,rep,name=breakdowns,proto3" json:"breakdowns,omitempty"`
+	Previous      *Stats       `protobuf:"bytes,4,opt,name=previous,proto3" json:"previous,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2096,6 +2113,13 @@ func (x *GetSummaryResponse) GetCardinalities() []*CardinalityItem {
 func (x *GetSummaryResponse) GetBreakdowns() []*Breakdown {
 	if x != nil {
 		return x.Breakdowns
+	}
+	return nil
+}
+
+func (x *GetSummaryResponse) GetPrevious() *Stats {
+	if x != nil {
+		return x.Previous
 	}
 	return nil
 }
@@ -5303,7 +5327,7 @@ var file_vllmv1_proto_rawDesc = []byte{
 	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
 	0x2e, 0x76, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x2e, 0x6c, 0x6c, 0x6d, 0x2e,
 	0x76, 0x31, 0x2e, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x52, 0x07, 0x6f, 0x72, 0x64, 0x65, 0x72,
-	0x42, 0x79, 0x22, 0xb1, 0x02, 0x0a, 0x11, 0x47, 0x65, 0x74, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72,
+	0x42, 0x79, 0x22, 0xa9, 0x03, 0x0a, 0x11, 0x47, 0x65, 0x74, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72,
 	0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x43, 0x0a, 0x06, 0x66, 0x69, 0x6c, 0x74,
 	0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2b, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
 	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x76, 0x69, 0x73,
@@ -5322,23 +5346,35 @@ var file_vllmv1_proto_rawDesc = []byte{
 	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x76, 0x69, 0x73, 0x69,
 	0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x2e, 0x6c, 0x6c, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69,
 	0x6d, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x0d, 0x63, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x61,
-	0x6c, 0x69, 0x74, 0x69, 0x65, 0x73, 0x22, 0x82, 0x02, 0x0a, 0x12, 0x47, 0x65, 0x74, 0x53, 0x75,
-	0x6d, 0x6d, 0x61, 0x72, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x40, 0x0a,
-	0x05, 0x73, 0x74, 0x61, 0x74, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f,
-	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
-	0x2e, 0x76, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x2e, 0x6c, 0x6c, 0x6d, 0x2e,
-	0x76, 0x31, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x73, 0x52, 0x05, 0x73, 0x74, 0x61, 0x74, 0x73, 0x12,
-	0x5a, 0x0a, 0x0d, 0x63, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x74, 0x69, 0x65, 0x73,
-	0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x34, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
-	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x76, 0x69, 0x73, 0x69, 0x62,
-	0x69, 0x6c, 0x69, 0x74, 0x79, 0x2e, 0x6c, 0x6c, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x61, 0x72,
-	0x64, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x74, 0x79, 0x49, 0x74, 0x65, 0x6d, 0x52, 0x0d, 0x63, 0x61,
-	0x72, 0x64, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x74, 0x69, 0x65, 0x73, 0x12, 0x4e, 0x0a, 0x0a, 0x62,
-	0x72, 0x65, 0x61, 0x6b, 0x64, 0x6f, 0x77, 0x6e, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32,
-	0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x76, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x2e, 0x6c,
-	0x6c, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x72, 0x65, 0x61, 0x6b, 0x64, 0x6f, 0x77, 0x6e, 0x52,
-	0x0a, 0x62, 0x72, 0x65, 0x61, 0x6b, 0x64, 0x6f, 0x77, 0x6e, 0x73, 0x22, 0xee, 0x02, 0x0a, 0x13,
+	0x6c, 0x69, 0x74, 0x69, 0x65, 0x73, 0x12, 0x3c, 0x0a, 0x0b, 0x63, 0x6f, 0x6d, 0x70, 0x61, 0x72,
+	0x65, 0x46, 0x72, 0x6f, 0x6d, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f,
+	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69,
+	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0b, 0x63, 0x6f, 0x6d, 0x70, 0x61, 0x72, 0x65,
+	0x46, 0x72, 0x6f, 0x6d, 0x12, 0x38, 0x0a, 0x09, 0x63, 0x6f, 0x6d, 0x70, 0x61, 0x72, 0x65, 0x54,
+	0x6f, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74,
+	0x61, 0x6d, 0x70, 0x52, 0x09, 0x63, 0x6f, 0x6d, 0x70, 0x61, 0x72, 0x65, 0x54, 0x6f, 0x22, 0xca,
+	0x02, 0x0a, 0x12, 0x47, 0x65, 0x74, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x79, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x40, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x73, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x76, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c,
+	0x69, 0x74, 0x79, 0x2e, 0x6c, 0x6c, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x73,
+	0x52, 0x05, 0x73, 0x74, 0x61, 0x74, 0x73, 0x12, 0x5a, 0x0a, 0x0d, 0x63, 0x61, 0x72, 0x64, 0x69,
+	0x6e, 0x61, 0x6c, 0x69, 0x74, 0x69, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x34,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x76, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x2e, 0x6c, 0x6c,
+	0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x74, 0x79,
+	0x49, 0x74, 0x65, 0x6d, 0x52, 0x0d, 0x63, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x74,
+	0x69, 0x65, 0x73, 0x12, 0x4e, 0x0a, 0x0a, 0x62, 0x72, 0x65, 0x61, 0x6b, 0x64, 0x6f, 0x77, 0x6e,
+	0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x76, 0x69, 0x73, 0x69,
+	0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x2e, 0x6c, 0x6c, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x72,
+	0x65, 0x61, 0x6b, 0x64, 0x6f, 0x77, 0x6e, 0x52, 0x0a, 0x62, 0x72, 0x65, 0x61, 0x6b, 0x64, 0x6f,
+	0x77, 0x6e, 0x73, 0x12, 0x46, 0x0a, 0x08, 0x70, 0x72, 0x65, 0x76, 0x69, 0x6f, 0x75, 0x73, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x76, 0x69, 0x73, 0x69, 0x62, 0x69,
+	0x6c, 0x69, 0x74, 0x79, 0x2e, 0x6c, 0x6c, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x74, 0x61, 0x74,
+	0x73, 0x52, 0x08, 0x70, 0x72, 0x65, 0x76, 0x69, 0x6f, 0x75, 0x73, 0x22, 0xee, 0x02, 0x0a, 0x13,
 	0x47, 0x65, 0x74, 0x44, 0x61, 0x74, 0x61, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75,
 	0x65, 0x73, 0x74, 0x12, 0x43, 0x0a, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x2b, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
@@ -6063,92 +6099,95 @@ var file_vllmv1_proto_depIdxs = []int32{
 	8,   // 39: octelium.api.main.visibility.llm.v1.GetSummaryRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
 	13,  // 40: octelium.api.main.visibility.llm.v1.GetSummaryRequest.breakdowns:type_name -> octelium.api.main.visibility.llm.v1.BreakdownRequest
 	4,   // 41: octelium.api.main.visibility.llm.v1.GetSummaryRequest.cardinalities:type_name -> octelium.api.main.visibility.llm.v1.Dimension
-	9,   // 42: octelium.api.main.visibility.llm.v1.GetSummaryResponse.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	10,  // 43: octelium.api.main.visibility.llm.v1.GetSummaryResponse.cardinalities:type_name -> octelium.api.main.visibility.llm.v1.CardinalityItem
-	12,  // 44: octelium.api.main.visibility.llm.v1.GetSummaryResponse.breakdowns:type_name -> octelium.api.main.visibility.llm.v1.Breakdown
-	8,   // 45: octelium.api.main.visibility.llm.v1.GetDataPointRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
-	63,  // 46: octelium.api.main.visibility.llm.v1.GetDataPointRequest.interval:type_name -> octelium.api.main.meta.v1.Duration
-	4,   // 47: octelium.api.main.visibility.llm.v1.GetDataPointRequest.groupBy:type_name -> octelium.api.main.visibility.llm.v1.Dimension
-	5,   // 48: octelium.api.main.visibility.llm.v1.GetDataPointRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
-	38,  // 49: octelium.api.main.visibility.llm.v1.GetDataPointResponse.series:type_name -> octelium.api.main.visibility.llm.v1.GetDataPointResponse.Series
-	38,  // 50: octelium.api.main.visibility.llm.v1.GetDataPointResponse.other:type_name -> octelium.api.main.visibility.llm.v1.GetDataPointResponse.Series
-	8,   // 51: octelium.api.main.visibility.llm.v1.ListTopDimensionRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
-	4,   // 52: octelium.api.main.visibility.llm.v1.ListTopDimensionRequest.dimension:type_name -> octelium.api.main.visibility.llm.v1.Dimension
-	5,   // 53: octelium.api.main.visibility.llm.v1.ListTopDimensionRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
-	11,  // 54: octelium.api.main.visibility.llm.v1.ListTopDimensionResponse.items:type_name -> octelium.api.main.visibility.llm.v1.DimensionItem
-	9,   // 55: octelium.api.main.visibility.llm.v1.ListTopDimensionResponse.other:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	8,   // 56: octelium.api.main.visibility.llm.v1.ListTopModelRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
-	1,   // 57: octelium.api.main.visibility.llm.v1.ListTopModelRequest.field:type_name -> octelium.api.main.visibility.llm.v1.ModelField
-	5,   // 58: octelium.api.main.visibility.llm.v1.ListTopModelRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
-	39,  // 59: octelium.api.main.visibility.llm.v1.ListTopModelResponse.items:type_name -> octelium.api.main.visibility.llm.v1.ListTopModelResponse.Item
-	9,   // 60: octelium.api.main.visibility.llm.v1.ListTopModelResponse.other:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	8,   // 61: octelium.api.main.visibility.llm.v1.ListTopToolRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
-	2,   // 62: octelium.api.main.visibility.llm.v1.ListTopToolRequest.scope:type_name -> octelium.api.main.visibility.llm.v1.ToolScope
-	5,   // 63: octelium.api.main.visibility.llm.v1.ListTopToolRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
-	40,  // 64: octelium.api.main.visibility.llm.v1.ListTopToolResponse.items:type_name -> octelium.api.main.visibility.llm.v1.ListTopToolResponse.Item
-	9,   // 65: octelium.api.main.visibility.llm.v1.ListTopToolResponse.other:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	8,   // 66: octelium.api.main.visibility.llm.v1.ListTopUserRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
-	5,   // 67: octelium.api.main.visibility.llm.v1.ListTopUserRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
-	41,  // 68: octelium.api.main.visibility.llm.v1.ListTopUserResponse.items:type_name -> octelium.api.main.visibility.llm.v1.ListTopUserResponse.Item
-	9,   // 69: octelium.api.main.visibility.llm.v1.ListTopUserResponse.other:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	8,   // 70: octelium.api.main.visibility.llm.v1.ListTopSessionRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
-	5,   // 71: octelium.api.main.visibility.llm.v1.ListTopSessionRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
-	42,  // 72: octelium.api.main.visibility.llm.v1.ListTopSessionResponse.items:type_name -> octelium.api.main.visibility.llm.v1.ListTopSessionResponse.Item
-	9,   // 73: octelium.api.main.visibility.llm.v1.ListTopSessionResponse.other:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	8,   // 74: octelium.api.main.visibility.llm.v1.ListTopServiceRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
-	5,   // 75: octelium.api.main.visibility.llm.v1.ListTopServiceRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
-	43,  // 76: octelium.api.main.visibility.llm.v1.ListTopServiceResponse.items:type_name -> octelium.api.main.visibility.llm.v1.ListTopServiceResponse.Item
-	9,   // 77: octelium.api.main.visibility.llm.v1.ListTopServiceResponse.other:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	8,   // 78: octelium.api.main.visibility.llm.v1.ListTopPolicyRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
-	5,   // 79: octelium.api.main.visibility.llm.v1.ListTopPolicyRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
-	44,  // 80: octelium.api.main.visibility.llm.v1.ListTopPolicyResponse.items:type_name -> octelium.api.main.visibility.llm.v1.ListTopPolicyResponse.Item
-	9,   // 81: octelium.api.main.visibility.llm.v1.ListTopPolicyResponse.other:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	8,   // 82: octelium.api.main.visibility.llm.v1.ListAccessLogRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
-	45,  // 83: octelium.api.main.visibility.llm.v1.ListAccessLogRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.ListAccessLogRequest.OrderBy
-	64,  // 84: octelium.api.main.visibility.llm.v1.ListAccessLogResponse.items:type_name -> octelium.api.main.core.v1.AccessLog
-	65,  // 85: octelium.api.main.visibility.llm.v1.ListAccessLogResponse.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	46,  // 86: octelium.api.main.visibility.llm.v1.GetDataPointResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
-	9,   // 87: octelium.api.main.visibility.llm.v1.GetDataPointResponse.DataPoint.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	47,  // 88: octelium.api.main.visibility.llm.v1.GetDataPointResponse.Series.ref:type_name -> octelium.api.main.meta.v1.ObjectReference
-	37,  // 89: octelium.api.main.visibility.llm.v1.GetDataPointResponse.Series.datapoints:type_name -> octelium.api.main.visibility.llm.v1.GetDataPointResponse.DataPoint
-	9,   // 90: octelium.api.main.visibility.llm.v1.GetDataPointResponse.Series.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	9,   // 91: octelium.api.main.visibility.llm.v1.ListTopModelResponse.Item.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	9,   // 92: octelium.api.main.visibility.llm.v1.ListTopToolResponse.Item.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	66,  // 93: octelium.api.main.visibility.llm.v1.ListTopUserResponse.Item.user:type_name -> octelium.api.main.core.v1.User
-	9,   // 94: octelium.api.main.visibility.llm.v1.ListTopUserResponse.Item.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	67,  // 95: octelium.api.main.visibility.llm.v1.ListTopSessionResponse.Item.session:type_name -> octelium.api.main.core.v1.Session
-	9,   // 96: octelium.api.main.visibility.llm.v1.ListTopSessionResponse.Item.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	68,  // 97: octelium.api.main.visibility.llm.v1.ListTopServiceResponse.Item.service:type_name -> octelium.api.main.core.v1.Service
-	9,   // 98: octelium.api.main.visibility.llm.v1.ListTopServiceResponse.Item.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	69,  // 99: octelium.api.main.visibility.llm.v1.ListTopPolicyResponse.Item.policy:type_name -> octelium.api.main.core.v1.Policy
-	9,   // 100: octelium.api.main.visibility.llm.v1.ListTopPolicyResponse.Item.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
-	6,   // 101: octelium.api.main.visibility.llm.v1.ListAccessLogRequest.OrderBy.type:type_name -> octelium.api.main.visibility.llm.v1.ListAccessLogRequest.OrderBy.Type
-	7,   // 102: octelium.api.main.visibility.llm.v1.ListAccessLogRequest.OrderBy.mode:type_name -> octelium.api.main.visibility.llm.v1.ListAccessLogRequest.OrderBy.Mode
-	14,  // 103: octelium.api.main.visibility.llm.v1.LLMService.GetSummary:input_type -> octelium.api.main.visibility.llm.v1.GetSummaryRequest
-	16,  // 104: octelium.api.main.visibility.llm.v1.LLMService.GetDataPoint:input_type -> octelium.api.main.visibility.llm.v1.GetDataPointRequest
-	18,  // 105: octelium.api.main.visibility.llm.v1.LLMService.ListTopDimension:input_type -> octelium.api.main.visibility.llm.v1.ListTopDimensionRequest
-	20,  // 106: octelium.api.main.visibility.llm.v1.LLMService.ListTopModel:input_type -> octelium.api.main.visibility.llm.v1.ListTopModelRequest
-	22,  // 107: octelium.api.main.visibility.llm.v1.LLMService.ListTopTool:input_type -> octelium.api.main.visibility.llm.v1.ListTopToolRequest
-	24,  // 108: octelium.api.main.visibility.llm.v1.LLMService.ListTopUser:input_type -> octelium.api.main.visibility.llm.v1.ListTopUserRequest
-	26,  // 109: octelium.api.main.visibility.llm.v1.LLMService.ListTopSession:input_type -> octelium.api.main.visibility.llm.v1.ListTopSessionRequest
-	28,  // 110: octelium.api.main.visibility.llm.v1.LLMService.ListTopService:input_type -> octelium.api.main.visibility.llm.v1.ListTopServiceRequest
-	30,  // 111: octelium.api.main.visibility.llm.v1.LLMService.ListTopPolicy:input_type -> octelium.api.main.visibility.llm.v1.ListTopPolicyRequest
-	32,  // 112: octelium.api.main.visibility.llm.v1.LLMService.ListAccessLog:input_type -> octelium.api.main.visibility.llm.v1.ListAccessLogRequest
-	15,  // 113: octelium.api.main.visibility.llm.v1.LLMService.GetSummary:output_type -> octelium.api.main.visibility.llm.v1.GetSummaryResponse
-	17,  // 114: octelium.api.main.visibility.llm.v1.LLMService.GetDataPoint:output_type -> octelium.api.main.visibility.llm.v1.GetDataPointResponse
-	19,  // 115: octelium.api.main.visibility.llm.v1.LLMService.ListTopDimension:output_type -> octelium.api.main.visibility.llm.v1.ListTopDimensionResponse
-	21,  // 116: octelium.api.main.visibility.llm.v1.LLMService.ListTopModel:output_type -> octelium.api.main.visibility.llm.v1.ListTopModelResponse
-	23,  // 117: octelium.api.main.visibility.llm.v1.LLMService.ListTopTool:output_type -> octelium.api.main.visibility.llm.v1.ListTopToolResponse
-	25,  // 118: octelium.api.main.visibility.llm.v1.LLMService.ListTopUser:output_type -> octelium.api.main.visibility.llm.v1.ListTopUserResponse
-	27,  // 119: octelium.api.main.visibility.llm.v1.LLMService.ListTopSession:output_type -> octelium.api.main.visibility.llm.v1.ListTopSessionResponse
-	29,  // 120: octelium.api.main.visibility.llm.v1.LLMService.ListTopService:output_type -> octelium.api.main.visibility.llm.v1.ListTopServiceResponse
-	31,  // 121: octelium.api.main.visibility.llm.v1.LLMService.ListTopPolicy:output_type -> octelium.api.main.visibility.llm.v1.ListTopPolicyResponse
-	33,  // 122: octelium.api.main.visibility.llm.v1.LLMService.ListAccessLog:output_type -> octelium.api.main.visibility.llm.v1.ListAccessLogResponse
-	113, // [113:123] is the sub-list for method output_type
-	103, // [103:113] is the sub-list for method input_type
-	103, // [103:103] is the sub-list for extension type_name
-	103, // [103:103] is the sub-list for extension extendee
-	0,   // [0:103] is the sub-list for field type_name
+	46,  // 42: octelium.api.main.visibility.llm.v1.GetSummaryRequest.compareFrom:type_name -> google.protobuf.Timestamp
+	46,  // 43: octelium.api.main.visibility.llm.v1.GetSummaryRequest.compareTo:type_name -> google.protobuf.Timestamp
+	9,   // 44: octelium.api.main.visibility.llm.v1.GetSummaryResponse.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	10,  // 45: octelium.api.main.visibility.llm.v1.GetSummaryResponse.cardinalities:type_name -> octelium.api.main.visibility.llm.v1.CardinalityItem
+	12,  // 46: octelium.api.main.visibility.llm.v1.GetSummaryResponse.breakdowns:type_name -> octelium.api.main.visibility.llm.v1.Breakdown
+	9,   // 47: octelium.api.main.visibility.llm.v1.GetSummaryResponse.previous:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	8,   // 48: octelium.api.main.visibility.llm.v1.GetDataPointRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
+	63,  // 49: octelium.api.main.visibility.llm.v1.GetDataPointRequest.interval:type_name -> octelium.api.main.meta.v1.Duration
+	4,   // 50: octelium.api.main.visibility.llm.v1.GetDataPointRequest.groupBy:type_name -> octelium.api.main.visibility.llm.v1.Dimension
+	5,   // 51: octelium.api.main.visibility.llm.v1.GetDataPointRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
+	38,  // 52: octelium.api.main.visibility.llm.v1.GetDataPointResponse.series:type_name -> octelium.api.main.visibility.llm.v1.GetDataPointResponse.Series
+	38,  // 53: octelium.api.main.visibility.llm.v1.GetDataPointResponse.other:type_name -> octelium.api.main.visibility.llm.v1.GetDataPointResponse.Series
+	8,   // 54: octelium.api.main.visibility.llm.v1.ListTopDimensionRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
+	4,   // 55: octelium.api.main.visibility.llm.v1.ListTopDimensionRequest.dimension:type_name -> octelium.api.main.visibility.llm.v1.Dimension
+	5,   // 56: octelium.api.main.visibility.llm.v1.ListTopDimensionRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
+	11,  // 57: octelium.api.main.visibility.llm.v1.ListTopDimensionResponse.items:type_name -> octelium.api.main.visibility.llm.v1.DimensionItem
+	9,   // 58: octelium.api.main.visibility.llm.v1.ListTopDimensionResponse.other:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	8,   // 59: octelium.api.main.visibility.llm.v1.ListTopModelRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
+	1,   // 60: octelium.api.main.visibility.llm.v1.ListTopModelRequest.field:type_name -> octelium.api.main.visibility.llm.v1.ModelField
+	5,   // 61: octelium.api.main.visibility.llm.v1.ListTopModelRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
+	39,  // 62: octelium.api.main.visibility.llm.v1.ListTopModelResponse.items:type_name -> octelium.api.main.visibility.llm.v1.ListTopModelResponse.Item
+	9,   // 63: octelium.api.main.visibility.llm.v1.ListTopModelResponse.other:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	8,   // 64: octelium.api.main.visibility.llm.v1.ListTopToolRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
+	2,   // 65: octelium.api.main.visibility.llm.v1.ListTopToolRequest.scope:type_name -> octelium.api.main.visibility.llm.v1.ToolScope
+	5,   // 66: octelium.api.main.visibility.llm.v1.ListTopToolRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
+	40,  // 67: octelium.api.main.visibility.llm.v1.ListTopToolResponse.items:type_name -> octelium.api.main.visibility.llm.v1.ListTopToolResponse.Item
+	9,   // 68: octelium.api.main.visibility.llm.v1.ListTopToolResponse.other:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	8,   // 69: octelium.api.main.visibility.llm.v1.ListTopUserRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
+	5,   // 70: octelium.api.main.visibility.llm.v1.ListTopUserRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
+	41,  // 71: octelium.api.main.visibility.llm.v1.ListTopUserResponse.items:type_name -> octelium.api.main.visibility.llm.v1.ListTopUserResponse.Item
+	9,   // 72: octelium.api.main.visibility.llm.v1.ListTopUserResponse.other:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	8,   // 73: octelium.api.main.visibility.llm.v1.ListTopSessionRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
+	5,   // 74: octelium.api.main.visibility.llm.v1.ListTopSessionRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
+	42,  // 75: octelium.api.main.visibility.llm.v1.ListTopSessionResponse.items:type_name -> octelium.api.main.visibility.llm.v1.ListTopSessionResponse.Item
+	9,   // 76: octelium.api.main.visibility.llm.v1.ListTopSessionResponse.other:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	8,   // 77: octelium.api.main.visibility.llm.v1.ListTopServiceRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
+	5,   // 78: octelium.api.main.visibility.llm.v1.ListTopServiceRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
+	43,  // 79: octelium.api.main.visibility.llm.v1.ListTopServiceResponse.items:type_name -> octelium.api.main.visibility.llm.v1.ListTopServiceResponse.Item
+	9,   // 80: octelium.api.main.visibility.llm.v1.ListTopServiceResponse.other:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	8,   // 81: octelium.api.main.visibility.llm.v1.ListTopPolicyRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
+	5,   // 82: octelium.api.main.visibility.llm.v1.ListTopPolicyRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.Metric
+	44,  // 83: octelium.api.main.visibility.llm.v1.ListTopPolicyResponse.items:type_name -> octelium.api.main.visibility.llm.v1.ListTopPolicyResponse.Item
+	9,   // 84: octelium.api.main.visibility.llm.v1.ListTopPolicyResponse.other:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	8,   // 85: octelium.api.main.visibility.llm.v1.ListAccessLogRequest.filter:type_name -> octelium.api.main.visibility.llm.v1.Filter
+	45,  // 86: octelium.api.main.visibility.llm.v1.ListAccessLogRequest.orderBy:type_name -> octelium.api.main.visibility.llm.v1.ListAccessLogRequest.OrderBy
+	64,  // 87: octelium.api.main.visibility.llm.v1.ListAccessLogResponse.items:type_name -> octelium.api.main.core.v1.AccessLog
+	65,  // 88: octelium.api.main.visibility.llm.v1.ListAccessLogResponse.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	46,  // 89: octelium.api.main.visibility.llm.v1.GetDataPointResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
+	9,   // 90: octelium.api.main.visibility.llm.v1.GetDataPointResponse.DataPoint.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	47,  // 91: octelium.api.main.visibility.llm.v1.GetDataPointResponse.Series.ref:type_name -> octelium.api.main.meta.v1.ObjectReference
+	37,  // 92: octelium.api.main.visibility.llm.v1.GetDataPointResponse.Series.datapoints:type_name -> octelium.api.main.visibility.llm.v1.GetDataPointResponse.DataPoint
+	9,   // 93: octelium.api.main.visibility.llm.v1.GetDataPointResponse.Series.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	9,   // 94: octelium.api.main.visibility.llm.v1.ListTopModelResponse.Item.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	9,   // 95: octelium.api.main.visibility.llm.v1.ListTopToolResponse.Item.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	66,  // 96: octelium.api.main.visibility.llm.v1.ListTopUserResponse.Item.user:type_name -> octelium.api.main.core.v1.User
+	9,   // 97: octelium.api.main.visibility.llm.v1.ListTopUserResponse.Item.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	67,  // 98: octelium.api.main.visibility.llm.v1.ListTopSessionResponse.Item.session:type_name -> octelium.api.main.core.v1.Session
+	9,   // 99: octelium.api.main.visibility.llm.v1.ListTopSessionResponse.Item.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	68,  // 100: octelium.api.main.visibility.llm.v1.ListTopServiceResponse.Item.service:type_name -> octelium.api.main.core.v1.Service
+	9,   // 101: octelium.api.main.visibility.llm.v1.ListTopServiceResponse.Item.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	69,  // 102: octelium.api.main.visibility.llm.v1.ListTopPolicyResponse.Item.policy:type_name -> octelium.api.main.core.v1.Policy
+	9,   // 103: octelium.api.main.visibility.llm.v1.ListTopPolicyResponse.Item.stats:type_name -> octelium.api.main.visibility.llm.v1.Stats
+	6,   // 104: octelium.api.main.visibility.llm.v1.ListAccessLogRequest.OrderBy.type:type_name -> octelium.api.main.visibility.llm.v1.ListAccessLogRequest.OrderBy.Type
+	7,   // 105: octelium.api.main.visibility.llm.v1.ListAccessLogRequest.OrderBy.mode:type_name -> octelium.api.main.visibility.llm.v1.ListAccessLogRequest.OrderBy.Mode
+	14,  // 106: octelium.api.main.visibility.llm.v1.LLMService.GetSummary:input_type -> octelium.api.main.visibility.llm.v1.GetSummaryRequest
+	16,  // 107: octelium.api.main.visibility.llm.v1.LLMService.GetDataPoint:input_type -> octelium.api.main.visibility.llm.v1.GetDataPointRequest
+	18,  // 108: octelium.api.main.visibility.llm.v1.LLMService.ListTopDimension:input_type -> octelium.api.main.visibility.llm.v1.ListTopDimensionRequest
+	20,  // 109: octelium.api.main.visibility.llm.v1.LLMService.ListTopModel:input_type -> octelium.api.main.visibility.llm.v1.ListTopModelRequest
+	22,  // 110: octelium.api.main.visibility.llm.v1.LLMService.ListTopTool:input_type -> octelium.api.main.visibility.llm.v1.ListTopToolRequest
+	24,  // 111: octelium.api.main.visibility.llm.v1.LLMService.ListTopUser:input_type -> octelium.api.main.visibility.llm.v1.ListTopUserRequest
+	26,  // 112: octelium.api.main.visibility.llm.v1.LLMService.ListTopSession:input_type -> octelium.api.main.visibility.llm.v1.ListTopSessionRequest
+	28,  // 113: octelium.api.main.visibility.llm.v1.LLMService.ListTopService:input_type -> octelium.api.main.visibility.llm.v1.ListTopServiceRequest
+	30,  // 114: octelium.api.main.visibility.llm.v1.LLMService.ListTopPolicy:input_type -> octelium.api.main.visibility.llm.v1.ListTopPolicyRequest
+	32,  // 115: octelium.api.main.visibility.llm.v1.LLMService.ListAccessLog:input_type -> octelium.api.main.visibility.llm.v1.ListAccessLogRequest
+	15,  // 116: octelium.api.main.visibility.llm.v1.LLMService.GetSummary:output_type -> octelium.api.main.visibility.llm.v1.GetSummaryResponse
+	17,  // 117: octelium.api.main.visibility.llm.v1.LLMService.GetDataPoint:output_type -> octelium.api.main.visibility.llm.v1.GetDataPointResponse
+	19,  // 118: octelium.api.main.visibility.llm.v1.LLMService.ListTopDimension:output_type -> octelium.api.main.visibility.llm.v1.ListTopDimensionResponse
+	21,  // 119: octelium.api.main.visibility.llm.v1.LLMService.ListTopModel:output_type -> octelium.api.main.visibility.llm.v1.ListTopModelResponse
+	23,  // 120: octelium.api.main.visibility.llm.v1.LLMService.ListTopTool:output_type -> octelium.api.main.visibility.llm.v1.ListTopToolResponse
+	25,  // 121: octelium.api.main.visibility.llm.v1.LLMService.ListTopUser:output_type -> octelium.api.main.visibility.llm.v1.ListTopUserResponse
+	27,  // 122: octelium.api.main.visibility.llm.v1.LLMService.ListTopSession:output_type -> octelium.api.main.visibility.llm.v1.ListTopSessionResponse
+	29,  // 123: octelium.api.main.visibility.llm.v1.LLMService.ListTopService:output_type -> octelium.api.main.visibility.llm.v1.ListTopServiceResponse
+	31,  // 124: octelium.api.main.visibility.llm.v1.LLMService.ListTopPolicy:output_type -> octelium.api.main.visibility.llm.v1.ListTopPolicyResponse
+	33,  // 125: octelium.api.main.visibility.llm.v1.LLMService.ListAccessLog:output_type -> octelium.api.main.visibility.llm.v1.ListAccessLogResponse
+	116, // [116:126] is the sub-list for method output_type
+	106, // [106:116] is the sub-list for method input_type
+	106, // [106:106] is the sub-list for extension type_name
+	106, // [106:106] is the sub-list for extension extendee
+	0,   // [0:106] is the sub-list for field type_name
 }
 
 func init() { file_vllmv1_proto_init() }

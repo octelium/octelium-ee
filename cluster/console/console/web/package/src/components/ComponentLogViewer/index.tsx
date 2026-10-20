@@ -332,8 +332,25 @@ export const ComponentLogC = ({ log }: { log: ComponentLog }) => {
   );
 };
 
+const SEVERE_LEVELS = [
+  ComponentLog_Entry_Level.ERROR,
+  ComponentLog_Entry_Level.PANIC,
+  ComponentLog_Entry_Level.FATAL,
+];
+
+const levelsValue = (levels: ComponentLog_Entry_Level[]) =>
+  levels.length === 0 ? "all" : [...levels].sort((a, b) => a - b).join(",");
+
 const LEVEL_OPTIONS = [
   { value: "all", label: "All severities" },
+  { value: levelsValue(SEVERE_LEVELS), label: "Error or worse" },
+  {
+    value: levelsValue([
+      ComponentLog_Entry_Level.PANIC,
+      ComponentLog_Entry_Level.FATAL,
+    ]),
+    label: "Panic or fatal",
+  },
   { value: String(ComponentLog_Entry_Level.DEBUG), label: "Debug" },
   { value: String(ComponentLog_Entry_Level.INFO), label: "Info" },
   { value: String(ComponentLog_Entry_Level.WARN), label: "Warn" },
@@ -344,22 +361,23 @@ const LEVEL_OPTIONS = [
 
 const ComponentLogViewer = (props: {
   itemsPerPage?: number;
-  level?: ComponentLog_Entry_Level;
-  onLevelChange?: (level?: ComponentLog_Entry_Level) => void;
+  levels?: ComponentLog_Entry_Level[];
+  onLevelsChange?: (levels: ComponentLog_Entry_Level[]) => void;
   page?: number;
   onPageChange?: (page: number) => void;
   query?: string;
   component?: ComponentSelector;
 }) => {
   const [page, setPage] = React.useState(props.page ?? 0);
-  const [level, setLevel] = React.useState<
-    ComponentLog_Entry_Level | undefined
-  >(props.level);
+  const [levels, setLevels] = React.useState<ComponentLog_Entry_Level[]>(
+    props.levels ?? [],
+  );
   const [from, setFrom] = React.useState<Timestamp>(
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
   );
 
-  React.useEffect(() => setLevel(props.level), [props.level]);
+  const propLevels = levelsValue(props.levels ?? []);
+  React.useEffect(() => setLevels(props.levels ?? []), [propLevels]);
   React.useEffect(() => setPage(props.page ?? 0), [props.page]);
 
   const changePage = (nextPage: number) => {
@@ -373,7 +391,7 @@ const ComponentLogViewer = (props: {
       "listComponentLog",
       page,
       from ? Timestamp.toDate(from).toISOString() : undefined,
-      level,
+      levelsValue(levels),
       props.query,
       props.component ? ComponentSelector.toJsonString(props.component) : null,
     ],
@@ -387,7 +405,7 @@ const ComponentLogViewer = (props: {
               query: props.query,
             },
             from,
-            level,
+            levels,
             component: props.component,
           }),
         );
@@ -399,6 +417,19 @@ const ComponentLogViewer = (props: {
   const totalCount = Number(
     qry.data?.listResponseMeta?.totalCount ?? qry.data?.items.length ?? 0,
   );
+  const levelValue = levelsValue(levels);
+  const levelOptions = LEVEL_OPTIONS.some((itm) => itm.value === levelValue)
+    ? LEVEL_OPTIONS
+    : [
+        ...LEVEL_OPTIONS,
+        {
+          value: levelValue,
+          label: [...levels]
+            .sort((a, b) => a - b)
+            .map((itm) => getLevelMeta(itm).label)
+            .join(" or "),
+        },
+      ];
 
   return (
     <div className="w-full flex flex-col gap-6">
@@ -420,18 +451,20 @@ const ComponentLogViewer = (props: {
           label="Severity"
           aria-label="Component log severity"
           allowDeselect={false}
-          value={level === undefined ? "all" : String(level)}
+          value={levelValue}
           onChange={(value) => {
             const next =
               value && value !== "all"
-                ? (Number(value) as ComponentLog_Entry_Level)
-                : undefined;
-            setLevel(next);
+                ? value
+                    .split(",")
+                    .map((itm) => Number(itm) as ComponentLog_Entry_Level)
+                : [];
+            setLevels(next);
             setPage(0);
-            if (props.onLevelChange) props.onLevelChange(next);
+            if (props.onLevelsChange) props.onLevelsChange(next);
             else props.onPageChange?.(0);
           }}
-          data={LEVEL_OPTIONS}
+          data={levelOptions}
           className="w-40"
         />
       </div>

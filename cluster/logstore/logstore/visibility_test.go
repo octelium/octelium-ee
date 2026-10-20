@@ -464,3 +464,211 @@ func TestComponentLogTopComponentOrderBy(t *testing.T) {
 		assert.Equal(t, uint64(8), resp.TotalOther)
 	}
 }
+
+func TestAccessLogReasonAndModeFilters(t *testing.T) {
+	ts := newTestServer(t)
+	if ts == nil {
+		return
+	}
+
+	now := time.Now().UTC().Truncate(time.Second)
+	current := now.Add(-10 * time.Minute)
+
+	for _, arg := range []struct {
+		count  int
+		status corev1.AccessLog_Entry_Common_Status
+		reason corev1.AccessLog_Entry_Common_Reason_Type
+		mode   corev1.Service_Spec_Mode
+	}{
+		{3, corev1.AccessLog_Entry_Common_DENIED, corev1.AccessLog_Entry_Common_Reason_NO_POLICY_MATCH, corev1.Service_Spec_SSH},
+		{2, corev1.AccessLog_Entry_Common_DENIED, corev1.AccessLog_Entry_Common_Reason_POLICY_MATCH, corev1.Service_Spec_HTTP},
+		{4, corev1.AccessLog_Entry_Common_ALLOWED, corev1.AccessLog_Entry_Common_Reason_POLICY_MATCH, corev1.Service_Spec_HTTP},
+	} {
+		for idx := range arg.count {
+			insertLogJSON(t, ts.srv, "access_logs", marshalLog(t, newRichAccessLog(&richAccessLogOptions{
+				CreatedAt: current.Add(time.Duration(idx) * time.Second),
+				Duration:  time.Second,
+				Status:    arg.status,
+				Reason:    arg.reason,
+				Mode:      arg.mode,
+			})))
+		}
+	}
+
+	from := pbutils.Timestamp(now.Add(-60 * time.Minute))
+	to := pbutils.Timestamp(now)
+
+	for _, tc := range []struct {
+		reason corev1.AccessLog_Entry_Common_Reason_Type
+		mode   corev1.Service_Spec_Mode
+		status corev1.AccessLog_Entry_Common_Status
+		total  uint32
+	}{
+		{total: 9},
+		{reason: corev1.AccessLog_Entry_Common_Reason_NO_POLICY_MATCH, total: 3},
+		{reason: corev1.AccessLog_Entry_Common_Reason_POLICY_MATCH, total: 6},
+		{reason: corev1.AccessLog_Entry_Common_Reason_POLICY_MATCH, status: corev1.AccessLog_Entry_Common_DENIED, total: 2},
+		{mode: corev1.Service_Spec_HTTP, total: 6},
+		{mode: corev1.Service_Spec_SSH, reason: corev1.AccessLog_Entry_Common_Reason_POLICY_MATCH, total: 0},
+	} {
+		{
+			resp, err := ts.srv.listAccessLog(ts.ctx, &visibilityv1.ListAccessLogRequest{
+				From:   from,
+				To:     to,
+				Status: tc.status,
+				Reason: tc.reason,
+				Mode:   tc.mode,
+			})
+			if assert.Nil(t, err, "%+v", err) {
+				assert.Equal(t, tc.total, resp.ListResponseMeta.TotalCount)
+				assert.Len(t, resp.Items, int(tc.total))
+			}
+		}
+
+		{
+			resp, err := ts.srv.getSummaryAccessLog(ts.ctx, &visibilityv1.GetAccessLogSummaryRequest{
+				From:   from,
+				To:     to,
+				Status: tc.status,
+				Reason: tc.reason,
+				Mode:   tc.mode,
+			})
+			if assert.Nil(t, err, "%+v", err) {
+				assert.Equal(t, uint64(tc.total), resp.TotalNumber)
+			}
+		}
+
+		{
+			resp, err := ts.srv.getAccessLogDataPoint(ts.ctx, &visibilityv1.GetAccessLogDataPointRequest{
+				From:   from,
+				To:     to,
+				Status: tc.status,
+				Reason: tc.reason,
+				Mode:   tc.mode,
+			})
+			if assert.Nil(t, err, "%+v", err) {
+				var total int64
+				for _, dp := range resp.Datapoints {
+					total += dp.Count
+				}
+				assert.Equal(t, int64(tc.total), total)
+			}
+		}
+	}
+
+	{
+		resp, err := ts.srv.listAccessLogTopDenyReason(ts.ctx, &visibilityv1.ListAccessLogTopDenyReasonRequest{
+			From: from,
+			To:   to,
+			Mode: corev1.Service_Spec_SSH,
+		})
+		assert.Nil(t, err, "%+v", err)
+		if assert.Len(t, resp.Items, 1) {
+			assert.Equal(t, corev1.AccessLog_Entry_Common_Reason_NO_POLICY_MATCH, resp.Items[0].Reason)
+			assert.Equal(t, uint64(3), resp.Items[0].Count)
+		}
+	}
+}
+
+func TestComponentLogLevelsFilter(t *testing.T) {
+	ts := newTestServer(t)
+	if ts == nil {
+		return
+	}
+
+	now := time.Now().UTC().Truncate(time.Second)
+	current := now.Add(-10 * time.Minute)
+
+	for _, arg := range []struct {
+		count         int
+		level         corev1.ComponentLog_Entry_Level
+		componentType string
+	}{
+		{5, corev1.ComponentLog_Entry_INFO, "apiserver"},
+		{2, corev1.ComponentLog_Entry_ERROR, "apiserver"},
+		{1, corev1.ComponentLog_Entry_PANIC, "nocturne"},
+		{1, corev1.ComponentLog_Entry_FATAL, "vigil"},
+	} {
+		for idx := range arg.count {
+			insertLogJSON(t, ts.srv, "component_logs", marshalLog(t,
+				newComponentLogFor(current.Add(time.Duration(idx)*time.Second),
+					arg.level, "octelium", arg.componentType)))
+		}
+	}
+
+	from := pbutils.Timestamp(now.Add(-60 * time.Minute))
+	to := pbutils.Timestamp(now)
+
+	severe := []corev1.ComponentLog_Entry_Level{
+		corev1.ComponentLog_Entry_ERROR,
+		corev1.ComponentLog_Entry_PANIC,
+		corev1.ComponentLog_Entry_FATAL,
+	}
+
+	for _, tc := range []struct {
+		level  corev1.ComponentLog_Entry_Level
+		levels []corev1.ComponentLog_Entry_Level
+		total  uint32
+		types  []string
+	}{
+		{total: 9, types: []string{"apiserver", "nocturne", "vigil"}},
+		{levels: severe, total: 4, types: []string{"apiserver", "nocturne", "vigil"}},
+		{level: corev1.ComponentLog_Entry_PANIC, levels: []corev1.ComponentLog_Entry_Level{
+			corev1.ComponentLog_Entry_FATAL,
+		}, total: 2, types: []string{"nocturne", "vigil"}},
+		{level: corev1.ComponentLog_Entry_ERROR, total: 2, types: []string{"apiserver"}},
+		{levels: []corev1.ComponentLog_Entry_Level{corev1.ComponentLog_Entry_WARN}, total: 0},
+	} {
+		{
+			resp, err := ts.srv.listComponentLog(ts.ctx, &visibilityv1.ListComponentLogRequest{
+				From:   from,
+				To:     to,
+				Level:  tc.level,
+				Levels: tc.levels,
+			})
+			if assert.Nil(t, err, "%+v", err) {
+				assert.Equal(t, tc.total, resp.ListResponseMeta.TotalCount)
+			}
+		}
+
+		{
+			resp, err := ts.srv.getComponentLogDataPoint(ts.ctx, &visibilityv1.GetComponentLogDataPointRequest{
+				From:   from,
+				To:     to,
+				Level:  tc.level,
+				Levels: tc.levels,
+			})
+			if assert.Nil(t, err, "%+v", err) {
+				var total int64
+				for _, dp := range resp.Datapoints {
+					total += dp.Count
+				}
+				assert.Equal(t, int64(tc.total), total)
+			}
+		}
+
+		{
+			resp, err := ts.srv.listComponentLogTopComponent(ts.ctx, &visibilityv1.ListComponentLogTopComponentRequest{
+				From:    from,
+				To:      to,
+				Level:   tc.level,
+				Levels:  tc.levels,
+				OrderBy: visibilityv1.ListComponentLogTopComponentRequest_SEVERITY,
+			})
+			if assert.Nil(t, err, "%+v", err) {
+				var types []string
+				for _, item := range resp.Items {
+					types = append(types, item.Component.Type)
+				}
+				assert.ElementsMatch(t, tc.types, types)
+			}
+		}
+	}
+
+	{
+		_, err := ts.srv.listComponentLog(ts.ctx, &visibilityv1.ListComponentLogRequest{
+			Levels: make([]corev1.ComponentLog_Entry_Level, maxComponentLevels+1),
+		})
+		assert.NotNil(t, err)
+	}
+}

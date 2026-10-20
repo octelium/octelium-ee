@@ -1,6 +1,9 @@
 import type { Conversation, FileInfo } from "@/apis/consoleagent/protocol";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
-import { usePageDetailsValue } from "@/components/PageHeader/context";
+import {
+  usePageConditionsValue,
+  usePageDetailsValue,
+} from "@/components/PageHeader/context";
 import TimeAgo from "@/components/TimeAgo";
 import { AgentSurface, type ReadyChatProps } from "@/pages/Agent/Agent";
 import { type BlockContext } from "@/pages/Agent/Blocks";
@@ -23,6 +26,7 @@ import {
   Box,
   Check,
   History,
+  LayoutDashboard,
   Maximize2,
   MessagesSquare,
   PanelsTopLeft,
@@ -41,6 +45,7 @@ import {
   buildRunContext,
   contextAsText,
   routeResources,
+  withConditions,
 } from "./pageContext";
 import { getSuggestions } from "./suggestions";
 
@@ -160,6 +165,7 @@ const DockChat = (props: ReadyChatProps) => {
   const { pathname, search } = useLocation();
   const setChatMounted = React.useContext(DockFrameContext);
   const details = usePageDetailsValue();
+  const conditions = usePageConditionsValue();
 
   const [input, setInput] = React.useState("");
   const [attachments, setAttachments] = React.useState<FileInfo[]>([]);
@@ -194,8 +200,14 @@ const DockChat = (props: ReadyChatProps) => {
 
   const { trail } = agent;
   const page = React.useMemo(
-    () => buildPageContext({ pathname, search, trail, details }),
-    [pathname, search, trail, details],
+    () =>
+      buildPageContext({
+        pathname,
+        search,
+        trail,
+        details: withConditions(details, conditions),
+      }),
+    [pathname, search, trail, details, conditions],
   );
   const resources = React.useMemo(() => routeResources(trail), [trail]);
   const current = trail.at(-1);
@@ -411,7 +423,12 @@ const DockChat = (props: ReadyChatProps) => {
   if (pinned) {
     chips.push({
       key: "pinned",
-      icon: pinned.items && pinned.items.length > 0 ? ScrollText : Box,
+      icon:
+        pinned.items?.[0]?.kind === "DashboardSection"
+          ? LayoutDashboard
+          : pinned.items && pinned.items.length > 0
+            ? ScrollText
+            : Box,
       label: pinned.label,
       title: pinned.label,
       onRemove: () => setPinned(undefined),
@@ -421,8 +438,8 @@ const DockChat = (props: ReadyChatProps) => {
   const subject =
     pinned?.label ?? resourceCrumb?.label ?? current?.label ?? "this page";
   const suggestions = React.useMemo(
-    () => getSuggestions({ trail, pathname, pinned }),
-    [trail, pathname, pinned],
+    () => getSuggestions({ trail, pathname, pinned, details, conditions }),
+    [trail, pathname, pinned, details, conditions],
   );
 
   const onRetry = conv.retryInput

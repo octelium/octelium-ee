@@ -62,7 +62,6 @@ import { GetUserSummaryResponse } from "./core/vcorev1";
 import { CommonSummaryOptions } from "./meta/vmetav1";
 import { IdentityProvider } from "../corev1/corev1";
 import { Credential } from "../corev1/corev1";
-import { AccessLog_Entry_Common_Reason_Type } from "../corev1/corev1";
 import { Policy } from "../corev1/corev1";
 import { Service } from "../corev1/corev1";
 import { Session } from "../corev1/corev1";
@@ -75,6 +74,8 @@ import { AuditLog } from "../enterprisev1/enterprisev1";
 import { AuthenticationLog } from "../enterprisev1/enterprisev1";
 import { ListResponseMeta } from "../metav1/metav1";
 import { AccessLog } from "../corev1/corev1";
+import { Service_Spec_Mode } from "../corev1/corev1";
+import { AccessLog_Entry_Common_Reason_Type } from "../corev1/corev1";
 import { AccessLog_Entry_Common_Status } from "../corev1/corev1";
 import { Timestamp } from "../google/protobuf/timestamp";
 import { ObjectReference } from "../metav1/metav1";
@@ -139,6 +140,14 @@ export interface ListAccessLogRequest {
      * @generated from protobuf field: bool isAnonymous = 16
      */
     isAnonymous: boolean;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 17
+     */
+    reason: AccessLog_Entry_Common_Reason_Type;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Mode mode = 18
+     */
+    mode: Service_Spec_Mode;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogResponse
@@ -393,6 +402,14 @@ export interface GetAccessLogSummaryRequest {
      * @generated from protobuf field: google.protobuf.Timestamp compareTo = 16
      */
     compareTo?: Timestamp;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 17
+     */
+    reason: AccessLog_Entry_Common_Reason_Type;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Mode mode = 18
+     */
+    mode: Service_Spec_Mode;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAccessLogSummaryResponse
@@ -934,6 +951,10 @@ export interface ListComponentLogRequest {
      * @generated from protobuf field: octelium.api.main.visibility.v1.ComponentSelector component = 6
      */
     component?: ComponentSelector;
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.ComponentLog.Entry.Level levels = 7
+     */
+    levels: ComponentLog_Entry_Level[];
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListComponentLogResponse
@@ -1032,6 +1053,14 @@ export interface GetAccessLogDataPointRequest {
      * @generated from protobuf field: uint32 limitSeries = 17
      */
     limitSeries: number;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 18
+     */
+    reason: AccessLog_Entry_Common_Reason_Type;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Mode mode = 19
+     */
+    mode: Service_Spec_Mode;
 }
 /**
  * GroupBy is the dimension by which the entries are split into separate
@@ -1337,6 +1366,14 @@ export interface ListAccessLogTopUserRequest {
      */
     isAnonymous: boolean;
     /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 15
+     */
+    reason: AccessLog_Entry_Common_Reason_Type;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Mode mode = 16
+     */
+    mode: Service_Spec_Mode;
+    /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
      *
@@ -1434,6 +1471,14 @@ export interface ListAccessLogTopSessionRequest {
      */
     isAnonymous: boolean;
     /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 15
+     */
+    reason: AccessLog_Entry_Common_Reason_Type;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Mode mode = 16
+     */
+    mode: Service_Spec_Mode;
+    /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
      *
@@ -1526,6 +1571,14 @@ export interface ListAccessLogTopServiceRequest {
      * @generated from protobuf field: bool isAnonymous = 14
      */
     isAnonymous: boolean;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 15
+     */
+    reason: AccessLog_Entry_Common_Reason_Type;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Mode mode = 16
+     */
+    mode: Service_Spec_Mode;
     /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
@@ -1624,6 +1677,14 @@ export interface ListAccessLogTopPolicyRequest {
      */
     isAnonymous: boolean;
     /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 15
+     */
+    reason: AccessLog_Entry_Common_Reason_Type;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Mode mode = 16
+     */
+    mode: Service_Spec_Mode;
+    /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
      *
@@ -1720,6 +1781,14 @@ export interface ListAccessLogTopDenyReasonRequest {
      * @generated from protobuf field: bool isAnonymous = 14
      */
     isAnonymous: boolean;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 15
+     */
+    reason: AccessLog_Entry_Common_Reason_Type;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Mode mode = 16
+     */
+    mode: Service_Spec_Mode;
     /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
@@ -2046,6 +2115,10 @@ export interface ListComponentLogTopComponentRequest {
      * @generated from protobuf field: octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.OrderBy orderBy = 7
      */
     orderBy: ListComponentLogTopComponentRequest_OrderBy;
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.ComponentLog.Entry.Level levels = 8
+     */
+    levels: ComponentLog_Entry_Level[];
     /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
@@ -2582,6 +2655,10 @@ export interface GetComponentLogDataPointRequest {
      * @generated from protobuf field: uint32 limitSeries = 16
      */
     limitSeries: number;
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.ComponentLog.Entry.Level levels = 17
+     */
+    levels: ComponentLog_Entry_Level[];
 }
 /**
  * GroupBy is the dimension by which the entries are split into separate
@@ -3327,7 +3404,9 @@ class ListAccessLogRequest$Type extends MessageType<ListAccessLogRequest> {
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
             { no: 14, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] },
             { no: 15, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 16, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 16, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 17, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
+            { no: 18, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] }
         ]);
     }
     create(value?: PartialMessage<ListAccessLogRequest>): ListAccessLogRequest {
@@ -3335,6 +3414,8 @@ class ListAccessLogRequest$Type extends MessageType<ListAccessLogRequest> {
         message.status = 0;
         message.isPublic = false;
         message.isAnonymous = false;
+        message.reason = 0;
+        message.mode = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogRequest>(this, message, value);
         return message;
@@ -3385,6 +3466,12 @@ class ListAccessLogRequest$Type extends MessageType<ListAccessLogRequest> {
                     break;
                 case /* bool isAnonymous */ 16:
                     message.isAnonymous = reader.bool();
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason */ 17:
+                    message.reason = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 18:
+                    message.mode = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -3440,6 +3527,12 @@ class ListAccessLogRequest$Type extends MessageType<ListAccessLogRequest> {
         /* bool isAnonymous = 16; */
         if (message.isAnonymous !== false)
             writer.tag(16, WireType.Varint).bool(message.isAnonymous);
+        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 17; */
+        if (message.reason !== 0)
+            writer.tag(17, WireType.Varint).int32(message.reason);
+        /* octelium.api.main.core.v1.Service.Spec.Mode mode = 18; */
+        if (message.mode !== 0)
+            writer.tag(18, WireType.Varint).int32(message.mode);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3976,7 +4069,9 @@ class GetAccessLogSummaryRequest$Type extends MessageType<GetAccessLogSummaryReq
             { no: 13, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 15, name: "compareFrom", kind: "message", T: () => Timestamp },
-            { no: 16, name: "compareTo", kind: "message", T: () => Timestamp }
+            { no: 16, name: "compareTo", kind: "message", T: () => Timestamp },
+            { no: 17, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
+            { no: 18, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] }
         ]);
     }
     create(value?: PartialMessage<GetAccessLogSummaryRequest>): GetAccessLogSummaryRequest {
@@ -3984,6 +4079,8 @@ class GetAccessLogSummaryRequest$Type extends MessageType<GetAccessLogSummaryReq
         message.status = 0;
         message.isPublic = false;
         message.isAnonymous = false;
+        message.reason = 0;
+        message.mode = 0;
         if (value !== undefined)
             reflectionMergePartial<GetAccessLogSummaryRequest>(this, message, value);
         return message;
@@ -4034,6 +4131,12 @@ class GetAccessLogSummaryRequest$Type extends MessageType<GetAccessLogSummaryReq
                     break;
                 case /* google.protobuf.Timestamp compareTo */ 16:
                     message.compareTo = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.compareTo);
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason */ 17:
+                    message.reason = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 18:
+                    message.mode = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4089,6 +4192,12 @@ class GetAccessLogSummaryRequest$Type extends MessageType<GetAccessLogSummaryReq
         /* google.protobuf.Timestamp compareTo = 16; */
         if (message.compareTo)
             Timestamp.internalBinaryWrite(message.compareTo, writer.tag(16, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 17; */
+        if (message.reason !== 0)
+            writer.tag(17, WireType.Varint).int32(message.reason);
+        /* octelium.api.main.core.v1.Service.Spec.Mode mode = 18; */
+        if (message.mode !== 0)
+            writer.tag(18, WireType.Varint).int32(message.mode);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5636,12 +5745,14 @@ class ListComponentLogRequest$Type extends MessageType<ListComponentLogRequest> 
             { no: 2, name: "level", kind: "enum", T: () => ["octelium.api.main.core.v1.ComponentLog.Entry.Level", ComponentLog_Entry_Level] },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
-            { no: 6, name: "component", kind: "message", T: () => ComponentSelector }
+            { no: 6, name: "component", kind: "message", T: () => ComponentSelector },
+            { no: 7, name: "levels", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.ComponentLog.Entry.Level", ComponentLog_Entry_Level] }
         ]);
     }
     create(value?: PartialMessage<ListComponentLogRequest>): ListComponentLogRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.level = 0;
+        message.levels = [];
         if (value !== undefined)
             reflectionMergePartial<ListComponentLogRequest>(this, message, value);
         return message;
@@ -5665,6 +5776,13 @@ class ListComponentLogRequest$Type extends MessageType<ListComponentLogRequest> 
                     break;
                 case /* octelium.api.main.visibility.v1.ComponentSelector component */ 6:
                     message.component = ComponentSelector.internalBinaryRead(reader, reader.uint32(), options, message.component);
+                    break;
+                case /* repeated octelium.api.main.core.v1.ComponentLog.Entry.Level levels */ 7:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.levels.push(reader.int32());
+                    else
+                        message.levels.push(reader.int32());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5693,6 +5811,13 @@ class ListComponentLogRequest$Type extends MessageType<ListComponentLogRequest> 
         /* octelium.api.main.visibility.v1.ComponentSelector component = 6; */
         if (message.component)
             ComponentSelector.internalBinaryWrite(message.component, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.core.v1.ComponentLog.Entry.Level levels = 7; */
+        if (message.levels.length) {
+            writer.tag(7, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.levels.length; i++)
+                writer.int32(message.levels[i]);
+            writer.join();
+        }
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5822,7 +5947,9 @@ class GetAccessLogDataPointRequest$Type extends MessageType<GetAccessLogDataPoin
             { no: 14, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 15, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 16, name: "groupBy", kind: "enum", T: () => ["octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.GroupBy", GetAccessLogDataPointRequest_GroupBy] },
-            { no: 17, name: "limitSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 17, name: "limitSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 18, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
+            { no: 19, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] }
         ]);
     }
     create(value?: PartialMessage<GetAccessLogDataPointRequest>): GetAccessLogDataPointRequest {
@@ -5832,6 +5959,8 @@ class GetAccessLogDataPointRequest$Type extends MessageType<GetAccessLogDataPoin
         message.isAnonymous = false;
         message.groupBy = 0;
         message.limitSeries = 0;
+        message.reason = 0;
+        message.mode = 0;
         if (value !== undefined)
             reflectionMergePartial<GetAccessLogDataPointRequest>(this, message, value);
         return message;
@@ -5885,6 +6014,12 @@ class GetAccessLogDataPointRequest$Type extends MessageType<GetAccessLogDataPoin
                     break;
                 case /* uint32 limitSeries */ 17:
                     message.limitSeries = reader.uint32();
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason */ 18:
+                    message.reason = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 19:
+                    message.mode = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5943,6 +6078,12 @@ class GetAccessLogDataPointRequest$Type extends MessageType<GetAccessLogDataPoin
         /* uint32 limitSeries = 17; */
         if (message.limitSeries !== 0)
             writer.tag(17, WireType.Varint).uint32(message.limitSeries);
+        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 18; */
+        if (message.reason !== 0)
+            writer.tag(18, WireType.Varint).int32(message.reason);
+        /* octelium.api.main.core.v1.Service.Spec.Mode mode = 19; */
+        if (message.mode !== 0)
+            writer.tag(19, WireType.Varint).int32(message.mode);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6427,6 +6568,8 @@ class ListAccessLogTopUserRequest$Type extends MessageType<ListAccessLogTopUserR
             { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] },
             { no: 13, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 15, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
+            { no: 16, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -6435,6 +6578,8 @@ class ListAccessLogTopUserRequest$Type extends MessageType<ListAccessLogTopUserR
         message.status = 0;
         message.isPublic = false;
         message.isAnonymous = false;
+        message.reason = 0;
+        message.mode = 0;
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopUserRequest>(this, message, value);
@@ -6471,6 +6616,12 @@ class ListAccessLogTopUserRequest$Type extends MessageType<ListAccessLogTopUserR
                     break;
                 case /* bool isAnonymous */ 14:
                     message.isAnonymous = reader.bool();
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason */ 15:
+                    message.reason = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 16:
+                    message.mode = reader.int32();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -6514,6 +6665,12 @@ class ListAccessLogTopUserRequest$Type extends MessageType<ListAccessLogTopUserR
         /* bool isAnonymous = 14; */
         if (message.isAnonymous !== false)
             writer.tag(14, WireType.Varint).bool(message.isAnonymous);
+        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 15; */
+        if (message.reason !== 0)
+            writer.tag(15, WireType.Varint).int32(message.reason);
+        /* octelium.api.main.core.v1.Service.Spec.Mode mode = 16; */
+        if (message.mode !== 0)
+            writer.tag(16, WireType.Varint).int32(message.mode);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -6659,6 +6816,8 @@ class ListAccessLogTopSessionRequest$Type extends MessageType<ListAccessLogTopSe
             { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] },
             { no: 13, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 15, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
+            { no: 16, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -6667,6 +6826,8 @@ class ListAccessLogTopSessionRequest$Type extends MessageType<ListAccessLogTopSe
         message.status = 0;
         message.isPublic = false;
         message.isAnonymous = false;
+        message.reason = 0;
+        message.mode = 0;
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopSessionRequest>(this, message, value);
@@ -6709,6 +6870,12 @@ class ListAccessLogTopSessionRequest$Type extends MessageType<ListAccessLogTopSe
                     break;
                 case /* bool isAnonymous */ 14:
                     message.isAnonymous = reader.bool();
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason */ 15:
+                    message.reason = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 16:
+                    message.mode = reader.int32();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -6758,6 +6925,12 @@ class ListAccessLogTopSessionRequest$Type extends MessageType<ListAccessLogTopSe
         /* bool isAnonymous = 14; */
         if (message.isAnonymous !== false)
             writer.tag(14, WireType.Varint).bool(message.isAnonymous);
+        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 15; */
+        if (message.reason !== 0)
+            writer.tag(15, WireType.Varint).int32(message.reason);
+        /* octelium.api.main.core.v1.Service.Spec.Mode mode = 16; */
+        if (message.mode !== 0)
+            writer.tag(16, WireType.Varint).int32(message.mode);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -6902,6 +7075,8 @@ class ListAccessLogTopServiceRequest$Type extends MessageType<ListAccessLogTopSe
             { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] },
             { no: 13, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 15, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
+            { no: 16, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -6910,6 +7085,8 @@ class ListAccessLogTopServiceRequest$Type extends MessageType<ListAccessLogTopSe
         message.status = 0;
         message.isPublic = false;
         message.isAnonymous = false;
+        message.reason = 0;
+        message.mode = 0;
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopServiceRequest>(this, message, value);
@@ -6949,6 +7126,12 @@ class ListAccessLogTopServiceRequest$Type extends MessageType<ListAccessLogTopSe
                     break;
                 case /* bool isAnonymous */ 14:
                     message.isAnonymous = reader.bool();
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason */ 15:
+                    message.reason = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 16:
+                    message.mode = reader.int32();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -6995,6 +7178,12 @@ class ListAccessLogTopServiceRequest$Type extends MessageType<ListAccessLogTopSe
         /* bool isAnonymous = 14; */
         if (message.isAnonymous !== false)
             writer.tag(14, WireType.Varint).bool(message.isAnonymous);
+        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 15; */
+        if (message.reason !== 0)
+            writer.tag(15, WireType.Varint).int32(message.reason);
+        /* octelium.api.main.core.v1.Service.Spec.Mode mode = 16; */
+        if (message.mode !== 0)
+            writer.tag(16, WireType.Varint).int32(message.mode);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -7140,6 +7329,8 @@ class ListAccessLogTopPolicyRequest$Type extends MessageType<ListAccessLogTopPol
             { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] },
             { no: 13, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 15, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
+            { no: 16, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -7148,6 +7339,8 @@ class ListAccessLogTopPolicyRequest$Type extends MessageType<ListAccessLogTopPol
         message.status = 0;
         message.isPublic = false;
         message.isAnonymous = false;
+        message.reason = 0;
+        message.mode = 0;
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopPolicyRequest>(this, message, value);
@@ -7190,6 +7383,12 @@ class ListAccessLogTopPolicyRequest$Type extends MessageType<ListAccessLogTopPol
                     break;
                 case /* bool isAnonymous */ 14:
                     message.isAnonymous = reader.bool();
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason */ 15:
+                    message.reason = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 16:
+                    message.mode = reader.int32();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -7239,6 +7438,12 @@ class ListAccessLogTopPolicyRequest$Type extends MessageType<ListAccessLogTopPol
         /* bool isAnonymous = 14; */
         if (message.isAnonymous !== false)
             writer.tag(14, WireType.Varint).bool(message.isAnonymous);
+        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 15; */
+        if (message.reason !== 0)
+            writer.tag(15, WireType.Varint).int32(message.reason);
+        /* octelium.api.main.core.v1.Service.Spec.Mode mode = 16; */
+        if (message.mode !== 0)
+            writer.tag(16, WireType.Varint).int32(message.mode);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -7384,6 +7589,8 @@ class ListAccessLogTopDenyReasonRequest$Type extends MessageType<ListAccessLogTo
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
             { no: 13, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 15, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
+            { no: 16, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -7391,6 +7598,8 @@ class ListAccessLogTopDenyReasonRequest$Type extends MessageType<ListAccessLogTo
         const message = globalThis.Object.create((this.messagePrototype!));
         message.isPublic = false;
         message.isAnonymous = false;
+        message.reason = 0;
+        message.mode = 0;
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopDenyReasonRequest>(this, message, value);
@@ -7433,6 +7642,12 @@ class ListAccessLogTopDenyReasonRequest$Type extends MessageType<ListAccessLogTo
                     break;
                 case /* bool isAnonymous */ 14:
                     message.isAnonymous = reader.bool();
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason */ 15:
+                    message.reason = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 16:
+                    message.mode = reader.int32();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -7482,6 +7697,12 @@ class ListAccessLogTopDenyReasonRequest$Type extends MessageType<ListAccessLogTo
         /* bool isAnonymous = 14; */
         if (message.isAnonymous !== false)
             writer.tag(14, WireType.Varint).bool(message.isAnonymous);
+        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 15; */
+        if (message.reason !== 0)
+            writer.tag(15, WireType.Varint).int32(message.reason);
+        /* octelium.api.main.core.v1.Service.Spec.Mode mode = 16; */
+        if (message.mode !== 0)
+            writer.tag(16, WireType.Varint).int32(message.mode);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -8324,6 +8545,7 @@ class ListComponentLogTopComponentRequest$Type extends MessageType<ListComponent
             { no: 2, name: "level", kind: "enum", T: () => ["octelium.api.main.core.v1.ComponentLog.Entry.Level", ComponentLog_Entry_Level] },
             { no: 6, name: "component", kind: "message", T: () => ComponentSelector },
             { no: 7, name: "orderBy", kind: "enum", T: () => ["octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.OrderBy", ListComponentLogTopComponentRequest_OrderBy] },
+            { no: 8, name: "levels", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.ComponentLog.Entry.Level", ComponentLog_Entry_Level] },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -8331,6 +8553,7 @@ class ListComponentLogTopComponentRequest$Type extends MessageType<ListComponent
         const message = globalThis.Object.create((this.messagePrototype!));
         message.level = 0;
         message.orderBy = 0;
+        message.levels = [];
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListComponentLogTopComponentRequest>(this, message, value);
@@ -8355,6 +8578,13 @@ class ListComponentLogTopComponentRequest$Type extends MessageType<ListComponent
                     break;
                 case /* octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.OrderBy orderBy */ 7:
                     message.orderBy = reader.int32();
+                    break;
+                case /* repeated octelium.api.main.core.v1.ComponentLog.Entry.Level levels */ 8:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.levels.push(reader.int32());
+                    else
+                        message.levels.push(reader.int32());
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -8386,6 +8616,13 @@ class ListComponentLogTopComponentRequest$Type extends MessageType<ListComponent
         /* octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.OrderBy orderBy = 7; */
         if (message.orderBy !== 0)
             writer.tag(7, WireType.Varint).int32(message.orderBy);
+        /* repeated octelium.api.main.core.v1.ComponentLog.Entry.Level levels = 8; */
+        if (message.levels.length) {
+            writer.tag(8, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.levels.length; i++)
+                writer.int32(message.levels[i]);
+            writer.join();
+        }
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -9569,7 +9806,8 @@ class GetComponentLogDataPointRequest$Type extends MessageType<GetComponentLogDa
             { no: 2, name: "level", kind: "enum", T: () => ["octelium.api.main.core.v1.ComponentLog.Entry.Level", ComponentLog_Entry_Level] },
             { no: 14, name: "component", kind: "message", T: () => ComponentSelector },
             { no: 15, name: "groupBy", kind: "enum", T: () => ["octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.GroupBy", GetComponentLogDataPointRequest_GroupBy] },
-            { no: 16, name: "limitSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 16, name: "limitSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 17, name: "levels", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.ComponentLog.Entry.Level", ComponentLog_Entry_Level] }
         ]);
     }
     create(value?: PartialMessage<GetComponentLogDataPointRequest>): GetComponentLogDataPointRequest {
@@ -9577,6 +9815,7 @@ class GetComponentLogDataPointRequest$Type extends MessageType<GetComponentLogDa
         message.level = 0;
         message.groupBy = 0;
         message.limitSeries = 0;
+        message.levels = [];
         if (value !== undefined)
             reflectionMergePartial<GetComponentLogDataPointRequest>(this, message, value);
         return message;
@@ -9606,6 +9845,13 @@ class GetComponentLogDataPointRequest$Type extends MessageType<GetComponentLogDa
                     break;
                 case /* uint32 limitSeries */ 16:
                     message.limitSeries = reader.uint32();
+                    break;
+                case /* repeated octelium.api.main.core.v1.ComponentLog.Entry.Level levels */ 17:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.levels.push(reader.int32());
+                    else
+                        message.levels.push(reader.int32());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -9640,6 +9886,13 @@ class GetComponentLogDataPointRequest$Type extends MessageType<GetComponentLogDa
         /* uint32 limitSeries = 16; */
         if (message.limitSeries !== 0)
             writer.tag(16, WireType.Varint).uint32(message.limitSeries);
+        /* repeated octelium.api.main.core.v1.ComponentLog.Entry.Level levels = 17; */
+        if (message.levels.length) {
+            writer.tag(17, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.levels.length; i++)
+                writer.int32(message.levels[i]);
+            writer.join();
+        }
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

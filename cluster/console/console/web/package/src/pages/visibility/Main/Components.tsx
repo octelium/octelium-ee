@@ -17,10 +17,20 @@ import { COMPONENT_LIMIT, useComponentLeaderboard } from "./queries";
 type LevelFilter = "all" | "warn" | "error";
 type SortMode = "volume" | "severity";
 
-const LEVELS: Record<LevelFilter, ComponentLog_Entry_Level | undefined> = {
-  all: undefined,
-  warn: ComponentLog_Entry_Level.WARN,
-  error: ComponentLog_Entry_Level.ERROR,
+const LEVELS: Record<LevelFilter, ComponentLog_Entry_Level[]> = {
+  all: [],
+  warn: [ComponentLog_Entry_Level.WARN],
+  error: [
+    ComponentLog_Entry_Level.ERROR,
+    ComponentLog_Entry_Level.PANIC,
+    ComponentLog_Entry_Level.FATAL,
+  ],
+};
+
+const EMPTY_SUBJECT: Record<LevelFilter, string> = {
+  all: "a log entry",
+  warn: "a warning",
+  error: "an error, panic or fatal entry",
 };
 
 const ORDER_BY: Record<SortMode, ListComponentLogTopComponentRequest_OrderBy> =
@@ -74,7 +84,14 @@ const Components = (props: { periodMinutes: number }) => {
     const params = new URLSearchParams();
     if (type) params.set("component.type", type);
     if (namespace) params.set("component.namespace", namespace);
-    if (level !== "all") params.set("level", level.toUpperCase());
+    if (LEVELS[level].length === 1) {
+      params.set("level", ComponentLog_Entry_Level[LEVELS[level][0]]);
+    } else if (LEVELS[level].length > 1) {
+      params.set(
+        "levels",
+        LEVELS[level].map((itm) => ComponentLog_Entry_Level[itm]).join(","),
+      );
+    }
 
     return {
       id: `${namespace}/${type}`,
@@ -133,7 +150,7 @@ const Components = (props: { periodMinutes: number }) => {
         isLoading={query.isLoading}
         isError={query.isError}
         unit="entries"
-        emptyLabel={`No component emitted a ${level === "all" ? "" : `${level} `}log entry in the last ${rangeLabel}.`}
+        emptyLabel={`No component emitted ${EMPTY_SUBJECT[level]} in the last ${rangeLabel}.`}
       />
     </Panel>
   );

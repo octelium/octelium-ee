@@ -595,4 +595,250 @@ describe("Console navigation and agent panel", () => {
     assert.equal(result.keyword, 80);
     assert.deepEqual(result.questions, [true, true, false, false]);
   });
+
+  const sections = () =>
+    page.locator("main section h2").evaluateAll((items) =>
+      items.map((item) => item.textContent),
+    );
+  const mounted = () => page.evaluate(() => [...window.mounted].sort());
+  const storedLayouts = () =>
+    page.evaluate(() =>
+      JSON.parse(
+        localStorage.getItem("octelium.console.layout.v1:example.test:u-1") ??
+          "null",
+      ),
+    );
+
+  it("customizes the overview sections and keeps the layout per user", async () => {
+    await load("/", "dashboard");
+    assert.deepEqual(await sections(), ["Needs attention", "Errors", "Requests"]);
+
+    await page.getByRole("button", { name: "Customize this page" }).click();
+    const drawer = page.getByRole("dialog", { name: "Customize this page" });
+    await drawer.getByRole("button", { name: "Move Requests up" }).click();
+    assert.equal(
+      await drawer
+        .getByRole("button", { name: "Move Requests up" })
+        .isDisabled(),
+      false,
+    );
+    assert.equal(
+      await drawer.getByRole("button", { name: "Hide Needs attention" }).count(),
+      0,
+    );
+    await drawer
+      .getByRole("img", { name: "Needs attention is always shown" })
+      .waitFor();
+    await drawer.getByRole("button", { name: "Hide Errors" }).click();
+    await drawer.getByRole("button", { name: "Show Errors" }).waitFor();
+    await drawer.getByRole("button", { name: "Save" }).click();
+    await drawer.waitFor({ state: "hidden" });
+
+    assert.deepEqual(await sections(), ["Needs attention", "Requests"]);
+    assert.deepEqual(await mounted(), ["attention", "requests"]);
+    await page.getByText("1 section is hidden").waitFor();
+    assert.deepEqual(await storedLayouts(), {
+      test: {
+        order: ["attention", "requests", "errors"],
+        hidden: ["errors"],
+        collapsed: [],
+      },
+    });
+
+    await page.reload();
+    await page.getByRole("navigation", { name: "Breadcrumb" }).waitFor();
+    await page.getByText("1 section is hidden").waitFor();
+    assert.deepEqual(await sections(), ["Needs attention", "Requests"]);
+
+    await page.getByRole("button", { name: "Customize", exact: true }).click();
+    await drawer.getByRole("button", { name: "Show Errors" }).click();
+    await drawer.getByRole("button", { name: "Save" }).click();
+    await drawer.waitFor({ state: "hidden" });
+    assert.deepEqual(await sections(), ["Needs attention", "Requests", "Errors"]);
+
+    await page.getByRole("button", { name: "Customize this page" }).click();
+    await drawer.getByRole("button", { name: "Collapse Errors" }).click();
+    await drawer.getByRole("button", { name: "Cancel" }).click();
+    await drawer.waitFor({ state: "hidden" });
+    assert.deepEqual(await mounted(), ["attention", "errors", "requests"]);
+
+    await page.getByRole("button", { name: "Customize this page" }).click();
+    await drawer.getByRole("button", { name: "Reset to default" }).click();
+    await drawer.getByRole("button", { name: "Save" }).click();
+    await drawer.waitFor({ state: "hidden" });
+    assert.deepEqual(await sections(), ["Needs attention", "Errors", "Requests"]);
+    assert.equal(await storedLayouts(), null);
+  });
+
+  it("collapses and hides a section from its menu", async () => {
+    await load("/", "dashboard");
+
+    await page.getByRole("button", { name: "Errors actions" }).click();
+    await page.getByRole("menuitem", { name: "Collapse section" }).click();
+    await page.getByRole("button", { name: "Expand Errors" }).waitFor();
+    assert.deepEqual(await mounted(), ["attention", "requests"]);
+    await page.getByRole("button", { name: "Expand Errors" }).click();
+    await page.getByRole("button", { name: "Errors actions" }).waitFor();
+    assert.deepEqual(await mounted(), ["attention", "errors", "requests"]);
+
+    await page.getByRole("button", { name: "Errors actions" }).click();
+    await page.getByRole("menuitem", { name: "Hide section" }).click();
+    await page.getByText("Errors is hidden").waitFor();
+    assert.deepEqual(await sections(), ["Needs attention", "Requests"]);
+    await page.getByRole("button", { name: "Undo" }).click();
+    await page.getByRole("button", { name: "Errors actions" }).waitFor();
+    assert.deepEqual(await sections(), ["Needs attention", "Errors", "Requests"]);
+    assert.equal(await storedLayouts(), null);
+
+    await page.getByRole("button", { name: "Needs attention actions" }).click();
+    await page.getByRole("menuitem", { name: "Customize page…" }).waitFor();
+    assert.equal(
+      await page.getByRole("menuitem", { name: "Hide section" }).count(),
+      0,
+    );
+  });
+
+  it("copies a link to a section", async () => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await load("/", "dashboard");
+    await page.getByRole("button", { name: "Requests actions" }).click();
+    await page.getByRole("menuitem", { name: "Copy link" }).click();
+    await page.getByText("Link copied").waitFor();
+    assert.match(
+      await page.evaluate(() => navigator.clipboard.readText()),
+      /#section-requests$/,
+    );
+  });
+
+  it("asks the agent about a section with a snapshot of what it shows", async () => {
+    await load("/", "dashboard");
+    await page.getByRole("button", { name: "Requests actions" }).click();
+    await page
+      .getByRole("menuitem", { name: "Ask the agent about this" })
+      .click();
+    await dock().getByRole("heading", { name: "Ask about Requests" }).waitFor();
+    await dock()
+      .getByRole("button", { name: /Compare with before/ })
+      .waitFor();
+    await dock()
+      .getByRole("button", { name: /Explain this section/ })
+      .click();
+    await dock().getByText("The agent answered.").waitFor();
+
+    const created = (await calls()).find((call) => call.method === "POST");
+    const { page: pageContext, items } = created.body.input.context;
+    assert.equal(pageContext.details["Time range"], "last 1h");
+    assert.equal(
+      pageContext.details["Needs attention"],
+      "3 × Access requests past their deadline",
+    );
+    assert.equal(items.length, 1);
+    assert.equal(items[0].kind, "DashboardSection");
+    assert.equal(items[0].id, "requests");
+    assert.equal(items[0].title, "Requests");
+    assert.equal(items[0].data.window, "last 1h");
+    assert.deepEqual(items[0].data.values, [
+      {
+        label: "Requests",
+        value: "1234",
+        previous: "1000",
+        to: "/visibility/accesslogs",
+      },
+    ]);
+    assert.deepEqual(items[0].data.links, [
+      { text: "Requests", to: "/visibility/accesslogs" },
+    ]);
+    assert.match(items[0].data.text, /Access log entries/);
+    assert.ok(JSON.stringify(items[0].data).length <= 7500);
+  });
+
+  it("pins the focused section with the shortcut", async () => {
+    await load("/", "dashboard");
+    await page.getByRole("link", { name: /Errors/ }).focus();
+    await page.keyboard.press("Control+j");
+    await dock().getByRole("heading", { name: "Ask about Errors" }).waitFor();
+
+    await page.locator("body").click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press("Control+j");
+    await page.waitForFunction(
+      () => !document.documentElement.hasAttribute("data-agent-dock"),
+    );
+    await page.keyboard.press("Control+j");
+    await page.waitForFunction(() =>
+      document.documentElement.hasAttribute("data-agent-dock"),
+    );
+    await dock().getByRole("heading", { name: "Ask about Errors" }).waitFor();
+  });
+
+  it("suggests the conditions of the page and uses its time range", async () => {
+    await load("/", "dashboard");
+    await page
+      .getByRole("button", { name: "Ask the agent about this page" })
+      .click();
+    const first = dock()
+      .getByRole("button", { name: /Access requests past their deadline/ })
+      .first();
+    await first.waitFor();
+    assert.match(
+      await first.textContent(),
+      /3 × Access requests past their deadline: what is causing this/,
+    );
+    await dock()
+      .getByRole("button", { name: /access activity of the last 1h/ })
+      .waitFor();
+  });
+
+  it("resolves and validates the stored layouts", async () => {
+    await load("/", "dashboard");
+    const result = await page.evaluate(() => {
+      const { resolveLayout, toStoredLayout, parseLayouts } =
+        window.layoutUtils;
+      const widgets = [{ id: "a" }, { id: "b", locked: true }, { id: "c" }];
+      return {
+        resolved: resolveLayout(widgets, {
+          order: ["c", "x", "a", "c"],
+          hidden: ["b", "x", "a"],
+          collapsed: ["b", "c"],
+        }),
+        fresh: resolveLayout(widgets),
+        stored: toStoredLayout(widgets, resolveLayout(widgets)),
+        reordered: toStoredLayout(widgets, {
+          order: ["c", "a", "b"],
+          hidden: [],
+          collapsed: [],
+        }),
+        parsed: parseLayouts(
+          JSON.stringify({
+            ok: { order: ["a"], hidden: [], collapsed: [] },
+            bad: { order: "a", hidden: [], collapsed: [] },
+            long: { order: ["x".repeat(65)], hidden: [], collapsed: [] },
+            empty: null,
+          }),
+        ),
+        invalid: parseLayouts("{"),
+        array: parseLayouts("[]"),
+      };
+    });
+    assert.deepEqual(result.resolved, {
+      order: ["c", "a", "b"],
+      hidden: ["a"],
+      collapsed: ["c"],
+    });
+    assert.deepEqual(result.fresh, {
+      order: ["a", "b", "c"],
+      hidden: [],
+      collapsed: [],
+    });
+    assert.equal(result.stored, undefined);
+    assert.deepEqual(result.reordered, {
+      order: ["c", "a", "b"],
+      hidden: [],
+      collapsed: [],
+    });
+    assert.deepEqual(result.parsed, {
+      ok: { order: ["a"], hidden: [], collapsed: [] },
+    });
+    assert.deepEqual(result.invalid, {});
+    assert.deepEqual(result.array, {});
+  });
 });

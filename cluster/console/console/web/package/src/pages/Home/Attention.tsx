@@ -23,6 +23,7 @@ import {
 import { Link } from "react-router-dom";
 import { twMerge } from "@/lib/utils";
 import { Panel } from "@/components/Dashboard/components";
+import { usePageConditions } from "@/components/PageHeader/context";
 import { StatusBadge, SubsystemGrid } from "@/components/Dashboard/health";
 import { GetClusterHealthResponse_Status } from "@/apis/visibilityv1/visibilityv1";
 import {
@@ -277,7 +278,7 @@ const Attention = (props: { periodMinutes: number }) => {
       label: `Component errors in the last ${rangeLabel}`,
       scope: "Logs",
       severity: "critical",
-      to: "/visibility/componentlogs?level=ERROR",
+      to: "/visibility/componentlogs?levels=ERROR,PANIC,FATAL",
       icon: ScrollText,
     },
   ];
@@ -289,6 +290,10 @@ const Attention = (props: { periodMinutes: number }) => {
         SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] ||
         b.count - a.count,
     );
+
+  usePageConditions(
+    items.map((item) => ({ label: item.label, count: item.count, to: item.to })),
+  );
 
   const isLoading =
     cluster.isLoading || componentLogs.isLoading || health.isLoading;

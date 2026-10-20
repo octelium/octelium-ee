@@ -7,6 +7,7 @@ import {
   AgentContext,
   isAgentPath,
   isModKey,
+  pinnedForElement,
   type AgentActivity,
   type AgentContextValue,
   type AskRequest,
@@ -102,12 +103,16 @@ export const AgentProvider = (props: { children: React.ReactNode }) => {
         event.key.toLowerCase() === "j"
       ) {
         event.preventDefault();
-        toggle();
+        const pinned = openedRef.current
+          ? undefined
+          : pinnedForElement(document.activeElement);
+        if (pinned && status === "ready") ask({ pinned, fresh: true });
+        else toggle();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [usable, hidden, toggle]);
+  }, [usable, hidden, toggle, ask, status]);
 
   const previousActivityRef = React.useRef<AgentActivity | undefined>(
     undefined,

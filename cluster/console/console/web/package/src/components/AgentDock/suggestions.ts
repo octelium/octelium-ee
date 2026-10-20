@@ -1,5 +1,6 @@
 import type { ResourceRef } from "@/apis/consoleagent/protocol";
 import type { Crumb } from "@/components/Navigation/catalog";
+import type { PageCondition } from "@/components/PageHeader/context";
 import {
   Activity,
   BookOpenText,
@@ -102,6 +103,29 @@ const itemSuggestions = (pinned: PinnedContext): Suggestion[] => {
           "Show the other changes made to the same resource in the last 7 days",
         ),
         s(Eraser, "Undo it", "How can this change be undone?"),
+      ];
+    case "DashboardSection":
+      return [
+        s(
+          BookOpenText,
+          "Explain this section",
+          "Explain what this section shows and what stands out in it",
+        ),
+        s(
+          ShieldAlert,
+          "What needs attention?",
+          "What in this section needs my attention, and what should I address first?",
+        ),
+        s(
+          ChartColumn,
+          "Compare with before",
+          "How does this compare with the previous period, and what drove the change?",
+        ),
+        s(
+          FileSearch,
+          "Show the evidence",
+          "Find the log entries and resources behind the most significant number in this section",
+        ),
       ];
     case "ComponentLog":
       return [
@@ -360,7 +384,7 @@ const tabSuggestions = (tab: string, kind: string): Suggestion[] => {
   }
 };
 
-const pageSuggestions: Record<string, Suggestion[]> = {
+const pageSuggestions = (range: string): Record<string, Suggestion[]> => ({
   "/": [
     s(
       ShieldAlert,
@@ -369,10 +393,14 @@ const pageSuggestions: Record<string, Suggestion[]> = {
     ),
     s(
       Activity,
-      "Last 24 hours",
-      "Summarize the access activity of the last 24 hours",
+      "Recent activity",
+      `Summarize the access activity of the ${range}`,
     ),
-    s(UserX, "Denied Users", "Which Users had denied requests today?"),
+    s(
+      UserX,
+      "Denied Users",
+      `Which Users had denied requests in the ${range}?`,
+    ),
     s(
       ChartColumn,
       "Traffic trends",
@@ -435,12 +463,12 @@ const pageSuggestions: Record<string, Suggestion[]> = {
     s(
       ShieldAlert,
       "Investigate denials",
-      "Investigate the denied requests of the last 24 hours",
+      `Investigate the denied requests of the ${range}`,
     ),
     s(
       ScanSearch,
       "Anomalies",
-      "Are there any unusual access or sign-in patterns today?",
+      `Are there any unusual access or sign-in patterns in the ${range}?`,
     ),
   ],
   "/visibility/accesslogs": [
@@ -508,7 +536,18 @@ const pageSuggestions: Record<string, Suggestion[]> = {
       "Which guardrails block requests most, and for whom?",
     ),
   ],
-};
+});
+
+const conditionSuggestions = (conditions: PageCondition[]): Suggestion[] =>
+  conditions
+    .slice(0, 2)
+    .map((item) =>
+      s(
+        ShieldAlert,
+        item.label,
+        `${item.count} × ${item.label}: what is causing this, and what should I address first?`,
+      ),
+    );
 
 const listSuggestions = (label: string): Suggestion[] => [
   s(ListChecks, "Summarize", `Summarize the ${label}`),
@@ -562,6 +601,8 @@ export const getSuggestions = (args: {
   trail: Crumb[];
   pathname: string;
   pinned?: PinnedContext;
+  details?: Record<string, string>;
+  conditions?: PageCondition[];
 }): Suggestion[] => {
   const { trail, pinned } = args;
   if (pinned?.items && pinned.items.length > 0) {
@@ -599,8 +640,15 @@ export const getSuggestions = (args: {
 
   const last = trail.at(-1);
   const path = last?.path ?? args.pathname;
-  if (pageSuggestions[path]) {
-    return pageSuggestions[path];
+  const pages = pageSuggestions(
+    args.details?.["Time range"] ?? "last 24 hours",
+  );
+  const conditions = conditionSuggestions(args.conditions ?? []);
+  if (pages[path]) {
+    return [...conditions, ...pages[path]].slice(
+      0,
+      Math.max(4, pages[path].length),
+    );
   }
   if (trail.length === 3 && last) {
     return [

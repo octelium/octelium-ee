@@ -12,6 +12,9 @@ import { User } from "@/apis/corev1/corev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { GetStatusResponse } from "@/apis/userv1/userv1";
 import {
+  GetAccessLogSummaryResponse,
+  ListAccessLogTopDenyReasonResponse,
+  ListComponentLogTopComponentResponse,
   GetClusterHealthResponse,
   GetClusterHealthResponse_Status,
   GetClusterHealthResponse_Subsystem_Type,
@@ -42,6 +45,12 @@ import Attention from "@/pages/Home/Attention";
 import AccessAttention from "@/pages/access/Overview/Attention";
 import EnterpriseHealth from "@/pages/enterprise/Overview/Health";
 import VisibilityBreakdown from "@/pages/visibility/Main/Breakdown";
+import VisibilityAccessLeaders from "@/pages/visibility/Main/AccessLeaders";
+import VisibilityComponents from "@/pages/visibility/Main/Components";
+import ComponentLogsPage from "@/pages/visibility/componentlogs";
+import AccessLogsPage from "@/pages/visibility/accesslogs";
+import StatsOverview from "@/components/LLMVisibility/StatsOverview";
+import { CHART_INK, STATUS_COLORS } from "@/utils/charts/palette";
 import StatBars from "@/components/LLMVisibility/StatBars";
 import { metricAccessor } from "@/components/LLMVisibility/utils";
 import { Metric } from "@/apis/visibilityv1/llm/vllmv1";
@@ -180,11 +189,84 @@ cluster.getClusterHealth = async () => {
   return { response: GetComponentLogSummaryResponse.create() };
 };
 
+const bucket = (minute: number) =>
+  Timestamp.fromDate(new Date(Date.UTC(2026, 9, 19, 11, minute)));
 (
   Object.getPrototypeOf(getClientVisibilityAccessLog()) as any
 ).getAccessLogDataPoint = async (request: any) => {
   calls.push({ name: "getAccessLogDataPoint", request });
-  return { response: GetAccessLogDataPointResponse.create() };
+  if (scenario !== "breakdown-other") {
+    return { response: GetAccessLogDataPointResponse.create() };
+  }
+  return {
+    response: GetAccessLogDataPointResponse.create({
+      datapoints: [
+        { timestamp: bucket(0), count: 10 },
+        { timestamp: bucket(5), count: 20 },
+      ],
+      series: [
+        {
+          key: "ALLOWED",
+          total: 9,
+          datapoints: [
+            { timestamp: bucket(0), count: 4 },
+            { timestamp: bucket(5), count: 5 },
+          ],
+        },
+        {
+          key: "DENIED",
+          total: 6,
+          datapoints: [
+            { timestamp: bucket(0), count: 2 },
+            { timestamp: bucket(5), count: 4 },
+          ],
+        },
+      ],
+    }),
+  };
+};
+(window as any).statusColors = {
+  good: STATUS_COLORS.good,
+  critical: STATUS_COLORS.critical,
+  muted: CHART_INK.muted,
+};
+(
+  Object.getPrototypeOf(getClientVisibilityAccessLog()) as any
+).getAccessLogSummary = async (request: any) => {
+  calls.push({ name: "getAccessLogSummary", request });
+  return { response: GetAccessLogSummaryResponse.create({ totalNumber: 4 }) };
+};
+(
+  Object.getPrototypeOf(getClientVisibilityAccessLog()) as any
+).listAccessLogTopDenyReason = async () => ({
+  response: ListAccessLogTopDenyReasonResponse.create({
+    items: [
+      {
+        reason: 6,
+        count: 4,
+        policyRef: { name: "deny-all", uid: "p-1" },
+      },
+      { reason: 13, count: 1 },
+    ],
+    totalCount: 2,
+  }),
+});
+(
+  Object.getPrototypeOf(getClientVisibilityComponentLog()) as any
+).listComponentLogTopComponent = async (request: any) => {
+  calls.push({ name: "listComponentLogTopComponent", request });
+  return {
+    response: ListComponentLogTopComponentResponse.create({
+      items: [
+        {
+          component: { namespace: "octelium", type: "vigil" },
+          count: 3,
+          countFatal: 1,
+        },
+      ],
+      totalCount: 1,
+    }),
+  };
 };
 
 for (const [client, method, response] of [
@@ -240,6 +322,8 @@ if (scenario === "shadow") {
 }
 
 const Location = () => <output data-location>{useLocation().pathname}</output>;
+
+const Search = () => <output data-search>{useLocation().search}</output>;
 
 const Query = () => {
   const query = useClusterSummary("range", 60, 0);
@@ -322,8 +406,37 @@ const Fixture = () => (
               <EnterpriseHealth periodMinutes={60} />
             ) : scenario === "access-error" ? (
               <AccessAttention periodMinutes={60} />
-            ) : scenario === "breakdown" ? (
+            ) : scenario === "breakdown" || scenario === "breakdown-other" ? (
               <VisibilityBreakdown periodMinutes={60} />
+            ) : scenario === "componentlogs" ? (
+              <>
+                <ComponentLogsPage />
+                <Search />
+              </>
+            ) : scenario === "accesslogs" ? (
+              <AccessLogsPage />
+            ) : scenario === "access-leaders" ? (
+              <VisibilityAccessLeaders periodMinutes={60} />
+            ) : scenario === "components" ? (
+              <VisibilityComponents periodMinutes={60} />
+            ) : scenario === "llm-stats" ? (
+              <StatsOverview
+                rangeLabel="24h"
+                stats={
+                  {
+                    requests: { total: 120, denied: 0, failed: 3 },
+                    tokens: { total: 1000 },
+                    latency: { p95Ms: 400 },
+                  } as any
+                }
+                previous={
+                  {
+                    requests: { total: 100, denied: 0, failed: 6 },
+                    tokens: { total: 1000 },
+                    latency: { p95Ms: 200 },
+                  } as any
+                }
+              />
             ) : scenario === "statbars" ? (
               <StatBars
                 accessor={metricAccessor(Metric.LATENCY_P95)}

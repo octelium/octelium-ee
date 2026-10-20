@@ -2,6 +2,7 @@ import {
   AccessLog_Entry_Common_Status,
   ComponentLog_Entry_Level,
 } from "@/apis/corev1/corev1";
+import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import {
   DataPointSeries,
   GetAccessLogDataPointRequest,
@@ -207,7 +208,7 @@ export const DIMENSIONS: Record<StreamKey, Dimension[]> = {
 };
 
 type BreakdownResponse = {
-  datapoints: { timestamp?: unknown; count: number }[];
+  datapoints: { timestamp?: Timestamp; count: number }[];
   series: DataPointSeries[];
 };
 
@@ -277,14 +278,14 @@ export const useBreakdown = (
 
 export const useComponentLeaderboard = (
   periodMinutes: number,
-  level: ComponentLog_Entry_Level | undefined,
+  levels: ComponentLog_Entry_Level[],
   orderBy: ListComponentLogTopComponentRequest_OrderBy,
 ) => {
   return useDashboardQuery({
     queryKey: [
       "componentLogTopComponent",
       periodMinutes,
-      level ?? null,
+      levels.join(","),
       orderBy,
       COMPONENT_LIMIT,
     ],
@@ -296,7 +297,7 @@ export const useComponentLeaderboard = (
           ListComponentLogTopComponentRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
-            level,
+            levels,
             orderBy,
             limit: COMPONENT_LIMIT,
           }),

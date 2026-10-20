@@ -28,6 +28,8 @@ const maxTopItems = 100
 const defaultDataPointSeries = 8
 const maxDataPointSeries = 25
 
+const maxComponentLevels = 8
+
 const jsonIsPublic = `json_extract_string(rsc, '$.entry.common.isPublic')`
 const jsonIsAnonymous = `json_extract_string(rsc, '$.entry.common.isAnonymous')`
 const jsonMode = `json_extract_string(rsc, '$.entry.common.mode')`
@@ -79,6 +81,39 @@ func appendAccessStatusFilter(filters []exp.Expression,
 	}
 
 	return filters
+}
+
+func appendAccessReasonModeFilters(filters []exp.Expression,
+	reason corev1.AccessLog_Entry_Common_Reason_Type, mode corev1.Service_Spec_Mode) []exp.Expression {
+	if reason != corev1.AccessLog_Entry_Common_Reason_TYPE_UNKNOWN_REASON {
+		filters = append(filters, goqu.L(jsonDenyReason).Eq(reason.String()))
+	}
+	if mode != corev1.Service_Spec_MODE_UNSET {
+		filters = append(filters, goqu.L(jsonMode).Eq(mode.String()))
+	}
+
+	return filters
+}
+
+func appendComponentLevelFilter(filters []exp.Expression,
+	level corev1.ComponentLog_Entry_Level, levels []corev1.ComponentLog_Entry_Level) ([]exp.Expression, error) {
+
+	if len(levels) > maxComponentLevels {
+		return nil, grpcutils.InvalidArg("Too many levels")
+	}
+
+	var vals []string
+	for _, itm := range append([]corev1.ComponentLog_Entry_Level{level}, levels...) {
+		if itm != corev1.ComponentLog_Entry_LEVEL_UNSET {
+			vals = append(vals, itm.String())
+		}
+	}
+
+	if len(vals) == 0 {
+		return filters, nil
+	}
+
+	return append(filters, goqu.L(colLevel).In(vals)), nil
 }
 
 func appendComponentFilter(filters []exp.Expression,

@@ -1,10 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
 
+import dashboardLayoutReducer from "../features/dashboardLayout/slice";
 import settingsReducer from "../features/settings/slice";
 
 const store = configureStore({
   reducer: {
     settings: settingsReducer,
+    dashboardLayout: dashboardLayoutReducer,
   },
 });
 
