@@ -572,8 +572,10 @@ export interface ListAuthenticationLogRequest {
      */
     to?: Timestamp;
     /**
-     * Status only lists the entries of this Status. When it is unset, both the
-     * successful and the failed authentications are listed.
+     * Status only lists the entries of this Status. Note that SUCCESS also
+     * matches the entries that were recorded before the Status was introduced.
+     * When it is unset, both the successful and the failed authentications are
+     * listed.
      *
      * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12
      */
@@ -646,8 +648,10 @@ export interface GetAuthenticationLogSummaryRequest {
      */
     compareTo?: Timestamp;
     /**
-     * Status only counts the entries of this Status. When it is unset, both the
-     * successful and the failed authentications are counted.
+     * Status only counts the entries of this Status. Note that SUCCESS also
+     * matches the entries that were recorded before the Status was introduced.
+     * When it is unset, both the successful and the failed authentications are
+     * counted.
      *
      * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 14
      */
@@ -1296,8 +1300,10 @@ export interface GetAuthenticationLogDataPointRequest {
      */
     limitSeries: number;
     /**
-     * Status only counts the entries of this Status. When it is unset, both the
-     * successful and the failed authentications are counted.
+     * Status only counts the entries of this Status. Note that SUCCESS also
+     * matches the entries that were recorded before the Status was introduced.
+     * When it is unset, both the successful and the failed authentications are
+     * counted.
      *
      * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 15
      */
@@ -1354,7 +1360,8 @@ export enum GetAuthenticationLogDataPointRequest_GroupBy {
     AUTHENTICATOR = 8,
     /**
      * STATUS splits the entries by their Status (i.e. "SUCCESS" or
-     * "FAILURE").
+     * "FAILURE"). The entries that were recorded before the Status was
+     * introduced are part of the "SUCCESS" series.
      *
      * @generated from protobuf enum value: STATUS = 9;
      */
@@ -1945,8 +1952,10 @@ export interface ListAuthenticationLogTopUserRequest {
      */
     to?: Timestamp;
     /**
-     * Status only counts the entries of this Status. When it is unset, both the
-     * successful and the failed authentications are counted.
+     * Status only counts the entries of this Status. Note that SUCCESS also
+     * matches the entries that were recorded before the Status was introduced.
+     * When it is unset, both the successful and the failed authentications are
+     * counted.
      *
      * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12
      */
@@ -2034,8 +2043,10 @@ export interface ListAuthenticationLogTopCredentialRequest {
      */
     to?: Timestamp;
     /**
-     * Status only counts the entries of this Status. When it is unset, both the
-     * successful and the failed authentications are counted.
+     * Status only counts the entries of this Status. Note that SUCCESS also
+     * matches the entries that were recorded before the Status was introduced.
+     * When it is unset, both the successful and the failed authentications are
+     * counted.
      *
      * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12
      */
@@ -2127,8 +2138,10 @@ export interface ListAuthenticationLogTopIdentityProviderRequest {
      */
     to?: Timestamp;
     /**
-     * Status only counts the entries of this Status. When it is unset, both the
-     * successful and the failed authentications are counted.
+     * Status only counts the entries of this Status. Note that SUCCESS also
+     * matches the entries that were recorded before the Status was introduced.
+     * When it is unset, both the successful and the failed authentications are
+     * counted.
      *
      * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12
      */

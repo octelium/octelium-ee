@@ -196,8 +196,7 @@ type PublishRequest struct {
 	Messages []*Message `protobuf:"bytes,2,rep,name=messages,proto3" json:"messages,omitempty"`
 	// MaxLength is the maximum number of the Messages that the Topic retains.
 	// The oldest Messages are trimmed once it is exceeded. Zero uses an internal
-	// default. Note that an implementation is allowed to trim approximately, so
-	// the Topic can briefly retain slightly more Messages than this number.
+	// default.
 	MaxLength uint32 `protobuf:"varint,3,opt,name=maxLength,proto3" json:"maxLength,omitempty"`
 	// MaxAge is the maximum age of the Messages that the Topic retains. The
 	// Messages that are older are trimmed and a Topic that is neither published
@@ -418,6 +417,10 @@ func (x *SubscribeRequest) GetAckTimeout() *metav1.Duration {
 	return nil
 }
 
+// SubscribeResponse is a batch of the delivered Messages. The first response
+// of a subscription has no Messages at all and it is sent once the
+// subscription is established, so that the subscriber knows that it receives
+// every Message that is published afterwards.
 type SubscribeResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Messages is the list of the delivered Messages in the order of the Topic.

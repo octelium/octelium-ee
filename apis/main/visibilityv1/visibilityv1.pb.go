@@ -178,7 +178,8 @@ const (
 	GetAuthenticationLogDataPointRequest_CREDENTIAL        GetAuthenticationLogDataPointRequest_GroupBy = 7
 	GetAuthenticationLogDataPointRequest_AUTHENTICATOR     GetAuthenticationLogDataPointRequest_GroupBy = 8
 	// STATUS splits the entries by their Status (i.e. "SUCCESS" or
-	// "FAILURE").
+	// "FAILURE"). The entries that were recorded before the Status was
+	// introduced are part of the "SUCCESS" series.
 	GetAuthenticationLogDataPointRequest_STATUS GetAuthenticationLogDataPointRequest_GroupBy = 9
 	// FAILURE_REASON splits the failed authentication attempts by their
 	// reason. The successful authentications are not part of any series.
@@ -1687,8 +1688,10 @@ type ListAuthenticationLogRequest struct {
 	AuthenticatorRef    *metav1.ObjectReference    `protobuf:"bytes,11,opt,name=authenticatorRef,proto3" json:"authenticatorRef,omitempty"`
 	From                *timestamppb.Timestamp     `protobuf:"bytes,4,opt,name=from,proto3" json:"from,omitempty"`
 	To                  *timestamppb.Timestamp     `protobuf:"bytes,5,opt,name=to,proto3" json:"to,omitempty"`
-	// Status only lists the entries of this Status. When it is unset, both the
-	// successful and the failed authentications are listed.
+	// Status only lists the entries of this Status. Note that SUCCESS also
+	// matches the entries that were recorded before the Status was introduced.
+	// When it is unset, both the successful and the failed authentications are
+	// listed.
 	Status enterprisev1.AuthenticationLog_Entry_Status `protobuf:"varint,12,opt,name=status,proto3,enum=octelium.api.main.enterprise.v1.AuthenticationLog_Entry_Status" json:"status,omitempty"`
 	// Reason only lists the failed authentication attempts of this reason.
 	Reason        enterprisev1.AuthenticationLog_Entry_Failure_Reason `protobuf:"varint,13,opt,name=reason,proto3,enum=octelium.api.main.enterprise.v1.AuthenticationLog_Entry_Failure_Reason" json:"reason,omitempty"`
@@ -1869,8 +1872,10 @@ type GetAuthenticationLogSummaryRequest struct {
 	// whose summary is returned in the `previous` field of the response.
 	CompareFrom *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=compareFrom,proto3" json:"compareFrom,omitempty"`
 	CompareTo   *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=compareTo,proto3" json:"compareTo,omitempty"`
-	// Status only counts the entries of this Status. When it is unset, both the
-	// successful and the failed authentications are counted.
+	// Status only counts the entries of this Status. Note that SUCCESS also
+	// matches the entries that were recorded before the Status was introduced.
+	// When it is unset, both the successful and the failed authentications are
+	// counted.
 	Status enterprisev1.AuthenticationLog_Entry_Status `protobuf:"varint,14,opt,name=status,proto3,enum=octelium.api.main.enterprise.v1.AuthenticationLog_Entry_Status" json:"status,omitempty"`
 	// Reason only counts the failed authentication attempts of this reason.
 	Reason        enterprisev1.AuthenticationLog_Entry_Failure_Reason `protobuf:"varint,15,opt,name=reason,proto3,enum=octelium.api.main.enterprise.v1.AuthenticationLog_Entry_Failure_Reason" json:"reason,omitempty"`
@@ -3209,8 +3214,10 @@ type GetAuthenticationLogDataPointRequest struct {
 	// LimitSeries caps the number of the returned series to the top ones by
 	// total count. It defaults to 8 and it cannot exceed 25.
 	LimitSeries uint32 `protobuf:"varint,14,opt,name=limitSeries,proto3" json:"limitSeries,omitempty"`
-	// Status only counts the entries of this Status. When it is unset, both the
-	// successful and the failed authentications are counted.
+	// Status only counts the entries of this Status. Note that SUCCESS also
+	// matches the entries that were recorded before the Status was introduced.
+	// When it is unset, both the successful and the failed authentications are
+	// counted.
 	Status enterprisev1.AuthenticationLog_Entry_Status `protobuf:"varint,15,opt,name=status,proto3,enum=octelium.api.main.enterprise.v1.AuthenticationLog_Entry_Status" json:"status,omitempty"`
 	// Reason only counts the failed authentication attempts of this reason.
 	Reason        enterprisev1.AuthenticationLog_Entry_Failure_Reason `protobuf:"varint,16,opt,name=reason,proto3,enum=octelium.api.main.enterprise.v1.AuthenticationLog_Entry_Failure_Reason" json:"reason,omitempty"`
@@ -4460,8 +4467,10 @@ type ListAuthenticationLogTopUserRequest struct {
 	AuthenticatorRef    *metav1.ObjectReference `protobuf:"bytes,11,opt,name=authenticatorRef,proto3" json:"authenticatorRef,omitempty"`
 	From                *timestamppb.Timestamp  `protobuf:"bytes,4,opt,name=from,proto3" json:"from,omitempty"`
 	To                  *timestamppb.Timestamp  `protobuf:"bytes,5,opt,name=to,proto3" json:"to,omitempty"`
-	// Status only counts the entries of this Status. When it is unset, both the
-	// successful and the failed authentications are counted.
+	// Status only counts the entries of this Status. Note that SUCCESS also
+	// matches the entries that were recorded before the Status was introduced.
+	// When it is unset, both the successful and the failed authentications are
+	// counted.
 	Status enterprisev1.AuthenticationLog_Entry_Status `protobuf:"varint,12,opt,name=status,proto3,enum=octelium.api.main.enterprise.v1.AuthenticationLog_Entry_Status" json:"status,omitempty"`
 	// Reason only counts the failed authentication attempts of this reason.
 	Reason enterprisev1.AuthenticationLog_Entry_Failure_Reason `protobuf:"varint,13,opt,name=reason,proto3,enum=octelium.api.main.enterprise.v1.AuthenticationLog_Entry_Failure_Reason" json:"reason,omitempty"`
@@ -4631,8 +4640,10 @@ type ListAuthenticationLogTopCredentialRequest struct {
 	AuthenticatorRef    *metav1.ObjectReference `protobuf:"bytes,11,opt,name=authenticatorRef,proto3" json:"authenticatorRef,omitempty"`
 	From                *timestamppb.Timestamp  `protobuf:"bytes,4,opt,name=from,proto3" json:"from,omitempty"`
 	To                  *timestamppb.Timestamp  `protobuf:"bytes,5,opt,name=to,proto3" json:"to,omitempty"`
-	// Status only counts the entries of this Status. When it is unset, both the
-	// successful and the failed authentications are counted.
+	// Status only counts the entries of this Status. Note that SUCCESS also
+	// matches the entries that were recorded before the Status was introduced.
+	// When it is unset, both the successful and the failed authentications are
+	// counted.
 	Status enterprisev1.AuthenticationLog_Entry_Status `protobuf:"varint,12,opt,name=status,proto3,enum=octelium.api.main.enterprise.v1.AuthenticationLog_Entry_Status" json:"status,omitempty"`
 	// Reason only counts the failed authentication attempts of this reason.
 	Reason enterprisev1.AuthenticationLog_Entry_Failure_Reason `protobuf:"varint,13,opt,name=reason,proto3,enum=octelium.api.main.enterprise.v1.AuthenticationLog_Entry_Failure_Reason" json:"reason,omitempty"`
@@ -4817,8 +4828,10 @@ type ListAuthenticationLogTopIdentityProviderRequest struct {
 	AuthenticatorRef    *metav1.ObjectReference `protobuf:"bytes,11,opt,name=authenticatorRef,proto3" json:"authenticatorRef,omitempty"`
 	From                *timestamppb.Timestamp  `protobuf:"bytes,4,opt,name=from,proto3" json:"from,omitempty"`
 	To                  *timestamppb.Timestamp  `protobuf:"bytes,5,opt,name=to,proto3" json:"to,omitempty"`
-	// Status only counts the entries of this Status. When it is unset, both the
-	// successful and the failed authentications are counted.
+	// Status only counts the entries of this Status. Note that SUCCESS also
+	// matches the entries that were recorded before the Status was introduced.
+	// When it is unset, both the successful and the failed authentications are
+	// counted.
 	Status enterprisev1.AuthenticationLog_Entry_Status `protobuf:"varint,12,opt,name=status,proto3,enum=octelium.api.main.enterprise.v1.AuthenticationLog_Entry_Status" json:"status,omitempty"`
 	// Reason only counts the failed authentication attempts of this reason.
 	Reason enterprisev1.AuthenticationLog_Entry_Failure_Reason `protobuf:"varint,13,opt,name=reason,proto3,enum=octelium.api.main.enterprise.v1.AuthenticationLog_Entry_Failure_Reason" json:"reason,omitempty"`
