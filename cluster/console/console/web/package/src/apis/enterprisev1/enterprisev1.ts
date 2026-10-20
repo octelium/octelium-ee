@@ -10255,8 +10255,10 @@ export interface SynchronizeDirectoryProviderResponse {
 }
 /**
  * AuthenticationLog is a log entry that records a single authentication of a
- * Session (e.g. an OIDC login or a Credential-based authentication). A Session
- * that re-authenticates produces more than one AuthenticationLog.
+ * Session (e.g. an OIDC login or a Credential-based authentication) or a single
+ * failed authentication attempt (e.g. an invalid Authenticator challenge
+ * response or an expired Credential). A Session that re-authenticates produces
+ * more than one AuthenticationLog.
  *
  * @generated from protobuf message octelium.api.main.enterprise.v1.AuthenticationLog
  */
@@ -10293,13 +10295,16 @@ export interface AuthenticationLog {
  */
 export interface AuthenticationLog_Entry {
     /**
-     * SessionRef is a reference to the Session that authenticated.
+     * SessionRef is a reference to the Session that authenticated. For a
+     * failed authentication attempt, it is only set if the attempt was made by
+     * an existing Session (e.g. a re-authentication).
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference sessionRef = 1
      */
     sessionRef?: ObjectReference;
     /**
-     * UserRef is a reference to the User that owns the Session.
+     * UserRef is a reference to the User that owns the Session. For a failed
+     * authentication attempt, it is only set if the User could be identified.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 2
      */
@@ -10312,18 +10317,174 @@ export interface AuthenticationLog_Entry {
     deviceRef?: ObjectReference;
     /**
      * Authentication is the authentication information of the Session (e.g.
-     * its type, its assurance level and its GeoIP information).
+     * its type, its assurance level and its GeoIP information). For a failed
+     * authentication attempt, only the `info` (i.e. the attempted method, its
+     * IdentityProvider, Credential or Authenticator, and the downstream
+     * information) and the `setAt` fields are set.
      *
      * @generated from protobuf field: octelium.api.main.core.v1.Session.Status.Authentication authentication = 4
      */
     authentication?: Session_Status_Authentication;
     /**
      * AuthenticationIndex is the zero-based index of this authentication among
-     * the Session's total authentications.
+     * the Session's total authentications. It is not used by failed
+     * authentication attempts.
      *
      * @generated from protobuf field: uint32 authenticationIndex = 5
      */
     authenticationIndex: number;
+    /**
+     * Status is the result of the authentication.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 6
+     */
+    status: AuthenticationLog_Entry_Status;
+    /**
+     * Failure is the information of the failed authentication attempt. It is
+     * only set when the Status is FAILURE.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure failure = 7
+     */
+    failure?: AuthenticationLog_Entry_Failure;
+}
+/**
+ * Failure is the information of a failed authentication attempt
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure
+ */
+export interface AuthenticationLog_Entry_Failure {
+    /**
+     * Reason is the reason for which the authentication attempt was
+     * rejected.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 1
+     */
+    reason: AuthenticationLog_Entry_Failure_Reason;
+}
+/**
+ * Reason is the reason for which the authentication attempt was rejected
+ *
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
+ */
+export enum AuthenticationLog_Entry_Failure_Reason {
+    /**
+     * REASON_UNSET means that the reason is unknown
+     *
+     * @generated from protobuf enum value: REASON_UNSET = 0;
+     */
+    REASON_UNSET = 0,
+    /**
+     * INVALID_CREDENTIAL means that the presented proof was invalid (e.g.
+     * a wrong TOTP code, a FIDO or a TPM verification failure, an invalid
+     * OIDC assertion, a mismatched PKCE code verifier or OAuth2 client ID,
+     * or an IdentityProvider callback that could not be verified).
+     *
+     * @generated from protobuf enum value: INVALID_CREDENTIAL = 1;
+     */
+    INVALID_CREDENTIAL = 1,
+    /**
+     * EXPIRED_CREDENTIAL means that the Credential, the Session or the
+     * Authenticator challenge expired, or that the Credential exceeded its
+     * maximum number of authentications.
+     *
+     * @generated from protobuf enum value: EXPIRED_CREDENTIAL = 2;
+     */
+    EXPIRED_CREDENTIAL = 2,
+    /**
+     * REVOKED_CREDENTIAL means that a valid token was presented for a
+     * Credential or a Session that no longer accepts it (i.e. it was
+     * deleted, disabled, locked, rejected or its token was rotated). Note
+     * that reusing an already rotated refresh token falls into this
+     * reason.
+     *
+     * @generated from protobuf enum value: REVOKED_CREDENTIAL = 3;
+     */
+    REVOKED_CREDENTIAL = 3,
+    /**
+     * USER_NOT_FOUND means that the authenticated identity does not belong
+     * to any User.
+     *
+     * @generated from protobuf enum value: USER_NOT_FOUND = 4;
+     */
+    USER_NOT_FOUND = 4,
+    /**
+     * USER_DEACTIVATED means that the User is deactivated.
+     *
+     * @generated from protobuf enum value: USER_DEACTIVATED = 5;
+     */
+    USER_DEACTIVATED = 5,
+    /**
+     * USER_LOCKED means that the User is locked.
+     *
+     * @generated from protobuf enum value: USER_LOCKED = 6;
+     */
+    USER_LOCKED = 6,
+    /**
+     * DENIED_BY_RULE means that the authentication was denied by a
+     * post-authentication rule of the IdentityProvider or of the
+     * Authenticators.
+     *
+     * @generated from protobuf enum value: DENIED_BY_RULE = 7;
+     */
+    DENIED_BY_RULE = 7,
+    /**
+     * NOT_ALLOWED means that the authentication method is not allowed for
+     * the User, the Session, the Device or the Authenticator (e.g. a User
+     * of the wrong type, an inactive Authenticator or a disabled
+     * IdentityProvider).
+     *
+     * @generated from protobuf enum value: NOT_ALLOWED = 8;
+     */
+    NOT_ALLOWED = 8,
+    /**
+     * LIMIT_EXCEEDED means that a limit was exceeded (e.g. the maximum
+     * number of Sessions per User or the re-authentication rate limit).
+     *
+     * @generated from protobuf enum value: LIMIT_EXCEEDED = 9;
+     */
+    LIMIT_EXCEEDED = 9,
+    /**
+     * IDENTITY_PROVIDER_ERROR means that the IdentityProvider returned an
+     * error instead of authenticating the User (e.g. the User denied the
+     * consent or failed to authenticate to the IdentityProvider).
+     *
+     * @generated from protobuf enum value: IDENTITY_PROVIDER_ERROR = 10;
+     */
+    IDENTITY_PROVIDER_ERROR = 10,
+    /**
+     * INTERNAL_ERROR means that the authentication could not be completed
+     * because of an internal error.
+     *
+     * @generated from protobuf enum value: INTERNAL_ERROR = 11;
+     */
+    INTERNAL_ERROR = 11
+}
+/**
+ * Status is the result of the authentication
+ *
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
+ */
+export enum AuthenticationLog_Entry_Status {
+    /**
+     * STATUS_UNSET is only used by the AuthenticationLogs that were recorded
+     * before the Status was introduced, all of which are successful
+     * authentications.
+     *
+     * @generated from protobuf enum value: STATUS_UNSET = 0;
+     */
+    STATUS_UNSET = 0,
+    /**
+     * SUCCESS means that the Session successfully authenticated.
+     *
+     * @generated from protobuf enum value: SUCCESS = 1;
+     */
+    SUCCESS = 1,
+    /**
+     * FAILURE means that the authentication attempt was rejected.
+     *
+     * @generated from protobuf enum value: FAILURE = 2;
+     */
+    FAILURE = 2
 }
 /**
  * UpgradeClusterRequest is the request of the UpgradeCluster method.
@@ -31238,12 +31399,15 @@ class AuthenticationLog_Entry$Type extends MessageType<AuthenticationLog_Entry> 
             { no: 2, name: "userRef", kind: "message", T: () => ObjectReference },
             { no: 3, name: "deviceRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "authentication", kind: "message", T: () => Session_Status_Authentication },
-            { no: 5, name: "authenticationIndex", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 5, name: "authenticationIndex", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 6, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status", AuthenticationLog_Entry_Status] },
+            { no: 7, name: "failure", kind: "message", T: () => AuthenticationLog_Entry_Failure }
         ]);
     }
     create(value?: PartialMessage<AuthenticationLog_Entry>): AuthenticationLog_Entry {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.authenticationIndex = 0;
+        message.status = 0;
         if (value !== undefined)
             reflectionMergePartial<AuthenticationLog_Entry>(this, message, value);
         return message;
@@ -31267,6 +31431,12 @@ class AuthenticationLog_Entry$Type extends MessageType<AuthenticationLog_Entry> 
                     break;
                 case /* uint32 authenticationIndex */ 5:
                     message.authenticationIndex = reader.uint32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status */ 6:
+                    message.status = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure failure */ 7:
+                    message.failure = AuthenticationLog_Entry_Failure.internalBinaryRead(reader, reader.uint32(), options, message.failure);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -31295,6 +31465,12 @@ class AuthenticationLog_Entry$Type extends MessageType<AuthenticationLog_Entry> 
         /* uint32 authenticationIndex = 5; */
         if (message.authenticationIndex !== 0)
             writer.tag(5, WireType.Varint).uint32(message.authenticationIndex);
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 6; */
+        if (message.status !== 0)
+            writer.tag(6, WireType.Varint).int32(message.status);
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure failure = 7; */
+        if (message.failure)
+            AuthenticationLog_Entry_Failure.internalBinaryWrite(message.failure, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -31305,6 +31481,53 @@ class AuthenticationLog_Entry$Type extends MessageType<AuthenticationLog_Entry> 
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.AuthenticationLog.Entry
  */
 export const AuthenticationLog_Entry = new AuthenticationLog_Entry$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class AuthenticationLog_Entry_Failure$Type extends MessageType<AuthenticationLog_Entry_Failure> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure", [
+            { no: 1, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] }
+        ]);
+    }
+    create(value?: PartialMessage<AuthenticationLog_Entry_Failure>): AuthenticationLog_Entry_Failure {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.reason = 0;
+        if (value !== undefined)
+            reflectionMergePartial<AuthenticationLog_Entry_Failure>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: AuthenticationLog_Entry_Failure): AuthenticationLog_Entry_Failure {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason */ 1:
+                    message.reason = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: AuthenticationLog_Entry_Failure, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 1; */
+        if (message.reason !== 0)
+            writer.tag(1, WireType.Varint).int32(message.reason);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure
+ */
+export const AuthenticationLog_Entry_Failure = new AuthenticationLog_Entry_Failure$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class UpgradeClusterRequest$Type extends MessageType<UpgradeClusterRequest> {
     constructor() {

@@ -1,7 +1,12 @@
+import { AuthenticationLog_Entry_Status } from "@/apis/enterprisev1/enterprisev1";
 import SeriesChart from "@/components/Charts/SeriesChart";
 import { CompositionBar } from "@/components/ResourceInventory/InventoryTable";
 import TopList from "@/components/TopList";
-import { seriesColor, useChartColorScheme } from "@/utils/charts/palette";
+import {
+  seriesColor,
+  STATUS_COLORS,
+  useChartColorScheme,
+} from "@/utils/charts/palette";
 import { n, periodLabel } from "@/utils/visibility";
 import { QUERY_PRIORITY } from "@/utils/visibility/queue";
 import {
@@ -12,17 +17,23 @@ import {
   Terminal,
   User,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   MiniStat,
   MiniStatGrid,
   Panel,
-  toPoints,
+  seriesPoints,
 } from "@/components/Dashboard/components";
 import {
+  AUTH_BY_STATUS,
   useAuthDataPoint,
   useAuthSummary,
   useAuthTop,
 } from "@/components/Dashboard/queries";
+import {
+  getFailedAuthenticationLogsPath,
+  getFailureReasonSegments,
+} from "@/components/AuthenticationLogViewer/failure";
 
 const Identity = (props: { periodMinutes: number }) => {
   const { periodMinutes } = props;
@@ -30,7 +41,17 @@ const Identity = (props: { periodMinutes: number }) => {
   useChartColorScheme();
 
   const summary = useAuthSummary(periodMinutes, QUERY_PRIORITY.critical);
-  const dataPoints = useAuthDataPoint(periodMinutes, QUERY_PRIORITY.high);
+  const failures = useAuthSummary(
+    periodMinutes,
+    QUERY_PRIORITY.high,
+    AuthenticationLog_Entry_Status.FAILURE,
+  );
+  const dataPoints = useAuthDataPoint(
+    periodMinutes,
+    QUERY_PRIORITY.high,
+    AUTH_BY_STATUS,
+    AuthenticationLog_Entry_Status.STATUS_UNSET,
+  );
   const topUsers = useAuthTop("user", periodMinutes, QUERY_PRIORITY.normal);
   const topProviders = useAuthTop("identityProvider", periodMinutes);
 
@@ -41,6 +62,10 @@ const Identity = (props: { periodMinutes: number }) => {
     { label: "AAL3", value: n(data?.totalAAL3) },
   ];
   const assuranceTotal = assurance.reduce((sum, item) => sum + item.value, 0);
+  const failed = n(failures.data?.totalNumber);
+  const failureReasons = getFailureReasonSegments(
+    failures.data?.totalByFailureReason,
+  );
 
   const userItems = (topUsers.data?.items ?? [])
     .map((item: any) => ({ resource: item.user, count: item.count }))
@@ -56,7 +81,7 @@ const Identity = (props: { periodMinutes: number }) => {
     <Panel
       icon={ShieldUser}
       title="Identity & authentication"
-      description={`Logins, re-authentications and assurance levels in the last ${rangeLabel}`}
+      description={`Logins, failed sign-ins, re-authentications and assurance levels in the last ${rangeLabel}`}
       to="/visibility/authenticationlogs"
       toLabel="Authentication logs"
     >
@@ -99,7 +124,7 @@ const Identity = (props: { periodMinutes: number }) => {
           />
         </MiniStatGrid>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className="flex flex-col gap-2.5 rounded-lg border border-slate-200 bg-slate-50/60 px-3.5 py-3">
             <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
               Assurance levels
@@ -144,15 +169,40 @@ const Identity = (props: { periodMinutes: number }) => {
               </span>
             </div>
           </div>
+
+          <div className="flex flex-col gap-2.5 rounded-lg border border-slate-200 bg-slate-50/60 px-3.5 py-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
+                Failed sign-ins
+              </span>
+              <Link
+                to={getFailedAuthenticationLogsPath()}
+                className="text-micro font-semibold tabular-nums text-slate-700 hover:underline"
+              >
+                {failed.toLocaleString()}
+              </Link>
+            </div>
+            <CompositionBar
+              segments={failureReasons.map((item) => ({
+                label: item.label,
+                value: item.value,
+              }))}
+              total={failed}
+            />
+          </div>
         </div>
 
         <SeriesChart
           height={260}
-          colors={[seriesColor(1)]}
+          colors={[seriesColor(1), STATUS_COLORS.critical]}
           series={[
             {
-              name: "Authentications",
-              points: toPoints(dataPoints.data?.datapoints),
+              name: "Successful",
+              points: seriesPoints(dataPoints.data?.series, "SUCCESS"),
+            },
+            {
+              name: "Failed",
+              points: seriesPoints(dataPoints.data?.series, "FAILURE"),
             },
           ]}
           emptyLabel={`No authentications in the last ${rangeLabel}`}

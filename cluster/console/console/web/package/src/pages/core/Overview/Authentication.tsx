@@ -1,3 +1,4 @@
+import { AuthenticationLog_Entry_Status } from "@/apis/enterprisev1/enterprisev1";
 import SeriesChart from "@/components/Charts/SeriesChart";
 import {
   Breakdown,
@@ -15,6 +16,10 @@ import { compact } from "@/components/Dashboard/utils";
 import { CompositionBar } from "@/components/ResourceInventory/InventoryTable";
 import TopList from "@/components/TopList";
 import {
+  getFailedAuthenticationLogsPath,
+  getFailureReasonSegments,
+} from "@/components/AuthenticationLogViewer/failure";
+import {
   STATUS_COLORS,
   seriesColor,
   useChartColorScheme,
@@ -29,6 +34,7 @@ import {
   ShieldUser,
   Usb,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { AUTH_BY_ASSURANCE, useCoreTotals } from "./queries";
 
 const Authentication = (props: { periodMinutes: number }) => {
@@ -38,6 +44,11 @@ const Authentication = (props: { periodMinutes: number }) => {
 
   const totals = useCoreTotals(periodMinutes, QUERY_PRIORITY.critical);
   const summary = useAuthSummary(periodMinutes, QUERY_PRIORITY.high);
+  const failures = useAuthSummary(
+    periodMinutes,
+    QUERY_PRIORITY.normal,
+    AuthenticationLog_Entry_Status.FAILURE,
+  );
   const dataPoints = useAuthDataPoint(
     periodMinutes,
     QUERY_PRIORITY.high,
@@ -49,6 +60,7 @@ const Authentication = (props: { periodMinutes: number }) => {
   const data = summary.data;
   const registered = totals.data?.core?.authenticator;
   const logins = n(data?.totalNumber);
+  const failed = n(failures.data?.totalNumber);
 
   const userItems = (topUsers.data?.items ?? [])
     .map((item: any) => ({ resource: item.user, count: item.count }))
@@ -214,31 +226,52 @@ const Authentication = (props: { periodMinutes: number }) => {
           </Breakdown>
         </div>
 
-        <Breakdown
-          title="Assurance levels reached"
-          note={`${compact(logins)} logins`}
-        >
-          <CompositionBar
-            segments={[
-              {
-                label: "AAL1",
-                value: n(data?.totalAAL1),
-                color: STATUS_COLORS.warning,
-              },
-              {
-                label: "AAL2",
-                value: n(data?.totalAAL2),
-                color: seriesColor(0),
-              },
-              {
-                label: "AAL3",
-                value: n(data?.totalAAL3),
-                color: STATUS_COLORS.good,
-              },
-            ]}
-            total={logins}
-          />
-        </Breakdown>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Breakdown
+            title="Assurance levels reached"
+            note={`${compact(logins)} logins`}
+          >
+            <CompositionBar
+              segments={[
+                {
+                  label: "AAL1",
+                  value: n(data?.totalAAL1),
+                  color: STATUS_COLORS.warning,
+                },
+                {
+                  label: "AAL2",
+                  value: n(data?.totalAAL2),
+                  color: seriesColor(0),
+                },
+                {
+                  label: "AAL3",
+                  value: n(data?.totalAAL3),
+                  color: STATUS_COLORS.good,
+                },
+              ]}
+              total={logins}
+            />
+          </Breakdown>
+
+          <Breakdown
+            title={`Failed sign-ins · ${rangeLabel}`}
+            note={
+              <Link
+                to={getFailedAuthenticationLogsPath()}
+                className="hover:underline"
+              >
+                {`${compact(failed)} failed`}
+              </Link>
+            }
+          >
+            <CompositionBar
+              segments={getFailureReasonSegments(
+                failures.data?.totalByFailureReason,
+              ).map((item) => ({ label: item.label, value: item.value }))}
+              total={failed}
+            />
+          </Breakdown>
+        </div>
 
         {(userItems.length > 0 || providerItems.length > 0) && (
           <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">

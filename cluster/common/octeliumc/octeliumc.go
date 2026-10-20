@@ -25,6 +25,7 @@ import (
 	"github.com/octelium/octelium/apis/rsc/renterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rlockv1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/apis/rsc/rpubsubv1"
 	"github.com/octelium/octelium/apis/rsc/rratelimitv1"
 	"github.com/octelium/octelium/apis/rsc/rvectorv1"
 	"github.com/octelium/octelium/cluster/common/octeliumc"
@@ -39,6 +40,7 @@ type Client struct {
 	rateLimitC  rratelimitv1.MainServiceClient
 	lockC       rlockv1.MainServiceClient
 	vectorC     rvectorv1.MainServiceClient
+	pubSubC     rpubsubv1.MainServiceClient
 	enterpriseC renterprisev1.ResourceServiceClient
 
 	coreV1UtilsC       *coreV1UtilsC
@@ -137,6 +139,7 @@ func NewClient(ctx context.Context, opts *Opts) (*Client, error) {
 		rateLimitC:  rratelimitv1.NewMainServiceClient(grpcConn),
 		lockC:       rlockv1.NewMainServiceClient(grpcConn),
 		vectorC:     rvectorv1.NewMainServiceClient(grpcConn),
+		pubSubC:     rpubsubv1.NewMainServiceClient(grpcConn),
 		enterpriseC: renterprisev1.NewResourceServiceClient(grpcConn),
 		accessC:     raccessv1.NewResourceServiceClient(grpcConn),
 		cordiumC:    rcordiumv1.NewResourceServiceClient(cordiumConn),
@@ -174,6 +177,10 @@ func (c *Client) LockC() rlockv1.MainServiceClient {
 
 func (c *Client) VectorC() rvectorv1.MainServiceClient {
 	return c.vectorC
+}
+
+func (c *Client) PubSubC() rpubsubv1.MainServiceClient {
+	return c.pubSubC
 }
 
 func (c *Client) EnterpriseC() renterprisev1.ResourceServiceClient {

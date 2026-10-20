@@ -1,4 +1,5 @@
 import { ComponentLog_Entry_Level } from "@/apis/corev1/corev1";
+import { AuthenticationLog_Entry_Status } from "@/apis/enterprisev1/enterprisev1";
 import {
   GetAccessLogDataPointRequest,
   GetAccessLogDataPointRequest_GroupBy,
@@ -48,6 +49,12 @@ import {
   summaryKey,
   useDashboardQuery,
 } from "./utils";
+
+export const AUTH_BY_STATUS = {
+  name: "status",
+  dimension: GetAuthenticationLogDataPointRequest_GroupBy.STATUS,
+  limitSeries: 2,
+};
 
 const AUDIT_REFS = {
   userRef: null,
@@ -234,11 +241,16 @@ export const useAccessDenyReasons = (
   });
 };
 
-export const useAuthSummary = (periodMinutes: number, priority: number) => {
+export const useAuthSummary = (
+  periodMinutes: number,
+  priority: number,
+  status: AuthenticationLog_Entry_Status = AuthenticationLog_Entry_Status.SUCCESS,
+) => {
   return useDashboardQuery({
     queryKey: [
       ...visibilityKeys.authSummary("current", periodMinutes, NO_REFS),
       "compare",
+      status,
     ],
     priority,
     fetch: async (signal) => {
@@ -250,6 +262,7 @@ export const useAuthSummary = (periodMinutes: number, priority: number) => {
             to: toTs(curTo),
             compareFrom: toTs(prevFrom),
             compareTo: toTs(prevTo),
+            status,
           }),
           { abort: signal },
         )
@@ -266,6 +279,7 @@ export const useAuthDataPoint = (
     dimension: GetAuthenticationLogDataPointRequest_GroupBy;
     limitSeries: number;
   },
+  status: AuthenticationLog_Entry_Status = AuthenticationLog_Entry_Status.SUCCESS,
 ) => {
   const interval = getAutoInterval(periodMinutes);
 
@@ -273,6 +287,7 @@ export const useAuthDataPoint = (
     queryKey: [
       ...visibilityKeys.authDataPoint(periodMinutes, NO_REFS),
       groupBy?.name ?? null,
+      status,
     ],
     priority,
     refetchMillis: POINT_REFETCH,
@@ -286,6 +301,7 @@ export const useAuthDataPoint = (
             interval,
             groupBy: groupBy?.dimension,
             limitSeries: groupBy?.limitSeries,
+            status,
           }),
           { abort: signal },
         )
@@ -490,9 +506,10 @@ export const useAuthTop = (
   resource: keyof typeof authTopMethod,
   periodMinutes: number,
   priority: number = QUERY_PRIORITY.low,
+  status: AuthenticationLog_Entry_Status = AuthenticationLog_Entry_Status.SUCCESS,
 ) => {
   return useDashboardQuery<TopResponse>({
-    queryKey: [...dashboardKeys.authTop(resource, periodMinutes)],
+    queryKey: [...dashboardKeys.authTop(resource, periodMinutes), status],
     priority,
     fetch: async (signal) => {
       const { curFrom, curTo } = buildTimestamps(periodMinutes);
@@ -502,6 +519,7 @@ export const useAuthTop = (
             from: toTs(curFrom),
             to: toTs(curTo),
             limit: TOP_LIMIT,
+            status,
           }),
           { abort: signal },
         )

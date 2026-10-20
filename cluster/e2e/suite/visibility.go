@@ -16,6 +16,7 @@ import (
 	"time"
 
 	eeharness "github.com/octelium/octelium-ee/cluster/e2e/harness"
+	"github.com/octelium/octelium/apis/main/authv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
@@ -247,6 +248,115 @@ func topUserCount(items []*visibilityv1.ListAccessLogTopUserResponse_Item,
 	}
 
 	return items[idx].Count
+}
+
+func testAuthenticationLogFailure(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+
+	from := pbutils.Timestamp(time.Now().Add(-time.Minute))
+
+	usr := h.CreateWorkloadUser(t, &corev1.User_Spec_Authorization{
+		InlinePolicies: harness.InlineAllowAny("allow"),
+	})
+
+	cred := h.CreateCredential(t, harness.CredentialOpts{
+		User:        usr.Metadata.Name,
+		Type:        corev1.Credential_Spec_AUTH_TOKEN,
+		SessionType: corev1.Session_Status_CLIENTLESS,
+	})
+
+	tkn := h.CredentialToken(t, cred).GetAuthenticationToken()
+	require.NotNil(t, tkn)
+
+	{
+		ctx, cancel := h.Ctx(t)
+		defer cancel()
+
+		cur, err := h.CoreC().GetCredential(ctx, &metav1.GetOptions{Uid: cred.Metadata.Uid})
+		require.Nil(t, err)
+
+		cur.Spec.IsDisabled = true
+		_, err = h.CoreC().UpdateCredential(ctx, cur)
+		require.Nil(t, err)
+	}
+
+	authC := h.AuthC(t)
+
+	var entry *enterprisev1.AuthenticationLog
+
+	h.Eventually(t, "the authentication log to carry the failed attempt",
+		eeharness.IngestionBudget, func(ctx context.Context) error {
+			if _, err := authC.AuthenticateWithAuthenticationToken(ctx,
+				&authv1.AuthenticateWithAuthenticationTokenRequest{
+					AuthenticationToken: tkn.AuthenticationToken,
+				}); err == nil {
+				return errors.Errorf("the disabled Credential authenticated")
+			}
+
+			res, err := h.AuthenticationLogC().ListAuthenticationLog(ctx,
+				&visibilityv1.ListAuthenticationLogRequest{
+					CredentialRef: umetav1.GetObjectReference(cred),
+					Status:        enterprisev1.AuthenticationLog_Entry_FAILURE,
+					From:          from,
+				})
+			if err != nil {
+				return err
+			}
+			if len(res.Items) < 1 {
+				return errors.Errorf("the authentication log has no failed attempt for the Credential")
+			}
+
+			entry = res.Items[0]
+			return nil
+		})
+
+	t.Run("TheEntryDescribesTheFailure", func(t *testing.T) {
+		require.NotNil(t, entry.Entry)
+		require.NotNil(t, entry.Entry.Failure)
+		require.NotNil(t, entry.Entry.Authentication)
+
+		assert.Equal(t, enterprisev1.AuthenticationLog_Entry_FAILURE, entry.Entry.Status)
+		assert.Equal(t, enterprisev1.AuthenticationLog_Entry_Failure_REVOKED_CREDENTIAL,
+			entry.Entry.Failure.Reason)
+		assert.Equal(t, corev1.Session_Status_Authentication_Info_CREDENTIAL,
+			entry.Entry.Authentication.Info.GetType())
+		assert.Equal(t, cred.Metadata.Uid,
+			entry.Entry.Authentication.Info.GetCredential().GetCredentialRef().GetUid())
+		assert.Equal(t, usr.Metadata.Uid, entry.Entry.UserRef.GetUid())
+		assert.Nil(t, entry.Entry.SessionRef)
+		assert.NotEmpty(t, entry.Metadata.Id)
+	})
+
+	t.Run("TheSummaryCountsTheFailure", func(t *testing.T) {
+		ctx, cancel := h.Ctx(t)
+		defer cancel()
+
+		res, err := h.AuthenticationLogC().GetAuthenticationLogSummary(ctx,
+			&visibilityv1.GetAuthenticationLogSummaryRequest{
+				CredentialRef: umetav1.GetObjectReference(cred),
+				From:          from,
+			})
+		require.Nil(t, err)
+
+		assert.True(t, res.TotalFailure > 0)
+		assert.Equal(t, uint64(0), res.TotalSuccess)
+		assert.Equal(t, res.TotalNumber, res.TotalFailure)
+		assert.True(t, res.TotalByFailureReason[enterprisev1.AuthenticationLog_Entry_Failure_REVOKED_CREDENTIAL.String()] > 0)
+	})
+
+	t.Run("TheSuccessfulLogsExcludeTheFailure", func(t *testing.T) {
+		ctx, cancel := h.Ctx(t)
+		defer cancel()
+
+		res, err := h.AuthenticationLogC().ListAuthenticationLog(ctx,
+			&visibilityv1.ListAuthenticationLogRequest{
+				CredentialRef: umetav1.GetObjectReference(cred),
+				Status:        enterprisev1.AuthenticationLog_Entry_SUCCESS,
+				From:          from,
+			})
+		require.Nil(t, err)
+		assert.Empty(t, res.Items)
+	})
 }
 
 func testAuthenticationLogTrail(t *testing.T, ch *harness.H) {

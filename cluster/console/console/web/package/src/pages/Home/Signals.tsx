@@ -1,4 +1,5 @@
 import { AccessLog_Entry_Common_Status } from "@/apis/corev1/corev1";
+import { AuthenticationLog_Entry_Status } from "@/apis/enterprisev1/enterprisev1";
 import { GetClusterSummaryRequest_Kind } from "@/apis/visibilityv1/visibilityv1";
 import {
   seriesColor,
@@ -23,6 +24,10 @@ import {
   summaryTileState,
 } from "@/components/Dashboard/queries";
 import { compact } from "@/components/Dashboard/utils";
+import {
+  getFailedAuthenticationLogsPath,
+  getFailureReasonSegments,
+} from "@/components/AuthenticationLogViewer/failure";
 
 const Signals = (props: { periodMinutes: number }) => {
   const { periodMinutes } = props;
@@ -36,6 +41,17 @@ const Signals = (props: { periodMinutes: number }) => {
   );
   const auth = useAuthSummary(periodMinutes, QUERY_PRIORITY.critical);
   const authPoints = useAuthDataPoint(periodMinutes, QUERY_PRIORITY.high);
+  const authFailures = useAuthSummary(
+    periodMinutes,
+    QUERY_PRIORITY.high,
+    AuthenticationLog_Entry_Status.FAILURE,
+  );
+  const authFailurePoints = useAuthDataPoint(
+    periodMinutes,
+    QUERY_PRIORITY.normal,
+    undefined,
+    AuthenticationLog_Entry_Status.FAILURE,
+  );
 
   const cluster = useClusterSummary(
     "total",
@@ -61,6 +77,12 @@ const Signals = (props: { periodMinutes: number }) => {
   const deniedPrev = n(access.data?.previous?.totalDenied);
   const logins = n(auth.data?.totalNumber);
   const loginsPrev = n(auth.data?.previous?.totalNumber);
+  const failedLogins = n(authFailures.data?.totalNumber);
+  const failedLoginsPrev = n(authFailures.data?.previous?.totalNumber);
+  const topFailureReason = getFailureReasonSegments(
+    authFailures.data?.totalByFailureReason,
+    1,
+  )[0];
 
   const sessions = cluster.data?.core?.session;
   const requests = cluster.data?.access?.request;
@@ -82,7 +104,7 @@ const Signals = (props: { periodMinutes: number }) => {
   return (
     <section
       aria-label="Cluster signals"
-      className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+      className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7"
     >
       <StatTile
         label="Requests"
@@ -126,10 +148,32 @@ const Signals = (props: { periodMinutes: number }) => {
         trend={{ cur: logins, prev: loginsPrev, upIsGood: true, rangeLabel }}
         points={toPoints(authPoints.data?.datapoints)}
         color={seriesColor(1)}
-        to="/visibility/authenticationlogs"
+        to="/visibility/authenticationlogs?status=success"
         isLoading={auth.isLoading}
         isError={auth.isError}
         hasData={auth.data !== undefined}
+      />
+
+      <StatTile
+        label="Failed logins"
+        value={failedLogins}
+        footer={
+          topFailureReason
+            ? `Mostly ${topFailureReason.label.toLowerCase()} · ${compact(n(authFailures.data?.totalUser))} users`
+            : `No failed logins in the last ${rangeLabel}`
+        }
+        trend={{
+          cur: failedLogins,
+          prev: failedLoginsPrev,
+          upIsGood: false,
+          rangeLabel,
+        }}
+        points={toPoints(authFailurePoints.data?.datapoints)}
+        color={STATUS_COLORS.critical}
+        to={getFailedAuthenticationLogsPath()}
+        isLoading={authFailures.isLoading}
+        isError={authFailures.isError}
+        hasData={authFailures.data !== undefined}
       />
 
       <StatTile

@@ -1,3 +1,4 @@
+import { AuthenticationLog_Entry_Status } from "@/apis/enterprisev1/enterprisev1";
 import { GetClusterSummaryRequest_Kind } from "@/apis/visibilityv1/visibilityv1";
 import { StatTile, toPoints } from "@/components/Dashboard/components";
 import { compact } from "@/components/Dashboard/utils";
@@ -23,6 +24,11 @@ const Signals = (props: { periodMinutes: number }) => {
   const totals = useCoreTotals(periodMinutes, QUERY_PRIORITY.critical);
   const created = useCoreCreated(periodMinutes, QUERY_PRIORITY.critical);
   const auth = useAuthSummary(periodMinutes, QUERY_PRIORITY.high);
+  const authFailures = useAuthSummary(
+    periodMinutes,
+    QUERY_PRIORITY.normal,
+    AuthenticationLog_Entry_Status.FAILURE,
+  );
   const authPoints = useAuthDataPoint(
     periodMinutes,
     QUERY_PRIORITY.high,
@@ -113,7 +119,7 @@ const Signals = (props: { periodMinutes: number }) => {
             ? `${Math.round((strongLogins / logins) * 100)}% AAL2+`
             : undefined
         }
-        footer={`${compact(n(auth.data?.totalUser))} users · ${compact(n(auth.data?.totalReauthentication))} re-auths`}
+        footer={`${compact(n(auth.data?.totalUser))} users · ${compact(n(auth.data?.totalReauthentication))} re-auths · ${compact(n(authFailures.data?.totalNumber))} failed`}
         trend={{
           cur: logins,
           prev: n(auth.data?.previous?.totalNumber),
@@ -122,7 +128,7 @@ const Signals = (props: { periodMinutes: number }) => {
         }}
         points={toPoints(authPoints.data?.datapoints)}
         color={seriesColor(1)}
-        to="/visibility/authenticationlogs"
+        to="/visibility/authenticationlogs?status=success"
         isLoading={auth.isLoading}
         isError={auth.isError}
         hasData={auth.data !== undefined}

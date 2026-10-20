@@ -757,27 +757,6 @@ func (s *tstVisibilityLog) GetAccessLogDataPoint(ctx context.Context, req *visib
 	return ret, nil
 }
 
-func (s *tstVisibilityLog) GetAuthenticationLogDataPoint(ctx context.Context, req *visibilityv1.GetAuthenticationLogDataPointRequest) (*visibilityv1.GetAuthenticationLogDataPointResponse, error) {
-	ret := &visibilityv1.GetAuthenticationLogDataPointResponse{}
-
-	start := utilrand.GetRandomRangeMath(1, 100)
-	end := utilrand.GetRandomRangeMath(start, 10*start)
-
-	max := 300
-	for i := range max {
-		n := utilrand.GetRandomRangeMath(start, end)
-		ts := time.Now().Add(time.Duration(i-max) * time.Hour)
-		start = n - n/2
-		end = n * 2
-		ret.Datapoints = append(ret.Datapoints, &visibilityv1.GetAuthenticationLogDataPointResponse_DataPoint{
-			Timestamp: pbutils.Timestamp(ts),
-			Count:     int64(utilrand.GetRandomRangeMath(10, 100)),
-		})
-	}
-
-	return ret, nil
-}
-
 func (s *tstVisibilityLog) ListSSHSessionRecording(ctx context.Context, req *visibilityv1.ListSSHSessionRecordingRequest) (*visibilityv1.ListSSHSessionRecordingResponse, error) {
 
 	return &visibilityv1.ListSSHSessionRecordingResponse{}, nil

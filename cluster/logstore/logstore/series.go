@@ -85,6 +85,10 @@ func getAuthenticationLogGroupBy(
 			expr: `json_extract_string(rsc, '$.entry.authentication.info.authenticator.authenticatorRef.uid')`,
 			kind: "Authenticator",
 		}
+	case visibilityv1.GetAuthenticationLogDataPointRequest_STATUS:
+		return &groupByDimension{expr: sqlAuthenticationStatus}
+	case visibilityv1.GetAuthenticationLogDataPointRequest_FAILURE_REASON:
+		return &groupByDimension{expr: jsonAuthenticationFailureReason}
 	default:
 		return nil
 	}

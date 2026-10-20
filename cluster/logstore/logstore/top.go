@@ -320,6 +320,7 @@ func (s *Server) listAuthenticationLogTopUser(ctx context.Context, req *visibili
 		return nil, err
 	}
 
+	filters = appendAuthenticationStatusFilters(filters, req.Status, req.Reason)
 	filters = appendTimeFilters(filters, req.From, req.To)
 
 	res, err := s.getTop(ctx, "authentication_logs", getTopLimit(req.Limit), "", "entry.userRef", filters)
@@ -379,6 +380,7 @@ func (s *Server) listAuthenticationLogTopCredential(ctx context.Context, req *vi
 		return nil, err
 	}
 
+	filters = appendAuthenticationStatusFilters(filters, req.Status, req.Reason)
 	filters = appendTimeFilters(filters, req.From, req.To)
 
 	res, err := s.getTop(ctx, "authentication_logs", getTopLimit(req.Limit), "", "entry.authentication.info.credential.credentialRef", filters)
@@ -442,9 +444,10 @@ func (s *Server) listAuthenticationLogTopIdentityProvider(ctx context.Context, r
 		return nil, err
 	}
 
+	filters = appendAuthenticationStatusFilters(filters, req.Status, req.Reason)
 	filters = appendTimeFilters(filters, req.From, req.To)
 
-	res, err := s.getTop(ctx, "authentication_logs", getTopLimit(req.Limit), "", "entry.identityProviderRef", filters)
+	res, err := s.getTop(ctx, "authentication_logs", getTopLimit(req.Limit), "", "entry.authentication.info.identityProvider.identityProviderRef", filters)
 	if err != nil {
 		return nil, err
 	}

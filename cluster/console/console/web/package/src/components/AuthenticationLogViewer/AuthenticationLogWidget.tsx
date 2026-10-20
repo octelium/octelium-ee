@@ -2,6 +2,7 @@ import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { Duration, ObjectReference } from "@/apis/metav1/metav1";
 import {
   GetAuthenticationLogDataPointRequest,
+  GetAuthenticationLogDataPointRequest_GroupBy,
   GetAuthenticationLogSummaryRequest,
   ListAuthenticationLogTopCredentialRequest,
   ListAuthenticationLogTopIdentityProviderRequest,
@@ -15,14 +16,15 @@ import { Button, Menu } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import {
-  Activity,
   ArrowUpRight,
   ChevronDown,
   Fingerprint,
   KeyRound,
   Minus,
   Repeat2,
+  ShieldCheck,
   ShieldUser,
+  ShieldX,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
@@ -48,8 +50,24 @@ import {
   visibilityKeys,
 } from "@/utils/visibility";
 import PeriodSelector from "../LogWidget/PeriodSelector";
+import { getFailureReasonSegments } from "./failure";
 
-const TrendBadge = ({ cur, prev }: { cur: number; prev: number }) => {
+const FAILURE_REASON_COLORS = [
+  "bg-red-500",
+  "bg-orange-400",
+  "bg-amber-400",
+  "bg-rose-300",
+];
+
+const TrendBadge = ({
+  cur,
+  prev,
+  upIsGood = true,
+}: {
+  cur: number;
+  prev: number;
+  upIsGood?: boolean;
+}) => {
   const d = deltaPct(cur, prev);
   if ((cur === 0 && prev === 0) || d === 0)
     return (
@@ -62,7 +80,7 @@ const TrendBadge = ({ cur, prev }: { cur: number; prev: number }) => {
     <span
       className={twMerge(
         "inline-flex items-center gap-0.5 text-micro font-semibold",
-        up ? "text-emerald-600" : "text-red-500",
+        up === upIsGood ? "text-emerald-600" : "text-red-500",
       )}
     >
       {up ? (
@@ -90,13 +108,15 @@ const StatCard = ({
   icon: Icon,
   color,
   to,
+  upIsGood,
 }: {
   label: string;
   value: number;
   prevValue: number;
   icon: React.FC<any>;
-  color: "slate" | "blue" | "violet" | "amber" | "teal";
+  color: "slate" | "blue" | "violet" | "amber" | "teal" | "red";
   to?: string;
+  upIsGood?: boolean;
 }) => {
   const palette = {
     slate: {
@@ -129,6 +149,12 @@ const StatCard = ({
       icon: "text-teal-600",
       value: "text-teal-700",
     },
+    red: {
+      bg: "bg-red-50",
+      border: "border-red-100",
+      icon: "text-red-600",
+      value: "text-red-700",
+    },
   }[color];
 
   const content = (
@@ -141,7 +167,7 @@ const StatCard = ({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <TrendBadge cur={value} prev={prevValue} />
+          <TrendBadge cur={value} prev={prevValue} upIsGood={upIsGood} />
           {to && (
             <ArrowUpRight
               size={11}
@@ -218,6 +244,7 @@ interface AuthenticationLogHealthWidgetProps {
 
 const getAuthenticationLogPath = (
   props: AuthenticationLogHealthWidgetProps,
+  status?: string,
 ) => {
   const params = new URLSearchParams();
   const refs = [
@@ -233,6 +260,7 @@ const getAuthenticationLogPath = (
     if (ref?.name) params.set(`${key}.name`, ref.name);
     else if (ref?.uid) params.set(`${key}.uid`, ref.uid);
   });
+  if (status) params.set("status", status);
 
   const query = params.toString();
   return `/visibility/authenticationlogs${query ? `?${query}` : ""}`;
@@ -306,7 +334,7 @@ const AuthenticationLogHealthWidget = (
   });
 
   const dataPoint = useQuery({
-    queryKey: visibilityKeys.authDataPoint(periodMinutes, refKeys),
+    queryKey: [...visibilityKeys.authDataPoint(periodMinutes, refKeys), "status"],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAuthenticationLog().getAuthenticationLogDataPoint(
@@ -314,6 +342,8 @@ const AuthenticationLogHealthWidget = (
             from: toTs(curFrom),
             to: toTs(curTo),
             interval: autoInterval,
+            groupBy: GetAuthenticationLogDataPointRequest_GroupBy.STATUS,
+            limitSeries: 2,
             userRef: props.userRef,
             sessionRef: props.sessionRef,
             deviceRef: props.deviceRef,
@@ -396,6 +426,14 @@ const AuthenticationLogHealthWidget = (
   const isSummaryLoading = curSummary.isLoading || prevSummary.isLoading;
   const cur = curSummary.data;
   const prev = prevSummary.data;
+  const failureReasons = getFailureReasonSegments(cur?.totalByFailureReason);
+  const failurePoints = (
+    dataPoint.data?.series.find((item) => item.key === "FAILURE")?.datapoints ??
+    []
+  ).map((x) => ({
+    ts: x.timestamp!,
+    value: Number(x.count),
+  }));
 
   const isAnyLoading =
     isSummaryLoading ||
@@ -450,8 +488,8 @@ const AuthenticationLogHealthWidget = (
       )}
 
       {isSummaryLoading ? (
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-          {[0, 1, 2, 3].map((i) => (
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+          {[0, 1, 2, 3, 4].map((i) => (
             <div
               key={i}
               className="h-28 motion-safe:animate-pulse rounded-xl border border-slate-200 bg-slate-50"
@@ -460,14 +498,23 @@ const AuthenticationLogHealthWidget = (
         </div>
       ) : cur && prev ? (
         <>
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
             <StatCard
-              label="Total"
-              value={n(cur.totalNumber)}
-              prevValue={n(prev.totalNumber)}
-              icon={Activity}
+              label="Successful"
+              value={n(cur.totalSuccess)}
+              prevValue={n(prev.totalSuccess)}
+              icon={ShieldCheck}
               color="slate"
-              to={getAuthenticationLogPath(props)}
+              to={getAuthenticationLogPath(props, "success")}
+            />
+            <StatCard
+              label="Failed"
+              value={n(cur.totalFailure)}
+              prevValue={n(prev.totalFailure)}
+              icon={ShieldX}
+              color="red"
+              upIsGood={false}
+              to={getAuthenticationLogPath(props, "failure")}
             />
             <StatCard
               label="Identity Provider"
@@ -502,15 +549,15 @@ const AuthenticationLogHealthWidget = (
                   <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden flex">
                     {[
                       {
-                        pctVal: pct(n(cur.totalAAL1), n(cur.totalNumber)),
+                        pctVal: pct(n(cur.totalAAL1), n(cur.totalSuccess)),
                         color: "bg-blue-400",
                       },
                       {
-                        pctVal: pct(n(cur.totalAAL2), n(cur.totalNumber)),
+                        pctVal: pct(n(cur.totalAAL2), n(cur.totalSuccess)),
                         color: "bg-violet-500",
                       },
                       {
-                        pctVal: pct(n(cur.totalAAL3), n(cur.totalNumber)),
+                        pctVal: pct(n(cur.totalAAL3), n(cur.totalSuccess)),
                         color: "bg-teal-500",
                       },
                     ].map(({ pctVal, color }, i) => (
@@ -558,6 +605,46 @@ const AuthenticationLogHealthWidget = (
                   </div>
                 </div>
               </div>
+
+              {failureReasons.length > 0 && (
+                <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3">
+                  <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
+                    Failure reasons
+                  </span>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden flex">
+                      {failureReasons.map((item, i) => (
+                        <div
+                          key={item.reason}
+                          className={twMerge(
+                            "h-full transition-[width] duration-200",
+                            FAILURE_REASON_COLORS[i],
+                          )}
+                          style={{
+                            width: `${pct(item.value, n(cur.totalFailure))}%`,
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1">
+                      {failureReasons.map((item, i) => (
+                        <span
+                          key={item.reason}
+                          className="flex items-center gap-1 text-micro font-normal text-slate-500"
+                        >
+                          <span
+                            className={twMerge(
+                              "w-2 h-2 rounded-full shrink-0",
+                              FAILURE_REASON_COLORS[i],
+                            )}
+                          />
+                          {item.label}: {item.value.toLocaleString()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <MiniStat
@@ -643,6 +730,14 @@ const AuthenticationLogHealthWidget = (
           value: x.count,
         }))}
       />
+
+      {n(cur?.totalFailure) > 0 && (
+        <ChartPanel
+          caption={`Failed attempts — last ${rangeLabel}`}
+          tone="critical"
+          points={failurePoints}
+        />
+      )}
 
       {((showTopUsers && topUsers.data && topUsers.data?.items.length > 0) ||
         (showTopIdentityProviders &&

@@ -1,3 +1,7 @@
+import {
+  AuthenticationLog_Entry_Failure_Reason,
+  AuthenticationLog_Entry_Status,
+} from "@/apis/enterprisev1/enterprisev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { ObjectReference } from "@/apis/metav1/metav1";
 import {
@@ -13,6 +17,7 @@ import {
   RefreshCw,
   Shield,
   ShieldCheck,
+  ShieldX,
 } from "lucide-react";
 import { SummaryItemCount, SummaryItemCountWrap } from "../Summary";
 
@@ -26,6 +31,8 @@ const AuthenticationLogSummary = (props: {
   authenticatorRef?: ObjectReference;
   from?: Timestamp;
   to?: Timestamp;
+  status?: AuthenticationLog_Entry_Status;
+  reason?: AuthenticationLog_Entry_Failure_Reason;
 }) => {
   const qry = useQuery({
     queryKey: ["visibility", "getAuthenticationLogSummary", { ...props }],
@@ -45,7 +52,7 @@ const AuthenticationLogSummary = (props: {
     refetchInterval: refetchIntervalChart,
   });
 
-  const authenticationLogsPath = () => {
+  const authenticationLogsPath = (status?: string) => {
     const params = new URLSearchParams();
     const refs: Array<[string, ObjectReference | undefined]> = [
       ["userRef", props.userRef],
@@ -59,6 +66,7 @@ const AuthenticationLogSummary = (props: {
       const value = ref?.name || ref?.uid;
       if (value) params.set(`${key}.${ref?.name ? "name" : "uid"}`, value);
     });
+    if (status) params.set("status", status);
     const query = params.toString();
     return query
       ? `/visibility/authenticationlogs?${query}`
@@ -76,7 +84,7 @@ const AuthenticationLogSummary = (props: {
             showZero
             count={Math.max(
               0,
-              qry.data.totalNumber - qry.data.totalReauthentication,
+              qry.data.totalSuccess - qry.data.totalReauthentication,
             )}
             icon={LogIn}
           >
@@ -84,6 +92,9 @@ const AuthenticationLogSummary = (props: {
           </SummaryItemCount>
           <SummaryItemCount showZero count={qry.data.totalReauthentication} icon={RefreshCw}>
             Re-authentications
+          </SummaryItemCount>
+          <SummaryItemCount showZero count={qry.data.totalFailure} icon={ShieldX} to={authenticationLogsPath("failure")}>
+            Failed
           </SummaryItemCount>
           <SummaryItemCount showZero count={qry.data.totalAAL2} icon={Shield}>
             AAL2

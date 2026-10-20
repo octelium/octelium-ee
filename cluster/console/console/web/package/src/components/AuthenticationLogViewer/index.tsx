@@ -8,7 +8,11 @@ import {
   Session_Status_Authentication_Info_Authenticator_Mode,
   Session_Status_Authentication_Info_Type,
 } from "@/apis/corev1/corev1";
-import { AuthenticationLog } from "@/apis/enterprisev1/enterprisev1";
+import {
+  AuthenticationLog,
+  AuthenticationLog_Entry_Failure_Reason,
+  AuthenticationLog_Entry_Status,
+} from "@/apis/enterprisev1/enterprisev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { ObjectReference } from "@/apis/metav1/metav1";
 import {
@@ -20,10 +24,11 @@ import {
   getClientCore,
   getClientVisibilityAuthenticationLog,
 } from "@/utils/client";
+import { SegmentedControl, Select } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { Activity, ChevronDown, ShieldCheck, ShieldX } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
@@ -36,6 +41,11 @@ import AuthenticationLogSummary from "../LogSummary/AuthenticationLogSummary";
 import { ResourceListLabel } from "../ResourceList";
 import TimeAgo from "../TimeAgo";
 import { CompactSummary } from "../Summary";
+import {
+  AuthenticationLogStatusFilter,
+  FAILURE_REASONS,
+  getFailureReasonLabel,
+} from "./failure";
 
 const DetailField = ({
   label,
@@ -143,6 +153,80 @@ const BoolChip = ({ label }: { label: string }) => (
   </span>
 );
 
+const isAuthenticationLogFailure = (authLog: AuthenticationLog) =>
+  authLog.entry?.status === AuthenticationLog_Entry_Status.FAILURE;
+
+const getFailureReasonName = (authLog: AuthenticationLog) =>
+  AuthenticationLog_Entry_Failure_Reason[
+    authLog.entry?.failure?.reason ??
+      AuthenticationLog_Entry_Failure_Reason.REASON_UNSET
+  ];
+
+const getStatusValue = (status?: AuthenticationLogStatusFilter) =>
+  match(status)
+    .with("success", () => AuthenticationLog_Entry_Status.SUCCESS)
+    .with("failure", () => AuthenticationLog_Entry_Status.FAILURE)
+    .otherwise(() => AuthenticationLog_Entry_Status.STATUS_UNSET);
+
+const getFailureReasonValue = (reason?: string) =>
+  reason
+    ? AuthenticationLog_Entry_Failure_Reason[
+        reason as keyof typeof AuthenticationLog_Entry_Failure_Reason
+      ]
+    : undefined;
+
+const FailureBadge = ({ authLog }: { authLog: AuthenticationLog }) => (
+  <span className="shrink-0 rounded-md border border-red-200 bg-red-50 px-1.5 py-px text-[10px] font-semibold leading-4 text-red-700">
+    Failed · {getFailureReasonLabel(getFailureReasonName(authLog))}
+  </span>
+);
+
+const StatusSelector = ({
+  value,
+  onChange,
+}: {
+  value: AuthenticationLogStatusFilter;
+  onChange: (value: AuthenticationLogStatusFilter) => void;
+}) => (
+  <SegmentedControl
+    className="shrink-0"
+    size="xs"
+    value={value}
+    onChange={(nextValue) =>
+      onChange(nextValue as AuthenticationLogStatusFilter)
+    }
+    data={[
+      {
+        value: "all",
+        label: (
+          <span className="flex items-center justify-center gap-1.5">
+            <Activity size={12} strokeWidth={2.4} />
+            All
+          </span>
+        ),
+      },
+      {
+        value: "success",
+        label: (
+          <span className="flex items-center justify-center gap-1.5">
+            <ShieldCheck size={12} strokeWidth={2.4} />
+            Successful
+          </span>
+        ),
+      },
+      {
+        value: "failure",
+        label: (
+          <span className="flex items-center justify-center gap-1.5">
+            <ShieldX size={12} strokeWidth={2.4} />
+            Failed
+          </span>
+        ),
+      },
+    ]}
+  />
+);
+
 const AuthenticationLogDetails = ({
   authLog,
 }: {
@@ -151,6 +235,7 @@ const AuthenticationLogDetails = ({
   const x = authLog;
   const entry = x.entry;
   const info = entry?.authentication?.info;
+  const isFailure = isAuthenticationLogFailure(x);
 
   return (
     <div className="border-t border-slate-200 bg-slate-50/70">
@@ -170,7 +255,15 @@ const AuthenticationLogDetails = ({
             <CopyText value={x.metadata.id} />
           </DetailField>
         )}
-        {entry && (
+        {entry && isFailure && (
+          <>
+            <DetailField label="Result">Failed</DetailField>
+            <DetailField label="Failure reason">
+              {getFailureReasonLabel(getFailureReasonName(x))}
+            </DetailField>
+          </>
+        )}
+        {entry && !isFailure && (
           <DetailField label="Authentication number">
             #{entry.authenticationIndex + 1}
           </DetailField>
@@ -417,6 +510,7 @@ export const AuthenticationLogC = ({
   const detailsID = React.useId();
   const entry = x.entry;
   const info = entry?.authentication?.info;
+  const isFailure = isAuthenticationLogFailure(x);
 
   if (!entry) return null;
 
@@ -465,7 +559,10 @@ export const AuthenticationLogC = ({
       >
         <span
           aria-hidden="true"
-          className="h-9 w-1 shrink-0 rounded-full bg-sky-500"
+          className={twMerge(
+            "h-9 w-1 shrink-0 rounded-full bg-sky-500",
+            isFailure && "bg-red-500",
+          )}
         />
 
         <span className="flex min-w-0 flex-1 flex-col gap-1">
@@ -474,8 +571,9 @@ export const AuthenticationLogC = ({
               className="max-w-56 truncate text-body font-semibold text-slate-800"
               title={userName}
             >
-              {userName ?? "Unknown user"}
+              {userName ?? (isFailure ? "Unidentified user" : "Unknown user")}
             </span>
+            {isFailure && <FailureBadge authLog={x} />}
             {authType != null &&
               authType !==
                 Session_Status_Authentication_Info_Type.TYPE_UNSET && (
@@ -490,7 +588,11 @@ export const AuthenticationLogC = ({
           </span>
 
           <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] font-medium text-slate-500">
-            <span>Authentication #{entry.authenticationIndex + 1}</span>
+            <span>
+              {isFailure
+                ? "Failed attempt"
+                : `Authentication #${entry.authenticationIndex + 1}`}
+            </span>
             {sessionName && (
               <span className="max-w-44 truncate" title={sessionName}>
                 Session {sessionName}
@@ -561,6 +663,8 @@ const DoAuthenticationLogViewer = (props: {
   page?: number;
   onPageChange?: (page: number) => void;
   query?: string;
+  status?: AuthenticationLog_Entry_Status;
+  reason?: AuthenticationLog_Entry_Failure_Reason;
 }) => {
   const [page, setPage] = React.useState(props.page ?? 0);
 
@@ -587,6 +691,8 @@ const DoAuthenticationLogViewer = (props: {
         page,
         from: props.from,
         query: props.query,
+        status: props.status,
+        reason: props.reason,
       },
     ],
     queryFn: async () => {
@@ -605,6 +711,8 @@ const DoAuthenticationLogViewer = (props: {
               query: props.query,
             },
             from: props.from,
+            status: props.status,
+            reason: props.reason,
           }),
         );
       return response;
@@ -720,14 +828,28 @@ const AuthenticationLogViewer = (props: {
   page?: number;
   onPageChange?: (page: number) => void;
   query?: string;
+  status?: AuthenticationLogStatusFilter;
+  reason?: string;
 }) => {
   const [from, setFrom] = React.useState<Timestamp>(
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
   );
+  const [status, setStatus] = React.useState<AuthenticationLogStatusFilter>(
+    props.status ?? (props.reason ? "failure" : "all"),
+  );
+  const [reason, setReason] = React.useState<string | undefined>(props.reason);
+
+  React.useEffect(() => {
+    setStatus(props.status ?? (props.reason ? "failure" : "all"));
+    setReason(props.reason);
+  }, [props.status, props.reason]);
+
+  const statusValue = getStatusValue(status);
+  const reasonValue = getFailureReasonValue(reason);
 
   return (
     <div className="w-full flex flex-col gap-6">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 shrink-0">
           Since
         </span>
@@ -738,6 +860,37 @@ const AuthenticationLogViewer = (props: {
             props.onPageChange?.(0);
           }}
         />
+        <StatusSelector
+          value={status}
+          onChange={(value) => {
+            setStatus(value);
+            if (value === "success") {
+              setReason(undefined);
+            }
+            props.onPageChange?.(0);
+          }}
+        />
+        {status !== "success" && (
+          <Select
+            size="xs"
+            className="w-52"
+            placeholder="Any failure reason"
+            aria-label="Failure reason"
+            clearable
+            value={reason ?? null}
+            data={FAILURE_REASONS.map((item) => ({
+              value: item,
+              label: getFailureReasonLabel(item),
+            }))}
+            onChange={(value) => {
+              setReason(value ?? undefined);
+              if (value) {
+                setStatus("failure");
+              }
+              props.onPageChange?.(0);
+            }}
+          />
+        )}
       </div>
 
       {!props.query && (
@@ -750,6 +903,8 @@ const AuthenticationLogViewer = (props: {
             credentialRef={props.credentialRef}
             authenticatorRef={props.authenticatorRef}
             from={from}
+            status={statusValue}
+            reason={reasonValue}
           />
         </CompactSummary>
       )}
@@ -766,6 +921,8 @@ const AuthenticationLogViewer = (props: {
         page={props.page}
         onPageChange={props.onPageChange}
         query={props.query}
+        status={statusValue}
+        reason={reasonValue}
       />
     </div>
   );

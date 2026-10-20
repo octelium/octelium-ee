@@ -4,7 +4,11 @@ import {
   ComponentLog,
   ComponentLog_Entry_Level,
 } from "@/apis/corev1/corev1";
-import { AuditLog, AuthenticationLog } from "@/apis/enterprisev1/enterprisev1";
+import {
+  AuditLog,
+  AuthenticationLog,
+  AuthenticationLog_Entry_Status,
+} from "@/apis/enterprisev1/enterprisev1";
 import { AskAgentButton } from "@/components/AgentDock/AskButtons";
 import { logToJSON, type LogItem } from "./Editor";
 
@@ -28,7 +32,11 @@ export const logTitle = (item: LogItem): string => {
     }
     case "AuthenticationLog": {
       const entry = (item as AuthenticationLog).entry;
-      return `Sign-in of ${refName(entry?.userRef) ?? refName(entry?.sessionRef) ?? "a User"}`;
+      const failed =
+        entry?.status === AuthenticationLog_Entry_Status.FAILURE
+          ? "Failed sign-in"
+          : "Sign-in";
+      return `${failed} of ${refName(entry?.userRef) ?? refName(entry?.sessionRef) ?? "a User"}`;
     }
     case "AuditLog": {
       const entry = (item as AuditLog).entry;

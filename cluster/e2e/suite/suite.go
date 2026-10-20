@@ -78,6 +78,7 @@ func Phases() []suite.Phase {
 		{Name: "AccessLogLifecycle", Run: testAccessLogLifecycle},
 		{Name: "AccessLogAggregations", Run: testAccessLogAggregations},
 		{Name: "AuthenticationLogTrail", Run: testAuthenticationLogTrail},
+		{Name: "AuthenticationLogFailure", Run: testAuthenticationLogFailure},
 		{Name: "ComponentLogAggregations", Run: testComponentLogAggregations},
 		{Name: "LogStoreIngestionRecovery", Run: testLogStoreIngestionRecovery},
 		{Name: "MetricStoreQueryPath", Run: testMetricStoreQueryPath},

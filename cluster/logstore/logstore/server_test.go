@@ -215,6 +215,8 @@ type authenticationLogOptions struct {
 	AuthenticationIndex uint32
 	CredentialRef       *metav1.ObjectReference
 	IdentityProviderRef *metav1.ObjectReference
+	Status              enterprisev1.AuthenticationLog_Entry_Status
+	FailureReason       enterprisev1.AuthenticationLog_Entry_Failure_Reason
 }
 
 func newAuthenticationLog(opts *authenticationLogOptions) *enterprisev1.AuthenticationLog {
@@ -259,6 +261,15 @@ func newAuthenticationLog(opts *authenticationLogOptions) *enterprisev1.Authenti
 			SessionRef:          opts.SessionRef,
 			Authentication:      &corev1.Session_Status_Authentication{Info: info},
 			AuthenticationIndex: opts.AuthenticationIndex,
+			Status:              opts.Status,
+			Failure: func() *enterprisev1.AuthenticationLog_Entry_Failure {
+				if opts.Status != enterprisev1.AuthenticationLog_Entry_FAILURE {
+					return nil
+				}
+				return &enterprisev1.AuthenticationLog_Entry_Failure{
+					Reason: opts.FailureReason,
+				}
+			}(),
 		},
 	}
 }

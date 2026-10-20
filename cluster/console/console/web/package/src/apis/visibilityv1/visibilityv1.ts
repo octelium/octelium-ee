@@ -72,6 +72,8 @@ import { Struct } from "../google/protobuf/struct";
 import { Duration } from "../metav1/metav1";
 import { AuditLog } from "../enterprisev1/enterprisev1";
 import { AuthenticationLog } from "../enterprisev1/enterprisev1";
+import { AuthenticationLog_Entry_Failure_Reason } from "../enterprisev1/enterprisev1";
+import { AuthenticationLog_Entry_Status } from "../enterprisev1/enterprisev1";
 import { ListResponseMeta } from "../metav1/metav1";
 import { AccessLog } from "../corev1/corev1";
 import { Service_Spec_Mode } from "../corev1/corev1";
@@ -569,6 +571,19 @@ export interface ListAuthenticationLogRequest {
      * @generated from protobuf field: google.protobuf.Timestamp to = 5
      */
     to?: Timestamp;
+    /**
+     * Status only lists the entries of this Status. When it is unset, both the
+     * successful and the failed authentications are listed.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12
+     */
+    status: AuthenticationLog_Entry_Status;
+    /**
+     * Reason only lists the failed authentication attempts of this reason.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13
+     */
+    reason: AuthenticationLog_Entry_Failure_Reason;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogResponse
@@ -630,6 +645,19 @@ export interface GetAuthenticationLogSummaryRequest {
      * @generated from protobuf field: google.protobuf.Timestamp compareTo = 13
      */
     compareTo?: Timestamp;
+    /**
+     * Status only counts the entries of this Status. When it is unset, both the
+     * successful and the failed authentications are counted.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 14
+     */
+    status: AuthenticationLog_Entry_Status;
+    /**
+     * Reason only counts the failed authentication attempts of this reason.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 15
+     */
+    reason: AuthenticationLog_Entry_Failure_Reason;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse
@@ -706,6 +734,27 @@ export interface GetAuthenticationLogSummaryResponse {
      * @generated from protobuf field: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse previous = 17
      */
     previous?: GetAuthenticationLogSummaryResponse;
+    /**
+     * TotalSuccess is the number of the successful authentications.
+     *
+     * @generated from protobuf field: uint64 totalSuccess = 18
+     */
+    totalSuccess: number;
+    /**
+     * TotalFailure is the number of the failed authentication attempts.
+     *
+     * @generated from protobuf field: uint64 totalFailure = 19
+     */
+    totalFailure: number;
+    /**
+     * TotalByFailureReason is the number of the failed authentication attempts
+     * keyed by their reason (e.g. "INVALID_CREDENTIAL").
+     *
+     * @generated from protobuf field: map<string, uint64> totalByFailureReason = 20
+     */
+    totalByFailureReason: {
+        [key: string]: number;
+    };
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuditLogRequest
@@ -1246,6 +1295,19 @@ export interface GetAuthenticationLogDataPointRequest {
      * @generated from protobuf field: uint32 limitSeries = 14
      */
     limitSeries: number;
+    /**
+     * Status only counts the entries of this Status. When it is unset, both the
+     * successful and the failed authentications are counted.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 15
+     */
+    status: AuthenticationLog_Entry_Status;
+    /**
+     * Reason only counts the failed authentication attempts of this reason.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 16
+     */
+    reason: AuthenticationLog_Entry_Failure_Reason;
 }
 /**
  * GroupBy is the dimension by which the entries are split into separate
@@ -1289,7 +1351,21 @@ export enum GetAuthenticationLogDataPointRequest_GroupBy {
     /**
      * @generated from protobuf enum value: AUTHENTICATOR = 8;
      */
-    AUTHENTICATOR = 8
+    AUTHENTICATOR = 8,
+    /**
+     * STATUS splits the entries by their Status (i.e. "SUCCESS" or
+     * "FAILURE").
+     *
+     * @generated from protobuf enum value: STATUS = 9;
+     */
+    STATUS = 9,
+    /**
+     * FAILURE_REASON splits the failed authentication attempts by their
+     * reason. The successful authentications are not part of any series.
+     *
+     * @generated from protobuf enum value: FAILURE_REASON = 10;
+     */
+    FAILURE_REASON = 10
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse
@@ -1869,6 +1945,19 @@ export interface ListAuthenticationLogTopUserRequest {
      */
     to?: Timestamp;
     /**
+     * Status only counts the entries of this Status. When it is unset, both the
+     * successful and the failed authentications are counted.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12
+     */
+    status: AuthenticationLog_Entry_Status;
+    /**
+     * Reason only counts the failed authentication attempts of this reason.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13
+     */
+    reason: AuthenticationLog_Entry_Failure_Reason;
+    /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
      *
@@ -1944,6 +2033,19 @@ export interface ListAuthenticationLogTopCredentialRequest {
      * @generated from protobuf field: google.protobuf.Timestamp to = 5
      */
     to?: Timestamp;
+    /**
+     * Status only counts the entries of this Status. When it is unset, both the
+     * successful and the failed authentications are counted.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12
+     */
+    status: AuthenticationLog_Entry_Status;
+    /**
+     * Reason only counts the failed authentication attempts of this reason.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13
+     */
+    reason: AuthenticationLog_Entry_Failure_Reason;
     /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
@@ -2024,6 +2126,19 @@ export interface ListAuthenticationLogTopIdentityProviderRequest {
      * @generated from protobuf field: google.protobuf.Timestamp to = 5
      */
     to?: Timestamp;
+    /**
+     * Status only counts the entries of this Status. When it is unset, both the
+     * successful and the failed authentications are counted.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12
+     */
+    status: AuthenticationLog_Entry_Status;
+    /**
+     * Reason only counts the failed authentication attempts of this reason.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13
+     */
+    reason: AuthenticationLog_Entry_Failure_Reason;
     /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
@@ -4488,11 +4603,15 @@ class ListAuthenticationLogRequest$Type extends MessageType<ListAuthenticationLo
             { no: 10, name: "credentialRef", kind: "message", T: () => ObjectReference },
             { no: 11, name: "authenticatorRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
-            { no: 5, name: "to", kind: "message", T: () => Timestamp }
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status", AuthenticationLog_Entry_Status] },
+            { no: 13, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] }
         ]);
     }
     create(value?: PartialMessage<ListAuthenticationLogRequest>): ListAuthenticationLogRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.status = 0;
+        message.reason = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuthenticationLogRequest>(this, message, value);
         return message;
@@ -4528,6 +4647,12 @@ class ListAuthenticationLogRequest$Type extends MessageType<ListAuthenticationLo
                     break;
                 case /* google.protobuf.Timestamp to */ 5:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status */ 12:
+                    message.status = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason */ 13:
+                    message.reason = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4568,6 +4693,12 @@ class ListAuthenticationLogRequest$Type extends MessageType<ListAuthenticationLo
         /* octelium.api.main.meta.v1.ObjectReference authenticatorRef = 11; */
         if (message.authenticatorRef)
             ObjectReference.internalBinaryWrite(message.authenticatorRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12; */
+        if (message.status !== 0)
+            writer.tag(12, WireType.Varint).int32(message.status);
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13; */
+        if (message.reason !== 0)
+            writer.tag(13, WireType.Varint).int32(message.reason);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4645,11 +4776,15 @@ class GetAuthenticationLogSummaryRequest$Type extends MessageType<GetAuthenticat
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
             { no: 12, name: "compareFrom", kind: "message", T: () => Timestamp },
-            { no: 13, name: "compareTo", kind: "message", T: () => Timestamp }
+            { no: 13, name: "compareTo", kind: "message", T: () => Timestamp },
+            { no: 14, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status", AuthenticationLog_Entry_Status] },
+            { no: 15, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] }
         ]);
     }
     create(value?: PartialMessage<GetAuthenticationLogSummaryRequest>): GetAuthenticationLogSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.status = 0;
+        message.reason = 0;
         if (value !== undefined)
             reflectionMergePartial<GetAuthenticationLogSummaryRequest>(this, message, value);
         return message;
@@ -4688,6 +4823,12 @@ class GetAuthenticationLogSummaryRequest$Type extends MessageType<GetAuthenticat
                     break;
                 case /* google.protobuf.Timestamp compareTo */ 13:
                     message.compareTo = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.compareTo);
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status */ 14:
+                    message.status = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason */ 15:
+                    message.reason = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4731,6 +4872,12 @@ class GetAuthenticationLogSummaryRequest$Type extends MessageType<GetAuthenticat
         /* google.protobuf.Timestamp compareTo = 13; */
         if (message.compareTo)
             Timestamp.internalBinaryWrite(message.compareTo, writer.tag(13, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 14; */
+        if (message.status !== 0)
+            writer.tag(14, WireType.Varint).int32(message.status);
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 15; */
+        if (message.reason !== 0)
+            writer.tag(15, WireType.Varint).int32(message.reason);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4761,7 +4908,10 @@ class GetAuthenticationLogSummaryResponse$Type extends MessageType<GetAuthentica
             { no: 14, name: "totalAAL2", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 15, name: "totalAAL3", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 16, name: "totalReauthentication", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 17, name: "previous", kind: "message", T: () => GetAuthenticationLogSummaryResponse }
+            { no: 17, name: "previous", kind: "message", T: () => GetAuthenticationLogSummaryResponse },
+            { no: 18, name: "totalSuccess", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 19, name: "totalFailure", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 20, name: "totalByFailureReason", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ } }
         ]);
     }
     create(value?: PartialMessage<GetAuthenticationLogSummaryResponse>): GetAuthenticationLogSummaryResponse {
@@ -4782,6 +4932,9 @@ class GetAuthenticationLogSummaryResponse$Type extends MessageType<GetAuthentica
         message.totalAAL2 = 0;
         message.totalAAL3 = 0;
         message.totalReauthentication = 0;
+        message.totalSuccess = 0;
+        message.totalFailure = 0;
+        message.totalByFailureReason = {};
         if (value !== undefined)
             reflectionMergePartial<GetAuthenticationLogSummaryResponse>(this, message, value);
         return message;
@@ -4842,6 +4995,15 @@ class GetAuthenticationLogSummaryResponse$Type extends MessageType<GetAuthentica
                 case /* octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse previous */ 17:
                     message.previous = GetAuthenticationLogSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
+                case /* uint64 totalSuccess */ 18:
+                    message.totalSuccess = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalFailure */ 19:
+                    message.totalFailure = reader.uint64().toNumber();
+                    break;
+                case /* map<string, uint64> totalByFailureReason */ 20:
+                    this.binaryReadMap20(message.totalByFailureReason, reader, options);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -4852,6 +5014,22 @@ class GetAuthenticationLogSummaryResponse$Type extends MessageType<GetAuthentica
             }
         }
         return message;
+    }
+    private binaryReadMap20(map: GetAuthenticationLogSummaryResponse["totalByFailureReason"], reader: IBinaryReader, options: BinaryReadOptions): void {
+        let len = reader.uint32(), end = reader.pos + len, key: keyof GetAuthenticationLogSummaryResponse["totalByFailureReason"] | undefined, val: GetAuthenticationLogSummaryResponse["totalByFailureReason"][any] | undefined;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case 1:
+                    key = reader.string();
+                    break;
+                case 2:
+                    val = reader.uint64().toNumber();
+                    break;
+                default: throw new globalThis.Error("unknown map entry field for octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse.totalByFailureReason");
+            }
+        }
+        map[key ?? ""] = val ?? 0;
     }
     internalBinaryWrite(message: GetAuthenticationLogSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* uint64 totalNumber = 1; */
@@ -4905,6 +5083,15 @@ class GetAuthenticationLogSummaryResponse$Type extends MessageType<GetAuthentica
         /* octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse previous = 17; */
         if (message.previous)
             GetAuthenticationLogSummaryResponse.internalBinaryWrite(message.previous, writer.tag(17, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalSuccess = 18; */
+        if (message.totalSuccess !== 0)
+            writer.tag(18, WireType.Varint).uint64(message.totalSuccess);
+        /* uint64 totalFailure = 19; */
+        if (message.totalFailure !== 0)
+            writer.tag(19, WireType.Varint).uint64(message.totalFailure);
+        /* map<string, uint64> totalByFailureReason = 20; */
+        for (let k of globalThis.Object.keys(message.totalByFailureReason))
+            writer.tag(20, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.Varint).uint64(message.totalByFailureReason[k]).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6342,13 +6529,17 @@ class GetAuthenticationLogDataPointRequest$Type extends MessageType<GetAuthentic
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
             { no: 13, name: "groupBy", kind: "enum", T: () => ["octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.GroupBy", GetAuthenticationLogDataPointRequest_GroupBy] },
-            { no: 14, name: "limitSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 14, name: "limitSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 15, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status", AuthenticationLog_Entry_Status] },
+            { no: 16, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] }
         ]);
     }
     create(value?: PartialMessage<GetAuthenticationLogDataPointRequest>): GetAuthenticationLogDataPointRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.groupBy = 0;
         message.limitSeries = 0;
+        message.status = 0;
+        message.reason = 0;
         if (value !== undefined)
             reflectionMergePartial<GetAuthenticationLogDataPointRequest>(this, message, value);
         return message;
@@ -6390,6 +6581,12 @@ class GetAuthenticationLogDataPointRequest$Type extends MessageType<GetAuthentic
                     break;
                 case /* uint32 limitSeries */ 14:
                     message.limitSeries = reader.uint32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status */ 15:
+                    message.status = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason */ 16:
+                    message.reason = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6436,6 +6633,12 @@ class GetAuthenticationLogDataPointRequest$Type extends MessageType<GetAuthentic
         /* uint32 limitSeries = 14; */
         if (message.limitSeries !== 0)
             writer.tag(14, WireType.Varint).uint32(message.limitSeries);
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 15; */
+        if (message.status !== 0)
+            writer.tag(15, WireType.Varint).int32(message.status);
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 16; */
+        if (message.reason !== 0)
+            writer.tag(16, WireType.Varint).int32(message.reason);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -7850,11 +8053,15 @@ class ListAuthenticationLogTopUserRequest$Type extends MessageType<ListAuthentic
             { no: 11, name: "authenticatorRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status", AuthenticationLog_Entry_Status] },
+            { no: 13, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<ListAuthenticationLogTopUserRequest>): ListAuthenticationLogTopUserRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.status = 0;
+        message.reason = 0;
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuthenticationLogTopUserRequest>(this, message, value);
@@ -7879,6 +8086,12 @@ class ListAuthenticationLogTopUserRequest$Type extends MessageType<ListAuthentic
                     break;
                 case /* google.protobuf.Timestamp to */ 5:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status */ 12:
+                    message.status = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason */ 13:
+                    message.reason = reader.int32();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -7910,6 +8123,12 @@ class ListAuthenticationLogTopUserRequest$Type extends MessageType<ListAuthentic
         /* octelium.api.main.meta.v1.ObjectReference authenticatorRef = 11; */
         if (message.authenticatorRef)
             ObjectReference.internalBinaryWrite(message.authenticatorRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12; */
+        if (message.status !== 0)
+            writer.tag(12, WireType.Varint).int32(message.status);
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13; */
+        if (message.reason !== 0)
+            writer.tag(13, WireType.Varint).int32(message.reason);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -8051,11 +8270,15 @@ class ListAuthenticationLogTopCredentialRequest$Type extends MessageType<ListAut
             { no: 11, name: "authenticatorRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status", AuthenticationLog_Entry_Status] },
+            { no: 13, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<ListAuthenticationLogTopCredentialRequest>): ListAuthenticationLogTopCredentialRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.status = 0;
+        message.reason = 0;
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuthenticationLogTopCredentialRequest>(this, message, value);
@@ -8086,6 +8309,12 @@ class ListAuthenticationLogTopCredentialRequest$Type extends MessageType<ListAut
                     break;
                 case /* google.protobuf.Timestamp to */ 5:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status */ 12:
+                    message.status = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason */ 13:
+                    message.reason = reader.int32();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -8123,6 +8352,12 @@ class ListAuthenticationLogTopCredentialRequest$Type extends MessageType<ListAut
         /* octelium.api.main.meta.v1.ObjectReference authenticatorRef = 11; */
         if (message.authenticatorRef)
             ObjectReference.internalBinaryWrite(message.authenticatorRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12; */
+        if (message.status !== 0)
+            writer.tag(12, WireType.Varint).int32(message.status);
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13; */
+        if (message.reason !== 0)
+            writer.tag(13, WireType.Varint).int32(message.reason);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -8265,11 +8500,15 @@ class ListAuthenticationLogTopIdentityProviderRequest$Type extends MessageType<L
             { no: 11, name: "authenticatorRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status", AuthenticationLog_Entry_Status] },
+            { no: 13, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<ListAuthenticationLogTopIdentityProviderRequest>): ListAuthenticationLogTopIdentityProviderRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.status = 0;
+        message.reason = 0;
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuthenticationLogTopIdentityProviderRequest>(this, message, value);
@@ -8303,6 +8542,12 @@ class ListAuthenticationLogTopIdentityProviderRequest$Type extends MessageType<L
                     break;
                 case /* google.protobuf.Timestamp to */ 5:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status */ 12:
+                    message.status = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason */ 13:
+                    message.reason = reader.int32();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -8343,6 +8588,12 @@ class ListAuthenticationLogTopIdentityProviderRequest$Type extends MessageType<L
         /* octelium.api.main.meta.v1.ObjectReference authenticatorRef = 11; */
         if (message.authenticatorRef)
             ObjectReference.internalBinaryWrite(message.authenticatorRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12; */
+        if (message.status !== 0)
+            writer.tag(12, WireType.Varint).int32(message.status);
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13; */
+        if (message.reason !== 0)
+            writer.tag(13, WireType.Varint).int32(message.reason);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);

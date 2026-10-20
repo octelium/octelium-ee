@@ -188,6 +188,8 @@ func Run(ctx context.Context) error {
 		if err := cWatcher.Session(ctx, nil, sessCtl.OnAdd, sessCtl.OnUpdate, sessCtl.OnDelete); err != nil {
 			return err
 		}
+
+		sessCtl.RunFailures(ctx)
 	}
 
 	ewatcher.InitWatcher(octeliumC, bindingCtl).Run(ctx)

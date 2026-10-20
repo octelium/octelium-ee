@@ -2030,6 +2030,169 @@ func (Condition_Expression_TimeDayType_Type) EnumDescriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 105, 0}
 }
 
+// Status is the result of the authentication
+type AuthenticationLog_Entry_Status int32
+
+const (
+	// STATUS_UNSET is only used by the AuthenticationLogs that were recorded
+	// before the Status was introduced, all of which are successful
+	// authentications.
+	AuthenticationLog_Entry_STATUS_UNSET AuthenticationLog_Entry_Status = 0
+	// SUCCESS means that the Session successfully authenticated.
+	AuthenticationLog_Entry_SUCCESS AuthenticationLog_Entry_Status = 1
+	// FAILURE means that the authentication attempt was rejected.
+	AuthenticationLog_Entry_FAILURE AuthenticationLog_Entry_Status = 2
+)
+
+// Enum value maps for AuthenticationLog_Entry_Status.
+var (
+	AuthenticationLog_Entry_Status_name = map[int32]string{
+		0: "STATUS_UNSET",
+		1: "SUCCESS",
+		2: "FAILURE",
+	}
+	AuthenticationLog_Entry_Status_value = map[string]int32{
+		"STATUS_UNSET": 0,
+		"SUCCESS":      1,
+		"FAILURE":      2,
+	}
+)
+
+func (x AuthenticationLog_Entry_Status) Enum() *AuthenticationLog_Entry_Status {
+	p := new(AuthenticationLog_Entry_Status)
+	*p = x
+	return p
+}
+
+func (x AuthenticationLog_Entry_Status) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AuthenticationLog_Entry_Status) Descriptor() protoreflect.EnumDescriptor {
+	return file_enterprisev1_proto_enumTypes[33].Descriptor()
+}
+
+func (AuthenticationLog_Entry_Status) Type() protoreflect.EnumType {
+	return &file_enterprisev1_proto_enumTypes[33]
+}
+
+func (x AuthenticationLog_Entry_Status) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AuthenticationLog_Entry_Status.Descriptor instead.
+func (AuthenticationLog_Entry_Status) EnumDescriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{47, 0, 0}
+}
+
+// Reason is the reason for which the authentication attempt was rejected
+type AuthenticationLog_Entry_Failure_Reason int32
+
+const (
+	// REASON_UNSET means that the reason is unknown
+	AuthenticationLog_Entry_Failure_REASON_UNSET AuthenticationLog_Entry_Failure_Reason = 0
+	// INVALID_CREDENTIAL means that the presented proof was invalid (e.g.
+	// a wrong TOTP code, a FIDO or a TPM verification failure, an invalid
+	// OIDC assertion, a mismatched PKCE code verifier or OAuth2 client ID,
+	// or an IdentityProvider callback that could not be verified).
+	AuthenticationLog_Entry_Failure_INVALID_CREDENTIAL AuthenticationLog_Entry_Failure_Reason = 1
+	// EXPIRED_CREDENTIAL means that the Credential, the Session or the
+	// Authenticator challenge expired, or that the Credential exceeded its
+	// maximum number of authentications.
+	AuthenticationLog_Entry_Failure_EXPIRED_CREDENTIAL AuthenticationLog_Entry_Failure_Reason = 2
+	// REVOKED_CREDENTIAL means that a valid token was presented for a
+	// Credential or a Session that no longer accepts it (i.e. it was
+	// deleted, disabled, locked, rejected or its token was rotated). Note
+	// that reusing an already rotated refresh token falls into this
+	// reason.
+	AuthenticationLog_Entry_Failure_REVOKED_CREDENTIAL AuthenticationLog_Entry_Failure_Reason = 3
+	// USER_NOT_FOUND means that the authenticated identity does not belong
+	// to any User.
+	AuthenticationLog_Entry_Failure_USER_NOT_FOUND AuthenticationLog_Entry_Failure_Reason = 4
+	// USER_DEACTIVATED means that the User is deactivated.
+	AuthenticationLog_Entry_Failure_USER_DEACTIVATED AuthenticationLog_Entry_Failure_Reason = 5
+	// USER_LOCKED means that the User is locked.
+	AuthenticationLog_Entry_Failure_USER_LOCKED AuthenticationLog_Entry_Failure_Reason = 6
+	// DENIED_BY_RULE means that the authentication was denied by a
+	// post-authentication rule of the IdentityProvider or of the
+	// Authenticators.
+	AuthenticationLog_Entry_Failure_DENIED_BY_RULE AuthenticationLog_Entry_Failure_Reason = 7
+	// NOT_ALLOWED means that the authentication method is not allowed for
+	// the User, the Session, the Device or the Authenticator (e.g. a User
+	// of the wrong type, an inactive Authenticator or a disabled
+	// IdentityProvider).
+	AuthenticationLog_Entry_Failure_NOT_ALLOWED AuthenticationLog_Entry_Failure_Reason = 8
+	// LIMIT_EXCEEDED means that a limit was exceeded (e.g. the maximum
+	// number of Sessions per User or the re-authentication rate limit).
+	AuthenticationLog_Entry_Failure_LIMIT_EXCEEDED AuthenticationLog_Entry_Failure_Reason = 9
+	// IDENTITY_PROVIDER_ERROR means that the IdentityProvider returned an
+	// error instead of authenticating the User (e.g. the User denied the
+	// consent or failed to authenticate to the IdentityProvider).
+	AuthenticationLog_Entry_Failure_IDENTITY_PROVIDER_ERROR AuthenticationLog_Entry_Failure_Reason = 10
+	// INTERNAL_ERROR means that the authentication could not be completed
+	// because of an internal error.
+	AuthenticationLog_Entry_Failure_INTERNAL_ERROR AuthenticationLog_Entry_Failure_Reason = 11
+)
+
+// Enum value maps for AuthenticationLog_Entry_Failure_Reason.
+var (
+	AuthenticationLog_Entry_Failure_Reason_name = map[int32]string{
+		0:  "REASON_UNSET",
+		1:  "INVALID_CREDENTIAL",
+		2:  "EXPIRED_CREDENTIAL",
+		3:  "REVOKED_CREDENTIAL",
+		4:  "USER_NOT_FOUND",
+		5:  "USER_DEACTIVATED",
+		6:  "USER_LOCKED",
+		7:  "DENIED_BY_RULE",
+		8:  "NOT_ALLOWED",
+		9:  "LIMIT_EXCEEDED",
+		10: "IDENTITY_PROVIDER_ERROR",
+		11: "INTERNAL_ERROR",
+	}
+	AuthenticationLog_Entry_Failure_Reason_value = map[string]int32{
+		"REASON_UNSET":            0,
+		"INVALID_CREDENTIAL":      1,
+		"EXPIRED_CREDENTIAL":      2,
+		"REVOKED_CREDENTIAL":      3,
+		"USER_NOT_FOUND":          4,
+		"USER_DEACTIVATED":        5,
+		"USER_LOCKED":             6,
+		"DENIED_BY_RULE":          7,
+		"NOT_ALLOWED":             8,
+		"LIMIT_EXCEEDED":          9,
+		"IDENTITY_PROVIDER_ERROR": 10,
+		"INTERNAL_ERROR":          11,
+	}
+)
+
+func (x AuthenticationLog_Entry_Failure_Reason) Enum() *AuthenticationLog_Entry_Failure_Reason {
+	p := new(AuthenticationLog_Entry_Failure_Reason)
+	*p = x
+	return p
+}
+
+func (x AuthenticationLog_Entry_Failure_Reason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AuthenticationLog_Entry_Failure_Reason) Descriptor() protoreflect.EnumDescriptor {
+	return file_enterprisev1_proto_enumTypes[34].Descriptor()
+}
+
+func (AuthenticationLog_Entry_Failure_Reason) Type() protoreflect.EnumType {
+	return &file_enterprisev1_proto_enumTypes[34]
+}
+
+func (x AuthenticationLog_Entry_Failure_Reason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AuthenticationLog_Entry_Failure_Reason.Descriptor instead.
+func (AuthenticationLog_Entry_Failure_Reason) EnumDescriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{47, 0, 0, 0}
+}
+
 // Type is the type of the License.
 type License_Type int32
 
@@ -2076,11 +2239,11 @@ func (x License_Type) String() string {
 }
 
 func (License_Type) Descriptor() protoreflect.EnumDescriptor {
-	return file_enterprisev1_proto_enumTypes[33].Descriptor()
+	return file_enterprisev1_proto_enumTypes[35].Descriptor()
 }
 
 func (License_Type) Type() protoreflect.EnumType {
-	return &file_enterprisev1_proto_enumTypes[33]
+	return &file_enterprisev1_proto_enumTypes[35]
 }
 
 func (x License_Type) Number() protoreflect.EnumNumber {
@@ -2131,11 +2294,11 @@ func (x License_Plan_Type) String() string {
 }
 
 func (License_Plan_Type) Descriptor() protoreflect.EnumDescriptor {
-	return file_enterprisev1_proto_enumTypes[34].Descriptor()
+	return file_enterprisev1_proto_enumTypes[36].Descriptor()
 }
 
 func (License_Plan_Type) Type() protoreflect.EnumType {
-	return &file_enterprisev1_proto_enumTypes[34]
+	return &file_enterprisev1_proto_enumTypes[36]
 }
 
 func (x License_Plan_Type) Number() protoreflect.EnumNumber {
@@ -2188,11 +2351,11 @@ func (x License_Plan_Support_Type) String() string {
 }
 
 func (License_Plan_Support_Type) Descriptor() protoreflect.EnumDescriptor {
-	return file_enterprisev1_proto_enumTypes[35].Descriptor()
+	return file_enterprisev1_proto_enumTypes[37].Descriptor()
 }
 
 func (License_Plan_Support_Type) Type() protoreflect.EnumType {
-	return &file_enterprisev1_proto_enumTypes[35]
+	return &file_enterprisev1_proto_enumTypes[37]
 }
 
 func (x License_Plan_Support_Type) Number() protoreflect.EnumNumber {
@@ -2253,11 +2416,11 @@ func (x Agent_State) String() string {
 }
 
 func (Agent_State) Descriptor() protoreflect.EnumDescriptor {
-	return file_enterprisev1_proto_enumTypes[36].Descriptor()
+	return file_enterprisev1_proto_enumTypes[38].Descriptor()
 }
 
 func (Agent_State) Type() protoreflect.EnumType {
-	return &file_enterprisev1_proto_enumTypes[36]
+	return &file_enterprisev1_proto_enumTypes[38]
 }
 
 func (x Agent_State) Number() protoreflect.EnumNumber {
@@ -2309,11 +2472,11 @@ func (x Agent_Workspace_Type) String() string {
 }
 
 func (Agent_Workspace_Type) Descriptor() protoreflect.EnumDescriptor {
-	return file_enterprisev1_proto_enumTypes[37].Descriptor()
+	return file_enterprisev1_proto_enumTypes[39].Descriptor()
 }
 
 func (Agent_Workspace_Type) Type() protoreflect.EnumType {
-	return &file_enterprisev1_proto_enumTypes[37]
+	return &file_enterprisev1_proto_enumTypes[39]
 }
 
 func (x Agent_Workspace_Type) Number() protoreflect.EnumNumber {
@@ -5567,8 +5730,10 @@ func (*SynchronizeDirectoryProviderResponse) Descriptor() ([]byte, []int) {
 }
 
 // AuthenticationLog is a log entry that records a single authentication of a
-// Session (e.g. an OIDC login or a Credential-based authentication). A Session
-// that re-authenticates produces more than one AuthenticationLog.
+// Session (e.g. an OIDC login or a Credential-based authentication) or a single
+// failed authentication attempt (e.g. an invalid Authenticator challenge
+// response or an expired Credential). A Session that re-authenticates produces
+// more than one AuthenticationLog.
 type AuthenticationLog struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// APIVersion is the API version (i.e. "enterprise/v1")
@@ -26692,20 +26857,32 @@ func (*Condition_Expression_MCPToolArgument_Exists) Descriptor() ([]byte, []int)
 // Entry is the AuthenticationLog entry information
 type AuthenticationLog_Entry struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// SessionRef is a reference to the Session that authenticated.
+	// SessionRef is a reference to the Session that authenticated. For a
+	// failed authentication attempt, it is only set if the attempt was made by
+	// an existing Session (e.g. a re-authentication).
 	SessionRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=sessionRef,proto3" json:"sessionRef,omitempty"`
-	// UserRef is a reference to the User that owns the Session.
+	// UserRef is a reference to the User that owns the Session. For a failed
+	// authentication attempt, it is only set if the User could be identified.
 	UserRef *metav1.ObjectReference `protobuf:"bytes,2,opt,name=userRef,proto3" json:"userRef,omitempty"`
 	// DeviceRef is a reference to the Device of the Session.
 	DeviceRef *metav1.ObjectReference `protobuf:"bytes,3,opt,name=deviceRef,proto3" json:"deviceRef,omitempty"`
 	// Authentication is the authentication information of the Session (e.g.
-	// its type, its assurance level and its GeoIP information).
+	// its type, its assurance level and its GeoIP information). For a failed
+	// authentication attempt, only the `info` (i.e. the attempted method, its
+	// IdentityProvider, Credential or Authenticator, and the downstream
+	// information) and the `setAt` fields are set.
 	Authentication *corev1.Session_Status_Authentication `protobuf:"bytes,4,opt,name=authentication,proto3" json:"authentication,omitempty"`
 	// AuthenticationIndex is the zero-based index of this authentication among
-	// the Session's total authentications.
+	// the Session's total authentications. It is not used by failed
+	// authentication attempts.
 	AuthenticationIndex uint32 `protobuf:"varint,5,opt,name=authenticationIndex,proto3" json:"authenticationIndex,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Status is the result of the authentication.
+	Status AuthenticationLog_Entry_Status `protobuf:"varint,6,opt,name=status,proto3,enum=octelium.api.main.enterprise.v1.AuthenticationLog_Entry_Status" json:"status,omitempty"`
+	// Failure is the information of the failed authentication attempt. It is
+	// only set when the Status is FAILURE.
+	Failure       *AuthenticationLog_Entry_Failure `protobuf:"bytes,7,opt,name=failure,proto3" json:"failure,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AuthenticationLog_Entry) Reset() {
@@ -26773,6 +26950,67 @@ func (x *AuthenticationLog_Entry) GetAuthenticationIndex() uint32 {
 	return 0
 }
 
+func (x *AuthenticationLog_Entry) GetStatus() AuthenticationLog_Entry_Status {
+	if x != nil {
+		return x.Status
+	}
+	return AuthenticationLog_Entry_STATUS_UNSET
+}
+
+func (x *AuthenticationLog_Entry) GetFailure() *AuthenticationLog_Entry_Failure {
+	if x != nil {
+		return x.Failure
+	}
+	return nil
+}
+
+// Failure is the information of a failed authentication attempt
+type AuthenticationLog_Entry_Failure struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Reason is the reason for which the authentication attempt was
+	// rejected.
+	Reason        AuthenticationLog_Entry_Failure_Reason `protobuf:"varint,1,opt,name=reason,proto3,enum=octelium.api.main.enterprise.v1.AuthenticationLog_Entry_Failure_Reason" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AuthenticationLog_Entry_Failure) Reset() {
+	*x = AuthenticationLog_Entry_Failure{}
+	mi := &file_enterprisev1_proto_msgTypes[349]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuthenticationLog_Entry_Failure) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuthenticationLog_Entry_Failure) ProtoMessage() {}
+
+func (x *AuthenticationLog_Entry_Failure) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[349]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuthenticationLog_Entry_Failure.ProtoReflect.Descriptor instead.
+func (*AuthenticationLog_Entry_Failure) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{47, 0, 0}
+}
+
+func (x *AuthenticationLog_Entry_Failure) GetReason() AuthenticationLog_Entry_Failure_Reason {
+	if x != nil {
+		return x.Reason
+	}
+	return AuthenticationLog_Entry_Failure_REASON_UNSET
+}
+
 // Request is the set of the Cluster packages that are upgraded
 type UpgradeClusterRequest_Request struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -26788,7 +27026,7 @@ type UpgradeClusterRequest_Request struct {
 
 func (x *UpgradeClusterRequest_Request) Reset() {
 	*x = UpgradeClusterRequest_Request{}
-	mi := &file_enterprisev1_proto_msgTypes[349]
+	mi := &file_enterprisev1_proto_msgTypes[350]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26800,7 +27038,7 @@ func (x *UpgradeClusterRequest_Request) String() string {
 func (*UpgradeClusterRequest_Request) ProtoMessage() {}
 
 func (x *UpgradeClusterRequest_Request) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[349]
+	mi := &file_enterprisev1_proto_msgTypes[350]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26848,7 +27086,7 @@ type UpgradeClusterRequest_Request_Core struct {
 
 func (x *UpgradeClusterRequest_Request_Core) Reset() {
 	*x = UpgradeClusterRequest_Request_Core{}
-	mi := &file_enterprisev1_proto_msgTypes[350]
+	mi := &file_enterprisev1_proto_msgTypes[351]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26860,7 +27098,7 @@ func (x *UpgradeClusterRequest_Request_Core) String() string {
 func (*UpgradeClusterRequest_Request_Core) ProtoMessage() {}
 
 func (x *UpgradeClusterRequest_Request_Core) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[350]
+	mi := &file_enterprisev1_proto_msgTypes[351]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26894,7 +27132,7 @@ type UpgradeClusterRequest_Request_PackageEnterprise struct {
 
 func (x *UpgradeClusterRequest_Request_PackageEnterprise) Reset() {
 	*x = UpgradeClusterRequest_Request_PackageEnterprise{}
-	mi := &file_enterprisev1_proto_msgTypes[351]
+	mi := &file_enterprisev1_proto_msgTypes[352]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26906,7 +27144,7 @@ func (x *UpgradeClusterRequest_Request_PackageEnterprise) String() string {
 func (*UpgradeClusterRequest_Request_PackageEnterprise) ProtoMessage() {}
 
 func (x *UpgradeClusterRequest_Request_PackageEnterprise) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[351]
+	mi := &file_enterprisev1_proto_msgTypes[352]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26940,7 +27178,7 @@ type UpgradeClusterRequest_Request_PackageCordium struct {
 
 func (x *UpgradeClusterRequest_Request_PackageCordium) Reset() {
 	*x = UpgradeClusterRequest_Request_PackageCordium{}
-	mi := &file_enterprisev1_proto_msgTypes[352]
+	mi := &file_enterprisev1_proto_msgTypes[353]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26952,7 +27190,7 @@ func (x *UpgradeClusterRequest_Request_PackageCordium) String() string {
 func (*UpgradeClusterRequest_Request_PackageCordium) ProtoMessage() {}
 
 func (x *UpgradeClusterRequest_Request_PackageCordium) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[352]
+	mi := &file_enterprisev1_proto_msgTypes[353]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26992,7 +27230,7 @@ type GetClusterInfoResponse_Core struct {
 
 func (x *GetClusterInfoResponse_Core) Reset() {
 	*x = GetClusterInfoResponse_Core{}
-	mi := &file_enterprisev1_proto_msgTypes[353]
+	mi := &file_enterprisev1_proto_msgTypes[354]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27004,7 +27242,7 @@ func (x *GetClusterInfoResponse_Core) String() string {
 func (*GetClusterInfoResponse_Core) ProtoMessage() {}
 
 func (x *GetClusterInfoResponse_Core) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[353]
+	mi := &file_enterprisev1_proto_msgTypes[354]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27065,7 +27303,7 @@ type GetClusterInfoResponse_PackageEnterprise struct {
 
 func (x *GetClusterInfoResponse_PackageEnterprise) Reset() {
 	*x = GetClusterInfoResponse_PackageEnterprise{}
-	mi := &file_enterprisev1_proto_msgTypes[354]
+	mi := &file_enterprisev1_proto_msgTypes[355]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27077,7 +27315,7 @@ func (x *GetClusterInfoResponse_PackageEnterprise) String() string {
 func (*GetClusterInfoResponse_PackageEnterprise) ProtoMessage() {}
 
 func (x *GetClusterInfoResponse_PackageEnterprise) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[354]
+	mi := &file_enterprisev1_proto_msgTypes[355]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27138,7 +27376,7 @@ type GetClusterInfoResponse_PackageCordium struct {
 
 func (x *GetClusterInfoResponse_PackageCordium) Reset() {
 	*x = GetClusterInfoResponse_PackageCordium{}
-	mi := &file_enterprisev1_proto_msgTypes[355]
+	mi := &file_enterprisev1_proto_msgTypes[356]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27150,7 +27388,7 @@ func (x *GetClusterInfoResponse_PackageCordium) String() string {
 func (*GetClusterInfoResponse_PackageCordium) ProtoMessage() {}
 
 func (x *GetClusterInfoResponse_PackageCordium) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[355]
+	mi := &file_enterprisev1_proto_msgTypes[356]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27207,7 +27445,7 @@ type License_Organization struct {
 
 func (x *License_Organization) Reset() {
 	*x = License_Organization{}
-	mi := &file_enterprisev1_proto_msgTypes[356]
+	mi := &file_enterprisev1_proto_msgTypes[357]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27219,7 +27457,7 @@ func (x *License_Organization) String() string {
 func (*License_Organization) ProtoMessage() {}
 
 func (x *License_Organization) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[356]
+	mi := &file_enterprisev1_proto_msgTypes[357]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27271,7 +27509,7 @@ type License_Plan struct {
 
 func (x *License_Plan) Reset() {
 	*x = License_Plan{}
-	mi := &file_enterprisev1_proto_msgTypes[357]
+	mi := &file_enterprisev1_proto_msgTypes[358]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27283,7 +27521,7 @@ func (x *License_Plan) String() string {
 func (*License_Plan) ProtoMessage() {}
 
 func (x *License_Plan) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[357]
+	mi := &file_enterprisev1_proto_msgTypes[358]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27345,7 +27583,7 @@ type License_Plan_Support struct {
 
 func (x *License_Plan_Support) Reset() {
 	*x = License_Plan_Support{}
-	mi := &file_enterprisev1_proto_msgTypes[358]
+	mi := &file_enterprisev1_proto_msgTypes[359]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27357,7 +27595,7 @@ func (x *License_Plan_Support) String() string {
 func (*License_Plan_Support) ProtoMessage() {}
 
 func (x *License_Plan_Support) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[358]
+	mi := &file_enterprisev1_proto_msgTypes[359]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27392,7 +27630,7 @@ type License_Plan_Limits struct {
 
 func (x *License_Plan_Limits) Reset() {
 	*x = License_Plan_Limits{}
-	mi := &file_enterprisev1_proto_msgTypes[359]
+	mi := &file_enterprisev1_proto_msgTypes[360]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27404,7 +27642,7 @@ func (x *License_Plan_Limits) String() string {
 func (*License_Plan_Limits) ProtoMessage() {}
 
 func (x *License_Plan_Limits) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[359]
+	mi := &file_enterprisev1_proto_msgTypes[360]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27444,7 +27682,7 @@ type Agent_Workspace struct {
 
 func (x *Agent_Workspace) Reset() {
 	*x = Agent_Workspace{}
-	mi := &file_enterprisev1_proto_msgTypes[360]
+	mi := &file_enterprisev1_proto_msgTypes[361]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27456,7 +27694,7 @@ func (x *Agent_Workspace) String() string {
 func (*Agent_Workspace) ProtoMessage() {}
 
 func (x *Agent_Workspace) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[360]
+	mi := &file_enterprisev1_proto_msgTypes[361]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -31987,7 +32225,7 @@ var file_enterprisev1_proto_rawDesc = []byte{
 	0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x52, 0x65, 0x66,
 	0x22, 0x26, 0x0a, 0x24, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x44,
 	0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xd5, 0x04, 0x0a, 0x11, 0x41, 0x75, 0x74,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xb7, 0x09, 0x0a, 0x11, 0x41, 0x75, 0x74,
 	0x68, 0x65, 0x6e, 0x74, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x6f, 0x67, 0x12, 0x1e,
 	0x0a, 0x0a, 0x61, 0x70, 0x69, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x09, 0x52, 0x0a, 0x61, 0x70, 0x69, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x12,
@@ -32001,7 +32239,7 @@ var file_enterprisev1_proto_rawDesc = []byte{
 	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
 	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x75, 0x74, 0x68, 0x65, 0x6e, 0x74, 0x69,
 	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x6f, 0x67, 0x2e, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52,
-	0x05, 0x65, 0x6e, 0x74, 0x72, 0x79, 0x1a, 0xf7, 0x02, 0x0a, 0x05, 0x45, 0x6e, 0x74, 0x72, 0x79,
+	0x05, 0x65, 0x6e, 0x74, 0x72, 0x79, 0x1a, 0xd9, 0x07, 0x0a, 0x05, 0x45, 0x6e, 0x74, 0x72, 0x79,
 	0x12, 0x4a, 0x0a, 0x0a, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x66, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
 	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31,
@@ -32025,284 +32263,347 @@ var file_enterprisev1_proto_rawDesc = []byte{
 	0x0a, 0x13, 0x61, 0x75, 0x74, 0x68, 0x65, 0x6e, 0x74, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
 	0x49, 0x6e, 0x64, 0x65, 0x78, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x13, 0x61, 0x75, 0x74,
 	0x68, 0x65, 0x6e, 0x74, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x6e, 0x64, 0x65, 0x78,
-	0x22, 0xca, 0x04, 0x0a, 0x15, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75, 0x73,
-	0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x58, 0x0a, 0x07, 0x72, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x3e, 0x2e, 0x6f, 0x63,
-	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
-	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70,
-	0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x2e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x07, 0x72, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0xd6, 0x03, 0x0a, 0x07, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x12, 0x57, 0x0a, 0x04, 0x63, 0x6f, 0x72, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x43,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x43,
-	0x6f, 0x72, 0x65, 0x52, 0x04, 0x63, 0x6f, 0x72, 0x65, 0x12, 0x7e, 0x0a, 0x11, 0x70, 0x61, 0x63,
-	0x6b, 0x61, 0x67, 0x65, 0x45, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x18, 0x03,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x50, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c,
-	0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x2e, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x45, 0x6e, 0x74, 0x65,
-	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x52, 0x11, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x45,
-	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x12, 0x75, 0x0a, 0x0e, 0x70, 0x61, 0x63,
-	0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x72, 0x64, 0x69, 0x75, 0x6d, 0x18, 0x04, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x4d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
-	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
-	0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74,
-	0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x2e, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x72, 0x64, 0x69, 0x75, 0x6d,
-	0x52, 0x0e, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x72, 0x64, 0x69, 0x75, 0x6d,
-	0x1a, 0x20, 0x0a, 0x04, 0x43, 0x6f, 0x72, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73,
-	0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69,
-	0x6f, 0x6e, 0x1a, 0x2d, 0x0a, 0x11, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x45, 0x6e, 0x74,
-	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69,
-	0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f,
-	0x6e, 0x1a, 0x2a, 0x0a, 0x0e, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x72, 0x64,
-	0x69, 0x75, 0x6d, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x22, 0x18, 0x0a,
-	0x16, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x73, 0x0a, 0x1d, 0x53, 0x79, 0x6e, 0x63, 0x68,
-	0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72,
-	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x52, 0x0a, 0x0e, 0x73, 0x65, 0x63, 0x72,
-	0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x52, 0x65, 0x66, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
-	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x62, 0x6a,
-	0x65, 0x63, 0x74, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x52, 0x0e, 0x73, 0x65,
-	0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x52, 0x65, 0x66, 0x22, 0x20, 0x0a, 0x1e,
-	0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65,
-	0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x17,
-	0x0a, 0x15, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0xe5, 0x06, 0x0a, 0x16, 0x47, 0x65, 0x74, 0x43,
-	0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x50, 0x0a, 0x04, 0x63, 0x6f, 0x72, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x3c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x12, 0x57, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0e,
+	0x32, 0x3f, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
 	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x66,
-	0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x43, 0x6f, 0x72, 0x65, 0x52, 0x04,
-	0x63, 0x6f, 0x72, 0x65, 0x12, 0x77, 0x0a, 0x11, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x45,
-	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x49, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65,
-	0x45, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x52, 0x11, 0x70, 0x61, 0x63, 0x6b,
-	0x61, 0x67, 0x65, 0x45, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x12, 0x6e, 0x0a,
-	0x0e, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x72, 0x64, 0x69, 0x75, 0x6d, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x46, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
-	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74,
-	0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x50,
-	0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x72, 0x64, 0x69, 0x75, 0x6d, 0x52, 0x0e, 0x70,
-	0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x72, 0x64, 0x69, 0x75, 0x6d, 0x1a, 0xa6, 0x01,
-	0x0a, 0x04, 0x43, 0x6f, 0x72, 0x65, 0x12, 0x26, 0x0a, 0x0e, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e,
-	0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e,
-	0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x24,
-	0x0a, 0x0d, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x56, 0x65, 0x72,
-	0x73, 0x69, 0x6f, 0x6e, 0x12, 0x1e, 0x0a, 0x0a, 0x63, 0x61, 0x6e, 0x55, 0x70, 0x67, 0x72, 0x61,
-	0x64, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a, 0x63, 0x61, 0x6e, 0x55, 0x70, 0x67,
-	0x72, 0x61, 0x64, 0x65, 0x12, 0x30, 0x0a, 0x05, 0x73, 0x65, 0x74, 0x41, 0x74, 0x18, 0x04, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52,
-	0x05, 0x73, 0x65, 0x74, 0x41, 0x74, 0x1a, 0xb3, 0x01, 0x0a, 0x11, 0x50, 0x61, 0x63, 0x6b, 0x61,
-	0x67, 0x65, 0x45, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x12, 0x26, 0x0a, 0x0e,
-	0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x56, 0x65, 0x72,
-	0x73, 0x69, 0x6f, 0x6e, 0x12, 0x24, 0x0a, 0x0d, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x56, 0x65,
-	0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x6c, 0x61, 0x74,
-	0x65, 0x73, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x1e, 0x0a, 0x0a, 0x63, 0x61,
-	0x6e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a,
-	0x63, 0x61, 0x6e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x12, 0x30, 0x0a, 0x05, 0x73, 0x65,
-	0x74, 0x41, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
-	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65,
-	0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x05, 0x73, 0x65, 0x74, 0x41, 0x74, 0x1a, 0xb0, 0x01, 0x0a,
-	0x0e, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x72, 0x64, 0x69, 0x75, 0x6d, 0x12,
-	0x26, 0x0a, 0x0e, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f,
-	0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74,
-	0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x24, 0x0a, 0x0d, 0x6c, 0x61, 0x74, 0x65, 0x73,
-	0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d,
-	0x6c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x1e, 0x0a,
-	0x0a, 0x63, 0x61, 0x6e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x08, 0x52, 0x0a, 0x63, 0x61, 0x6e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x12, 0x30, 0x0a,
-	0x05, 0x73, 0x65, 0x74, 0x41, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67,
-	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54,
-	0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x05, 0x73, 0x65, 0x74, 0x41, 0x74, 0x22,
-	0xa6, 0x09, 0x0a, 0x07, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x76,
-	0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x07, 0x76, 0x65,
-	0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x03, 0x75, 0x69, 0x64, 0x12, 0x59, 0x0a, 0x0c, 0x6f, 0x72, 0x67, 0x61, 0x6e,
-	0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x35, 0x2e,
-	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
-	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x2e, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0c, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x12, 0x36, 0x0a, 0x08, 0x69, 0x73, 0x73, 0x75, 0x65, 0x64, 0x41, 0x74, 0x18, 0x04,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70,
-	0x52, 0x08, 0x69, 0x73, 0x73, 0x75, 0x65, 0x64, 0x41, 0x74, 0x12, 0x38, 0x0a, 0x09, 0x6e, 0x6f,
-	0x74, 0x42, 0x65, 0x66, 0x6f, 0x72, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e,
-	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e,
-	0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x09, 0x6e, 0x6f, 0x74, 0x42, 0x65,
-	0x66, 0x6f, 0x72, 0x65, 0x12, 0x36, 0x0a, 0x08, 0x6e, 0x6f, 0x74, 0x41, 0x66, 0x74, 0x65, 0x72,
-	0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61,
-	0x6d, 0x70, 0x52, 0x08, 0x6e, 0x6f, 0x74, 0x41, 0x66, 0x74, 0x65, 0x72, 0x12, 0x41, 0x0a, 0x04,
-	0x74, 0x79, 0x70, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x2d, 0x2e, 0x6f, 0x63, 0x74,
+	0x76, 0x31, 0x2e, 0x41, 0x75, 0x74, 0x68, 0x65, 0x6e, 0x74, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x4c, 0x6f, 0x67, 0x2e, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75,
+	0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x5a, 0x0a, 0x07, 0x66, 0x61, 0x69,
+	0x6c, 0x75, 0x72, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x40, 0x2e, 0x6f, 0x63, 0x74,
 	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
-	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x63,
-	0x65, 0x6e, 0x73, 0x65, 0x2e, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12,
-	0x34, 0x0a, 0x15, 0x61, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65,
-	0x72, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x73, 0x18, 0x08, 0x20, 0x03, 0x28, 0x09, 0x52, 0x15,
-	0x61, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x44, 0x6f,
-	0x6d, 0x61, 0x69, 0x6e, 0x73, 0x12, 0x41, 0x0a, 0x04, 0x70, 0x6c, 0x61, 0x6e, 0x18, 0x09, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x2d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
-	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
-	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x2e, 0x50, 0x6c,
-	0x61, 0x6e, 0x52, 0x04, 0x70, 0x6c, 0x61, 0x6e, 0x1a, 0x42, 0x0a, 0x0c, 0x4f, 0x72, 0x67, 0x61,
-	0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x69, 0x64, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x69, 0x64, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x69,
-	0x73, 0x70, 0x6c, 0x61, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x0b, 0x64, 0x69, 0x73, 0x70, 0x6c, 0x61, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x1a, 0x95, 0x04, 0x0a,
-	0x04, 0x50, 0x6c, 0x61, 0x6e, 0x12, 0x46, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x0e, 0x32, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
-	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
-	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x2e, 0x50, 0x6c,
-	0x61, 0x6e, 0x2e, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x12, 0x0a,
-	0x04, 0x74, 0x69, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x69, 0x65,
-	0x72, 0x12, 0x4f, 0x0a, 0x07, 0x73, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x03, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x35, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
-	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x2e, 0x50, 0x6c, 0x61,
-	0x6e, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x07, 0x73, 0x75, 0x70, 0x70, 0x6f,
-	0x72, 0x74, 0x12, 0x4c, 0x0a, 0x06, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x73, 0x18, 0x04, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x34, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
-	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x2e, 0x50, 0x6c, 0x61,
-	0x6e, 0x2e, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x73, 0x52, 0x06, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x73,
-	0x12, 0x1a, 0x0a, 0x08, 0x66, 0x65, 0x61, 0x74, 0x75, 0x72, 0x65, 0x73, 0x18, 0x05, 0x20, 0x03,
-	0x28, 0x09, 0x52, 0x08, 0x66, 0x65, 0x61, 0x74, 0x75, 0x72, 0x65, 0x73, 0x1a, 0x98, 0x01, 0x0a,
-	0x07, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x4e, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x3a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
-	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
-	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65,
-	0x2e, 0x50, 0x6c, 0x61, 0x6e, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x2e, 0x54, 0x79,
-	0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x22, 0x3d, 0x0a, 0x04, 0x54, 0x79, 0x70, 0x65,
-	0x12, 0x10, 0x0a, 0x0c, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e,
-	0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x4e, 0x4f, 0x4e, 0x45, 0x10, 0x01, 0x12, 0x0c, 0x0a, 0x08,
-	0x53, 0x54, 0x41, 0x4e, 0x44, 0x41, 0x52, 0x44, 0x10, 0x02, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x52,
-	0x45, 0x4d, 0x49, 0x55, 0x4d, 0x10, 0x03, 0x1a, 0x24, 0x0a, 0x06, 0x4c, 0x69, 0x6d, 0x69, 0x74,
-	0x73, 0x12, 0x1a, 0x0a, 0x08, 0x6d, 0x61, 0x78, 0x55, 0x73, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x0d, 0x52, 0x08, 0x6d, 0x61, 0x78, 0x55, 0x73, 0x65, 0x72, 0x73, 0x22, 0x35, 0x0a,
-	0x04, 0x54, 0x79, 0x70, 0x65, 0x12, 0x10, 0x0a, 0x0c, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e,
-	0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x52, 0x45, 0x4d, 0x49,
-	0x55, 0x4d, 0x10, 0x01, 0x12, 0x0e, 0x0a, 0x0a, 0x45, 0x4e, 0x54, 0x45, 0x52, 0x50, 0x52, 0x49,
-	0x53, 0x45, 0x10, 0x02, 0x22, 0x52, 0x0a, 0x04, 0x54, 0x79, 0x70, 0x65, 0x12, 0x10, 0x0a, 0x0c,
-	0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x09,
-	0x0a, 0x05, 0x54, 0x52, 0x49, 0x41, 0x4c, 0x10, 0x01, 0x12, 0x10, 0x0a, 0x0c, 0x53, 0x55, 0x42,
-	0x53, 0x43, 0x52, 0x49, 0x50, 0x54, 0x49, 0x4f, 0x4e, 0x10, 0x02, 0x12, 0x0d, 0x0a, 0x09, 0x50,
-	0x45, 0x52, 0x50, 0x45, 0x54, 0x55, 0x41, 0x4c, 0x10, 0x03, 0x12, 0x0c, 0x0a, 0x08, 0x49, 0x4e,
-	0x54, 0x45, 0x52, 0x4e, 0x41, 0x4c, 0x10, 0x04, 0x22, 0x3d, 0x0a, 0x11, 0x53, 0x65, 0x74, 0x4c,
-	0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x10, 0x0a,
-	0x03, 0x6a, 0x77, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6a, 0x77, 0x74, 0x12,
-	0x16, 0x0a, 0x06, 0x64, 0x72, 0x79, 0x52, 0x75, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52,
-	0x06, 0x64, 0x72, 0x79, 0x52, 0x75, 0x6e, 0x22, 0xb7, 0x01, 0x0a, 0x12, 0x53, 0x65, 0x74, 0x4c,
-	0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x42,
-	0x0a, 0x07, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x07, 0x6c, 0x69, 0x63, 0x65, 0x6e,
-	0x73, 0x65, 0x12, 0x5d, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x75, 0x74,
+	0x68, 0x65, 0x6e, 0x74, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x6f, 0x67, 0x2e, 0x45,
+	0x6e, 0x74, 0x72, 0x79, 0x2e, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x52, 0x07, 0x66, 0x61,
+	0x69, 0x6c, 0x75, 0x72, 0x65, 0x1a, 0xf4, 0x02, 0x0a, 0x07, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72,
+	0x65, 0x12, 0x5f, 0x0a, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x0e, 0x32, 0x47, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
 	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
-	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69,
-	0x67, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65,
-	0x49, 0x6e, 0x66, 0x6f, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x05, 0x73, 0x74, 0x61, 0x74,
-	0x65, 0x22, 0x13, 0x0a, 0x11, 0x47, 0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0xe9, 0x01, 0x0a, 0x12, 0x47, 0x65, 0x74, 0x4c, 0x69,
-	0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x42, 0x0a,
-	0x07, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x28,
+	0x2e, 0x76, 0x31, 0x2e, 0x41, 0x75, 0x74, 0x68, 0x65, 0x6e, 0x74, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x4c, 0x6f, 0x67, 0x2e, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x2e, 0x46, 0x61, 0x69, 0x6c,
+	0x75, 0x72, 0x65, 0x2e, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x52, 0x06, 0x72, 0x65, 0x61, 0x73,
+	0x6f, 0x6e, 0x22, 0x87, 0x02, 0x0a, 0x06, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x12, 0x10, 0x0a,
+	0x0c, 0x52, 0x45, 0x41, 0x53, 0x4f, 0x4e, 0x5f, 0x55, 0x4e, 0x53, 0x45, 0x54, 0x10, 0x00, 0x12,
+	0x16, 0x0a, 0x12, 0x49, 0x4e, 0x56, 0x41, 0x4c, 0x49, 0x44, 0x5f, 0x43, 0x52, 0x45, 0x44, 0x45,
+	0x4e, 0x54, 0x49, 0x41, 0x4c, 0x10, 0x01, 0x12, 0x16, 0x0a, 0x12, 0x45, 0x58, 0x50, 0x49, 0x52,
+	0x45, 0x44, 0x5f, 0x43, 0x52, 0x45, 0x44, 0x45, 0x4e, 0x54, 0x49, 0x41, 0x4c, 0x10, 0x02, 0x12,
+	0x16, 0x0a, 0x12, 0x52, 0x45, 0x56, 0x4f, 0x4b, 0x45, 0x44, 0x5f, 0x43, 0x52, 0x45, 0x44, 0x45,
+	0x4e, 0x54, 0x49, 0x41, 0x4c, 0x10, 0x03, 0x12, 0x12, 0x0a, 0x0e, 0x55, 0x53, 0x45, 0x52, 0x5f,
+	0x4e, 0x4f, 0x54, 0x5f, 0x46, 0x4f, 0x55, 0x4e, 0x44, 0x10, 0x04, 0x12, 0x14, 0x0a, 0x10, 0x55,
+	0x53, 0x45, 0x52, 0x5f, 0x44, 0x45, 0x41, 0x43, 0x54, 0x49, 0x56, 0x41, 0x54, 0x45, 0x44, 0x10,
+	0x05, 0x12, 0x0f, 0x0a, 0x0b, 0x55, 0x53, 0x45, 0x52, 0x5f, 0x4c, 0x4f, 0x43, 0x4b, 0x45, 0x44,
+	0x10, 0x06, 0x12, 0x12, 0x0a, 0x0e, 0x44, 0x45, 0x4e, 0x49, 0x45, 0x44, 0x5f, 0x42, 0x59, 0x5f,
+	0x52, 0x55, 0x4c, 0x45, 0x10, 0x07, 0x12, 0x0f, 0x0a, 0x0b, 0x4e, 0x4f, 0x54, 0x5f, 0x41, 0x4c,
+	0x4c, 0x4f, 0x57, 0x45, 0x44, 0x10, 0x08, 0x12, 0x12, 0x0a, 0x0e, 0x4c, 0x49, 0x4d, 0x49, 0x54,
+	0x5f, 0x45, 0x58, 0x43, 0x45, 0x45, 0x44, 0x45, 0x44, 0x10, 0x09, 0x12, 0x1b, 0x0a, 0x17, 0x49,
+	0x44, 0x45, 0x4e, 0x54, 0x49, 0x54, 0x59, 0x5f, 0x50, 0x52, 0x4f, 0x56, 0x49, 0x44, 0x45, 0x52,
+	0x5f, 0x45, 0x52, 0x52, 0x4f, 0x52, 0x10, 0x0a, 0x12, 0x12, 0x0a, 0x0e, 0x49, 0x4e, 0x54, 0x45,
+	0x52, 0x4e, 0x41, 0x4c, 0x5f, 0x45, 0x52, 0x52, 0x4f, 0x52, 0x10, 0x0b, 0x22, 0x34, 0x0a, 0x06,
+	0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x10, 0x0a, 0x0c, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53,
+	0x5f, 0x55, 0x4e, 0x53, 0x45, 0x54, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x53, 0x55, 0x43, 0x43,
+	0x45, 0x53, 0x53, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x46, 0x41, 0x49, 0x4c, 0x55, 0x52, 0x45,
+	0x10, 0x02, 0x22, 0xca, 0x04, 0x0a, 0x15, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c,
+	0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x58, 0x0a, 0x07,
+	0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x3e, 0x2e,
+	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x07, 0x72,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0xd6, 0x03, 0x0a, 0x07, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x12, 0x57, 0x0a, 0x04, 0x63, 0x6f, 0x72, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x43, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65,
+	0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x2e, 0x43, 0x6f, 0x72, 0x65, 0x52, 0x04, 0x63, 0x6f, 0x72, 0x65, 0x12, 0x7e, 0x0a, 0x11, 0x70,
+	0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x45, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x50, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65,
+	0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x45, 0x6e,
+	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x52, 0x11, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67,
+	0x65, 0x45, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x12, 0x75, 0x0a, 0x0e, 0x70,
+	0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x72, 0x64, 0x69, 0x75, 0x6d, 0x18, 0x04, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x4d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75,
+	0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x2e, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x72, 0x64, 0x69,
+	0x75, 0x6d, 0x52, 0x0e, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x72, 0x64, 0x69,
+	0x75, 0x6d, 0x1a, 0x20, 0x0a, 0x04, 0x43, 0x6f, 0x72, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65,
+	0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72,
+	0x73, 0x69, 0x6f, 0x6e, 0x1a, 0x2d, 0x0a, 0x11, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x45,
+	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72,
+	0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73,
+	0x69, 0x6f, 0x6e, 0x1a, 0x2a, 0x0a, 0x0e, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f,
+	0x72, 0x64, 0x69, 0x75, 0x6d, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x22,
+	0x18, 0x0a, 0x16, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65,
+	0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x73, 0x0a, 0x1d, 0x53, 0x79, 0x6e,
+	0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74,
+	0x6f, 0x72, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x52, 0x0a, 0x0e, 0x73, 0x65,
+	0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x52, 0x65, 0x66, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f,
+	0x62, 0x6a, 0x65, 0x63, 0x74, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x52, 0x0e,
+	0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x52, 0x65, 0x66, 0x22, 0x20,
+	0x0a, 0x1e, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x53, 0x65, 0x63,
+	0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x17, 0x0a, 0x15, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x6e,
+	0x66, 0x6f, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0xe5, 0x06, 0x0a, 0x16, 0x47, 0x65,
+	0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x50, 0x0a, 0x04, 0x63, 0x6f, 0x72, 0x65, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x3c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x49,
+	0x6e, 0x66, 0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x43, 0x6f, 0x72, 0x65,
+	0x52, 0x04, 0x63, 0x6f, 0x72, 0x65, 0x12, 0x77, 0x0a, 0x11, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67,
+	0x65, 0x45, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x49, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x6e,
+	0x66, 0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x50, 0x61, 0x63, 0x6b, 0x61,
+	0x67, 0x65, 0x45, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x52, 0x11, 0x70, 0x61,
+	0x63, 0x6b, 0x61, 0x67, 0x65, 0x45, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x12,
+	0x6e, 0x0a, 0x0e, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x72, 0x64, 0x69, 0x75,
+	0x6d, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x46, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75,
+	0x73, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x2e, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x72, 0x64, 0x69, 0x75, 0x6d, 0x52,
+	0x0e, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x72, 0x64, 0x69, 0x75, 0x6d, 0x1a,
+	0xa6, 0x01, 0x0a, 0x04, 0x43, 0x6f, 0x72, 0x65, 0x12, 0x26, 0x0a, 0x0e, 0x63, 0x75, 0x72, 0x72,
+	0x65, 0x6e, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0e, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e,
+	0x12, 0x24, 0x0a, 0x0d, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f,
+	0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x56,
+	0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x1e, 0x0a, 0x0a, 0x63, 0x61, 0x6e, 0x55, 0x70, 0x67,
+	0x72, 0x61, 0x64, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a, 0x63, 0x61, 0x6e, 0x55,
+	0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x12, 0x30, 0x0a, 0x05, 0x73, 0x65, 0x74, 0x41, 0x74, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d,
+	0x70, 0x52, 0x05, 0x73, 0x65, 0x74, 0x41, 0x74, 0x1a, 0xb3, 0x01, 0x0a, 0x11, 0x50, 0x61, 0x63,
+	0x6b, 0x61, 0x67, 0x65, 0x45, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x12, 0x26,
+	0x0a, 0x0e, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x56,
+	0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x24, 0x0a, 0x0d, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x74,
+	0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x6c,
+	0x61, 0x74, 0x65, 0x73, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x1e, 0x0a, 0x0a,
+	0x63, 0x61, 0x6e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08,
+	0x52, 0x0a, 0x63, 0x61, 0x6e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x12, 0x30, 0x0a, 0x05,
+	0x73, 0x65, 0x74, 0x41, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f,
+	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69,
+	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x05, 0x73, 0x65, 0x74, 0x41, 0x74, 0x1a, 0xb0,
+	0x01, 0x0a, 0x0e, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x72, 0x64, 0x69, 0x75,
+	0x6d, 0x12, 0x26, 0x0a, 0x0e, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x56, 0x65, 0x72, 0x73,
+	0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x63, 0x75, 0x72, 0x72, 0x65,
+	0x6e, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x24, 0x0a, 0x0d, 0x6c, 0x61, 0x74,
+	0x65, 0x73, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0d, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12,
+	0x1e, 0x0a, 0x0a, 0x63, 0x61, 0x6e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x08, 0x52, 0x0a, 0x63, 0x61, 0x6e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x12,
+	0x30, 0x0a, 0x05, 0x73, 0x65, 0x74, 0x41, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a,
+	0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
+	0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x05, 0x73, 0x65, 0x74, 0x41,
+	0x74, 0x22, 0xa6, 0x09, 0x0a, 0x07, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a,
+	0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x07,
+	0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x69, 0x64, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x69, 0x64, 0x12, 0x59, 0x0a, 0x0c, 0x6f, 0x72, 0x67,
+	0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x35, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x2e, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69,
+	0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0c, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x36, 0x0a, 0x08, 0x69, 0x73, 0x73, 0x75, 0x65, 0x64, 0x41, 0x74,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61,
+	0x6d, 0x70, 0x52, 0x08, 0x69, 0x73, 0x73, 0x75, 0x65, 0x64, 0x41, 0x74, 0x12, 0x38, 0x0a, 0x09,
+	0x6e, 0x6f, 0x74, 0x42, 0x65, 0x66, 0x6f, 0x72, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x09, 0x6e, 0x6f, 0x74,
+	0x42, 0x65, 0x66, 0x6f, 0x72, 0x65, 0x12, 0x36, 0x0a, 0x08, 0x6e, 0x6f, 0x74, 0x41, 0x66, 0x74,
+	0x65, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
+	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73,
+	0x74, 0x61, 0x6d, 0x70, 0x52, 0x08, 0x6e, 0x6f, 0x74, 0x41, 0x66, 0x74, 0x65, 0x72, 0x12, 0x41,
+	0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x2d, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c,
+	0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x2e, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70,
+	0x65, 0x12, 0x34, 0x0a, 0x15, 0x61, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x43, 0x6c, 0x75, 0x73,
+	0x74, 0x65, 0x72, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x73, 0x18, 0x08, 0x20, 0x03, 0x28, 0x09,
+	0x52, 0x15, 0x61, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72,
+	0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x73, 0x12, 0x41, 0x0a, 0x04, 0x70, 0x6c, 0x61, 0x6e, 0x18,
+	0x09, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x2e,
+	0x50, 0x6c, 0x61, 0x6e, 0x52, 0x04, 0x70, 0x6c, 0x61, 0x6e, 0x1a, 0x42, 0x0a, 0x0c, 0x4f, 0x72,
+	0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x69, 0x64, 0x12, 0x20, 0x0a, 0x0b,
+	0x64, 0x69, 0x73, 0x70, 0x6c, 0x61, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x0b, 0x64, 0x69, 0x73, 0x70, 0x6c, 0x61, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x1a, 0x95,
+	0x04, 0x0a, 0x04, 0x50, 0x6c, 0x61, 0x6e, 0x12, 0x46, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x2e,
+	0x50, 0x6c, 0x61, 0x6e, 0x2e, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12,
+	0x12, 0x0a, 0x04, 0x74, 0x69, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74,
+	0x69, 0x65, 0x72, 0x12, 0x4f, 0x0a, 0x07, 0x73, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x35, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
+	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x2e, 0x50,
+	0x6c, 0x61, 0x6e, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x07, 0x73, 0x75, 0x70,
+	0x70, 0x6f, 0x72, 0x74, 0x12, 0x4c, 0x0a, 0x06, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x73, 0x18, 0x04,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x34, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
+	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x2e, 0x50,
+	0x6c, 0x61, 0x6e, 0x2e, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x73, 0x52, 0x06, 0x6c, 0x69, 0x6d, 0x69,
+	0x74, 0x73, 0x12, 0x1a, 0x0a, 0x08, 0x66, 0x65, 0x61, 0x74, 0x75, 0x72, 0x65, 0x73, 0x18, 0x05,
+	0x20, 0x03, 0x28, 0x09, 0x52, 0x08, 0x66, 0x65, 0x61, 0x74, 0x75, 0x72, 0x65, 0x73, 0x1a, 0x98,
+	0x01, 0x0a, 0x07, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x4e, 0x0a, 0x04, 0x74, 0x79,
+	0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x3a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e,
+	0x73, 0x65, 0x2e, 0x50, 0x6c, 0x61, 0x6e, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x2e,
+	0x54, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x22, 0x3d, 0x0a, 0x04, 0x54, 0x79,
+	0x70, 0x65, 0x12, 0x10, 0x0a, 0x0c, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e, 0x4b, 0x4e, 0x4f,
+	0x57, 0x4e, 0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x4e, 0x4f, 0x4e, 0x45, 0x10, 0x01, 0x12, 0x0c,
+	0x0a, 0x08, 0x53, 0x54, 0x41, 0x4e, 0x44, 0x41, 0x52, 0x44, 0x10, 0x02, 0x12, 0x0b, 0x0a, 0x07,
+	0x50, 0x52, 0x45, 0x4d, 0x49, 0x55, 0x4d, 0x10, 0x03, 0x1a, 0x24, 0x0a, 0x06, 0x4c, 0x69, 0x6d,
+	0x69, 0x74, 0x73, 0x12, 0x1a, 0x0a, 0x08, 0x6d, 0x61, 0x78, 0x55, 0x73, 0x65, 0x72, 0x73, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x08, 0x6d, 0x61, 0x78, 0x55, 0x73, 0x65, 0x72, 0x73, 0x22,
+	0x35, 0x0a, 0x04, 0x54, 0x79, 0x70, 0x65, 0x12, 0x10, 0x0a, 0x0c, 0x54, 0x59, 0x50, 0x45, 0x5f,
+	0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x52, 0x45,
+	0x4d, 0x49, 0x55, 0x4d, 0x10, 0x01, 0x12, 0x0e, 0x0a, 0x0a, 0x45, 0x4e, 0x54, 0x45, 0x52, 0x50,
+	0x52, 0x49, 0x53, 0x45, 0x10, 0x02, 0x22, 0x52, 0x0a, 0x04, 0x54, 0x79, 0x70, 0x65, 0x12, 0x10,
+	0x0a, 0x0c, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00,
+	0x12, 0x09, 0x0a, 0x05, 0x54, 0x52, 0x49, 0x41, 0x4c, 0x10, 0x01, 0x12, 0x10, 0x0a, 0x0c, 0x53,
+	0x55, 0x42, 0x53, 0x43, 0x52, 0x49, 0x50, 0x54, 0x49, 0x4f, 0x4e, 0x10, 0x02, 0x12, 0x0d, 0x0a,
+	0x09, 0x50, 0x45, 0x52, 0x50, 0x45, 0x54, 0x55, 0x41, 0x4c, 0x10, 0x03, 0x12, 0x0c, 0x0a, 0x08,
+	0x49, 0x4e, 0x54, 0x45, 0x52, 0x4e, 0x41, 0x4c, 0x10, 0x04, 0x22, 0x3d, 0x0a, 0x11, 0x53, 0x65,
+	0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x10, 0x0a, 0x03, 0x6a, 0x77, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6a, 0x77,
+	0x74, 0x12, 0x16, 0x0a, 0x06, 0x64, 0x72, 0x79, 0x52, 0x75, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x08, 0x52, 0x06, 0x64, 0x72, 0x79, 0x52, 0x75, 0x6e, 0x22, 0xb7, 0x01, 0x0a, 0x12, 0x53, 0x65,
+	0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x42, 0x0a, 0x07, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x07, 0x6c, 0x69, 0x63,
+	0x65, 0x6e, 0x73, 0x65, 0x12, 0x5d, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x0e, 0x32, 0x47, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e,
+	0x73, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x05, 0x73, 0x74,
+	0x61, 0x74, 0x65, 0x22, 0x13, 0x0a, 0x11, 0x47, 0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73,
+	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0xe9, 0x01, 0x0a, 0x12, 0x47, 0x65, 0x74,
+	0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x42, 0x0a, 0x07, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x07, 0x6c, 0x69, 0x63, 0x65,
+	0x6e, 0x73, 0x65, 0x12, 0x5d, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x0e, 0x32, 0x47, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66,
+	0x69, 0x67, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73,
+	0x65, 0x49, 0x6e, 0x66, 0x6f, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x05, 0x73, 0x74, 0x61,
+	0x74, 0x65, 0x12, 0x30, 0x0a, 0x05, 0x73, 0x65, 0x74, 0x41, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x05, 0x73,
+	0x65, 0x74, 0x41, 0x74, 0x22, 0x16, 0x0a, 0x14, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4c, 0x69,
+	0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x17, 0x0a, 0x15,
+	0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x11, 0x0a, 0x0f, 0x47, 0x65, 0x74, 0x41, 0x67, 0x65, 0x6e,
+	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x18, 0x0a, 0x16, 0x49, 0x6e, 0x69, 0x74,
+	0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x22, 0x61, 0x0a, 0x1b, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x67, 0x65, 0x6e,
+	0x74, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x69, 0x73, 0x70, 0x6c, 0x61, 0x79, 0x4e, 0x61, 0x6d, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x69, 0x73, 0x70, 0x6c, 0x61, 0x79, 0x4e,
+	0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x69, 0x73, 0x45, 0x70, 0x68, 0x65, 0x6d, 0x65, 0x72,
+	0x61, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0b, 0x69, 0x73, 0x45, 0x70, 0x68, 0x65,
+	0x6d, 0x65, 0x72, 0x61, 0x6c, 0x22, 0xe2, 0x04, 0x0a, 0x05, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x12,
+	0x42, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x2c,
 	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
 	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x07, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73,
-	0x65, 0x12, 0x5d, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e,
-	0x32, 0x47, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
-	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
-	0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x2e, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x49,
-	0x6e, 0x66, 0x6f, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65,
-	0x12, 0x30, 0x0a, 0x05, 0x73, 0x65, 0x74, 0x41, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
-	0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x05, 0x73, 0x65, 0x74,
-	0x41, 0x74, 0x22, 0x16, 0x0a, 0x14, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4c, 0x69, 0x63, 0x65,
-	0x6e, 0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x17, 0x0a, 0x15, 0x44, 0x65,
-	0x6c, 0x65, 0x74, 0x65, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x11, 0x0a, 0x0f, 0x47, 0x65, 0x74, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x18, 0x0a, 0x16, 0x49, 0x6e, 0x69, 0x74, 0x69, 0x61,
-	0x6c, 0x69, 0x7a, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x22, 0x61, 0x0a, 0x1b, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x57,
-	0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
-	0x20, 0x0a, 0x0b, 0x64, 0x69, 0x73, 0x70, 0x6c, 0x61, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x69, 0x73, 0x70, 0x6c, 0x61, 0x79, 0x4e, 0x61, 0x6d,
-	0x65, 0x12, 0x20, 0x0a, 0x0b, 0x69, 0x73, 0x45, 0x70, 0x68, 0x65, 0x6d, 0x65, 0x72, 0x61, 0x6c,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0b, 0x69, 0x73, 0x45, 0x70, 0x68, 0x65, 0x6d, 0x65,
-	0x72, 0x61, 0x6c, 0x22, 0xe2, 0x04, 0x0a, 0x05, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x12, 0x42, 0x0a,
-	0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x2c, 0x2e, 0x6f,
-	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
-	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41,
-	0x67, 0x65, 0x6e, 0x74, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x05, 0x73, 0x74, 0x61, 0x74,
-	0x65, 0x12, 0x46, 0x0a, 0x08, 0x73, 0x70, 0x61, 0x63, 0x65, 0x52, 0x65, 0x66, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
-	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e,
-	0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x52,
-	0x08, 0x73, 0x70, 0x61, 0x63, 0x65, 0x52, 0x65, 0x66, 0x12, 0x4c, 0x0a, 0x0b, 0x74, 0x65, 0x6d,
-	0x70, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x65, 0x66, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a,
+	0x2e, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x05, 0x73, 0x74,
+	0x61, 0x74, 0x65, 0x12, 0x46, 0x0a, 0x08, 0x73, 0x70, 0x61, 0x63, 0x65, 0x52, 0x65, 0x66, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76,
+	0x31, 0x2e, 0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63,
+	0x65, 0x52, 0x08, 0x73, 0x70, 0x61, 0x63, 0x65, 0x52, 0x65, 0x66, 0x12, 0x4c, 0x0a, 0x0b, 0x74,
+	0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x65, 0x66, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x62, 0x6a,
+	0x65, 0x63, 0x74, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x52, 0x0b, 0x74, 0x65,
+	0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x65, 0x66, 0x12, 0x50, 0x0a, 0x0a, 0x77, 0x6f, 0x72,
+	0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x30, 0x2e,
+	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x41, 0x67, 0x65, 0x6e, 0x74, 0x2e, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x52,
+	0x0a, 0x77, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x73, 0x1a, 0xe4, 0x01, 0x0a, 0x09,
+	0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x49, 0x0a, 0x04, 0x74, 0x79, 0x70,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x35, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x2e,
+	0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x2e, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04,
+	0x74, 0x79, 0x70, 0x65, 0x12, 0x45, 0x0a, 0x09, 0x77, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63,
+	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x63, 0x6f, 0x72, 0x64,
+	0x69, 0x75, 0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65,
+	0x52, 0x09, 0x77, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x75,
+	0x72, 0x6c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x22, 0x33, 0x0a,
+	0x04, 0x54, 0x79, 0x70, 0x65, 0x12, 0x0e, 0x0a, 0x0a, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e,
+	0x53, 0x45, 0x54, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x52, 0x49, 0x4d, 0x41, 0x52, 0x59,
+	0x10, 0x01, 0x12, 0x0e, 0x0a, 0x0a, 0x41, 0x44, 0x44, 0x49, 0x54, 0x49, 0x4f, 0x4e, 0x41, 0x4c,
+	0x10, 0x02, 0x22, 0x46, 0x0a, 0x05, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x0f, 0x0a, 0x0b, 0x53,
+	0x54, 0x41, 0x54, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x45, 0x54, 0x10, 0x00, 0x12, 0x13, 0x0a, 0x0f,
+	0x4e, 0x4f, 0x54, 0x5f, 0x49, 0x4e, 0x49, 0x54, 0x49, 0x41, 0x4c, 0x49, 0x5a, 0x45, 0x44, 0x10,
+	0x01, 0x12, 0x09, 0x0a, 0x05, 0x52, 0x45, 0x41, 0x44, 0x59, 0x10, 0x02, 0x12, 0x0c, 0x0a, 0x08,
+	0x4f, 0x55, 0x54, 0x44, 0x41, 0x54, 0x45, 0x44, 0x10, 0x03, 0x32, 0xd9, 0x2a, 0x0a, 0x0b, 0x4d,
+	0x61, 0x69, 0x6e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x7e, 0x0a, 0x10, 0x47, 0x65,
+	0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x38,
 	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x62, 0x6a, 0x65, 0x63,
-	0x74, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x52, 0x0b, 0x74, 0x65, 0x6d, 0x70,
-	0x6c, 0x61, 0x74, 0x65, 0x52, 0x65, 0x66, 0x12, 0x50, 0x0a, 0x0a, 0x77, 0x6f, 0x72, 0x6b, 0x73,
-	0x70, 0x61, 0x63, 0x65, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x30, 0x2e, 0x6f, 0x63,
-	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
-	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x67,
-	0x65, 0x6e, 0x74, 0x2e, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x52, 0x0a, 0x77,
-	0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x73, 0x1a, 0xe4, 0x01, 0x0a, 0x09, 0x57, 0x6f,
-	0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x49, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x35, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
-	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x2e, 0x57, 0x6f,
-	0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x2e, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79,
-	0x70, 0x65, 0x12, 0x45, 0x0a, 0x09, 0x77, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x63, 0x6f, 0x72, 0x64, 0x69, 0x75,
-	0x6d, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x52, 0x09,
-	0x77, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x72, 0x6c,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x22, 0x33, 0x0a, 0x04, 0x54,
-	0x79, 0x70, 0x65, 0x12, 0x0e, 0x0a, 0x0a, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x45,
-	0x54, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x52, 0x49, 0x4d, 0x41, 0x52, 0x59, 0x10, 0x01,
-	0x12, 0x0e, 0x0a, 0x0a, 0x41, 0x44, 0x44, 0x49, 0x54, 0x49, 0x4f, 0x4e, 0x41, 0x4c, 0x10, 0x02,
-	0x22, 0x46, 0x0a, 0x05, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x0f, 0x0a, 0x0b, 0x53, 0x54, 0x41,
-	0x54, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x45, 0x54, 0x10, 0x00, 0x12, 0x13, 0x0a, 0x0f, 0x4e, 0x4f,
-	0x54, 0x5f, 0x49, 0x4e, 0x49, 0x54, 0x49, 0x41, 0x4c, 0x49, 0x5a, 0x45, 0x44, 0x10, 0x01, 0x12,
-	0x09, 0x0a, 0x05, 0x52, 0x45, 0x41, 0x44, 0x59, 0x10, 0x02, 0x12, 0x0c, 0x0a, 0x08, 0x4f, 0x55,
-	0x54, 0x44, 0x41, 0x54, 0x45, 0x44, 0x10, 0x03, 0x32, 0xd9, 0x2a, 0x0a, 0x0b, 0x4d, 0x61, 0x69,
-	0x6e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x7e, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x43,
-	0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x38, 0x2e, 0x6f,
-	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
-	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47,
-	0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
-	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
-	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72,
-	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x13, 0x55, 0x70, 0x64, 0x61,
-	0x74, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12,
-	0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74,
+	0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x13, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x67, 0x12, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x67, 0x1a, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x67, 0x22, 0x00, 0x12, 0x83, 0x01, 0x0a, 0x17, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43, 0x6f,
+	0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x12,
+	0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
 	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x1a,
-	0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x22,
-	0x00, 0x12, 0x83, 0x01, 0x0a, 0x17, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6c, 0x6c,
+	0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72,
+	0x74, 0x65, 0x72, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45,
+	0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x22, 0x00, 0x12, 0x73, 0x0a, 0x14, 0x47, 0x65, 0x74,
+	0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65,
+	0x72, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65,
+	0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65,
+	0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x22, 0x00, 0x12, 0x90,
+	0x01, 0x0a, 0x15, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72,
+	0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x12, 0x3d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x43,
+	0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72,
+	0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63,
+	0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22,
+	0x00, 0x12, 0x83, 0x01, 0x0a, 0x17, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6c, 0x6c,
 	0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x12, 0x32, 0x2e,
 	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
 	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
@@ -32310,125 +32611,125 @@ var file_enterprisev1_proto_rawDesc = []byte{
 	0x72, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
 	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
 	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70,
-	0x6f, 0x72, 0x74, 0x65, 0x72, 0x22, 0x00, 0x12, 0x73, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x43, 0x6f,
-	0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x12,
-	0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f,
-	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6f, 0x72, 0x74, 0x65, 0x72, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x17, 0x44, 0x65, 0x6c, 0x65, 0x74,
+	0x65, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74,
+	0x65, 0x72, 0x12, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x44,
+	0x65, 0x6c, 0x65, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2a, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0x67, 0x0a, 0x0e, 0x47, 0x65,
+	0x74, 0x44, 0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x25, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69,
+	0x6f, 0x6e, 0x73, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65,
+	0x72, 0x22, 0x00, 0x12, 0x7e, 0x0a, 0x0f, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x4e, 0x53, 0x50, 0x72,
+	0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
 	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
-	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74,
-	0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x22, 0x00, 0x12, 0x90, 0x01, 0x0a,
-	0x15, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78,
-	0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x12, 0x3d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
-	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
-	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x6f, 0x6c,
-	0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x4f, 0x70,
-	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
-	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f,
-	0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12,
-	0x83, 0x01, 0x0a, 0x17, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63,
-	0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x12, 0x32, 0x2e, 0x6f, 0x63,
-	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
-	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f,
-	0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x1a,
-	0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x4e, 0x53,
+	0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a,
+	0x30, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
 	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72,
-	0x74, 0x65, 0x72, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x17, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x43,
-	0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72,
-	0x12, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
-	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c,
-	0x65, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2a, 0x2e, 0x6f, 0x63, 0x74,
-	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d,
-	0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0x67, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x44,
-	0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74,
-	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d,
-	0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e,
-	0x73, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
-	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
-	0x2e, 0x76, 0x31, 0x2e, 0x44, 0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x22,
-	0x00, 0x12, 0x7e, 0x0a, 0x0f, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76,
-	0x69, 0x64, 0x65, 0x72, 0x12, 0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x4e, 0x53, 0x50, 0x72,
-	0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x30, 0x2e,
-	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
-	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x44, 0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22,
-	0x00, 0x12, 0x71, 0x0a, 0x11, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x44, 0x4e, 0x53, 0x50, 0x72,
-	0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x31, 0x2e, 0x44, 0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x4c, 0x69, 0x73,
+	0x74, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x11, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x44, 0x4e, 0x53,
+	0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x4e, 0x53, 0x50, 0x72,
+	0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
 	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
 	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76,
-	0x69, 0x64, 0x65, 0x72, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x69, 0x64, 0x65, 0x72, 0x22, 0x00, 0x12, 0x67, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x43, 0x65, 0x72,
+	0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74,
+	0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a,
+	0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x22, 0x00, 0x12,
+	0x71, 0x0a, 0x11, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69,
+	0x63, 0x61, 0x74, 0x65, 0x12, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
 	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64,
-	0x65, 0x72, 0x22, 0x00, 0x12, 0x67, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69,
-	0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
-	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e,
-	0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2c, 0x2e,
-	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
-	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x22, 0x00, 0x12, 0x71, 0x0a,
-	0x11, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61,
-	0x74, 0x65, 0x12, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61,
+	0x74, 0x65, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
 	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
 	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65,
-	0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
-	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x22, 0x00,
-	0x12, 0x7e, 0x0a, 0x0f, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63,
-	0x61, 0x74, 0x65, 0x12, 0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x22, 0x00, 0x12, 0x7e, 0x0a, 0x0f, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66,
+	0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x65, 0x72, 0x74,
+	0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x30,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x4c, 0x69, 0x73, 0x74,
+	0x22, 0x00, 0x12, 0x89, 0x01, 0x0a, 0x10, 0x49, 0x73, 0x73, 0x75, 0x65, 0x43, 0x65, 0x72, 0x74,
+	0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x38, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x73, 0x73, 0x75, 0x65, 0x43,
+	0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x39, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x49, 0x73, 0x73, 0x75, 0x65, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69,
+	0x63, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x83,
+	0x01, 0x0a, 0x0e, 0x53, 0x65, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74,
+	0x65, 0x12, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61,
+	0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65,
+	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
+	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x43,
+	0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x22, 0x00, 0x12, 0x73, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69,
+	0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x12, 0x25, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69,
+	0x6f, 0x6e, 0x73, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74,
+	0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x22, 0x00, 0x12, 0x90, 0x01, 0x0a, 0x15, 0x4c, 0x69,
+	0x73, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73,
+	0x75, 0x65, 0x72, 0x12, 0x3d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
 	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
 	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66,
-	0x69, 0x63, 0x61, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x30, 0x2e, 0x6f,
+	0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f,
+	0x6e, 0x73, 0x1a, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65,
+	0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x83, 0x01, 0x0a,
+	0x17, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61,
+	0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69,
+	0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x1a, 0x32, 0x2e, 0x6f,
 	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
 	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43,
-	0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00,
-	0x12, 0x89, 0x01, 0x0a, 0x10, 0x49, 0x73, 0x73, 0x75, 0x65, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66,
-	0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x38, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
-	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x73, 0x73, 0x75, 0x65, 0x43, 0x65, 0x72,
-	0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x39, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x49, 0x73, 0x73, 0x75, 0x65, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61,
-	0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x83, 0x01, 0x0a,
-	0x0e, 0x53, 0x65, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12,
-	0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x53, 0x65, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72,
+	0x22, 0x00, 0x12, 0x83, 0x01, 0x0a, 0x17, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72,
+	0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x32,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64,
+	0x65, 0x72, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72,
+	0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x22, 0x00, 0x12, 0x73, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x44,
+	0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72,
+	0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74,
+	0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
 	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
-	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x43, 0x65, 0x72,
-	0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x22, 0x00, 0x12, 0x73, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69,
-	0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74,
-	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d,
-	0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e,
-	0x73, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
-	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
-	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49,
-	0x73, 0x73, 0x75, 0x65, 0x72, 0x22, 0x00, 0x12, 0x90, 0x01, 0x0a, 0x15, 0x4c, 0x69, 0x73, 0x74,
-	0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65,
-	0x72, 0x12, 0x3d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
-	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
-	0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63,
-	0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73,
-	0x1a, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
-	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73,
-	0x73, 0x75, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x83, 0x01, 0x0a, 0x17, 0x55,
-	0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65,
-	0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74,
+	0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x22, 0x00, 0x12, 0x90, 0x01,
+	0x0a, 0x15, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50,
+	0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x3d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69,
+	0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x4f,
+	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
 	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
-	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69,
-	0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74,
-	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
-	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72,
-	0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x22, 0x00,
-	0x12, 0x83, 0x01, 0x0a, 0x17, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f,
+	0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00,
+	0x12, 0x83, 0x01, 0x0a, 0x17, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63,
 	0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x32, 0x2e, 0x6f,
 	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
 	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44,
@@ -32436,276 +32737,251 @@ var file_enterprisev1_proto_rawDesc = []byte{
 	0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
 	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
 	0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76,
-	0x69, 0x64, 0x65, 0x72, 0x22, 0x00, 0x12, 0x73, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x44, 0x69, 0x72,
-	0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x25,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70,
-	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
-	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72,
-	0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x22, 0x00, 0x12, 0x90, 0x01, 0x0a, 0x15,
-	0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f,
-	0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x3d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
-	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65,
-	0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x4f, 0x70, 0x74,
-	0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79,
-	0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x83,
-	0x01, 0x0a, 0x17, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f,
-	0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74,
-	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
-	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72,
-	0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x1a, 0x32,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64,
-	0x65, 0x72, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x17, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x44, 0x69,
-	0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12,
-	0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c, 0x65,
-	0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65,
-	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65,
-	0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52,
-	0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0xc2, 0x01, 0x0a, 0x23, 0x47, 0x65, 0x6e, 0x65,
-	0x72, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f,
-	0x76, 0x69, 0x64, 0x65, 0x72, 0x43, 0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x12,
-	0x4b, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74,
-	0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x43, 0x72, 0x65, 0x64, 0x65,
-	0x6e, 0x74, 0x69, 0x61, 0x6c, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x4c, 0x2e, 0x6f,
-	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
-	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47,
-	0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79,
-	0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x43, 0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69,
-	0x61, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x9c, 0x01, 0x0a,
-	0x19, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72,
-	0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x55, 0x73, 0x65, 0x72, 0x12, 0x41, 0x2e, 0x6f, 0x63, 0x74,
-	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
-	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73,
-	0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64,
-	0x65, 0x72, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x3a, 0x2e,
-	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
-	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x69, 0x64, 0x65, 0x72, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x17, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65,
 	0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65,
-	0x72, 0x55, 0x73, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x9f, 0x01, 0x0a, 0x1a,
-	0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f,
-	0x76, 0x69, 0x64, 0x65, 0x72, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x12, 0x42, 0x2e, 0x6f, 0x63, 0x74,
-	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
-	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73,
-	0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64,
-	0x65, 0x72, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x3b,
+	0x72, 0x12, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65,
+	0x6c, 0x65, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2a, 0x2e, 0x6f, 0x63,
+	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
+	0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0xc2, 0x01, 0x0a, 0x23, 0x47, 0x65,
+	0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50,
+	0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x43, 0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61,
+	0x6c, 0x12, 0x4b, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72, 0x65,
+	0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x43, 0x72, 0x65,
+	0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x4c,
 	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
 	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64,
-	0x65, 0x72, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0xad, 0x01,
-	0x0a, 0x1c, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x44, 0x69, 0x72,
-	0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x44,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x44, 0x69, 0x72, 0x65,
-	0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x45, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69,
-	0x7a, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69,
-	0x64, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x62, 0x0a,
-	0x0c, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x27, 0x2e,
-	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
-	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x1a, 0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
-	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
-	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x22,
-	0x00, 0x12, 0x6f, 0x0a, 0x0a, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12,
-	0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69,
-	0x6f, 0x6e, 0x73, 0x1a, 0x2b, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
-	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
-	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x4c, 0x69, 0x73, 0x74,
-	0x22, 0x00, 0x12, 0x66, 0x0a, 0x0c, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x53, 0x65, 0x63, 0x72,
-	0x65, 0x74, 0x12, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
-	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x44,
-	0x65, 0x6c, 0x65, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2a, 0x2e, 0x6f,
+	0x2e, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f,
+	0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x43, 0x72, 0x65, 0x64, 0x65, 0x6e,
+	0x74, 0x69, 0x61, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x9c,
+	0x01, 0x0a, 0x19, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79,
+	0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x55, 0x73, 0x65, 0x72, 0x12, 0x41, 0x2e, 0x6f,
 	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
-	0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0x5d, 0x0a, 0x09, 0x47, 0x65,
-	0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
-	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61,
-	0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x27,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x22, 0x00, 0x12, 0x62, 0x0a, 0x0c, 0x55, 0x70, 0x64,
-	0x61, 0x74, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65,
-	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
-	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72,
-	0x65, 0x74, 0x1a, 0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
-	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x22, 0x00, 0x12, 0x67, 0x0a,
-	0x0e, 0x47, 0x65, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x12,
-	0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f,
-	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c,
+	0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76,
+	0x69, 0x64, 0x65, 0x72, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a,
+	0x3a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69,
+	0x64, 0x65, 0x72, 0x55, 0x73, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x9f, 0x01,
+	0x0a, 0x1a, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50,
+	0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x12, 0x42, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c,
+	0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76,
+	0x69, 0x64, 0x65, 0x72, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73,
+	0x1a, 0x3b, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76,
+	0x69, 0x64, 0x65, 0x72, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12,
+	0xad, 0x01, 0x0a, 0x1c, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x44,
+	0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72,
+	0x12, 0x44, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x44, 0x69,
+	0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x45, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
 	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
-	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53,
-	0x74, 0x6f, 0x72, 0x65, 0x22, 0x00, 0x12, 0x7e, 0x0a, 0x0f, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x65,
-	0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x12, 0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65,
-	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
-	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74,
-	0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f,
-	0x6e, 0x73, 0x1a, 0x30, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
-	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65,
-	0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x11, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
-	0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x12, 0x2c, 0x2e, 0x6f, 0x63,
-	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
-	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65,
-	0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65,
-	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
-	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72,
-	0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x22, 0x00, 0x12, 0x9b, 0x01, 0x0a, 0x16, 0x53, 0x79,
-	0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53,
-	0x74, 0x6f, 0x72, 0x65, 0x12, 0x3e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69,
-	0x7a, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x3f, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69,
-	0x7a, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x13, 0x43, 0x72, 0x65, 0x61, 0x74,
-	0x65, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x12, 0x2e,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x1a, 0x2e,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x22, 0x00,
-	0x12, 0x6b, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e,
-	0x61, 0x67, 0x65, 0x72, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31,
-	0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2e, 0x2e, 0x6f, 0x63,
-	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
-	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65,
-	0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x22, 0x00, 0x12, 0x84, 0x01,
-	0x0a, 0x11, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61,
-	0x67, 0x65, 0x72, 0x12, 0x39, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
-	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
-	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65,
-	0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x32,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x4c, 0x69,
-	0x73, 0x74, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x13, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x44, 0x65,
-	0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x12, 0x2e, 0x2e, 0x6f, 0x63,
-	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
-	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65,
-	0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x1a, 0x2e, 0x2e, 0x6f, 0x63,
-	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
-	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65,
-	0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x22, 0x00, 0x12, 0x6d, 0x0a,
-	0x13, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e,
-	0x61, 0x67, 0x65, 0x72, 0x12, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f,
+	0x6e, 0x69, 0x7a, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f,
+	0x76, 0x69, 0x64, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12,
+	0x62, 0x0a, 0x0c, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12,
+	0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x1a, 0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65,
+	0x74, 0x22, 0x00, 0x12, 0x6f, 0x0a, 0x0a, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65,
+	0x74, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x4f, 0x70,
+	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2b, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x4c, 0x69,
+	0x73, 0x74, 0x22, 0x00, 0x12, 0x66, 0x0a, 0x0c, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x53, 0x65,
+	0x63, 0x72, 0x65, 0x74, 0x12, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
 	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31,
 	0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2a,
 	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
 	0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70, 0x65, 0x72, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0x7e, 0x0a, 0x12,
-	0x52, 0x65, 0x73, 0x65, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x42, 0x69, 0x6e, 0x64, 0x69,
-	0x6e, 0x67, 0x12, 0x3a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
-	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x73, 0x65, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65,
-	0x42, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2a,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70, 0x65, 0x72, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0x66, 0x0a, 0x10,
-	0x47, 0x65, 0x74, 0x43, 0x6f, 0x72, 0x65, 0x43, 0x6f, 0x6e, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e,
-	0x12, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0x5d, 0x0a, 0x09,
+	0x47, 0x65, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65,
+	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65,
+	0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73,
+	0x1a, 0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
 	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0x24, 0x2e, 0x6f,
-	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
-	0x2e, 0x63, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e, 0x64, 0x69, 0x74, 0x69,
-	0x6f, 0x6e, 0x22, 0x00, 0x32, 0x94, 0x01, 0x0a, 0x13, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x50,
-	0x6f, 0x72, 0x74, 0x61, 0x6c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x7d, 0x0a, 0x0c,
-	0x49, 0x73, 0x41, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x65, 0x64, 0x12, 0x34, 0x2e, 0x6f,
-	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
-	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49,
-	0x73, 0x41, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x35, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
-	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x73, 0x41, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x65,
-	0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x32, 0x91, 0x05, 0x0a, 0x0e,
-	0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x83,
-	0x01, 0x0a, 0x0e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65,
-	0x72, 0x12, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
-	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
-	0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74,
-	0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65,
-	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
-	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x67, 0x72,
-	0x61, 0x64, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0x00, 0x12, 0x83, 0x01, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73,
-	0x74, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
-	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
-	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75,
-	0x73, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x0a, 0x53, 0x65,
-	0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
-	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
-	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x4c, 0x69,
-	0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x33, 0x2e, 0x6f,
-	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
-	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53,
-	0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x0a, 0x47, 0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73,
-	0x65, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
-	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
-	0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x33, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
-	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e,
-	0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x80, 0x01, 0x0a,
-	0x0d, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x12, 0x35,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
-	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4c, 0x69,
-	0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x32,
-	0xf7, 0x02, 0x0a, 0x0c, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
-	0x12, 0x66, 0x0a, 0x08, 0x47, 0x65, 0x74, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x12, 0x30, 0x2e, 0x6f,
-	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
-	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47,
-	0x65, 0x74, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x22, 0x00, 0x12, 0x74, 0x0a, 0x0f, 0x49, 0x6e, 0x69, 0x74,
-	0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x12, 0x37, 0x2e, 0x6f, 0x63,
+	0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x22, 0x00, 0x12, 0x62, 0x0a, 0x0c, 0x55,
+	0x70, 0x64, 0x61, 0x74, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x27, 0x2e, 0x6f, 0x63,
 	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
-	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6e,
-	0x69, 0x74, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65,
+	0x63, 0x72, 0x65, 0x74, 0x1a, 0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
 	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x22, 0x00, 0x12, 0x88,
-	0x01, 0x0a, 0x14, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x57, 0x6f,
-	0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x3c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
-	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
-	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
-	0x41, 0x67, 0x65, 0x6e, 0x74, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x30, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x22, 0x00, 0x12,
+	0x67, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72,
+	0x65, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65,
+	0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65,
+	0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x22, 0x00, 0x12, 0x7e, 0x0a, 0x0f, 0x4c, 0x69, 0x73, 0x74,
+	0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x12, 0x37, 0x2e, 0x6f, 0x63,
+	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
+	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69,
+	0x73, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x4f, 0x70, 0x74,
+	0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x30, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
+	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f,
+	0x72, 0x65, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x11, 0x55, 0x70, 0x64, 0x61,
+	0x74, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x12, 0x2c, 0x2e,
+	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x1a, 0x2c, 0x2e, 0x6f, 0x63,
+	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
+	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65,
+	0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x22, 0x00, 0x12, 0x9b, 0x01, 0x0a, 0x16,
+	0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65,
+	0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x12, 0x3e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f,
+	0x6e, 0x69, 0x7a, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x3f, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f,
+	0x6e, 0x69, 0x7a, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x13, 0x43, 0x72, 0x65,
+	0x61, 0x74, 0x65, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72,
+	0x12, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72,
+	0x1a, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72,
+	0x22, 0x00, 0x12, 0x6b, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d,
+	0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e,
+	0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2e, 0x2e,
+	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x22, 0x00, 0x12,
+	0x84, 0x01, 0x0a, 0x11, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61,
+	0x6e, 0x61, 0x67, 0x65, 0x72, 0x12, 0x39, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
 	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
-	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x2e, 0x57, 0x6f,
-	0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x22, 0x00, 0x42, 0x35, 0x5a, 0x33, 0x67, 0x69, 0x74,
-	0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2f, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2f, 0x61, 0x70, 0x69, 0x73, 0x2f, 0x6d,
-	0x61, 0x69, 0x6e, 0x2f, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x76, 0x31,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x65, 0x76, 0x69,
+	0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73,
+	0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72,
+	0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x13, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
+	0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x12, 0x2e, 0x2e,
+	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x1a, 0x2e, 0x2e,
+	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x22, 0x00, 0x12,
+	0x6d, 0x0a, 0x13, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d,
+	0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x12, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e,
+	0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73,
+	0x1a, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70, 0x65,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0x7e,
+	0x0a, 0x12, 0x52, 0x65, 0x73, 0x65, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x42, 0x69, 0x6e,
+	0x64, 0x69, 0x6e, 0x67, 0x12, 0x3a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
+	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x73, 0x65, 0x74, 0x44, 0x65, 0x76, 0x69,
+	0x63, 0x65, 0x42, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70, 0x65,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0x66,
+	0x0a, 0x10, 0x47, 0x65, 0x74, 0x43, 0x6f, 0x72, 0x65, 0x43, 0x6f, 0x6e, 0x64, 0x69, 0x74, 0x69,
+	0x6f, 0x6e, 0x12, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0x24,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x63, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e, 0x64, 0x69,
+	0x74, 0x69, 0x6f, 0x6e, 0x22, 0x00, 0x32, 0x94, 0x01, 0x0a, 0x13, 0x50, 0x6f, 0x6c, 0x69, 0x63,
+	0x79, 0x50, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x7d,
+	0x0a, 0x0c, 0x49, 0x73, 0x41, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x65, 0x64, 0x12, 0x34,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x49, 0x73, 0x41, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x65, 0x64, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x35, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
+	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x73, 0x41, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69,
+	0x7a, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x32, 0x91, 0x05,
+	0x0a, 0x0e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x12, 0x83, 0x01, 0x0a, 0x0e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75, 0x73,
+	0x74, 0x65, 0x72, 0x12, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75,
+	0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x37, 0x2e, 0x6f, 0x63,
+	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
+	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70,
+	0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x83, 0x01, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x43, 0x6c,
+	0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65,
+	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
+	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x43,
+	0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x6e,
+	0x66, 0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x0a,
+	0x53, 0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74,
+	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
+	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74,
+	0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x33,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x53, 0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x0a, 0x47, 0x65, 0x74, 0x4c, 0x69, 0x63, 0x65,
+	0x6e, 0x73, 0x65, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x33, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4c, 0x69, 0x63,
+	0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x80,
+	0x01, 0x0a, 0x0d, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65,
+	0x12, 0x35, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65,
+	0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
+	0x00, 0x32, 0xf7, 0x02, 0x0a, 0x0c, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69,
+	0x63, 0x65, 0x12, 0x66, 0x0a, 0x08, 0x47, 0x65, 0x74, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x12, 0x30,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x47, 0x65, 0x74, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x26, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x22, 0x00, 0x12, 0x74, 0x0a, 0x0f, 0x49, 0x6e,
+	0x69, 0x74, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x12, 0x37, 0x2e,
+	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x49, 0x6e, 0x69, 0x74, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x22, 0x00,
+	0x12, 0x88, 0x01, 0x0a, 0x14, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74,
+	0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x3c, 0x2e, 0x6f, 0x63, 0x74, 0x65,
+	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
+	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61,
+	0x74, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x30, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x2e,
+	0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x22, 0x00, 0x42, 0x35, 0x5a, 0x33, 0x67,
+	0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2f, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2f, 0x61, 0x70, 0x69, 0x73,
+	0x2f, 0x6d, 0x61, 0x69, 0x6e, 0x2f, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -32720,8 +32996,8 @@ func file_enterprisev1_proto_rawDescGZIP() []byte {
 	return file_enterprisev1_proto_rawDescData
 }
 
-var file_enterprisev1_proto_enumTypes = make([]protoimpl.EnumInfo, 38)
-var file_enterprisev1_proto_msgTypes = make([]protoimpl.MessageInfo, 361)
+var file_enterprisev1_proto_enumTypes = make([]protoimpl.EnumInfo, 40)
+var file_enterprisev1_proto_msgTypes = make([]protoimpl.MessageInfo, 362)
 var file_enterprisev1_proto_goTypes = []any{
 	(CollectorExporter_Spec_OTLP_Compression)(0),                          // 0: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Compression
 	(CollectorExporter_Spec_OTLPHTTP_Encoding)(0),                         // 1: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Encoding
@@ -32756,1078 +33032,1084 @@ var file_enterprisev1_proto_goTypes = []any{
 	(Condition_Expression_APIServerCordium_Service)(0),                    // 30: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium.Service
 	(Condition_Expression_APIServerAccess_Service)(0),                     // 31: octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess.Service
 	(Condition_Expression_TimeDayType_Type)(0),                            // 32: octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType.Type
-	(License_Type)(0),                                                     // 33: octelium.api.main.enterprise.v1.License.Type
-	(License_Plan_Type)(0),                                                // 34: octelium.api.main.enterprise.v1.License.Plan.Type
-	(License_Plan_Support_Type)(0),                                        // 35: octelium.api.main.enterprise.v1.License.Plan.Support.Type
-	(Agent_State)(0),                                                      // 36: octelium.api.main.enterprise.v1.Agent.State
-	(Agent_Workspace_Type)(0),                                             // 37: octelium.api.main.enterprise.v1.Agent.Workspace.Type
-	(*GetClusterConfigRequest)(nil),                                       // 38: octelium.api.main.enterprise.v1.GetClusterConfigRequest
-	(*ListCollectorExporterOptions)(nil),                                  // 39: octelium.api.main.enterprise.v1.ListCollectorExporterOptions
-	(*CollectorExporter)(nil),                                             // 40: octelium.api.main.enterprise.v1.CollectorExporter
-	(*CollectorExporterList)(nil),                                         // 41: octelium.api.main.enterprise.v1.CollectorExporterList
-	(*ClusterConfig)(nil),                                                 // 42: octelium.api.main.enterprise.v1.ClusterConfig
-	(*Secret)(nil),                                                        // 43: octelium.api.main.enterprise.v1.Secret
-	(*SecretList)(nil),                                                    // 44: octelium.api.main.enterprise.v1.SecretList
-	(*ListSecretOptions)(nil),                                             // 45: octelium.api.main.enterprise.v1.ListSecretOptions
-	(*Certificate)(nil),                                                   // 46: octelium.api.main.enterprise.v1.Certificate
-	(*CertificateList)(nil),                                               // 47: octelium.api.main.enterprise.v1.CertificateList
-	(*CertificateIssuer)(nil),                                             // 48: octelium.api.main.enterprise.v1.CertificateIssuer
-	(*CertificateIssuerList)(nil),                                         // 49: octelium.api.main.enterprise.v1.CertificateIssuerList
-	(*DirectoryProvider)(nil),                                             // 50: octelium.api.main.enterprise.v1.DirectoryProvider
-	(*DirectoryProviderList)(nil),                                         // 51: octelium.api.main.enterprise.v1.DirectoryProviderList
-	(*DirectoryProviderUser)(nil),                                         // 52: octelium.api.main.enterprise.v1.DirectoryProviderUser
-	(*DirectoryProviderUserList)(nil),                                     // 53: octelium.api.main.enterprise.v1.DirectoryProviderUserList
-	(*DirectoryProviderGroup)(nil),                                        // 54: octelium.api.main.enterprise.v1.DirectoryProviderGroup
-	(*DirectoryProviderGroupList)(nil),                                    // 55: octelium.api.main.enterprise.v1.DirectoryProviderGroupList
-	(*DNSProvider)(nil),                                                   // 56: octelium.api.main.enterprise.v1.DNSProvider
-	(*DNSProviderList)(nil),                                               // 57: octelium.api.main.enterprise.v1.DNSProviderList
-	(*ListDNSProviderOptions)(nil),                                        // 58: octelium.api.main.enterprise.v1.ListDNSProviderOptions
-	(*ListDirectoryProviderOptions)(nil),                                  // 59: octelium.api.main.enterprise.v1.ListDirectoryProviderOptions
-	(*ListCertificateOptions)(nil),                                        // 60: octelium.api.main.enterprise.v1.ListCertificateOptions
-	(*ListCertificateIssuerOptions)(nil),                                  // 61: octelium.api.main.enterprise.v1.ListCertificateIssuerOptions
-	(*SessionExtInfo)(nil),                                                // 62: octelium.api.main.enterprise.v1.SessionExtInfo
-	(*SecretStore)(nil),                                                   // 63: octelium.api.main.enterprise.v1.SecretStore
-	(*SecretStoreList)(nil),                                               // 64: octelium.api.main.enterprise.v1.SecretStoreList
-	(*GenerateDirectoryProviderCredentialRequest)(nil),                    // 65: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest
-	(*GenerateDirectoryProviderCredentialResponse)(nil),                   // 66: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse
-	(*IssueCertificateRequest)(nil),                                       // 67: octelium.api.main.enterprise.v1.IssueCertificateRequest
-	(*IssueCertificateResponse)(nil),                                      // 68: octelium.api.main.enterprise.v1.IssueCertificateResponse
-	(*SetCertificateRequest)(nil),                                         // 69: octelium.api.main.enterprise.v1.SetCertificateRequest
-	(*SetCertificateResponse)(nil),                                        // 70: octelium.api.main.enterprise.v1.SetCertificateResponse
-	(*AuditLog)(nil),                                                      // 71: octelium.api.main.enterprise.v1.AuditLog
-	(*ListSecretStoreOptions)(nil),                                        // 72: octelium.api.main.enterprise.v1.ListSecretStoreOptions
-	(*DeviceManager)(nil),                                                 // 73: octelium.api.main.enterprise.v1.DeviceManager
-	(*DeviceManagerList)(nil),                                             // 74: octelium.api.main.enterprise.v1.DeviceManagerList
-	(*ListDeviceManagerOptions)(nil),                                      // 75: octelium.api.main.enterprise.v1.ListDeviceManagerOptions
-	(*ResetDeviceBindingRequest)(nil),                                     // 76: octelium.api.main.enterprise.v1.ResetDeviceBindingRequest
-	(*UserExtInfo)(nil),                                                   // 77: octelium.api.main.enterprise.v1.UserExtInfo
-	(*ListDirectoryProviderUserOptions)(nil),                              // 78: octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions
-	(*ListDirectoryProviderGroupOptions)(nil),                             // 79: octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions
-	(*IsAuthorizedRequest)(nil),                                           // 80: octelium.api.main.enterprise.v1.IsAuthorizedRequest
-	(*IsAuthorizedResponse)(nil),                                          // 81: octelium.api.main.enterprise.v1.IsAuthorizedResponse
-	(*Condition)(nil),                                                     // 82: octelium.api.main.enterprise.v1.Condition
-	(*SynchronizeDirectoryProviderRequest)(nil),                           // 83: octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderRequest
-	(*SynchronizeDirectoryProviderResponse)(nil),                          // 84: octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderResponse
-	(*AuthenticationLog)(nil),                                             // 85: octelium.api.main.enterprise.v1.AuthenticationLog
-	(*UpgradeClusterRequest)(nil),                                         // 86: octelium.api.main.enterprise.v1.UpgradeClusterRequest
-	(*UpgradeClusterResponse)(nil),                                        // 87: octelium.api.main.enterprise.v1.UpgradeClusterResponse
-	(*SynchronizeSecretStoreRequest)(nil),                                 // 88: octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest
-	(*SynchronizeSecretStoreResponse)(nil),                                // 89: octelium.api.main.enterprise.v1.SynchronizeSecretStoreResponse
-	(*GetClusterInfoRequest)(nil),                                         // 90: octelium.api.main.enterprise.v1.GetClusterInfoRequest
-	(*GetClusterInfoResponse)(nil),                                        // 91: octelium.api.main.enterprise.v1.GetClusterInfoResponse
-	(*License)(nil),                                                       // 92: octelium.api.main.enterprise.v1.License
-	(*SetLicenseRequest)(nil),                                             // 93: octelium.api.main.enterprise.v1.SetLicenseRequest
-	(*SetLicenseResponse)(nil),                                            // 94: octelium.api.main.enterprise.v1.SetLicenseResponse
-	(*GetLicenseRequest)(nil),                                             // 95: octelium.api.main.enterprise.v1.GetLicenseRequest
-	(*GetLicenseResponse)(nil),                                            // 96: octelium.api.main.enterprise.v1.GetLicenseResponse
-	(*DeleteLicenseRequest)(nil),                                          // 97: octelium.api.main.enterprise.v1.DeleteLicenseRequest
-	(*DeleteLicenseResponse)(nil),                                         // 98: octelium.api.main.enterprise.v1.DeleteLicenseResponse
-	(*GetAgentRequest)(nil),                                               // 99: octelium.api.main.enterprise.v1.GetAgentRequest
-	(*InitializeAgentRequest)(nil),                                        // 100: octelium.api.main.enterprise.v1.InitializeAgentRequest
-	(*CreateAgentWorkspaceRequest)(nil),                                   // 101: octelium.api.main.enterprise.v1.CreateAgentWorkspaceRequest
-	(*Agent)(nil),                                                         // 102: octelium.api.main.enterprise.v1.Agent
-	(*CollectorExporter_Spec)(nil),                                        // 103: octelium.api.main.enterprise.v1.CollectorExporter.Spec
-	(*CollectorExporter_Status)(nil),                                      // 104: octelium.api.main.enterprise.v1.CollectorExporter.Status
-	(*CollectorExporter_Spec_OTLP)(nil),                                   // 105: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP
-	(*CollectorExporter_Spec_OTLPHTTP)(nil),                               // 106: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP
-	(*CollectorExporter_Spec_PrometheusRemoteWrite)(nil),                  // 107: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite
-	(*CollectorExporter_Spec_Clickhouse)(nil),                             // 108: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse
-	(*CollectorExporter_Spec_Elasticsearch)(nil),                          // 109: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch
-	(*CollectorExporter_Spec_Logzio)(nil),                                 // 110: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio
-	(*CollectorExporter_Spec_InfluxDB)(nil),                               // 111: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB
-	(*CollectorExporter_Spec_Kafka)(nil),                                  // 112: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka
-	(*CollectorExporter_Spec_Datadog)(nil),                                // 113: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog
-	(*CollectorExporter_Spec_Splunk)(nil),                                 // 114: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk
-	(*CollectorExporter_Spec_AzureMonitor)(nil),                           // 115: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor
-	(*CollectorExporter_Spec_AzureDataExplorer)(nil),                      // 116: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer
-	(*CollectorExporter_Spec_OTLP_Header)(nil),                            // 117: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Header
-	(*CollectorExporter_Spec_OTLP_Auth)(nil),                              // 118: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth
-	(*CollectorExporter_Spec_OTLP_TLS)(nil),                               // 119: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.TLS
-	(*CollectorExporter_Spec_OTLP_Keepalive)(nil),                         // 120: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive
-	(*CollectorExporter_Spec_OTLP_Auth_Bearer)(nil),                       // 121: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Bearer
-	(*CollectorExporter_Spec_OTLP_Auth_Basic)(nil),                        // 122: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic
-	(*CollectorExporter_Spec_OTLP_Auth_Custom)(nil),                       // 123: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom
-	(*CollectorExporter_Spec_OTLP_Auth_Basic_Password)(nil),               // 124: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic.Password
-	(*CollectorExporter_Spec_OTLP_Auth_Custom_Value)(nil),                 // 125: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom.Value
-	(*CollectorExporter_Spec_OTLPHTTP_Header)(nil),                        // 126: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header
-	(*CollectorExporter_Spec_OTLPHTTP_Auth)(nil),                          // 127: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth
-	(*CollectorExporter_Spec_OTLPHTTP_TLS)(nil),                           // 128: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS
-	(*CollectorExporter_Spec_OTLPHTTP_Auth_Bearer)(nil),                   // 129: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Bearer
-	(*CollectorExporter_Spec_OTLPHTTP_Auth_Basic)(nil),                    // 130: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic
-	(*CollectorExporter_Spec_OTLPHTTP_Auth_Custom)(nil),                   // 131: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom
-	(*CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password)(nil),           // 132: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic.Password
-	(*CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value)(nil),             // 133: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom.Value
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_Header)(nil),           // 134: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel)(nil),    // 135: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth)(nil),             // 136: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_TLS)(nil),              // 137: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue)(nil), // 138: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion)(nil),         // 139: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo)(nil),                            // 140: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer)(nil),                           // 141: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Bearer
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic)(nil),                            // 142: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom)(nil),                           // 143: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password)(nil),                   // 144: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.Password
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value)(nil),                     // 145: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom.Value
-	(*CollectorExporter_Spec_Clickhouse_Password)(nil),                                         // 146: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Password
-	(*CollectorExporter_Spec_Clickhouse_TLS)(nil),                                              // 147: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS
-	(*CollectorExporter_Spec_Clickhouse_ConnectionParam)(nil),                                  // 148: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam
-	(*CollectorExporter_Spec_Clickhouse_TableEngine)(nil),                                      // 149: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine
-	(*CollectorExporter_Spec_Clickhouse_MetricsTables)(nil),                                    // 150: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables
-	(*CollectorExporter_Spec_Elasticsearch_Header)(nil),                                        // 151: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header
-	(*CollectorExporter_Spec_Elasticsearch_Auth)(nil),                                          // 152: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth
-	(*CollectorExporter_Spec_Elasticsearch_TLS)(nil),                                           // 153: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS
-	(*CollectorExporter_Spec_Elasticsearch_Auth_APIKey)(nil),                                   // 154: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.APIKey
-	(*CollectorExporter_Spec_Elasticsearch_Auth_Basic)(nil),                                    // 155: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic
-	(*CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password)(nil),                           // 156: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic.Password
-	(*CollectorExporter_Spec_Logzio_Token)(nil),                                                // 157: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.Token
-	(*CollectorExporter_Spec_InfluxDB_Header)(nil),                                             // 158: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header
-	(*CollectorExporter_Spec_InfluxDB_Token)(nil),                                              // 159: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Token
-	(*CollectorExporter_Spec_InfluxDB_V1Compatibility)(nil),                                    // 160: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility
-	(*CollectorExporter_Spec_InfluxDB_V1Compatibility_Password)(nil),                           // 161: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password
-	(*CollectorExporter_Spec_Kafka_Header)(nil),                                                // 162: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header
-	(*CollectorExporter_Spec_Kafka_Auth)(nil),                                                  // 163: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth
-	(*CollectorExporter_Spec_Kafka_TLS)(nil),                                                   // 164: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS
-	(*CollectorExporter_Spec_Kafka_Signal)(nil),                                                // 165: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal
-	(*CollectorExporter_Spec_Kafka_Producer)(nil),                                              // 166: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer
-	(*CollectorExporter_Spec_Kafka_Auth_SASL)(nil),                                             // 167: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL
-	(*CollectorExporter_Spec_Kafka_Auth_SASL_Password)(nil),                                    // 168: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password
-	(*CollectorExporter_Spec_Datadog_APIKey)(nil),                                              // 169: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey
-	(*CollectorExporter_Spec_Datadog_API)(nil),                                                 // 170: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API
-	(*CollectorExporter_Spec_Datadog_Metrics)(nil),                                             // 171: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics
-	(*CollectorExporter_Spec_Datadog_Logs)(nil),                                                // 172: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs
-	(*CollectorExporter_Spec_Datadog_HostMetadata)(nil),                                        // 173: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata
-	(*CollectorExporter_Spec_Splunk_Token)(nil),                                                // 174: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.Token
-	(*CollectorExporter_Spec_Splunk_TLS)(nil),                                                  // 175: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.TLS
-	(*CollectorExporter_Spec_AzureMonitor_ConnectionString)(nil),                               // 176: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString
-	(*CollectorExporter_Spec_AzureMonitor_InstrumentationKey)(nil),                             // 177: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey
-	(*CollectorExporter_Spec_AzureDataExplorer_ApplicationKey)(nil),                            // 178: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey
-	(*CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal)(nil),                          // 179: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal
-	(*CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity)(nil),                           // 180: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity
-	(*CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth)(nil),                          // 181: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth
-	(*CollectorExporter_Spec_AzureDataExplorer_Auth)(nil),                                      // 182: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth
-	(*ClusterConfig_Spec)(nil),                                                                 // 183: octelium.api.main.enterprise.v1.ClusterConfig.Spec
-	(*ClusterConfig_Status)(nil),                                                               // 184: octelium.api.main.enterprise.v1.ClusterConfig.Status
-	(*ClusterConfig_Spec_Collector)(nil),                                                       // 185: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector
-	(*ClusterConfig_Spec_Scaler)(nil),                                                          // 186: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler
-	(*ClusterConfig_Spec_Certificate)(nil),                                                     // 187: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate
-	(*ClusterConfig_Spec_Agent)(nil),                                                           // 188: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent
-	(*ClusterConfig_Spec_Collector_Pipeline)(nil),                                              // 189: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.Pipeline
-	(*ClusterConfig_Spec_Scaler_Octovigil)(nil),                                                // 190: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Octovigil
-	(*ClusterConfig_Spec_Scaler_Ingress)(nil),                                                  // 191: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Ingress
-	(*ClusterConfig_Spec_Scaler_Collector)(nil),                                                // 192: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Collector
-	(*ClusterConfig_Spec_Agent_LLM)(nil),                                                       // 193: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.LLM
-	(*ClusterConfig_Status_UpgradeRequest)(nil),                                                // 194: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest
-	(*ClusterConfig_Status_LicenseInfo)(nil),                                                   // 195: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo
-	(*Secret_Spec)(nil),                                                                        // 196: octelium.api.main.enterprise.v1.Secret.Spec
-	(*Secret_Status)(nil),                                                                      // 197: octelium.api.main.enterprise.v1.Secret.Status
-	(*Secret_Data)(nil),                                                                        // 198: octelium.api.main.enterprise.v1.Secret.Data
-	(*Secret_Spec_Data)(nil),                                                                   // 199: octelium.api.main.enterprise.v1.Secret.Spec.Data
-	nil,                                                                                        // 200: octelium.api.main.enterprise.v1.Secret.Status.ExtEntry
-	(*Secret_Data_DataMap)(nil),                                                                // 201: octelium.api.main.enterprise.v1.Secret.Data.DataMap
-	nil,                                                                                        // 202: octelium.api.main.enterprise.v1.Secret.Data.DataMap.MapEntry
-	(*Certificate_Spec)(nil),                                                                   // 203: octelium.api.main.enterprise.v1.Certificate.Spec
-	(*Certificate_Status)(nil),                                                                 // 204: octelium.api.main.enterprise.v1.Certificate.Status
-	(*Certificate_Status_Issuance)(nil),                                                        // 205: octelium.api.main.enterprise.v1.Certificate.Status.Issuance
-	(*Certificate_Status_Info)(nil),                                                            // 206: octelium.api.main.enterprise.v1.Certificate.Status.Info
-	(*CertificateIssuer_Spec)(nil),                                                             // 207: octelium.api.main.enterprise.v1.CertificateIssuer.Spec
-	(*CertificateIssuer_Status)(nil),                                                           // 208: octelium.api.main.enterprise.v1.CertificateIssuer.Status
-	(*CertificateIssuer_Spec_ACME)(nil),                                                        // 209: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME
-	(*CertificateIssuer_Spec_ACME_Solver)(nil),                                                 // 210: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver
-	(*CertificateIssuer_Spec_ACME_Solver_DNS)(nil),                                             // 211: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver.DNS
-	(*CertificateIssuer_Status_ACME)(nil),                                                      // 212: octelium.api.main.enterprise.v1.CertificateIssuer.Status.ACME
-	(*DirectoryProvider_Spec)(nil),                                                             // 213: octelium.api.main.enterprise.v1.DirectoryProvider.Spec
-	(*DirectoryProvider_Status)(nil),                                                           // 214: octelium.api.main.enterprise.v1.DirectoryProvider.Status
-	(*DirectoryProvider_Spec_SCIM)(nil),                                                        // 215: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.SCIM
-	(*DirectoryProvider_Spec_GoogleWorkspace)(nil),                                             // 216: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace
-	(*DirectoryProvider_Spec_Keycloak)(nil),                                                    // 217: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak
-	(*DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount)(nil),                              // 218: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount
-	(*DirectoryProvider_Spec_GoogleWorkspace_Polling)(nil),                                     // 219: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling
-	(*DirectoryProvider_Spec_Keycloak_ClientSecret)(nil),                                       // 220: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret
-	(*DirectoryProvider_Spec_Keycloak_Polling)(nil),                                            // 221: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling
-	(*DirectoryProvider_Status_Synchronization)(nil),                                           // 222: octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization
-	(*DirectoryProviderUser_Spec)(nil),                                                         // 223: octelium.api.main.enterprise.v1.DirectoryProviderUser.Spec
-	(*DirectoryProviderUser_Status)(nil),                                                       // 224: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status
-	(*DirectoryProviderGroup_Spec)(nil),                                                        // 225: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Spec
-	(*DirectoryProviderGroup_Status)(nil),                                                      // 226: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status
-	(*DNSProvider_Spec)(nil),                                                                   // 227: octelium.api.main.enterprise.v1.DNSProvider.Spec
-	(*DNSProvider_Status)(nil),                                                                 // 228: octelium.api.main.enterprise.v1.DNSProvider.Status
-	(*DNSProvider_Spec_Cloudflare)(nil),                                                        // 229: octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare
-	(*DNSProvider_Spec_AWS)(nil),                                                               // 230: octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS
-	(*DNSProvider_Spec_DigitalOcean)(nil),                                                      // 231: octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean
-	(*DNSProvider_Spec_Google)(nil),                                                            // 232: octelium.api.main.enterprise.v1.DNSProvider.Spec.Google
-	(*DNSProvider_Spec_Azure)(nil),                                                             // 233: octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure
-	(*DNSProvider_Spec_Linode)(nil),                                                            // 234: octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode
-	(*DNSProvider_Spec_OVH)(nil),                                                               // 235: octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH
-	(*DNSProvider_Spec_Cloudflare_APIToken)(nil),                                               // 236: octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.APIToken
-	(*DNSProvider_Spec_AWS_SecretAccessKey)(nil),                                               // 237: octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.SecretAccessKey
-	(*DNSProvider_Spec_DigitalOcean_APIToken)(nil),                                             // 238: octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.APIToken
-	(*DNSProvider_Spec_Google_ServiceAccount)(nil),                                             // 239: octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.ServiceAccount
-	(*DNSProvider_Spec_Azure_ClientSecret)(nil),                                                // 240: octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.ClientSecret
-	(*DNSProvider_Spec_Linode_APIToken)(nil),                                                   // 241: octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.APIToken
-	(*DNSProvider_Spec_OVH_ApplicationSecret)(nil),                                             // 242: octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.ApplicationSecret
-	(*SecretStore_Spec)(nil),                                                                   // 243: octelium.api.main.enterprise.v1.SecretStore.Spec
-	(*SecretStore_Status)(nil),                                                                 // 244: octelium.api.main.enterprise.v1.SecretStore.Status
-	(*SecretStore_Spec_HashicorpVault)(nil),                                                    // 245: octelium.api.main.enterprise.v1.SecretStore.Spec.HashicorpVault
-	(*SecretStore_Spec_GoogleCloudKeyManagementService)(nil),                                   // 246: octelium.api.main.enterprise.v1.SecretStore.Spec.GoogleCloudKeyManagementService
-	(*SecretStore_Spec_AWSKeyManagementService)(nil),                                           // 247: octelium.api.main.enterprise.v1.SecretStore.Spec.AWSKeyManagementService
-	(*SecretStore_Spec_AzureKeyVault)(nil),                                                     // 248: octelium.api.main.enterprise.v1.SecretStore.Spec.AzureKeyVault
-	(*SecretStore_Spec_Kubernetes)(nil),                                                        // 249: octelium.api.main.enterprise.v1.SecretStore.Spec.Kubernetes
-	(*SecretStore_Status_Synchronization)(nil),                                                 // 250: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization
-	(*GenerateDirectoryProviderCredentialResponse_Bearer)(nil),                                 // 251: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse.Bearer
-	(*AuditLog_Entry)(nil),                                                                     // 252: octelium.api.main.enterprise.v1.AuditLog.Entry
-	(*DeviceManager_Spec)(nil),                                                                 // 253: octelium.api.main.enterprise.v1.DeviceManager.Spec
-	(*DeviceManager_Status)(nil),                                                               // 254: octelium.api.main.enterprise.v1.DeviceManager.Status
-	(*DeviceManager_Spec_SecretRef)(nil),                                                       // 255: octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	(*DeviceManager_Spec_CrowdStrike)(nil),                                                     // 256: octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike
-	(*DeviceManager_Spec_SentinelOne)(nil),                                                     // 257: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne
-	(*DeviceManager_Spec_MicrosoftIntune)(nil),                                                 // 258: octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune
-	(*DeviceManager_Spec_Jamf)(nil),                                                            // 259: octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf
-	(*DeviceManager_Spec_OnePassword)(nil),                                                     // 260: octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword
-	(*DeviceManager_Spec_FleetDM)(nil),                                                         // 261: octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM
-	(*DeviceManager_Spec_Huntress)(nil),                                                        // 262: octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress
-	(*DeviceManager_Spec_Iru)(nil),                                                             // 263: octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru
-	(*DeviceManager_Spec_Polling)(nil),                                                         // 264: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling
-	(*DeviceManager_Spec_Linking)(nil),                                                         // 265: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking
-	nil,                                                                                        // 266: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.AgentFiltersEntry
-	(*DeviceManager_Status_Collection)(nil),                                                    // 267: octelium.api.main.enterprise.v1.DeviceManager.Status.Collection
-	(*DeviceManager_Status_Linking)(nil),                                                       // 268: octelium.api.main.enterprise.v1.DeviceManager.Status.Linking
-	(*IsAuthorizedRequest_Additional)(nil),                                                     // 269: octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional
-	(*Condition_All)(nil),                                                                      // 270: octelium.api.main.enterprise.v1.Condition.All
-	(*Condition_Any)(nil),                                                                      // 271: octelium.api.main.enterprise.v1.Condition.Any
-	(*Condition_None)(nil),                                                                     // 272: octelium.api.main.enterprise.v1.Condition.None
-	(*Condition_Not)(nil),                                                                      // 273: octelium.api.main.enterprise.v1.Condition.Not
-	(*Condition_Expression)(nil),                                                               // 274: octelium.api.main.enterprise.v1.Condition.Expression
-	(*Condition_Expression_User)(nil),                                                          // 275: octelium.api.main.enterprise.v1.Condition.Expression.User
-	(*Condition_Expression_UserType)(nil),                                                      // 276: octelium.api.main.enterprise.v1.Condition.Expression.UserType
-	(*Condition_Expression_Group)(nil),                                                         // 277: octelium.api.main.enterprise.v1.Condition.Expression.Group
-	(*Condition_Expression_Session)(nil),                                                       // 278: octelium.api.main.enterprise.v1.Condition.Expression.Session
-	(*Condition_Expression_Device)(nil),                                                        // 279: octelium.api.main.enterprise.v1.Condition.Expression.Device
-	(*Condition_Expression_DeviceOSType)(nil),                                                  // 280: octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType
-	(*Condition_Expression_Service)(nil),                                                       // 281: octelium.api.main.enterprise.v1.Condition.Expression.Service
-	(*Condition_Expression_Namespace)(nil),                                                     // 282: octelium.api.main.enterprise.v1.Condition.Expression.Namespace
-	(*Condition_Expression_ServiceMode)(nil),                                                   // 283: octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode
-	(*Condition_Expression_ServicePublic)(nil),                                                 // 284: octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic
-	(*Condition_Expression_SessionType)(nil),                                                   // 285: octelium.api.main.enterprise.v1.Condition.Expression.SessionType
-	(*Condition_Expression_SessionAuthenticationType)(nil),                                     // 286: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType
-	(*Condition_Expression_SessionAuthenticationAAL)(nil),                                      // 287: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL
-	(*Condition_Expression_SessionAuthenticationIdentityProvider)(nil),                         // 288: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider
-	(*Condition_Expression_SessionAuthenticationCredential)(nil),                               // 289: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential
-	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey)(nil),             // 290: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey
-	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware)(nil),            // 291: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware
-	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified)(nil),        // 292: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified
-	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent)(nil),         // 293: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent
-	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified)(nil), // 294: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified
-	(*Condition_Expression_SessionAuthenticationCredAuthenticatorAAGUID)(nil),                  // 295: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorAAGUID
-	(*Condition_Expression_SessionBrowser)(nil),                                                // 296: octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser
-	(*Condition_Expression_TimeBefore)(nil),                                                    // 297: octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore
-	(*Condition_Expression_TimeAfter)(nil),                                                     // 298: octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter
-	(*Condition_Expression_SessionAuthenticationCredentialType)(nil),                           // 299: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType
-	(*Condition_Expression_SessionAuthenticationGeoipCountryCode)(nil),                         // 300: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode
-	(*Condition_Expression_SessionAuthenticationGeoipContinentCode)(nil),                       // 301: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode
-	(*Condition_Expression_RequestHTTPPath)(nil),                                               // 302: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath
-	(*Condition_Expression_RequestHTTPMethod)(nil),                                             // 303: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod
-	(*Condition_Expression_RequestHTTPHasHeader)(nil),                                          // 304: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader
-	(*Condition_Expression_RequestHTTPHeaderValue)(nil),                                        // 305: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue
-	(*Condition_Expression_RequestIP)(nil),                                                     // 306: octelium.api.main.enterprise.v1.Condition.Expression.RequestIP
-	(*Condition_Expression_RequestIPInRange)(nil),                                              // 307: octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange
-	(*Condition_Expression_StringMatch)(nil),                                                   // 308: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	(*Condition_Expression_StringSetMatch)(nil),                                                // 309: octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch
-	(*Condition_Expression_UIntMatch)(nil),                                                     // 310: octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
-	(*Condition_Expression_IntMatch)(nil),                                                      // 311: octelium.api.main.enterprise.v1.Condition.Expression.IntMatch
-	(*Condition_Expression_DoubleMatch)(nil),                                                   // 312: octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch
-	(*Condition_Expression_RequestHTTPHost)(nil),                                               // 313: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost
-	(*Condition_Expression_RequestHTTPProtocol)(nil),                                           // 314: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol
-	(*Condition_Expression_RequestHTTPScheme)(nil),                                             // 315: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme
-	(*Condition_Expression_RequestHTTPURI)(nil),                                                // 316: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI
-	(*Condition_Expression_RequestHTTPSize)(nil),                                               // 317: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize
-	(*Condition_Expression_RequestHTTPHasQueryParam)(nil),                                      // 318: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam
-	(*Condition_Expression_RequestHTTPQueryParamValue)(nil),                                    // 319: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue
-	(*Condition_Expression_RequestSSH)(nil),                                                    // 320: octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH
-	(*Condition_Expression_RequestSSHUser)(nil),                                                // 321: octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser
-	(*Condition_Expression_RequestKubernetes)(nil),                                             // 322: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes
-	(*Condition_Expression_RequestKubernetesVerb)(nil),                                         // 323: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb
-	(*Condition_Expression_RequestKubernetesAPIPrefix)(nil),                                    // 324: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix
-	(*Condition_Expression_RequestKubernetesAPIGroup)(nil),                                     // 325: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup
-	(*Condition_Expression_RequestKubernetesAPIVersion)(nil),                                   // 326: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion
-	(*Condition_Expression_RequestKubernetesNamespace)(nil),                                    // 327: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace
-	(*Condition_Expression_RequestKubernetesResource)(nil),                                     // 328: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource
-	(*Condition_Expression_RequestKubernetesSubresource)(nil),                                  // 329: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource
-	(*Condition_Expression_RequestKubernetesName)(nil),                                         // 330: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName
-	(*Condition_Expression_RequestGRPC)(nil),                                                   // 331: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC
-	(*Condition_Expression_RequestGRPCMethod)(nil),                                             // 332: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod
-	(*Condition_Expression_RequestGRPCService)(nil),                                            // 333: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService
-	(*Condition_Expression_RequestGRPCServiceFullName)(nil),                                    // 334: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName
-	(*Condition_Expression_RequestGRPCPackage)(nil),                                            // 335: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage
-	(*Condition_Expression_RequestPostgresConnect)(nil),                                        // 336: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect
-	(*Condition_Expression_RequestPostgresConnectUser)(nil),                                    // 337: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser
-	(*Condition_Expression_RequestPostgresConnectDatabase)(nil),                                // 338: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase
-	(*Condition_Expression_RequestPostgresConnectApplicationName)(nil),                         // 339: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName
-	(*Condition_Expression_RequestPostgresQuery)(nil),                                          // 340: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery
-	(*Condition_Expression_RequestPostgresQueryText)(nil),                                      // 341: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText
-	(*Condition_Expression_RequestPostgresParse)(nil),                                          // 342: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse
-	(*Condition_Expression_RequestPostgresParseName)(nil),                                      // 343: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName
-	(*Condition_Expression_RequestPostgresParseQuery)(nil),                                     // 344: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery
-	(*Condition_Expression_RequestDNS)(nil),                                                    // 345: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS
-	(*Condition_Expression_RequestDNSName)(nil),                                                // 346: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName
-	(*Condition_Expression_RequestDNSTypeID)(nil),                                              // 347: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID
-	(*Condition_Expression_RequestSOCKS5)(nil),                                                 // 348: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5
-	(*Condition_Expression_RequestSOCKS5Host)(nil),                                             // 349: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host
-	(*Condition_Expression_RequestSOCKS5Port)(nil),                                             // 350: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port
-	(*Condition_Expression_RequestSOCKS5AddressType)(nil),                                      // 351: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType
-	(*Condition_Expression_MCPProtocolVersion)(nil),                                            // 352: octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion
-	(*Condition_Expression_MCPMethod)(nil),                                                     // 353: octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod
-	(*Condition_Expression_MCPToolName)(nil),                                                   // 354: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName
-	(*Condition_Expression_MCPPromptName)(nil),                                                 // 355: octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName
-	(*Condition_Expression_MCPResourceURI)(nil),                                                // 356: octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI
-	(*Condition_Expression_MCPIsNotification)(nil),                                             // 357: octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification
-	(*Condition_Expression_MCPToolArgument)(nil),                                               // 358: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument
-	(*Condition_Expression_LLMProtocol)(nil),                                                   // 359: octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol
-	(*Condition_Expression_LLMOperation)(nil),                                                  // 360: octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation
-	(*Condition_Expression_LLMModel)(nil),                                                      // 361: octelium.api.main.enterprise.v1.Condition.Expression.LLMModel
-	(*Condition_Expression_LLMStream)(nil),                                                     // 362: octelium.api.main.enterprise.v1.Condition.Expression.LLMStream
-	(*Condition_Expression_LLMEstimatedInputTokens)(nil),                                       // 363: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens
-	(*Condition_Expression_LLMEstimateQuality)(nil),                                            // 364: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality
-	(*Condition_Expression_LLMMaxOutputTokens)(nil),                                            // 365: octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens
-	(*Condition_Expression_LLMHasTools)(nil),                                                   // 366: octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools
-	(*Condition_Expression_LLMToolCount)(nil),                                                  // 367: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount
-	(*Condition_Expression_LLMToolName)(nil),                                                   // 368: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName
-	(*Condition_Expression_LLMInputItemCount)(nil),                                             // 369: octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount
-	(*Condition_Expression_LLMHasImageInput)(nil),                                              // 370: octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput
-	(*Condition_Expression_LLMHasAudioInput)(nil),                                              // 371: octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput
-	(*Condition_Expression_APIServerReadOnlyMethods)(nil),                                      // 372: octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods
-	(*Condition_Expression_APIServerMethods)(nil),                                              // 373: octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods
-	(*Condition_Expression_APIServerServices)(nil),                                             // 374: octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices
-	(*Condition_Expression_APIServerCore)(nil),                                                 // 375: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore
-	(*Condition_Expression_APIServerUser)(nil),                                                 // 376: octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser
-	(*Condition_Expression_APIServerEnterprise)(nil),                                           // 377: octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise
-	(*Condition_Expression_APIServerCordium)(nil),                                              // 378: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium
-	(*Condition_Expression_APIServerAccess)(nil),                                               // 379: octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess
-	(*Condition_Expression_TimeDayType)(nil),                                                   // 380: octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType
-	(*Condition_Expression_StringMatch_In)(nil),                                                // 381: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In
-	(*Condition_Expression_StringSetMatch_In)(nil),                                             // 382: octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In
-	(*Condition_Expression_MCPToolArgument_BoolMatch)(nil),                                     // 383: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch
-	(*Condition_Expression_MCPToolArgument_IsNull)(nil),                                        // 384: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull
-	(*Condition_Expression_MCPToolArgument_Exists)(nil),                                        // 385: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists
-	(*AuthenticationLog_Entry)(nil),                                                            // 386: octelium.api.main.enterprise.v1.AuthenticationLog.Entry
-	(*UpgradeClusterRequest_Request)(nil),                                                      // 387: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request
-	(*UpgradeClusterRequest_Request_Core)(nil),                                                 // 388: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.Core
-	(*UpgradeClusterRequest_Request_PackageEnterprise)(nil),                                    // 389: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageEnterprise
-	(*UpgradeClusterRequest_Request_PackageCordium)(nil),                                       // 390: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageCordium
-	(*GetClusterInfoResponse_Core)(nil),                                                        // 391: octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core
-	(*GetClusterInfoResponse_PackageEnterprise)(nil),                                           // 392: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise
-	(*GetClusterInfoResponse_PackageCordium)(nil),                                              // 393: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium
-	(*License_Organization)(nil),                                                               // 394: octelium.api.main.enterprise.v1.License.Organization
-	(*License_Plan)(nil),                                                                       // 395: octelium.api.main.enterprise.v1.License.Plan
-	(*License_Plan_Support)(nil),                                                               // 396: octelium.api.main.enterprise.v1.License.Plan.Support
-	(*License_Plan_Limits)(nil),                                                                // 397: octelium.api.main.enterprise.v1.License.Plan.Limits
-	(*Agent_Workspace)(nil),                                                                    // 398: octelium.api.main.enterprise.v1.Agent.Workspace
-	(*metav1.CommonListOptions)(nil),                                                           // 399: octelium.api.main.meta.v1.CommonListOptions
-	(*metav1.Metadata)(nil),                                                                    // 400: octelium.api.main.meta.v1.Metadata
-	(*metav1.ListResponseMeta)(nil),                                                            // 401: octelium.api.main.meta.v1.ListResponseMeta
-	(*metav1.ObjectReference)(nil),                                                             // 402: octelium.api.main.meta.v1.ObjectReference
-	(*metav1.LogMetadata)(nil),                                                                 // 403: octelium.api.main.meta.v1.LogMetadata
-	(*corev1.RequestContext_Request)(nil),                                                      // 404: octelium.api.main.core.v1.RequestContext.Request
-	(*corev1.AccessLog_Entry_Common_Reason)(nil),                                               // 405: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason
-	(*timestamppb.Timestamp)(nil),                                                              // 406: google.protobuf.Timestamp
-	(*metav1.Duration)(nil),                                                                    // 407: octelium.api.main.meta.v1.Duration
-	(*cordiumv1.Workspace_Spec_Image)(nil),                                                     // 408: octelium.api.main.cordium.v1.Workspace.Spec.Image
-	(*cordiumv1.Workspace_Spec_Limit)(nil),                                                     // 409: octelium.api.main.cordium.v1.Workspace.Spec.Limit
-	(*structpb.Struct)(nil),                                                                    // 410: google.protobuf.Struct
-	(*corev1.Condition)(nil),                                                                   // 411: octelium.api.main.core.v1.Condition
-	(*corev1.InlinePolicy)(nil),                                                                // 412: octelium.api.main.core.v1.InlinePolicy
-	(corev1.User_Spec_Type)(0),                                                                 // 413: octelium.api.main.core.v1.User.Spec.Type
-	(corev1.Device_Status_OSType)(0),                                                           // 414: octelium.api.main.core.v1.Device.Status.OSType
-	(corev1.Service_Spec_Mode)(0),                                                              // 415: octelium.api.main.core.v1.Service.Spec.Mode
-	(corev1.Session_Status_Type)(0),                                                            // 416: octelium.api.main.core.v1.Session.Status.Type
-	(corev1.Session_Status_Authentication_Info_Type)(0),                                        // 417: octelium.api.main.core.v1.Session.Status.Authentication.Info.Type
-	(corev1.Session_Status_Authentication_Info_AAL)(0),                                         // 418: octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL
-	(corev1.Credential_Spec_Type)(0),                                                           // 419: octelium.api.main.core.v1.Credential.Spec.Type
-	(corev1.RequestContext_Request_SOCKS5_Connect_AddressType)(0),                              // 420: octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType
-	(corev1.Service_Spec_Config_LLM_Protocol)(0),                                               // 421: octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol
-	(corev1.Service_Spec_Config_LLM_Operation)(0),                                              // 422: octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation
-	(corev1.RequestContext_Request_LLM_EstimateQuality)(0),                                     // 423: octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality
-	(*corev1.Session_Status_Authentication)(nil),                                               // 424: octelium.api.main.core.v1.Session.Status.Authentication
-	(*cordiumv1.Workspace)(nil),                                                                // 425: octelium.api.main.cordium.v1.Workspace
-	(*metav1.GetOptions)(nil),                                                                  // 426: octelium.api.main.meta.v1.GetOptions
-	(*metav1.DeleteOptions)(nil),                                                               // 427: octelium.api.main.meta.v1.DeleteOptions
-	(*metav1.OperationResult)(nil),                                                             // 428: octelium.api.main.meta.v1.OperationResult
+	(AuthenticationLog_Entry_Status)(0),                                   // 33: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
+	(AuthenticationLog_Entry_Failure_Reason)(0),                           // 34: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
+	(License_Type)(0),                                                     // 35: octelium.api.main.enterprise.v1.License.Type
+	(License_Plan_Type)(0),                                                // 36: octelium.api.main.enterprise.v1.License.Plan.Type
+	(License_Plan_Support_Type)(0),                                        // 37: octelium.api.main.enterprise.v1.License.Plan.Support.Type
+	(Agent_State)(0),                                                      // 38: octelium.api.main.enterprise.v1.Agent.State
+	(Agent_Workspace_Type)(0),                                             // 39: octelium.api.main.enterprise.v1.Agent.Workspace.Type
+	(*GetClusterConfigRequest)(nil),                                       // 40: octelium.api.main.enterprise.v1.GetClusterConfigRequest
+	(*ListCollectorExporterOptions)(nil),                                  // 41: octelium.api.main.enterprise.v1.ListCollectorExporterOptions
+	(*CollectorExporter)(nil),                                             // 42: octelium.api.main.enterprise.v1.CollectorExporter
+	(*CollectorExporterList)(nil),                                         // 43: octelium.api.main.enterprise.v1.CollectorExporterList
+	(*ClusterConfig)(nil),                                                 // 44: octelium.api.main.enterprise.v1.ClusterConfig
+	(*Secret)(nil),                                                        // 45: octelium.api.main.enterprise.v1.Secret
+	(*SecretList)(nil),                                                    // 46: octelium.api.main.enterprise.v1.SecretList
+	(*ListSecretOptions)(nil),                                             // 47: octelium.api.main.enterprise.v1.ListSecretOptions
+	(*Certificate)(nil),                                                   // 48: octelium.api.main.enterprise.v1.Certificate
+	(*CertificateList)(nil),                                               // 49: octelium.api.main.enterprise.v1.CertificateList
+	(*CertificateIssuer)(nil),                                             // 50: octelium.api.main.enterprise.v1.CertificateIssuer
+	(*CertificateIssuerList)(nil),                                         // 51: octelium.api.main.enterprise.v1.CertificateIssuerList
+	(*DirectoryProvider)(nil),                                             // 52: octelium.api.main.enterprise.v1.DirectoryProvider
+	(*DirectoryProviderList)(nil),                                         // 53: octelium.api.main.enterprise.v1.DirectoryProviderList
+	(*DirectoryProviderUser)(nil),                                         // 54: octelium.api.main.enterprise.v1.DirectoryProviderUser
+	(*DirectoryProviderUserList)(nil),                                     // 55: octelium.api.main.enterprise.v1.DirectoryProviderUserList
+	(*DirectoryProviderGroup)(nil),                                        // 56: octelium.api.main.enterprise.v1.DirectoryProviderGroup
+	(*DirectoryProviderGroupList)(nil),                                    // 57: octelium.api.main.enterprise.v1.DirectoryProviderGroupList
+	(*DNSProvider)(nil),                                                   // 58: octelium.api.main.enterprise.v1.DNSProvider
+	(*DNSProviderList)(nil),                                               // 59: octelium.api.main.enterprise.v1.DNSProviderList
+	(*ListDNSProviderOptions)(nil),                                        // 60: octelium.api.main.enterprise.v1.ListDNSProviderOptions
+	(*ListDirectoryProviderOptions)(nil),                                  // 61: octelium.api.main.enterprise.v1.ListDirectoryProviderOptions
+	(*ListCertificateOptions)(nil),                                        // 62: octelium.api.main.enterprise.v1.ListCertificateOptions
+	(*ListCertificateIssuerOptions)(nil),                                  // 63: octelium.api.main.enterprise.v1.ListCertificateIssuerOptions
+	(*SessionExtInfo)(nil),                                                // 64: octelium.api.main.enterprise.v1.SessionExtInfo
+	(*SecretStore)(nil),                                                   // 65: octelium.api.main.enterprise.v1.SecretStore
+	(*SecretStoreList)(nil),                                               // 66: octelium.api.main.enterprise.v1.SecretStoreList
+	(*GenerateDirectoryProviderCredentialRequest)(nil),                    // 67: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest
+	(*GenerateDirectoryProviderCredentialResponse)(nil),                   // 68: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse
+	(*IssueCertificateRequest)(nil),                                       // 69: octelium.api.main.enterprise.v1.IssueCertificateRequest
+	(*IssueCertificateResponse)(nil),                                      // 70: octelium.api.main.enterprise.v1.IssueCertificateResponse
+	(*SetCertificateRequest)(nil),                                         // 71: octelium.api.main.enterprise.v1.SetCertificateRequest
+	(*SetCertificateResponse)(nil),                                        // 72: octelium.api.main.enterprise.v1.SetCertificateResponse
+	(*AuditLog)(nil),                                                      // 73: octelium.api.main.enterprise.v1.AuditLog
+	(*ListSecretStoreOptions)(nil),                                        // 74: octelium.api.main.enterprise.v1.ListSecretStoreOptions
+	(*DeviceManager)(nil),                                                 // 75: octelium.api.main.enterprise.v1.DeviceManager
+	(*DeviceManagerList)(nil),                                             // 76: octelium.api.main.enterprise.v1.DeviceManagerList
+	(*ListDeviceManagerOptions)(nil),                                      // 77: octelium.api.main.enterprise.v1.ListDeviceManagerOptions
+	(*ResetDeviceBindingRequest)(nil),                                     // 78: octelium.api.main.enterprise.v1.ResetDeviceBindingRequest
+	(*UserExtInfo)(nil),                                                   // 79: octelium.api.main.enterprise.v1.UserExtInfo
+	(*ListDirectoryProviderUserOptions)(nil),                              // 80: octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions
+	(*ListDirectoryProviderGroupOptions)(nil),                             // 81: octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions
+	(*IsAuthorizedRequest)(nil),                                           // 82: octelium.api.main.enterprise.v1.IsAuthorizedRequest
+	(*IsAuthorizedResponse)(nil),                                          // 83: octelium.api.main.enterprise.v1.IsAuthorizedResponse
+	(*Condition)(nil),                                                     // 84: octelium.api.main.enterprise.v1.Condition
+	(*SynchronizeDirectoryProviderRequest)(nil),                           // 85: octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderRequest
+	(*SynchronizeDirectoryProviderResponse)(nil),                          // 86: octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderResponse
+	(*AuthenticationLog)(nil),                                             // 87: octelium.api.main.enterprise.v1.AuthenticationLog
+	(*UpgradeClusterRequest)(nil),                                         // 88: octelium.api.main.enterprise.v1.UpgradeClusterRequest
+	(*UpgradeClusterResponse)(nil),                                        // 89: octelium.api.main.enterprise.v1.UpgradeClusterResponse
+	(*SynchronizeSecretStoreRequest)(nil),                                 // 90: octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest
+	(*SynchronizeSecretStoreResponse)(nil),                                // 91: octelium.api.main.enterprise.v1.SynchronizeSecretStoreResponse
+	(*GetClusterInfoRequest)(nil),                                         // 92: octelium.api.main.enterprise.v1.GetClusterInfoRequest
+	(*GetClusterInfoResponse)(nil),                                        // 93: octelium.api.main.enterprise.v1.GetClusterInfoResponse
+	(*License)(nil),                                                       // 94: octelium.api.main.enterprise.v1.License
+	(*SetLicenseRequest)(nil),                                             // 95: octelium.api.main.enterprise.v1.SetLicenseRequest
+	(*SetLicenseResponse)(nil),                                            // 96: octelium.api.main.enterprise.v1.SetLicenseResponse
+	(*GetLicenseRequest)(nil),                                             // 97: octelium.api.main.enterprise.v1.GetLicenseRequest
+	(*GetLicenseResponse)(nil),                                            // 98: octelium.api.main.enterprise.v1.GetLicenseResponse
+	(*DeleteLicenseRequest)(nil),                                          // 99: octelium.api.main.enterprise.v1.DeleteLicenseRequest
+	(*DeleteLicenseResponse)(nil),                                         // 100: octelium.api.main.enterprise.v1.DeleteLicenseResponse
+	(*GetAgentRequest)(nil),                                               // 101: octelium.api.main.enterprise.v1.GetAgentRequest
+	(*InitializeAgentRequest)(nil),                                        // 102: octelium.api.main.enterprise.v1.InitializeAgentRequest
+	(*CreateAgentWorkspaceRequest)(nil),                                   // 103: octelium.api.main.enterprise.v1.CreateAgentWorkspaceRequest
+	(*Agent)(nil),                                                         // 104: octelium.api.main.enterprise.v1.Agent
+	(*CollectorExporter_Spec)(nil),                                        // 105: octelium.api.main.enterprise.v1.CollectorExporter.Spec
+	(*CollectorExporter_Status)(nil),                                      // 106: octelium.api.main.enterprise.v1.CollectorExporter.Status
+	(*CollectorExporter_Spec_OTLP)(nil),                                   // 107: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP
+	(*CollectorExporter_Spec_OTLPHTTP)(nil),                               // 108: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP
+	(*CollectorExporter_Spec_PrometheusRemoteWrite)(nil),                  // 109: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite
+	(*CollectorExporter_Spec_Clickhouse)(nil),                             // 110: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse
+	(*CollectorExporter_Spec_Elasticsearch)(nil),                          // 111: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch
+	(*CollectorExporter_Spec_Logzio)(nil),                                 // 112: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio
+	(*CollectorExporter_Spec_InfluxDB)(nil),                               // 113: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB
+	(*CollectorExporter_Spec_Kafka)(nil),                                  // 114: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka
+	(*CollectorExporter_Spec_Datadog)(nil),                                // 115: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog
+	(*CollectorExporter_Spec_Splunk)(nil),                                 // 116: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk
+	(*CollectorExporter_Spec_AzureMonitor)(nil),                           // 117: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor
+	(*CollectorExporter_Spec_AzureDataExplorer)(nil),                      // 118: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer
+	(*CollectorExporter_Spec_OTLP_Header)(nil),                            // 119: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Header
+	(*CollectorExporter_Spec_OTLP_Auth)(nil),                              // 120: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth
+	(*CollectorExporter_Spec_OTLP_TLS)(nil),                               // 121: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.TLS
+	(*CollectorExporter_Spec_OTLP_Keepalive)(nil),                         // 122: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive
+	(*CollectorExporter_Spec_OTLP_Auth_Bearer)(nil),                       // 123: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Bearer
+	(*CollectorExporter_Spec_OTLP_Auth_Basic)(nil),                        // 124: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic
+	(*CollectorExporter_Spec_OTLP_Auth_Custom)(nil),                       // 125: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom
+	(*CollectorExporter_Spec_OTLP_Auth_Basic_Password)(nil),               // 126: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic.Password
+	(*CollectorExporter_Spec_OTLP_Auth_Custom_Value)(nil),                 // 127: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom.Value
+	(*CollectorExporter_Spec_OTLPHTTP_Header)(nil),                        // 128: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header
+	(*CollectorExporter_Spec_OTLPHTTP_Auth)(nil),                          // 129: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth
+	(*CollectorExporter_Spec_OTLPHTTP_TLS)(nil),                           // 130: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS
+	(*CollectorExporter_Spec_OTLPHTTP_Auth_Bearer)(nil),                   // 131: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Bearer
+	(*CollectorExporter_Spec_OTLPHTTP_Auth_Basic)(nil),                    // 132: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic
+	(*CollectorExporter_Spec_OTLPHTTP_Auth_Custom)(nil),                   // 133: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom
+	(*CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password)(nil),           // 134: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic.Password
+	(*CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value)(nil),             // 135: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom.Value
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_Header)(nil),           // 136: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel)(nil),    // 137: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth)(nil),             // 138: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_TLS)(nil),              // 139: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue)(nil), // 140: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion)(nil),         // 141: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo)(nil),                            // 142: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer)(nil),                           // 143: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Bearer
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic)(nil),                            // 144: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom)(nil),                           // 145: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password)(nil),                   // 146: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.Password
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value)(nil),                     // 147: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom.Value
+	(*CollectorExporter_Spec_Clickhouse_Password)(nil),                                         // 148: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Password
+	(*CollectorExporter_Spec_Clickhouse_TLS)(nil),                                              // 149: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS
+	(*CollectorExporter_Spec_Clickhouse_ConnectionParam)(nil),                                  // 150: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam
+	(*CollectorExporter_Spec_Clickhouse_TableEngine)(nil),                                      // 151: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine
+	(*CollectorExporter_Spec_Clickhouse_MetricsTables)(nil),                                    // 152: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables
+	(*CollectorExporter_Spec_Elasticsearch_Header)(nil),                                        // 153: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header
+	(*CollectorExporter_Spec_Elasticsearch_Auth)(nil),                                          // 154: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth
+	(*CollectorExporter_Spec_Elasticsearch_TLS)(nil),                                           // 155: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS
+	(*CollectorExporter_Spec_Elasticsearch_Auth_APIKey)(nil),                                   // 156: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.APIKey
+	(*CollectorExporter_Spec_Elasticsearch_Auth_Basic)(nil),                                    // 157: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic
+	(*CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password)(nil),                           // 158: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic.Password
+	(*CollectorExporter_Spec_Logzio_Token)(nil),                                                // 159: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.Token
+	(*CollectorExporter_Spec_InfluxDB_Header)(nil),                                             // 160: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header
+	(*CollectorExporter_Spec_InfluxDB_Token)(nil),                                              // 161: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Token
+	(*CollectorExporter_Spec_InfluxDB_V1Compatibility)(nil),                                    // 162: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility
+	(*CollectorExporter_Spec_InfluxDB_V1Compatibility_Password)(nil),                           // 163: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password
+	(*CollectorExporter_Spec_Kafka_Header)(nil),                                                // 164: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header
+	(*CollectorExporter_Spec_Kafka_Auth)(nil),                                                  // 165: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth
+	(*CollectorExporter_Spec_Kafka_TLS)(nil),                                                   // 166: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS
+	(*CollectorExporter_Spec_Kafka_Signal)(nil),                                                // 167: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal
+	(*CollectorExporter_Spec_Kafka_Producer)(nil),                                              // 168: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer
+	(*CollectorExporter_Spec_Kafka_Auth_SASL)(nil),                                             // 169: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL
+	(*CollectorExporter_Spec_Kafka_Auth_SASL_Password)(nil),                                    // 170: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password
+	(*CollectorExporter_Spec_Datadog_APIKey)(nil),                                              // 171: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey
+	(*CollectorExporter_Spec_Datadog_API)(nil),                                                 // 172: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API
+	(*CollectorExporter_Spec_Datadog_Metrics)(nil),                                             // 173: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics
+	(*CollectorExporter_Spec_Datadog_Logs)(nil),                                                // 174: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs
+	(*CollectorExporter_Spec_Datadog_HostMetadata)(nil),                                        // 175: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata
+	(*CollectorExporter_Spec_Splunk_Token)(nil),                                                // 176: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.Token
+	(*CollectorExporter_Spec_Splunk_TLS)(nil),                                                  // 177: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.TLS
+	(*CollectorExporter_Spec_AzureMonitor_ConnectionString)(nil),                               // 178: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString
+	(*CollectorExporter_Spec_AzureMonitor_InstrumentationKey)(nil),                             // 179: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey
+	(*CollectorExporter_Spec_AzureDataExplorer_ApplicationKey)(nil),                            // 180: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey
+	(*CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal)(nil),                          // 181: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal
+	(*CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity)(nil),                           // 182: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity
+	(*CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth)(nil),                          // 183: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth
+	(*CollectorExporter_Spec_AzureDataExplorer_Auth)(nil),                                      // 184: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth
+	(*ClusterConfig_Spec)(nil),                                                                 // 185: octelium.api.main.enterprise.v1.ClusterConfig.Spec
+	(*ClusterConfig_Status)(nil),                                                               // 186: octelium.api.main.enterprise.v1.ClusterConfig.Status
+	(*ClusterConfig_Spec_Collector)(nil),                                                       // 187: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector
+	(*ClusterConfig_Spec_Scaler)(nil),                                                          // 188: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler
+	(*ClusterConfig_Spec_Certificate)(nil),                                                     // 189: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate
+	(*ClusterConfig_Spec_Agent)(nil),                                                           // 190: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent
+	(*ClusterConfig_Spec_Collector_Pipeline)(nil),                                              // 191: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.Pipeline
+	(*ClusterConfig_Spec_Scaler_Octovigil)(nil),                                                // 192: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Octovigil
+	(*ClusterConfig_Spec_Scaler_Ingress)(nil),                                                  // 193: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Ingress
+	(*ClusterConfig_Spec_Scaler_Collector)(nil),                                                // 194: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Collector
+	(*ClusterConfig_Spec_Agent_LLM)(nil),                                                       // 195: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.LLM
+	(*ClusterConfig_Status_UpgradeRequest)(nil),                                                // 196: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest
+	(*ClusterConfig_Status_LicenseInfo)(nil),                                                   // 197: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo
+	(*Secret_Spec)(nil),                                                                        // 198: octelium.api.main.enterprise.v1.Secret.Spec
+	(*Secret_Status)(nil),                                                                      // 199: octelium.api.main.enterprise.v1.Secret.Status
+	(*Secret_Data)(nil),                                                                        // 200: octelium.api.main.enterprise.v1.Secret.Data
+	(*Secret_Spec_Data)(nil),                                                                   // 201: octelium.api.main.enterprise.v1.Secret.Spec.Data
+	nil,                                                                                        // 202: octelium.api.main.enterprise.v1.Secret.Status.ExtEntry
+	(*Secret_Data_DataMap)(nil),                                                                // 203: octelium.api.main.enterprise.v1.Secret.Data.DataMap
+	nil,                                                                                        // 204: octelium.api.main.enterprise.v1.Secret.Data.DataMap.MapEntry
+	(*Certificate_Spec)(nil),                                                                   // 205: octelium.api.main.enterprise.v1.Certificate.Spec
+	(*Certificate_Status)(nil),                                                                 // 206: octelium.api.main.enterprise.v1.Certificate.Status
+	(*Certificate_Status_Issuance)(nil),                                                        // 207: octelium.api.main.enterprise.v1.Certificate.Status.Issuance
+	(*Certificate_Status_Info)(nil),                                                            // 208: octelium.api.main.enterprise.v1.Certificate.Status.Info
+	(*CertificateIssuer_Spec)(nil),                                                             // 209: octelium.api.main.enterprise.v1.CertificateIssuer.Spec
+	(*CertificateIssuer_Status)(nil),                                                           // 210: octelium.api.main.enterprise.v1.CertificateIssuer.Status
+	(*CertificateIssuer_Spec_ACME)(nil),                                                        // 211: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME
+	(*CertificateIssuer_Spec_ACME_Solver)(nil),                                                 // 212: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver
+	(*CertificateIssuer_Spec_ACME_Solver_DNS)(nil),                                             // 213: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver.DNS
+	(*CertificateIssuer_Status_ACME)(nil),                                                      // 214: octelium.api.main.enterprise.v1.CertificateIssuer.Status.ACME
+	(*DirectoryProvider_Spec)(nil),                                                             // 215: octelium.api.main.enterprise.v1.DirectoryProvider.Spec
+	(*DirectoryProvider_Status)(nil),                                                           // 216: octelium.api.main.enterprise.v1.DirectoryProvider.Status
+	(*DirectoryProvider_Spec_SCIM)(nil),                                                        // 217: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.SCIM
+	(*DirectoryProvider_Spec_GoogleWorkspace)(nil),                                             // 218: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace
+	(*DirectoryProvider_Spec_Keycloak)(nil),                                                    // 219: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak
+	(*DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount)(nil),                              // 220: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount
+	(*DirectoryProvider_Spec_GoogleWorkspace_Polling)(nil),                                     // 221: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling
+	(*DirectoryProvider_Spec_Keycloak_ClientSecret)(nil),                                       // 222: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret
+	(*DirectoryProvider_Spec_Keycloak_Polling)(nil),                                            // 223: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling
+	(*DirectoryProvider_Status_Synchronization)(nil),                                           // 224: octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization
+	(*DirectoryProviderUser_Spec)(nil),                                                         // 225: octelium.api.main.enterprise.v1.DirectoryProviderUser.Spec
+	(*DirectoryProviderUser_Status)(nil),                                                       // 226: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status
+	(*DirectoryProviderGroup_Spec)(nil),                                                        // 227: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Spec
+	(*DirectoryProviderGroup_Status)(nil),                                                      // 228: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status
+	(*DNSProvider_Spec)(nil),                                                                   // 229: octelium.api.main.enterprise.v1.DNSProvider.Spec
+	(*DNSProvider_Status)(nil),                                                                 // 230: octelium.api.main.enterprise.v1.DNSProvider.Status
+	(*DNSProvider_Spec_Cloudflare)(nil),                                                        // 231: octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare
+	(*DNSProvider_Spec_AWS)(nil),                                                               // 232: octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS
+	(*DNSProvider_Spec_DigitalOcean)(nil),                                                      // 233: octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean
+	(*DNSProvider_Spec_Google)(nil),                                                            // 234: octelium.api.main.enterprise.v1.DNSProvider.Spec.Google
+	(*DNSProvider_Spec_Azure)(nil),                                                             // 235: octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure
+	(*DNSProvider_Spec_Linode)(nil),                                                            // 236: octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode
+	(*DNSProvider_Spec_OVH)(nil),                                                               // 237: octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH
+	(*DNSProvider_Spec_Cloudflare_APIToken)(nil),                                               // 238: octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.APIToken
+	(*DNSProvider_Spec_AWS_SecretAccessKey)(nil),                                               // 239: octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.SecretAccessKey
+	(*DNSProvider_Spec_DigitalOcean_APIToken)(nil),                                             // 240: octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.APIToken
+	(*DNSProvider_Spec_Google_ServiceAccount)(nil),                                             // 241: octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.ServiceAccount
+	(*DNSProvider_Spec_Azure_ClientSecret)(nil),                                                // 242: octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.ClientSecret
+	(*DNSProvider_Spec_Linode_APIToken)(nil),                                                   // 243: octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.APIToken
+	(*DNSProvider_Spec_OVH_ApplicationSecret)(nil),                                             // 244: octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.ApplicationSecret
+	(*SecretStore_Spec)(nil),                                                                   // 245: octelium.api.main.enterprise.v1.SecretStore.Spec
+	(*SecretStore_Status)(nil),                                                                 // 246: octelium.api.main.enterprise.v1.SecretStore.Status
+	(*SecretStore_Spec_HashicorpVault)(nil),                                                    // 247: octelium.api.main.enterprise.v1.SecretStore.Spec.HashicorpVault
+	(*SecretStore_Spec_GoogleCloudKeyManagementService)(nil),                                   // 248: octelium.api.main.enterprise.v1.SecretStore.Spec.GoogleCloudKeyManagementService
+	(*SecretStore_Spec_AWSKeyManagementService)(nil),                                           // 249: octelium.api.main.enterprise.v1.SecretStore.Spec.AWSKeyManagementService
+	(*SecretStore_Spec_AzureKeyVault)(nil),                                                     // 250: octelium.api.main.enterprise.v1.SecretStore.Spec.AzureKeyVault
+	(*SecretStore_Spec_Kubernetes)(nil),                                                        // 251: octelium.api.main.enterprise.v1.SecretStore.Spec.Kubernetes
+	(*SecretStore_Status_Synchronization)(nil),                                                 // 252: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization
+	(*GenerateDirectoryProviderCredentialResponse_Bearer)(nil),                                 // 253: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse.Bearer
+	(*AuditLog_Entry)(nil),                                                                     // 254: octelium.api.main.enterprise.v1.AuditLog.Entry
+	(*DeviceManager_Spec)(nil),                                                                 // 255: octelium.api.main.enterprise.v1.DeviceManager.Spec
+	(*DeviceManager_Status)(nil),                                                               // 256: octelium.api.main.enterprise.v1.DeviceManager.Status
+	(*DeviceManager_Spec_SecretRef)(nil),                                                       // 257: octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	(*DeviceManager_Spec_CrowdStrike)(nil),                                                     // 258: octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike
+	(*DeviceManager_Spec_SentinelOne)(nil),                                                     // 259: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne
+	(*DeviceManager_Spec_MicrosoftIntune)(nil),                                                 // 260: octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune
+	(*DeviceManager_Spec_Jamf)(nil),                                                            // 261: octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf
+	(*DeviceManager_Spec_OnePassword)(nil),                                                     // 262: octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword
+	(*DeviceManager_Spec_FleetDM)(nil),                                                         // 263: octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM
+	(*DeviceManager_Spec_Huntress)(nil),                                                        // 264: octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress
+	(*DeviceManager_Spec_Iru)(nil),                                                             // 265: octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru
+	(*DeviceManager_Spec_Polling)(nil),                                                         // 266: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling
+	(*DeviceManager_Spec_Linking)(nil),                                                         // 267: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking
+	nil,                                                                                        // 268: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.AgentFiltersEntry
+	(*DeviceManager_Status_Collection)(nil),                                                    // 269: octelium.api.main.enterprise.v1.DeviceManager.Status.Collection
+	(*DeviceManager_Status_Linking)(nil),                                                       // 270: octelium.api.main.enterprise.v1.DeviceManager.Status.Linking
+	(*IsAuthorizedRequest_Additional)(nil),                                                     // 271: octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional
+	(*Condition_All)(nil),                                                                      // 272: octelium.api.main.enterprise.v1.Condition.All
+	(*Condition_Any)(nil),                                                                      // 273: octelium.api.main.enterprise.v1.Condition.Any
+	(*Condition_None)(nil),                                                                     // 274: octelium.api.main.enterprise.v1.Condition.None
+	(*Condition_Not)(nil),                                                                      // 275: octelium.api.main.enterprise.v1.Condition.Not
+	(*Condition_Expression)(nil),                                                               // 276: octelium.api.main.enterprise.v1.Condition.Expression
+	(*Condition_Expression_User)(nil),                                                          // 277: octelium.api.main.enterprise.v1.Condition.Expression.User
+	(*Condition_Expression_UserType)(nil),                                                      // 278: octelium.api.main.enterprise.v1.Condition.Expression.UserType
+	(*Condition_Expression_Group)(nil),                                                         // 279: octelium.api.main.enterprise.v1.Condition.Expression.Group
+	(*Condition_Expression_Session)(nil),                                                       // 280: octelium.api.main.enterprise.v1.Condition.Expression.Session
+	(*Condition_Expression_Device)(nil),                                                        // 281: octelium.api.main.enterprise.v1.Condition.Expression.Device
+	(*Condition_Expression_DeviceOSType)(nil),                                                  // 282: octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType
+	(*Condition_Expression_Service)(nil),                                                       // 283: octelium.api.main.enterprise.v1.Condition.Expression.Service
+	(*Condition_Expression_Namespace)(nil),                                                     // 284: octelium.api.main.enterprise.v1.Condition.Expression.Namespace
+	(*Condition_Expression_ServiceMode)(nil),                                                   // 285: octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode
+	(*Condition_Expression_ServicePublic)(nil),                                                 // 286: octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic
+	(*Condition_Expression_SessionType)(nil),                                                   // 287: octelium.api.main.enterprise.v1.Condition.Expression.SessionType
+	(*Condition_Expression_SessionAuthenticationType)(nil),                                     // 288: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType
+	(*Condition_Expression_SessionAuthenticationAAL)(nil),                                      // 289: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL
+	(*Condition_Expression_SessionAuthenticationIdentityProvider)(nil),                         // 290: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider
+	(*Condition_Expression_SessionAuthenticationCredential)(nil),                               // 291: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential
+	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey)(nil),             // 292: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey
+	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware)(nil),            // 293: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware
+	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified)(nil),        // 294: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified
+	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent)(nil),         // 295: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent
+	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified)(nil), // 296: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified
+	(*Condition_Expression_SessionAuthenticationCredAuthenticatorAAGUID)(nil),                  // 297: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorAAGUID
+	(*Condition_Expression_SessionBrowser)(nil),                                                // 298: octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser
+	(*Condition_Expression_TimeBefore)(nil),                                                    // 299: octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore
+	(*Condition_Expression_TimeAfter)(nil),                                                     // 300: octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter
+	(*Condition_Expression_SessionAuthenticationCredentialType)(nil),                           // 301: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType
+	(*Condition_Expression_SessionAuthenticationGeoipCountryCode)(nil),                         // 302: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode
+	(*Condition_Expression_SessionAuthenticationGeoipContinentCode)(nil),                       // 303: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode
+	(*Condition_Expression_RequestHTTPPath)(nil),                                               // 304: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath
+	(*Condition_Expression_RequestHTTPMethod)(nil),                                             // 305: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod
+	(*Condition_Expression_RequestHTTPHasHeader)(nil),                                          // 306: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader
+	(*Condition_Expression_RequestHTTPHeaderValue)(nil),                                        // 307: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue
+	(*Condition_Expression_RequestIP)(nil),                                                     // 308: octelium.api.main.enterprise.v1.Condition.Expression.RequestIP
+	(*Condition_Expression_RequestIPInRange)(nil),                                              // 309: octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange
+	(*Condition_Expression_StringMatch)(nil),                                                   // 310: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	(*Condition_Expression_StringSetMatch)(nil),                                                // 311: octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch
+	(*Condition_Expression_UIntMatch)(nil),                                                     // 312: octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
+	(*Condition_Expression_IntMatch)(nil),                                                      // 313: octelium.api.main.enterprise.v1.Condition.Expression.IntMatch
+	(*Condition_Expression_DoubleMatch)(nil),                                                   // 314: octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch
+	(*Condition_Expression_RequestHTTPHost)(nil),                                               // 315: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost
+	(*Condition_Expression_RequestHTTPProtocol)(nil),                                           // 316: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol
+	(*Condition_Expression_RequestHTTPScheme)(nil),                                             // 317: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme
+	(*Condition_Expression_RequestHTTPURI)(nil),                                                // 318: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI
+	(*Condition_Expression_RequestHTTPSize)(nil),                                               // 319: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize
+	(*Condition_Expression_RequestHTTPHasQueryParam)(nil),                                      // 320: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam
+	(*Condition_Expression_RequestHTTPQueryParamValue)(nil),                                    // 321: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue
+	(*Condition_Expression_RequestSSH)(nil),                                                    // 322: octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH
+	(*Condition_Expression_RequestSSHUser)(nil),                                                // 323: octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser
+	(*Condition_Expression_RequestKubernetes)(nil),                                             // 324: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes
+	(*Condition_Expression_RequestKubernetesVerb)(nil),                                         // 325: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb
+	(*Condition_Expression_RequestKubernetesAPIPrefix)(nil),                                    // 326: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix
+	(*Condition_Expression_RequestKubernetesAPIGroup)(nil),                                     // 327: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup
+	(*Condition_Expression_RequestKubernetesAPIVersion)(nil),                                   // 328: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion
+	(*Condition_Expression_RequestKubernetesNamespace)(nil),                                    // 329: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace
+	(*Condition_Expression_RequestKubernetesResource)(nil),                                     // 330: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource
+	(*Condition_Expression_RequestKubernetesSubresource)(nil),                                  // 331: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource
+	(*Condition_Expression_RequestKubernetesName)(nil),                                         // 332: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName
+	(*Condition_Expression_RequestGRPC)(nil),                                                   // 333: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC
+	(*Condition_Expression_RequestGRPCMethod)(nil),                                             // 334: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod
+	(*Condition_Expression_RequestGRPCService)(nil),                                            // 335: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService
+	(*Condition_Expression_RequestGRPCServiceFullName)(nil),                                    // 336: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName
+	(*Condition_Expression_RequestGRPCPackage)(nil),                                            // 337: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage
+	(*Condition_Expression_RequestPostgresConnect)(nil),                                        // 338: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect
+	(*Condition_Expression_RequestPostgresConnectUser)(nil),                                    // 339: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser
+	(*Condition_Expression_RequestPostgresConnectDatabase)(nil),                                // 340: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase
+	(*Condition_Expression_RequestPostgresConnectApplicationName)(nil),                         // 341: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName
+	(*Condition_Expression_RequestPostgresQuery)(nil),                                          // 342: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery
+	(*Condition_Expression_RequestPostgresQueryText)(nil),                                      // 343: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText
+	(*Condition_Expression_RequestPostgresParse)(nil),                                          // 344: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse
+	(*Condition_Expression_RequestPostgresParseName)(nil),                                      // 345: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName
+	(*Condition_Expression_RequestPostgresParseQuery)(nil),                                     // 346: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery
+	(*Condition_Expression_RequestDNS)(nil),                                                    // 347: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS
+	(*Condition_Expression_RequestDNSName)(nil),                                                // 348: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName
+	(*Condition_Expression_RequestDNSTypeID)(nil),                                              // 349: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID
+	(*Condition_Expression_RequestSOCKS5)(nil),                                                 // 350: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5
+	(*Condition_Expression_RequestSOCKS5Host)(nil),                                             // 351: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host
+	(*Condition_Expression_RequestSOCKS5Port)(nil),                                             // 352: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port
+	(*Condition_Expression_RequestSOCKS5AddressType)(nil),                                      // 353: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType
+	(*Condition_Expression_MCPProtocolVersion)(nil),                                            // 354: octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion
+	(*Condition_Expression_MCPMethod)(nil),                                                     // 355: octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod
+	(*Condition_Expression_MCPToolName)(nil),                                                   // 356: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName
+	(*Condition_Expression_MCPPromptName)(nil),                                                 // 357: octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName
+	(*Condition_Expression_MCPResourceURI)(nil),                                                // 358: octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI
+	(*Condition_Expression_MCPIsNotification)(nil),                                             // 359: octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification
+	(*Condition_Expression_MCPToolArgument)(nil),                                               // 360: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument
+	(*Condition_Expression_LLMProtocol)(nil),                                                   // 361: octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol
+	(*Condition_Expression_LLMOperation)(nil),                                                  // 362: octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation
+	(*Condition_Expression_LLMModel)(nil),                                                      // 363: octelium.api.main.enterprise.v1.Condition.Expression.LLMModel
+	(*Condition_Expression_LLMStream)(nil),                                                     // 364: octelium.api.main.enterprise.v1.Condition.Expression.LLMStream
+	(*Condition_Expression_LLMEstimatedInputTokens)(nil),                                       // 365: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens
+	(*Condition_Expression_LLMEstimateQuality)(nil),                                            // 366: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality
+	(*Condition_Expression_LLMMaxOutputTokens)(nil),                                            // 367: octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens
+	(*Condition_Expression_LLMHasTools)(nil),                                                   // 368: octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools
+	(*Condition_Expression_LLMToolCount)(nil),                                                  // 369: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount
+	(*Condition_Expression_LLMToolName)(nil),                                                   // 370: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName
+	(*Condition_Expression_LLMInputItemCount)(nil),                                             // 371: octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount
+	(*Condition_Expression_LLMHasImageInput)(nil),                                              // 372: octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput
+	(*Condition_Expression_LLMHasAudioInput)(nil),                                              // 373: octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput
+	(*Condition_Expression_APIServerReadOnlyMethods)(nil),                                      // 374: octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods
+	(*Condition_Expression_APIServerMethods)(nil),                                              // 375: octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods
+	(*Condition_Expression_APIServerServices)(nil),                                             // 376: octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices
+	(*Condition_Expression_APIServerCore)(nil),                                                 // 377: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore
+	(*Condition_Expression_APIServerUser)(nil),                                                 // 378: octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser
+	(*Condition_Expression_APIServerEnterprise)(nil),                                           // 379: octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise
+	(*Condition_Expression_APIServerCordium)(nil),                                              // 380: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium
+	(*Condition_Expression_APIServerAccess)(nil),                                               // 381: octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess
+	(*Condition_Expression_TimeDayType)(nil),                                                   // 382: octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType
+	(*Condition_Expression_StringMatch_In)(nil),                                                // 383: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In
+	(*Condition_Expression_StringSetMatch_In)(nil),                                             // 384: octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In
+	(*Condition_Expression_MCPToolArgument_BoolMatch)(nil),                                     // 385: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch
+	(*Condition_Expression_MCPToolArgument_IsNull)(nil),                                        // 386: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull
+	(*Condition_Expression_MCPToolArgument_Exists)(nil),                                        // 387: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists
+	(*AuthenticationLog_Entry)(nil),                                                            // 388: octelium.api.main.enterprise.v1.AuthenticationLog.Entry
+	(*AuthenticationLog_Entry_Failure)(nil),                                                    // 389: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure
+	(*UpgradeClusterRequest_Request)(nil),                                                      // 390: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request
+	(*UpgradeClusterRequest_Request_Core)(nil),                                                 // 391: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.Core
+	(*UpgradeClusterRequest_Request_PackageEnterprise)(nil),                                    // 392: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageEnterprise
+	(*UpgradeClusterRequest_Request_PackageCordium)(nil),                                       // 393: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageCordium
+	(*GetClusterInfoResponse_Core)(nil),                                                        // 394: octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core
+	(*GetClusterInfoResponse_PackageEnterprise)(nil),                                           // 395: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise
+	(*GetClusterInfoResponse_PackageCordium)(nil),                                              // 396: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium
+	(*License_Organization)(nil),                                                               // 397: octelium.api.main.enterprise.v1.License.Organization
+	(*License_Plan)(nil),                                                                       // 398: octelium.api.main.enterprise.v1.License.Plan
+	(*License_Plan_Support)(nil),                                                               // 399: octelium.api.main.enterprise.v1.License.Plan.Support
+	(*License_Plan_Limits)(nil),                                                                // 400: octelium.api.main.enterprise.v1.License.Plan.Limits
+	(*Agent_Workspace)(nil),                                                                    // 401: octelium.api.main.enterprise.v1.Agent.Workspace
+	(*metav1.CommonListOptions)(nil),                                                           // 402: octelium.api.main.meta.v1.CommonListOptions
+	(*metav1.Metadata)(nil),                                                                    // 403: octelium.api.main.meta.v1.Metadata
+	(*metav1.ListResponseMeta)(nil),                                                            // 404: octelium.api.main.meta.v1.ListResponseMeta
+	(*metav1.ObjectReference)(nil),                                                             // 405: octelium.api.main.meta.v1.ObjectReference
+	(*metav1.LogMetadata)(nil),                                                                 // 406: octelium.api.main.meta.v1.LogMetadata
+	(*corev1.RequestContext_Request)(nil),                                                      // 407: octelium.api.main.core.v1.RequestContext.Request
+	(*corev1.AccessLog_Entry_Common_Reason)(nil),                                               // 408: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason
+	(*timestamppb.Timestamp)(nil),                                                              // 409: google.protobuf.Timestamp
+	(*metav1.Duration)(nil),                                                                    // 410: octelium.api.main.meta.v1.Duration
+	(*cordiumv1.Workspace_Spec_Image)(nil),                                                     // 411: octelium.api.main.cordium.v1.Workspace.Spec.Image
+	(*cordiumv1.Workspace_Spec_Limit)(nil),                                                     // 412: octelium.api.main.cordium.v1.Workspace.Spec.Limit
+	(*structpb.Struct)(nil),                                                                    // 413: google.protobuf.Struct
+	(*corev1.Condition)(nil),                                                                   // 414: octelium.api.main.core.v1.Condition
+	(*corev1.InlinePolicy)(nil),                                                                // 415: octelium.api.main.core.v1.InlinePolicy
+	(corev1.User_Spec_Type)(0),                                                                 // 416: octelium.api.main.core.v1.User.Spec.Type
+	(corev1.Device_Status_OSType)(0),                                                           // 417: octelium.api.main.core.v1.Device.Status.OSType
+	(corev1.Service_Spec_Mode)(0),                                                              // 418: octelium.api.main.core.v1.Service.Spec.Mode
+	(corev1.Session_Status_Type)(0),                                                            // 419: octelium.api.main.core.v1.Session.Status.Type
+	(corev1.Session_Status_Authentication_Info_Type)(0),                                        // 420: octelium.api.main.core.v1.Session.Status.Authentication.Info.Type
+	(corev1.Session_Status_Authentication_Info_AAL)(0),                                         // 421: octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL
+	(corev1.Credential_Spec_Type)(0),                                                           // 422: octelium.api.main.core.v1.Credential.Spec.Type
+	(corev1.RequestContext_Request_SOCKS5_Connect_AddressType)(0),                              // 423: octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType
+	(corev1.Service_Spec_Config_LLM_Protocol)(0),                                               // 424: octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol
+	(corev1.Service_Spec_Config_LLM_Operation)(0),                                              // 425: octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation
+	(corev1.RequestContext_Request_LLM_EstimateQuality)(0),                                     // 426: octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality
+	(*corev1.Session_Status_Authentication)(nil),                                               // 427: octelium.api.main.core.v1.Session.Status.Authentication
+	(*cordiumv1.Workspace)(nil),                                                                // 428: octelium.api.main.cordium.v1.Workspace
+	(*metav1.GetOptions)(nil),                                                                  // 429: octelium.api.main.meta.v1.GetOptions
+	(*metav1.DeleteOptions)(nil),                                                               // 430: octelium.api.main.meta.v1.DeleteOptions
+	(*metav1.OperationResult)(nil),                                                             // 431: octelium.api.main.meta.v1.OperationResult
 }
 var file_enterprisev1_proto_depIdxs = []int32{
-	399, // 0: octelium.api.main.enterprise.v1.ListCollectorExporterOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	400, // 1: octelium.api.main.enterprise.v1.CollectorExporter.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	103, // 2: octelium.api.main.enterprise.v1.CollectorExporter.spec:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec
-	104, // 3: octelium.api.main.enterprise.v1.CollectorExporter.status:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Status
-	40,  // 4: octelium.api.main.enterprise.v1.CollectorExporterList.items:type_name -> octelium.api.main.enterprise.v1.CollectorExporter
-	401, // 5: octelium.api.main.enterprise.v1.CollectorExporterList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	400, // 6: octelium.api.main.enterprise.v1.ClusterConfig.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	183, // 7: octelium.api.main.enterprise.v1.ClusterConfig.spec:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec
-	184, // 8: octelium.api.main.enterprise.v1.ClusterConfig.status:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status
-	400, // 9: octelium.api.main.enterprise.v1.Secret.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	196, // 10: octelium.api.main.enterprise.v1.Secret.spec:type_name -> octelium.api.main.enterprise.v1.Secret.Spec
-	197, // 11: octelium.api.main.enterprise.v1.Secret.status:type_name -> octelium.api.main.enterprise.v1.Secret.Status
-	198, // 12: octelium.api.main.enterprise.v1.Secret.data:type_name -> octelium.api.main.enterprise.v1.Secret.Data
-	43,  // 13: octelium.api.main.enterprise.v1.SecretList.items:type_name -> octelium.api.main.enterprise.v1.Secret
-	401, // 14: octelium.api.main.enterprise.v1.SecretList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	399, // 15: octelium.api.main.enterprise.v1.ListSecretOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	400, // 16: octelium.api.main.enterprise.v1.Certificate.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	203, // 17: octelium.api.main.enterprise.v1.Certificate.spec:type_name -> octelium.api.main.enterprise.v1.Certificate.Spec
-	204, // 18: octelium.api.main.enterprise.v1.Certificate.status:type_name -> octelium.api.main.enterprise.v1.Certificate.Status
-	46,  // 19: octelium.api.main.enterprise.v1.CertificateList.items:type_name -> octelium.api.main.enterprise.v1.Certificate
-	401, // 20: octelium.api.main.enterprise.v1.CertificateList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	400, // 21: octelium.api.main.enterprise.v1.CertificateIssuer.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	207, // 22: octelium.api.main.enterprise.v1.CertificateIssuer.spec:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec
-	208, // 23: octelium.api.main.enterprise.v1.CertificateIssuer.status:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Status
-	48,  // 24: octelium.api.main.enterprise.v1.CertificateIssuerList.items:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer
-	401, // 25: octelium.api.main.enterprise.v1.CertificateIssuerList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	400, // 26: octelium.api.main.enterprise.v1.DirectoryProvider.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	213, // 27: octelium.api.main.enterprise.v1.DirectoryProvider.spec:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec
-	214, // 28: octelium.api.main.enterprise.v1.DirectoryProvider.status:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Status
-	50,  // 29: octelium.api.main.enterprise.v1.DirectoryProviderList.items:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider
-	401, // 30: octelium.api.main.enterprise.v1.DirectoryProviderList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	400, // 31: octelium.api.main.enterprise.v1.DirectoryProviderUser.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	223, // 32: octelium.api.main.enterprise.v1.DirectoryProviderUser.spec:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderUser.Spec
-	224, // 33: octelium.api.main.enterprise.v1.DirectoryProviderUser.status:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderUser.Status
-	52,  // 34: octelium.api.main.enterprise.v1.DirectoryProviderUserList.items:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderUser
-	401, // 35: octelium.api.main.enterprise.v1.DirectoryProviderUserList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	400, // 36: octelium.api.main.enterprise.v1.DirectoryProviderGroup.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	225, // 37: octelium.api.main.enterprise.v1.DirectoryProviderGroup.spec:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderGroup.Spec
-	226, // 38: octelium.api.main.enterprise.v1.DirectoryProviderGroup.status:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status
-	54,  // 39: octelium.api.main.enterprise.v1.DirectoryProviderGroupList.items:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderGroup
-	401, // 40: octelium.api.main.enterprise.v1.DirectoryProviderGroupList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	400, // 41: octelium.api.main.enterprise.v1.DNSProvider.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	227, // 42: octelium.api.main.enterprise.v1.DNSProvider.spec:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec
-	228, // 43: octelium.api.main.enterprise.v1.DNSProvider.status:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Status
-	56,  // 44: octelium.api.main.enterprise.v1.DNSProviderList.items:type_name -> octelium.api.main.enterprise.v1.DNSProvider
-	401, // 45: octelium.api.main.enterprise.v1.DNSProviderList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	399, // 46: octelium.api.main.enterprise.v1.ListDNSProviderOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	399, // 47: octelium.api.main.enterprise.v1.ListDirectoryProviderOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	399, // 48: octelium.api.main.enterprise.v1.ListCertificateOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	399, // 49: octelium.api.main.enterprise.v1.ListCertificateIssuerOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	402, // 50: octelium.api.main.enterprise.v1.SessionExtInfo.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	400, // 51: octelium.api.main.enterprise.v1.SecretStore.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	243, // 52: octelium.api.main.enterprise.v1.SecretStore.spec:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec
-	244, // 53: octelium.api.main.enterprise.v1.SecretStore.status:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status
-	63,  // 54: octelium.api.main.enterprise.v1.SecretStoreList.items:type_name -> octelium.api.main.enterprise.v1.SecretStore
-	401, // 55: octelium.api.main.enterprise.v1.SecretStoreList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	402, // 56: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	402, // 0: octelium.api.main.enterprise.v1.ListCollectorExporterOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	403, // 1: octelium.api.main.enterprise.v1.CollectorExporter.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	105, // 2: octelium.api.main.enterprise.v1.CollectorExporter.spec:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec
+	106, // 3: octelium.api.main.enterprise.v1.CollectorExporter.status:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Status
+	42,  // 4: octelium.api.main.enterprise.v1.CollectorExporterList.items:type_name -> octelium.api.main.enterprise.v1.CollectorExporter
+	404, // 5: octelium.api.main.enterprise.v1.CollectorExporterList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	403, // 6: octelium.api.main.enterprise.v1.ClusterConfig.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	185, // 7: octelium.api.main.enterprise.v1.ClusterConfig.spec:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec
+	186, // 8: octelium.api.main.enterprise.v1.ClusterConfig.status:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status
+	403, // 9: octelium.api.main.enterprise.v1.Secret.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	198, // 10: octelium.api.main.enterprise.v1.Secret.spec:type_name -> octelium.api.main.enterprise.v1.Secret.Spec
+	199, // 11: octelium.api.main.enterprise.v1.Secret.status:type_name -> octelium.api.main.enterprise.v1.Secret.Status
+	200, // 12: octelium.api.main.enterprise.v1.Secret.data:type_name -> octelium.api.main.enterprise.v1.Secret.Data
+	45,  // 13: octelium.api.main.enterprise.v1.SecretList.items:type_name -> octelium.api.main.enterprise.v1.Secret
+	404, // 14: octelium.api.main.enterprise.v1.SecretList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	402, // 15: octelium.api.main.enterprise.v1.ListSecretOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	403, // 16: octelium.api.main.enterprise.v1.Certificate.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	205, // 17: octelium.api.main.enterprise.v1.Certificate.spec:type_name -> octelium.api.main.enterprise.v1.Certificate.Spec
+	206, // 18: octelium.api.main.enterprise.v1.Certificate.status:type_name -> octelium.api.main.enterprise.v1.Certificate.Status
+	48,  // 19: octelium.api.main.enterprise.v1.CertificateList.items:type_name -> octelium.api.main.enterprise.v1.Certificate
+	404, // 20: octelium.api.main.enterprise.v1.CertificateList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	403, // 21: octelium.api.main.enterprise.v1.CertificateIssuer.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	209, // 22: octelium.api.main.enterprise.v1.CertificateIssuer.spec:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec
+	210, // 23: octelium.api.main.enterprise.v1.CertificateIssuer.status:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Status
+	50,  // 24: octelium.api.main.enterprise.v1.CertificateIssuerList.items:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer
+	404, // 25: octelium.api.main.enterprise.v1.CertificateIssuerList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	403, // 26: octelium.api.main.enterprise.v1.DirectoryProvider.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	215, // 27: octelium.api.main.enterprise.v1.DirectoryProvider.spec:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec
+	216, // 28: octelium.api.main.enterprise.v1.DirectoryProvider.status:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Status
+	52,  // 29: octelium.api.main.enterprise.v1.DirectoryProviderList.items:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider
+	404, // 30: octelium.api.main.enterprise.v1.DirectoryProviderList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	403, // 31: octelium.api.main.enterprise.v1.DirectoryProviderUser.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	225, // 32: octelium.api.main.enterprise.v1.DirectoryProviderUser.spec:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderUser.Spec
+	226, // 33: octelium.api.main.enterprise.v1.DirectoryProviderUser.status:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderUser.Status
+	54,  // 34: octelium.api.main.enterprise.v1.DirectoryProviderUserList.items:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderUser
+	404, // 35: octelium.api.main.enterprise.v1.DirectoryProviderUserList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	403, // 36: octelium.api.main.enterprise.v1.DirectoryProviderGroup.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	227, // 37: octelium.api.main.enterprise.v1.DirectoryProviderGroup.spec:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderGroup.Spec
+	228, // 38: octelium.api.main.enterprise.v1.DirectoryProviderGroup.status:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status
+	56,  // 39: octelium.api.main.enterprise.v1.DirectoryProviderGroupList.items:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderGroup
+	404, // 40: octelium.api.main.enterprise.v1.DirectoryProviderGroupList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	403, // 41: octelium.api.main.enterprise.v1.DNSProvider.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	229, // 42: octelium.api.main.enterprise.v1.DNSProvider.spec:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec
+	230, // 43: octelium.api.main.enterprise.v1.DNSProvider.status:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Status
+	58,  // 44: octelium.api.main.enterprise.v1.DNSProviderList.items:type_name -> octelium.api.main.enterprise.v1.DNSProvider
+	404, // 45: octelium.api.main.enterprise.v1.DNSProviderList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	402, // 46: octelium.api.main.enterprise.v1.ListDNSProviderOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	402, // 47: octelium.api.main.enterprise.v1.ListDirectoryProviderOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	402, // 48: octelium.api.main.enterprise.v1.ListCertificateOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	402, // 49: octelium.api.main.enterprise.v1.ListCertificateIssuerOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	405, // 50: octelium.api.main.enterprise.v1.SessionExtInfo.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	403, // 51: octelium.api.main.enterprise.v1.SecretStore.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	245, // 52: octelium.api.main.enterprise.v1.SecretStore.spec:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec
+	246, // 53: octelium.api.main.enterprise.v1.SecretStore.status:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status
+	65,  // 54: octelium.api.main.enterprise.v1.SecretStoreList.items:type_name -> octelium.api.main.enterprise.v1.SecretStore
+	404, // 55: octelium.api.main.enterprise.v1.SecretStoreList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	405, // 56: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
 	22,  // 57: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest.mode:type_name -> octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest.Mode
-	251, // 58: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse.bearer:type_name -> octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse.Bearer
-	402, // 59: octelium.api.main.enterprise.v1.IssueCertificateRequest.certificateRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 60: octelium.api.main.enterprise.v1.SetCertificateRequest.certificateRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	403, // 61: octelium.api.main.enterprise.v1.AuditLog.metadata:type_name -> octelium.api.main.meta.v1.LogMetadata
-	252, // 62: octelium.api.main.enterprise.v1.AuditLog.entry:type_name -> octelium.api.main.enterprise.v1.AuditLog.Entry
-	399, // 63: octelium.api.main.enterprise.v1.ListSecretStoreOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	400, // 64: octelium.api.main.enterprise.v1.DeviceManager.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	253, // 65: octelium.api.main.enterprise.v1.DeviceManager.spec:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec
-	254, // 66: octelium.api.main.enterprise.v1.DeviceManager.status:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status
-	73,  // 67: octelium.api.main.enterprise.v1.DeviceManagerList.items:type_name -> octelium.api.main.enterprise.v1.DeviceManager
-	401, // 68: octelium.api.main.enterprise.v1.DeviceManagerList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	399, // 69: octelium.api.main.enterprise.v1.ListDeviceManagerOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	402, // 70: octelium.api.main.enterprise.v1.ResetDeviceBindingRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 71: octelium.api.main.enterprise.v1.UserExtInfo.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	399, // 72: octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	402, // 73: octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	399, // 74: octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	402, // 75: octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 76: octelium.api.main.enterprise.v1.IsAuthorizedRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 77: octelium.api.main.enterprise.v1.IsAuthorizedRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 78: octelium.api.main.enterprise.v1.IsAuthorizedRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 79: octelium.api.main.enterprise.v1.IsAuthorizedRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 80: octelium.api.main.enterprise.v1.IsAuthorizedRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	404, // 81: octelium.api.main.enterprise.v1.IsAuthorizedRequest.request:type_name -> octelium.api.main.core.v1.RequestContext.Request
-	269, // 82: octelium.api.main.enterprise.v1.IsAuthorizedRequest.additional:type_name -> octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional
-	405, // 83: octelium.api.main.enterprise.v1.IsAuthorizedResponse.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason
-	270, // 84: octelium.api.main.enterprise.v1.Condition.all:type_name -> octelium.api.main.enterprise.v1.Condition.All
-	271, // 85: octelium.api.main.enterprise.v1.Condition.any:type_name -> octelium.api.main.enterprise.v1.Condition.Any
-	272, // 86: octelium.api.main.enterprise.v1.Condition.none:type_name -> octelium.api.main.enterprise.v1.Condition.None
-	273, // 87: octelium.api.main.enterprise.v1.Condition.not:type_name -> octelium.api.main.enterprise.v1.Condition.Not
-	274, // 88: octelium.api.main.enterprise.v1.Condition.expression:type_name -> octelium.api.main.enterprise.v1.Condition.Expression
-	402, // 89: octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderRequest.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	403, // 90: octelium.api.main.enterprise.v1.AuthenticationLog.metadata:type_name -> octelium.api.main.meta.v1.LogMetadata
-	386, // 91: octelium.api.main.enterprise.v1.AuthenticationLog.entry:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry
-	387, // 92: octelium.api.main.enterprise.v1.UpgradeClusterRequest.request:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request
-	402, // 93: octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest.secretStoreRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	391, // 94: octelium.api.main.enterprise.v1.GetClusterInfoResponse.core:type_name -> octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core
-	392, // 95: octelium.api.main.enterprise.v1.GetClusterInfoResponse.packageEnterprise:type_name -> octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise
-	393, // 96: octelium.api.main.enterprise.v1.GetClusterInfoResponse.packageCordium:type_name -> octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium
-	394, // 97: octelium.api.main.enterprise.v1.License.organization:type_name -> octelium.api.main.enterprise.v1.License.Organization
-	406, // 98: octelium.api.main.enterprise.v1.License.issuedAt:type_name -> google.protobuf.Timestamp
-	406, // 99: octelium.api.main.enterprise.v1.License.notBefore:type_name -> google.protobuf.Timestamp
-	406, // 100: octelium.api.main.enterprise.v1.License.notAfter:type_name -> google.protobuf.Timestamp
-	33,  // 101: octelium.api.main.enterprise.v1.License.type:type_name -> octelium.api.main.enterprise.v1.License.Type
-	395, // 102: octelium.api.main.enterprise.v1.License.plan:type_name -> octelium.api.main.enterprise.v1.License.Plan
-	92,  // 103: octelium.api.main.enterprise.v1.SetLicenseResponse.license:type_name -> octelium.api.main.enterprise.v1.License
+	253, // 58: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse.bearer:type_name -> octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse.Bearer
+	405, // 59: octelium.api.main.enterprise.v1.IssueCertificateRequest.certificateRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 60: octelium.api.main.enterprise.v1.SetCertificateRequest.certificateRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	406, // 61: octelium.api.main.enterprise.v1.AuditLog.metadata:type_name -> octelium.api.main.meta.v1.LogMetadata
+	254, // 62: octelium.api.main.enterprise.v1.AuditLog.entry:type_name -> octelium.api.main.enterprise.v1.AuditLog.Entry
+	402, // 63: octelium.api.main.enterprise.v1.ListSecretStoreOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	403, // 64: octelium.api.main.enterprise.v1.DeviceManager.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	255, // 65: octelium.api.main.enterprise.v1.DeviceManager.spec:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec
+	256, // 66: octelium.api.main.enterprise.v1.DeviceManager.status:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status
+	75,  // 67: octelium.api.main.enterprise.v1.DeviceManagerList.items:type_name -> octelium.api.main.enterprise.v1.DeviceManager
+	404, // 68: octelium.api.main.enterprise.v1.DeviceManagerList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	402, // 69: octelium.api.main.enterprise.v1.ListDeviceManagerOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	405, // 70: octelium.api.main.enterprise.v1.ResetDeviceBindingRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 71: octelium.api.main.enterprise.v1.UserExtInfo.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	402, // 72: octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	405, // 73: octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	402, // 74: octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	405, // 75: octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 76: octelium.api.main.enterprise.v1.IsAuthorizedRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 77: octelium.api.main.enterprise.v1.IsAuthorizedRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 78: octelium.api.main.enterprise.v1.IsAuthorizedRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 79: octelium.api.main.enterprise.v1.IsAuthorizedRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 80: octelium.api.main.enterprise.v1.IsAuthorizedRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	407, // 81: octelium.api.main.enterprise.v1.IsAuthorizedRequest.request:type_name -> octelium.api.main.core.v1.RequestContext.Request
+	271, // 82: octelium.api.main.enterprise.v1.IsAuthorizedRequest.additional:type_name -> octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional
+	408, // 83: octelium.api.main.enterprise.v1.IsAuthorizedResponse.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason
+	272, // 84: octelium.api.main.enterprise.v1.Condition.all:type_name -> octelium.api.main.enterprise.v1.Condition.All
+	273, // 85: octelium.api.main.enterprise.v1.Condition.any:type_name -> octelium.api.main.enterprise.v1.Condition.Any
+	274, // 86: octelium.api.main.enterprise.v1.Condition.none:type_name -> octelium.api.main.enterprise.v1.Condition.None
+	275, // 87: octelium.api.main.enterprise.v1.Condition.not:type_name -> octelium.api.main.enterprise.v1.Condition.Not
+	276, // 88: octelium.api.main.enterprise.v1.Condition.expression:type_name -> octelium.api.main.enterprise.v1.Condition.Expression
+	405, // 89: octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderRequest.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	406, // 90: octelium.api.main.enterprise.v1.AuthenticationLog.metadata:type_name -> octelium.api.main.meta.v1.LogMetadata
+	388, // 91: octelium.api.main.enterprise.v1.AuthenticationLog.entry:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry
+	390, // 92: octelium.api.main.enterprise.v1.UpgradeClusterRequest.request:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request
+	405, // 93: octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest.secretStoreRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	394, // 94: octelium.api.main.enterprise.v1.GetClusterInfoResponse.core:type_name -> octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core
+	395, // 95: octelium.api.main.enterprise.v1.GetClusterInfoResponse.packageEnterprise:type_name -> octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise
+	396, // 96: octelium.api.main.enterprise.v1.GetClusterInfoResponse.packageCordium:type_name -> octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium
+	397, // 97: octelium.api.main.enterprise.v1.License.organization:type_name -> octelium.api.main.enterprise.v1.License.Organization
+	409, // 98: octelium.api.main.enterprise.v1.License.issuedAt:type_name -> google.protobuf.Timestamp
+	409, // 99: octelium.api.main.enterprise.v1.License.notBefore:type_name -> google.protobuf.Timestamp
+	409, // 100: octelium.api.main.enterprise.v1.License.notAfter:type_name -> google.protobuf.Timestamp
+	35,  // 101: octelium.api.main.enterprise.v1.License.type:type_name -> octelium.api.main.enterprise.v1.License.Type
+	398, // 102: octelium.api.main.enterprise.v1.License.plan:type_name -> octelium.api.main.enterprise.v1.License.Plan
+	94,  // 103: octelium.api.main.enterprise.v1.SetLicenseResponse.license:type_name -> octelium.api.main.enterprise.v1.License
 	14,  // 104: octelium.api.main.enterprise.v1.SetLicenseResponse.state:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State
-	92,  // 105: octelium.api.main.enterprise.v1.GetLicenseResponse.license:type_name -> octelium.api.main.enterprise.v1.License
+	94,  // 105: octelium.api.main.enterprise.v1.GetLicenseResponse.license:type_name -> octelium.api.main.enterprise.v1.License
 	14,  // 106: octelium.api.main.enterprise.v1.GetLicenseResponse.state:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State
-	406, // 107: octelium.api.main.enterprise.v1.GetLicenseResponse.setAt:type_name -> google.protobuf.Timestamp
-	36,  // 108: octelium.api.main.enterprise.v1.Agent.state:type_name -> octelium.api.main.enterprise.v1.Agent.State
-	402, // 109: octelium.api.main.enterprise.v1.Agent.spaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 110: octelium.api.main.enterprise.v1.Agent.templateRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	398, // 111: octelium.api.main.enterprise.v1.Agent.workspaces:type_name -> octelium.api.main.enterprise.v1.Agent.Workspace
-	105, // 112: octelium.api.main.enterprise.v1.CollectorExporter.Spec.otlp:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP
-	106, // 113: octelium.api.main.enterprise.v1.CollectorExporter.Spec.otlpHTTP:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP
-	108, // 114: octelium.api.main.enterprise.v1.CollectorExporter.Spec.clickhouse:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse
-	109, // 115: octelium.api.main.enterprise.v1.CollectorExporter.Spec.elasticsearch:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch
-	110, // 116: octelium.api.main.enterprise.v1.CollectorExporter.Spec.logzio:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio
-	111, // 117: octelium.api.main.enterprise.v1.CollectorExporter.Spec.influxDB:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB
-	112, // 118: octelium.api.main.enterprise.v1.CollectorExporter.Spec.kafka:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka
-	113, // 119: octelium.api.main.enterprise.v1.CollectorExporter.Spec.datadog:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog
-	114, // 120: octelium.api.main.enterprise.v1.CollectorExporter.Spec.splunk:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk
-	115, // 121: octelium.api.main.enterprise.v1.CollectorExporter.Spec.azureMonitor:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor
-	116, // 122: octelium.api.main.enterprise.v1.CollectorExporter.Spec.azureDataExplorer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer
-	107, // 123: octelium.api.main.enterprise.v1.CollectorExporter.Spec.prometheusRemoteWrite:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite
-	117, // 124: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Header
-	118, // 125: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth
-	119, // 126: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.TLS
+	409, // 107: octelium.api.main.enterprise.v1.GetLicenseResponse.setAt:type_name -> google.protobuf.Timestamp
+	38,  // 108: octelium.api.main.enterprise.v1.Agent.state:type_name -> octelium.api.main.enterprise.v1.Agent.State
+	405, // 109: octelium.api.main.enterprise.v1.Agent.spaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 110: octelium.api.main.enterprise.v1.Agent.templateRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	401, // 111: octelium.api.main.enterprise.v1.Agent.workspaces:type_name -> octelium.api.main.enterprise.v1.Agent.Workspace
+	107, // 112: octelium.api.main.enterprise.v1.CollectorExporter.Spec.otlp:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP
+	108, // 113: octelium.api.main.enterprise.v1.CollectorExporter.Spec.otlpHTTP:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP
+	110, // 114: octelium.api.main.enterprise.v1.CollectorExporter.Spec.clickhouse:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse
+	111, // 115: octelium.api.main.enterprise.v1.CollectorExporter.Spec.elasticsearch:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch
+	112, // 116: octelium.api.main.enterprise.v1.CollectorExporter.Spec.logzio:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio
+	113, // 117: octelium.api.main.enterprise.v1.CollectorExporter.Spec.influxDB:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB
+	114, // 118: octelium.api.main.enterprise.v1.CollectorExporter.Spec.kafka:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka
+	115, // 119: octelium.api.main.enterprise.v1.CollectorExporter.Spec.datadog:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog
+	116, // 120: octelium.api.main.enterprise.v1.CollectorExporter.Spec.splunk:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk
+	117, // 121: octelium.api.main.enterprise.v1.CollectorExporter.Spec.azureMonitor:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor
+	118, // 122: octelium.api.main.enterprise.v1.CollectorExporter.Spec.azureDataExplorer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer
+	109, // 123: octelium.api.main.enterprise.v1.CollectorExporter.Spec.prometheusRemoteWrite:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite
+	119, // 124: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Header
+	120, // 125: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth
+	121, // 126: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.TLS
 	0,   // 127: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.compression:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Compression
-	407, // 128: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	120, // 129: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.keepalive:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive
-	126, // 130: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header
-	127, // 131: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth
+	410, // 128: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	122, // 129: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.keepalive:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive
+	128, // 130: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header
+	129, // 131: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth
 	1,   // 132: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.encoding:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Encoding
 	2,   // 133: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.compression:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Compression
-	128, // 134: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS
-	407, // 135: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	134, // 136: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header
-	136, // 137: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth
-	137, // 138: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS
-	135, // 139: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.externalLabels:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel
-	407, // 140: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	138, // 141: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.remoteWriteQueue:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue
-	139, // 142: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.resourceToTelemetryConversion:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion
-	140, // 143: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.targetInfo:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo
+	130, // 134: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS
+	410, // 135: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	136, // 136: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header
+	138, // 137: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth
+	139, // 138: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS
+	137, // 139: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.externalLabels:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel
+	410, // 140: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	140, // 141: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.remoteWriteQueue:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue
+	141, // 142: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.resourceToTelemetryConversion:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion
+	142, // 143: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.targetInfo:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo
 	3,   // 144: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.translationStrategy:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TranslationStrategy
-	146, // 145: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Password
-	147, // 146: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS
-	148, // 147: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.connectionParams:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam
-	150, // 148: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.metricsTables:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables
-	407, // 149: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ttl:type_name -> octelium.api.main.meta.v1.Duration
+	148, // 145: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Password
+	149, // 146: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS
+	150, // 147: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.connectionParams:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam
+	152, // 148: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.metricsTables:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables
+	410, // 149: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ttl:type_name -> octelium.api.main.meta.v1.Duration
 	4,   // 150: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.compression:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Compression
-	149, // 151: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.tableEngine:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine
-	407, // 152: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	151, // 153: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header
-	152, // 154: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth
+	151, // 151: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.tableEngine:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine
+	410, // 152: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	153, // 153: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header
+	154, // 154: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth
 	5,   // 155: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.compression:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Compression
-	407, // 156: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	153, // 157: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS
-	157, // 158: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.token:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.Token
-	407, // 159: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	159, // 160: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.token:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Token
-	158, // 161: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header
+	410, // 156: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	155, // 157: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS
+	159, // 158: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.token:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.Token
+	410, // 159: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	161, // 160: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.token:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Token
+	160, // 161: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header
 	6,   // 162: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.metricsSchema:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.MetricsSchema
 	7,   // 163: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.precision:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Precision
-	407, // 164: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	160, // 165: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.v1Compatibility:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility
-	165, // 166: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.logs:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal
-	165, // 167: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.metrics:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal
-	162, // 168: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.recordHeaders:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header
-	163, // 169: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth
-	164, // 170: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS
-	407, // 171: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	407, // 172: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.connIdleTimeout:type_name -> octelium.api.main.meta.v1.Duration
-	166, // 173: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.producer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer
-	170, // 174: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.api:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API
-	171, // 175: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.metrics:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics
-	172, // 176: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.logs:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs
-	173, // 177: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.hostMetadata:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata
-	407, // 178: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.hostnameDetectionTimeout:type_name -> octelium.api.main.meta.v1.Duration
-	174, // 179: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.token:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.Token
-	407, // 180: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	175, // 181: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.TLS
-	176, // 182: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.connectionString:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString
-	177, // 183: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.instrumentationKey:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey
-	407, // 184: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.maxBatchInterval:type_name -> octelium.api.main.meta.v1.Duration
-	407, // 185: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.shutdownTimeout:type_name -> octelium.api.main.meta.v1.Duration
-	182, // 186: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth
+	410, // 164: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	162, // 165: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.v1Compatibility:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility
+	167, // 166: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.logs:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal
+	167, // 167: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.metrics:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal
+	164, // 168: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.recordHeaders:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header
+	165, // 169: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth
+	166, // 170: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS
+	410, // 171: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	410, // 172: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.connIdleTimeout:type_name -> octelium.api.main.meta.v1.Duration
+	168, // 173: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.producer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer
+	172, // 174: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.api:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API
+	173, // 175: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.metrics:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics
+	174, // 176: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.logs:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs
+	175, // 177: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.hostMetadata:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata
+	410, // 178: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.hostnameDetectionTimeout:type_name -> octelium.api.main.meta.v1.Duration
+	176, // 179: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.token:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.Token
+	410, // 180: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	177, // 181: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.TLS
+	178, // 182: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.connectionString:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString
+	179, // 183: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.instrumentationKey:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey
+	410, // 184: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.maxBatchInterval:type_name -> octelium.api.main.meta.v1.Duration
+	410, // 185: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.shutdownTimeout:type_name -> octelium.api.main.meta.v1.Duration
+	184, // 186: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth
 	11,  // 187: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ingestionType:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.IngestionType
-	407, // 188: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	121, // 189: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.bearer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Bearer
-	122, // 190: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic
-	123, // 191: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.custom:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom
-	407, // 192: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive.time:type_name -> octelium.api.main.meta.v1.Duration
-	407, // 193: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	124, // 194: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic.Password
-	125, // 195: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom.value:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom.Value
-	129, // 196: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.bearer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Bearer
-	130, // 197: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic
-	131, // 198: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.custom:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom
-	132, // 199: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic.Password
-	133, // 200: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom.value:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom.Value
-	141, // 201: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.bearer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Bearer
-	142, // 202: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic
-	143, // 203: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.custom:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom
-	144, // 204: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.Password
-	145, // 205: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom.value:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom.Value
-	154, // 206: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.apiKey:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.APIKey
-	155, // 207: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic
-	156, // 208: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic.Password
-	161, // 209: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password
-	167, // 210: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.sasl:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL
+	410, // 188: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	123, // 189: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.bearer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Bearer
+	124, // 190: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic
+	125, // 191: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.custom:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom
+	410, // 192: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive.time:type_name -> octelium.api.main.meta.v1.Duration
+	410, // 193: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	126, // 194: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic.Password
+	127, // 195: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom.value:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom.Value
+	131, // 196: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.bearer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Bearer
+	132, // 197: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic
+	133, // 198: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.custom:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom
+	134, // 199: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic.Password
+	135, // 200: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom.value:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom.Value
+	143, // 201: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.bearer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Bearer
+	144, // 202: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic
+	145, // 203: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.custom:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom
+	146, // 204: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.Password
+	147, // 205: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom.value:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom.Value
+	156, // 206: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.apiKey:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.APIKey
+	157, // 207: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic
+	158, // 208: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic.Password
+	163, // 209: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password
+	169, // 210: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.sasl:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL
 	8,   // 211: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal.encoding:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Encoding
 	9,   // 212: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer.compression:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.ProducerCompression
-	407, // 213: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer.linger:type_name -> octelium.api.main.meta.v1.Duration
-	168, // 214: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password
+	410, // 213: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer.linger:type_name -> octelium.api.main.meta.v1.Duration
+	170, // 214: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password
 	10,  // 215: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.mechanism:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Mechanism
-	169, // 216: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API.key:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey
-	407, // 217: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs.batchWait:type_name -> octelium.api.main.meta.v1.Duration
-	407, // 218: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata.reporterPeriod:type_name -> octelium.api.main.meta.v1.Duration
-	178, // 219: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal.applicationKey:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey
-	179, // 220: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth.servicePrincipal:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal
-	180, // 221: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth.managedIdentity:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity
-	181, // 222: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth.azureDefault:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth
-	185, // 223: octelium.api.main.enterprise.v1.ClusterConfig.Spec.collector:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector
-	186, // 224: octelium.api.main.enterprise.v1.ClusterConfig.Spec.scaler:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler
-	187, // 225: octelium.api.main.enterprise.v1.ClusterConfig.Spec.certificate:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate
-	188, // 226: octelium.api.main.enterprise.v1.ClusterConfig.Spec.agent:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent
-	194, // 227: octelium.api.main.enterprise.v1.ClusterConfig.Status.upgradeRequest:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest
-	194, // 228: octelium.api.main.enterprise.v1.ClusterConfig.Status.lastUpgradeRequests:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest
-	195, // 229: octelium.api.main.enterprise.v1.ClusterConfig.Status.licenseInfo:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo
-	189, // 230: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.pipelines:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.Pipeline
-	190, // 231: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.octovigil:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Octovigil
-	191, // 232: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.ingress:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Ingress
-	192, // 233: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.collector:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Collector
+	171, // 216: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API.key:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey
+	410, // 217: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs.batchWait:type_name -> octelium.api.main.meta.v1.Duration
+	410, // 218: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata.reporterPeriod:type_name -> octelium.api.main.meta.v1.Duration
+	180, // 219: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal.applicationKey:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey
+	181, // 220: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth.servicePrincipal:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal
+	182, // 221: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth.managedIdentity:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity
+	183, // 222: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth.azureDefault:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth
+	187, // 223: octelium.api.main.enterprise.v1.ClusterConfig.Spec.collector:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector
+	188, // 224: octelium.api.main.enterprise.v1.ClusterConfig.Spec.scaler:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler
+	189, // 225: octelium.api.main.enterprise.v1.ClusterConfig.Spec.certificate:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate
+	190, // 226: octelium.api.main.enterprise.v1.ClusterConfig.Spec.agent:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent
+	196, // 227: octelium.api.main.enterprise.v1.ClusterConfig.Status.upgradeRequest:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest
+	196, // 228: octelium.api.main.enterprise.v1.ClusterConfig.Status.lastUpgradeRequests:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest
+	197, // 229: octelium.api.main.enterprise.v1.ClusterConfig.Status.licenseInfo:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo
+	191, // 230: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.pipelines:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.Pipeline
+	192, // 231: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.octovigil:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Octovigil
+	193, // 232: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.ingress:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Ingress
+	194, // 233: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.collector:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Collector
 	15,  // 234: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate.defaultMode:type_name -> octelium.api.main.enterprise.v1.Certificate.Spec.Mode
-	193, // 235: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.llm:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.LLM
-	408, // 236: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.image:type_name -> octelium.api.main.cordium.v1.Workspace.Spec.Image
-	409, // 237: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.limit:type_name -> octelium.api.main.cordium.v1.Workspace.Spec.Limit
-	410, // 238: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.config:type_name -> google.protobuf.Struct
+	195, // 235: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.llm:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.LLM
+	411, // 236: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.image:type_name -> octelium.api.main.cordium.v1.Workspace.Spec.Image
+	412, // 237: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.limit:type_name -> octelium.api.main.cordium.v1.Workspace.Spec.Limit
+	413, // 238: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.config:type_name -> google.protobuf.Struct
 	12,  // 239: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.Pipeline.type:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.Pipeline.Type
-	406, // 240: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.createdAt:type_name -> google.protobuf.Timestamp
+	409, // 240: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.createdAt:type_name -> google.protobuf.Timestamp
 	13,  // 241: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.state:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.State
-	406, // 242: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.doneAt:type_name -> google.protobuf.Timestamp
-	387, // 243: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.request:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request
-	402, // 244: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.licenseSecretRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	409, // 242: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.doneAt:type_name -> google.protobuf.Timestamp
+	390, // 243: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.request:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request
+	405, // 244: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.licenseSecretRef:type_name -> octelium.api.main.meta.v1.ObjectReference
 	14,  // 245: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.state:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State
-	406, // 246: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.setAt:type_name -> google.protobuf.Timestamp
-	406, // 247: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.stateCheckedAt:type_name -> google.protobuf.Timestamp
-	199, // 248: octelium.api.main.enterprise.v1.Secret.Spec.data:type_name -> octelium.api.main.enterprise.v1.Secret.Spec.Data
-	200, // 249: octelium.api.main.enterprise.v1.Secret.Status.ext:type_name -> octelium.api.main.enterprise.v1.Secret.Status.ExtEntry
-	201, // 250: octelium.api.main.enterprise.v1.Secret.Data.dataMap:type_name -> octelium.api.main.enterprise.v1.Secret.Data.DataMap
-	410, // 251: octelium.api.main.enterprise.v1.Secret.Data.attrs:type_name -> google.protobuf.Struct
-	410, // 252: octelium.api.main.enterprise.v1.Secret.Spec.Data.attrs:type_name -> google.protobuf.Struct
-	410, // 253: octelium.api.main.enterprise.v1.Secret.Status.ExtEntry.value:type_name -> google.protobuf.Struct
-	202, // 254: octelium.api.main.enterprise.v1.Secret.Data.DataMap.map:type_name -> octelium.api.main.enterprise.v1.Secret.Data.DataMap.MapEntry
+	409, // 246: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.setAt:type_name -> google.protobuf.Timestamp
+	409, // 247: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.stateCheckedAt:type_name -> google.protobuf.Timestamp
+	201, // 248: octelium.api.main.enterprise.v1.Secret.Spec.data:type_name -> octelium.api.main.enterprise.v1.Secret.Spec.Data
+	202, // 249: octelium.api.main.enterprise.v1.Secret.Status.ext:type_name -> octelium.api.main.enterprise.v1.Secret.Status.ExtEntry
+	203, // 250: octelium.api.main.enterprise.v1.Secret.Data.dataMap:type_name -> octelium.api.main.enterprise.v1.Secret.Data.DataMap
+	413, // 251: octelium.api.main.enterprise.v1.Secret.Data.attrs:type_name -> google.protobuf.Struct
+	413, // 252: octelium.api.main.enterprise.v1.Secret.Spec.Data.attrs:type_name -> google.protobuf.Struct
+	413, // 253: octelium.api.main.enterprise.v1.Secret.Status.ExtEntry.value:type_name -> google.protobuf.Struct
+	204, // 254: octelium.api.main.enterprise.v1.Secret.Data.DataMap.map:type_name -> octelium.api.main.enterprise.v1.Secret.Data.DataMap.MapEntry
 	15,  // 255: octelium.api.main.enterprise.v1.Certificate.Spec.mode:type_name -> octelium.api.main.enterprise.v1.Certificate.Spec.Mode
-	402, // 256: octelium.api.main.enterprise.v1.Certificate.Status.secretRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	205, // 257: octelium.api.main.enterprise.v1.Certificate.Status.issuance:type_name -> octelium.api.main.enterprise.v1.Certificate.Status.Issuance
-	205, // 258: octelium.api.main.enterprise.v1.Certificate.Status.lastIssuances:type_name -> octelium.api.main.enterprise.v1.Certificate.Status.Issuance
-	402, // 259: octelium.api.main.enterprise.v1.Certificate.Status.certificateIssuerRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 260: octelium.api.main.enterprise.v1.Certificate.Status.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 261: octelium.api.main.enterprise.v1.Certificate.Status.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	206, // 262: octelium.api.main.enterprise.v1.Certificate.Status.info:type_name -> octelium.api.main.enterprise.v1.Certificate.Status.Info
-	406, // 263: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.createdAt:type_name -> google.protobuf.Timestamp
+	405, // 256: octelium.api.main.enterprise.v1.Certificate.Status.secretRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	207, // 257: octelium.api.main.enterprise.v1.Certificate.Status.issuance:type_name -> octelium.api.main.enterprise.v1.Certificate.Status.Issuance
+	207, // 258: octelium.api.main.enterprise.v1.Certificate.Status.lastIssuances:type_name -> octelium.api.main.enterprise.v1.Certificate.Status.Issuance
+	405, // 259: octelium.api.main.enterprise.v1.Certificate.Status.certificateIssuerRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 260: octelium.api.main.enterprise.v1.Certificate.Status.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 261: octelium.api.main.enterprise.v1.Certificate.Status.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	208, // 262: octelium.api.main.enterprise.v1.Certificate.Status.info:type_name -> octelium.api.main.enterprise.v1.Certificate.Status.Info
+	409, // 263: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.createdAt:type_name -> google.protobuf.Timestamp
 	16,  // 264: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.state:type_name -> octelium.api.main.enterprise.v1.Certificate.Status.Issuance.State
-	406, // 265: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.issuanceStartedAt:type_name -> google.protobuf.Timestamp
-	406, // 266: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.issuanceCompletedAt:type_name -> google.protobuf.Timestamp
-	406, // 267: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.expiresAt:type_name -> google.protobuf.Timestamp
-	406, // 268: octelium.api.main.enterprise.v1.Certificate.Status.Info.notBefore:type_name -> google.protobuf.Timestamp
-	406, // 269: octelium.api.main.enterprise.v1.Certificate.Status.Info.notAfter:type_name -> google.protobuf.Timestamp
-	209, // 270: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.acme:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME
+	409, // 265: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.issuanceStartedAt:type_name -> google.protobuf.Timestamp
+	409, // 266: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.issuanceCompletedAt:type_name -> google.protobuf.Timestamp
+	409, // 267: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.expiresAt:type_name -> google.protobuf.Timestamp
+	409, // 268: octelium.api.main.enterprise.v1.Certificate.Status.Info.notBefore:type_name -> google.protobuf.Timestamp
+	409, // 269: octelium.api.main.enterprise.v1.Certificate.Status.Info.notAfter:type_name -> google.protobuf.Timestamp
+	211, // 270: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.acme:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME
 	17,  // 271: octelium.api.main.enterprise.v1.CertificateIssuer.Status.state:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Status.State
-	212, // 272: octelium.api.main.enterprise.v1.CertificateIssuer.Status.acme:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Status.ACME
-	210, // 273: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.solver:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver
-	211, // 274: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver.dns:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver.DNS
-	402, // 275: octelium.api.main.enterprise.v1.CertificateIssuer.Status.ACME.secretRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	215, // 276: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.scim:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.SCIM
-	216, // 277: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.googleWorkspace:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace
-	217, // 278: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.keycloak:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak
-	402, // 279: octelium.api.main.enterprise.v1.DirectoryProvider.Status.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 280: octelium.api.main.enterprise.v1.DirectoryProvider.Status.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	222, // 281: octelium.api.main.enterprise.v1.DirectoryProvider.Status.synchronization:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization
-	222, // 282: octelium.api.main.enterprise.v1.DirectoryProvider.Status.lastSynchronizations:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization
-	218, // 283: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.serviceAccount:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount
-	219, // 284: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.polling:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling
-	220, // 285: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.clientSecret:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret
-	221, // 286: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.polling:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling
-	407, // 287: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling.interval:type_name -> octelium.api.main.meta.v1.Duration
-	407, // 288: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling.interval:type_name -> octelium.api.main.meta.v1.Duration
-	406, // 289: octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization.createdAt:type_name -> google.protobuf.Timestamp
+	214, // 272: octelium.api.main.enterprise.v1.CertificateIssuer.Status.acme:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Status.ACME
+	212, // 273: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.solver:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver
+	213, // 274: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver.dns:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver.DNS
+	405, // 275: octelium.api.main.enterprise.v1.CertificateIssuer.Status.ACME.secretRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	217, // 276: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.scim:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.SCIM
+	218, // 277: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.googleWorkspace:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace
+	219, // 278: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.keycloak:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak
+	405, // 279: octelium.api.main.enterprise.v1.DirectoryProvider.Status.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 280: octelium.api.main.enterprise.v1.DirectoryProvider.Status.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	224, // 281: octelium.api.main.enterprise.v1.DirectoryProvider.Status.synchronization:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization
+	224, // 282: octelium.api.main.enterprise.v1.DirectoryProvider.Status.lastSynchronizations:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization
+	220, // 283: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.serviceAccount:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount
+	221, // 284: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.polling:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling
+	222, // 285: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.clientSecret:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret
+	223, // 286: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.polling:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling
+	410, // 287: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling.interval:type_name -> octelium.api.main.meta.v1.Duration
+	410, // 288: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling.interval:type_name -> octelium.api.main.meta.v1.Duration
+	409, // 289: octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization.createdAt:type_name -> google.protobuf.Timestamp
 	18,  // 290: octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization.state:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization.State
-	406, // 291: octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization.completedAt:type_name -> google.protobuf.Timestamp
-	402, // 292: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 293: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	410, // 294: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status.attrs:type_name -> google.protobuf.Struct
-	402, // 295: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 296: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status.groupRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	410, // 297: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status.attrs:type_name -> google.protobuf.Struct
-	229, // 298: octelium.api.main.enterprise.v1.DNSProvider.Spec.cloudflare:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare
-	230, // 299: octelium.api.main.enterprise.v1.DNSProvider.Spec.aws:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS
-	231, // 300: octelium.api.main.enterprise.v1.DNSProvider.Spec.digitalocean:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean
-	232, // 301: octelium.api.main.enterprise.v1.DNSProvider.Spec.google:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Google
-	233, // 302: octelium.api.main.enterprise.v1.DNSProvider.Spec.azure:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure
-	234, // 303: octelium.api.main.enterprise.v1.DNSProvider.Spec.linode:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode
-	235, // 304: octelium.api.main.enterprise.v1.DNSProvider.Spec.ovh:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH
-	236, // 305: octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.apiToken:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.APIToken
-	237, // 306: octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.secretAccessKey:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.SecretAccessKey
-	238, // 307: octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.apiToken:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.APIToken
-	239, // 308: octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.serviceAccount:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.ServiceAccount
-	240, // 309: octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.clientSecret:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.ClientSecret
-	241, // 310: octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.apiToken:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.APIToken
-	242, // 311: octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.applicationSecret:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.ApplicationSecret
-	248, // 312: octelium.api.main.enterprise.v1.SecretStore.Spec.azureKeyVault:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.AzureKeyVault
-	245, // 313: octelium.api.main.enterprise.v1.SecretStore.Spec.hashicorpVault:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.HashicorpVault
-	246, // 314: octelium.api.main.enterprise.v1.SecretStore.Spec.googleCloudKeyManagementService:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.GoogleCloudKeyManagementService
-	247, // 315: octelium.api.main.enterprise.v1.SecretStore.Spec.awsKeyManagementService:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.AWSKeyManagementService
-	249, // 316: octelium.api.main.enterprise.v1.SecretStore.Spec.kubernetes:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.Kubernetes
+	409, // 291: octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization.completedAt:type_name -> google.protobuf.Timestamp
+	405, // 292: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 293: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	413, // 294: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status.attrs:type_name -> google.protobuf.Struct
+	405, // 295: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 296: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status.groupRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	413, // 297: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status.attrs:type_name -> google.protobuf.Struct
+	231, // 298: octelium.api.main.enterprise.v1.DNSProvider.Spec.cloudflare:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare
+	232, // 299: octelium.api.main.enterprise.v1.DNSProvider.Spec.aws:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS
+	233, // 300: octelium.api.main.enterprise.v1.DNSProvider.Spec.digitalocean:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean
+	234, // 301: octelium.api.main.enterprise.v1.DNSProvider.Spec.google:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Google
+	235, // 302: octelium.api.main.enterprise.v1.DNSProvider.Spec.azure:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure
+	236, // 303: octelium.api.main.enterprise.v1.DNSProvider.Spec.linode:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode
+	237, // 304: octelium.api.main.enterprise.v1.DNSProvider.Spec.ovh:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH
+	238, // 305: octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.apiToken:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.APIToken
+	239, // 306: octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.secretAccessKey:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.SecretAccessKey
+	240, // 307: octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.apiToken:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.APIToken
+	241, // 308: octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.serviceAccount:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.ServiceAccount
+	242, // 309: octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.clientSecret:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.ClientSecret
+	243, // 310: octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.apiToken:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.APIToken
+	244, // 311: octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.applicationSecret:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.ApplicationSecret
+	250, // 312: octelium.api.main.enterprise.v1.SecretStore.Spec.azureKeyVault:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.AzureKeyVault
+	247, // 313: octelium.api.main.enterprise.v1.SecretStore.Spec.hashicorpVault:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.HashicorpVault
+	248, // 314: octelium.api.main.enterprise.v1.SecretStore.Spec.googleCloudKeyManagementService:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.GoogleCloudKeyManagementService
+	249, // 315: octelium.api.main.enterprise.v1.SecretStore.Spec.awsKeyManagementService:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.AWSKeyManagementService
+	251, // 316: octelium.api.main.enterprise.v1.SecretStore.Spec.kubernetes:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.Kubernetes
 	19,  // 317: octelium.api.main.enterprise.v1.SecretStore.Status.type:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.Type
 	20,  // 318: octelium.api.main.enterprise.v1.SecretStore.Status.state:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.State
-	250, // 319: octelium.api.main.enterprise.v1.SecretStore.Status.synchronization:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization
-	250, // 320: octelium.api.main.enterprise.v1.SecretStore.Status.lastSynchronizations:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization
-	406, // 321: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.createdAt:type_name -> google.protobuf.Timestamp
+	252, // 319: octelium.api.main.enterprise.v1.SecretStore.Status.synchronization:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization
+	252, // 320: octelium.api.main.enterprise.v1.SecretStore.Status.lastSynchronizations:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization
+	409, // 321: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.createdAt:type_name -> google.protobuf.Timestamp
 	21,  // 322: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.state:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.State
-	406, // 323: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.completedAt:type_name -> google.protobuf.Timestamp
-	402, // 324: octelium.api.main.enterprise.v1.AuditLog.Entry.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 325: octelium.api.main.enterprise.v1.AuditLog.Entry.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 326: octelium.api.main.enterprise.v1.AuditLog.Entry.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 327: octelium.api.main.enterprise.v1.AuditLog.Entry.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	411, // 328: octelium.api.main.enterprise.v1.DeviceManager.Spec.condition:type_name -> octelium.api.main.core.v1.Condition
-	264, // 329: octelium.api.main.enterprise.v1.DeviceManager.Spec.polling:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling
-	265, // 330: octelium.api.main.enterprise.v1.DeviceManager.Spec.linking:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking
-	256, // 331: octelium.api.main.enterprise.v1.DeviceManager.Spec.crowdStrike:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike
-	257, // 332: octelium.api.main.enterprise.v1.DeviceManager.Spec.sentinelOne:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne
-	258, // 333: octelium.api.main.enterprise.v1.DeviceManager.Spec.microsoftIntune:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune
-	259, // 334: octelium.api.main.enterprise.v1.DeviceManager.Spec.jamf:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf
-	260, // 335: octelium.api.main.enterprise.v1.DeviceManager.Spec.onePassword:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword
-	261, // 336: octelium.api.main.enterprise.v1.DeviceManager.Spec.fleetDM:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM
-	262, // 337: octelium.api.main.enterprise.v1.DeviceManager.Spec.huntress:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress
-	263, // 338: octelium.api.main.enterprise.v1.DeviceManager.Spec.iru:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru
+	409, // 323: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.completedAt:type_name -> google.protobuf.Timestamp
+	405, // 324: octelium.api.main.enterprise.v1.AuditLog.Entry.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 325: octelium.api.main.enterprise.v1.AuditLog.Entry.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 326: octelium.api.main.enterprise.v1.AuditLog.Entry.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 327: octelium.api.main.enterprise.v1.AuditLog.Entry.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	414, // 328: octelium.api.main.enterprise.v1.DeviceManager.Spec.condition:type_name -> octelium.api.main.core.v1.Condition
+	266, // 329: octelium.api.main.enterprise.v1.DeviceManager.Spec.polling:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling
+	267, // 330: octelium.api.main.enterprise.v1.DeviceManager.Spec.linking:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking
+	258, // 331: octelium.api.main.enterprise.v1.DeviceManager.Spec.crowdStrike:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike
+	259, // 332: octelium.api.main.enterprise.v1.DeviceManager.Spec.sentinelOne:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne
+	260, // 333: octelium.api.main.enterprise.v1.DeviceManager.Spec.microsoftIntune:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune
+	261, // 334: octelium.api.main.enterprise.v1.DeviceManager.Spec.jamf:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf
+	262, // 335: octelium.api.main.enterprise.v1.DeviceManager.Spec.onePassword:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword
+	263, // 336: octelium.api.main.enterprise.v1.DeviceManager.Spec.fleetDM:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM
+	264, // 337: octelium.api.main.enterprise.v1.DeviceManager.Spec.huntress:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress
+	265, // 338: octelium.api.main.enterprise.v1.DeviceManager.Spec.iru:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru
 	26,  // 339: octelium.api.main.enterprise.v1.DeviceManager.Status.type:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status.Type
 	27,  // 340: octelium.api.main.enterprise.v1.DeviceManager.Status.state:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status.State
-	267, // 341: octelium.api.main.enterprise.v1.DeviceManager.Status.collection:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status.Collection
-	268, // 342: octelium.api.main.enterprise.v1.DeviceManager.Status.linking:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status.Linking
+	269, // 341: octelium.api.main.enterprise.v1.DeviceManager.Status.collection:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status.Collection
+	270, // 342: octelium.api.main.enterprise.v1.DeviceManager.Status.linking:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status.Linking
 	23,  // 343: octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.region:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.Region
-	255, // 344: octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.clientSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	255, // 345: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	266, // 346: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.agentFilters:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.AgentFiltersEntry
-	255, // 347: octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.clientSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	257, // 344: octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.clientSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	257, // 345: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	268, // 346: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.agentFilters:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.AgentFiltersEntry
+	257, // 347: octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.clientSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
 	24,  // 348: octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.cloud:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.Cloud
-	255, // 349: octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf.clientSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	255, // 350: octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	255, // 351: octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	255, // 352: octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress.apiSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	255, // 353: octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	407, // 354: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.interval:type_name -> octelium.api.main.meta.v1.Duration
-	407, // 355: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	407, // 356: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.staleAfter:type_name -> octelium.api.main.meta.v1.Duration
-	407, // 357: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.maxObservationAge:type_name -> octelium.api.main.meta.v1.Duration
+	257, // 349: octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf.clientSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	257, // 350: octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	257, // 351: octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	257, // 352: octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress.apiSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	257, // 353: octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	410, // 354: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.interval:type_name -> octelium.api.main.meta.v1.Duration
+	410, // 355: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	410, // 356: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.staleAfter:type_name -> octelium.api.main.meta.v1.Duration
+	410, // 357: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.maxObservationAge:type_name -> octelium.api.main.meta.v1.Duration
 	25,  // 358: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.strategy:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy
-	407, // 359: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.verificationInterval:type_name -> octelium.api.main.meta.v1.Duration
-	406, // 360: octelium.api.main.enterprise.v1.DeviceManager.Status.Collection.lastAttemptAt:type_name -> google.protobuf.Timestamp
-	406, // 361: octelium.api.main.enterprise.v1.DeviceManager.Status.Collection.lastSuccessAt:type_name -> google.protobuf.Timestamp
-	406, // 362: octelium.api.main.enterprise.v1.DeviceManager.Status.Linking.lastSweepAt:type_name -> google.protobuf.Timestamp
-	412, // 363: octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional.inlinePolicies:type_name -> octelium.api.main.core.v1.InlinePolicy
-	82,  // 364: octelium.api.main.enterprise.v1.Condition.All.of:type_name -> octelium.api.main.enterprise.v1.Condition
-	82,  // 365: octelium.api.main.enterprise.v1.Condition.Any.of:type_name -> octelium.api.main.enterprise.v1.Condition
-	82,  // 366: octelium.api.main.enterprise.v1.Condition.None.of:type_name -> octelium.api.main.enterprise.v1.Condition
-	274, // 367: octelium.api.main.enterprise.v1.Condition.Not.expression:type_name -> octelium.api.main.enterprise.v1.Condition.Expression
-	275, // 368: octelium.api.main.enterprise.v1.Condition.Expression.user:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.User
-	279, // 369: octelium.api.main.enterprise.v1.Condition.Expression.device:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Device
-	278, // 370: octelium.api.main.enterprise.v1.Condition.Expression.session:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Session
-	281, // 371: octelium.api.main.enterprise.v1.Condition.Expression.service:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Service
-	282, // 372: octelium.api.main.enterprise.v1.Condition.Expression.namespace:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Namespace
-	277, // 373: octelium.api.main.enterprise.v1.Condition.Expression.group:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Group
-	285, // 374: octelium.api.main.enterprise.v1.Condition.Expression.sessionType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionType
-	276, // 375: octelium.api.main.enterprise.v1.Condition.Expression.userType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UserType
-	280, // 376: octelium.api.main.enterprise.v1.Condition.Expression.deviceOSType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType
-	283, // 377: octelium.api.main.enterprise.v1.Condition.Expression.serviceMode:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode
-	284, // 378: octelium.api.main.enterprise.v1.Condition.Expression.servicePublic:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic
-	286, // 379: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType
-	287, // 380: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationAAL:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL
-	288, // 381: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationIdentityProvider:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider
-	289, // 382: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredential:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential
-	296, // 383: octelium.api.main.enterprise.v1.Condition.Expression.sessionBrowser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser
-	290, // 384: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOPasskey:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey
-	295, // 385: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorAAGUID:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorAAGUID
-	297, // 386: octelium.api.main.enterprise.v1.Condition.Expression.timeBefore:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore
-	298, // 387: octelium.api.main.enterprise.v1.Condition.Expression.timeAfter:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter
-	291, // 388: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOHardware:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware
-	294, // 389: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOAttestationVerified:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified
-	299, // 390: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredentialType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType
-	292, // 391: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOUserVerified:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified
-	293, // 392: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOUserPresent:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent
-	300, // 393: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationGeoipCountryCode:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode
-	301, // 394: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationGeoipContinentCode:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode
-	302, // 395: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPPath:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath
-	303, // 396: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPMethod:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod
-	304, // 397: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHasHeader:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader
-	305, // 398: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHeaderValue:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue
-	306, // 399: octelium.api.main.enterprise.v1.Condition.Expression.requestIP:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestIP
-	307, // 400: octelium.api.main.enterprise.v1.Condition.Expression.requestIPInRange:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange
-	372, // 401: octelium.api.main.enterprise.v1.Condition.Expression.apiServerReadOnlyMethods:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods
-	373, // 402: octelium.api.main.enterprise.v1.Condition.Expression.apiServerMethods:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods
-	374, // 403: octelium.api.main.enterprise.v1.Condition.Expression.apiServerServices:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices
-	375, // 404: octelium.api.main.enterprise.v1.Condition.Expression.apiServerCore:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore
-	376, // 405: octelium.api.main.enterprise.v1.Condition.Expression.apiServerUser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser
-	377, // 406: octelium.api.main.enterprise.v1.Condition.Expression.apiServerEnterprise:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise
-	378, // 407: octelium.api.main.enterprise.v1.Condition.Expression.apiServerCordium:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium
-	379, // 408: octelium.api.main.enterprise.v1.Condition.Expression.apiServerAccess:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess
-	352, // 409: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPProtocolVersion:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion
-	353, // 410: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPMethod:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod
-	354, // 411: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPToolName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName
-	355, // 412: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPPromptName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName
-	356, // 413: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPResourceURI:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI
-	357, // 414: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPIsNotification:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification
-	359, // 415: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMProtocol:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol
-	360, // 416: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMOperation:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation
-	361, // 417: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMModel:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMModel
-	362, // 418: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMStream:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMStream
-	363, // 419: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMEstimatedInputTokens:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens
-	364, // 420: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMEstimateQuality:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality
-	365, // 421: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMMaxOutputTokens:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens
-	366, // 422: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMHasTools:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools
-	367, // 423: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMToolCount:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount
-	368, // 424: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMToolName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName
-	369, // 425: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMInputItemCount:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount
-	370, // 426: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMHasImageInput:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput
-	371, // 427: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMHasAudioInput:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput
-	313, // 428: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHost:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost
-	314, // 429: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPProtocol:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol
-	315, // 430: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPScheme:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme
-	316, // 431: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPURI:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI
-	317, // 432: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPSize:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize
-	318, // 433: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHasQueryParam:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam
-	319, // 434: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPQueryParamValue:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue
-	320, // 435: octelium.api.main.enterprise.v1.Condition.Expression.requestSSH:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH
-	321, // 436: octelium.api.main.enterprise.v1.Condition.Expression.requestSSHUser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser
-	322, // 437: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetes:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes
-	323, // 438: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesVerb:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb
-	324, // 439: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesAPIPrefix:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix
-	325, // 440: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesAPIGroup:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup
-	326, // 441: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesAPIVersion:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion
-	327, // 442: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesNamespace:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace
-	328, // 443: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesResource:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource
-	329, // 444: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesSubresource:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource
-	330, // 445: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName
-	331, // 446: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPC:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC
-	332, // 447: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCMethod:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod
-	333, // 448: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCService:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService
-	334, // 449: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCServiceFullName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName
-	335, // 450: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCPackage:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage
-	336, // 451: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnect:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect
-	337, // 452: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnectUser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser
-	338, // 453: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnectDatabase:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase
-	339, // 454: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnectApplicationName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName
-	340, // 455: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresQuery:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery
-	341, // 456: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresQueryText:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText
-	342, // 457: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresParse:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse
-	343, // 458: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresParseName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName
-	344, // 459: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresParseQuery:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery
-	345, // 460: octelium.api.main.enterprise.v1.Condition.Expression.requestDNS:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS
-	346, // 461: octelium.api.main.enterprise.v1.Condition.Expression.requestDNSName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName
-	347, // 462: octelium.api.main.enterprise.v1.Condition.Expression.requestDNSTypeID:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID
-	348, // 463: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5
-	349, // 464: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5Host:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host
-	350, // 465: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5Port:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port
-	351, // 466: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5AddressType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType
-	380, // 467: octelium.api.main.enterprise.v1.Condition.Expression.timeDayType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType
-	358, // 468: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPToolArgument:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument
-	402, // 469: octelium.api.main.enterprise.v1.Condition.Expression.User.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 470: octelium.api.main.enterprise.v1.Condition.Expression.UserType.type:type_name -> octelium.api.main.core.v1.User.Spec.Type
-	402, // 471: octelium.api.main.enterprise.v1.Condition.Expression.Group.groupRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 472: octelium.api.main.enterprise.v1.Condition.Expression.Session.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 473: octelium.api.main.enterprise.v1.Condition.Expression.Device.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	414, // 474: octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType.osType:type_name -> octelium.api.main.core.v1.Device.Status.OSType
-	402, // 475: octelium.api.main.enterprise.v1.Condition.Expression.Service.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 476: octelium.api.main.enterprise.v1.Condition.Expression.Namespace.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	415, // 477: octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
-	416, // 478: octelium.api.main.enterprise.v1.Condition.Expression.SessionType.type:type_name -> octelium.api.main.core.v1.Session.Status.Type
-	417, // 479: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType.type:type_name -> octelium.api.main.core.v1.Session.Status.Authentication.Info.Type
-	418, // 480: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL.aal:type_name -> octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL
-	402, // 481: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 482: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	406, // 483: octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore.timestamp:type_name -> google.protobuf.Timestamp
-	406, // 484: octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter.timestamp:type_name -> google.protobuf.Timestamp
-	419, // 485: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType.type:type_name -> octelium.api.main.core.v1.Credential.Spec.Type
-	309, // 486: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch
-	309, // 487: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch
-	308, // 488: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 489: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 490: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 491: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue.header:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 492: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue.value:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	381, // 493: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.in:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In
-	382, // 494: octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.in:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In
-	308, // 495: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 496: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 497: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 498: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	311, // 499: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.IntMatch
-	308, // 500: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 501: octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 502: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 503: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 504: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 505: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 506: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 507: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 508: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 509: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 510: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 511: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 512: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 513: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 514: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 515: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 516: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 517: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 518: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 519: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 520: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	311, // 521: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.IntMatch
-	308, // 522: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	310, // 523: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
-	420, // 524: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType.addressType:type_name -> octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType
-	308, // 525: octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 526: octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 527: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 528: octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 529: octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	308, // 530: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.stringMatch:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	312, // 531: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.doubleMatch:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch
-	383, // 532: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.boolMatch:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch
-	384, // 533: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.isNull:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull
-	385, // 534: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.exists:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists
-	421, // 535: octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol.protocol:type_name -> octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol
-	422, // 536: octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation.operation:type_name -> octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation
-	308, // 537: octelium.api.main.enterprise.v1.Condition.Expression.LLMModel.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	310, // 538: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
-	423, // 539: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality.quality:type_name -> octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality
-	310, // 540: octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
-	310, // 541: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
-	308, // 542: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	310, // 543: octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
+	410, // 359: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.verificationInterval:type_name -> octelium.api.main.meta.v1.Duration
+	409, // 360: octelium.api.main.enterprise.v1.DeviceManager.Status.Collection.lastAttemptAt:type_name -> google.protobuf.Timestamp
+	409, // 361: octelium.api.main.enterprise.v1.DeviceManager.Status.Collection.lastSuccessAt:type_name -> google.protobuf.Timestamp
+	409, // 362: octelium.api.main.enterprise.v1.DeviceManager.Status.Linking.lastSweepAt:type_name -> google.protobuf.Timestamp
+	415, // 363: octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional.inlinePolicies:type_name -> octelium.api.main.core.v1.InlinePolicy
+	84,  // 364: octelium.api.main.enterprise.v1.Condition.All.of:type_name -> octelium.api.main.enterprise.v1.Condition
+	84,  // 365: octelium.api.main.enterprise.v1.Condition.Any.of:type_name -> octelium.api.main.enterprise.v1.Condition
+	84,  // 366: octelium.api.main.enterprise.v1.Condition.None.of:type_name -> octelium.api.main.enterprise.v1.Condition
+	276, // 367: octelium.api.main.enterprise.v1.Condition.Not.expression:type_name -> octelium.api.main.enterprise.v1.Condition.Expression
+	277, // 368: octelium.api.main.enterprise.v1.Condition.Expression.user:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.User
+	281, // 369: octelium.api.main.enterprise.v1.Condition.Expression.device:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Device
+	280, // 370: octelium.api.main.enterprise.v1.Condition.Expression.session:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Session
+	283, // 371: octelium.api.main.enterprise.v1.Condition.Expression.service:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Service
+	284, // 372: octelium.api.main.enterprise.v1.Condition.Expression.namespace:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Namespace
+	279, // 373: octelium.api.main.enterprise.v1.Condition.Expression.group:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Group
+	287, // 374: octelium.api.main.enterprise.v1.Condition.Expression.sessionType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionType
+	278, // 375: octelium.api.main.enterprise.v1.Condition.Expression.userType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UserType
+	282, // 376: octelium.api.main.enterprise.v1.Condition.Expression.deviceOSType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType
+	285, // 377: octelium.api.main.enterprise.v1.Condition.Expression.serviceMode:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode
+	286, // 378: octelium.api.main.enterprise.v1.Condition.Expression.servicePublic:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic
+	288, // 379: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType
+	289, // 380: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationAAL:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL
+	290, // 381: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationIdentityProvider:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider
+	291, // 382: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredential:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential
+	298, // 383: octelium.api.main.enterprise.v1.Condition.Expression.sessionBrowser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser
+	292, // 384: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOPasskey:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey
+	297, // 385: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorAAGUID:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorAAGUID
+	299, // 386: octelium.api.main.enterprise.v1.Condition.Expression.timeBefore:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore
+	300, // 387: octelium.api.main.enterprise.v1.Condition.Expression.timeAfter:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter
+	293, // 388: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOHardware:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware
+	296, // 389: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOAttestationVerified:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified
+	301, // 390: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredentialType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType
+	294, // 391: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOUserVerified:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified
+	295, // 392: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOUserPresent:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent
+	302, // 393: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationGeoipCountryCode:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode
+	303, // 394: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationGeoipContinentCode:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode
+	304, // 395: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPPath:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath
+	305, // 396: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPMethod:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod
+	306, // 397: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHasHeader:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader
+	307, // 398: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHeaderValue:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue
+	308, // 399: octelium.api.main.enterprise.v1.Condition.Expression.requestIP:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestIP
+	309, // 400: octelium.api.main.enterprise.v1.Condition.Expression.requestIPInRange:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange
+	374, // 401: octelium.api.main.enterprise.v1.Condition.Expression.apiServerReadOnlyMethods:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods
+	375, // 402: octelium.api.main.enterprise.v1.Condition.Expression.apiServerMethods:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods
+	376, // 403: octelium.api.main.enterprise.v1.Condition.Expression.apiServerServices:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices
+	377, // 404: octelium.api.main.enterprise.v1.Condition.Expression.apiServerCore:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore
+	378, // 405: octelium.api.main.enterprise.v1.Condition.Expression.apiServerUser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser
+	379, // 406: octelium.api.main.enterprise.v1.Condition.Expression.apiServerEnterprise:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise
+	380, // 407: octelium.api.main.enterprise.v1.Condition.Expression.apiServerCordium:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium
+	381, // 408: octelium.api.main.enterprise.v1.Condition.Expression.apiServerAccess:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess
+	354, // 409: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPProtocolVersion:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion
+	355, // 410: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPMethod:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod
+	356, // 411: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPToolName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName
+	357, // 412: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPPromptName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName
+	358, // 413: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPResourceURI:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI
+	359, // 414: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPIsNotification:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification
+	361, // 415: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMProtocol:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol
+	362, // 416: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMOperation:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation
+	363, // 417: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMModel:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMModel
+	364, // 418: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMStream:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMStream
+	365, // 419: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMEstimatedInputTokens:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens
+	366, // 420: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMEstimateQuality:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality
+	367, // 421: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMMaxOutputTokens:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens
+	368, // 422: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMHasTools:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools
+	369, // 423: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMToolCount:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount
+	370, // 424: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMToolName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName
+	371, // 425: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMInputItemCount:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount
+	372, // 426: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMHasImageInput:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput
+	373, // 427: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMHasAudioInput:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput
+	315, // 428: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHost:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost
+	316, // 429: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPProtocol:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol
+	317, // 430: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPScheme:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme
+	318, // 431: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPURI:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI
+	319, // 432: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPSize:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize
+	320, // 433: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHasQueryParam:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam
+	321, // 434: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPQueryParamValue:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue
+	322, // 435: octelium.api.main.enterprise.v1.Condition.Expression.requestSSH:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH
+	323, // 436: octelium.api.main.enterprise.v1.Condition.Expression.requestSSHUser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser
+	324, // 437: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetes:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes
+	325, // 438: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesVerb:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb
+	326, // 439: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesAPIPrefix:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix
+	327, // 440: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesAPIGroup:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup
+	328, // 441: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesAPIVersion:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion
+	329, // 442: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesNamespace:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace
+	330, // 443: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesResource:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource
+	331, // 444: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesSubresource:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource
+	332, // 445: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName
+	333, // 446: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPC:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC
+	334, // 447: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCMethod:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod
+	335, // 448: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCService:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService
+	336, // 449: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCServiceFullName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName
+	337, // 450: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCPackage:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage
+	338, // 451: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnect:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect
+	339, // 452: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnectUser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser
+	340, // 453: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnectDatabase:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase
+	341, // 454: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnectApplicationName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName
+	342, // 455: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresQuery:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery
+	343, // 456: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresQueryText:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText
+	344, // 457: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresParse:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse
+	345, // 458: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresParseName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName
+	346, // 459: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresParseQuery:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery
+	347, // 460: octelium.api.main.enterprise.v1.Condition.Expression.requestDNS:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS
+	348, // 461: octelium.api.main.enterprise.v1.Condition.Expression.requestDNSName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName
+	349, // 462: octelium.api.main.enterprise.v1.Condition.Expression.requestDNSTypeID:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID
+	350, // 463: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5
+	351, // 464: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5Host:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host
+	352, // 465: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5Port:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port
+	353, // 466: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5AddressType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType
+	382, // 467: octelium.api.main.enterprise.v1.Condition.Expression.timeDayType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType
+	360, // 468: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPToolArgument:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument
+	405, // 469: octelium.api.main.enterprise.v1.Condition.Expression.User.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	416, // 470: octelium.api.main.enterprise.v1.Condition.Expression.UserType.type:type_name -> octelium.api.main.core.v1.User.Spec.Type
+	405, // 471: octelium.api.main.enterprise.v1.Condition.Expression.Group.groupRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 472: octelium.api.main.enterprise.v1.Condition.Expression.Session.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 473: octelium.api.main.enterprise.v1.Condition.Expression.Device.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	417, // 474: octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType.osType:type_name -> octelium.api.main.core.v1.Device.Status.OSType
+	405, // 475: octelium.api.main.enterprise.v1.Condition.Expression.Service.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 476: octelium.api.main.enterprise.v1.Condition.Expression.Namespace.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	418, // 477: octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
+	419, // 478: octelium.api.main.enterprise.v1.Condition.Expression.SessionType.type:type_name -> octelium.api.main.core.v1.Session.Status.Type
+	420, // 479: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType.type:type_name -> octelium.api.main.core.v1.Session.Status.Authentication.Info.Type
+	421, // 480: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL.aal:type_name -> octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL
+	405, // 481: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 482: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	409, // 483: octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore.timestamp:type_name -> google.protobuf.Timestamp
+	409, // 484: octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter.timestamp:type_name -> google.protobuf.Timestamp
+	422, // 485: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType.type:type_name -> octelium.api.main.core.v1.Credential.Spec.Type
+	311, // 486: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch
+	311, // 487: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch
+	310, // 488: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 489: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 490: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 491: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue.header:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 492: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue.value:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	383, // 493: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.in:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In
+	384, // 494: octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.in:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In
+	310, // 495: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 496: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 497: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 498: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	313, // 499: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.IntMatch
+	310, // 500: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 501: octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 502: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 503: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 504: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 505: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 506: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 507: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 508: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 509: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 510: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 511: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 512: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 513: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 514: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 515: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 516: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 517: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 518: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 519: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 520: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	313, // 521: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.IntMatch
+	310, // 522: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	312, // 523: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
+	423, // 524: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType.addressType:type_name -> octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType
+	310, // 525: octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 526: octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 527: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 528: octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 529: octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	310, // 530: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.stringMatch:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	314, // 531: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.doubleMatch:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch
+	385, // 532: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.boolMatch:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch
+	386, // 533: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.isNull:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull
+	387, // 534: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.exists:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists
+	424, // 535: octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol.protocol:type_name -> octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol
+	425, // 536: octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation.operation:type_name -> octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation
+	310, // 537: octelium.api.main.enterprise.v1.Condition.Expression.LLMModel.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	312, // 538: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
+	426, // 539: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality.quality:type_name -> octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality
+	312, // 540: octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
+	312, // 541: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
+	310, // 542: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	312, // 543: octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
 	29,  // 544: octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise.service:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise.Service
 	30,  // 545: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium.service:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium.Service
 	31,  // 546: octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess.service:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess.Service
 	32,  // 547: octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType.type:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType.Type
 	28,  // 548: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch.value:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch.Value
-	402, // 549: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 550: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 551: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	424, // 552: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.authentication:type_name -> octelium.api.main.core.v1.Session.Status.Authentication
-	388, // 553: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.core:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.Core
-	389, // 554: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.packageEnterprise:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageEnterprise
-	390, // 555: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.packageCordium:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageCordium
-	406, // 556: octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core.setAt:type_name -> google.protobuf.Timestamp
-	406, // 557: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise.setAt:type_name -> google.protobuf.Timestamp
-	406, // 558: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium.setAt:type_name -> google.protobuf.Timestamp
-	34,  // 559: octelium.api.main.enterprise.v1.License.Plan.type:type_name -> octelium.api.main.enterprise.v1.License.Plan.Type
-	396, // 560: octelium.api.main.enterprise.v1.License.Plan.support:type_name -> octelium.api.main.enterprise.v1.License.Plan.Support
-	397, // 561: octelium.api.main.enterprise.v1.License.Plan.limits:type_name -> octelium.api.main.enterprise.v1.License.Plan.Limits
-	35,  // 562: octelium.api.main.enterprise.v1.License.Plan.Support.type:type_name -> octelium.api.main.enterprise.v1.License.Plan.Support.Type
-	37,  // 563: octelium.api.main.enterprise.v1.Agent.Workspace.type:type_name -> octelium.api.main.enterprise.v1.Agent.Workspace.Type
-	425, // 564: octelium.api.main.enterprise.v1.Agent.Workspace.workspace:type_name -> octelium.api.main.cordium.v1.Workspace
-	38,  // 565: octelium.api.main.enterprise.v1.MainService.GetClusterConfig:input_type -> octelium.api.main.enterprise.v1.GetClusterConfigRequest
-	42,  // 566: octelium.api.main.enterprise.v1.MainService.UpdateClusterConfig:input_type -> octelium.api.main.enterprise.v1.ClusterConfig
-	40,  // 567: octelium.api.main.enterprise.v1.MainService.CreateCollectorExporter:input_type -> octelium.api.main.enterprise.v1.CollectorExporter
-	426, // 568: octelium.api.main.enterprise.v1.MainService.GetCollectorExporter:input_type -> octelium.api.main.meta.v1.GetOptions
-	39,  // 569: octelium.api.main.enterprise.v1.MainService.ListCollectorExporter:input_type -> octelium.api.main.enterprise.v1.ListCollectorExporterOptions
-	40,  // 570: octelium.api.main.enterprise.v1.MainService.UpdateCollectorExporter:input_type -> octelium.api.main.enterprise.v1.CollectorExporter
-	427, // 571: octelium.api.main.enterprise.v1.MainService.DeleteCollectorExporter:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	426, // 572: octelium.api.main.enterprise.v1.MainService.GetDNSProvider:input_type -> octelium.api.main.meta.v1.GetOptions
-	58,  // 573: octelium.api.main.enterprise.v1.MainService.ListDNSProvider:input_type -> octelium.api.main.enterprise.v1.ListDNSProviderOptions
-	56,  // 574: octelium.api.main.enterprise.v1.MainService.UpdateDNSProvider:input_type -> octelium.api.main.enterprise.v1.DNSProvider
-	426, // 575: octelium.api.main.enterprise.v1.MainService.GetCertificate:input_type -> octelium.api.main.meta.v1.GetOptions
-	46,  // 576: octelium.api.main.enterprise.v1.MainService.UpdateCertificate:input_type -> octelium.api.main.enterprise.v1.Certificate
-	60,  // 577: octelium.api.main.enterprise.v1.MainService.ListCertificate:input_type -> octelium.api.main.enterprise.v1.ListCertificateOptions
-	67,  // 578: octelium.api.main.enterprise.v1.MainService.IssueCertificate:input_type -> octelium.api.main.enterprise.v1.IssueCertificateRequest
-	69,  // 579: octelium.api.main.enterprise.v1.MainService.SetCertificate:input_type -> octelium.api.main.enterprise.v1.SetCertificateRequest
-	426, // 580: octelium.api.main.enterprise.v1.MainService.GetCertificateIssuer:input_type -> octelium.api.main.meta.v1.GetOptions
-	61,  // 581: octelium.api.main.enterprise.v1.MainService.ListCertificateIssuer:input_type -> octelium.api.main.enterprise.v1.ListCertificateIssuerOptions
-	48,  // 582: octelium.api.main.enterprise.v1.MainService.UpdateCertificateIssuer:input_type -> octelium.api.main.enterprise.v1.CertificateIssuer
-	50,  // 583: octelium.api.main.enterprise.v1.MainService.CreateDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.DirectoryProvider
-	426, // 584: octelium.api.main.enterprise.v1.MainService.GetDirectoryProvider:input_type -> octelium.api.main.meta.v1.GetOptions
-	59,  // 585: octelium.api.main.enterprise.v1.MainService.ListDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.ListDirectoryProviderOptions
-	50,  // 586: octelium.api.main.enterprise.v1.MainService.UpdateDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.DirectoryProvider
-	427, // 587: octelium.api.main.enterprise.v1.MainService.DeleteDirectoryProvider:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	65,  // 588: octelium.api.main.enterprise.v1.MainService.GenerateDirectoryProviderCredential:input_type -> octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest
-	78,  // 589: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderUser:input_type -> octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions
-	79,  // 590: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderGroup:input_type -> octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions
-	83,  // 591: octelium.api.main.enterprise.v1.MainService.SynchronizeDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderRequest
-	43,  // 592: octelium.api.main.enterprise.v1.MainService.CreateSecret:input_type -> octelium.api.main.enterprise.v1.Secret
-	45,  // 593: octelium.api.main.enterprise.v1.MainService.ListSecret:input_type -> octelium.api.main.enterprise.v1.ListSecretOptions
-	427, // 594: octelium.api.main.enterprise.v1.MainService.DeleteSecret:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	426, // 595: octelium.api.main.enterprise.v1.MainService.GetSecret:input_type -> octelium.api.main.meta.v1.GetOptions
-	43,  // 596: octelium.api.main.enterprise.v1.MainService.UpdateSecret:input_type -> octelium.api.main.enterprise.v1.Secret
-	426, // 597: octelium.api.main.enterprise.v1.MainService.GetSecretStore:input_type -> octelium.api.main.meta.v1.GetOptions
-	72,  // 598: octelium.api.main.enterprise.v1.MainService.ListSecretStore:input_type -> octelium.api.main.enterprise.v1.ListSecretStoreOptions
-	63,  // 599: octelium.api.main.enterprise.v1.MainService.UpdateSecretStore:input_type -> octelium.api.main.enterprise.v1.SecretStore
-	88,  // 600: octelium.api.main.enterprise.v1.MainService.SynchronizeSecretStore:input_type -> octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest
-	73,  // 601: octelium.api.main.enterprise.v1.MainService.CreateDeviceManager:input_type -> octelium.api.main.enterprise.v1.DeviceManager
-	426, // 602: octelium.api.main.enterprise.v1.MainService.GetDeviceManager:input_type -> octelium.api.main.meta.v1.GetOptions
-	75,  // 603: octelium.api.main.enterprise.v1.MainService.ListDeviceManager:input_type -> octelium.api.main.enterprise.v1.ListDeviceManagerOptions
-	73,  // 604: octelium.api.main.enterprise.v1.MainService.UpdateDeviceManager:input_type -> octelium.api.main.enterprise.v1.DeviceManager
-	427, // 605: octelium.api.main.enterprise.v1.MainService.DeleteDeviceManager:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	76,  // 606: octelium.api.main.enterprise.v1.MainService.ResetDeviceBinding:input_type -> octelium.api.main.enterprise.v1.ResetDeviceBindingRequest
-	82,  // 607: octelium.api.main.enterprise.v1.MainService.GetCoreCondition:input_type -> octelium.api.main.enterprise.v1.Condition
-	80,  // 608: octelium.api.main.enterprise.v1.PolicyPortalService.IsAuthorized:input_type -> octelium.api.main.enterprise.v1.IsAuthorizedRequest
-	86,  // 609: octelium.api.main.enterprise.v1.ClusterService.UpgradeCluster:input_type -> octelium.api.main.enterprise.v1.UpgradeClusterRequest
-	90,  // 610: octelium.api.main.enterprise.v1.ClusterService.GetClusterInfo:input_type -> octelium.api.main.enterprise.v1.GetClusterInfoRequest
-	93,  // 611: octelium.api.main.enterprise.v1.ClusterService.SetLicense:input_type -> octelium.api.main.enterprise.v1.SetLicenseRequest
-	95,  // 612: octelium.api.main.enterprise.v1.ClusterService.GetLicense:input_type -> octelium.api.main.enterprise.v1.GetLicenseRequest
-	97,  // 613: octelium.api.main.enterprise.v1.ClusterService.DeleteLicense:input_type -> octelium.api.main.enterprise.v1.DeleteLicenseRequest
-	99,  // 614: octelium.api.main.enterprise.v1.AgentService.GetAgent:input_type -> octelium.api.main.enterprise.v1.GetAgentRequest
-	100, // 615: octelium.api.main.enterprise.v1.AgentService.InitializeAgent:input_type -> octelium.api.main.enterprise.v1.InitializeAgentRequest
-	101, // 616: octelium.api.main.enterprise.v1.AgentService.CreateAgentWorkspace:input_type -> octelium.api.main.enterprise.v1.CreateAgentWorkspaceRequest
-	42,  // 617: octelium.api.main.enterprise.v1.MainService.GetClusterConfig:output_type -> octelium.api.main.enterprise.v1.ClusterConfig
-	42,  // 618: octelium.api.main.enterprise.v1.MainService.UpdateClusterConfig:output_type -> octelium.api.main.enterprise.v1.ClusterConfig
-	40,  // 619: octelium.api.main.enterprise.v1.MainService.CreateCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporter
-	40,  // 620: octelium.api.main.enterprise.v1.MainService.GetCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporter
-	41,  // 621: octelium.api.main.enterprise.v1.MainService.ListCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporterList
-	40,  // 622: octelium.api.main.enterprise.v1.MainService.UpdateCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporter
-	428, // 623: octelium.api.main.enterprise.v1.MainService.DeleteCollectorExporter:output_type -> octelium.api.main.meta.v1.OperationResult
-	56,  // 624: octelium.api.main.enterprise.v1.MainService.GetDNSProvider:output_type -> octelium.api.main.enterprise.v1.DNSProvider
-	57,  // 625: octelium.api.main.enterprise.v1.MainService.ListDNSProvider:output_type -> octelium.api.main.enterprise.v1.DNSProviderList
-	56,  // 626: octelium.api.main.enterprise.v1.MainService.UpdateDNSProvider:output_type -> octelium.api.main.enterprise.v1.DNSProvider
-	46,  // 627: octelium.api.main.enterprise.v1.MainService.GetCertificate:output_type -> octelium.api.main.enterprise.v1.Certificate
-	46,  // 628: octelium.api.main.enterprise.v1.MainService.UpdateCertificate:output_type -> octelium.api.main.enterprise.v1.Certificate
-	47,  // 629: octelium.api.main.enterprise.v1.MainService.ListCertificate:output_type -> octelium.api.main.enterprise.v1.CertificateList
-	68,  // 630: octelium.api.main.enterprise.v1.MainService.IssueCertificate:output_type -> octelium.api.main.enterprise.v1.IssueCertificateResponse
-	70,  // 631: octelium.api.main.enterprise.v1.MainService.SetCertificate:output_type -> octelium.api.main.enterprise.v1.SetCertificateResponse
-	48,  // 632: octelium.api.main.enterprise.v1.MainService.GetCertificateIssuer:output_type -> octelium.api.main.enterprise.v1.CertificateIssuer
-	49,  // 633: octelium.api.main.enterprise.v1.MainService.ListCertificateIssuer:output_type -> octelium.api.main.enterprise.v1.CertificateIssuerList
-	48,  // 634: octelium.api.main.enterprise.v1.MainService.UpdateCertificateIssuer:output_type -> octelium.api.main.enterprise.v1.CertificateIssuer
-	50,  // 635: octelium.api.main.enterprise.v1.MainService.CreateDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProvider
-	50,  // 636: octelium.api.main.enterprise.v1.MainService.GetDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProvider
-	51,  // 637: octelium.api.main.enterprise.v1.MainService.ListDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProviderList
-	50,  // 638: octelium.api.main.enterprise.v1.MainService.UpdateDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProvider
-	428, // 639: octelium.api.main.enterprise.v1.MainService.DeleteDirectoryProvider:output_type -> octelium.api.main.meta.v1.OperationResult
-	66,  // 640: octelium.api.main.enterprise.v1.MainService.GenerateDirectoryProviderCredential:output_type -> octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse
-	53,  // 641: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderUser:output_type -> octelium.api.main.enterprise.v1.DirectoryProviderUserList
-	55,  // 642: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderGroup:output_type -> octelium.api.main.enterprise.v1.DirectoryProviderGroupList
-	84,  // 643: octelium.api.main.enterprise.v1.MainService.SynchronizeDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderResponse
-	43,  // 644: octelium.api.main.enterprise.v1.MainService.CreateSecret:output_type -> octelium.api.main.enterprise.v1.Secret
-	44,  // 645: octelium.api.main.enterprise.v1.MainService.ListSecret:output_type -> octelium.api.main.enterprise.v1.SecretList
-	428, // 646: octelium.api.main.enterprise.v1.MainService.DeleteSecret:output_type -> octelium.api.main.meta.v1.OperationResult
-	43,  // 647: octelium.api.main.enterprise.v1.MainService.GetSecret:output_type -> octelium.api.main.enterprise.v1.Secret
-	43,  // 648: octelium.api.main.enterprise.v1.MainService.UpdateSecret:output_type -> octelium.api.main.enterprise.v1.Secret
-	63,  // 649: octelium.api.main.enterprise.v1.MainService.GetSecretStore:output_type -> octelium.api.main.enterprise.v1.SecretStore
-	64,  // 650: octelium.api.main.enterprise.v1.MainService.ListSecretStore:output_type -> octelium.api.main.enterprise.v1.SecretStoreList
-	63,  // 651: octelium.api.main.enterprise.v1.MainService.UpdateSecretStore:output_type -> octelium.api.main.enterprise.v1.SecretStore
-	89,  // 652: octelium.api.main.enterprise.v1.MainService.SynchronizeSecretStore:output_type -> octelium.api.main.enterprise.v1.SynchronizeSecretStoreResponse
-	73,  // 653: octelium.api.main.enterprise.v1.MainService.CreateDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManager
-	73,  // 654: octelium.api.main.enterprise.v1.MainService.GetDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManager
-	74,  // 655: octelium.api.main.enterprise.v1.MainService.ListDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManagerList
-	73,  // 656: octelium.api.main.enterprise.v1.MainService.UpdateDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManager
-	428, // 657: octelium.api.main.enterprise.v1.MainService.DeleteDeviceManager:output_type -> octelium.api.main.meta.v1.OperationResult
-	428, // 658: octelium.api.main.enterprise.v1.MainService.ResetDeviceBinding:output_type -> octelium.api.main.meta.v1.OperationResult
-	411, // 659: octelium.api.main.enterprise.v1.MainService.GetCoreCondition:output_type -> octelium.api.main.core.v1.Condition
-	81,  // 660: octelium.api.main.enterprise.v1.PolicyPortalService.IsAuthorized:output_type -> octelium.api.main.enterprise.v1.IsAuthorizedResponse
-	87,  // 661: octelium.api.main.enterprise.v1.ClusterService.UpgradeCluster:output_type -> octelium.api.main.enterprise.v1.UpgradeClusterResponse
-	91,  // 662: octelium.api.main.enterprise.v1.ClusterService.GetClusterInfo:output_type -> octelium.api.main.enterprise.v1.GetClusterInfoResponse
-	94,  // 663: octelium.api.main.enterprise.v1.ClusterService.SetLicense:output_type -> octelium.api.main.enterprise.v1.SetLicenseResponse
-	96,  // 664: octelium.api.main.enterprise.v1.ClusterService.GetLicense:output_type -> octelium.api.main.enterprise.v1.GetLicenseResponse
-	98,  // 665: octelium.api.main.enterprise.v1.ClusterService.DeleteLicense:output_type -> octelium.api.main.enterprise.v1.DeleteLicenseResponse
-	102, // 666: octelium.api.main.enterprise.v1.AgentService.GetAgent:output_type -> octelium.api.main.enterprise.v1.Agent
-	102, // 667: octelium.api.main.enterprise.v1.AgentService.InitializeAgent:output_type -> octelium.api.main.enterprise.v1.Agent
-	398, // 668: octelium.api.main.enterprise.v1.AgentService.CreateAgentWorkspace:output_type -> octelium.api.main.enterprise.v1.Agent.Workspace
-	617, // [617:669] is the sub-list for method output_type
-	565, // [565:617] is the sub-list for method input_type
-	565, // [565:565] is the sub-list for extension type_name
-	565, // [565:565] is the sub-list for extension extendee
-	0,   // [0:565] is the sub-list for field type_name
+	405, // 549: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 550: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	405, // 551: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	427, // 552: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.authentication:type_name -> octelium.api.main.core.v1.Session.Status.Authentication
+	33,  // 553: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
+	389, // 554: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.failure:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure
+	34,  // 555: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
+	391, // 556: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.core:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.Core
+	392, // 557: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.packageEnterprise:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageEnterprise
+	393, // 558: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.packageCordium:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageCordium
+	409, // 559: octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core.setAt:type_name -> google.protobuf.Timestamp
+	409, // 560: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise.setAt:type_name -> google.protobuf.Timestamp
+	409, // 561: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium.setAt:type_name -> google.protobuf.Timestamp
+	36,  // 562: octelium.api.main.enterprise.v1.License.Plan.type:type_name -> octelium.api.main.enterprise.v1.License.Plan.Type
+	399, // 563: octelium.api.main.enterprise.v1.License.Plan.support:type_name -> octelium.api.main.enterprise.v1.License.Plan.Support
+	400, // 564: octelium.api.main.enterprise.v1.License.Plan.limits:type_name -> octelium.api.main.enterprise.v1.License.Plan.Limits
+	37,  // 565: octelium.api.main.enterprise.v1.License.Plan.Support.type:type_name -> octelium.api.main.enterprise.v1.License.Plan.Support.Type
+	39,  // 566: octelium.api.main.enterprise.v1.Agent.Workspace.type:type_name -> octelium.api.main.enterprise.v1.Agent.Workspace.Type
+	428, // 567: octelium.api.main.enterprise.v1.Agent.Workspace.workspace:type_name -> octelium.api.main.cordium.v1.Workspace
+	40,  // 568: octelium.api.main.enterprise.v1.MainService.GetClusterConfig:input_type -> octelium.api.main.enterprise.v1.GetClusterConfigRequest
+	44,  // 569: octelium.api.main.enterprise.v1.MainService.UpdateClusterConfig:input_type -> octelium.api.main.enterprise.v1.ClusterConfig
+	42,  // 570: octelium.api.main.enterprise.v1.MainService.CreateCollectorExporter:input_type -> octelium.api.main.enterprise.v1.CollectorExporter
+	429, // 571: octelium.api.main.enterprise.v1.MainService.GetCollectorExporter:input_type -> octelium.api.main.meta.v1.GetOptions
+	41,  // 572: octelium.api.main.enterprise.v1.MainService.ListCollectorExporter:input_type -> octelium.api.main.enterprise.v1.ListCollectorExporterOptions
+	42,  // 573: octelium.api.main.enterprise.v1.MainService.UpdateCollectorExporter:input_type -> octelium.api.main.enterprise.v1.CollectorExporter
+	430, // 574: octelium.api.main.enterprise.v1.MainService.DeleteCollectorExporter:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	429, // 575: octelium.api.main.enterprise.v1.MainService.GetDNSProvider:input_type -> octelium.api.main.meta.v1.GetOptions
+	60,  // 576: octelium.api.main.enterprise.v1.MainService.ListDNSProvider:input_type -> octelium.api.main.enterprise.v1.ListDNSProviderOptions
+	58,  // 577: octelium.api.main.enterprise.v1.MainService.UpdateDNSProvider:input_type -> octelium.api.main.enterprise.v1.DNSProvider
+	429, // 578: octelium.api.main.enterprise.v1.MainService.GetCertificate:input_type -> octelium.api.main.meta.v1.GetOptions
+	48,  // 579: octelium.api.main.enterprise.v1.MainService.UpdateCertificate:input_type -> octelium.api.main.enterprise.v1.Certificate
+	62,  // 580: octelium.api.main.enterprise.v1.MainService.ListCertificate:input_type -> octelium.api.main.enterprise.v1.ListCertificateOptions
+	69,  // 581: octelium.api.main.enterprise.v1.MainService.IssueCertificate:input_type -> octelium.api.main.enterprise.v1.IssueCertificateRequest
+	71,  // 582: octelium.api.main.enterprise.v1.MainService.SetCertificate:input_type -> octelium.api.main.enterprise.v1.SetCertificateRequest
+	429, // 583: octelium.api.main.enterprise.v1.MainService.GetCertificateIssuer:input_type -> octelium.api.main.meta.v1.GetOptions
+	63,  // 584: octelium.api.main.enterprise.v1.MainService.ListCertificateIssuer:input_type -> octelium.api.main.enterprise.v1.ListCertificateIssuerOptions
+	50,  // 585: octelium.api.main.enterprise.v1.MainService.UpdateCertificateIssuer:input_type -> octelium.api.main.enterprise.v1.CertificateIssuer
+	52,  // 586: octelium.api.main.enterprise.v1.MainService.CreateDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.DirectoryProvider
+	429, // 587: octelium.api.main.enterprise.v1.MainService.GetDirectoryProvider:input_type -> octelium.api.main.meta.v1.GetOptions
+	61,  // 588: octelium.api.main.enterprise.v1.MainService.ListDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.ListDirectoryProviderOptions
+	52,  // 589: octelium.api.main.enterprise.v1.MainService.UpdateDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.DirectoryProvider
+	430, // 590: octelium.api.main.enterprise.v1.MainService.DeleteDirectoryProvider:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	67,  // 591: octelium.api.main.enterprise.v1.MainService.GenerateDirectoryProviderCredential:input_type -> octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest
+	80,  // 592: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderUser:input_type -> octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions
+	81,  // 593: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderGroup:input_type -> octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions
+	85,  // 594: octelium.api.main.enterprise.v1.MainService.SynchronizeDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderRequest
+	45,  // 595: octelium.api.main.enterprise.v1.MainService.CreateSecret:input_type -> octelium.api.main.enterprise.v1.Secret
+	47,  // 596: octelium.api.main.enterprise.v1.MainService.ListSecret:input_type -> octelium.api.main.enterprise.v1.ListSecretOptions
+	430, // 597: octelium.api.main.enterprise.v1.MainService.DeleteSecret:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	429, // 598: octelium.api.main.enterprise.v1.MainService.GetSecret:input_type -> octelium.api.main.meta.v1.GetOptions
+	45,  // 599: octelium.api.main.enterprise.v1.MainService.UpdateSecret:input_type -> octelium.api.main.enterprise.v1.Secret
+	429, // 600: octelium.api.main.enterprise.v1.MainService.GetSecretStore:input_type -> octelium.api.main.meta.v1.GetOptions
+	74,  // 601: octelium.api.main.enterprise.v1.MainService.ListSecretStore:input_type -> octelium.api.main.enterprise.v1.ListSecretStoreOptions
+	65,  // 602: octelium.api.main.enterprise.v1.MainService.UpdateSecretStore:input_type -> octelium.api.main.enterprise.v1.SecretStore
+	90,  // 603: octelium.api.main.enterprise.v1.MainService.SynchronizeSecretStore:input_type -> octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest
+	75,  // 604: octelium.api.main.enterprise.v1.MainService.CreateDeviceManager:input_type -> octelium.api.main.enterprise.v1.DeviceManager
+	429, // 605: octelium.api.main.enterprise.v1.MainService.GetDeviceManager:input_type -> octelium.api.main.meta.v1.GetOptions
+	77,  // 606: octelium.api.main.enterprise.v1.MainService.ListDeviceManager:input_type -> octelium.api.main.enterprise.v1.ListDeviceManagerOptions
+	75,  // 607: octelium.api.main.enterprise.v1.MainService.UpdateDeviceManager:input_type -> octelium.api.main.enterprise.v1.DeviceManager
+	430, // 608: octelium.api.main.enterprise.v1.MainService.DeleteDeviceManager:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	78,  // 609: octelium.api.main.enterprise.v1.MainService.ResetDeviceBinding:input_type -> octelium.api.main.enterprise.v1.ResetDeviceBindingRequest
+	84,  // 610: octelium.api.main.enterprise.v1.MainService.GetCoreCondition:input_type -> octelium.api.main.enterprise.v1.Condition
+	82,  // 611: octelium.api.main.enterprise.v1.PolicyPortalService.IsAuthorized:input_type -> octelium.api.main.enterprise.v1.IsAuthorizedRequest
+	88,  // 612: octelium.api.main.enterprise.v1.ClusterService.UpgradeCluster:input_type -> octelium.api.main.enterprise.v1.UpgradeClusterRequest
+	92,  // 613: octelium.api.main.enterprise.v1.ClusterService.GetClusterInfo:input_type -> octelium.api.main.enterprise.v1.GetClusterInfoRequest
+	95,  // 614: octelium.api.main.enterprise.v1.ClusterService.SetLicense:input_type -> octelium.api.main.enterprise.v1.SetLicenseRequest
+	97,  // 615: octelium.api.main.enterprise.v1.ClusterService.GetLicense:input_type -> octelium.api.main.enterprise.v1.GetLicenseRequest
+	99,  // 616: octelium.api.main.enterprise.v1.ClusterService.DeleteLicense:input_type -> octelium.api.main.enterprise.v1.DeleteLicenseRequest
+	101, // 617: octelium.api.main.enterprise.v1.AgentService.GetAgent:input_type -> octelium.api.main.enterprise.v1.GetAgentRequest
+	102, // 618: octelium.api.main.enterprise.v1.AgentService.InitializeAgent:input_type -> octelium.api.main.enterprise.v1.InitializeAgentRequest
+	103, // 619: octelium.api.main.enterprise.v1.AgentService.CreateAgentWorkspace:input_type -> octelium.api.main.enterprise.v1.CreateAgentWorkspaceRequest
+	44,  // 620: octelium.api.main.enterprise.v1.MainService.GetClusterConfig:output_type -> octelium.api.main.enterprise.v1.ClusterConfig
+	44,  // 621: octelium.api.main.enterprise.v1.MainService.UpdateClusterConfig:output_type -> octelium.api.main.enterprise.v1.ClusterConfig
+	42,  // 622: octelium.api.main.enterprise.v1.MainService.CreateCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporter
+	42,  // 623: octelium.api.main.enterprise.v1.MainService.GetCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporter
+	43,  // 624: octelium.api.main.enterprise.v1.MainService.ListCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporterList
+	42,  // 625: octelium.api.main.enterprise.v1.MainService.UpdateCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporter
+	431, // 626: octelium.api.main.enterprise.v1.MainService.DeleteCollectorExporter:output_type -> octelium.api.main.meta.v1.OperationResult
+	58,  // 627: octelium.api.main.enterprise.v1.MainService.GetDNSProvider:output_type -> octelium.api.main.enterprise.v1.DNSProvider
+	59,  // 628: octelium.api.main.enterprise.v1.MainService.ListDNSProvider:output_type -> octelium.api.main.enterprise.v1.DNSProviderList
+	58,  // 629: octelium.api.main.enterprise.v1.MainService.UpdateDNSProvider:output_type -> octelium.api.main.enterprise.v1.DNSProvider
+	48,  // 630: octelium.api.main.enterprise.v1.MainService.GetCertificate:output_type -> octelium.api.main.enterprise.v1.Certificate
+	48,  // 631: octelium.api.main.enterprise.v1.MainService.UpdateCertificate:output_type -> octelium.api.main.enterprise.v1.Certificate
+	49,  // 632: octelium.api.main.enterprise.v1.MainService.ListCertificate:output_type -> octelium.api.main.enterprise.v1.CertificateList
+	70,  // 633: octelium.api.main.enterprise.v1.MainService.IssueCertificate:output_type -> octelium.api.main.enterprise.v1.IssueCertificateResponse
+	72,  // 634: octelium.api.main.enterprise.v1.MainService.SetCertificate:output_type -> octelium.api.main.enterprise.v1.SetCertificateResponse
+	50,  // 635: octelium.api.main.enterprise.v1.MainService.GetCertificateIssuer:output_type -> octelium.api.main.enterprise.v1.CertificateIssuer
+	51,  // 636: octelium.api.main.enterprise.v1.MainService.ListCertificateIssuer:output_type -> octelium.api.main.enterprise.v1.CertificateIssuerList
+	50,  // 637: octelium.api.main.enterprise.v1.MainService.UpdateCertificateIssuer:output_type -> octelium.api.main.enterprise.v1.CertificateIssuer
+	52,  // 638: octelium.api.main.enterprise.v1.MainService.CreateDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProvider
+	52,  // 639: octelium.api.main.enterprise.v1.MainService.GetDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProvider
+	53,  // 640: octelium.api.main.enterprise.v1.MainService.ListDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProviderList
+	52,  // 641: octelium.api.main.enterprise.v1.MainService.UpdateDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProvider
+	431, // 642: octelium.api.main.enterprise.v1.MainService.DeleteDirectoryProvider:output_type -> octelium.api.main.meta.v1.OperationResult
+	68,  // 643: octelium.api.main.enterprise.v1.MainService.GenerateDirectoryProviderCredential:output_type -> octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse
+	55,  // 644: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderUser:output_type -> octelium.api.main.enterprise.v1.DirectoryProviderUserList
+	57,  // 645: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderGroup:output_type -> octelium.api.main.enterprise.v1.DirectoryProviderGroupList
+	86,  // 646: octelium.api.main.enterprise.v1.MainService.SynchronizeDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderResponse
+	45,  // 647: octelium.api.main.enterprise.v1.MainService.CreateSecret:output_type -> octelium.api.main.enterprise.v1.Secret
+	46,  // 648: octelium.api.main.enterprise.v1.MainService.ListSecret:output_type -> octelium.api.main.enterprise.v1.SecretList
+	431, // 649: octelium.api.main.enterprise.v1.MainService.DeleteSecret:output_type -> octelium.api.main.meta.v1.OperationResult
+	45,  // 650: octelium.api.main.enterprise.v1.MainService.GetSecret:output_type -> octelium.api.main.enterprise.v1.Secret
+	45,  // 651: octelium.api.main.enterprise.v1.MainService.UpdateSecret:output_type -> octelium.api.main.enterprise.v1.Secret
+	65,  // 652: octelium.api.main.enterprise.v1.MainService.GetSecretStore:output_type -> octelium.api.main.enterprise.v1.SecretStore
+	66,  // 653: octelium.api.main.enterprise.v1.MainService.ListSecretStore:output_type -> octelium.api.main.enterprise.v1.SecretStoreList
+	65,  // 654: octelium.api.main.enterprise.v1.MainService.UpdateSecretStore:output_type -> octelium.api.main.enterprise.v1.SecretStore
+	91,  // 655: octelium.api.main.enterprise.v1.MainService.SynchronizeSecretStore:output_type -> octelium.api.main.enterprise.v1.SynchronizeSecretStoreResponse
+	75,  // 656: octelium.api.main.enterprise.v1.MainService.CreateDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManager
+	75,  // 657: octelium.api.main.enterprise.v1.MainService.GetDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManager
+	76,  // 658: octelium.api.main.enterprise.v1.MainService.ListDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManagerList
+	75,  // 659: octelium.api.main.enterprise.v1.MainService.UpdateDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManager
+	431, // 660: octelium.api.main.enterprise.v1.MainService.DeleteDeviceManager:output_type -> octelium.api.main.meta.v1.OperationResult
+	431, // 661: octelium.api.main.enterprise.v1.MainService.ResetDeviceBinding:output_type -> octelium.api.main.meta.v1.OperationResult
+	414, // 662: octelium.api.main.enterprise.v1.MainService.GetCoreCondition:output_type -> octelium.api.main.core.v1.Condition
+	83,  // 663: octelium.api.main.enterprise.v1.PolicyPortalService.IsAuthorized:output_type -> octelium.api.main.enterprise.v1.IsAuthorizedResponse
+	89,  // 664: octelium.api.main.enterprise.v1.ClusterService.UpgradeCluster:output_type -> octelium.api.main.enterprise.v1.UpgradeClusterResponse
+	93,  // 665: octelium.api.main.enterprise.v1.ClusterService.GetClusterInfo:output_type -> octelium.api.main.enterprise.v1.GetClusterInfoResponse
+	96,  // 666: octelium.api.main.enterprise.v1.ClusterService.SetLicense:output_type -> octelium.api.main.enterprise.v1.SetLicenseResponse
+	98,  // 667: octelium.api.main.enterprise.v1.ClusterService.GetLicense:output_type -> octelium.api.main.enterprise.v1.GetLicenseResponse
+	100, // 668: octelium.api.main.enterprise.v1.ClusterService.DeleteLicense:output_type -> octelium.api.main.enterprise.v1.DeleteLicenseResponse
+	104, // 669: octelium.api.main.enterprise.v1.AgentService.GetAgent:output_type -> octelium.api.main.enterprise.v1.Agent
+	104, // 670: octelium.api.main.enterprise.v1.AgentService.InitializeAgent:output_type -> octelium.api.main.enterprise.v1.Agent
+	401, // 671: octelium.api.main.enterprise.v1.AgentService.CreateAgentWorkspace:output_type -> octelium.api.main.enterprise.v1.Agent.Workspace
+	620, // [620:672] is the sub-list for method output_type
+	568, // [568:620] is the sub-list for method input_type
+	568, // [568:568] is the sub-list for extension type_name
+	568, // [568:568] is the sub-list for extension extendee
+	0,   // [0:568] is the sub-list for field type_name
 }
 
 func init() { file_enterprisev1_proto_init() }
@@ -34184,8 +34466,8 @@ func file_enterprisev1_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_enterprisev1_proto_rawDesc,
-			NumEnums:      38,
-			NumMessages:   361,
+			NumEnums:      40,
+			NumMessages:   362,
 			NumExtensions: 0,
 			NumServices:   4,
 		},

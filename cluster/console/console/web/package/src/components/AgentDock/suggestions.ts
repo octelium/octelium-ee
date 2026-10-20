@@ -495,6 +495,11 @@ const pageSuggestions = (range: string): Record<string, Suggestion[]> => ({
       "Unusual sign-ins",
       "Are there unusual sign-ins, e.g. from new devices or locations?",
     ),
+    s(
+      ShieldAlert,
+      "Failed sign-ins",
+      "Summarize the failed sign-ins of the last 24 hours by reason, User and identity provider",
+    ),
   ],
   "/visibility/auditlogs": [
     s(

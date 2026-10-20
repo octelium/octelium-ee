@@ -1,3 +1,4 @@
+import { AuthenticationLog_Entry_Status } from "@/apis/enterprisev1/enterprisev1";
 import { StatTile, toPoints } from "@/components/Dashboard/components";
 import {
   useAccessDataPoint,
@@ -25,8 +26,17 @@ const Streams = (props: { periodMinutes: number }) => {
 
   const access = useAccessSummary(periodMinutes, QUERY_PRIORITY.critical);
   const accessPoints = useAccessDataPoint(periodMinutes, QUERY_PRIORITY.high);
-  const auth = useAuthSummary(periodMinutes, QUERY_PRIORITY.critical);
-  const authPoints = useAuthDataPoint(periodMinutes, QUERY_PRIORITY.high);
+  const auth = useAuthSummary(
+    periodMinutes,
+    QUERY_PRIORITY.critical,
+    AuthenticationLog_Entry_Status.STATUS_UNSET,
+  );
+  const authPoints = useAuthDataPoint(
+    periodMinutes,
+    QUERY_PRIORITY.high,
+    undefined,
+    AuthenticationLog_Entry_Status.STATUS_UNSET,
+  );
   const audit = useAuditSummary(periodMinutes, QUERY_PRIORITY.high);
   const auditPoints = useAuditDataPoint(periodMinutes, QUERY_PRIORITY.normal);
   const component = useComponentSummary(periodMinutes, QUERY_PRIORITY.high);
@@ -68,8 +78,8 @@ const Streams = (props: { periodMinutes: number }) => {
       <StatTile
         label="Authentication log"
         value={n(auth.data?.totalNumber)}
-        badge={`${compact(n(auth.data?.totalReauthentication))} re-auth`}
-        footer={`${compact(n(auth.data?.totalUser))} users · ${compact(n(auth.data?.totalIdentityProvider))} providers used`}
+        badge={`${compact(n(auth.data?.totalFailure))} failed`}
+        footer={`${compact(n(auth.data?.totalUser))} users · ${compact(n(auth.data?.totalReauthentication))} re-auths`}
         trend={{
           cur: n(auth.data?.totalNumber),
           prev: n(auth.data?.previous?.totalNumber),

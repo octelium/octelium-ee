@@ -104,17 +104,23 @@ func (c *Controller) doAuthenticationLog(ctx context.Context, sess *corev1.Sessi
 				}
 				return sess.Status.TotalAuthentications - 1
 			}(),
+			Status: enterprisev1.AuthenticationLog_Entry_SUCCESS,
 		},
 	}
 
 	// zap.L().Debug("Created authenticationLog", zap.Any("log", lg))
 
+	return c.exportLogs(ctx, []*enterprisev1.AuthenticationLog{lg})
+}
+
+func (c *Controller) exportLogs(ctx context.Context, items []*enterprisev1.AuthenticationLog) error {
 	lgs := plog.NewLogs()
 	lgs.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
 	logRecords := lgs.ResourceLogs().At(0).ScopeLogs().At(0).LogRecords()
-	lr := logRecords.AppendEmpty()
 
-	convertLogRecord(lg, lr)
+	for _, itm := range items {
+		convertLogRecord(itm, logRecords.AppendEmpty())
+	}
 
 	_, err := c.client.Export(ctx, plogotlp.NewExportRequestFromLogs(lgs))
 	return err
@@ -123,9 +129,14 @@ func (c *Controller) doAuthenticationLog(ctx context.Context, sess *corev1.Sessi
 func convertLogRecord(in *enterprisev1.AuthenticationLog, ret plog.LogRecord) {
 	inMap := pbutils.MustConvertToMap(in)
 
+	severity := plog.SeverityNumberInfo
+	if in.Entry.GetStatus() == enterprisev1.AuthenticationLog_Entry_FAILURE {
+		severity = plog.SeverityNumberWarn
+	}
+
 	ret.SetTimestamp(pcommon.NewTimestampFromTime(in.Metadata.CreatedAt.AsTime()))
 	ret.SetObservedTimestamp(pcommon.NewTimestampFromTime(in.Metadata.CreatedAt.AsTime()))
-	ret.SetSeverityNumber(plog.SeverityNumberInfo)
-	ret.SetSeverityText(plog.SeverityNumberInfo.String())
+	ret.SetSeverityNumber(severity)
+	ret.SetSeverityText(severity.String())
 	ret.Body().SetEmptyMap().FromRaw(inMap)
 }

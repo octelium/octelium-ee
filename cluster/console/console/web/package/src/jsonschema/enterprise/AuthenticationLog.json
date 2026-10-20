@@ -26,7 +26,7 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Authentication Log",
-            "description": "AuthenticationLog is a log entry that records a single authentication of a Session (e.g. an OIDC login or a Credential-based authentication). A Session that re-authenticates produces more than one AuthenticationLog."
+            "description": "AuthenticationLog is a log entry that records a single authentication of a Session (e.g. an OIDC login or a Credential-based authentication) or a single failed authentication attempt (e.g. an invalid Authenticator challenge response or an expired Credential). A Session that re-authenticates produces more than one AuthenticationLog."
         },
         "octelium.api.main.core.v1.GeoIP": {
             "properties": {
@@ -574,12 +574,12 @@
                 "sessionRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
-                    "description": "SessionRef is a reference to the Session that authenticated."
+                    "description": "SessionRef is a reference to the Session that authenticated. For a failed authentication attempt, it is only set if the attempt was made by an existing Session (e.g. a re-authentication)."
                 },
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
-                    "description": "UserRef is a reference to the User that owns the Session."
+                    "description": "UserRef is a reference to the User that owns the Session. For a failed authentication attempt, it is only set if the User could be identified."
                 },
                 "deviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
@@ -589,17 +589,59 @@
                 "authentication": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication",
                     "additionalProperties": false,
-                    "description": "Authentication is the authentication information of the Session (e.g. its type, its assurance level and its GeoIP information)."
+                    "description": "Authentication is the authentication information of the Session (e.g. its type, its assurance level and its GeoIP information). For a failed authentication attempt, only the `info` (i.e. the attempted method, its IdentityProvider, Credential or Authenticator, and the downstream information) and the `setAt` fields are set."
                 },
                 "authenticationIndex": {
                     "type": "integer",
-                    "description": "AuthenticationIndex is the zero-based index of this authentication among the Session's total authentications."
+                    "description": "AuthenticationIndex is the zero-based index of this authentication among the Session's total authentications. It is not used by failed authentication attempts."
+                },
+                "status": {
+                    "enum": [
+                        "STATUS_UNSET",
+                        "SUCCESS",
+                        "FAILURE"
+                    ],
+                    "type": "string",
+                    "title": "Status",
+                    "description": "Status is the result of the authentication"
+                },
+                "failure": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure",
+                    "additionalProperties": false,
+                    "description": "Failure is the information of the failed authentication attempt. It is only set when the Status is FAILURE."
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Entry",
             "description": "Entry is the AuthenticationLog entry information"
+        },
+        "octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure": {
+            "properties": {
+                "reason": {
+                    "enum": [
+                        "REASON_UNSET",
+                        "INVALID_CREDENTIAL",
+                        "EXPIRED_CREDENTIAL",
+                        "REVOKED_CREDENTIAL",
+                        "USER_NOT_FOUND",
+                        "USER_DEACTIVATED",
+                        "USER_LOCKED",
+                        "DENIED_BY_RULE",
+                        "NOT_ALLOWED",
+                        "LIMIT_EXCEEDED",
+                        "IDENTITY_PROVIDER_ERROR",
+                        "INTERNAL_ERROR"
+                    ],
+                    "type": "string",
+                    "title": "Reason",
+                    "description": "Reason is the reason for which the authentication attempt was rejected"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Failure",
+            "description": "Failure is the information of a failed authentication attempt"
         },
         "octelium.api.main.meta.v1.Duration": {
             "properties": {

@@ -213,6 +213,8 @@ func (s *Server) getAuthenticationLogDataPoint(ctx context.Context, req *visibil
 		return nil, err
 	}
 
+	filters = appendAuthenticationStatusFilters(filters, req.Status, req.Reason)
+
 	interval := s.getDataPointInterval(req.Interval)
 
 	dps, err := s.getDataPoints(ctx, "authentication_logs", from, to, interval, filters)

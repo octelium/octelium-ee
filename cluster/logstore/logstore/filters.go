@@ -15,6 +15,7 @@ import (
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/octelium/octelium/apis/main/corev1"
+	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"google.golang.org/protobuf/proto"
@@ -39,6 +40,8 @@ const jsonComponentNamespace = `json_extract_string(rsc, '$.entry.component.name
 const jsonComponentUID = `json_extract_string(rsc, '$.entry.component.uid')`
 const jsonAuditMethod = `json_extract_string(rsc, '$.entry.method')`
 const jsonAuditResourceKind = `json_extract_string(rsc, '$.entry.resourceRef.kind')`
+const jsonAuthenticationFailureReason = `json_extract_string(rsc, '$.entry.failure.reason')`
+const sqlAuthenticationStatus = `COALESCE(json_extract_string(rsc, '$.entry.status'), 'SUCCESS')`
 
 func getTopLimit(limit uint32) int {
 	switch {
@@ -90,6 +93,20 @@ func appendAccessReasonModeFilters(filters []exp.Expression,
 	}
 	if mode != corev1.Service_Spec_MODE_UNSET {
 		filters = append(filters, goqu.L(jsonMode).Eq(mode.String()))
+	}
+
+	return filters
+}
+
+func appendAuthenticationStatusFilters(filters []exp.Expression,
+	status enterprisev1.AuthenticationLog_Entry_Status,
+	reason enterprisev1.AuthenticationLog_Entry_Failure_Reason) []exp.Expression {
+	switch status {
+	case enterprisev1.AuthenticationLog_Entry_SUCCESS, enterprisev1.AuthenticationLog_Entry_FAILURE:
+		filters = append(filters, goqu.L(sqlAuthenticationStatus).Eq(status.String()))
+	}
+	if reason != enterprisev1.AuthenticationLog_Entry_Failure_REASON_UNSET {
+		filters = append(filters, goqu.L(jsonAuthenticationFailureReason).Eq(reason.String()))
 	}
 
 	return filters

@@ -16,6 +16,7 @@ import (
 
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium/apis/main/corev1"
+	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -310,7 +311,7 @@ func TestApplyStoragePressureCleanupWithoutTrimmableLogs(t *testing.T) {
 
 func TestGetCleanupMaxCounts(t *testing.T) {
 	counts := getCleanupMaxCounts()
-	assert.Len(t, counts, 5)
+	assert.Len(t, counts, 6)
 
 	for _, c := range counts {
 		assert.NotEmpty(t, c.table)
@@ -320,6 +321,14 @@ func TestGetCleanupMaxCounts(t *testing.T) {
 	assert.Equal(t, "component_logs", counts[2].table)
 	assert.Contains(t, counts[2].where, corev1.ComponentLog_Entry_DEBUG.String())
 	assert.Equal(t, maxDBComponentLogsDebug, counts[2].limit)
+
+	assert.Equal(t, "authentication_logs", counts[4].table)
+	assert.Contains(t, counts[4].where, enterprisev1.AuthenticationLog_Entry_FAILURE.String())
+	assert.Equal(t, maxDBAuthenticationLogsFailure, counts[4].limit)
+
+	assert.Equal(t, "authentication_logs", counts[5].table)
+	assert.Empty(t, counts[5].where)
+	assert.Equal(t, maxDBAuthenticationLogs, counts[5].limit)
 }
 
 func TestStartStoragePressureLoopExitsOnContextCancellation(t *testing.T) {

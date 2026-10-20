@@ -816,10 +816,13 @@ func (s *Server) doSummaryAuthenticationLog(ctx context.Context, req *visibility
 		}
 	*/
 
+	filters = appendAuthenticationStatusFilters(filters, req.Status, req.Reason)
 	filters = appendTimeFilters(filters, from, to)
 
 	ds := goqu.From("authentication_logs").Where(filters...).Select(
 		goqu.L(`COUNT(*) AS count_total`),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'SUCCESS') AS count_success`, sqlAuthenticationStatus)),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'FAILURE') AS count_failure`, sqlAuthenticationStatus)),
 
 		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.authentication.info.type') = 'REFRESH_TOKEN') AS count_refresh_token`),
 		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.authentication.info.type') = 'AUTHENTICATOR') AS count_authenticator`),
@@ -860,7 +863,7 @@ func (s *Server) doSummaryAuthenticationLog(ctx context.Context, req *visibility
 	defer rows.Close()
 
 	for rows.Next() {
-		err := rows.Scan(&ret.TotalNumber,
+		err := rows.Scan(&ret.TotalNumber, &ret.TotalSuccess, &ret.TotalFailure,
 			&ret.TotalRefreshToken, &ret.TotalAuthenticator, &ret.TotalIdentityProvider, &ret.TotalCredential,
 			&ret.TotalAAL1, &ret.TotalAAL2, &ret.TotalAAL3,
 			&ret.TotalAuthenticatorFIDO, &ret.TotalAuthenticatorTOTP, &ret.TotalAuthenticatorTPM,
@@ -870,6 +873,14 @@ func (s *Server) doSummaryAuthenticationLog(ctx context.Context, req *visibility
 			return nil, grpcutils.InternalWithErr(err)
 		}
 
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	ret.TotalByFailureReason, err = s.getGroupedCounts(ctx, "authentication_logs", jsonAuthenticationFailureReason, filters)
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil
@@ -925,6 +936,7 @@ func (s *Server) listAuthenticationLog(ctx context.Context, req *visibilityv1.Li
 		}
 	*/
 
+	filters = appendAuthenticationStatusFilters(filters, req.Status, req.Reason)
 	filters = appendTimeFilters(filters, req.From, req.To)
 
 	totalCount, err := s.countLogs(ctx, "authentication_logs", filters)

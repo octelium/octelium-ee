@@ -19,6 +19,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium/apis/main/corev1"
+	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vllmv1"
 	"github.com/octelium/octelium/cluster/common/healthcheck"
@@ -263,6 +264,7 @@ func (s *Server) startCleanupLoop(ctx context.Context) {
 
 var maxDBAccessLogs = 2_000_000
 var maxDBAuthenticationLogs = 100_000
+var maxDBAuthenticationLogsFailure = 25_000
 var maxDBAuditLogs = 100_000
 var maxDBComponentLogs = 100_000
 var maxDBComponentLogsDebug = 10_000
@@ -283,6 +285,12 @@ func getCleanupMaxCounts() []*maxCleanup {
 			limit: maxDBComponentLogsDebug,
 		},
 		{table: "audit_logs", limit: maxDBAuditLogs},
+		{
+			table: "authentication_logs",
+			where: fmt.Sprintf(`%s = '%s'`, sqlAuthenticationStatus,
+				enterprisev1.AuthenticationLog_Entry_FAILURE.String()),
+			limit: maxDBAuthenticationLogsFailure,
+		},
 		{table: "authentication_logs", limit: maxDBAuthenticationLogs},
 	}
 }

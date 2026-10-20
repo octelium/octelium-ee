@@ -9,10 +9,12 @@
 package logstore
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/octelium/octelium/apis/main/corev1"
+	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
@@ -20,6 +22,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -618,5 +621,292 @@ func TestCleanupByMaxCount(t *testing.T) {
 		assert.Nil(t, err, "%+v", err)
 		assert.Zero(t, deleted)
 		assert.Equal(t, 5, getTableCount(t, ts.srv, "authentication_logs"))
+	}
+}
+
+func TestAuthenticationLogFailureQueries(t *testing.T) {
+	ts := newTestServer(t)
+	if ts == nil {
+		return
+	}
+
+	user1 := createTestUser(t, ts)
+	user2 := createTestUser(t, ts)
+	userRef1 := umetav1.GetObjectReference(user1)
+	userRef2 := umetav1.GetObjectReference(user2)
+
+	idp, err := ts.srv.octeliumC.CoreC().CreateIdentityProvider(ts.ctx, &corev1.IdentityProvider{
+		Metadata: &metav1.Metadata{
+			Name: fmt.Sprintf("idp-%s", utilrand.GetRandomStringLowercase(6)),
+		},
+		Spec:   &corev1.IdentityProvider_Spec{},
+		Status: &corev1.IdentityProvider_Status{},
+	})
+	assert.Nil(t, err, "%+v", err)
+	identityProviderRef := umetav1.GetObjectReference(idp)
+
+	base := time.Now().UTC().Add(-time.Hour).Truncate(time.Second)
+
+	insert := func(idx int, opts *authenticationLogOptions) {
+		opts.CreatedAt = base.Add(time.Duration(idx) * time.Second)
+		insertLogJSON(t, ts.srv, "authentication_logs", marshalLog(t, newAuthenticationLog(opts)))
+	}
+
+	idx := 0
+	for range 10 {
+		insert(idx, &authenticationLogOptions{
+			UserRef: userRef1,
+			Type:    corev1.Session_Status_Authentication_Info_IDENTITY_PROVIDER,
+			AAL:     corev1.Session_Status_Authentication_Info_AAL1,
+
+			IdentityProviderRef: identityProviderRef,
+		})
+		idx++
+	}
+	for range 5 {
+		insert(idx, &authenticationLogOptions{
+			UserRef: userRef2,
+			Type:    corev1.Session_Status_Authentication_Info_REFRESH_TOKEN,
+			AAL:     corev1.Session_Status_Authentication_Info_AAL1,
+			Status:  enterprisev1.AuthenticationLog_Entry_SUCCESS,
+		})
+		idx++
+	}
+	for range 4 {
+		insert(idx, &authenticationLogOptions{
+			UserRef:       userRef2,
+			Type:          corev1.Session_Status_Authentication_Info_AUTHENTICATOR,
+			Status:        enterprisev1.AuthenticationLog_Entry_FAILURE,
+			FailureReason: enterprisev1.AuthenticationLog_Entry_Failure_INVALID_CREDENTIAL,
+		})
+		idx++
+	}
+	for range 3 {
+		insert(idx, &authenticationLogOptions{
+			Type:                corev1.Session_Status_Authentication_Info_IDENTITY_PROVIDER,
+			Status:              enterprisev1.AuthenticationLog_Entry_FAILURE,
+			FailureReason:       enterprisev1.AuthenticationLog_Entry_Failure_USER_NOT_FOUND,
+			IdentityProviderRef: identityProviderRef,
+		})
+		idx++
+	}
+	for range 2 {
+		insert(idx, &authenticationLogOptions{
+			UserRef:       userRef1,
+			Type:          corev1.Session_Status_Authentication_Info_CREDENTIAL,
+			Status:        enterprisev1.AuthenticationLog_Entry_FAILURE,
+			FailureReason: enterprisev1.AuthenticationLog_Entry_Failure_REVOKED_CREDENTIAL,
+			CredentialRef: randomObjectReference(),
+		})
+		idx++
+	}
+
+	for _, tt := range []struct {
+		status enterprisev1.AuthenticationLog_Entry_Status
+		reason enterprisev1.AuthenticationLog_Entry_Failure_Reason
+		count  uint32
+	}{
+		{count: 24},
+		{status: enterprisev1.AuthenticationLog_Entry_SUCCESS, count: 15},
+		{status: enterprisev1.AuthenticationLog_Entry_FAILURE, count: 9},
+		{reason: enterprisev1.AuthenticationLog_Entry_Failure_INVALID_CREDENTIAL, count: 4},
+		{
+			status: enterprisev1.AuthenticationLog_Entry_FAILURE,
+			reason: enterprisev1.AuthenticationLog_Entry_Failure_USER_NOT_FOUND,
+			count:  3,
+		},
+		{
+			status: enterprisev1.AuthenticationLog_Entry_SUCCESS,
+			reason: enterprisev1.AuthenticationLog_Entry_Failure_USER_NOT_FOUND,
+			count:  0,
+		},
+	} {
+		resp, err := ts.srv.listAuthenticationLog(ts.ctx, &visibilityv1.ListAuthenticationLogRequest{
+			Status: tt.status,
+			Reason: tt.reason,
+			Common: &vmetav1.CommonListOptions{ItemsPerPage: 1000},
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, tt.count, resp.ListResponseMeta.TotalCount)
+		assert.Equal(t, int(tt.count), len(resp.Items))
+		for _, itm := range resp.Items {
+			switch tt.status {
+			case enterprisev1.AuthenticationLog_Entry_FAILURE:
+				assert.Equal(t, enterprisev1.AuthenticationLog_Entry_FAILURE, itm.Entry.Status)
+				assert.NotNil(t, itm.Entry.Failure)
+			case enterprisev1.AuthenticationLog_Entry_SUCCESS:
+				assert.NotEqual(t, enterprisev1.AuthenticationLog_Entry_FAILURE, itm.Entry.Status)
+			}
+		}
+	}
+
+	{
+		resp, err := ts.srv.getSummaryAuthenticationLog(ts.ctx, &visibilityv1.GetAuthenticationLogSummaryRequest{
+			CompareFrom: pbutils.Timestamp(base.Add(-2 * time.Hour)),
+			CompareTo:   pbutils.Timestamp(base.Add(-time.Hour)),
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, 24, int(resp.TotalNumber))
+		assert.Equal(t, 15, int(resp.TotalSuccess))
+		assert.Equal(t, 9, int(resp.TotalFailure))
+		assert.Equal(t, 15, int(resp.TotalAAL1))
+		assert.Equal(t, map[string]uint64{
+			"INVALID_CREDENTIAL": 4,
+			"USER_NOT_FOUND":     3,
+			"REVOKED_CREDENTIAL": 2,
+		}, resp.TotalByFailureReason)
+		assert.NotNil(t, resp.Previous)
+		assert.Equal(t, 0, int(resp.Previous.TotalFailure))
+	}
+
+	{
+		resp, err := ts.srv.getSummaryAuthenticationLog(ts.ctx, &visibilityv1.GetAuthenticationLogSummaryRequest{
+			Status: enterprisev1.AuthenticationLog_Entry_FAILURE,
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, 9, int(resp.TotalNumber))
+		assert.Equal(t, 0, int(resp.TotalSuccess))
+		assert.Equal(t, 9, int(resp.TotalFailure))
+		assert.Equal(t, 0, int(resp.TotalAAL1))
+		assert.Equal(t, 2, int(resp.TotalUser))
+		assert.Equal(t, 3, int(resp.TotalIdentityProvider))
+	}
+
+	{
+		resp, err := ts.srv.getSummaryAuthenticationLog(ts.ctx, &visibilityv1.GetAuthenticationLogSummaryRequest{
+			Status: enterprisev1.AuthenticationLog_Entry_SUCCESS,
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, 15, int(resp.TotalNumber))
+		assert.Equal(t, 0, int(resp.TotalFailure))
+		assert.Empty(t, resp.TotalByFailureReason)
+	}
+
+	{
+		resp, err := ts.srv.getAuthenticationLogDataPoint(ts.ctx, &visibilityv1.GetAuthenticationLogDataPointRequest{
+			From:    pbutils.Timestamp(base.Add(-time.Minute)),
+			To:      pbutils.Timestamp(base.Add(time.Hour)),
+			GroupBy: visibilityv1.GetAuthenticationLogDataPointRequest_STATUS,
+		})
+		assert.Nil(t, err, "%+v", err)
+
+		totals := make(map[string]int64)
+		for _, series := range resp.Series {
+			totals[series.Key] = series.Total
+		}
+		assert.Equal(t, map[string]int64{"SUCCESS": 15, "FAILURE": 9}, totals)
+	}
+
+	{
+		resp, err := ts.srv.getAuthenticationLogDataPoint(ts.ctx, &visibilityv1.GetAuthenticationLogDataPointRequest{
+			From:    pbutils.Timestamp(base.Add(-time.Minute)),
+			To:      pbutils.Timestamp(base.Add(time.Hour)),
+			GroupBy: visibilityv1.GetAuthenticationLogDataPointRequest_FAILURE_REASON,
+			Status:  enterprisev1.AuthenticationLog_Entry_FAILURE,
+		})
+		assert.Nil(t, err, "%+v", err)
+
+		var total int64
+		for _, dp := range resp.Datapoints {
+			total += dp.Count
+		}
+		assert.Equal(t, int64(9), total)
+
+		totals := make(map[string]int64)
+		for _, series := range resp.Series {
+			totals[series.Key] = series.Total
+		}
+		assert.Equal(t, map[string]int64{
+			"INVALID_CREDENTIAL": 4,
+			"USER_NOT_FOUND":     3,
+			"REVOKED_CREDENTIAL": 2,
+		}, totals)
+	}
+
+	{
+		resp, err := ts.srv.listAuthenticationLogTopUser(ts.ctx, &visibilityv1.ListAuthenticationLogTopUserRequest{
+			Status: enterprisev1.AuthenticationLog_Entry_FAILURE,
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 2)
+		assert.Equal(t, user2.Metadata.Uid, resp.Items[0].User.Metadata.Uid)
+		assert.Equal(t, int32(4), resp.Items[0].Count)
+		assert.Equal(t, int32(2), resp.Items[1].Count)
+	}
+
+	{
+		resp, err := ts.srv.listAuthenticationLogTopIdentityProvider(ts.ctx,
+			&visibilityv1.ListAuthenticationLogTopIdentityProviderRequest{})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 1)
+		assert.Equal(t, idp.Metadata.Uid, resp.Items[0].IdentityProvider.Metadata.Uid)
+		assert.Equal(t, int32(13), resp.Items[0].Count)
+	}
+
+	{
+		resp, err := ts.srv.listAuthenticationLogTopIdentityProvider(ts.ctx,
+			&visibilityv1.ListAuthenticationLogTopIdentityProviderRequest{
+				Reason: enterprisev1.AuthenticationLog_Entry_Failure_USER_NOT_FOUND,
+			})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 1)
+		assert.Equal(t, int32(3), resp.Items[0].Count)
+	}
+
+	{
+		resp, err := ts.srv.listAuthenticationLogTopCredential(ts.ctx,
+			&visibilityv1.ListAuthenticationLogTopCredentialRequest{
+				Status: enterprisev1.AuthenticationLog_Entry_SUCCESS,
+			})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint64(0), resp.TotalCount)
+	}
+}
+
+func TestCleanupAuthenticationLogFailures(t *testing.T) {
+	ts := newTestServer(t)
+	if ts == nil {
+		return
+	}
+
+	oldAuthenticationMax := maxDBAuthenticationLogs
+	oldAuthenticationFailureMax := maxDBAuthenticationLogsFailure
+	t.Cleanup(func() {
+		maxDBAuthenticationLogs = oldAuthenticationMax
+		maxDBAuthenticationLogsFailure = oldAuthenticationFailureMax
+	})
+
+	maxDBAuthenticationLogs = 30
+	maxDBAuthenticationLogsFailure = 5
+
+	now := time.Now().UTC().Truncate(time.Second)
+
+	for idx := range 40 {
+		opts := &authenticationLogOptions{
+			CreatedAt: now.Add(time.Duration(idx) * time.Second),
+		}
+		if idx%2 == 0 {
+			opts.Status = enterprisev1.AuthenticationLog_Entry_FAILURE
+			opts.FailureReason = enterprisev1.AuthenticationLog_Entry_Failure_INVALID_CREDENTIAL
+		}
+
+		insertLogJSON(t, ts.srv, "authentication_logs", marshalLog(t, newAuthenticationLog(opts)))
+	}
+
+	err := ts.srv.doCleanup(ts.ctx)
+	assert.Nil(t, err, "%+v", err)
+
+	resp, err := ts.srv.getSummaryAuthenticationLog(ts.ctx, &visibilityv1.GetAuthenticationLogSummaryRequest{})
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, 20, int(resp.TotalSuccess))
+	assert.Equal(t, maxDBAuthenticationLogsFailure, int(resp.TotalFailure))
+
+	list, err := ts.srv.listAuthenticationLog(ts.ctx, &visibilityv1.ListAuthenticationLogRequest{
+		Status: enterprisev1.AuthenticationLog_Entry_FAILURE,
+		Common: &vmetav1.CommonListOptions{ItemsPerPage: 1000},
+	})
+	assert.Nil(t, err, "%+v", err)
+	for _, itm := range list.Items {
+		assert.True(t, !itm.Metadata.CreatedAt.AsTime().Before(now.Add(30*time.Second)))
 	}
 }

@@ -136,6 +136,16 @@ export const DIMENSIONS: Record<StreamKey, Dimension[]> = {
       groupBy: GetAuthenticationLogDataPointRequest_GroupBy.TYPE,
     },
     {
+      value: "status",
+      label: "Result",
+      groupBy: GetAuthenticationLogDataPointRequest_GroupBy.STATUS,
+    },
+    {
+      value: "failureReason",
+      label: "Failure reason",
+      groupBy: GetAuthenticationLogDataPointRequest_GroupBy.FAILURE_REASON,
+    },
+    {
       value: "aal",
       label: "Assurance level",
       groupBy: GetAuthenticationLogDataPointRequest_GroupBy.ASSURANCE_LEVEL,

@@ -3,6 +3,10 @@ import {
   useLogListReq,
 } from "@/components/AccessLogViewer/listReq";
 import AuthenticationLogViewer from "@/components/AuthenticationLogViewer";
+import {
+  parseAuthenticationLogStatus,
+  parseFailureReason,
+} from "@/components/AuthenticationLogViewer/failure";
 import LogPageShell, {
   useLogPageParams,
 } from "@/components/LogViewer/LogPageShell";
@@ -19,6 +23,8 @@ export default () => {
         identityProviderRef={toObjectRef(req?.identityProviderRef)}
         credentialRef={toObjectRef(req?.credentialRef)}
         authenticatorRef={toObjectRef(req?.authenticatorRef)}
+        status={parseAuthenticationLogStatus(req?.status)}
+        reason={parseFailureReason(req?.reason)}
         itemsPerPage={25}
         page={pagination.page}
         onPageChange={pagination.setPage}
