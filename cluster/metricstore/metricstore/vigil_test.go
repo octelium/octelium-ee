@@ -633,6 +633,35 @@ func TestCounterBucketsAreZeroFilled(t *testing.T) {
 	assert.Zero(t, points[4].GetAsDouble())
 }
 
+func TestRetriedExportsAreStoredAndCountedOnce(t *testing.T) {
+	s := newTestSrvMetric(t)
+
+	base := time.Now().UTC().Truncate(time.Hour)
+	procStart := base.Add(-2 * time.Hour)
+	seedTestVigilCounter(t, s, "octelium-vigil-1", procStart,
+		base.Add(-10*time.Minute), 10*time.Second, 60, 10)
+	seedTestVigilCounter(t, s, "octelium-vigil-1", procStart,
+		base.Add(-10*time.Minute), 10*time.Second, 60, 10)
+
+	metrics, sm := newVigilResourceMetrics()
+	appendTestHistogram(sm, "authorization.req.duration", "us", procStart, base.Add(-5*time.Minute))
+	storeTestMetrics(t, s, metrics)
+	storeTestMetrics(t, s, metrics)
+
+	assert.Equal(t, int64(60), testTableCount(t, s.s, "metric_number_points"))
+	assert.Equal(t, int64(1), testTableCount(t, s.s, "metric_histogram_points"))
+
+	points := testCounterPoints(t, s, base.Add(-8*time.Minute), base.Add(-3*time.Minute),
+		testMetricStep(), vmetricsv1.CounterOperation_RATE)
+
+	require.Len(t, points, 5)
+	for _, point := range points {
+		assert.InDelta(t, 1, point.GetAsDouble(), 0.0001,
+			"bucket %s reports %v instead of the true 1 req/s",
+			point.Timestamp.AsTime(), point.GetAsDouble())
+	}
+}
+
 func TestGaugeSumIsNotDilutedByAPartialBucket(t *testing.T) {
 	s := newTestSrvMetric(t)
 

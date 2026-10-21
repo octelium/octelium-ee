@@ -43,17 +43,11 @@ func (s *srvMetric) queryGauge(ctx context.Context, query *querySpec,
 		seriesAggregation := numberSeriesAggregationExpression(query.req.SeriesAggregation)
 
 		querySQL := `
-WITH deduplicated AS (
-	SELECT * EXCLUDE (dedupe_row)
-	FROM (
-		SELECT
-			p.*,
-			ROW_NUMBER() OVER (PARTITION BY p.point_id ORDER BY p.ingested_at ASC) AS dedupe_row
-		FROM metric_number_points p
-		JOIN selected_metric_series m ON m.series_id = p.series_id
-		WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
-	)
-	WHERE dedupe_row = 1
+WITH range_points AS (
+	SELECT p.*
+	FROM metric_number_points p
+	WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
+	  AND p.series_id IN (SELECT series_id FROM selected_metric_series)
 ), per_source AS (
 	SELECT
 		m.output_id,
@@ -66,7 +60,7 @@ WITH deduplicated AS (
 		arg_max(COALESCE(p.number_double, CAST(p.number_int AS DOUBLE)),
 			printf('%020d:%s', p.timestamp, p.point_id)) AS value_last,
 		MAX(p.timestamp) AS last_timestamp
-	FROM deduplicated p
+	FROM range_points p
 	JOIN selected_metric_series m ON m.series_id = p.series_id
 	GROUP BY m.output_id, p.series_id, bucket_idx
 ), source_values AS (
@@ -225,17 +219,11 @@ func (s *srvMetric) queryCounterRaw(ctx context.Context, query *querySpec,
 		}
 
 		rows, err := conn.QueryContext(ctx, `
-WITH deduplicated AS (
-	SELECT * EXCLUDE (dedupe_row)
-	FROM (
-		SELECT
-			p.*,
-			ROW_NUMBER() OVER (PARTITION BY p.point_id ORDER BY p.ingested_at ASC) AS dedupe_row
-		FROM metric_number_points p
-		JOIN selected_metric_series m ON m.series_id = p.series_id
-		WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
-	)
-	WHERE dedupe_row = 1
+WITH range_points AS (
+	SELECT p.*
+	FROM metric_number_points p
+	WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
+	  AND p.series_id IN (SELECT series_id FROM selected_metric_series)
 ), ranked AS (
 	SELECT
 		m.output_id,
@@ -244,7 +232,7 @@ WITH deduplicated AS (
 		p.number_int,
 		p.number_double,
 		ROW_NUMBER() OVER (PARTITION BY m.output_id ORDER BY p.timestamp DESC, p.point_id DESC) AS row_number
-	FROM deduplicated p
+	FROM range_points p
 	JOIN selected_metric_series m ON m.series_id = p.series_id
 )
 SELECT output_id, timestamp, start_timestamp, number_int, number_double
@@ -348,17 +336,11 @@ func numberSeriesAggregationExpression(aggregation vmetricsv1.QueryMetricsReques
 func counterDeltaSQL(query *querySpec) string {
 	aggregation := numberSeriesAggregationExpression(query.req.SeriesAggregation)
 	return `
-WITH deduplicated AS (
-	SELECT * EXCLUDE (dedupe_row)
-	FROM (
-		SELECT
-			p.*,
-			ROW_NUMBER() OVER (PARTITION BY p.point_id ORDER BY p.ingested_at ASC) AS dedupe_row
-		FROM metric_number_points p
-		JOIN selected_metric_series m ON m.series_id = p.series_id
-		WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
-	)
-	WHERE dedupe_row = 1
+WITH range_points AS (
+	SELECT p.*
+	FROM metric_number_points p
+	WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
+	  AND p.series_id IN (SELECT series_id FROM selected_metric_series)
 ), per_source AS (
 	SELECT
 		m.output_id,
@@ -366,7 +348,7 @@ WITH deduplicated AS (
 		` + bucketIndexExpression() + ` AS bucket_idx,
 		SUM(COALESCE(p.number_double, CAST(p.number_int AS DOUBLE))) AS source_value,
 		MAX(p.timestamp) AS last_timestamp
-	FROM deduplicated p
+	FROM range_points p
 	JOIN selected_metric_series m ON m.series_id = p.series_id
 	GROUP BY m.output_id, p.series_id, bucket_idx
 )
@@ -397,17 +379,11 @@ WITH previous_ranked AS (
 	FROM metric_number_points p
 	JOIN selected_metric_series m ON m.series_id = p.series_id
 	WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
-), range_deduplicated AS (
-	SELECT * EXCLUDE (dedupe_row)
-	FROM (
-		SELECT
-			p.*,
-			ROW_NUMBER() OVER (PARTITION BY p.point_id ORDER BY p.ingested_at ASC) AS dedupe_row
-		FROM metric_number_points p
-		JOIN selected_metric_series m ON m.series_id = p.series_id
-		WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
-	)
-	WHERE dedupe_row = 1
+), range_points AS (
+	SELECT p.*
+	FROM metric_number_points p
+	WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
+	  AND p.series_id IN (SELECT series_id FROM selected_metric_series)
 ), selected_points AS (
 	SELECT series_id, timestamp, start_timestamp, value
 	FROM previous_ranked
@@ -418,7 +394,7 @@ WITH previous_ranked AS (
 		p.timestamp,
 		p.start_timestamp,
 		COALESCE(p.number_double, CAST(p.number_int AS DOUBLE)) AS value
-	FROM range_deduplicated p
+	FROM range_points p
 ), with_previous AS (
 	SELECT
 		*,

@@ -23,6 +23,8 @@ import (
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func newTestDuckDB(t *testing.T) *sql.DB {
@@ -135,6 +137,105 @@ func TestNumberPointReplacementIsIdempotent(t *testing.T) {
 		`SELECT number_int FROM metric_number_points WHERE point_id = ?`, point.pointID).Scan(&storedValue))
 	assert.Equal(t, 1, count)
 	assert.Equal(t, value, storedValue)
+}
+
+func TestPointReplacementDeduplicatesAcrossTheBatchTimeRange(t *testing.T) {
+	db := newTestDuckDB(t)
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Second)
+
+	conn, err := db.Conn(ctx)
+	require.NoError(t, err)
+	defer conn.Close()
+
+	numberPoint := func(pointID string, at time.Time) numberPointRecord {
+		value := int64(1)
+		return numberPointRecord{
+			pointID: pointID, timestamp: at, ingestedAt: now,
+			seriesID: "series-1", intValue: &value,
+		}
+	}
+	histogramPoint := func(pointID string, at time.Time) histogramPointRecord {
+		return histogramPointRecord{
+			pointID: pointID, timestamp: at, ingestedAt: now,
+			seriesID: "series-1", count: 1, bucketCounts: []uint64{1},
+		}
+	}
+	exponentialPoint := func(pointID string, at time.Time) exponentialHistogramPointRecord {
+		return exponentialHistogramPointRecord{
+			pointID: pointID, timestamp: at, ingestedAt: now,
+			seriesID: "series-1", count: 1, positiveCounts: []uint64{1}, negativeCounts: []uint64{},
+		}
+	}
+
+	stored := []string{"point-1", "point-2", "point-3"}
+	storedAt := []time.Time{now.Add(-2 * time.Hour), now.Add(-time.Hour), now}
+	retried := []string{"point-4", "point-1", "point-2", "point-3", "point-5"}
+	retriedAt := []time.Time{now.Add(-3 * time.Hour), storedAt[0], storedAt[1], storedAt[2], now.Add(time.Minute)}
+
+	var numberPoints, retriedNumberPoints []numberPointRecord
+	var histogramPoints, retriedHistogramPoints []histogramPointRecord
+	var exponentialPoints, retriedExponentialPoints []exponentialHistogramPointRecord
+	for i, pointID := range stored {
+		numberPoints = append(numberPoints, numberPoint(pointID, storedAt[i]))
+		histogramPoints = append(histogramPoints, histogramPoint(pointID, storedAt[i]))
+		exponentialPoints = append(exponentialPoints, exponentialPoint(pointID, storedAt[i]))
+	}
+	for i, pointID := range retried {
+		retriedNumberPoints = append(retriedNumberPoints, numberPoint(pointID, retriedAt[i]))
+		retriedHistogramPoints = append(retriedHistogramPoints, histogramPoint(pointID, retriedAt[i]))
+		retriedExponentialPoints = append(retriedExponentialPoints, exponentialPoint(pointID, retriedAt[i]))
+	}
+
+	require.NoError(t, replaceNumberPoints(ctx, conn, numberPoints))
+	require.NoError(t, replaceNumberPoints(ctx, conn, retriedNumberPoints))
+	require.NoError(t, replaceNumberPoints(ctx, conn, numberPoints[1:2]))
+	require.NoError(t, replaceHistogramPoints(ctx, conn, histogramPoints))
+	require.NoError(t, replaceHistogramPoints(ctx, conn, retriedHistogramPoints))
+	require.NoError(t, replaceHistogramPoints(ctx, conn, histogramPoints[1:2]))
+	require.NoError(t, replaceExponentialHistogramPoints(ctx, conn, exponentialPoints))
+	require.NoError(t, replaceExponentialHistogramPoints(ctx, conn, retriedExponentialPoints))
+	require.NoError(t, replaceExponentialHistogramPoints(ctx, conn, exponentialPoints[1:2]))
+
+	for _, table := range metricPointTables {
+		var count, distinct int
+		require.NoError(t, conn.QueryRowContext(ctx,
+			`SELECT COUNT(*), COUNT(DISTINCT point_id) FROM `+table).Scan(&count, &distinct))
+		assert.Equal(t, 5, count, table)
+		assert.Equal(t, 5, distinct, table)
+	}
+}
+
+func TestEnsureRawRowLimitCountsTheSelectedSeriesPointsInRange(t *testing.T) {
+	db := newTestDuckDB(t)
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Second)
+
+	conn, err := db.Conn(ctx)
+	require.NoError(t, err)
+	defer conn.Close()
+
+	value := int64(1)
+	require.NoError(t, replaceNumberPoints(ctx, conn, []numberPointRecord{
+		{pointID: "point-1", timestamp: now.Add(-30 * time.Second), ingestedAt: now, seriesID: "series-1", intValue: &value},
+		{pointID: "point-2", timestamp: now.Add(-20 * time.Second), ingestedAt: now, seriesID: "series-1", intValue: &value},
+		{pointID: "point-3", timestamp: now.Add(-10 * time.Second), ingestedAt: now, seriesID: "series-1", intValue: &value},
+		{pointID: "point-4", timestamp: now.Add(-2 * time.Hour), ingestedAt: now, seriesID: "series-1", intValue: &value},
+		{pointID: "point-5", timestamp: now.Add(-10 * time.Second), ingestedAt: now, seriesID: "series-2", intValue: &value},
+	}))
+
+	mapSeries(t, conn, "series-1", "output-1")
+
+	query := &querySpec{
+		from:     now.Add(-time.Minute),
+		to:       now.Add(time.Minute),
+		step:     time.Minute,
+		snapshot: now.Add(time.Minute),
+	}
+
+	require.NoError(t, ensureRawRowLimit(ctx, conn, "metric_number_points", query, false, 3))
+	err = ensureRawRowLimit(ctx, conn, "metric_number_points", query, false, 2)
+	assert.Equal(t, codes.ResourceExhausted, status.Code(err))
 }
 
 func TestExponentialHistogramIngestQueryRoundTrip(t *testing.T) {

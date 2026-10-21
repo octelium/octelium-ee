@@ -123,6 +123,7 @@ func getMetricStoreDBConfig() (*metricStoreDBConfig, error) {
 
 	values := url.Values{}
 	values.Set("access_mode", "read_write")
+	values.Set("allocator_background_threads", "true")
 	values.Set("allow_community_extensions", "false")
 	values.Set("autoinstall_known_extensions", "false")
 	values.Set("enable_external_access", "false")

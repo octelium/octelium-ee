@@ -169,17 +169,11 @@ WITH previous_ranked AS (
 	FROM metric_histogram_points p
 	JOIN selected_metric_series m ON m.series_id = p.series_id
 	WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
-), range_deduplicated AS (
-	SELECT * EXCLUDE (dedupe_row)
-	FROM (
-		SELECT
-			p.*,
-			ROW_NUMBER() OVER (PARTITION BY p.point_id ORDER BY p.ingested_at ASC) AS dedupe_row
-		FROM metric_histogram_points p
-		JOIN selected_metric_series m ON m.series_id = p.series_id
-		WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
-	)
-	WHERE dedupe_row = 1
+), range_points AS (
+	SELECT p.*
+	FROM metric_histogram_points p
+	WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
+	  AND p.series_id IN (SELECT series_id FROM selected_metric_series)
 ), selected_points AS (
 	SELECT
 		p.series_id,
@@ -207,7 +201,7 @@ WITH previous_ranked AS (
 		p.min,
 		p.max,
 		p.bucket_counts
-	FROM range_deduplicated p
+	FROM range_points p
 	JOIN selected_metric_series m ON m.series_id = p.series_id
 )
 SELECT
@@ -228,17 +222,11 @@ ORDER BY series_id, timestamp
 	}
 
 	return conn.QueryContext(ctx, `
-WITH deduplicated AS (
-	SELECT * EXCLUDE (dedupe_row)
-	FROM (
-		SELECT
-			p.*,
-			ROW_NUMBER() OVER (PARTITION BY p.point_id ORDER BY p.ingested_at ASC) AS dedupe_row
-		FROM metric_histogram_points p
-		JOIN selected_metric_series m ON m.series_id = p.series_id
-		WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
-	)
-	WHERE dedupe_row = 1
+WITH range_points AS (
+	SELECT p.*
+	FROM metric_histogram_points p
+	WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
+	  AND p.series_id IN (SELECT series_id FROM selected_metric_series)
 )
 SELECT
 	p.series_id,
@@ -251,7 +239,7 @@ SELECT
 	p.min,
 	p.max,
 	CAST(p.bucket_counts AS VARCHAR)
-FROM deduplicated p
+FROM range_points p
 JOIN selected_metric_series m ON m.series_id = p.series_id
 ORDER BY p.series_id, p.timestamp
 `, metricTimeToDB(query.from), metricTimeToDB(query.to), metricTimeToDB(query.snapshot))

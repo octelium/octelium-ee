@@ -66,6 +66,24 @@ func TestValidateExplicitHistogram(t *testing.T) {
 	assert.NotNil(t, validateExplicitHistogram([]uint64{2, 3, 5}, []float64{10, math.Inf(1)}, 10))
 }
 
+func TestMetricPointTimeRange(t *testing.T) {
+	now := time.Now().UTC()
+	points := []numberPointRecord{
+		{timestamp: now},
+		{timestamp: now.Add(-time.Hour)},
+		{timestamp: now.Add(time.Minute)},
+		{timestamp: now.Add(-time.Minute)},
+	}
+
+	from, to := metricPointTimeRange(points, func(point numberPointRecord) time.Time { return point.timestamp })
+	assert.Equal(t, metricTimeToDB(now.Add(-time.Hour)), from)
+	assert.Equal(t, metricTimeToDB(now.Add(time.Minute)), to)
+
+	from, to = metricPointTimeRange(points[:1], func(point numberPointRecord) time.Time { return point.timestamp })
+	assert.Equal(t, metricTimeToDB(now), from)
+	assert.Equal(t, metricTimeToDB(now), to)
+}
+
 func TestValidateMetricPointTimes(t *testing.T) {
 	now := time.Now().UTC()
 	timestamp := pcommon.NewTimestampFromTime(now)

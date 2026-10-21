@@ -70,10 +70,10 @@ CREATE OR REPLACE TEMP TABLE selected_metric_series (
 func ensureRawRowLimit(ctx context.Context, conn *sql.Conn, table string, query *querySpec,
 	includePrevious bool, limit int) error {
 	var count int64
-	statement := `SELECT COUNT(DISTINCT p.point_id)
+	statement := `SELECT COUNT(*)
 FROM ` + table + ` p
-JOIN selected_metric_series m ON m.series_id = p.series_id
-WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?`
+WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
+  AND p.series_id IN (SELECT series_id FROM selected_metric_series)`
 	if err := conn.QueryRowContext(ctx, statement, metricTimeToDB(query.from), metricTimeToDB(query.to),
 		metricTimeToDB(query.snapshot)).Scan(&count); err != nil {
 		return err

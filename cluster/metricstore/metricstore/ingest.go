@@ -1326,11 +1326,13 @@ func replaceNumberPoints(ctx context.Context, conn *sql.Conn, points []numberPoi
 	}); err != nil {
 		return err
 	}
+	from, to := metricPointTimeRange(points, func(point numberPointRecord) time.Time { return point.timestamp })
 	if _, err := conn.ExecContext(ctx, `INSERT INTO metric_number_points
 SELECT s.* FROM metric_number_staging s
 WHERE NOT EXISTS (
-	SELECT 1 FROM metric_number_points p WHERE p.point_id = s.point_id
-)`); err != nil {
+	SELECT 1 FROM metric_number_points p
+	WHERE p.timestamp >= ? AND p.timestamp <= ? AND p.point_id = s.point_id
+)`, from, to); err != nil {
 		return err
 	}
 	_, err := conn.ExecContext(ctx, `DELETE FROM metric_number_staging`)
@@ -1357,6 +1359,7 @@ func replaceHistogramPoints(ctx context.Context, conn *sql.Conn, points []histog
 	}); err != nil {
 		return err
 	}
+	from, to := metricPointTimeRange(points, func(point histogramPointRecord) time.Time { return point.timestamp })
 	if _, err := conn.ExecContext(ctx, `
 INSERT INTO metric_histogram_points (
 	point_id, timestamp, ingested_at, start_timestamp, series_id,
@@ -1367,9 +1370,10 @@ SELECT
 	s.count, s.has_sum, s.sum, s.min, s.max, CAST(s.bucket_counts AS JSON)
 FROM metric_histogram_staging s
 WHERE NOT EXISTS (
-	SELECT 1 FROM metric_histogram_points p WHERE p.point_id = s.point_id
+	SELECT 1 FROM metric_histogram_points p
+	WHERE p.timestamp >= ? AND p.timestamp <= ? AND p.point_id = s.point_id
 )
-`); err != nil {
+`, from, to); err != nil {
 		return err
 	}
 	_, err := conn.ExecContext(ctx, `DELETE FROM metric_histogram_staging`)
@@ -1398,6 +1402,9 @@ func replaceExponentialHistogramPoints(ctx context.Context, conn *sql.Conn,
 	}); err != nil {
 		return err
 	}
+	from, to := metricPointTimeRange(points, func(point exponentialHistogramPointRecord) time.Time {
+		return point.timestamp
+	})
 	if _, err := conn.ExecContext(ctx, `
 INSERT INTO metric_exponential_histogram_points (
 	point_id, timestamp, ingested_at, start_timestamp, series_id,
@@ -1410,13 +1417,29 @@ SELECT
 	s.positive_offset, CAST(s.positive_counts AS JSON), s.negative_offset, CAST(s.negative_counts AS JSON)
 FROM metric_exponential_histogram_staging s
 WHERE NOT EXISTS (
-	SELECT 1 FROM metric_exponential_histogram_points p WHERE p.point_id = s.point_id
+	SELECT 1 FROM metric_exponential_histogram_points p
+	WHERE p.timestamp >= ? AND p.timestamp <= ? AND p.point_id = s.point_id
 )
-`); err != nil {
+`, from, to); err != nil {
 		return err
 	}
 	_, err := conn.ExecContext(ctx, `DELETE FROM metric_exponential_histogram_staging`)
 	return err
+}
+
+func metricPointTimeRange[T any](points []T, timestamp func(T) time.Time) (int64, int64) {
+	from := metricTimeToDB(timestamp(points[0]))
+	to := from
+	for _, point := range points[1:] {
+		value := metricTimeToDB(timestamp(point))
+		if value < from {
+			from = value
+		}
+		if value > to {
+			to = value
+		}
+	}
+	return from, to
 }
 
 func appendRows(conn *sql.Conn, table string, fn func(*duckdb.Appender) error) error {
