@@ -39,12 +39,13 @@ jobs:
           VAULT_DEV_ROOT_TOKEN_ID: root
           VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
     steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
       - name: Set up go
         uses: actions/setup-go@v5
         with:
-          go-version: "${{env.GO_VERSION}}"
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v4
+          go-version-file: go.work
+          cache-dependency-path: "**/go.sum"
       - name: Install psql
         run: |
           sudo apt-get update

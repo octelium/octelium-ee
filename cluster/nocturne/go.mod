@@ -1,6 +1,6 @@
 module github.com/octelium/octelium-ee/cluster/nocturne
 
-go 1.26.8
+go 1.27.3
 
 require (
 	github.com/crowdstrike/gofalcon v0.21.0
