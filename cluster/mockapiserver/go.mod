@@ -6,25 +6,20 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.4
 	github.com/improbable-eng/grpc-web v0.15.0
-	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261020233956-9924c9417b1c
-	github.com/octelium/octelium/cluster/authserver v0.0.0-20261020233956-9924c9417b1c
-	github.com/octelium/octelium/cluster/common v0.0.0-20261020233956-9924c9417b1c
-	github.com/octelium/octelium/cluster/octovigil v0.0.0-20261020233956-9924c9417b1c // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261020233956-9924c9417b1c
-	github.com/octelium/octelium/pkg v0.0.0-20261020233956-9924c9417b1c
-	go.uber.org/zap v1.28.0
-	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20241231184526-a9ab2273dd10 // indirect
-	google.golang.org/grpc v1.84.0
-)
-
-require (
 	github.com/octelium/octelium-ee/cluster/apiserver v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-20250516172457-ae6f09fa68bf
 	github.com/octelium/octelium-ee/cluster/policyportal v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/cluster/rscstore v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
+	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
+	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261020233956-9924c9417b1c
+	github.com/octelium/octelium/cluster/authserver v0.0.0-20261020233956-9924c9417b1c
+	github.com/octelium/octelium/cluster/common v0.0.0-20261020233956-9924c9417b1c
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261020233956-9924c9417b1c
+	github.com/octelium/octelium/pkg v0.0.0-20261020233956-9924c9417b1c
 	github.com/stretchr/testify v1.12.1
+	go.uber.org/zap v1.28.0
+	google.golang.org/grpc v1.84.0
 	google.golang.org/protobuf v1.36.12
 	k8s.io/api v0.37.0
 	k8s.io/apimachinery v0.37.0
@@ -124,6 +119,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/octelium/octelium/cluster/octovigil v0.0.0-20261020233956-9924c9417b1c // indirect
 	github.com/open-policy-agent/opa v1.20.1 // indirect
 	github.com/oschwald/geoip2-golang/v2 v2.3.0 // indirect
 	github.com/oschwald/maxminddb-golang/v2 v2.5.0 // indirect
@@ -178,6 +174,7 @@ require (
 	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/tools v0.48.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
+	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20241231184526-a9ab2273dd10 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260819154853-08b0e4226688 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect

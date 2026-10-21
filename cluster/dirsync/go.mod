@@ -4,8 +4,12 @@ go 1.27.3
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
+	github.com/go-resty/resty/v2 v2.17.2
 	github.com/gorilla/mux v1.8.1
 	github.com/gosimple/slug v1.15.0
+	github.com/octelium/octelium-ee/cluster/apiserver v0.0.0-00010101000000-000000000000
+	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
+	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261020233956-9924c9417b1c
 	github.com/octelium/octelium/cluster/common v0.0.0-20261020233956-9924c9417b1c
@@ -13,13 +17,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/zap v1.28.0
-)
-
-require (
-	github.com/go-resty/resty/v2 v2.17.2
-	github.com/octelium/octelium-ee/cluster/apiserver v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
 	golang.org/x/oauth2 v0.36.0
 	google.golang.org/api v0.278.0

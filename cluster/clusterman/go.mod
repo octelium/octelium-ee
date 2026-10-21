@@ -3,21 +3,17 @@ module github.com/octelium/octelium-ee/cluster/clusterman
 go 1.27.3
 
 require (
-	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20261020233956-9924c9417b1c
-	github.com/octelium/octelium/pkg v0.0.0-20261020233956-9924c9417b1c
-	github.com/pkg/errors v0.9.1
-	go.uber.org/zap v1.28.0
-	golang.org/x/oauth2 v0.36.0 // indirect
-)
-
-require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-20250516172457-ae6f09fa68bf
 	github.com/octelium/octelium-ee/cluster/genesis v0.0.0-00010101000000-000000000000
+	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/client/common v0.0.0-20261020233956-9924c9417b1c
 	github.com/octelium/octelium/client/octops v0.0.0-20261020233956-9924c9417b1c
+	github.com/octelium/octelium/cluster/common v0.0.0-20261020233956-9924c9417b1c
 	github.com/octelium/octelium/cluster/genesis v0.0.0-20261020233956-9924c9417b1c
+	github.com/octelium/octelium/pkg v0.0.0-20261020233956-9924c9417b1c
+	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.10.2
+	go.uber.org/zap v1.28.0
 	k8s.io/api v0.37.0
 	k8s.io/apimachinery v0.37.0
 	k8s.io/client-go v0.37.0
@@ -127,6 +123,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/term v0.45.0 // indirect

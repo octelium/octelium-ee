@@ -4,9 +4,14 @@ go 1.27.3
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.4 // indirect
-	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
+	github.com/go-resty/resty/v2 v2.17.2
+	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/google/uuid v1.6.0
+	github.com/hashicorp/go-version v1.9.0
+	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
+	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
+	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261020233956-9924c9417b1c
 	github.com/octelium/octelium/cluster/common v0.0.0-20261020233956-9924c9417b1c
 	github.com/octelium/octelium/pkg v0.0.0-20261020233956-9924c9417b1c
 	github.com/pkg/errors v0.9.1
@@ -14,16 +19,6 @@ require (
 	go.uber.org/zap v1.28.0
 	google.golang.org/grpc v1.84.0
 	google.golang.org/protobuf v1.36.12
-)
-
-require (
-	github.com/go-resty/resty/v2 v2.17.2
-	github.com/golang-jwt/jwt/v5 v5.3.1
-	github.com/google/uuid v1.6.0
-	github.com/hashicorp/go-version v1.9.0
-	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261020233956-9924c9417b1c
 )
 
 require (
@@ -66,6 +61,7 @@ require (
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/gosimple/slug v1.15.0 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.4 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/k8snetworkplumbingwg/network-attachment-definition-client v1.7.7 // indirect
@@ -81,6 +77,7 @@ require (
 	github.com/lestrrat-go/jwx/v3 v3.1.1 // indirect
 	github.com/lestrrat-go/option/v2 v2.0.0 // indirect
 	github.com/lib/pq v1.12.3 // indirect
+	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
 	github.com/mileusna/useragent v1.3.5 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect

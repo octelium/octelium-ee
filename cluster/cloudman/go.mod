@@ -3,35 +3,32 @@ module github.com/octelium/octelium-ee/cluster/cloudman
 go 1.27.3
 
 require (
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.21.1
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/dns/armdns v1.2.0
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
+	github.com/aws/aws-sdk-go-v2 v1.41.6
 	github.com/aws/aws-sdk-go-v2/config v1.32.16
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.15
 	github.com/aws/aws-sdk-go-v2/service/route53 v1.62.6
+	github.com/aws/aws-sdk-go-v2/service/sts v1.42.0
 	github.com/cloudflare/cloudflare-go v0.87.0
 	github.com/digitalocean/godo v1.108.0
 	github.com/go-acme/lego/v4 v4.35.2
 	github.com/linode/linodego v1.68.0
+	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
+	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
+	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261020233956-9924c9417b1c
 	github.com/octelium/octelium/cluster/common v0.0.0-20261020233956-9924c9417b1c
 	github.com/octelium/octelium/pkg v0.0.0-20261020233956-9924c9417b1c
+	github.com/ovh/go-ovh v1.9.0
 	github.com/pkg/errors v0.9.1
+	github.com/stretchr/testify v1.12.1
 	go.uber.org/zap v1.28.0
 	golang.org/x/oauth2 v0.36.0
 	google.golang.org/api v0.278.0
 	k8s.io/api v0.37.0
-)
-
-require (
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.21.1
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1
-	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/dns/armdns v1.2.0
-	github.com/aws/aws-sdk-go-v2 v1.41.6
-	github.com/aws/aws-sdk-go-v2/service/sts v1.42.0
-	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261020233956-9924c9417b1c
-	github.com/ovh/go-ovh v1.9.0
-	github.com/stretchr/testify v1.12.1
 )
 
 require (
