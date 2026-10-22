@@ -26,19 +26,7 @@ const resourceComponentInfo: ResourceComponentInfo = {
         spec: CollectorExporter_Spec.create({
           type: {
             oneofKind: "otlp",
-            otlp: CollectorExporter_Spec_OTLP.create({
-              auth: {
-                type: {
-                  oneofKind: "bearer",
-                  bearer: {
-                    type: {
-                      oneofKind: "fromSecret",
-                      fromSecret: "",
-                    },
-                  },
-                },
-              },
-            }),
+            otlp: CollectorExporter_Spec_OTLP.create(),
           },
         }),
         status: {},

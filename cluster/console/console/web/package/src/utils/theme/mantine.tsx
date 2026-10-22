@@ -7,6 +7,7 @@ import {
   Drawer,
   HoverCard,
   Input,
+  InputWrapper,
   Menu,
   Modal,
   MultiSelect,
@@ -181,6 +182,8 @@ const theme = createTheme({
     Drawer: Drawer.extend({ defaultProps: { zIndex: OVERLAY_Z_INDEX } }),
 
     Input: Input.extend({ styles: { ...labelStyles, ...inputStyles } }),
+
+    InputWrapper: InputWrapper.extend({ styles: labelStyles }),
 
     TextInput: TextInput.extend({ styles: { ...labelStyles, ...inputStyles } }),
 
@@ -419,8 +422,8 @@ const theme = createTheme({
           boxShadow: "var(--shadow-overlay)",
           fontFamily: FONT,
           overflow: "visible",
+          "--popover-border-color": "var(--color-slate-200)",
         },
-        arrow: { border: "1px solid var(--color-slate-200)" },
       },
     }),
   },

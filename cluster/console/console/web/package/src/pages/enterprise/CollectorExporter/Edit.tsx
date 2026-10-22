@@ -1,2337 +1,3623 @@
 import * as EnterpriseP from "@/apis/enterprisev1/enterprisev1";
-import { Duration } from "@/apis/metav1/metav1";
-import ItemMessage from "@/components/ItemMessage";
-import DurationPicker from "@/components/DurationPicker";
-import EditItem from "@/components/EditItem";
-
-import SelectResource from "@/components/ResourceLayout/SelectResource";
+import { Select, Switch, TagsInput, Textarea, TextInput } from "@mantine/core";
 import {
-  Alert,
-  CloseButton,
-  Group,
-  NumberInput,
-  SegmentedControl,
-  Select,
-  Switch,
-  Tabs,
-  TextInput,
-  Textarea,
-} from "@mantine/core";
-import { AlertTriangle } from "lucide-react";
+  Database,
+  KeyRound,
+  Network,
+  Power,
+  Radio,
+  Route,
+  Tags,
+} from "lucide-react";
 import * as React from "react";
-import { match } from "ts-pattern";
+import DestinationPicker from "./DestinationPicker";
+import {
+  Advanced,
+  AdvancedGroup,
+  Callout,
+  ChoiceGroup,
+  countSet,
+  DurationField,
+  EnumField,
+  FormSection,
+  Grid,
+  headerKeyError,
+  identError,
+  isUUID,
+  KeyValueList,
+  NumberField,
+  SecretField,
+  SecretRef,
+  secretName,
+  toSecret,
+  ToggleList,
+  ToggleRow,
+  urlError,
+} from "./fields";
+import { ExporterKind } from "./providers";
 
-type SecretSelector = {
-  type:
-    | { oneofKind: "fromSecret"; fromSecret: string }
-    | { oneofKind: undefined };
-};
+type ExporterType = EnterpriseP.CollectorExporter_Spec["type"];
 
-type GrpcStyleAuth = {
+type Update = () => void;
+
+type HTTPAuth = {
   type:
-    | { oneofKind: "bearer"; bearer: SecretSelector }
+    | { oneofKind: "bearer"; bearer: SecretRef }
     | {
         oneofKind: "basic";
-        basic: { username: string; password?: SecretSelector };
+        basic: { username: string; password?: SecretRef };
       }
     | {
         oneofKind: "custom";
-        custom: { header: string; value?: SecretSelector };
+        custom: { header: string; value?: SecretRef };
       }
     | { oneofKind: undefined };
 };
 
-const freshSecret = (): SecretSelector => ({
-  type: { oneofKind: "fromSecret", fromSecret: "" },
-});
-
-const freshBearer = (): GrpcStyleAuth["type"] => ({
-  oneofKind: "bearer",
-  bearer: freshSecret(),
-});
-
-const freshBasic = (): GrpcStyleAuth["type"] => ({
-  oneofKind: "basic",
-  basic: { username: "", password: freshSecret() },
-});
-
-const freshCustom = (): GrpcStyleAuth["type"] => ({
-  oneofKind: "custom",
-  custom: { header: "", value: freshSecret() },
-});
-
-const normalizeSecretSelectors = (item: EnterpriseP.CollectorExporter) => {
-  const type = item.spec?.type;
-  if (!type?.oneofKind) return item;
-  const normalizeAuth = (auth?: GrpcStyleAuth) => {
-    if (auth && !auth.type.oneofKind) auth.type = freshBearer();
-    if (auth?.type.oneofKind === "bearer" && !auth.type.bearer) auth.type.bearer = freshSecret();
-    if (auth?.type.oneofKind === "basic" && !auth.type.basic.password) auth.type.basic.password = freshSecret();
-    if (auth?.type.oneofKind === "custom" && !auth.type.custom.value) auth.type.custom.value = freshSecret();
-  };
-  if (type.oneofKind === "otlp") {
-    if (!type.otlp.auth) type.otlp.auth = EnterpriseP.CollectorExporter_Spec_OTLP_Auth.create({ type: freshBearer() });
-    normalizeAuth(type.otlp.auth as unknown as GrpcStyleAuth);
-  }
-  if (type.oneofKind === "otlpHTTP") {
-    if (!type.otlpHTTP.auth) type.otlpHTTP.auth = EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Auth.create({ type: freshBearer() });
-    normalizeAuth(type.otlpHTTP.auth as unknown as GrpcStyleAuth);
-  }
-  if (type.oneofKind === "prometheusRemoteWrite") {
-    if (!type.prometheusRemoteWrite.auth) type.prometheusRemoteWrite.auth = EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_Auth.create({ type: freshBearer() });
-    normalizeAuth(type.prometheusRemoteWrite.auth as unknown as GrpcStyleAuth);
-  }
-  if (type.oneofKind === "clickhouse" && !type.clickhouse.password) type.clickhouse.password = freshSecret();
-  if (type.oneofKind === "elasticsearch" && type.elasticsearch.auth?.type.oneofKind === "apiKey" && !type.elasticsearch.auth.type.apiKey) type.elasticsearch.auth.type.apiKey = freshSecret();
-  if (type.oneofKind === "elasticsearch" && type.elasticsearch.auth?.type.oneofKind === "basic" && !type.elasticsearch.auth.type.basic.password) type.elasticsearch.auth.type.basic.password = freshSecret();
-  if (type.oneofKind === "elasticsearch" && !type.elasticsearch.auth?.type.oneofKind) type.elasticsearch.auth = EnterpriseP.CollectorExporter_Spec_Elasticsearch_Auth.create({ type: { oneofKind: "apiKey", apiKey: freshSecret() } });
-  if (type.oneofKind === "logzio" && !type.logzio.token) type.logzio.token = freshSecret();
-  if (type.oneofKind === "influxDB" && !type.influxDB.token) type.influxDB.token = freshSecret();
-  if (type.oneofKind === "kafka" && type.kafka.auth?.type.oneofKind === "sasl" && !type.kafka.auth.type.sasl.password) type.kafka.auth.type.sasl.password = freshSecret();
-  if (type.oneofKind === "datadog") {
-    if (!type.datadog.api) type.datadog.api = EnterpriseP.CollectorExporter_Spec_Datadog_API.create();
-    if (!type.datadog.api.key) type.datadog.api.key = freshSecret();
-  }
-  if (type.oneofKind === "splunk" && !type.splunk.token) type.splunk.token = freshSecret();
-  if (type.oneofKind === "azureMonitor") {
-    if (!type.azureMonitor.connectionString) type.azureMonitor.connectionString = freshSecret();
-    if (!type.azureMonitor.instrumentationKey) type.azureMonitor.instrumentationKey = freshSecret();
-  }
-  if (type.oneofKind === "azureDataExplorer" && type.azureDataExplorer.auth?.type.oneofKind === "servicePrincipal" && !type.azureDataExplorer.auth.type.servicePrincipal.applicationKey) type.azureDataExplorer.auth.type.servicePrincipal.applicationKey = freshSecret();
-  if (type.oneofKind === "azureDataExplorer" && !type.azureDataExplorer.auth?.type.oneofKind) type.azureDataExplorer.auth = EnterpriseP.CollectorExporter_Spec_AzureDataExplorer_Auth.create({ type: { oneofKind: "servicePrincipal", servicePrincipal: { applicationID: "", applicationKey: freshSecret(), tenantID: "" } } });
-  return item;
+type TLSLike = {
+  insecure?: boolean;
+  insecureSkipVerify: boolean;
+  serverNameOverride?: string;
+  caPEM?: string;
 };
 
-const SecretSelectField = (props: {
-  label: string;
-  sel?: SecretSelector;
-  description?: string;
-  onUpdate: () => void;
-}) => {
-  const { label, sel, onUpdate } = props;
-  const secretDescription = `Secret containing the ${label.replace(/\s+secret$/i, "").toLowerCase()}.`;
+type TransportMode = "verify" | "skip" | "plaintext";
 
-  if (!sel || sel.type.oneofKind !== "fromSecret") {
-    return <></>;
-  }
-
-  return (
-    <SelectResource
-      api="enterprise"
-      kind="Secret"
-      required
-      label={label}
-      description={props.description ?? secretDescription}
-      defaultValue={sel.type.fromSecret}
-      onChange={(v) => {
-        if (sel.type.oneofKind === "fromSecret") {
-          sel.type.fromSecret = v?.metadata?.name ?? "";
-          onUpdate();
-        }
-      }}
-    />
-  );
-};
-
-const SecretAuthTabs = (props: {
-  auth?: GrpcStyleAuth;
-  ensureAuth: () => GrpcStyleAuth;
-  initAuth?: GrpcStyleAuth;
-  onUpdate: () => void;
-}) => {
-  const { auth, ensureAuth, initAuth, onUpdate } = props;
-  const configurations = React.useRef<Partial<Record<string, GrpcStyleAuth["type"]>>>({});
-
-  React.useEffect(() => {
-    if (auth?.type.oneofKind) {
-      configurations.current = {
-        [auth.type.oneofKind]: structuredClone(auth.type),
+const createType = (kind: ExporterKind): ExporterType => {
+  switch (kind) {
+    case "otlpHTTP":
+      return {
+        oneofKind: "otlpHTTP",
+        otlpHTTP: EnterpriseP.CollectorExporter_Spec_OTLPHTTP.create(),
       };
-    }
-  }, [initAuth]);
-
-  const changeAuth = (value: string) => {
-    const a = ensureAuth();
-    if (a.type.oneofKind) {
-      configurations.current[a.type.oneofKind] = structuredClone(a.type);
-    }
-    const cached = configurations.current[value];
-    if (cached) {
-      a.type = structuredClone(cached);
-    } else if (value === "bearer") {
-      a.type = freshBearer();
-    } else if (value === "basic") {
-      a.type = freshBasic();
-    } else if (value === "custom") {
-      a.type = freshCustom();
-    } else a.type = freshBearer();
-    onUpdate();
-  };
-
-  return (
-    <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/50 p-3">
-      <SegmentedControl
-        fullWidth
-        value={auth?.type.oneofKind ?? "bearer"}
-        onChange={changeAuth}
-        data={[
-          { label: "Bearer", value: "bearer" },
-          { label: "Basic", value: "basic" },
-          { label: "Custom header", value: "custom" },
-        ]}
-      />
-
-      {auth?.type.oneofKind === "bearer" && (
-        match(auth?.type)
-          .with({ oneofKind: "bearer" }, (b) => (
-            <SecretSelectField
-              label="Bearer Token Secret"
-              sel={b.bearer}
-              onUpdate={onUpdate}
-            />
-          ))
-          .otherwise(() => (
-            <></>
-          ))
-      )}
-
-      {auth?.type.oneofKind === "basic" && (
-        match(auth?.type)
-          .with({ oneofKind: "basic" }, (b) => (
-            <Group grow>
-              <TextInput
-                label="Username"
-                description="Username used for HTTP Basic authentication."
-                placeholder="username"
-                value={b.basic.username}
-                onChange={(v) => {
-                  b.basic.username = v.target.value;
-                  onUpdate();
-                }}
-              />
-              <SecretSelectField
-                label="Password Secret"
-                sel={b.basic.password}
-                onUpdate={onUpdate}
-              />
-            </Group>
-          ))
-          .otherwise(() => (
-            <></>
-          ))
-      )}
-
-      {auth?.type.oneofKind === "custom" && (
-        match(auth?.type)
-          .with({ oneofKind: "custom" }, (c) => (
-            <Group grow>
-              <TextInput
-                required
-                label="Header"
-                description="HTTP header used to carry the custom credential."
-                placeholder="X-Custom-Auth"
-                value={c.custom.header}
-                onChange={(v) => {
-                  c.custom.header = v.target.value;
-                  onUpdate();
-                }}
-              />
-              <SecretSelectField
-                label="Header Value Secret"
-                sel={c.custom.value}
-                onUpdate={onUpdate}
-              />
-            </Group>
-          ))
-          .otherwise(() => (
-            <></>
-          ))
-      )}
-    </div>
-  );
+    case "prometheusRemoteWrite":
+      return {
+        oneofKind: "prometheusRemoteWrite",
+        prometheusRemoteWrite:
+          EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite.create(),
+      };
+    case "clickhouse":
+      return {
+        oneofKind: "clickhouse",
+        clickhouse: EnterpriseP.CollectorExporter_Spec_Clickhouse.create({
+          createSchema: true,
+        }),
+      };
+    case "elasticsearch":
+      return {
+        oneofKind: "elasticsearch",
+        elasticsearch:
+          EnterpriseP.CollectorExporter_Spec_Elasticsearch.create(),
+      };
+    case "logzio":
+      return {
+        oneofKind: "logzio",
+        logzio: EnterpriseP.CollectorExporter_Spec_Logzio.create({
+          token: toSecret(""),
+        }),
+      };
+    case "influxDB":
+      return {
+        oneofKind: "influxDB",
+        influxDB: EnterpriseP.CollectorExporter_Spec_InfluxDB.create(),
+      };
+    case "kafka":
+      return {
+        oneofKind: "kafka",
+        kafka: EnterpriseP.CollectorExporter_Spec_Kafka.create(),
+      };
+    case "datadog":
+      return {
+        oneofKind: "datadog",
+        datadog: EnterpriseP.CollectorExporter_Spec_Datadog.create({
+          api: { key: toSecret(""), site: "", failOnInvalidKey: false },
+        }),
+      };
+    case "splunk":
+      return {
+        oneofKind: "splunk",
+        splunk: EnterpriseP.CollectorExporter_Spec_Splunk.create({
+          token: toSecret(""),
+        }),
+      };
+    case "azureMonitor":
+      return {
+        oneofKind: "azureMonitor",
+        azureMonitor: EnterpriseP.CollectorExporter_Spec_AzureMonitor.create({
+          connectionString: toSecret(""),
+        }),
+      };
+    case "azureDataExplorer":
+      return {
+        oneofKind: "azureDataExplorer",
+        azureDataExplorer:
+          EnterpriseP.CollectorExporter_Spec_AzureDataExplorer.create({
+            auth: {
+              type: {
+                oneofKind: "servicePrincipal",
+                servicePrincipal: {
+                  applicationID: "",
+                  tenantID: "",
+                  applicationKey: toSecret(""),
+                },
+              },
+            },
+          }),
+      };
+    default:
+      return {
+        oneofKind: "otlp",
+        otlp: EnterpriseP.CollectorExporter_Spec_OTLP.create(),
+      };
+  }
 };
 
-const HeaderList = (props: {
-  headers: { key: string; value: string }[];
-  makeHeader: () => { key: string; value: string };
-  onUpdate: () => void;
-}) => {
-  const { headers, makeHeader, onUpdate } = props;
-  const nextID = React.useRef(0);
-  const itemIDs = React.useRef<string[]>([]);
-  while (itemIDs.current.length < headers.length) {
-    itemIDs.current.push(`header-${nextID.current++}`);
+const cloneForEdit = (item: EnterpriseP.CollectorExporter) => {
+  const next = EnterpriseP.CollectorExporter.clone(item);
+  if (!next.spec) {
+    next.spec = EnterpriseP.CollectorExporter_Spec.create();
   }
-  if (itemIDs.current.length > headers.length) {
-    itemIDs.current.length = headers.length;
+  if (!next.spec.type.oneofKind) {
+    next.spec.type = createType("otlp");
   }
-
-  return (
-    <Group grow>
-      <ItemMessage
-        title="Add Headers"
-        obj={headers}
-        isList
-        onSet={() => {
-          headers.push(makeHeader());
-          itemIDs.current.push(`header-${nextID.current++}`);
-          onUpdate();
-        }}
-        onAddListItem={() => {
-          headers.push(makeHeader());
-          itemIDs.current.push(`header-${nextID.current++}`);
-          onUpdate();
-        }}
-      >
-        {headers.map((x, idx) => (
-          <div className="w-full flex mb-3" key={itemIDs.current[idx]}>
-            <CloseButton
-              size="sm"
-              variant="subtle"
-              className="mr-2"
-              onClick={() => {
-                headers.splice(idx, 1);
-                itemIDs.current.splice(idx, 1);
-                onUpdate();
-              }}
-            ></CloseButton>
-            <Group className="flex w-full" grow>
-              <TextInput
-                required
-                label="Key"
-                description="Set the Header key"
-                placeholder="MY_KEY"
-                value={x.key}
-                onChange={(v) => {
-                  x.key = v.target.value;
-                  onUpdate();
-                }}
-              />
-              <TextInput
-                required
-                label="Value"
-                description="Set the Header value"
-                placeholder="my-value"
-                value={x.value}
-                onChange={(v) => {
-                  x.value = v.target.value;
-                  onUpdate();
-                }}
-              />
-            </Group>
-          </div>
-        ))}
-      </ItemMessage>
-    </Group>
-  );
+  return next;
 };
 
-const EnumSelect = (props: {
-  label: string;
-  description?: string;
-  enumObj: Record<string, string | number>;
-  value: number;
-  options: { label: string; value: number }[];
-  onChange: (v: number) => void;
-}) => {
-  const { label, description, enumObj, value, options, onChange } = props;
+const grpcEndpointError = (value: string) => {
+  const endpoint = value.trim();
+  if (!endpoint) return undefined;
+  if (endpoint.startsWith("unix://")) {
+    return endpoint.length > "unix://".length
+      ? undefined
+      : "Set the unix socket path";
+  }
+  const rest = endpoint.replace(/^https?:\/\//, "").replace(/^dns:\/\/\/?/, "");
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(rest)) return "Unsupported scheme";
+  return /^(\[[^\]]+\]|[^\s:/[\]]+):\d+$/.test(rest)
+    ? undefined
+    : "Use host:port, e.g. otel-collector.example.com:4317";
+};
 
+const clickhouseEndpointError = (value: string) => {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    if (!url.host) return "Include the host, e.g. tcp://clickhouse:9000";
+    return ["tcp:", "http:", "https:", "clickhouse:"].includes(url.protocol)
+      ? undefined
+      : "Use a tcp://, clickhouse://, http:// or https:// address";
+  } catch {
+    return "Use a tcp://, clickhouse://, http:// or https:// address";
+  }
+};
+
+const optionalSecret = (name: string) => (name ? toSecret(name) : undefined);
+
+const SecretsHint = () => (
+  <p className="text-xs font-normal leading-5 text-slate-500">
+    Credentials are read from enterprise Secrets and never stored in the
+    exporter. Pick an existing Secret or create one from the picker.
+  </p>
+);
+
+const transportMode = (
+  tls?: TLSLike,
+  plaintextByDefault?: boolean,
+): TransportMode => {
+  if (!tls) return plaintextByDefault ? "plaintext" : "verify";
+  if (tls.insecure) return "plaintext";
+  if (tls.insecureSkipVerify) return "skip";
+  return "verify";
+};
+
+const TransportSelect = (props: {
+  value: TransportMode;
+  defaultMode: TransportMode;
+  description: string;
+  onChange: (mode: TransportMode) => void;
+}) => {
+  const label = (mode: TransportMode, text: string) =>
+    mode === props.defaultMode ? `${text} (default)` : text;
   return (
     <Select
-      label={label}
-      description={description ?? `Select the ${label.toLowerCase()}.`}
-      data={options.map((o) => ({
-        label: o.label,
-        value: String(enumObj[o.value]),
-      }))}
-      value={String(enumObj[value])}
-      onChange={(v) => {
-        if (v === null) {
-          return;
-        }
-        onChange(Number(enumObj[v as keyof typeof enumObj]));
-      }}
+      label="Transport security"
+      description={props.description}
+      allowDeselect={false}
+      data={[
+        {
+          value: "verify",
+          label: label("verify", "TLS, verify the certificate"),
+        },
+        { value: "skip", label: label("skip", "TLS, skip verification") },
+        { value: "plaintext", label: label("plaintext", "Plaintext, no TLS") },
+      ]}
+      value={props.value}
+      onChange={(value) => value && props.onChange(value as TransportMode)}
     />
   );
 };
 
-const DurationField = (props: {
-  label: string;
-  description?: string;
-  value?: Duration;
-  onChange: (value?: Duration) => void;
-}) => (
-  <DurationPicker
-    title={props.label}
-    description={props.description ?? `Duration for ${props.label.toLowerCase()}.`}
-    value={props.value}
-    onChange={props.onChange}
-  />
-);
-
-const StringListField = (props: {
-  label: string;
-  description?: string;
-  value: string[];
-  onChange: (value: string[]) => void;
-}) => (
-  <TextInput
-    label={props.label}
-    description={props.description ?? "Separate multiple values with commas."}
-    value={props.value.join(", ")}
-    onChange={(event) =>
-      props.onChange(
-        event.currentTarget.value
-          .split(",")
-          .map((value) => value.trim())
-          .filter(Boolean),
-      )
-    }
-  />
-);
-
-const AdvancedSettings = (props: {
-  type: EnterpriseP.CollectorExporter_Spec["type"];
-  onUpdate: () => void;
-}) => {
-  const { type, onUpdate } = props;
-
-  if (type.oneofKind === "otlp") {
-    const value = type.otlp;
-    return (
-      <EditItem title="Advanced delivery" obj={value}>
-        <div className="grid gap-4 md:grid-cols-2">
-          <DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} />
-          <TextInput label="Authority" description="Override the gRPC :authority pseudo-header." value={value.authority} onChange={(event) => { value.authority = event.currentTarget.value; onUpdate(); }} />
-          <TextInput label="User agent" description="Override the user-agent sent to the upstream endpoint." value={value.userAgent} onChange={(event) => { value.userAgent = event.currentTarget.value; onUpdate(); }} />
-          <TextInput label="Balancer name" description="gRPC load-balancing policy used for the upstream connection." value={value.balancerName} onChange={(event) => { value.balancerName = event.currentTarget.value; onUpdate(); }} />
-          <NumberInput min={0} label="Read buffer size" description="Size in bytes of the upstream connection read buffer." value={value.readBufferSize} onChange={(next) => { value.readBufferSize = Number(next) || 0; onUpdate(); }} />
-          <NumberInput min={0} label="Write buffer size" description="Size in bytes of the upstream connection write buffer." value={value.writeBufferSize} onChange={(next) => { value.writeBufferSize = Number(next) || 0; onUpdate(); }} />
-        </div>
-        <EditItem
-          title="TLS details"
-          obj={value.tls}
-          onSet={() => { value.tls = EnterpriseP.CollectorExporter_Spec_OTLP_TLS.create(); onUpdate(); }}
-          onUnset={() => { value.tls = undefined; onUpdate(); }}
-        >
-          {value.tls && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Server name override" description="Optional hostname used when verifying the upstream certificate." value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; onUpdate(); }} /><Textarea label="CA certificate PEM" description="Optional PEM-encoded CA used to verify the upstream certificate." autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; onUpdate(); }} /></div>}
-        </EditItem>
-        <EditItem title="Keepalive" obj={value.keepalive} onSet={() => { value.keepalive = EnterpriseP.CollectorExporter_Spec_OTLP_Keepalive.create(); onUpdate(); }} onUnset={() => { value.keepalive = undefined; onUpdate(); }}>
-          {value.keepalive && <div className="grid gap-4 md:grid-cols-2"><DurationField label="Keepalive time" value={value.keepalive.time} onChange={(next) => { value.keepalive!.time = next; onUpdate(); }} /><DurationField label="Keepalive timeout" value={value.keepalive.timeout} onChange={(next) => { value.keepalive!.timeout = next; onUpdate(); }} /><Switch label="Permit without stream" description="Allow keepalive pings when no streams are active." checked={value.keepalive.permitWithoutStream} onChange={(event) => { value.keepalive!.permitWithoutStream = event.currentTarget.checked; onUpdate(); }} /></div>}
-        </EditItem>
-      </EditItem>
-    );
-  }
-
-  if (type.oneofKind === "otlpHTTP") {
-    const value = type.otlpHTTP;
-    return <EditItem title="Advanced delivery" obj={value}><div className="grid gap-4 md:grid-cols-2"><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><NumberInput min={0} label="Read buffer size" description="Size in bytes of the upstream connection read buffer." value={value.readBufferSize} onChange={(next) => { value.readBufferSize = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Write buffer size" description="Size in bytes of the upstream connection write buffer." value={value.writeBufferSize} onChange={(next) => { value.writeBufferSize = Number(next) || 0; onUpdate(); }} /></div><EditItem title="TLS" obj={value.tls} onSet={() => { value.tls = EnterpriseP.CollectorExporter_Spec_OTLPHTTP_TLS.create(); onUpdate(); }} onUnset={() => { value.tls = undefined; onUpdate(); }}>{value.tls && <div className="grid gap-4 md:grid-cols-2"><Switch label="No TLS" description="Disable TLS and connect over plaintext." checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; onUpdate(); }} /><Switch label="Skip TLS verification" description="Skip upstream certificate-chain and hostname verification." checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; onUpdate(); }} /><TextInput label="Server name override" description="Optional hostname used when verifying the upstream certificate." value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; onUpdate(); }} /><Textarea label="CA certificate PEM" description="Optional PEM-encoded CA used to verify the upstream certificate." autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; onUpdate(); }} />{value.tls.insecureSkipVerify && <Alert color="red" icon={<AlertTriangle size={14} />}>Server certificates will not be verified.</Alert>}</div>}</EditItem></EditItem>;
-  }
-
-  if (type.oneofKind === "prometheusRemoteWrite") {
-    const value = type.prometheusRemoteWrite;
-    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.headers} makeHeader={() => EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_Header.create()} onUpdate={onUpdate} /><HeaderList headers={value.externalLabels} makeHeader={() => EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><NumberInput min={0} label="Maximum batch size (bytes)" description="Maximum size of a single remote-write request." value={value.maxBatchSizeBytes} onChange={(next) => { value.maxBatchSizeBytes = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum parallel requests" description="Maximum concurrent requests sent for one batch." value={value.maxBatchRequestParallelism} onChange={(next) => { value.maxBatchRequestParallelism = Number(next) || 0; onUpdate(); }} /></div><EditItem title="Remote write queue" obj={value.remoteWriteQueue} onSet={() => { value.remoteWriteQueue = EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue.create(); onUpdate(); }} onUnset={() => { value.remoteWriteQueue = undefined; onUpdate(); }}>{value.remoteWriteQueue && <div className="grid gap-4 md:grid-cols-3"><Switch label="Enabled" description="Buffer metric batches before sending them." checked={value.remoteWriteQueue.enabled} onChange={(event) => { value.remoteWriteQueue!.enabled = event.currentTarget.checked; onUpdate(); }} /><NumberInput min={0} label="Queue size" description="Maximum number of metric batches buffered in the queue." value={value.remoteWriteQueue.queueSize} onChange={(next) => { value.remoteWriteQueue!.queueSize = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Consumers" description="Number of workers sending queued batches." value={value.remoteWriteQueue.numConsumers} onChange={(next) => { value.remoteWriteQueue!.numConsumers = Number(next) || 0; onUpdate(); }} /></div>}</EditItem><EditItem title="Resource conversion" obj={value.resourceToTelemetryConversion} onSet={() => { value.resourceToTelemetryConversion = EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion.create(); onUpdate(); }} onUnset={() => { value.resourceToTelemetryConversion = undefined; onUpdate(); }}>{value.resourceToTelemetryConversion && <Group><Switch label="Enabled" description="Convert OpenTelemetry resource attributes into Prometheus labels." checked={value.resourceToTelemetryConversion.enabled} onChange={(event) => { value.resourceToTelemetryConversion!.enabled = event.currentTarget.checked; onUpdate(); }} /><Switch label="Exclude service attributes" description="Exclude service.* resource attributes from the conversion." checked={value.resourceToTelemetryConversion.excludeServiceAttributes} onChange={(event) => { value.resourceToTelemetryConversion!.excludeServiceAttributes = event.currentTarget.checked; onUpdate(); }} /></Group>}</EditItem><Switch label="Target information" description="Export the target_info metric with resource attributes." checked={value.targetInfo?.enabled ?? false} onChange={(event) => { value.targetInfo = EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo.create({ enabled: event.currentTarget.checked }); onUpdate(); }} /></EditItem>;
-  }
-
-  if (type.oneofKind === "clickhouse") {
-    const value = type.clickhouse;
-    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.connectionParams} makeHeader={() => EnterpriseP.CollectorExporter_Spec_Clickhouse_ConnectionParam.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><DurationField label="TTL" description="Retention duration for exported telemetry rows." value={value.ttl} onChange={(next) => { value.ttl = next; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /></div><EditItem title="Metrics tables" obj={value.metricsTables} onSet={() => { value.metricsTables = EnterpriseP.CollectorExporter_Spec_Clickhouse_MetricsTables.create(); onUpdate(); }} onUnset={() => { value.metricsTables = undefined; onUpdate(); }}>{value.metricsTables && <div className="grid gap-4 md:grid-cols-2">{(["gauge", "sum", "summary", "histogram", "exponentialHistogram"] as const).map((field) => <TextInput key={field} label={field === "exponentialHistogram" ? "Exponential histogram" : field[0].toUpperCase() + field.slice(1)} description="ClickHouse table name for this metric type." value={value.metricsTables![field]} onChange={(event) => { value.metricsTables![field] = event.currentTarget.value; onUpdate(); }} />)}</div>}</EditItem><EditItem title="Table engine" obj={value.tableEngine} onSet={() => { value.tableEngine = EnterpriseP.CollectorExporter_Spec_Clickhouse_TableEngine.create(); onUpdate(); }} onUnset={() => { value.tableEngine = undefined; onUpdate(); }}>{value.tableEngine && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Engine name" description="ClickHouse table engine name, such as MergeTree." value={value.tableEngine.name} onChange={(event) => { value.tableEngine!.name = event.currentTarget.value; onUpdate(); }} /><TextInput label="Parameters" description="Parameters passed to the ClickHouse table engine." value={value.tableEngine.params} onChange={(event) => { value.tableEngine!.params = event.currentTarget.value; onUpdate(); }} /></div>}</EditItem><EditItem title="TLS" obj={value.tls} onSet={() => { value.tls = EnterpriseP.CollectorExporter_Spec_Clickhouse_TLS.create(); onUpdate(); }} onUnset={() => { value.tls = undefined; onUpdate(); }}>{value.tls && <div className="grid gap-4 md:grid-cols-2"><Switch label="No TLS" description="Disable TLS and connect over plaintext." checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; onUpdate(); }} /><Switch label="Skip TLS verification" description="Skip upstream certificate-chain and hostname verification." checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; onUpdate(); }} /><TextInput label="Server name override" description="Optional hostname used when verifying the upstream certificate." value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; onUpdate(); }} /><Textarea label="CA certificate PEM" description="Optional PEM-encoded CA used to verify the upstream certificate." autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; onUpdate(); }} /></div>}</EditItem></EditItem>;
-  }
-
-  if (type.oneofKind === "elasticsearch") {
-    const value = type.elasticsearch;
-    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.headers} makeHeader={() => EnterpriseP.CollectorExporter_Spec_Elasticsearch_Header.create()} onUpdate={onUpdate} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><Switch label="Skip TLS verification" description="Skip upstream certificate-chain and hostname verification." checked={value.tls?.insecureSkipVerify ?? false} onChange={(event) => { value.tls = EnterpriseP.CollectorExporter_Spec_Elasticsearch_TLS.create({ insecureSkipVerify: event.currentTarget.checked }); onUpdate(); }} />{value.tls?.insecureSkipVerify && <Alert color="red" icon={<AlertTriangle size={14} />}>Server certificates will not be verified.</Alert>}</EditItem>;
-  }
-
-  if (type.oneofKind === "logzio") return <EditItem title="Advanced delivery" obj={type.logzio}><DurationField label="Timeout" value={type.logzio.timeout} onChange={(next) => { type.logzio.timeout = next; onUpdate(); }} /></EditItem>;
-
-  if (type.oneofKind === "influxDB") {
-    const value = type.influxDB;
-    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.headers} makeHeader={() => EnterpriseP.CollectorExporter_Spec_InfluxDB_Header.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><NumberInput min={0} label="Maximum payload lines" description="Maximum number of lines sent in one export request." value={value.payloadMaxLines} onChange={(next) => { value.payloadMaxLines = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum payload bytes" description="Maximum size in bytes of one export request." value={value.payloadMaxBytes} onChange={(next) => { value.payloadMaxBytes = Number(next) || 0; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><StringListField label="Log record dimensions" value={value.logRecordDimensions} onChange={(next) => { value.logRecordDimensions = next; onUpdate(); }} /></div><EditItem title="InfluxDB v1 compatibility" obj={value.v1Compatibility} onSet={() => { value.v1Compatibility = EnterpriseP.CollectorExporter_Spec_InfluxDB_V1Compatibility.create(); onUpdate(); }} onUnset={() => { value.v1Compatibility = undefined; onUpdate(); }}>{value.v1Compatibility && <div className="grid gap-4 md:grid-cols-2"><Switch label="Enabled" description="Enable InfluxDB v1.x compatibility mode." checked={value.v1Compatibility.enabled} onChange={(event) => { value.v1Compatibility!.enabled = event.currentTarget.checked; onUpdate(); }} /><TextInput label="Database" description="InfluxDB v1.x database receiving telemetry." value={value.v1Compatibility.db} onChange={(event) => { value.v1Compatibility!.db = event.currentTarget.value; onUpdate(); }} /><TextInput label="Username" description="InfluxDB v1.x username." value={value.v1Compatibility.username} onChange={(event) => { value.v1Compatibility!.username = event.currentTarget.value; onUpdate(); }} /><SecretSelectField label="Password Secret" sel={value.v1Compatibility.password} onUpdate={onUpdate} /></div>}</EditItem></EditItem>;
-  }
-
-  if (type.oneofKind === "kafka") {
-    const value = type.kafka;
-    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.recordHeaders} makeHeader={() => EnterpriseP.CollectorExporter_Spec_Kafka_Header.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><DurationField label="Connection idle timeout" value={value.connIdleTimeout} onChange={(next) => { value.connIdleTimeout = next; onUpdate(); }} /><Switch label="Partition logs by resource attributes" description="Use resource attributes when selecting the Kafka partition for logs." checked={value.partitionLogsByResourceAttributes} onChange={(event) => { value.partitionLogsByResourceAttributes = event.currentTarget.checked; onUpdate(); }} /><Switch label="Partition metrics by resource attributes" description="Use resource attributes when selecting the Kafka partition for metrics." checked={value.partitionMetricsByResourceAttributes} onChange={(event) => { value.partitionMetricsByResourceAttributes = event.currentTarget.checked; onUpdate(); }} /></div><EditItem title="TLS" obj={value.tls} onSet={() => { value.tls = EnterpriseP.CollectorExporter_Spec_Kafka_TLS.create(); onUpdate(); }} onUnset={() => { value.tls = undefined; onUpdate(); }}>{value.tls && <Group><Switch label="No TLS" description="Disable TLS and connect over plaintext." checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; onUpdate(); }} /><Switch label="Skip TLS verification" description="Skip upstream certificate-chain and hostname verification." checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; onUpdate(); }} /></Group>}</EditItem><EditItem title="Producer" obj={value.producer} onSet={() => { value.producer = EnterpriseP.CollectorExporter_Spec_Kafka_Producer.create(); onUpdate(); }} onUnset={() => { value.producer = undefined; onUpdate(); }}>{value.producer && <div className="grid gap-4 md:grid-cols-2"><NumberInput min={0} label="Maximum message bytes" description="Maximum size of a Kafka message in bytes." value={value.producer.maxMessageBytes} onChange={(next) => { value.producer!.maxMessageBytes = Number(next) || 0; onUpdate(); }} /><NumberInput label="Required acknowledgements" description="Number of broker acknowledgements required before a message is considered written." value={value.producer.requiredAcks} onChange={(next) => { value.producer!.requiredAcks = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Flush maximum messages" description="Maximum messages accumulated before a producer flush." value={value.producer.flushMaxMessages} onChange={(next) => { value.producer!.flushMaxMessages = Number(next) || 0; onUpdate(); }} /><Switch label="Allow automatic topic creation" description="Allow the producer to create missing Kafka topics automatically." checked={value.producer.allowAutoTopicCreation} onChange={(event) => { value.producer!.allowAutoTopicCreation = event.currentTarget.checked; onUpdate(); }} /><DurationField label="Linger" value={value.producer.linger} onChange={(next) => { value.producer!.linger = next; onUpdate(); }} /><EnumSelect label="Compression" enumObj={EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression} value={value.producer.compression} options={[{ label: "None", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.NONE }, { label: "Gzip", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.GZIP }, { label: "Snappy", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.SNAPPY }, { label: "LZ4", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.LZ4 }, { label: "Zstd", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.ZSTD }]} onChange={(next) => { value.producer!.compression = next; onUpdate(); }} /></div>}</EditItem></EditItem>;
-  }
-
-  if (type.oneofKind === "datadog") {
-    const value = type.datadog;
-    return <EditItem title="Advanced delivery" obj={value}><EditItem title="Metrics" obj={value.metrics} onSet={() => { value.metrics = EnterpriseP.CollectorExporter_Spec_Datadog_Metrics.create(); onUpdate(); }} onUnset={() => { value.metrics = undefined; onUpdate(); }}>{value.metrics && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Metrics endpoint" description="Optional Datadog metrics intake endpoint override." value={value.metrics.endpoint} onChange={(event) => { value.metrics!.endpoint = event.currentTarget.value; onUpdate(); }} /><Switch label="Resource attributes as tags" description="Export resource attributes as Datadog metric tags." checked={value.metrics.resourceAttributesAsTags} onChange={(event) => { value.metrics!.resourceAttributesAsTags = event.currentTarget.checked; onUpdate(); }} /><Switch label="Instrumentation scope metadata as tags" description="Export instrumentation-scope metadata as Datadog metric tags." checked={value.metrics.instrumentationScopeMetadataAsTags} onChange={(event) => { value.metrics!.instrumentationScopeMetadataAsTags = event.currentTarget.checked; onUpdate(); }} /></div>}</EditItem><EditItem title="Logs" obj={value.logs} onSet={() => { value.logs = EnterpriseP.CollectorExporter_Spec_Datadog_Logs.create(); onUpdate(); }} onUnset={() => { value.logs = undefined; onUpdate(); }}>{value.logs && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Logs endpoint" description="Optional Datadog logs intake endpoint override." value={value.logs.endpoint} onChange={(event) => { value.logs!.endpoint = event.currentTarget.value; onUpdate(); }} /><Switch label="Use compression" description="Compress log payloads before sending them." checked={value.logs.useCompression} onChange={(event) => { value.logs!.useCompression = event.currentTarget.checked; onUpdate(); }} /><NumberInput min={0} label="Compression level" description="Compression level used for Datadog log payloads." value={value.logs.compressionLevel} onChange={(next) => { value.logs!.compressionLevel = Number(next) || 0; onUpdate(); }} /><DurationField label="Batch wait" value={value.logs.batchWait} onChange={(next) => { value.logs!.batchWait = next; onUpdate(); }} /></div>}</EditItem><EditItem title="Host metadata" obj={value.hostMetadata} onSet={() => { value.hostMetadata = EnterpriseP.CollectorExporter_Spec_Datadog_HostMetadata.create(); onUpdate(); }} onUnset={() => { value.hostMetadata = undefined; onUpdate(); }}>{value.hostMetadata && <div className="grid gap-4 md:grid-cols-2"><Switch label="Enabled" description="Enable Datadog host metadata reporting." checked={value.hostMetadata.enabled} onChange={(event) => { value.hostMetadata!.enabled = event.currentTarget.checked; onUpdate(); }} /><DurationField label="Reporter period" value={value.hostMetadata.reporterPeriod} onChange={(next) => { value.hostMetadata!.reporterPeriod = next; onUpdate(); }} /></div>}</EditItem><DurationField label="Hostname detection timeout" value={value.hostnameDetectionTimeout} onChange={(next) => { value.hostnameDetectionTimeout = next; onUpdate(); }} /></EditItem>;
-  }
-
-  if (type.oneofKind === "splunk") {
-    const value = type.splunk;
-    return <EditItem title="Advanced delivery" obj={value}><div className="grid gap-4 md:grid-cols-2"><NumberInput min={0} label="Maximum log content length" description="Maximum log payload size sent to Splunk." value={value.maxContentLengthLogs} onChange={(next) => { value.maxContentLengthLogs = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum metric content length" description="Maximum metric payload size sent to Splunk." value={value.maxContentLengthMetrics} onChange={(next) => { value.maxContentLengthMetrics = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum idle connections" description="Maximum number of idle connections kept in the pool." value={value.maxIdleConns} onChange={(next) => { value.maxIdleConns = Number(next) || 0; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><Switch label="Skip TLS verification" description="Skip upstream certificate-chain and hostname verification." checked={value.tls?.insecureSkipVerify ?? false} onChange={(event) => { value.tls = EnterpriseP.CollectorExporter_Spec_Splunk_TLS.create({ insecureSkipVerify: event.currentTarget.checked }); onUpdate(); }} /></div>{value.tls?.insecureSkipVerify && <Alert color="red" icon={<AlertTriangle size={14} />}>Server certificates will not be verified.</Alert>}</EditItem>;
-  }
-
-  if (type.oneofKind === "azureMonitor") {
-    const value = type.azureMonitor;
-    return <EditItem title="Advanced delivery" obj={value}><div className="grid gap-4 md:grid-cols-2"><DurationField label="Maximum batch interval" value={value.maxBatchInterval} onChange={(next) => { value.maxBatchInterval = next; onUpdate(); }} /><DurationField label="Shutdown timeout" value={value.shutdownTimeout} onChange={(next) => { value.shutdownTimeout = next; onUpdate(); }} /></div></EditItem>;
-  }
-
-  if (type.oneofKind === "azureDataExplorer") {
-    const value = type.azureDataExplorer;
-    return <EditItem title="Advanced delivery" obj={value}><div className="grid gap-4 md:grid-cols-2"><TextInput label="Metrics table mapping" description="Optional mapping that routes metrics to an Azure Data Explorer table." value={value.metricsTableMapping} onChange={(event) => { value.metricsTableMapping = event.currentTarget.value; onUpdate(); }} /><TextInput label="Logs table mapping" description="Optional mapping that routes logs to an Azure Data Explorer table." value={value.logsTableMapping} onChange={(event) => { value.logsTableMapping = event.currentTarget.value; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /></div></EditItem>;
-  }
-
-  return null;
+const applyTransport = <T extends TLSLike>(
+  tls: T | undefined,
+  mode: TransportMode,
+  create: () => T,
+): T | undefined => {
+  const next = tls ?? create();
+  next.insecure = mode === "plaintext";
+  next.insecureSkipVerify = mode === "skip";
+  return pruneTLS(next);
 };
 
-const PrometheusTLSSettings = (props: {
-  type: EnterpriseP.CollectorExporter_Spec["type"];
-  onUpdate: () => void;
+const pruneTLS = <T extends TLSLike>(tls?: T) =>
+  tls &&
+  !tls.insecure &&
+  !tls.insecureSkipVerify &&
+  !tls.serverNameOverride &&
+  !tls.caPEM
+    ? undefined
+    : tls;
+
+const SkipVerifyWarning = () => (
+  <Callout title="The server certificate is not verified">
+    Anyone on the network path can impersonate the destination and read the
+    exported telemetry. Prefer adding the CA certificate instead.
+  </Callout>
+);
+
+const CertificateFields = <T extends TLSLike>(props: {
+  tls?: T;
+  create: () => T;
+  onChange: (tls?: T) => void;
 }) => {
-  if (props.type.oneofKind !== "prometheusRemoteWrite") return null;
-  const value = props.type.prometheusRemoteWrite;
+  const set = (fn: (tls: T) => void) => {
+    const next = props.tls ?? props.create();
+    fn(next);
+    props.onChange(pruneTLS(next));
+  };
   return (
-    <EditItem
-      title="TLS"
-      obj={value.tls}
-      onSet={() => {
-        value.tls =
-          EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_TLS.create();
-        props.onUpdate();
-      }}
-      onUnset={() => {
-        value.tls = undefined;
-        props.onUpdate();
-      }}
-    >
-      {value.tls && (
-        <div className="grid gap-4 md:grid-cols-2">
-          <Switch label="No TLS" description="Disable TLS and connect over plaintext." checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; props.onUpdate(); }} />
-          <Switch label="Skip TLS verification" description="Skip upstream certificate-chain and hostname verification." checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; props.onUpdate(); }} />
-          <TextInput label="Server name override" description="Optional hostname used when verifying the upstream certificate." value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; props.onUpdate(); }} />
-          <Textarea label="CA certificate PEM" description="Optional PEM-encoded CA used to verify the upstream certificate." autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; props.onUpdate(); }} />
-          {value.tls.insecureSkipVerify && <Alert color="red" icon={<AlertTriangle size={14} />}>Server certificates will not be verified.</Alert>}
-        </div>
-      )}
-    </EditItem>
+    <Grid>
+      <TextInput
+        label="Server name override"
+        description="Hostname checked against the certificate when it differs from the endpoint."
+        placeholder="collector.internal"
+        value={props.tls?.serverNameOverride ?? ""}
+        onChange={(event) => {
+          const value = event.currentTarget.value.trim();
+          set((tls) => {
+            tls.serverNameOverride = value;
+          });
+        }}
+      />
+      <Textarea
+        label="CA certificate"
+        description="PEM-encoded CA used instead of the system pool."
+        placeholder="-----BEGIN CERTIFICATE-----"
+        autosize
+        minRows={2}
+        maxRows={8}
+        styles={{
+          input: {
+            fontFamily: "var(--mantine-font-family-monospace)",
+            fontSize: "12px",
+          },
+        }}
+        value={props.tls?.caPEM ?? ""}
+        onChange={(event) => {
+          const value = event.currentTarget.value;
+          set((tls) => {
+            tls.caPEM = value;
+          });
+        }}
+      />
+    </Grid>
   );
+};
+
+type HTTPAuthMethod = "none" | "bearer" | "basic" | "custom";
+
+const HTTPAuthFields = (props: {
+  auth?: HTTPAuth;
+  onChange: (auth?: HTTPAuth) => void;
+}) => {
+  const stash = React.useRef<Partial<Record<HTTPAuthMethod, HTTPAuth>>>({});
+  const method: HTTPAuthMethod = props.auth?.type.oneofKind ?? "none";
+  const update = () => props.onChange(props.auth);
+
+  const change = (next: HTTPAuthMethod) => {
+    if (props.auth) stash.current[method] = structuredClone(props.auth);
+    if (next === "none") {
+      props.onChange(undefined);
+      return;
+    }
+    const cached = stash.current[next];
+    if (cached) {
+      props.onChange(structuredClone(cached));
+      return;
+    }
+    props.onChange({
+      type:
+        next === "bearer"
+          ? { oneofKind: "bearer", bearer: toSecret("") }
+          : next === "basic"
+            ? {
+                oneofKind: "basic",
+                basic: { username: "", password: toSecret("") },
+              }
+            : {
+                oneofKind: "custom",
+                custom: { header: "", value: toSecret("") },
+              },
+    });
+  };
+
+  const type = props.auth?.type;
+
+  return (
+    <>
+      <ChoiceGroup
+        label="Method"
+        value={method}
+        onChange={change}
+        options={[
+          { value: "none", label: "None", hint: "Open endpoint or mTLS" },
+          {
+            value: "bearer",
+            label: "Bearer token",
+            hint: "Authorization: Bearer",
+          },
+          { value: "basic", label: "Basic", hint: "Username and password" },
+          { value: "custom", label: "API key header", hint: "Any header name" },
+        ]}
+      />
+      {type?.oneofKind === "bearer" && (
+        <Grid>
+          <SecretField
+            required
+            label="Token"
+            description="Secret holding the bearer token."
+            value={secretName(type.bearer)}
+            onChange={(name) => {
+              type.bearer = toSecret(name);
+              update();
+            }}
+          />
+        </Grid>
+      )}
+      {type?.oneofKind === "basic" && (
+        <Grid>
+          <TextInput
+            required
+            label="Username"
+            description="Sent with the password in the Authorization header."
+            placeholder="otel"
+            value={type.basic.username}
+            error={type.basic.username.trim() ? undefined : "Required"}
+            onChange={(event) => {
+              type.basic.username = event.currentTarget.value;
+              update();
+            }}
+          />
+          <SecretField
+            required
+            label="Password"
+            description="Secret holding the password."
+            value={secretName(type.basic.password)}
+            onChange={(name) => {
+              type.basic.password = toSecret(name);
+              update();
+            }}
+          />
+        </Grid>
+      )}
+      {type?.oneofKind === "custom" && (
+        <Grid>
+          <TextInput
+            required
+            label="Header name"
+            description="For example x-honeycomb-team or api-key."
+            placeholder="X-API-Key"
+            value={type.custom.header}
+            error={
+              !type.custom.header.trim()
+                ? "Required"
+                : headerKeyError([{ key: type.custom.header, value: "" }])(
+                    type.custom.header,
+                    0,
+                  )
+            }
+            onChange={(event) => {
+              type.custom.header = event.currentTarget.value.trim();
+              update();
+            }}
+          />
+          <SecretField
+            required
+            label="Header value"
+            description="Secret holding the header value."
+            value={secretName(type.custom.value)}
+            onChange={(name) => {
+              type.custom.value = toSecret(name);
+              update();
+            }}
+          />
+        </Grid>
+      )}
+    </>
+  );
+};
+
+const AuthSection = (props: {
+  children: React.ReactNode;
+  description?: string;
+}) => (
+  <FormSection
+    icon={KeyRound}
+    title="Authentication"
+    description={
+      props.description ??
+      "How the Collector proves its identity to the destination."
+    }
+  >
+    {props.children}
+  </FormSection>
+);
+
+const OTLPForm = (props: {
+  value: EnterpriseP.CollectorExporter_Spec_OTLP;
+  update: Update;
+}) => {
+  const { value, update } = props;
+  const C = EnterpriseP.CollectorExporter_Spec_OTLP_Compression;
+  const keepalive = () => {
+    if (!value.keepalive) {
+      value.keepalive =
+        EnterpriseP.CollectorExporter_Spec_OTLP_Keepalive.create();
+    }
+    return value.keepalive;
+  };
+  const pruneKeepalive = () => {
+    const k = value.keepalive;
+    if (k && !k.time && !k.timeout && !k.permitWithoutStream) {
+      value.keepalive = undefined;
+    }
+  };
+  const mode = transportMode(value.tls);
+
+  return (
+    <>
+      <FormSection
+        icon={Network}
+        title="Connection"
+        description="The OTLP/gRPC receiver of your backend or of another Collector."
+      >
+        <TextInput
+          required
+          label="Endpoint"
+          description="host:port of the receiver. dns:/// and unix:// targets are supported too."
+          placeholder="otel-collector.example.com:4317"
+          value={value.endpoint}
+          error={grpcEndpointError(value.endpoint)}
+          onChange={(event) => {
+            value.endpoint = event.currentTarget.value.trim();
+            update();
+          }}
+        />
+        <Grid>
+          <TransportSelect
+            value={mode}
+            defaultMode="verify"
+            description="Choose plaintext for in-cluster receivers without TLS."
+            onChange={(next) => {
+              value.tls = applyTransport(value.tls, next, () =>
+                EnterpriseP.CollectorExporter_Spec_OTLP_TLS.create(),
+              );
+              update();
+            }}
+          />
+          <EnumField
+            label="Compression"
+            description="Gzip when not set."
+            value={value.compression}
+            options={[
+              { label: "Gzip", value: C.GZIP },
+              { label: "Zstandard", value: C.ZSTD },
+              { label: "Snappy", value: C.SNAPPY },
+              { label: "None", value: C.NONE },
+            ]}
+            onChange={(next) => {
+              value.compression = next;
+              update();
+            }}
+          />
+        </Grid>
+        {mode === "skip" && <SkipVerifyWarning />}
+      </FormSection>
+
+      <AuthSection>
+        <HTTPAuthFields
+          auth={value.auth as unknown as HTTPAuth | undefined}
+          onChange={(auth) => {
+            value.auth = auth as unknown as
+              EnterpriseP.CollectorExporter_Spec_OTLP_Auth | undefined;
+            update();
+          }}
+        />
+      </AuthSection>
+
+      <Advanced
+        summary="Headers, certificates, timeouts, keepalive and connection tuning."
+        count={countSet(
+          value.headers,
+          value.tls?.serverNameOverride,
+          value.tls?.caPEM,
+          value.timeout,
+          value.waitForReady,
+          value.authority,
+          value.userAgent,
+          value.balancerName,
+          value.readBufferSize,
+          value.writeBufferSize,
+          value.keepalive,
+        )}
+      >
+        <AdvancedGroup title="Headers">
+          <KeyValueList
+            label="Request headers"
+            description="Sent as gRPC metadata with every export, e.g. a tenant ID."
+            addLabel="Add header"
+            keyPlaceholder="x-scope-orgid"
+            valuePlaceholder="value"
+            items={value.headers}
+            make={() => EnterpriseP.CollectorExporter_Spec_OTLP_Header.create()}
+            keyError={headerKeyError(value.headers)}
+            onUpdate={update}
+          />
+        </AdvancedGroup>
+        {mode !== "plaintext" && (
+          <AdvancedGroup title="Certificates">
+            <CertificateFields
+              tls={value.tls}
+              create={() =>
+                EnterpriseP.CollectorExporter_Spec_OTLP_TLS.create()
+              }
+              onChange={(tls) => {
+                value.tls = tls;
+                update();
+              }}
+            />
+          </AdvancedGroup>
+        )}
+        <AdvancedGroup title="Requests">
+          <Grid>
+            <DurationField
+              label="Timeout"
+              description="Per export request. 5 seconds when not set."
+              value={value.timeout}
+              onChange={(next) => {
+                value.timeout = next;
+                update();
+              }}
+            />
+          </Grid>
+          <ToggleList>
+            <ToggleRow
+              label="Wait for the connection"
+              description="Block exports until the connection is ready instead of failing fast."
+              checked={value.waitForReady}
+              onChange={(checked) => {
+                value.waitForReady = checked;
+                update();
+              }}
+            />
+          </ToggleList>
+        </AdvancedGroup>
+        <AdvancedGroup title="Connection tuning">
+          <Grid>
+            <TextInput
+              label="Authority"
+              description="Overrides the :authority pseudo-header."
+              placeholder="collector.example.com"
+              value={value.authority}
+              onChange={(event) => {
+                value.authority = event.currentTarget.value.trim();
+                update();
+              }}
+            />
+            <TextInput
+              label="User agent"
+              description="Overrides the user agent of the requests."
+              placeholder="Default"
+              value={value.userAgent}
+              onChange={(event) => {
+                value.userAgent = event.currentTarget.value;
+                update();
+              }}
+            />
+            <Select
+              label="Load balancing"
+              description="gRPC policy across the resolved addresses."
+              placeholder="Default (pick first)"
+              clearable
+              data={[
+                { value: "pick_first", label: "Pick first" },
+                { value: "round_robin", label: "Round robin" },
+              ]}
+              value={value.balancerName || null}
+              onChange={(next) => {
+                value.balancerName = next ?? "";
+                update();
+              }}
+            />
+            <NumberField
+              label="Read buffer size"
+              description="In bytes, up to 64 MiB."
+              max={64 * 1024 * 1024}
+              value={value.readBufferSize}
+              onChange={(next) => {
+                value.readBufferSize = next;
+                update();
+              }}
+            />
+            <NumberField
+              label="Write buffer size"
+              description="In bytes, up to 64 MiB."
+              max={64 * 1024 * 1024}
+              value={value.writeBufferSize}
+              onChange={(next) => {
+                value.writeBufferSize = next;
+                update();
+              }}
+            />
+          </Grid>
+        </AdvancedGroup>
+        <AdvancedGroup
+          title="Keepalive"
+          description="Pings that keep long-lived connections through proxies and load balancers."
+        >
+          <Grid>
+            <DurationField
+              label="Ping after idle"
+              description="Inactivity before a ping is sent. At least 1 second."
+              value={value.keepalive?.time}
+              onChange={(next) => {
+                keepalive().time = next;
+                pruneKeepalive();
+                update();
+              }}
+            />
+            <DurationField
+              label="Ping timeout"
+              description="Wait for the acknowledgement before closing the connection."
+              value={value.keepalive?.timeout}
+              onChange={(next) => {
+                keepalive().timeout = next;
+                pruneKeepalive();
+                update();
+              }}
+            />
+          </Grid>
+          <ToggleList>
+            <ToggleRow
+              label="Ping without active streams"
+              checked={value.keepalive?.permitWithoutStream ?? false}
+              onChange={(checked) => {
+                keepalive().permitWithoutStream = checked;
+                pruneKeepalive();
+                update();
+              }}
+            />
+          </ToggleList>
+        </AdvancedGroup>
+      </Advanced>
+    </>
+  );
+};
+
+const OTLPHTTPForm = (props: {
+  value: EnterpriseP.CollectorExporter_Spec_OTLPHTTP;
+  update: Update;
+}) => {
+  const { value, update } = props;
+  const E = EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Encoding;
+  const C = EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Compression;
+  const mode = transportMode(value.tls);
+  const noEndpoint =
+    !value.endpoint.trim() &&
+    !value.logsEndpoint.trim() &&
+    !value.metricsEndpoint.trim();
+
+  return (
+    <>
+      <FormSection
+        icon={Network}
+        title="Connection"
+        description="The OTLP/HTTP receiver of your backend or of another Collector."
+      >
+        <TextInput
+          required={!value.logsEndpoint && !value.metricsEndpoint}
+          type="url"
+          label="Endpoint"
+          description="Base URL. /v1/logs and /v1/metrics are appended to it."
+          placeholder="https://otlp.example.com:4318"
+          value={value.endpoint}
+          error={urlError(value.endpoint)}
+          onChange={(event) => {
+            value.endpoint = event.currentTarget.value.trim();
+            update();
+          }}
+        />
+        <Grid>
+          <EnumField
+            label="Encoding"
+            description="Protobuf when not set."
+            value={value.encoding}
+            options={[
+              { label: "Protobuf", value: E.PROTO },
+              { label: "JSON", value: E.JSON },
+            ]}
+            onChange={(next) => {
+              value.encoding = next;
+              update();
+            }}
+          />
+          <EnumField
+            label="Compression"
+            description="Gzip when not set."
+            value={value.compression}
+            options={[
+              { label: "Gzip", value: C.GZIP },
+              { label: "None", value: C.NONE },
+            ]}
+            onChange={(next) => {
+              value.compression = next;
+              update();
+            }}
+          />
+        </Grid>
+        {noEndpoint && (
+          <Callout tone="info" title="Set an endpoint">
+            Set the base URL, or per-signal URLs under Advanced options.
+          </Callout>
+        )}
+      </FormSection>
+
+      <AuthSection>
+        <HTTPAuthFields
+          auth={value.auth as unknown as HTTPAuth | undefined}
+          onChange={(auth) => {
+            value.auth = auth as unknown as
+              EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Auth | undefined;
+            update();
+          }}
+        />
+      </AuthSection>
+
+      <Advanced
+        summary="Per-signal URLs, headers, TLS, timeouts and buffers."
+        count={countSet(
+          value.logsEndpoint,
+          value.metricsEndpoint,
+          value.headers,
+          value.tls,
+          value.timeout,
+          value.readBufferSize,
+          value.writeBufferSize,
+        )}
+      >
+        <AdvancedGroup
+          title="Per-signal URLs"
+          description="Full URLs that replace the base endpoint for one signal."
+        >
+          <Grid>
+            <TextInput
+              type="url"
+              label="Logs URL"
+              placeholder="https://otlp.example.com/v1/logs"
+              value={value.logsEndpoint}
+              error={urlError(value.logsEndpoint)}
+              onChange={(event) => {
+                value.logsEndpoint = event.currentTarget.value.trim();
+                update();
+              }}
+            />
+            <TextInput
+              type="url"
+              label="Metrics URL"
+              placeholder="https://otlp.example.com/v1/metrics"
+              value={value.metricsEndpoint}
+              error={urlError(value.metricsEndpoint)}
+              onChange={(event) => {
+                value.metricsEndpoint = event.currentTarget.value.trim();
+                update();
+              }}
+            />
+          </Grid>
+        </AdvancedGroup>
+        <AdvancedGroup title="Headers">
+          <KeyValueList
+            label="Request headers"
+            description="Sent with every export request."
+            addLabel="Add header"
+            keyPlaceholder="X-Scope-OrgID"
+            valuePlaceholder="value"
+            items={value.headers}
+            make={() =>
+              EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Header.create()
+            }
+            keyError={headerKeyError(value.headers)}
+            onUpdate={update}
+          />
+        </AdvancedGroup>
+        <AdvancedGroup title="TLS">
+          <Grid>
+            <TransportSelect
+              value={mode}
+              defaultMode="verify"
+              description="An http:// endpoint is always plaintext."
+              onChange={(next) => {
+                value.tls = applyTransport(value.tls, next, () =>
+                  EnterpriseP.CollectorExporter_Spec_OTLPHTTP_TLS.create(),
+                );
+                update();
+              }}
+            />
+          </Grid>
+          {mode === "skip" && <SkipVerifyWarning />}
+          {mode !== "plaintext" && (
+            <CertificateFields
+              tls={value.tls}
+              create={() =>
+                EnterpriseP.CollectorExporter_Spec_OTLPHTTP_TLS.create()
+              }
+              onChange={(tls) => {
+                value.tls = tls;
+                update();
+              }}
+            />
+          )}
+        </AdvancedGroup>
+        <AdvancedGroup title="Requests">
+          <Grid cols={3}>
+            <DurationField
+              label="Timeout"
+              description="Per export request."
+              value={value.timeout}
+              onChange={(next) => {
+                value.timeout = next;
+                update();
+              }}
+            />
+            <NumberField
+              label="Read buffer size"
+              description="In bytes, up to 64 MiB."
+              max={64 * 1024 * 1024}
+              value={value.readBufferSize}
+              onChange={(next) => {
+                value.readBufferSize = next;
+                update();
+              }}
+            />
+            <NumberField
+              label="Write buffer size"
+              description="In bytes, up to 64 MiB."
+              max={64 * 1024 * 1024}
+              value={value.writeBufferSize}
+              onChange={(next) => {
+                value.writeBufferSize = next;
+                update();
+              }}
+            />
+          </Grid>
+        </AdvancedGroup>
+      </Advanced>
+    </>
+  );
+};
+
+const PrometheusForm = (props: {
+  value: EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite;
+  update: Update;
+}) => {
+  const { value, update } = props;
+  const T =
+    EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy;
+  const mode = transportMode(value.tls);
+  const queueEnabled = value.remoteWriteQueue?.enabled ?? true;
+  const queue = () => {
+    if (!value.remoteWriteQueue) {
+      value.remoteWriteQueue =
+        EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue.create(
+          {
+            enabled: true,
+            queueSize: 10000,
+          },
+        );
+    }
+    return value.remoteWriteQueue;
+  };
+  const pruneQueue = () => {
+    const q = value.remoteWriteQueue;
+    if (q?.enabled && q.queueSize === 10000 && !q.numConsumers) {
+      value.remoteWriteQueue = undefined;
+    }
+  };
+
+  return (
+    <>
+      <FormSection
+        icon={Network}
+        title="Connection"
+        description="The remote write receiver of Prometheus or of a compatible store. Metrics only."
+      >
+        <TextInput
+          required
+          type="url"
+          label="Endpoint"
+          description="Full remote write URL."
+          placeholder="https://prometheus.example.com/api/v1/write"
+          value={value.endpoint}
+          error={urlError(value.endpoint)}
+          onChange={(event) => {
+            value.endpoint = event.currentTarget.value.trim();
+            update();
+          }}
+        />
+        <Grid>
+          <TextInput
+            label="Metric prefix"
+            description="Prepended to every metric name, e.g. octelium_."
+            placeholder="None"
+            value={value.namespace}
+            error={
+              value.namespace &&
+              !/^[A-Za-z_:][A-Za-z0-9_:]*$/.test(value.namespace)
+                ? "Use letters, digits, _ and :, not starting with a digit"
+                : undefined
+            }
+            onChange={(event) => {
+              value.namespace = event.currentTarget.value.trim();
+              update();
+            }}
+          />
+        </Grid>
+      </FormSection>
+
+      <AuthSection>
+        <HTTPAuthFields
+          auth={value.auth as unknown as HTTPAuth | undefined}
+          onChange={(auth) => {
+            value.auth = auth as unknown as
+              | EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_Auth
+              | undefined;
+            update();
+          }}
+        />
+      </AuthSection>
+
+      <FormSection
+        icon={Tags}
+        title="Labels"
+        description="Added to every exported series, e.g. the cluster or the environment."
+      >
+        <KeyValueList
+          label="External labels"
+          description="Label names use letters, digits and underscores."
+          addLabel="Add label"
+          keyPlaceholder="cluster"
+          valuePlaceholder="production"
+          items={value.externalLabels}
+          make={() =>
+            EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel.create()
+          }
+          keyError={(key, index) => {
+            if (!key.trim()) return "Required";
+            if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key.trim()))
+              return "Invalid label name";
+            return value.externalLabels.findIndex(
+              (item) => item.key.trim() === key.trim(),
+            ) !== index
+              ? "Duplicate"
+              : undefined;
+          }}
+          onUpdate={update}
+        />
+      </FormSection>
+
+      <Advanced
+        summary="Metric naming, resource attributes, headers, TLS, batching and queueing."
+        count={countSet(
+          value.translationStrategy,
+          value.sendMetadata,
+          value.disableScopeInfo,
+          value.targetInfo,
+          value.resourceToTelemetryConversion,
+          value.headers,
+          value.tls,
+          value.timeout,
+          value.maxBatchSizeBytes,
+          value.maxBatchRequestParallelism,
+          value.remoteWriteQueue,
+        )}
+      >
+        <AdvancedGroup title="Metric naming">
+          <Grid>
+            <EnumField
+              label="Name translation"
+              description="How OpenTelemetry names become Prometheus names."
+              value={value.translationStrategy}
+              options={[
+                {
+                  label: "Escape to underscores, add unit suffixes",
+                  value: T.UNDERSCORE_ESCAPING_WITH_SUFFIXES,
+                },
+                {
+                  label: "Escape to underscores, no suffixes",
+                  value: T.UNDERSCORE_ESCAPING_WITHOUT_SUFFIXES,
+                },
+                {
+                  label:
+                    "Keep UTF-8, add suffixes (Remote Write 2.0, not supported yet)",
+                  value: T.NO_UTF8_ESCAPING_WITH_SUFFIXES,
+                  disabled: true,
+                },
+                {
+                  label: "No translation (Remote Write 2.0, not supported yet)",
+                  value: T.NO_TRANSLATION,
+                  disabled: true,
+                },
+              ]}
+              onChange={(next) => {
+                value.translationStrategy = next;
+                update();
+              }}
+            />
+          </Grid>
+          <ToggleList>
+            <ToggleRow
+              label="Send metric metadata"
+              description="Include the help text, type and unit of every metric."
+              checked={value.sendMetadata}
+              onChange={(checked) => {
+                value.sendMetadata = checked;
+                update();
+              }}
+            />
+            <ToggleRow
+              label="Export target_info"
+              description="A series carrying the resource attributes of every source."
+              checked={value.targetInfo?.enabled ?? true}
+              onChange={(checked) => {
+                value.targetInfo = checked
+                  ? undefined
+                  : EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo.create(
+                      {
+                        enabled: false,
+                      },
+                    );
+                update();
+              }}
+            />
+            <ToggleRow
+              label="Export instrumentation scope"
+              description="The otel_scope_* labels and the otel_scope_info series."
+              checked={!value.disableScopeInfo}
+              onChange={(checked) => {
+                value.disableScopeInfo = !checked;
+                update();
+              }}
+            />
+            <ToggleRow
+              label="Resource attributes as labels"
+              description="Copy every resource attribute to every series. Raises cardinality."
+              checked={value.resourceToTelemetryConversion?.enabled ?? false}
+              onChange={(checked) => {
+                value.resourceToTelemetryConversion = checked
+                  ? EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion.create(
+                      {
+                        enabled: true,
+                      },
+                    )
+                  : undefined;
+                update();
+              }}
+            >
+              <Switch
+                size="sm"
+                label="Skip service.* attributes"
+                checked={
+                  value.resourceToTelemetryConversion
+                    ?.excludeServiceAttributes ?? false
+                }
+                onChange={(event) => {
+                  value.resourceToTelemetryConversion!.excludeServiceAttributes =
+                    event.currentTarget.checked;
+                  update();
+                }}
+              />
+            </ToggleRow>
+          </ToggleList>
+        </AdvancedGroup>
+        <AdvancedGroup title="Headers">
+          <KeyValueList
+            label="Request headers"
+            description="Sent with every remote write request, e.g. X-Scope-OrgID."
+            addLabel="Add header"
+            keyPlaceholder="X-Scope-OrgID"
+            valuePlaceholder="value"
+            items={value.headers}
+            make={() =>
+              EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_Header.create()
+            }
+            keyError={headerKeyError(value.headers)}
+            onUpdate={update}
+          />
+        </AdvancedGroup>
+        <AdvancedGroup title="TLS">
+          <Grid>
+            <TransportSelect
+              value={mode}
+              defaultMode="verify"
+              description="An http:// endpoint is always plaintext."
+              onChange={(next) => {
+                value.tls = applyTransport(value.tls, next, () =>
+                  EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_TLS.create(),
+                );
+                update();
+              }}
+            />
+          </Grid>
+          {mode === "skip" && <SkipVerifyWarning />}
+          {mode !== "plaintext" && (
+            <CertificateFields
+              tls={value.tls}
+              create={() =>
+                EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_TLS.create()
+              }
+              onChange={(tls) => {
+                value.tls = tls;
+                update();
+              }}
+            />
+          )}
+        </AdvancedGroup>
+        <AdvancedGroup title="Batching and queueing">
+          <Grid cols={3}>
+            <DurationField
+              label="Timeout"
+              description="Per remote write request."
+              value={value.timeout}
+              onChange={(next) => {
+                value.timeout = next;
+                update();
+              }}
+            />
+            <NumberField
+              label="Maximum request size"
+              description="Bigger batches are split. Up to 512 MiB."
+              suffix=" bytes"
+              max={512 * 1024 * 1024}
+              value={value.maxBatchSizeBytes}
+              onChange={(next) => {
+                value.maxBatchSizeBytes = next;
+                update();
+              }}
+            />
+            <NumberField
+              label="Parallel requests"
+              description="Per batch, up to 1024."
+              max={1024}
+              value={value.maxBatchRequestParallelism}
+              onChange={(next) => {
+                value.maxBatchRequestParallelism = next;
+                update();
+              }}
+            />
+          </Grid>
+          <ToggleList>
+            <ToggleRow
+              label="Sending queue"
+              description="Buffer batches in memory so short outages do not drop metrics."
+              checked={queueEnabled}
+              onChange={(checked) => {
+                value.remoteWriteQueue = checked
+                  ? undefined
+                  : EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue.create(
+                      {
+                        enabled: false,
+                      },
+                    );
+                update();
+              }}
+            >
+              <Grid>
+                <NumberField
+                  label="Queue size"
+                  description="Batches kept in memory. 10,000 by default."
+                  min={1}
+                  max={10_000_000}
+                  value={value.remoteWriteQueue?.queueSize ?? 0}
+                  onChange={(next) => {
+                    queue().queueSize = next || 10000;
+                    pruneQueue();
+                    update();
+                  }}
+                />
+                <NumberField
+                  label="Consumers"
+                  description="Workers sending from the queue. 5 by default."
+                  max={1024}
+                  value={value.remoteWriteQueue?.numConsumers ?? 0}
+                  onChange={(next) => {
+                    queue().numConsumers = next;
+                    pruneQueue();
+                    update();
+                  }}
+                />
+              </Grid>
+            </ToggleRow>
+          </ToggleList>
+        </AdvancedGroup>
+      </Advanced>
+    </>
+  );
+};
+
+const ClickhouseForm = (props: {
+  value: EnterpriseP.CollectorExporter_Spec_Clickhouse;
+  update: Update;
+}) => {
+  const { value, update } = props;
+  const C = EnterpriseP.CollectorExporter_Spec_Clickhouse_Compression;
+  const mode = transportMode(value.tls);
+  const metricsTables = () => {
+    if (!value.metricsTables) {
+      value.metricsTables =
+        EnterpriseP.CollectorExporter_Spec_Clickhouse_MetricsTables.create();
+    }
+    return value.metricsTables;
+  };
+  const tableEngine = () => {
+    if (!value.tableEngine) {
+      value.tableEngine =
+        EnterpriseP.CollectorExporter_Spec_Clickhouse_TableEngine.create();
+    }
+    return value.tableEngine;
+  };
+  const pruneTables = () => {
+    const t = value.metricsTables;
+    if (
+      t &&
+      !t.gauge &&
+      !t.sum &&
+      !t.summary &&
+      !t.histogram &&
+      !t.exponentialHistogram
+    ) {
+      value.metricsTables = undefined;
+    }
+    if (
+      value.tableEngine &&
+      !value.tableEngine.name &&
+      !value.tableEngine.params
+    ) {
+      value.tableEngine = undefined;
+    }
+  };
+  const tableFields = [
+    { key: "gauge", label: "Gauge", placeholder: "otel_metrics_gauge" },
+    { key: "sum", label: "Sum", placeholder: "otel_metrics_sum" },
+    {
+      key: "histogram",
+      label: "Histogram",
+      placeholder: "otel_metrics_histogram",
+    },
+    {
+      key: "exponentialHistogram",
+      label: "Exponential histogram",
+      placeholder: "otel_metrics_exponential_histogram",
+    },
+    { key: "summary", label: "Summary", placeholder: "otel_metrics_summary" },
+  ] as const;
+
+  return (
+    <>
+      <FormSection
+        icon={Network}
+        title="Connection"
+        description="The ClickHouse server or cluster that stores the telemetry."
+      >
+        <TextInput
+          required
+          label="Endpoint"
+          description="Native protocol (tcp://, clickhouse://) or HTTP interface (http://, https://)."
+          placeholder="tcp://clickhouse.example.com:9000"
+          value={value.endpoint}
+          error={clickhouseEndpointError(value.endpoint)}
+          onChange={(event) => {
+            value.endpoint = event.currentTarget.value.trim();
+            update();
+          }}
+        />
+        <Grid cols={3}>
+          <TextInput
+            label="Database"
+            description="default when not set."
+            placeholder="default"
+            value={value.database}
+            error={identError(value.database)}
+            onChange={(event) => {
+              value.database = event.currentTarget.value.trim();
+              update();
+            }}
+          />
+          <TextInput
+            label="Username"
+            description="default when not set."
+            placeholder="default"
+            value={value.username}
+            onChange={(event) => {
+              value.username = event.currentTarget.value.trim();
+              update();
+            }}
+          />
+          <SecretField
+            label="Password"
+            description="Secret holding the password. Optional."
+            value={secretName(value.password)}
+            onChange={(name) => {
+              value.password = optionalSecret(name);
+              update();
+            }}
+          />
+        </Grid>
+      </FormSection>
+
+      <FormSection
+        icon={Database}
+        title="Tables"
+        description="Where rows are written and how long they are kept."
+      >
+        <Grid>
+          <TextInput
+            label="Logs table"
+            description="otel_logs when not set."
+            placeholder="otel_logs"
+            value={value.logsTableName}
+            error={identError(value.logsTableName)}
+            onChange={(event) => {
+              value.logsTableName = event.currentTarget.value.trim();
+              update();
+            }}
+          />
+          <DurationField
+            label="Retention"
+            description="Rows older than this are deleted. Kept forever when not set."
+            value={value.ttl}
+            onChange={(next) => {
+              value.ttl = next;
+              update();
+            }}
+          />
+        </Grid>
+        <ToggleList>
+          <ToggleRow
+            label="Create the database and tables"
+            description="Create them when they do not exist yet. Turn off when you manage the schema yourself."
+            checked={value.createSchema}
+            onChange={(checked) => {
+              value.createSchema = checked;
+              update();
+            }}
+          />
+        </ToggleList>
+      </FormSection>
+
+      <Advanced
+        summary="Metric tables, table engine, cluster, compression, TLS and connection parameters."
+        count={countSet(
+          value.metricsTables,
+          value.tableEngine,
+          value.clusterName,
+          value.compression,
+          value.asyncInsert,
+          value.json,
+          value.timeout,
+          value.tls,
+          value.connectionParams,
+        )}
+      >
+        <AdvancedGroup
+          title="Metric tables"
+          description="One table per metric type."
+        >
+          <Grid cols={3}>
+            {tableFields.map((field) => (
+              <TextInput
+                key={field.key}
+                label={field.label}
+                placeholder={field.placeholder}
+                value={value.metricsTables?.[field.key] ?? ""}
+                error={identError(value.metricsTables?.[field.key] ?? "")}
+                onChange={(event) => {
+                  metricsTables()[field.key] = event.currentTarget.value.trim();
+                  pruneTables();
+                  update();
+                }}
+              />
+            ))}
+          </Grid>
+        </AdvancedGroup>
+        <AdvancedGroup title="Schema">
+          <Grid cols={3}>
+            <TextInput
+              label="Cluster"
+              description="Creates the tables ON CLUSTER."
+              placeholder="None"
+              value={value.clusterName}
+              error={identError(value.clusterName)}
+              onChange={(event) => {
+                value.clusterName = event.currentTarget.value.trim();
+                update();
+              }}
+            />
+            <TextInput
+              label="Table engine"
+              description="MergeTree when not set."
+              placeholder="MergeTree"
+              value={value.tableEngine?.name ?? ""}
+              error={identError(value.tableEngine?.name ?? "")}
+              onChange={(event) => {
+                tableEngine().name = event.currentTarget.value.trim();
+                pruneTables();
+                update();
+              }}
+            />
+            <TextInput
+              label="Engine parameters"
+              description="Passed to the table engine."
+              placeholder="None"
+              value={value.tableEngine?.params ?? ""}
+              onChange={(event) => {
+                tableEngine().params = event.currentTarget.value;
+                pruneTables();
+                update();
+              }}
+            />
+          </Grid>
+          <ToggleList>
+            <ToggleRow
+              label="JSON attribute columns"
+              description="Use the JSON column type instead of maps for attributes."
+              checked={value.json}
+              onChange={(checked) => {
+                value.json = checked;
+                update();
+              }}
+            />
+          </ToggleList>
+        </AdvancedGroup>
+        <AdvancedGroup title="Inserts">
+          <Grid>
+            <EnumField
+              label="Compression"
+              description="LZ4 when not set."
+              value={value.compression}
+              options={[
+                { label: "LZ4", value: C.LZ4 },
+                { label: "Zstandard", value: C.ZSTD },
+                { label: "Gzip", value: C.GZIP },
+                { label: "Deflate", value: C.DEFLATE },
+                { label: "Brotli", value: C.BR },
+                { label: "None", value: C.NONE },
+              ]}
+              onChange={(next) => {
+                value.compression = next;
+                update();
+              }}
+            />
+            <DurationField
+              label="Timeout"
+              description="Per insert."
+              value={value.timeout}
+              onChange={(next) => {
+                value.timeout = next;
+                update();
+              }}
+            />
+          </Grid>
+          <ToggleList>
+            <ToggleRow
+              label="Asynchronous inserts"
+              description="The server buffers rows and flushes them in the background."
+              checked={value.asyncInsert}
+              onChange={(checked) => {
+                value.asyncInsert = checked;
+                update();
+              }}
+            />
+          </ToggleList>
+        </AdvancedGroup>
+        <AdvancedGroup title="TLS">
+          <Grid>
+            <TransportSelect
+              value={mode}
+              defaultMode="verify"
+              description="Applies to secure endpoints, such as https:// or port 9440."
+              onChange={(next) => {
+                value.tls = applyTransport(value.tls, next, () =>
+                  EnterpriseP.CollectorExporter_Spec_Clickhouse_TLS.create(),
+                );
+                update();
+              }}
+            />
+          </Grid>
+          {mode === "skip" && <SkipVerifyWarning />}
+          {mode !== "plaintext" && (
+            <CertificateFields
+              tls={value.tls}
+              create={() =>
+                EnterpriseP.CollectorExporter_Spec_Clickhouse_TLS.create()
+              }
+              onChange={(tls) => {
+                value.tls = tls;
+                update();
+              }}
+            />
+          )}
+        </AdvancedGroup>
+        <AdvancedGroup title="Connection parameters">
+          <KeyValueList
+            label="Parameters"
+            description="Extra connection string options. Set the username and password above instead."
+            addLabel="Add parameter"
+            keyPlaceholder="dial_timeout"
+            valuePlaceholder="10s"
+            items={value.connectionParams}
+            make={() =>
+              EnterpriseP.CollectorExporter_Spec_Clickhouse_ConnectionParam.create()
+            }
+            keyError={(key, index) => {
+              const trimmed = key.trim().toLowerCase();
+              if (!trimmed) return "Required";
+              if (trimmed === "username" || trimmed === "password")
+                return "Set it above";
+              return value.connectionParams.findIndex(
+                (item) => item.key.trim().toLowerCase() === trimmed,
+              ) !== index
+                ? "Duplicate"
+                : undefined;
+            }}
+            onUpdate={update}
+          />
+        </AdvancedGroup>
+      </Advanced>
+    </>
+  );
+};
+
+type ElasticMode = "url" | "nodes" | "cloud";
+
+const ElasticsearchForm = (props: {
+  value: EnterpriseP.CollectorExporter_Spec_Elasticsearch;
+  update: Update;
+}) => {
+  const { value, update } = props;
+  const C = EnterpriseP.CollectorExporter_Spec_Elasticsearch_Compression;
+  const [mode, setMode] = React.useState<ElasticMode>(() =>
+    value.cloudID ? "cloud" : value.endpoints.length > 0 ? "nodes" : "url",
+  );
+  const stash = React.useRef<{
+    endpoint: string;
+    endpoints: string[];
+    cloudID: string;
+  }>({
+    endpoint: "",
+    endpoints: [],
+    cloudID: "",
+  });
+  const authStash = React.useRef<
+    Partial<
+      Record<string, EnterpriseP.CollectorExporter_Spec_Elasticsearch_Auth>
+    >
+  >({});
+  const auth = value.auth?.type;
+  const authMethod = auth?.oneofKind ?? "none";
+
+  const changeMode = (next: ElasticMode) => {
+    stash.current = {
+      endpoint: value.endpoint || stash.current.endpoint,
+      endpoints: value.endpoints.length
+        ? value.endpoints
+        : stash.current.endpoints,
+      cloudID: value.cloudID || stash.current.cloudID,
+    };
+    value.endpoint = next === "url" ? stash.current.endpoint : "";
+    value.endpoints = next === "nodes" ? [...stash.current.endpoints] : [];
+    value.cloudID = next === "cloud" ? stash.current.cloudID : "";
+    setMode(next);
+    update();
+  };
+
+  const changeAuth = (next: string) => {
+    if (value.auth) authStash.current[authMethod] = structuredClone(value.auth);
+    if (next === "none") {
+      value.auth = undefined;
+    } else {
+      value.auth =
+        authStash.current[next] ??
+        EnterpriseP.CollectorExporter_Spec_Elasticsearch_Auth.create({
+          type:
+            next === "basic"
+              ? {
+                  oneofKind: "basic",
+                  basic: { user: "", password: toSecret("") },
+                }
+              : { oneofKind: "apiKey", apiKey: toSecret("") },
+        });
+    }
+    update();
+  };
+
+  const indexError = (index: string) => {
+    if (!index) return undefined;
+    if (/[\\/*?"<>| ,#]/.test(index)) return "Contains invalid characters";
+    if (/^[-_+]/.test(index)) return "Must not start with -, _ or +";
+    return undefined;
+  };
+
+  return (
+    <>
+      <FormSection
+        icon={Network}
+        title="Connection"
+        description="A self-managed cluster or an Elastic Cloud deployment."
+      >
+        <ChoiceGroup
+          label="Connect with"
+          value={mode}
+          onChange={changeMode}
+          options={[
+            {
+              value: "url",
+              label: "Cluster URL",
+              hint: "One address, e.g. a load balancer",
+            },
+            {
+              value: "nodes",
+              label: "Node URLs",
+              hint: "Spread requests over nodes",
+            },
+            {
+              value: "cloud",
+              label: "Elastic Cloud",
+              hint: "Deployment Cloud ID",
+            },
+          ]}
+        />
+        {mode === "url" && (
+          <TextInput
+            required
+            type="url"
+            label="URL"
+            placeholder="https://elasticsearch.example.com:9200"
+            value={value.endpoint}
+            error={urlError(value.endpoint)}
+            onChange={(event) => {
+              value.endpoint = event.currentTarget.value.trim();
+              update();
+            }}
+          />
+        )}
+        {mode === "nodes" && (
+          <TagsInput
+            required
+            label="Node URLs"
+            description="Press Enter or comma after each URL. Up to 32."
+            placeholder={
+              value.endpoints.length ? "" : "https://es-1.example.com:9200"
+            }
+            splitChars={[",", " "]}
+            acceptValueOnBlur
+            maxTags={32}
+            value={value.endpoints}
+            error={value.endpoints.map((item) => urlError(item)).find(Boolean)}
+            onChange={(next) => {
+              value.endpoints = next;
+              update();
+            }}
+          />
+        )}
+        {mode === "cloud" && (
+          <TextInput
+            required
+            label="Cloud ID"
+            description="From the deployment page of the Elastic Cloud console."
+            placeholder="my-deployment:ZXUtd2VzdC0x..."
+            value={value.cloudID}
+            onChange={(event) => {
+              value.cloudID = event.currentTarget.value.trim();
+              update();
+            }}
+          />
+        )}
+      </FormSection>
+
+      <AuthSection>
+        <ChoiceGroup
+          label="Method"
+          value={authMethod}
+          onChange={changeAuth}
+          options={[
+            { value: "none", label: "None", hint: "Security disabled" },
+            { value: "apiKey", label: "API key", hint: "Recommended" },
+            { value: "basic", label: "Basic", hint: "Username and password" },
+          ]}
+        />
+        {auth?.oneofKind === "apiKey" && (
+          <Grid>
+            <SecretField
+              required
+              label="API key"
+              description="Secret holding the encoded API key."
+              value={secretName(auth.apiKey)}
+              onChange={(name) => {
+                auth.apiKey = toSecret(name);
+                update();
+              }}
+            />
+          </Grid>
+        )}
+        {auth?.oneofKind === "basic" && (
+          <Grid>
+            <TextInput
+              required
+              label="Username"
+              description="An Elasticsearch user allowed to write the indexes."
+              placeholder="elastic"
+              value={auth.basic.user}
+              error={auth.basic.user.trim() ? undefined : "Required"}
+              onChange={(event) => {
+                auth.basic.user = event.currentTarget.value;
+                update();
+              }}
+            />
+            <SecretField
+              required
+              label="Password"
+              description="Secret holding the password."
+              value={secretName(auth.basic.password)}
+              onChange={(name) => {
+                auth.basic.password = toSecret(name);
+                update();
+              }}
+            />
+          </Grid>
+        )}
+      </AuthSection>
+
+      <FormSection
+        icon={Route}
+        title="Indexes"
+        description="Leave empty to use the default data streams."
+      >
+        <Grid cols={3}>
+          <TextInput
+            label="Logs index"
+            placeholder="logs-generic-default"
+            value={value.logsIndex}
+            error={indexError(value.logsIndex)}
+            onChange={(event) => {
+              value.logsIndex = event.currentTarget.value.trim();
+              update();
+            }}
+          />
+          <TextInput
+            label="Metrics index"
+            placeholder="metrics-generic-default"
+            value={value.metricsIndex}
+            error={indexError(value.metricsIndex)}
+            onChange={(event) => {
+              value.metricsIndex = event.currentTarget.value.trim();
+              update();
+            }}
+          />
+          <TextInput
+            label="Ingest pipeline"
+            placeholder="None"
+            value={value.pipeline}
+            onChange={(event) => {
+              value.pipeline = event.currentTarget.value.trim();
+              update();
+            }}
+          />
+        </Grid>
+      </FormSection>
+
+      <Advanced
+        summary="Headers, compression, timeout and certificate verification."
+        count={countSet(
+          value.headers,
+          value.compression,
+          value.timeout,
+          value.tls?.insecureSkipVerify,
+        )}
+      >
+        <AdvancedGroup title="Headers">
+          <KeyValueList
+            label="Request headers"
+            description="Sent with every bulk request."
+            addLabel="Add header"
+            keyPlaceholder="X-Elastic-Product-Origin"
+            valuePlaceholder="value"
+            items={value.headers}
+            make={() =>
+              EnterpriseP.CollectorExporter_Spec_Elasticsearch_Header.create()
+            }
+            keyError={headerKeyError(value.headers)}
+            onUpdate={update}
+          />
+        </AdvancedGroup>
+        <AdvancedGroup title="Requests">
+          <Grid>
+            <EnumField
+              label="Compression"
+              description="Gzip when not set."
+              value={value.compression}
+              options={[
+                { label: "Gzip", value: C.GZIP },
+                { label: "None", value: C.NONE },
+              ]}
+              onChange={(next) => {
+                value.compression = next;
+                update();
+              }}
+            />
+            <DurationField
+              label="Timeout"
+              description="Per bulk request."
+              value={value.timeout}
+              onChange={(next) => {
+                value.timeout = next;
+                update();
+              }}
+            />
+          </Grid>
+          <ToggleList>
+            <ToggleRow
+              label="Skip certificate verification"
+              description="Accept any certificate presented by the cluster."
+              checked={value.tls?.insecureSkipVerify ?? false}
+              onChange={(checked) => {
+                value.tls = checked
+                  ? EnterpriseP.CollectorExporter_Spec_Elasticsearch_TLS.create(
+                      { insecureSkipVerify: true },
+                    )
+                  : undefined;
+                update();
+              }}
+            />
+          </ToggleList>
+          {value.tls?.insecureSkipVerify && <SkipVerifyWarning />}
+        </AdvancedGroup>
+      </Advanced>
+    </>
+  );
+};
+
+const KafkaForm = (props: {
+  value: EnterpriseP.CollectorExporter_Spec_Kafka;
+  update: Update;
+}) => {
+  const { value, update } = props;
+  const Enc = EnterpriseP.CollectorExporter_Spec_Kafka_Encoding;
+  const PC = EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression;
+  const M = EnterpriseP.CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism;
+  const saslStash = React.useRef<
+    EnterpriseP.CollectorExporter_Spec_Kafka_Auth | undefined
+  >(undefined);
+  const mode = transportMode(value.tls, true);
+  const sasl =
+    value.auth?.type.oneofKind === "sasl" ? value.auth.type.sasl : undefined;
+
+  const signal = (key: "logs" | "metrics") => {
+    if (!value[key])
+      value[key] = EnterpriseP.CollectorExporter_Spec_Kafka_Signal.create();
+    return value[key]!;
+  };
+  const pruneSignal = (key: "logs" | "metrics") => {
+    const s = value[key];
+    if (s && !s.topic && !s.encoding) value[key] = undefined;
+  };
+  const producer = () => {
+    if (!value.producer) {
+      value.producer = EnterpriseP.CollectorExporter_Spec_Kafka_Producer.create(
+        { requiredAcks: 1 },
+      );
+    }
+    return value.producer;
+  };
+  const pruneProducer = () => {
+    const p = value.producer;
+    if (
+      p &&
+      !p.maxMessageBytes &&
+      !p.flushMaxMessages &&
+      !p.compression &&
+      !p.allowAutoTopicCreation &&
+      !p.linger &&
+      p.requiredAcks === 1
+    ) {
+      value.producer = undefined;
+    }
+  };
+
+  const signalFields = (
+    key: "logs" | "metrics",
+    label: string,
+    placeholder: string,
+  ) => (
+    <Grid>
+      <TextInput
+        label={`${label} topic`}
+        description={`${placeholder} when not set.`}
+        placeholder={placeholder}
+        value={value[key]?.topic ?? ""}
+        onChange={(event) => {
+          signal(key).topic = event.currentTarget.value.trim();
+          pruneSignal(key);
+          update();
+        }}
+      />
+      <EnumField
+        label={`${label} encoding`}
+        description="OTLP Protobuf when not set."
+        value={value[key]?.encoding ?? 0}
+        options={[
+          { label: "OTLP Protobuf", value: Enc.OTLP_PROTO },
+          { label: "OTLP JSON", value: Enc.OTLP_JSON },
+          ...(key === "logs"
+            ? [{ label: "Raw log body", value: Enc.RAW }]
+            : []),
+        ]}
+        onChange={(next) => {
+          signal(key).encoding = next;
+          pruneSignal(key);
+          update();
+        }}
+      />
+    </Grid>
+  );
+
+  return (
+    <>
+      <FormSection
+        icon={Network}
+        title="Connection"
+        description="The bootstrap brokers of the Kafka cluster."
+      >
+        <TagsInput
+          required
+          label="Brokers"
+          description="host:port of one or more brokers. Press Enter or comma after each."
+          placeholder={value.brokers.length ? "" : "kafka-0.example.com:9092"}
+          splitChars={[",", " "]}
+          acceptValueOnBlur
+          maxTags={64}
+          value={value.brokers}
+          error={
+            value.brokers.length === 0 ? "Add at least one broker" : undefined
+          }
+          onChange={(next) => {
+            value.brokers = next;
+            update();
+          }}
+        />
+        <Grid>
+          <TransportSelect
+            value={mode}
+            defaultMode="plaintext"
+            description="Most managed Kafka services require TLS."
+            onChange={(next) => {
+              value.tls =
+                next === "plaintext"
+                  ? undefined
+                  : EnterpriseP.CollectorExporter_Spec_Kafka_TLS.create({
+                      insecureSkipVerify: next === "skip",
+                    });
+              update();
+            }}
+          />
+          <TextInput
+            label="Protocol version"
+            description="Kafka version the brokers speak. 2.1.0 when not set."
+            placeholder="2.1.0"
+            value={value.protocolVersion}
+            onChange={(event) => {
+              value.protocolVersion = event.currentTarget.value.trim();
+              update();
+            }}
+          />
+        </Grid>
+        {mode === "skip" && <SkipVerifyWarning />}
+      </FormSection>
+
+      <AuthSection>
+        <ChoiceGroup
+          label="Method"
+          value={sasl ? "sasl" : "none"}
+          onChange={(next) => {
+            if (next === "none") {
+              saslStash.current = value.auth;
+              value.auth = undefined;
+            } else {
+              value.auth =
+                saslStash.current ??
+                EnterpriseP.CollectorExporter_Spec_Kafka_Auth.create({
+                  type: {
+                    oneofKind: "sasl",
+                    sasl: {
+                      username: "",
+                      password: toSecret(""),
+                      mechanism: M.SCRAM_SHA_512,
+                    },
+                  },
+                });
+            }
+            update();
+          }}
+          options={[
+            { value: "none", label: "None", hint: "Unauthenticated listener" },
+            { value: "sasl", label: "SASL", hint: "PLAIN or SCRAM" },
+          ]}
+        />
+        {sasl && (
+          <Grid cols={3}>
+            <TextInput
+              required
+              label="Username"
+              description="The SASL user of the Collector."
+              value={sasl.username}
+              error={sasl.username.trim() ? undefined : "Required"}
+              onChange={(event) => {
+                sasl.username = event.currentTarget.value;
+                update();
+              }}
+            />
+            <SecretField
+              required
+              label="Password"
+              description="Secret holding the password."
+              value={secretName(sasl.password)}
+              onChange={(name) => {
+                sasl.password = toSecret(name);
+                update();
+              }}
+            />
+            <EnumField
+              label="Mechanism"
+              description="PLAIN when not set."
+              value={sasl.mechanism}
+              options={[
+                { label: "SCRAM-SHA-512", value: M.SCRAM_SHA_512 },
+                { label: "SCRAM-SHA-256", value: M.SCRAM_SHA_256 },
+                { label: "PLAIN", value: M.PLAIN },
+              ]}
+              onChange={(next) => {
+                sasl.mechanism = next;
+                update();
+              }}
+            />
+          </Grid>
+        )}
+        {sasl?.mechanism === M.PLAIN && mode === "plaintext" && (
+          <Callout title="The password is sent in clear text">
+            SASL/PLAIN over a plaintext connection exposes the password. Enable
+            TLS or use SCRAM.
+          </Callout>
+        )}
+      </AuthSection>
+
+      <FormSection
+        icon={Route}
+        title="Topics"
+        description="Where each signal is produced and how its records are encoded."
+      >
+        {signalFields("logs", "Logs", "otlp_logs")}
+        {signalFields("metrics", "Metrics", "otlp_metrics")}
+      </FormSection>
+
+      <Advanced
+        summary="Producer, record headers, partitioning, client ID and timeouts."
+        count={countSet(
+          value.producer,
+          value.recordHeaders,
+          value.partitionLogsByResourceAttributes,
+          value.partitionMetricsByResourceAttributes,
+          value.clientID,
+          value.timeout,
+          value.connIdleTimeout,
+        )}
+      >
+        <AdvancedGroup title="Producer">
+          <Grid cols={3}>
+            <Select
+              label="Acknowledgements"
+              description="Broker confirmations required per write."
+              allowDeselect={false}
+              data={[
+                { value: "1", label: "Leader only" },
+                { value: "-1", label: "All in-sync replicas" },
+                { value: "0", label: "None" },
+              ]}
+              value={String(value.producer?.requiredAcks ?? 1)}
+              onChange={(next) => {
+                producer().requiredAcks = Number(next ?? 1);
+                pruneProducer();
+                update();
+              }}
+            />
+            <EnumField
+              label="Compression"
+              description="None when not set."
+              value={value.producer?.compression ?? 0}
+              options={[
+                { label: "None", value: PC.NONE },
+                { label: "Gzip", value: PC.GZIP },
+                { label: "Snappy", value: PC.SNAPPY },
+                { label: "LZ4", value: PC.LZ4 },
+                { label: "Zstandard", value: PC.ZSTD },
+              ]}
+              onChange={(next) => {
+                producer().compression = next;
+                pruneProducer();
+                update();
+              }}
+            />
+            <NumberField
+              label="Maximum message size"
+              description="Up to 100 MiB."
+              suffix=" bytes"
+              max={100 * 1024 * 1024}
+              value={value.producer?.maxMessageBytes ?? 0}
+              onChange={(next) => {
+                producer().maxMessageBytes = next;
+                pruneProducer();
+                update();
+              }}
+            />
+            <NumberField
+              label="Flush after messages"
+              description="Records buffered before a flush."
+              value={value.producer?.flushMaxMessages ?? 0}
+              onChange={(next) => {
+                producer().flushMaxMessages = next;
+                pruneProducer();
+                update();
+              }}
+            />
+            <DurationField
+              label="Linger"
+              description="Wait to batch records, up to 1 minute."
+              value={value.producer?.linger}
+              onChange={(next) => {
+                producer().linger = next;
+                pruneProducer();
+                update();
+              }}
+            />
+          </Grid>
+          {value.producer?.requiredAcks === 0 && (
+            <Callout title="Writes are not confirmed">
+              Records are lost silently when a broker fails.
+            </Callout>
+          )}
+          <ToggleList>
+            <ToggleRow
+              label="Create missing topics"
+              description="Let the brokers create topics that do not exist yet."
+              checked={value.producer?.allowAutoTopicCreation ?? false}
+              onChange={(checked) => {
+                producer().allowAutoTopicCreation = checked;
+                pruneProducer();
+                update();
+              }}
+            />
+          </ToggleList>
+        </AdvancedGroup>
+        <AdvancedGroup title="Partitioning">
+          <ToggleList>
+            <ToggleRow
+              label="Partition logs by resource"
+              description="Logs of the same resource land on the same partition."
+              checked={value.partitionLogsByResourceAttributes}
+              onChange={(checked) => {
+                value.partitionLogsByResourceAttributes = checked;
+                update();
+              }}
+            />
+            <ToggleRow
+              label="Partition metrics by resource"
+              description="Metrics of the same resource land on the same partition."
+              checked={value.partitionMetricsByResourceAttributes}
+              onChange={(checked) => {
+                value.partitionMetricsByResourceAttributes = checked;
+                update();
+              }}
+            />
+          </ToggleList>
+        </AdvancedGroup>
+        <AdvancedGroup title="Record headers">
+          <KeyValueList
+            label="Headers"
+            description="Added to every produced record."
+            addLabel="Add header"
+            keyPlaceholder="source"
+            valuePlaceholder="octelium"
+            items={value.recordHeaders}
+            make={() =>
+              EnterpriseP.CollectorExporter_Spec_Kafka_Header.create()
+            }
+            keyError={headerKeyError(value.recordHeaders, {
+              allowAuthorization: true,
+            })}
+            onUpdate={update}
+          />
+        </AdvancedGroup>
+        <AdvancedGroup title="Client">
+          <Grid cols={3}>
+            <TextInput
+              label="Client ID"
+              description="Reported to the brokers."
+              placeholder="otel-collector"
+              value={value.clientID}
+              onChange={(event) => {
+                value.clientID = event.currentTarget.value.trim();
+                update();
+              }}
+            />
+            <DurationField
+              label="Timeout"
+              description="Per export."
+              value={value.timeout}
+              onChange={(next) => {
+                value.timeout = next;
+                update();
+              }}
+            />
+            <DurationField
+              label="Idle connection timeout"
+              description="Close idle broker connections after this."
+              value={value.connIdleTimeout}
+              onChange={(next) => {
+                value.connIdleTimeout = next;
+                update();
+              }}
+            />
+          </Grid>
+        </AdvancedGroup>
+      </Advanced>
+    </>
+  );
+};
+
+const DATADOG_SITES = [
+  { value: "datadoghq.com", label: "US1 · datadoghq.com" },
+  { value: "us3.datadoghq.com", label: "US3 · us3.datadoghq.com" },
+  { value: "us5.datadoghq.com", label: "US5 · us5.datadoghq.com" },
+  { value: "datadoghq.eu", label: "EU1 · datadoghq.eu" },
+  { value: "ap1.datadoghq.com", label: "AP1 · ap1.datadoghq.com" },
+  { value: "ap2.datadoghq.com", label: "AP2 · ap2.datadoghq.com" },
+  { value: "ddog-gov.com", label: "US1-FED · ddog-gov.com" },
+];
+
+const withCurrent = (
+  options: { value: string; label: string }[],
+  current: string,
+) =>
+  current && !options.some((option) => option.value === current)
+    ? [...options, { value: current, label: current }]
+    : options;
+
+const DatadogForm = (props: {
+  value: EnterpriseP.CollectorExporter_Spec_Datadog;
+  update: Update;
+}) => {
+  const { value, update } = props;
+  const api = () => {
+    if (!value.api)
+      value.api = EnterpriseP.CollectorExporter_Spec_Datadog_API.create();
+    return value.api;
+  };
+  const metrics = () => {
+    if (!value.metrics)
+      value.metrics =
+        EnterpriseP.CollectorExporter_Spec_Datadog_Metrics.create();
+    return value.metrics;
+  };
+  const logs = () => {
+    if (!value.logs) {
+      value.logs = EnterpriseP.CollectorExporter_Spec_Datadog_Logs.create({
+        useCompression: true,
+      });
+    }
+    return value.logs;
+  };
+  const prune = () => {
+    const m = value.metrics;
+    if (
+      m &&
+      !m.endpoint &&
+      !m.resourceAttributesAsTags &&
+      !m.instrumentationScopeMetadataAsTags
+    ) {
+      value.metrics = undefined;
+    }
+    const l = value.logs;
+    if (
+      l &&
+      !l.endpoint &&
+      l.useCompression &&
+      !l.compressionLevel &&
+      !l.batchWait
+    ) {
+      value.logs = undefined;
+    }
+  };
+  const hostMetadataEnabled = value.hostMetadata?.enabled ?? true;
+
+  return (
+    <>
+      <FormSection
+        icon={KeyRound}
+        title="Account"
+        description="The Datadog site of your organization and an API key of it."
+      >
+        <Grid>
+          <Select
+            label="Site"
+            description="Shown in the URL you use to sign in to Datadog."
+            placeholder="US1 · datadoghq.com"
+            clearable
+            data={withCurrent(DATADOG_SITES, value.api?.site ?? "")}
+            value={value.api?.site || null}
+            onChange={(next) => {
+              api().site = next ?? "";
+              update();
+            }}
+          />
+          <SecretField
+            required
+            label="API key"
+            description="Secret holding a Datadog API key, not an application key."
+            value={secretName(value.api?.key)}
+            onChange={(name) => {
+              api().key = toSecret(name);
+              update();
+            }}
+          />
+        </Grid>
+        <SecretsHint />
+      </FormSection>
+
+      <Advanced
+        summary="Hostname, intake URLs, tags, log batching and host metadata."
+        count={countSet(
+          value.hostname,
+          value.api?.failOnInvalidKey,
+          value.hostnameDetectionTimeout,
+          value.metrics,
+          value.logs,
+          value.hostMetadata,
+        )}
+      >
+        <AdvancedGroup title="Host">
+          <Grid>
+            <TextInput
+              label="Hostname"
+              description="Attributed to the telemetry. Detected when not set."
+              placeholder="Detected automatically"
+              value={value.hostname}
+              onChange={(event) => {
+                value.hostname = event.currentTarget.value.trim();
+                update();
+              }}
+            />
+            <DurationField
+              label="Hostname detection timeout"
+              description="How long detection may take."
+              value={value.hostnameDetectionTimeout}
+              onChange={(next) => {
+                value.hostnameDetectionTimeout = next;
+                update();
+              }}
+            />
+          </Grid>
+          <ToggleList>
+            <ToggleRow
+              label="Fail on an invalid API key"
+              description="Stop the Collector instead of only logging a warning."
+              checked={value.api?.failOnInvalidKey ?? false}
+              onChange={(checked) => {
+                api().failOnInvalidKey = checked;
+                update();
+              }}
+            />
+            <ToggleRow
+              label="Report host metadata"
+              description="Send the host tags and metadata shown in the infrastructure list."
+              checked={hostMetadataEnabled}
+              onChange={(checked) => {
+                value.hostMetadata = checked
+                  ? undefined
+                  : EnterpriseP.CollectorExporter_Spec_Datadog_HostMetadata.create(
+                      { enabled: false },
+                    );
+                update();
+              }}
+            >
+              <Grid>
+                <DurationField
+                  label="Reporting period"
+                  description="Between 5 minutes and 24 hours. 30 minutes by default."
+                  value={value.hostMetadata?.reporterPeriod}
+                  onChange={(next) => {
+                    value.hostMetadata = next
+                      ? EnterpriseP.CollectorExporter_Spec_Datadog_HostMetadata.create(
+                          {
+                            enabled: true,
+                            reporterPeriod: next,
+                          },
+                        )
+                      : undefined;
+                    update();
+                  }}
+                />
+              </Grid>
+            </ToggleRow>
+          </ToggleList>
+        </AdvancedGroup>
+        <AdvancedGroup title="Metrics">
+          <Grid>
+            <TextInput
+              type="url"
+              label="Metrics intake URL"
+              description="Derived from the site when not set."
+              placeholder="https://api.datadoghq.com"
+              value={value.metrics?.endpoint ?? ""}
+              error={urlError(value.metrics?.endpoint ?? "")}
+              onChange={(event) => {
+                metrics().endpoint = event.currentTarget.value.trim();
+                prune();
+                update();
+              }}
+            />
+          </Grid>
+          <ToggleList>
+            <ToggleRow
+              label="Resource attributes as tags"
+              checked={value.metrics?.resourceAttributesAsTags ?? false}
+              onChange={(checked) => {
+                metrics().resourceAttributesAsTags = checked;
+                prune();
+                update();
+              }}
+            />
+            <ToggleRow
+              label="Instrumentation scope as tags"
+              description="Tag metrics with the scope name and version."
+              checked={
+                value.metrics?.instrumentationScopeMetadataAsTags ?? false
+              }
+              onChange={(checked) => {
+                metrics().instrumentationScopeMetadataAsTags = checked;
+                prune();
+                update();
+              }}
+            />
+          </ToggleList>
+        </AdvancedGroup>
+        <AdvancedGroup title="Logs">
+          <Grid>
+            <TextInput
+              type="url"
+              label="Logs intake URL"
+              description="Derived from the site when not set."
+              placeholder="https://http-intake.logs.datadoghq.com"
+              value={value.logs?.endpoint ?? ""}
+              error={urlError(value.logs?.endpoint ?? "")}
+              onChange={(event) => {
+                logs().endpoint = event.currentTarget.value.trim();
+                prune();
+                update();
+              }}
+            />
+            <DurationField
+              label="Batch wait"
+              description="Maximum wait before a batch is sent."
+              value={value.logs?.batchWait}
+              onChange={(next) => {
+                logs().batchWait = next;
+                prune();
+                update();
+              }}
+            />
+          </Grid>
+          <ToggleList>
+            <ToggleRow
+              label="Compress log payloads"
+              checked={value.logs?.useCompression ?? true}
+              onChange={(checked) => {
+                logs().useCompression = checked;
+                prune();
+                update();
+              }}
+            >
+              <Grid>
+                <NumberField
+                  label="Compression level"
+                  description="1 (fastest) to 9 (smallest)."
+                  max={9}
+                  value={value.logs?.compressionLevel ?? 0}
+                  onChange={(next) => {
+                    logs().compressionLevel = next;
+                    prune();
+                    update();
+                  }}
+                />
+              </Grid>
+            </ToggleRow>
+          </ToggleList>
+        </AdvancedGroup>
+      </Advanced>
+    </>
+  );
+};
+
+const SplunkForm = (props: {
+  value: EnterpriseP.CollectorExporter_Spec_Splunk;
+  update: Update;
+}) => {
+  const { value, update } = props;
+  return (
+    <>
+      <FormSection
+        icon={Network}
+        title="HTTP Event Collector"
+        description="The HEC endpoint and a token allowed to write to the index."
+      >
+        <TextInput
+          required
+          type="url"
+          label="Endpoint"
+          placeholder="https://splunk.example.com:8088/services/collector"
+          value={value.endpoint}
+          error={urlError(value.endpoint)}
+          onChange={(event) => {
+            value.endpoint = event.currentTarget.value.trim();
+            update();
+          }}
+        />
+        <Grid>
+          <SecretField
+            required
+            label="HEC token"
+            description="Secret holding the HTTP Event Collector token."
+            value={secretName(value.token)}
+            onChange={(name) => {
+              value.token = toSecret(name);
+              update();
+            }}
+          />
+        </Grid>
+      </FormSection>
+
+      <FormSection
+        icon={Route}
+        title="Events"
+        description="Leave empty to use the defaults of the HEC token."
+      >
+        <Grid cols={3}>
+          <TextInput
+            label="Index"
+            placeholder="Token default"
+            value={value.index}
+            onChange={(event) => {
+              value.index = event.currentTarget.value.trim();
+              update();
+            }}
+          />
+          <TextInput
+            label="Source"
+            placeholder="Token default"
+            value={value.source}
+            onChange={(event) => {
+              value.source = event.currentTarget.value;
+              update();
+            }}
+          />
+          <TextInput
+            label="Source type"
+            placeholder="Token default"
+            value={value.sourceType}
+            onChange={(event) => {
+              value.sourceType = event.currentTarget.value;
+              update();
+            }}
+          />
+        </Grid>
+      </FormSection>
+
+      <Advanced
+        summary="Metric format, compression, payload limits, timeout and TLS."
+        count={countSet(
+          value.useMultiMetricFormat,
+          value.disableCompression,
+          value.appName,
+          value.appVersion,
+          value.maxContentLengthLogs,
+          value.maxContentLengthMetrics,
+          value.maxIdleConns,
+          value.timeout,
+          value.tls?.insecureSkipVerify,
+        )}
+      >
+        <AdvancedGroup title="Payloads">
+          <ToggleList>
+            <ToggleRow
+              label="Multi-metric format"
+              description="Combine metrics that share dimensions into a single event."
+              checked={value.useMultiMetricFormat}
+              onChange={(checked) => {
+                value.useMultiMetricFormat = checked;
+                update();
+              }}
+            />
+            <ToggleRow
+              label="Compress payloads"
+              checked={!value.disableCompression}
+              onChange={(checked) => {
+                value.disableCompression = !checked;
+                update();
+              }}
+            />
+          </ToggleList>
+          <Grid>
+            <NumberField
+              label="Maximum log payload"
+              description="Per request."
+              suffix=" bytes"
+              value={value.maxContentLengthLogs}
+              onChange={(next) => {
+                value.maxContentLengthLogs = next;
+                update();
+              }}
+            />
+            <NumberField
+              label="Maximum metric payload"
+              description="Per request."
+              suffix=" bytes"
+              value={value.maxContentLengthMetrics}
+              onChange={(next) => {
+                value.maxContentLengthMetrics = next;
+                update();
+              }}
+            />
+          </Grid>
+        </AdvancedGroup>
+        <AdvancedGroup title="Application">
+          <Grid>
+            <TextInput
+              label="App name"
+              description="Reported to Splunk."
+              placeholder="OpenTelemetry Collector"
+              value={value.appName}
+              onChange={(event) => {
+                value.appName = event.currentTarget.value;
+                update();
+              }}
+            />
+            <TextInput
+              label="App version"
+              description="Reported to Splunk."
+              placeholder="Collector version"
+              value={value.appVersion}
+              onChange={(event) => {
+                value.appVersion = event.currentTarget.value;
+                update();
+              }}
+            />
+          </Grid>
+        </AdvancedGroup>
+        <AdvancedGroup title="Connection">
+          <Grid>
+            <DurationField
+              label="Timeout"
+              description="Per request, up to 5 minutes."
+              value={value.timeout}
+              onChange={(next) => {
+                value.timeout = next;
+                update();
+              }}
+            />
+            <NumberField
+              label="Idle connections"
+              description="Kept open to the endpoint, up to 10,000."
+              max={10000}
+              value={value.maxIdleConns}
+              onChange={(next) => {
+                value.maxIdleConns = next;
+                update();
+              }}
+            />
+          </Grid>
+          {value.endpoint.startsWith("https://") && (
+            <ToggleList>
+              <ToggleRow
+                label="Skip certificate verification"
+                description="Accept any certificate presented by the endpoint."
+                checked={value.tls?.insecureSkipVerify ?? false}
+                onChange={(checked) => {
+                  value.tls = checked
+                    ? EnterpriseP.CollectorExporter_Spec_Splunk_TLS.create({
+                        insecureSkipVerify: true,
+                      })
+                    : undefined;
+                  update();
+                }}
+              />
+            </ToggleList>
+          )}
+          {value.tls?.insecureSkipVerify && <SkipVerifyWarning />}
+        </AdvancedGroup>
+      </Advanced>
+    </>
+  );
+};
+
+const InfluxDBForm = (props: {
+  value: EnterpriseP.CollectorExporter_Spec_InfluxDB;
+  update: Update;
+}) => {
+  const { value, update } = props;
+  const S = EnterpriseP.CollectorExporter_Spec_InfluxDB_MetricsSchema;
+  const P = EnterpriseP.CollectorExporter_Spec_InfluxDB_Precision;
+  const v1 = value.v1Compatibility;
+
+  return (
+    <>
+      <FormSection
+        icon={Network}
+        title="Connection"
+        description="The InfluxDB server and the bucket that receives the telemetry."
+      >
+        <TextInput
+          required
+          type="url"
+          label="Endpoint"
+          placeholder="https://influxdb.example.com:8086"
+          value={value.endpoint}
+          error={urlError(value.endpoint)}
+          onChange={(event) => {
+            value.endpoint = event.currentTarget.value.trim();
+            update();
+          }}
+        />
+        <Grid cols={3}>
+          <TextInput
+            required
+            label="Organization"
+            description="Name of the organization that owns the bucket."
+            placeholder="my-org"
+            value={value.org}
+            error={value.org.trim() ? undefined : "Required"}
+            onChange={(event) => {
+              value.org = event.currentTarget.value;
+              update();
+            }}
+          />
+          <TextInput
+            required
+            label="Bucket"
+            description="Bucket that receives the points."
+            placeholder="telemetry"
+            value={value.bucket}
+            error={value.bucket.trim() ? undefined : "Required"}
+            onChange={(event) => {
+              value.bucket = event.currentTarget.value;
+              update();
+            }}
+          />
+          <SecretField
+            label="API token"
+            description="Secret holding a token with write access."
+            value={secretName(value.token)}
+            onChange={(name) => {
+              value.token = optionalSecret(name);
+              update();
+            }}
+          />
+        </Grid>
+      </FormSection>
+
+      <Advanced
+        summary="Metrics schema, precision, log tags, headers, payload limits and InfluxDB 1.x."
+        count={countSet(
+          value.metricsSchema,
+          value.precision,
+          value.logRecordDimensions,
+          value.headers,
+          value.payloadMaxLines,
+          value.payloadMaxBytes,
+          value.timeout,
+          value.v1Compatibility,
+        )}
+      >
+        <AdvancedGroup title="Points">
+          <Grid>
+            <EnumField
+              label="Metrics schema"
+              description="How metrics map to measurements."
+              value={value.metricsSchema}
+              options={[
+                {
+                  label: "Telegraf Prometheus v1, one measurement per metric",
+                  value: S.TELEGRAF_PROMETHEUS_V1,
+                },
+                {
+                  label: "Telegraf Prometheus v2, shared measurement",
+                  value: S.TELEGRAF_PROMETHEUS_V2,
+                },
+              ]}
+              onChange={(next) => {
+                value.metricsSchema = next;
+                update();
+              }}
+            />
+            <EnumField
+              label="Timestamp precision"
+              description="Nanoseconds when not set."
+              value={value.precision}
+              options={[
+                { label: "Nanoseconds", value: P.NS },
+                { label: "Microseconds", value: P.US },
+                { label: "Milliseconds", value: P.MS },
+                { label: "Seconds", value: P.S },
+              ]}
+              onChange={(next) => {
+                value.precision = next;
+                update();
+              }}
+            />
+          </Grid>
+          <TagsInput
+            label="Log attributes as tags"
+            description="Log record attributes written as tags instead of fields. Press Enter after each."
+            placeholder={value.logRecordDimensions.length ? "" : "service.name"}
+            splitChars={[",", " "]}
+            acceptValueOnBlur
+            maxTags={64}
+            value={value.logRecordDimensions}
+            onChange={(next) => {
+              value.logRecordDimensions = next;
+              update();
+            }}
+          />
+        </AdvancedGroup>
+        <AdvancedGroup title="Requests">
+          <Grid cols={3}>
+            <NumberField
+              label="Maximum lines"
+              description="Per request, up to 1,000,000."
+              max={1_000_000}
+              value={value.payloadMaxLines}
+              onChange={(next) => {
+                value.payloadMaxLines = next;
+                update();
+              }}
+            />
+            <NumberField
+              label="Maximum size"
+              description="Per request, up to 256 MiB."
+              suffix=" bytes"
+              max={256 * 1024 * 1024}
+              value={value.payloadMaxBytes}
+              onChange={(next) => {
+                value.payloadMaxBytes = next;
+                update();
+              }}
+            />
+            <DurationField
+              label="Timeout"
+              description="Per request."
+              value={value.timeout}
+              onChange={(next) => {
+                value.timeout = next;
+                update();
+              }}
+            />
+          </Grid>
+          <KeyValueList
+            label="Request headers"
+            description="Sent with every write request."
+            addLabel="Add header"
+            keyPlaceholder="X-Custom"
+            valuePlaceholder="value"
+            items={value.headers}
+            make={() =>
+              EnterpriseP.CollectorExporter_Spec_InfluxDB_Header.create()
+            }
+            keyError={headerKeyError(value.headers)}
+            onUpdate={update}
+          />
+        </AdvancedGroup>
+        <AdvancedGroup title="InfluxDB 1.x">
+          <ToggleList>
+            <ToggleRow
+              label="Write to InfluxDB 1.x"
+              description="Use a 1.x database instead of the organization and bucket."
+              checked={v1?.enabled ?? false}
+              onChange={(checked) => {
+                value.v1Compatibility = checked
+                  ? EnterpriseP.CollectorExporter_Spec_InfluxDB_V1Compatibility.create(
+                      {
+                        ...v1,
+                        enabled: true,
+                      },
+                    )
+                  : undefined;
+                update();
+              }}
+            >
+              {v1 && (
+                <Grid cols={3}>
+                  <TextInput
+                    required
+                    label="Database"
+                    description="The 1.x database that receives the points."
+                    value={v1.db}
+                    error={v1.db.trim() ? undefined : "Required"}
+                    onChange={(event) => {
+                      v1.db = event.currentTarget.value;
+                      update();
+                    }}
+                  />
+                  <TextInput
+                    label="Username"
+                    description="Leave empty without authentication."
+                    value={v1.username}
+                    onChange={(event) => {
+                      v1.username = event.currentTarget.value;
+                      update();
+                    }}
+                  />
+                  <SecretField
+                    label="Password"
+                    description="Secret holding the password."
+                    value={secretName(v1.password)}
+                    onChange={(name) => {
+                      v1.password = optionalSecret(name);
+                      update();
+                    }}
+                  />
+                </Grid>
+              )}
+            </ToggleRow>
+          </ToggleList>
+        </AdvancedGroup>
+      </Advanced>
+    </>
+  );
+};
+
+const LOGZIO_REGIONS = [
+  { value: "us", label: "United States · us" },
+  { value: "eu", label: "Europe · eu" },
+  { value: "uk", label: "United Kingdom · uk" },
+  { value: "ca", label: "Canada · ca" },
+  { value: "au", label: "Australia · au" },
+];
+
+const LogzioForm = (props: {
+  value: EnterpriseP.CollectorExporter_Spec_Logzio;
+  update: Update;
+}) => {
+  const { value, update } = props;
+  return (
+    <>
+      <FormSection
+        icon={KeyRound}
+        title="Account"
+        description="The region of your Logz.io account and its log shipping token. Logs only."
+      >
+        <Grid>
+          <SecretField
+            required
+            label="Shipping token"
+            description="Secret holding the logs shipping token."
+            value={secretName(value.token)}
+            onChange={(name) => {
+              value.token = toSecret(name);
+              update();
+            }}
+          />
+          <Select
+            label="Region"
+            description="Region of the account. United States when not set."
+            placeholder="United States · us"
+            clearable
+            data={withCurrent(LOGZIO_REGIONS, value.region)}
+            value={value.region || null}
+            onChange={(next) => {
+              value.region = next ?? "";
+              update();
+            }}
+          />
+        </Grid>
+        <SecretsHint />
+      </FormSection>
+
+      <Advanced
+        summary="Listener URL and timeout."
+        count={countSet(value.endpoint, value.timeout)}
+      >
+        <AdvancedGroup title="Delivery">
+          <Grid>
+            <TextInput
+              type="url"
+              label="Listener URL"
+              description="Replaces the URL derived from the region."
+              placeholder="https://listener.logz.io:8053"
+              value={value.endpoint}
+              error={urlError(value.endpoint)}
+              onChange={(event) => {
+                value.endpoint = event.currentTarget.value.trim();
+                update();
+              }}
+            />
+            <DurationField
+              label="Timeout"
+              description="Per request, up to 5 minutes."
+              value={value.timeout}
+              onChange={(next) => {
+                value.timeout = next;
+                update();
+              }}
+            />
+          </Grid>
+        </AdvancedGroup>
+      </Advanced>
+    </>
+  );
+};
+
+const AzureMonitorForm = (props: {
+  value: EnterpriseP.CollectorExporter_Spec_AzureMonitor;
+  update: Update;
+}) => {
+  const { value, update } = props;
+  const mode =
+    value.instrumentationKey && !value.connectionString ? "key" : "connection";
+
+  return (
+    <>
+      <FormSection
+        icon={KeyRound}
+        title="Application Insights resource"
+        description="Copy the credential from the Overview page of the resource."
+      >
+        <ChoiceGroup
+          label="Credential"
+          value={mode}
+          onChange={(next) => {
+            if (next === "key") {
+              value.instrumentationKey = toSecret(
+                secretName(value.instrumentationKey),
+              );
+              value.connectionString = undefined;
+            } else {
+              value.connectionString = toSecret(
+                secretName(value.connectionString),
+              );
+              value.instrumentationKey = undefined;
+            }
+            update();
+          }}
+          options={[
+            {
+              value: "connection",
+              label: "Connection string",
+              hint: "Recommended, includes the endpoints",
+            },
+            { value: "key", label: "Instrumentation key", hint: "Legacy" },
+          ]}
+        />
+        <Grid>
+          {mode === "connection" ? (
+            <SecretField
+              required
+              label="Connection string"
+              description="Secret holding the connection string."
+              value={secretName(value.connectionString)}
+              onChange={(name) => {
+                value.connectionString = toSecret(name);
+                update();
+              }}
+            />
+          ) : (
+            <SecretField
+              required
+              label="Instrumentation key"
+              description="Secret holding the instrumentation key."
+              value={secretName(value.instrumentationKey)}
+              onChange={(name) => {
+                value.instrumentationKey = toSecret(name);
+                update();
+              }}
+            />
+          )}
+        </Grid>
+        <SecretsHint />
+      </FormSection>
+
+      <Advanced
+        summary="Ingestion URL, batching, events and shutdown."
+        count={countSet(
+          value.endpoint,
+          value.maxBatchSize,
+          value.maxBatchInterval,
+          value.shutdownTimeout,
+          value.customEventsEnabled,
+          value.exceptionEventsEnabled,
+        )}
+      >
+        <AdvancedGroup title="Log records">
+          <ToggleList>
+            <ToggleRow
+              label="Custom events"
+              description="Send log records with a microsoft.custom_event.name attribute as custom events."
+              checked={value.customEventsEnabled}
+              onChange={(checked) => {
+                value.customEventsEnabled = checked;
+                update();
+              }}
+            />
+            <ToggleRow
+              label="Exceptions"
+              description="Send log records with exception attributes as exception telemetry."
+              checked={value.exceptionEventsEnabled}
+              onChange={(checked) => {
+                value.exceptionEventsEnabled = checked;
+                update();
+              }}
+            />
+          </ToggleList>
+        </AdvancedGroup>
+        <AdvancedGroup title="Delivery">
+          <Grid>
+            <TextInput
+              type="url"
+              label="Ingestion URL"
+              description="Replaces the one from the connection string."
+              placeholder="https://westeurope-5.in.applicationinsights.azure.com/"
+              value={value.endpoint}
+              error={urlError(value.endpoint)}
+              onChange={(event) => {
+                value.endpoint = event.currentTarget.value.trim();
+                update();
+              }}
+            />
+            <NumberField
+              label="Maximum batch size"
+              description="Items per batch, up to 100,000."
+              max={100000}
+              value={value.maxBatchSize}
+              onChange={(next) => {
+                value.maxBatchSize = next;
+                update();
+              }}
+            />
+            <DurationField
+              label="Maximum batch interval"
+              description="Wait before a partial batch is sent."
+              value={value.maxBatchInterval}
+              onChange={(next) => {
+                value.maxBatchInterval = next;
+                update();
+              }}
+            />
+            <DurationField
+              label="Shutdown timeout"
+              description="Time to flush buffered items on shutdown."
+              value={value.shutdownTimeout}
+              onChange={(next) => {
+                value.shutdownTimeout = next;
+                update();
+              }}
+            />
+          </Grid>
+        </AdvancedGroup>
+      </Advanced>
+    </>
+  );
+};
+
+type ADXAuth =
+  EnterpriseP.CollectorExporter_Spec_AzureDataExplorer_Auth["type"];
+
+const AzureDataExplorerForm = (props: {
+  value: EnterpriseP.CollectorExporter_Spec_AzureDataExplorer;
+  update: Update;
+}) => {
+  const { value, update } = props;
+  const I = EnterpriseP.CollectorExporter_Spec_AzureDataExplorer_IngestionType;
+  const stash = React.useRef<Partial<Record<string, ADXAuth>>>({});
+  const auth = value.auth?.type;
+  const method = auth?.oneofKind ?? "servicePrincipal";
+
+  const changeAuth = (next: string) => {
+    if (auth?.oneofKind) stash.current[auth.oneofKind] = structuredClone(auth);
+    const type: ADXAuth =
+      stash.current[next] ??
+      (next === "managedIdentity"
+        ? { oneofKind: "managedIdentity", managedIdentity: { id: "system" } }
+        : next === "azureDefault"
+          ? { oneofKind: "azureDefault", azureDefault: {} }
+          : {
+              oneofKind: "servicePrincipal",
+              servicePrincipal: {
+                applicationID: "",
+                tenantID: "",
+                applicationKey: toSecret(""),
+              },
+            });
+    value.auth =
+      EnterpriseP.CollectorExporter_Spec_AzureDataExplorer_Auth.create({
+        type,
+      });
+    update();
+  };
+
+  const clusterURIError = (uri: string) => {
+    if (!uri) return undefined;
+    return urlError(uri, { httpsOnly: true });
+  };
+
+  return (
+    <>
+      <FormSection
+        icon={Network}
+        title="Cluster"
+        description="The cluster URI from the Overview page and the database that receives the telemetry."
+      >
+        <TextInput
+          required
+          type="url"
+          label="Cluster URI"
+          placeholder="https://mycluster.westeurope.kusto.windows.net"
+          value={value.clusterURI}
+          error={clusterURIError(value.clusterURI)}
+          onChange={(event) => {
+            value.clusterURI = event.currentTarget.value.trim();
+            update();
+          }}
+        />
+        <Grid>
+          <TextInput
+            label="Database"
+            description="Database that contains the tables."
+            placeholder="oteldb"
+            value={value.database}
+            error={identError(value.database)}
+            onChange={(event) => {
+              value.database = event.currentTarget.value.trim();
+              update();
+            }}
+          />
+          <EnumField
+            label="Ingestion"
+            description="Queued when not set."
+            value={value.ingestionType}
+            options={[
+              { label: "Queued, higher throughput", value: I.QUEUED },
+              { label: "Managed streaming, lower latency", value: I.MANAGED },
+            ]}
+            onChange={(next) => {
+              value.ingestionType = next;
+              update();
+            }}
+          />
+        </Grid>
+      </FormSection>
+
+      <AuthSection description="The identity needs the Ingestor role on the database.">
+        <ChoiceGroup
+          label="Method"
+          value={method}
+          onChange={changeAuth}
+          options={[
+            {
+              value: "servicePrincipal",
+              label: "Service principal",
+              hint: "Entra ID app and secret",
+            },
+            {
+              value: "managedIdentity",
+              label: "Managed identity",
+              hint: "System or user-assigned",
+            },
+            {
+              value: "azureDefault",
+              label: "Azure default",
+              hint: "Workload identity, environment…",
+            },
+          ]}
+        />
+        {auth?.oneofKind === "servicePrincipal" && (
+          <Grid cols={3}>
+            <TextInput
+              required
+              label="Application (client) ID"
+              description="From the Overview page of the app registration."
+              placeholder="00000000-0000-0000-0000-000000000000"
+              value={auth.servicePrincipal.applicationID}
+              error={
+                auth.servicePrincipal.applicationID &&
+                !isUUID(auth.servicePrincipal.applicationID)
+                  ? "Must be a UUID"
+                  : undefined
+              }
+              onChange={(event) => {
+                auth.servicePrincipal.applicationID =
+                  event.currentTarget.value.trim();
+                update();
+              }}
+            />
+            <TextInput
+              required
+              label="Directory (tenant) ID"
+              description="From the Overview page of the app registration."
+              placeholder="00000000-0000-0000-0000-000000000000"
+              value={auth.servicePrincipal.tenantID}
+              error={
+                auth.servicePrincipal.tenantID &&
+                !isUUID(auth.servicePrincipal.tenantID)
+                  ? "Must be a UUID"
+                  : undefined
+              }
+              onChange={(event) => {
+                auth.servicePrincipal.tenantID =
+                  event.currentTarget.value.trim();
+                update();
+              }}
+            />
+            <SecretField
+              required
+              label="Client secret"
+              description="Secret holding the client secret value."
+              value={secretName(auth.servicePrincipal.applicationKey)}
+              onChange={(name) => {
+                auth.servicePrincipal.applicationKey = toSecret(name);
+                update();
+              }}
+            />
+          </Grid>
+        )}
+        {auth?.oneofKind === "managedIdentity" && (
+          <Grid>
+            <TextInput
+              required
+              label="Identity"
+              description='"system" for the system-assigned identity, or the client ID of a user-assigned one.'
+              placeholder="system"
+              value={auth.managedIdentity.id}
+              error={
+                !auth.managedIdentity.id.trim()
+                  ? "Required"
+                  : auth.managedIdentity.id.toLowerCase() !== "system" &&
+                      !isUUID(auth.managedIdentity.id)
+                    ? 'Use "system" or a UUID'
+                    : undefined
+              }
+              onChange={(event) => {
+                auth.managedIdentity.id = event.currentTarget.value.trim();
+                update();
+              }}
+            />
+          </Grid>
+        )}
+        {auth?.oneofKind === "azureDefault" && (
+          <Callout tone="info" title="Uses the environment of the Collector">
+            Credentials are resolved from environment variables, workload
+            identity or the managed identity of the node, in that order.
+          </Callout>
+        )}
+      </AuthSection>
+
+      <FormSection
+        icon={Route}
+        title="Tables"
+        description="Leave empty to use OTELLogs and OTELMetrics."
+      >
+        <Grid>
+          <TextInput
+            label="Logs table"
+            placeholder="OTELLogs"
+            value={value.logsTable}
+            error={identError(value.logsTable)}
+            onChange={(event) => {
+              value.logsTable = event.currentTarget.value.trim();
+              update();
+            }}
+          />
+          <TextInput
+            label="Metrics table"
+            placeholder="OTELMetrics"
+            value={value.metricsTable}
+            error={identError(value.metricsTable)}
+            onChange={(event) => {
+              value.metricsTable = event.currentTarget.value.trim();
+              update();
+            }}
+          />
+        </Grid>
+      </FormSection>
+
+      <Advanced
+        summary="Ingestion mappings and timeout."
+        count={countSet(
+          value.logsTableMapping,
+          value.metricsTableMapping,
+          value.timeout,
+        )}
+      >
+        <AdvancedGroup
+          title="Ingestion mappings"
+          description="Named mappings that map the JSON payload to table columns."
+        >
+          <Grid>
+            <TextInput
+              label="Logs mapping"
+              placeholder="None"
+              value={value.logsTableMapping}
+              error={identError(value.logsTableMapping, "-.")}
+              onChange={(event) => {
+                value.logsTableMapping = event.currentTarget.value.trim();
+                update();
+              }}
+            />
+            <TextInput
+              label="Metrics mapping"
+              placeholder="None"
+              value={value.metricsTableMapping}
+              error={identError(value.metricsTableMapping, "-.")}
+              onChange={(event) => {
+                value.metricsTableMapping = event.currentTarget.value.trim();
+                update();
+              }}
+            />
+          </Grid>
+        </AdvancedGroup>
+        <AdvancedGroup title="Requests">
+          <Grid>
+            <DurationField
+              label="Timeout"
+              description="Per ingestion request."
+              value={value.timeout}
+              onChange={(next) => {
+                value.timeout = next;
+                update();
+              }}
+            />
+          </Grid>
+        </AdvancedGroup>
+      </Advanced>
+    </>
+  );
+};
+
+const TypeForm = (props: { type: ExporterType; update: Update }) => {
+  const { type, update } = props;
+  switch (type.oneofKind) {
+    case "otlp":
+      return <OTLPForm value={type.otlp} update={update} />;
+    case "otlpHTTP":
+      return <OTLPHTTPForm value={type.otlpHTTP} update={update} />;
+    case "prometheusRemoteWrite":
+      return (
+        <PrometheusForm value={type.prometheusRemoteWrite} update={update} />
+      );
+    case "clickhouse":
+      return <ClickhouseForm value={type.clickhouse} update={update} />;
+    case "elasticsearch":
+      return <ElasticsearchForm value={type.elasticsearch} update={update} />;
+    case "kafka":
+      return <KafkaForm value={type.kafka} update={update} />;
+    case "datadog":
+      return <DatadogForm value={type.datadog} update={update} />;
+    case "splunk":
+      return <SplunkForm value={type.splunk} update={update} />;
+    case "influxDB":
+      return <InfluxDBForm value={type.influxDB} update={update} />;
+    case "logzio":
+      return <LogzioForm value={type.logzio} update={update} />;
+    case "azureMonitor":
+      return <AzureMonitorForm value={type.azureMonitor} update={update} />;
+    case "azureDataExplorer":
+      return (
+        <AzureDataExplorerForm value={type.azureDataExplorer} update={update} />
+      );
+    default:
+      return null;
+  }
 };
 
 const Edit = (props: {
   item: EnterpriseP.CollectorExporter;
   onUpdate: (item: EnterpriseP.CollectorExporter) => void;
 }) => {
-  const { item, onUpdate } = props;
-  const [req, setReq] = React.useState(
-    normalizeSecretSelectors(EnterpriseP.CollectorExporter.clone(item)),
+  const [req, setReq] = React.useState(() => cloneForEdit(props.item));
+  const configurations = React.useRef<Partial<Record<string, ExporterType>>>(
+    {},
   );
-  const [init, setInit] = React.useState(
-    EnterpriseP.CollectorExporter.clone(req),
-  );
-  const configurations = React.useRef<
-    Partial<Record<string, EnterpriseP.CollectorExporter_Spec["type"]>>
-  >({
-    [req.spec?.type?.oneofKind ?? "otlp"]: structuredClone(
-      req.spec?.type ?? { oneofKind: undefined },
-    ),
-  });
-  const authenticationConfigurations = React.useRef<Record<string, unknown>>({});
-  const itemKey = item.metadata?.uid || item.apiVersion || item.kind;
+  const itemKey =
+    props.item.metadata?.uid || props.item.apiVersion || props.item.kind;
+  const initialKind = React.useRef(req.spec?.type.oneofKind);
 
   React.useEffect(() => {
-    const next = normalizeSecretSelectors(EnterpriseP.CollectorExporter.clone(item));
-    if (!next.spec) {
-      next.spec = EnterpriseP.CollectorExporter_Spec.create({
-        type: {
-          oneofKind: "otlp",
-          otlp: EnterpriseP.CollectorExporter_Spec_OTLP.create({
-            auth: { type: freshBearer() },
-          }),
-        },
-      });
-    }
+    const next = cloneForEdit(props.item);
     setReq(next);
-    setInit(EnterpriseP.CollectorExporter.clone(next));
-    configurations.current = {
-      [next.spec.type.oneofKind ?? "otlp"]: structuredClone(next.spec.type),
-    };
+    configurations.current = {};
+    initialKind.current = next.spec?.type.oneofKind;
   }, [itemKey]);
 
   const updateReq = () => {
     const next = EnterpriseP.CollectorExporter.clone(req);
     setReq(next);
-    onUpdate(EnterpriseP.CollectorExporter.clone(next));
+    props.onUpdate(EnterpriseP.CollectorExporter.clone(next));
   };
 
-  if (!req.spec) {
-    return <></>;
-  }
+  if (!req.spec) return null;
+  const spec = req.spec;
+  const kind = spec.type.oneofKind;
 
-  const grpcInitAuth = (
-    kind: "otlp" | "otlpHTTP" | "prometheusRemoteWrite",
-  ): GrpcStyleAuth | undefined =>
-    match(init.spec?.type)
-      .with({ oneofKind: "otlp" }, (t) =>
-        kind === "otlp"
-          ? (t.otlp.auth as unknown as GrpcStyleAuth | undefined)
-          : undefined,
-      )
-      .with({ oneofKind: "otlpHTTP" }, (t) =>
-        kind === "otlpHTTP"
-          ? (t.otlpHTTP.auth as unknown as GrpcStyleAuth | undefined)
-          : undefined,
-      )
-      .with({ oneofKind: "prometheusRemoteWrite" }, (t) =>
-        kind === "prometheusRemoteWrite"
-          ? (t.prometheusRemoteWrite.auth as unknown as
-              | GrpcStyleAuth
-              | undefined)
-          : undefined,
-      )
-      .otherwise(() => undefined);
+  const changeType = (next: ExporterKind) => {
+    if (next === kind) return;
+    if (kind) configurations.current[kind] = structuredClone(spec.type);
+    spec.type = structuredClone(
+      configurations.current[next] ?? createType(next),
+    );
+    updateReq();
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-slate-200 bg-white p-3">
-        <Switch
-          label="Disabled"
-          description="Disable this exporter so the Collector skips it even when referenced by a pipeline."
-          checked={req.spec!.isDisabled}
-          onChange={(v) => {
-            req.spec!.isDisabled = v.target.checked;
-            updateReq();
-          }}
-        />
-      </div>
-      <Tabs
-        value={req.spec!.type.oneofKind}
-        onChange={(v) => {
-          const currentKind = req.spec!.type.oneofKind;
-          if (currentKind) {
-            configurations.current[currentKind] = structuredClone(req.spec!.type);
-          }
-          if (v && configurations.current[v]) {
-            req.spec!.type = structuredClone(configurations.current[v]!);
-            updateReq();
-            return;
-          }
-          match(v)
-            .with("otlp", () => {
-              match(init.spec!.type.oneofKind)
-                .with("otlp", () => {
-                  req.spec!.type = init.spec!.type;
-                })
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "otlp",
-                    otlp: {
-                      auth: { type: freshBearer() },
-                    } as EnterpriseP.CollectorExporter_Spec_OTLP,
-                  };
-                });
-              updateReq();
-            })
-            .with("otlpHTTP", () => {
-              match(init.spec!.type.oneofKind)
-                .with("otlpHTTP", () => {
-                  req.spec!.type = init.spec!.type;
-                })
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "otlpHTTP",
-                    otlpHTTP: {
-                      auth: { type: freshBearer() },
-                    } as EnterpriseP.CollectorExporter_Spec_OTLPHTTP,
-                  };
-                });
-              updateReq();
-            })
-            .with("clickhouse", () => {
-              match(init.spec!.type.oneofKind)
-                .with("clickhouse", () => {
-                  req.spec!.type = init.spec!.type;
-                })
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "clickhouse",
-                    clickhouse: {
-                      password: freshSecret(),
-                    } as EnterpriseP.CollectorExporter_Spec_Clickhouse,
-                  };
-                });
-              updateReq();
-            })
-            .with("prometheusRemoteWrite", () => {
-              match(init.spec!.type.oneofKind)
-                .with("prometheusRemoteWrite", () => {
-                  req.spec!.type = init.spec!.type;
-                })
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "prometheusRemoteWrite",
-                    prometheusRemoteWrite: {
-                      auth: { type: freshBearer() },
-                    } as EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite,
-                  };
-                });
-              updateReq();
-            })
-            .with("elasticsearch", () => {
-              match(init.spec!.type.oneofKind)
-                .with("elasticsearch", () => {
-                  req.spec!.type = init.spec!.type;
-                })
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "elasticsearch",
-                    elasticsearch: {
-                      auth: {
-                        type: {
-                          oneofKind: "apiKey",
-                          apiKey: freshSecret(),
-                        },
-                      },
-                    } as EnterpriseP.CollectorExporter_Spec_Elasticsearch,
-                  };
-                });
-              updateReq();
-            })
-            .with("logzio", () => {
-              match(init.spec!.type.oneofKind)
-                .with("logzio", () => {
-                  req.spec!.type = init.spec!.type;
-                })
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "logzio",
-                    logzio: {
-                      token: freshSecret(),
-                    } as EnterpriseP.CollectorExporter_Spec_Logzio,
-                  };
-                });
-              updateReq();
-            })
-            .with("influxDB", () => {
-              match(init.spec!.type.oneofKind)
-                .with("influxDB", () => {
-                  req.spec!.type = init.spec!.type;
-                })
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "influxDB",
-                    influxDB: {
-                      token: freshSecret(),
-                    } as EnterpriseP.CollectorExporter_Spec_InfluxDB,
-                  };
-                });
-              updateReq();
-            })
-            .with("kafka", () => {
-              match(init.spec!.type.oneofKind)
-                .with("kafka", () => {
-                  req.spec!.type = init.spec!.type;
-                })
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "kafka",
-                    kafka: {
-                      auth: {
-                        type: {
-                          oneofKind: "sasl",
-                          sasl: {
-                            username: "",
-                            password: freshSecret(),
-                            mechanism:
-                              EnterpriseP
-                                .CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism
-                                .PLAIN,
-                          },
-                        },
-                      },
-                    } as EnterpriseP.CollectorExporter_Spec_Kafka,
-                  };
-                });
-              updateReq();
-            })
-            .with("datadog", () => {
-              match(init.spec!.type.oneofKind)
-                .with("datadog", () => {
-                  req.spec!.type = init.spec!.type;
-                })
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "datadog",
-                    datadog: {
-                      api: {
-                        key: freshSecret(),
-                        site: "",
-                        failOnInvalidKey: false,
-                      },
-                    } as EnterpriseP.CollectorExporter_Spec_Datadog,
-                  };
-                });
-              updateReq();
-            })
-            .with("splunk", () => {
-              match(init.spec!.type.oneofKind)
-                .with("splunk", () => {
-                  req.spec!.type = init.spec!.type;
-                })
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "splunk",
-                    splunk: {
-                      token: freshSecret(),
-                    } as EnterpriseP.CollectorExporter_Spec_Splunk,
-                  };
-                });
-              updateReq();
-            })
-            .with("azureMonitor", () => {
-              match(init.spec!.type.oneofKind)
-                .with("azureMonitor", () => {
-                  req.spec!.type = init.spec!.type;
-                })
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "azureMonitor",
-                    azureMonitor: {
-                      connectionString: freshSecret(),
-                    } as EnterpriseP.CollectorExporter_Spec_AzureMonitor,
-                  };
-                });
-              updateReq();
-            })
-            .with("azureDataExplorer", () => {
-              match(init.spec!.type.oneofKind)
-                .with("azureDataExplorer", () => {
-                  req.spec!.type = init.spec!.type;
-                })
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "azureDataExplorer",
-                    azureDataExplorer: {
-                      auth: {
-                        type: {
-                          oneofKind: "servicePrincipal",
-                          servicePrincipal: {
-                            applicationID: "",
-                            applicationKey: freshSecret(),
-                            tenantID: "",
-                          },
-                        },
-                      },
-                    } as EnterpriseP.CollectorExporter_Spec_AzureDataExplorer,
-                  };
-                });
-              updateReq();
-            });
-        }}
+    <div className="@container flex min-w-0 flex-col gap-4">
+      <DestinationPicker value={kind} onChange={changeType} />
+
+      {!!props.item.metadata?.uid && kind !== initialKind.current && (
+        <Callout tone="info" title="The destination changes when you save">
+          The pipelines that use this exporter will send their telemetry to the
+          new destination instead.
+        </Callout>
+      )}
+
+      <TypeForm key={kind} type={spec.type} update={updateReq} />
+
+      <FormSection
+        icon={spec.isDisabled ? Power : Radio}
+        title="Status"
+        description="A disabled exporter keeps its configuration, but the Collector skips it in every pipeline."
       >
-        <Tabs.List className="flex-nowrap overflow-x-auto rounded-xl border border-slate-200 bg-slate-50/60 p-1">
-          <Tabs.Tab value="otlp">OTLP</Tabs.Tab>
-          <Tabs.Tab value="otlpHTTP">OTLP HTTP</Tabs.Tab>
-          <Tabs.Tab value="clickhouse">ClickHouse</Tabs.Tab>
-          <Tabs.Tab value="prometheusRemoteWrite">
-            Prometheus Remote Write
-          </Tabs.Tab>
-          <Tabs.Tab value="elasticsearch">Elasticsearch</Tabs.Tab>
-          <Tabs.Tab value="kafka">Kafka</Tabs.Tab>
-          <Tabs.Tab value="datadog">Datadog</Tabs.Tab>
-          <Tabs.Tab value="logzio">Logz.io</Tabs.Tab>
-          <Tabs.Tab value="influxDB">InfluxDB</Tabs.Tab>
-          <Tabs.Tab value="splunk">Splunk</Tabs.Tab>
-          <Tabs.Tab value="azureMonitor">Azure Monitor</Tabs.Tab>
-          <Tabs.Tab value="azureDataExplorer">Azure Data Explorer</Tabs.Tab>
-        </Tabs.List>
-
-        <Tabs.Panel value="otlp">
-          {match(req.spec!.type)
-            .with({ oneofKind: "otlp" }, (type) => (
-              <>
-                <Group grow>
-                  <TextInput
-                    required
-                    label="Endpoint"
-                    description="Address of the upstream OTLP gRPC endpoint."
-                    placeholder="otlp-receiver.example.com:8443"
-                    value={type.otlp.endpoint}
-                    onChange={(v) => {
-                      type.otlp.endpoint = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <EnumSelect
-                    label="Compression"
-                    description="Compression algorithm used for OTLP payloads."
-                    enumObj={
-                      EnterpriseP.CollectorExporter_Spec_OTLP_Compression
-                    }
-                    value={type.otlp.compression}
-                    options={[
-                      {
-                        label: "Gzip",
-                        value:
-                          EnterpriseP.CollectorExporter_Spec_OTLP_Compression
-                            .GZIP,
-                      },
-                      {
-                        label: "None",
-                        value:
-                          EnterpriseP.CollectorExporter_Spec_OTLP_Compression
-                            .NONE,
-                      },
-                      {
-                        label: "Snappy",
-                        value:
-                          EnterpriseP.CollectorExporter_Spec_OTLP_Compression
-                            .SNAPPY,
-                      },
-                      {
-                        label: "Zstd",
-                        value:
-                          EnterpriseP.CollectorExporter_Spec_OTLP_Compression
-                            .ZSTD,
-                      },
-                    ]}
-                    onChange={(c) => {
-                      type.otlp.compression = c;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-
-                <Group grow>
-                  <Switch
-                    label="No TLS"
-                    description="Connect to the endpoint without TLS"
-                    checked={type.otlp.tls?.insecure ?? false}
-                    onChange={(v) => {
-                      if (!type.otlp.tls) {
-                        type.otlp.tls =
-                          EnterpriseP.CollectorExporter_Spec_OTLP_TLS.create();
-                      }
-                      type.otlp.tls.insecure = v.target.checked;
-                      updateReq();
-                    }}
-                  />
-                  <Switch
-                    label="Skip TLS Verify"
-                    description="Skip upstream certificate-chain and hostname verification."
-                    checked={type.otlp.tls?.insecureSkipVerify ?? false}
-                    onChange={(v) => {
-                      if (!type.otlp.tls) {
-                        type.otlp.tls =
-                          EnterpriseP.CollectorExporter_Spec_OTLP_TLS.create();
-                      }
-                      type.otlp.tls.insecureSkipVerify = v.target.checked;
-                      updateReq();
-                    }}
-                  />
-                  <Switch
-                    label="Wait For Ready"
-                    description="Wait for the upstream connection instead of failing immediately."
-                    checked={type.otlp.waitForReady}
-                    onChange={(v) => {
-                      type.otlp.waitForReady = v.target.checked;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-
-                <HeaderList
-                  headers={type.otlp.headers}
-                  makeHeader={() =>
-                    EnterpriseP.CollectorExporter_Spec_OTLP_Header.create()
-                  }
-                  onUpdate={updateReq}
-                />
-
-                <SecretAuthTabs
-                  auth={type.otlp.auth as unknown as GrpcStyleAuth | undefined}
-                  ensureAuth={() => {
-                    if (!type.otlp.auth) {
-                      type.otlp.auth =
-                        EnterpriseP.CollectorExporter_Spec_OTLP_Auth.create();
-                    }
-                    return type.otlp.auth as unknown as GrpcStyleAuth;
-                  }}
-                  initAuth={grpcInitAuth("otlp")}
-                  onUpdate={updateReq}
-                />
-              </>
-            ))
-            .otherwise(() => (
-              <></>
-            ))}
-        </Tabs.Panel>
-
-        <Tabs.Panel value="otlpHTTP">
-          {match(req.spec!.type)
-            .with({ oneofKind: "otlpHTTP" }, (type) => (
-              <>
-                <Group grow>
-                  <TextInput
-                    required
-                    label="Endpoint"
-                    description="Base URL; /v1/logs and /v1/metrics are appended automatically"
-                    placeholder="https://otlp-receiver.example.com"
-                    value={type.otlpHTTP.endpoint}
-                    onChange={(v) => {
-                      type.otlpHTTP.endpoint = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-
-                <Group grow>
-                  <TextInput
-                    label="Logs Endpoint"
-                    description="Optional URL override for exported logs."
-                    placeholder="https://otlp-receiver.example.com/v1/logs"
-                    value={type.otlpHTTP.logsEndpoint}
-                    onChange={(v) => {
-                      type.otlpHTTP.logsEndpoint = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <TextInput
-                    label="Metrics Endpoint"
-                    description="Optional URL override for exported metrics."
-                    placeholder="https://otlp-receiver.example.com/v1/metrics"
-                    value={type.otlpHTTP.metricsEndpoint}
-                    onChange={(v) => {
-                      type.otlpHTTP.metricsEndpoint = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-
-                <Group grow>
-                  <EnumSelect
-                    label="Encoding"
-                    description="Wire encoding used for OTLP HTTP payloads."
-                    enumObj={
-                      EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Encoding
-                    }
-                    value={type.otlpHTTP.encoding}
-                    options={[
-                      {
-                        label: "Proto",
-                        value:
-                          EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Encoding
-                            .PROTO,
-                      },
-                      {
-                        label: "JSON",
-                        value:
-                          EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Encoding
-                            .JSON,
-                      },
-                    ]}
-                    onChange={(e) => {
-                      type.otlpHTTP.encoding = e;
-                      updateReq();
-                    }}
-                  />
-                  <EnumSelect
-                    label="Compression"
-                    description="Compression algorithm used for OTLP HTTP payloads."
-                    enumObj={
-                      EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Compression
-                    }
-                    value={type.otlpHTTP.compression}
-                    options={[
-                      {
-                        label: "Gzip",
-                        value:
-                          EnterpriseP
-                            .CollectorExporter_Spec_OTLPHTTP_Compression.GZIP,
-                      },
-                      {
-                        label: "None",
-                        value:
-                          EnterpriseP
-                            .CollectorExporter_Spec_OTLPHTTP_Compression.NONE,
-                      },
-                    ]}
-                    onChange={(c) => {
-                      type.otlpHTTP.compression = c;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-
-                <HeaderList
-                  headers={type.otlpHTTP.headers}
-                  makeHeader={() =>
-                    EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Header.create()
-                  }
-                  onUpdate={updateReq}
-                />
-
-                <SecretAuthTabs
-                  auth={
-                    type.otlpHTTP.auth as unknown as GrpcStyleAuth | undefined
-                  }
-                  ensureAuth={() => {
-                    if (!type.otlpHTTP.auth) {
-                      type.otlpHTTP.auth =
-                        EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Auth.create();
-                    }
-                    return type.otlpHTTP.auth as unknown as GrpcStyleAuth;
-                  }}
-                  initAuth={grpcInitAuth("otlpHTTP")}
-                  onUpdate={updateReq}
-                />
-              </>
-            ))
-            .otherwise(() => (
-              <></>
-            ))}
-        </Tabs.Panel>
-
-        <Tabs.Panel value="clickhouse">
-          {match(req.spec!.type)
-            .with({ oneofKind: "clickhouse" }, (type) => (
-              <>
-                <Group grow>
-                  <TextInput
-                    required
-                    label="Endpoint"
-                    description="Address of the upstream ClickHouse server."
-                    placeholder='"tcp://addr:port", "http://addr:port", "clickhouse://addr:port"'
-                    value={type.clickhouse.endpoint}
-                    onChange={(v) => {
-                      type.clickhouse.endpoint = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <TextInput
-                    label="Username"
-                    description="Username of the ClickHouse database user."
-                    placeholder="clickhouse"
-                    value={type.clickhouse.username}
-                    onChange={(v) => {
-                      type.clickhouse.username = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-                <Group grow>
-                  <TextInput
-                    label="Database"
-                    description="ClickHouse database that receives the telemetry."
-                    placeholder="otel"
-                    value={type.clickhouse.database}
-                    onChange={(v) => {
-                      type.clickhouse.database = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <SecretSelectField
-                    label="Password Secret"
-                    sel={type.clickhouse.password}
-                    onUpdate={updateReq}
-                  />
-                </Group>
-                <Group grow>
-                  <TextInput
-                    label="Logs Table Name"
-                    description="Table where exported logs are stored."
-                    placeholder="otel_logs"
-                    value={type.clickhouse.logsTableName}
-                    onChange={(v) => {
-                      type.clickhouse.logsTableName = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <TextInput
-                    label="Cluster Name"
-                    description="Optional ClickHouse cluster used for ON CLUSTER table creation."
-                    placeholder="cluster"
-                    value={type.clickhouse.clusterName}
-                    onChange={(v) => {
-                      type.clickhouse.clusterName = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <EnumSelect
-                    label="Compression"
-                    description="Compression algorithm used for exported ClickHouse payloads."
-                    enumObj={
-                      EnterpriseP.CollectorExporter_Spec_Clickhouse_Compression
-                    }
-                    value={type.clickhouse.compression}
-                    options={[
-                      {
-                        label: "LZ4",
-                        value:
-                          EnterpriseP
-                            .CollectorExporter_Spec_Clickhouse_Compression.LZ4,
-                      },
-                      {
-                        label: "ZSTD",
-                        value:
-                          EnterpriseP
-                            .CollectorExporter_Spec_Clickhouse_Compression.ZSTD,
-                      },
-                      {
-                        label: "Gzip",
-                        value:
-                          EnterpriseP
-                            .CollectorExporter_Spec_Clickhouse_Compression.GZIP,
-                      },
-                      {
-                        label: "Deflate",
-                        value:
-                          EnterpriseP
-                            .CollectorExporter_Spec_Clickhouse_Compression
-                            .DEFLATE,
-                      },
-                      {
-                        label: "Br",
-                        value:
-                          EnterpriseP
-                            .CollectorExporter_Spec_Clickhouse_Compression.BR,
-                      },
-                      {
-                        label: "None",
-                        value:
-                          EnterpriseP
-                            .CollectorExporter_Spec_Clickhouse_Compression.NONE,
-                      },
-                    ]}
-                    onChange={(c) => {
-                      type.clickhouse.compression = c;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-                <Group>
-                  <Switch
-                    label="Async Insert"
-                    description="Buffer inserts on the ClickHouse server before flushing them."
-                    checked={type.clickhouse.asyncInsert}
-                    onChange={(v) => {
-                      type.clickhouse.asyncInsert = v.target.checked;
-                      updateReq();
-                    }}
-                  />
-                  <Switch
-                    label="Create Schema"
-                    description="Create the database and tables automatically when missing."
-                    checked={type.clickhouse.createSchema}
-                    onChange={(v) => {
-                      type.clickhouse.createSchema = v.target.checked;
-                      updateReq();
-                    }}
-                  />
-                  <Switch
-                    label="JSON"
-                    description="Use ClickHouse JSON columns instead of map columns for attributes."
-                    checked={type.clickhouse.json}
-                    onChange={(v) => {
-                      type.clickhouse.json = v.target.checked;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-              </>
-            ))
-            .otherwise(() => (
-              <></>
-            ))}
-        </Tabs.Panel>
-
-        <Tabs.Panel value="prometheusRemoteWrite">
-          {match(req.spec!.type)
-            .with({ oneofKind: "prometheusRemoteWrite" }, (type) => (
-              <>
-                <Group grow>
-                  <TextInput
-                    required
-                    label="Endpoint"
-                    description="URL of the Prometheus remote write endpoint."
-                    placeholder="https://prometheus.example.com/api/v1/write"
-                    value={type.prometheusRemoteWrite.endpoint}
-                    onChange={(v) => {
-                      type.prometheusRemoteWrite.endpoint = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <TextInput
-                    label="Namespace"
-                    description="Prefix prepended to every exported metric name."
-                    placeholder="default"
-                    value={type.prometheusRemoteWrite.namespace}
-                    onChange={(v) => {
-                      type.prometheusRemoteWrite.namespace = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-
-                <Group>
-                  <Switch
-                    label="Disable Scope Info"
-                    description="Do not export OpenTelemetry scope labels or the scope-info metric."
-                    checked={type.prometheusRemoteWrite.disableScopeInfo}
-                    onChange={(v) => {
-                      type.prometheusRemoteWrite.disableScopeInfo =
-                        v.target.checked;
-                      updateReq();
-                    }}
-                  />
-                  <Switch
-                    label="Send Metadata"
-                    description="Send metric help, type, and unit metadata with the samples."
-                    checked={type.prometheusRemoteWrite.sendMetadata}
-                    onChange={(v) => {
-                      type.prometheusRemoteWrite.sendMetadata =
-                        v.target.checked;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-
-                <EnumSelect
-                  label="Translation Strategy"
-                  description="How OpenTelemetry metric and label names are translated to Prometheus names."
-                  enumObj={
-                    EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy
-                  }
-                  value={type.prometheusRemoteWrite.translationStrategy}
-                  options={[
-                    {
-                      label: "Underscore Escaping With Suffixes",
-                      value:
-                        EnterpriseP
-                          .CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy
-                          .UNDERSCORE_ESCAPING_WITH_SUFFIXES,
-                    },
-                    {
-                      label: "Underscore Escaping Without Suffixes",
-                      value:
-                        EnterpriseP
-                          .CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy
-                          .UNDERSCORE_ESCAPING_WITHOUT_SUFFIXES,
-                    },
-                  ]}
-                  onChange={(s) => {
-                    type.prometheusRemoteWrite.translationStrategy = s;
-                    updateReq();
-                  }}
-                />
-
-                <SecretAuthTabs
-                  auth={
-                    type.prometheusRemoteWrite.auth as unknown as
-                      | GrpcStyleAuth
-                      | undefined
-                  }
-                  ensureAuth={() => {
-                    if (!type.prometheusRemoteWrite.auth) {
-                      type.prometheusRemoteWrite.auth =
-                        EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_Auth.create();
-                    }
-                    return type.prometheusRemoteWrite
-                      .auth as unknown as GrpcStyleAuth;
-                  }}
-                  initAuth={grpcInitAuth("prometheusRemoteWrite")}
-                  onUpdate={updateReq}
-                />
-              </>
-            ))
-            .otherwise(() => (
-              <></>
-            ))}
-        </Tabs.Panel>
-
-        <Tabs.Panel value="elasticsearch">
-          {match(req.spec!.type)
-            .with({ oneofKind: "elasticsearch" }, (type) => (
-              <>
-                <Group grow>
-                  <TextInput
-                    label="Endpoint"
-                    description="URL of the upstream Elasticsearch cluster."
-                    placeholder="https://es.example.com:9200"
-                    value={type.elasticsearch.endpoint}
-                    onChange={(v) => {
-                      type.elasticsearch.endpoint = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <TextInput
-                    label="Cloud ID"
-                    description="Elastic Cloud ID; used instead of endpoint addresses."
-                    placeholder="my-cloud-id"
-                    value={type.elasticsearch.cloudID}
-                    onChange={(v) => {
-                      type.elasticsearch.cloudID = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-
-                <TextInput
-                  label="Endpoints"
-                  description="Optional Elasticsearch node URLs, separated by commas."
-                  placeholder="https://es1:9200, https://es2:9200"
-                  value={type.elasticsearch.endpoints.join(",")}
-                  onChange={(v) => {
-                    type.elasticsearch.endpoints = v.target.value
-                      .split(",")
-                      .map((x) => x.trim())
-                      .filter((x) => x !== "");
-                    updateReq();
-                  }}
-                />
-
-                <Group grow>
-                  <TextInput
-                    label="Logs Index"
-                    description="Index or data stream where logs are written."
-                    placeholder="my-log-index"
-                    value={type.elasticsearch.logsIndex}
-                    onChange={(v) => {
-                      type.elasticsearch.logsIndex = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <TextInput
-                    label="Metrics Index"
-                    description="Index or data stream where metrics are written."
-                    placeholder="my-metrics-index"
-                    value={type.elasticsearch.metricsIndex}
-                    onChange={(v) => {
-                      type.elasticsearch.metricsIndex = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <TextInput
-                    label="Pipeline"
-                    description="Optional Elasticsearch ingest pipeline for exported documents."
-                    placeholder="pipeline"
-                    value={type.elasticsearch.pipeline}
-                    onChange={(v) => {
-                      type.elasticsearch.pipeline = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-
-                <EnumSelect
-                  label="Compression"
-                  description="Compression algorithm used for Elasticsearch payloads."
-                  enumObj={
-                    EnterpriseP.CollectorExporter_Spec_Elasticsearch_Compression
-                  }
-                  value={type.elasticsearch.compression}
-                  options={[
-                    {
-                      label: "Gzip",
-                      value:
-                        EnterpriseP
-                          .CollectorExporter_Spec_Elasticsearch_Compression
-                          .GZIP,
-                    },
-                    {
-                      label: "None",
-                      value:
-                        EnterpriseP
-                          .CollectorExporter_Spec_Elasticsearch_Compression
-                          .NONE,
-                    },
-                  ]}
-                  onChange={(c) => {
-                    type.elasticsearch.compression = c;
-                    updateReq();
-                  }}
-                />
-
-                <Tabs
-                  value={type.elasticsearch.auth?.type.oneofKind ?? "apiKey"}
-                  onChange={(v) => {
-                    if (!type.elasticsearch.auth) {
-                      type.elasticsearch.auth =
-                        EnterpriseP.CollectorExporter_Spec_Elasticsearch_Auth.create();
-                    }
-                    const currentKind = type.elasticsearch.auth.type.oneofKind;
-                    if (currentKind) {
-                      authenticationConfigurations.current[`elasticsearch.${currentKind}`] = structuredClone(type.elasticsearch.auth.type);
-                    }
-                    const cached = authenticationConfigurations.current[`elasticsearch.${v}`] as typeof type.elasticsearch.auth.type | undefined;
-                    if (cached) {
-                      type.elasticsearch.auth.type = structuredClone(cached);
-                      updateReq();
-                      return;
-                    }
-                    match(v)
-                      .with("apiKey", () => {
-                        type.elasticsearch.auth!.type = {
-                          oneofKind: "apiKey",
-                          apiKey: freshSecret(),
-                        };
-                      })
-                      .with("basic", () => {
-                        type.elasticsearch.auth!.type = {
-                          oneofKind: "basic",
-                          basic: { user: "", password: freshSecret() },
-                        };
-                      })
-                      .otherwise(() => {});
-                    updateReq();
-                  }}
-                >
-                  <SegmentedControl
-                    fullWidth
-                    value={type.elasticsearch.auth?.type.oneofKind ?? "apiKey"}
-                    data={[
-                      { label: "API key", value: "apiKey" },
-                      { label: "Basic", value: "basic" },
-                    ]}
-                    onChange={(value) => {
-                      if (!type.elasticsearch.auth) type.elasticsearch.auth = EnterpriseP.CollectorExporter_Spec_Elasticsearch_Auth.create();
-                      const current = type.elasticsearch.auth.type.oneofKind;
-                      if (current) authenticationConfigurations.current[`elasticsearch.${current}`] = structuredClone(type.elasticsearch.auth.type);
-                      const cached = authenticationConfigurations.current[`elasticsearch.${value}`] as typeof type.elasticsearch.auth.type | undefined;
-                      type.elasticsearch.auth.type = cached ? structuredClone(cached) : value === "basic" ? { oneofKind: "basic", basic: { user: "", password: freshSecret() } } : { oneofKind: "apiKey", apiKey: freshSecret() };
-                      updateReq();
-                    }}
-                  />
-
-                  <Tabs.Panel value="apiKey">
-                    {match(type.elasticsearch.auth?.type)
-                      .with({ oneofKind: "apiKey" }, (a) => (
-                        <SecretSelectField
-                          label="API Key Secret"
-                          sel={a.apiKey}
-                          onUpdate={updateReq}
-                        />
-                      ))
-                      .otherwise(() => (
-                        <></>
-                      ))}
-                  </Tabs.Panel>
-
-                  <Tabs.Panel value="basic">
-                    {match(type.elasticsearch.auth?.type)
-                      .with({ oneofKind: "basic" }, (a) => (
-                        <Group grow>
-                          <TextInput
-                            label="User"
-                            description="Username used for Elasticsearch Basic authentication."
-                            placeholder="elastic"
-                            value={a.basic.user}
-                            onChange={(v) => {
-                              a.basic.user = v.target.value;
-                              updateReq();
-                            }}
-                          />
-                          <SecretSelectField
-                            label="Password Secret"
-                            sel={a.basic.password}
-                            onUpdate={updateReq}
-                          />
-                        </Group>
-                      ))
-                      .otherwise(() => (
-                        <></>
-                      ))}
-                  </Tabs.Panel>
-                </Tabs>
-              </>
-            ))
-            .otherwise(() => (
-              <></>
-            ))}
-        </Tabs.Panel>
-
-        <Tabs.Panel value="kafka">
-          {match(req.spec!.type)
-            .with({ oneofKind: "kafka" }, (type) => (
-              <>
-                <TextInput
-                  label="Brokers"
-                  description="Kafka broker addresses, separated by commas."
-                  placeholder="localhost:9092, localhost:9093"
-                  value={type.kafka.brokers.join(",")}
-                  onChange={(v) => {
-                    type.kafka.brokers = v.target.value
-                      .split(",")
-                      .map((x) => x.trim())
-                      .filter((x) => x !== "");
-                    updateReq();
-                  }}
-                />
-
-                <Group grow>
-                  <TextInput
-                    label="Protocol Version"
-                    description="Kafka protocol version negotiated with the brokers."
-                    placeholder="2.1.0"
-                    value={type.kafka.protocolVersion}
-                    onChange={(v) => {
-                      type.kafka.protocolVersion = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <TextInput
-                    label="Client ID"
-                    description="Client identifier reported to the Kafka brokers."
-                    placeholder="otel-collector"
-                    value={type.kafka.clientID}
-                    onChange={(v) => {
-                      type.kafka.clientID = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-
-                <Group grow>
-                  <TextInput
-                    label="Logs Topic"
-                    description="Kafka topic for exported logs; leave empty to disable log export."
-                    placeholder="otlp_logs"
-                    value={type.kafka.logs?.topic ?? ""}
-                    onChange={(v) => {
-                      if (!type.kafka.logs) {
-                        type.kafka.logs =
-                          EnterpriseP.CollectorExporter_Spec_Kafka_Signal.create();
-                      }
-                      type.kafka.logs.topic = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <EnumSelect
-                    label="Logs Encoding"
-                    description="Wire encoding used for exported log records."
-                    enumObj={EnterpriseP.CollectorExporter_Spec_Kafka_Encoding}
-                    value={type.kafka.logs?.encoding ?? 0}
-                    options={[
-                      {
-                        label: "OTLP Proto",
-                        value:
-                          EnterpriseP.CollectorExporter_Spec_Kafka_Encoding
-                            .OTLP_PROTO,
-                      },
-                      {
-                        label: "OTLP JSON",
-                        value:
-                          EnterpriseP.CollectorExporter_Spec_Kafka_Encoding
-                            .OTLP_JSON,
-                      },
-                      {
-                        label: "Raw",
-                        value:
-                          EnterpriseP.CollectorExporter_Spec_Kafka_Encoding.RAW,
-                      },
-                    ]}
-                    onChange={(e) => {
-                      if (!type.kafka.logs) {
-                        type.kafka.logs =
-                          EnterpriseP.CollectorExporter_Spec_Kafka_Signal.create();
-                      }
-                      type.kafka.logs.encoding = e;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-
-                <Group grow>
-                  <TextInput
-                    label="Metrics Topic"
-                    description="Kafka topic for exported metrics; leave empty to disable metric export."
-                    placeholder="otlp_metrics"
-                    value={type.kafka.metrics?.topic ?? ""}
-                    onChange={(v) => {
-                      if (!type.kafka.metrics) {
-                        type.kafka.metrics =
-                          EnterpriseP.CollectorExporter_Spec_Kafka_Signal.create();
-                      }
-                      type.kafka.metrics.topic = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <EnumSelect
-                    label="Metrics Encoding"
-                    description="Wire encoding used for exported metric records."
-                    enumObj={EnterpriseP.CollectorExporter_Spec_Kafka_Encoding}
-                    value={type.kafka.metrics?.encoding ?? 0}
-                    options={[
-                      {
-                        label: "OTLP Proto",
-                        value:
-                          EnterpriseP.CollectorExporter_Spec_Kafka_Encoding
-                            .OTLP_PROTO,
-                      },
-                      {
-                        label: "OTLP JSON",
-                        value:
-                          EnterpriseP.CollectorExporter_Spec_Kafka_Encoding
-                            .OTLP_JSON,
-                      },
-                    ]}
-                    onChange={(e) => {
-                      if (!type.kafka.metrics) {
-                        type.kafka.metrics =
-                          EnterpriseP.CollectorExporter_Spec_Kafka_Signal.create();
-                      }
-                      type.kafka.metrics.encoding = e;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-
-                {match(type.kafka.auth?.type)
-                  .with({ oneofKind: "sasl" }, (a) => (
-                    <Group grow>
-                      <TextInput
-                        label="SASL Username"
-                        description="Username used for Kafka SASL authentication."
-                        value={a.sasl.username}
-                        onChange={(v) => {
-                          a.sasl.username = v.target.value;
-                          updateReq();
-                        }}
-                      />
-                      <SecretSelectField
-                        label="SASL Password Secret"
-                        sel={a.sasl.password}
-                        onUpdate={updateReq}
-                      />
-                      <EnumSelect
-                        label="Mechanism"
-                        description="SASL mechanism used to authenticate to Kafka."
-                        enumObj={
-                          EnterpriseP.CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism
-                        }
-                        value={a.sasl.mechanism}
-                        options={[
-                          {
-                            label: "PLAIN",
-                            value:
-                              EnterpriseP
-                                .CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism
-                                .PLAIN,
-                          },
-                          {
-                            label: "SCRAM-SHA-256",
-                            value:
-                              EnterpriseP
-                                .CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism
-                                .SCRAM_SHA_256,
-                          },
-                          {
-                            label: "SCRAM-SHA-512",
-                            value:
-                              EnterpriseP
-                                .CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism
-                                .SCRAM_SHA_512,
-                          },
-                        ]}
-                        onChange={(m) => {
-                          a.sasl.mechanism = m;
-                          updateReq();
-                        }}
-                      />
-                    </Group>
-                  ))
-                  .otherwise(() => (
-                    <></>
-                  ))}
-              </>
-            ))
-            .otherwise(() => (
-              <></>
-            ))}
-        </Tabs.Panel>
-
-        <Tabs.Panel value="datadog">
-          {match(req.spec!.type)
-            .with({ oneofKind: "datadog" }, (type) => (
-              <>
-                <Group grow>
-                  <TextInput
-                    required
-                    label="Site"
-                    description="Datadog site receiving the exported telemetry."
-                    placeholder="datadoghq.com"
-                    value={type.datadog.api?.site ?? ""}
-                    onChange={(v) => {
-                      if (!type.datadog.api) {
-                        type.datadog.api =
-                          EnterpriseP.CollectorExporter_Spec_Datadog_API.create();
-                      }
-                      type.datadog.api.site = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <SecretSelectField
-                    label="API Key Secret"
-                    sel={type.datadog.api?.key}
-                    onUpdate={updateReq}
-                  />
-                </Group>
-                <Group grow>
-                  <TextInput
-                    label="Hostname"
-                    description="Hostname attributed to exported Datadog telemetry; detected automatically when empty."
-                    value={type.datadog.hostname}
-                    onChange={(v) => {
-                      type.datadog.hostname = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <Switch
-                    label="Fail On Invalid Key"
-                    description="Fail Collector startup when Datadog rejects the API key."
-                    checked={type.datadog.api?.failOnInvalidKey ?? false}
-                    onChange={(v) => {
-                      if (!type.datadog.api) {
-                        type.datadog.api =
-                          EnterpriseP.CollectorExporter_Spec_Datadog_API.create();
-                      }
-                      type.datadog.api.failOnInvalidKey = v.target.checked;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-              </>
-            ))
-            .otherwise(() => (
-              <></>
-            ))}
-        </Tabs.Panel>
-
-        <Tabs.Panel value="logzio">
-          {match(req.spec!.type)
-            .with({ oneofKind: "logzio" }, (type) => (
-              <>
-                <Group grow>
-                  <TextInput
-                    required
-                    label="Endpoint"
-                    description="Logz.io listener URL; derived from Region when empty."
-                    placeholder="https://listener.logz.io:8053"
-                    value={type.logzio.endpoint}
-                    onChange={(v) => {
-                      type.logzio.endpoint = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <TextInput
-                    label="Region"
-                    description="Logz.io account region used to derive the listener URL."
-                    placeholder="us"
-                    value={type.logzio.region}
-                    onChange={(v) => {
-                      type.logzio.region = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <SecretSelectField
-                    label="Token Secret"
-                    sel={type.logzio.token}
-                    onUpdate={updateReq}
-                  />
-                </Group>
-              </>
-            ))
-            .otherwise(() => (
-              <></>
-            ))}
-        </Tabs.Panel>
-
-        <Tabs.Panel value="influxDB">
-          {match(req.spec!.type)
-            .with({ oneofKind: "influxDB" }, (type) => (
-              <>
-                <Group grow>
-                  <TextInput
-                    required
-                    label="Endpoint"
-                    description="URL of the upstream InfluxDB server."
-                    placeholder="https://influxdb.example.com:8086"
-                    value={type.influxDB.endpoint}
-                    onChange={(v) => {
-                      type.influxDB.endpoint = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <SecretSelectField
-                    label="Token Secret"
-                    sel={type.influxDB.token}
-                    onUpdate={updateReq}
-                  />
-                </Group>
-                <Group grow>
-                  <TextInput
-                    required
-                    label="Org"
-                    description="InfluxDB organization that owns the bucket."
-                    value={type.influxDB.org}
-                    onChange={(v) => {
-                      type.influxDB.org = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <TextInput
-                    required
-                    label="Bucket"
-                    description="InfluxDB bucket receiving the telemetry."
-                    value={type.influxDB.bucket}
-                    onChange={(v) => {
-                      type.influxDB.bucket = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-                <Group grow>
-                  <EnumSelect
-                    label="Metrics Schema"
-                    description="Schema used to map OpenTelemetry metrics into InfluxDB points."
-                    enumObj={
-                      EnterpriseP.CollectorExporter_Spec_InfluxDB_MetricsSchema
-                    }
-                    value={type.influxDB.metricsSchema}
-                    options={[
-                      {
-                        label: "Telegraf Prometheus V1",
-                        value:
-                          EnterpriseP
-                            .CollectorExporter_Spec_InfluxDB_MetricsSchema
-                            .TELEGRAF_PROMETHEUS_V1,
-                      },
-                      {
-                        label: "Telegraf Prometheus V2",
-                        value:
-                          EnterpriseP
-                            .CollectorExporter_Spec_InfluxDB_MetricsSchema
-                            .TELEGRAF_PROMETHEUS_V2,
-                      },
-                    ]}
-                    onChange={(s) => {
-                      type.influxDB.metricsSchema = s;
-                      updateReq();
-                    }}
-                  />
-                  <EnumSelect
-                    label="Precision"
-                    description="Timestamp precision used for exported InfluxDB points."
-                    enumObj={
-                      EnterpriseP.CollectorExporter_Spec_InfluxDB_Precision
-                    }
-                    value={type.influxDB.precision}
-                    options={[
-                      {
-                        label: "ns",
-                        value:
-                          EnterpriseP.CollectorExporter_Spec_InfluxDB_Precision
-                            .NS,
-                      },
-                      {
-                        label: "us",
-                        value:
-                          EnterpriseP.CollectorExporter_Spec_InfluxDB_Precision
-                            .US,
-                      },
-                      {
-                        label: "ms",
-                        value:
-                          EnterpriseP.CollectorExporter_Spec_InfluxDB_Precision
-                            .MS,
-                      },
-                      {
-                        label: "s",
-                        value:
-                          EnterpriseP.CollectorExporter_Spec_InfluxDB_Precision
-                            .S,
-                      },
-                    ]}
-                    onChange={(p) => {
-                      type.influxDB.precision = p;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-              </>
-            ))
-            .otherwise(() => (
-              <></>
-            ))}
-        </Tabs.Panel>
-
-        <Tabs.Panel value="splunk">
-          {match(req.spec!.type)
-            .with({ oneofKind: "splunk" }, (type) => (
-              <>
-                <Group grow>
-                  <TextInput
-                    required
-                    label="Endpoint"
-                    description="URL of the upstream Splunk HTTP Event Collector endpoint."
-                    placeholder="https://splunk.example.com:8088/services/collector"
-                    value={type.splunk.endpoint}
-                    onChange={(v) => {
-                      type.splunk.endpoint = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <SecretSelectField
-                    label="Token Secret"
-                    sel={type.splunk.token}
-                    onUpdate={updateReq}
-                  />
-                </Group>
-                <Group grow>
-                  <TextInput
-                    label="Source"
-                    description="Splunk source field assigned to exported events."
-                    value={type.splunk.source}
-                    onChange={(v) => {
-                      type.splunk.source = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <TextInput
-                    label="Source Type"
-                    description="Splunk sourcetype field assigned to exported events."
-                    value={type.splunk.sourceType}
-                    onChange={(v) => {
-                      type.splunk.sourceType = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <TextInput
-                    label="Index"
-                    description="Splunk index receiving the exported events."
-                    value={type.splunk.index}
-                    onChange={(v) => {
-                      type.splunk.index = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-                <Group grow>
-                  <TextInput
-                    label="App Name"
-                    description="Application name reported to Splunk."
-                    value={type.splunk.appName}
-                    onChange={(v) => {
-                      type.splunk.appName = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <TextInput
-                    label="App Version"
-                    description="Application version reported to Splunk."
-                    value={type.splunk.appVersion}
-                    onChange={(v) => {
-                      type.splunk.appVersion = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-                <Group>
-                  <Switch
-                    label="Use Multi Metric Format"
-                    description="Combine metrics with shared dimensions into a single event."
-                    checked={type.splunk.useMultiMetricFormat}
-                    onChange={(v) => {
-                      type.splunk.useMultiMetricFormat = v.target.checked;
-                      updateReq();
-                    }}
-                  />
-                  <Switch
-                    label="Disable Compression"
-                    description="Disable compression for exported Splunk payloads."
-                    checked={type.splunk.disableCompression}
-                    onChange={(v) => {
-                      type.splunk.disableCompression = v.target.checked;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-              </>
-            ))
-            .otherwise(() => (
-              <></>
-            ))}
-        </Tabs.Panel>
-
-        <Tabs.Panel value="azureMonitor">
-          {match(req.spec!.type)
-            .with({ oneofKind: "azureMonitor" }, (type) => (
-              <>
-                <Group grow>
-                  <SecretSelectField
-                    label="Connection String Secret"
-                    sel={type.azureMonitor.connectionString}
-                    onUpdate={updateReq}
-                  />
-                  <SecretSelectField
-                    label="Instrumentation Key Secret"
-                    sel={type.azureMonitor.instrumentationKey}
-                    onUpdate={updateReq}
-                  />
-                </Group>
-                <Group grow>
-                  <TextInput
-                    label="Endpoint"
-                    description="Optional Azure Monitor ingestion endpoint override."
-                    value={type.azureMonitor.endpoint}
-                    onChange={(v) => {
-                      type.azureMonitor.endpoint = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <NumberInput
-                    label="Max Batch Size"
-                    description="Maximum number of telemetry items sent in one batch."
-                    value={type.azureMonitor.maxBatchSize}
-                    onChange={(v) => {
-                      type.azureMonitor.maxBatchSize =
-                        typeof v === "number" ? v : Number(v) || 0;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-                <Group>
-                  <Switch
-                    label="Custom Events Enabled"
-                    description="Export custom-event log records to Application Insights."
-                    checked={type.azureMonitor.customEventsEnabled}
-                    onChange={(v) => {
-                      type.azureMonitor.customEventsEnabled = v.target.checked;
-                      updateReq();
-                    }}
-                  />
-                  <Switch
-                    label="Exception Events Enabled"
-                    description="Export exception attributes as Application Insights telemetry."
-                    checked={type.azureMonitor.exceptionEventsEnabled}
-                    onChange={(v) => {
-                      type.azureMonitor.exceptionEventsEnabled =
-                        v.target.checked;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-              </>
-            ))
-            .otherwise(() => (
-              <></>
-            ))}
-        </Tabs.Panel>
-
-        <Tabs.Panel value="azureDataExplorer">
-          {match(req.spec!.type)
-            .with({ oneofKind: "azureDataExplorer" }, (type) => (
-              <>
-                <Group grow>
-                  <TextInput
-                    required
-                    label="Cluster URI"
-                    description="URI of the upstream Azure Data Explorer cluster."
-                    placeholder="https://cluster.region.kusto.windows.net"
-                    value={type.azureDataExplorer.clusterURI}
-                    onChange={(v) => {
-                      type.azureDataExplorer.clusterURI = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <EnumSelect
-                    label="Ingestion Type"
-                    description="Ingestion mode used to write telemetry to Azure Data Explorer."
-                    enumObj={
-                      EnterpriseP.CollectorExporter_Spec_AzureDataExplorer_IngestionType
-                    }
-                    value={type.azureDataExplorer.ingestionType}
-                    options={[
-                      {
-                        label: "Queued",
-                        value:
-                          EnterpriseP
-                            .CollectorExporter_Spec_AzureDataExplorer_IngestionType
-                            .QUEUED,
-                      },
-                      {
-                        label: "Managed",
-                        value:
-                          EnterpriseP
-                            .CollectorExporter_Spec_AzureDataExplorer_IngestionType
-                            .MANAGED,
-                      },
-                    ]}
-                    onChange={(t) => {
-                      type.azureDataExplorer.ingestionType = t;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-
-                <Group grow>
-                  <TextInput
-                    label="Database"
-                    description="Azure Data Explorer database receiving the telemetry."
-                    value={type.azureDataExplorer.database}
-                    onChange={(v) => {
-                      type.azureDataExplorer.database = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <TextInput
-                    label="Logs Table"
-                    description="Azure Data Explorer table receiving logs."
-                    value={type.azureDataExplorer.logsTable}
-                    onChange={(v) => {
-                      type.azureDataExplorer.logsTable = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                  <TextInput
-                    label="Metrics Table"
-                    description="Azure Data Explorer table receiving metrics."
-                    value={type.azureDataExplorer.metricsTable}
-                    onChange={(v) => {
-                      type.azureDataExplorer.metricsTable = v.target.value;
-                      updateReq();
-                    }}
-                  />
-                </Group>
-
-                <Tabs
-                  value={type.azureDataExplorer.auth?.type.oneofKind ?? "servicePrincipal"}
-                  onChange={(v) => {
-                    if (!type.azureDataExplorer.auth) {
-                      type.azureDataExplorer.auth =
-                        EnterpriseP.CollectorExporter_Spec_AzureDataExplorer_Auth.create();
-                    }
-                    const currentKind = type.azureDataExplorer.auth.type.oneofKind;
-                    if (currentKind) {
-                      authenticationConfigurations.current[`azureDataExplorer.${currentKind}`] = structuredClone(type.azureDataExplorer.auth.type);
-                    }
-                    const cached = authenticationConfigurations.current[`azureDataExplorer.${v}`] as typeof type.azureDataExplorer.auth.type | undefined;
-                    if (cached) {
-                      type.azureDataExplorer.auth.type = structuredClone(cached);
-                      updateReq();
-                      return;
-                    }
-                    match(v)
-                      .with("servicePrincipal", () => {
-                        type.azureDataExplorer.auth!.type = {
-                          oneofKind: "servicePrincipal",
-                          servicePrincipal: {
-                            applicationID: "",
-                            applicationKey: freshSecret(),
-                            tenantID: "",
-                          },
-                        };
-                      })
-                      .with("managedIdentity", () => {
-                        type.azureDataExplorer.auth!.type = {
-                          oneofKind: "managedIdentity",
-                          managedIdentity: { id: "" },
-                        };
-                      })
-                      .with("azureDefault", () => {
-                        type.azureDataExplorer.auth!.type = {
-                          oneofKind: "azureDefault",
-                          azureDefault: {},
-                        };
-                      })
-                      .otherwise(() => {});
-                    updateReq();
-                  }}
-                >
-                  <SegmentedControl
-                    fullWidth
-                    value={type.azureDataExplorer.auth?.type.oneofKind ?? "servicePrincipal"}
-                    data={[
-                      { label: "Service principal", value: "servicePrincipal" },
-                      { label: "Managed identity", value: "managedIdentity" },
-                      { label: "Azure default", value: "azureDefault" },
-                    ]}
-                    onChange={(value) => {
-                      if (!type.azureDataExplorer.auth) type.azureDataExplorer.auth = EnterpriseP.CollectorExporter_Spec_AzureDataExplorer_Auth.create();
-                      const current = type.azureDataExplorer.auth.type.oneofKind;
-                      if (current) authenticationConfigurations.current[`azureDataExplorer.${current}`] = structuredClone(type.azureDataExplorer.auth.type);
-                      const cached = authenticationConfigurations.current[`azureDataExplorer.${value}`] as typeof type.azureDataExplorer.auth.type | undefined;
-                      type.azureDataExplorer.auth.type = cached ? structuredClone(cached) : value === "managedIdentity" ? { oneofKind: "managedIdentity", managedIdentity: { id: "" } } : value === "azureDefault" ? { oneofKind: "azureDefault", azureDefault: {} } : { oneofKind: "servicePrincipal", servicePrincipal: { applicationID: "", applicationKey: freshSecret(), tenantID: "" } };
-                      updateReq();
-                    }}
-                  />
-
-                  <Tabs.Panel value="servicePrincipal">
-                    {match(type.azureDataExplorer.auth?.type)
-                      .with({ oneofKind: "servicePrincipal" }, (a) => (
-                        <Group grow>
-                          <TextInput
-                            required
-                            label="Application ID"
-                            description="Client ID of the Entra ID application."
-                            value={a.servicePrincipal.applicationID}
-                            onChange={(v) => {
-                              a.servicePrincipal.applicationID = v.target.value;
-                              updateReq();
-                            }}
-                          />
-                          <TextInput
-                            required
-                            label="Tenant ID"
-                            description="Entra ID tenant that owns the application."
-                            value={a.servicePrincipal.tenantID}
-                            onChange={(v) => {
-                              a.servicePrincipal.tenantID = v.target.value;
-                              updateReq();
-                            }}
-                          />
-                          <SecretSelectField
-                            label="Application Key Secret"
-                            sel={a.servicePrincipal.applicationKey}
-                            onUpdate={updateReq}
-                          />
-                        </Group>
-                      ))
-                      .otherwise(() => (
-                        <></>
-                      ))}
-                  </Tabs.Panel>
-
-                  <Tabs.Panel value="managedIdentity">
-                    {match(type.azureDataExplorer.auth?.type)
-                      .with({ oneofKind: "managedIdentity" }, (a) => (
-                        <TextInput
-                          required
-                          label="Managed Identity ID"
-                          description='"system" or a client UUID'
-                          value={a.managedIdentity.id}
-                          onChange={(v) => {
-                            a.managedIdentity.id = v.target.value;
-                            updateReq();
-                          }}
-                        />
-                      ))
-                      .otherwise(() => (
-                        <></>
-                      ))}
-                  </Tabs.Panel>
-
-                  <Tabs.Panel value="azureDefault">
-                    <ItemMessage
-                      title="Azure Default Credentials"
-                      obj={{}}
-                    ></ItemMessage>
-                  </Tabs.Panel>
-                </Tabs>
-              </>
-            ))
-            .otherwise(() => (
-              <></>
-            ))}
-        </Tabs.Panel>
-      </Tabs>
-      <div className="mt-4">
-        <PrometheusTLSSettings type={req.spec.type} onUpdate={updateReq} />
-        <AdvancedSettings type={req.spec.type} onUpdate={updateReq} />
-      </div>
+        <ToggleList>
+          <ToggleRow
+            label="Disable this exporter"
+            checked={spec.isDisabled}
+            onChange={(checked) => {
+              spec.isDisabled = checked;
+              updateReq();
+            }}
+          />
+        </ToggleList>
+      </FormSection>
     </div>
   );
 };
