@@ -30,6 +30,10 @@ describe("system prompt", () => {
     assert.match(prompt, /<console_context> block/);
     assert.match(prompt, /\/visibility\/accesslogs\?serviceRef\.name=/);
     assert.match(prompt, /kind DashboardSection is a snapshot/);
+    assert.match(
+      prompt,
+      /kind TerminalSession comes from an interactive terminal/,
+    );
     assert.match(prompt, /"Needs attention"/);
     assert.match(prompt, /reason=<the reason type/);
     assert.match(prompt, /levels=ERROR,PANIC,FATAL/);

@@ -33,6 +33,7 @@ import {
   ScrollText,
   ShieldAlert,
   SquarePen,
+  SquareTerminal,
   X,
 } from "lucide-react";
 import * as React from "react";
@@ -426,9 +427,11 @@ const DockChat = (props: ReadyChatProps) => {
       icon:
         pinned.items?.[0]?.kind === "DashboardSection"
           ? LayoutDashboard
-          : pinned.items && pinned.items.length > 0
-            ? ScrollText
-            : Box,
+          : pinned.items?.[0]?.kind === "TerminalSession"
+            ? SquareTerminal
+            : pinned.items && pinned.items.length > 0
+              ? ScrollText
+              : Box,
       label: pinned.label,
       title: pinned.label,
       onRemove: () => setPinned(undefined),

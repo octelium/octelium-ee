@@ -10,6 +10,11 @@
   --color-terminal-line: #334155;
   --color-terminal-muted: #64748b;
   --color-terminal-text: #e2e8f0;
+  --color-terminal-bright: #f8fafc;
+  --color-terminal-hover: #1e293b;
+  --color-terminal-accent: #60a5fa;
+  --color-terminal-success: #34d399;
+  --color-terminal-error: #fb7185;
 
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
   --shadow-raised: 0 4px 12px rgba(15, 23, 42, 0.08);

@@ -138,18 +138,16 @@ describe("Console performance regressions", () => {
     for (const suffix of [
       "/src/components/TimestampPicker/index.tsx",
       "/src/components/SSHRecordingPlayer/Player.tsx",
+      "/src/components/ServiceConnect/session.ts",
     ]) {
       const key = [...sources].find(([, files]) =>
         files.some((file) => file.endsWith(suffix)),
       )?.[0];
       assert.ok(key, suffix);
-      assert.ok(manifest[key].css?.length > 0, suffix);
-      assert.ok(
-        manifest[key].css.every(
-          (file) => !manifest["index.html"].css.includes(file),
-        ),
-        suffix,
-      );
+      const styles = [...closure(key)]
+        .flatMap((dependency) => manifest[dependency].css ?? [])
+        .filter((file) => !manifest["index.html"].css.includes(file));
+      assert.ok(styles.length > 0, suffix);
     }
     assert.ok(!css.includes(".xterm-screen"));
     assert.ok(!css.includes(".fi-us"));

@@ -630,6 +630,21 @@ export const hasPlayground = (resource: Resource): boolean => {
   );
 };
 
+export const hasConnect = (resource: Resource): boolean => {
+  if (resource.apiVersion !== "core/v1" || resource.kind !== "Service") {
+    return false;
+  }
+  return match((resource as CoreP.Service).spec?.mode)
+    .with(
+      undefined,
+      CoreP.Service_Spec_Mode.MODE_UNSET,
+      CoreP.Service_Spec_Mode.RDP,
+      CoreP.Service_Spec_Mode.RDP_WEB,
+      () => false,
+    )
+    .otherwise(() => true);
+};
+
 export const getRefName = (arg: Resource): string => {
   const kind = arg.kind;
   return `${kind.at(0)?.toLowerCase() ?? ""}${kind.slice(1)}Ref`;

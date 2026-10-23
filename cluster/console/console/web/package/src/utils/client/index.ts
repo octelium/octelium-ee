@@ -1,6 +1,7 @@
 import * as grpcWeb from "@protobuf-ts/grpcweb-transport";
 
 import { getDomain, isDev } from "..";
+import type { ObjectReference } from "../../apis/metav1/metav1";
 import * as AccessC from "../../apis/accessv1/accessv1.client";
 import * as AuthGRPC from "../../apis/authv1/authv1.client";
 import * as CordiumC from "../../apis/cordiumv1/cordiumv1.client";
@@ -194,6 +195,35 @@ let cordiumClient: CordiumC.MainServiceClient | undefined;
 export const getClientCordium = (): CordiumC.MainServiceClient => {
   cordiumClient ??= new CordiumC.MainServiceClient(getTransport());
   return cordiumClient;
+};
+
+const cordiumWorkspaceClients = new Map<
+  string,
+  CordiumC.WorkspaceServiceClient
+>();
+
+export const getClientCordiumWorkspace = (
+  regionRef?: ObjectReference,
+): CordiumC.WorkspaceServiceClient => {
+  const region =
+    isDev() || !regionRef?.name || regionRef.name === "default"
+      ? ""
+      : regionRef.name;
+  let ret = cordiumWorkspaceClients.get(region);
+  if (!ret) {
+    ret = new CordiumC.WorkspaceServiceClient(
+      region
+        ? new grpcWeb.GrpcWebFetchTransport({
+            baseUrl: `${location.protocol === "https:" ? "https" : "http"}://${region}.octelium-api.${getDomain()}`,
+            fetchInit: {
+              credentials: "include",
+            },
+          })
+        : getTransport(),
+    );
+    cordiumWorkspaceClients.set(region, ret);
+  }
+  return ret;
 };
 
 let visibilityMetricsClient:

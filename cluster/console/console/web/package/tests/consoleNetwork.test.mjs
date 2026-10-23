@@ -454,7 +454,7 @@ describe("Console network regressions", () => {
         meta: defaults.meta ?? null,
       };
     });
-    assert.equal(result.identities.length, 20);
+    assert.equal(result.identities.length, 21);
     assert.ok(result.identities.every(([, same]) => same));
     assert.equal(result.sameTransport, true);
     assert.deepEqual(result.outcomes, ["CANCELLED", "OK"]);

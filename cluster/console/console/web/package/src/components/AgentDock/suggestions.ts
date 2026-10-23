@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   ShieldPlus,
   Sparkles,
+  SquareTerminal,
   Trash2,
   UserX,
   Users,
@@ -125,6 +126,29 @@ const itemSuggestions = (pinned: PinnedContext): Suggestion[] => {
           FileSearch,
           "Show the evidence",
           "Find the log entries and resources behind the most significant number in this section",
+        ),
+      ];
+    case "TerminalSession":
+      return [
+        s(
+          BookOpenText,
+          "Explain the output",
+          "Explain what this terminal output shows",
+        ),
+        s(
+          ScanSearch,
+          "Fix the error",
+          "Why did this command fail and how can I fix it?",
+        ),
+        s(
+          SquareTerminal,
+          "What next?",
+          "Suggest the next commands to inspect this Service from this terminal",
+        ),
+        s(
+          ShieldCheck,
+          "Check the access",
+          "Check the access logs of this Service for my recent connection and explain the decision",
         ),
       ];
     case "ComponentLog":
@@ -377,6 +401,19 @@ const tabSuggestions = (tab: string, kind: string): Suggestion[] => {
           ChartColumn,
           "LLM usage",
           `Summarize the LLM usage of this ${kind} and what drives it`,
+        ),
+      ];
+    case "connect":
+      return [
+        s(
+          SquareTerminal,
+          "Useful commands",
+          `Suggest useful commands to inspect this ${kind} from its CLI`,
+        ),
+        s(
+          ShieldCheck,
+          "Why can't I connect?",
+          `Check why my connection to this ${kind} might fail: its Policies, upstream and recent access logs`,
         ),
       ];
     default:

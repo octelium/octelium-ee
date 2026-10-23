@@ -1,7 +1,9 @@
+import { useOptionalAgent } from "@/components/AgentDock/context";
 import { getResourceComponentInfoFromResource } from "@/pages/utils/resourceRegistry";
 import {
   hasAccessLog,
   hasAuthenticationLog,
+  hasConnect,
   hasLLMVisibility,
   hasPlayground,
   hasSSHSessionLog,
@@ -18,11 +20,13 @@ import {
   ShieldCheck,
   ShieldEllipsis,
   ShieldUser,
+  SquareTerminal,
   Terminal,
 } from "lucide-react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { match } from "ts-pattern";
 import PageWrap from "../PageWrap";
+import KeepAliveScope from "./KeepAliveScope";
 import {
   ResourceLoadError,
   ResourceNotFound,
@@ -77,6 +81,13 @@ const PLAYGROUND_TAB: Tab = {
   path: "playground",
 };
 
+const CONNECT_TAB: Tab = {
+  value: "connect",
+  label: "Connect",
+  icon: SquareTerminal,
+  path: "connect",
+};
+
 const SSH_TAB: Tab = {
   value: "ssh",
   label: "SSH Recordings",
@@ -103,11 +114,12 @@ const getActiveTab = (pathname: string): string => {
     .with("llm", () => "llm")
     .with("ssh", () => "ssh")
     .with("playground", () => "playground")
+    .with("connect", () => "connect")
     .with("auditlogs", () => "auditlogs")
     .otherwise(() => "main");
 };
 
-const buildTabs = (resource: Resource): Tab[] => {
+const buildTabs = (resource: Resource, connectable: boolean): Tab[] => {
   const tabs = [...BASE_TABS];
   if (
     !resource.metadata?.isSystem &&
@@ -120,6 +132,7 @@ const buildTabs = (resource: Resource): Tab[] => {
       path: "edit",
     });
   }
+  if (connectable && hasConnect(resource)) tabs.push(CONNECT_TAB);
   if (hasPlayground(resource)) tabs.push(PLAYGROUND_TAB);
   if (
     resource.apiVersion === "core/v1" &&
@@ -156,8 +169,9 @@ const buildTabs = (resource: Resource): Tab[] => {
 const ResourceMainBar = (props: { resource: Resource }) => {
   const navigate = useNavigate();
   const loc = useLocation();
+  const agent = useOptionalAgent();
   const activeTab = getActiveTab(loc.pathname);
-  const tabs = buildTabs(props.resource);
+  const tabs = buildTabs(props.resource, agent?.status !== "unavailable");
   const resourcePath = `/${loc.pathname
     .split("/")
     .filter(Boolean)
@@ -226,7 +240,11 @@ const ResourceItemPage = () => {
       {ctx.data && (
         <div className="flex w-full flex-col gap-6">
           <ResourceMainBar resource={ctx.data} />
-          <Outlet />
+          <KeepAliveScope
+            key={`${ctx.data.apiVersion}/${ctx.data.kind}/${ctx.data.metadata?.uid ?? ctx.data.metadata?.name}`}
+          >
+            <Outlet />
+          </KeepAliveScope>
         </div>
       )}
     </PageWrap>
