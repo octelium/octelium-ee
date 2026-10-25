@@ -189,6 +189,26 @@ describe("model resolution", () => {
     assert.deepEqual(resolved.model.input, ["text", "image"]);
   });
 
+  it("resolves the existing Azure provider", async () => {
+    const modelRuntime = await newRuntime();
+    const model = modelRuntime.getModels("azure-openai-responses")[0];
+    assert.ok(model);
+    const resolved = await resolveModel(
+      llmConfig({
+        provider: "azure-openai-responses",
+        model: model.id,
+        apiKey: "k",
+      }),
+      { modelRuntime, logger },
+    );
+    assert.equal(resolved.model.provider, "azure-openai-responses");
+    assert.equal(resolved.model.api, "azure-openai-responses");
+    assert.equal(
+      modelRuntime.hasConfiguredAuth("azure-openai-responses"),
+      true,
+    );
+  });
+
   it("resolves the built-in providers", async () => {
     const modelRuntime = await newRuntime();
     const resolved = await resolveModel(
