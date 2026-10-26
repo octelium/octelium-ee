@@ -91,6 +91,9 @@ func Phases() []suite.Phase {
 		{Name: "RscStoreAccessResources", Run: testRscStoreAccessResources},
 		{Name: "RscStoreCordiumResources", Run: testRscStoreCordiumResources},
 		{Name: "RscStoreSecretRedaction", Run: testRscStoreSecretRedaction},
+		{Name: "RscStoreSearchLifecycle", Run: testRscStoreSearchLifecycle},
+		{Name: "RscStoreSummaryWindows", Run: testRscStoreSummaryWindows},
+		{Name: "RscStoreAccessActivity", Run: testRscStoreAccessActivity},
 		{Name: "VisibilityScoping", Run: testVisibilityScoping},
 
 		{Name: "ClusterSummaryFanOut", Run: testClusterSummaryFanOut},

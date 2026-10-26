@@ -9,6 +9,9 @@
 package rscstore
 
 import (
+	"context"
+	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -22,6 +25,10 @@ import (
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -777,4 +784,220 @@ func TestAccessPolicySummarySurfaces(t *testing.T) {
 	assert.EqualValues(t, 2, resp.TotalRuleNotification)
 	assert.EqualValues(t, 3, resp.TotalReviewSurface)
 	assert.EqualValues(t, 2, resp.TotalInteractiveSurface)
+}
+
+func TestAccessActivityWindowBoundaries(t *testing.T) {
+	before := time.Now().UTC()
+	from, to, err := getAccessWindow(nil, nil)
+	require.Nil(t, err)
+	assert.Equal(t, accessDataPointDefaultWindow, to.Sub(from))
+	assert.WithinDuration(t, before, to, time.Second)
+	fixed := timestamppb.New(time.Date(2025, time.January, 1, 12, 0, 0, 0, time.UTC))
+	from, to, err = getAccessWindow(nil, fixed)
+	require.Nil(t, err)
+	assert.Equal(t, fixed.AsTime(), to)
+	assert.Equal(t, to.Add(-accessDataPointDefaultWindow), from)
+	from, to, err = getAccessWindow(fixed, fixed)
+	require.Nil(t, err)
+	assert.Equal(t, from, to)
+	for _, tt := range []struct{ from, to *timestamppb.Timestamp }{
+		{from: &timestamppb.Timestamp{Seconds: 253402300800}},
+		{to: &timestamppb.Timestamp{Nanos: -1}},
+		{from: timestamppb.New(fixed.AsTime().Add(time.Second)), to: fixed},
+	} {
+		from, to, err := getAccessWindow(tt.from, tt.to)
+		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+		assert.True(t, from.IsZero())
+		assert.True(t, to.IsZero())
+	}
+	for _, tt := range []struct {
+		interval *metav1.Duration
+		want     time.Duration
+	}{
+		{interval: &metav1.Duration{Type: &metav1.Duration_Milliseconds{Milliseconds: 1000}}, want: time.Second},
+		{interval: &metav1.Duration{Type: &metav1.Duration_Milliseconds{Milliseconds: 1500}}, want: time.Second},
+		{interval: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 2}}, want: 2 * time.Second},
+		{interval: &metav1.Duration{Type: &metav1.Duration_Minutes{Minutes: 2}}, want: 2 * time.Minute},
+		{interval: &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 2}}, want: 2 * time.Hour},
+		{interval: &metav1.Duration{Type: &metav1.Duration_Days{Days: 2}}, want: 48 * time.Hour},
+		{interval: &metav1.Duration{Type: &metav1.Duration_Weeks{Weeks: 2}}, want: 14 * 24 * time.Hour},
+	} {
+		got, err := getAccessDataPointInterval(fixed.AsTime(), fixed.AsTime().Add(time.Minute), tt.interval)
+		require.Nil(t, err)
+		assert.Equal(t, tt.want, got)
+	}
+	for _, interval := range []*metav1.Duration{
+		{Type: &metav1.Duration_Milliseconds{}},
+		{Type: &metav1.Duration_Milliseconds{Milliseconds: 999}},
+		{Type: &metav1.Duration_Seconds{}},
+		{Type: &metav1.Duration_Minutes{}},
+	} {
+		_, err := getAccessDataPointInterval(fixed.AsTime(), fixed.AsTime().Add(time.Minute), interval)
+		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+	}
+	_, err = getAccessDataPointInterval(fixed.AsTime(), fixed.AsTime().Add(20*365*24*time.Hour), nil)
+	assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+}
+
+func TestAccessActivityRPCGroupsAndValidation(t *testing.T) {
+	env := newRscStoreTestEnv(t)
+	require.NotNil(t, env)
+	activity := insertTstAccessActivity(t, env)
+	conn := newRscStoreRPCClient(t, env)
+	client := vaccessv1.NewResourceServiceClient(conn)
+	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Second)
+	defer cancel()
+	request := &vaccessv1.GetRequestDataPointRequest{
+		From:     timestamppb.New(activity.now.Add(-time.Hour)),
+		To:       timestamppb.New(activity.now),
+		Interval: &metav1.Duration{Type: &metav1.Duration_Minutes{Minutes: 5}},
+	}
+	for _, group := range []vaccessv1.GetRequestDataPointRequest_GroupBy{
+		vaccessv1.GetRequestDataPointRequest_GROUP_BY_UNSET,
+		vaccessv1.GetRequestDataPointRequest_STATE,
+		vaccessv1.GetRequestDataPointRequest_URGENCY,
+		vaccessv1.GetRequestDataPointRequest_EFFECT,
+		vaccessv1.GetRequestDataPointRequest_ORIGIN,
+		vaccessv1.GetRequestDataPointRequest_POLICY,
+	} {
+		t.Run(group.String(), func(t *testing.T) {
+			arg := proto.Clone(request).(*vaccessv1.GetRequestDataPointRequest)
+			arg.GroupBy = group
+			res, err := client.GetRequestDataPoint(ctx, arg)
+			require.Nil(t, err)
+			var total int64
+			for idx, point := range res.Datapoints {
+				total += point.Count
+				if idx > 0 {
+					assert.Equal(t, 5*time.Minute, point.Timestamp.AsTime().Sub(res.Datapoints[idx-1].Timestamp.AsTime()))
+				}
+			}
+			assert.Equal(t, int64(9), total)
+			for _, series := range res.Series {
+				var count int64
+				require.Len(t, series.Datapoints, len(res.Datapoints))
+				for idx, point := range series.Datapoints {
+					count += point.Count
+					assert.True(t, proto.Equal(res.Datapoints[idx].Timestamp, point.Timestamp))
+				}
+				assert.Equal(t, count, series.Total)
+			}
+		})
+	}
+	for _, mutate := range []func(*vaccessv1.GetRequestDataPointRequest){
+		func(arg *vaccessv1.GetRequestDataPointRequest) { arg.GroupBy = 99 },
+		func(arg *vaccessv1.GetRequestDataPointRequest) {
+			arg.Interval = &metav1.Duration{Type: &metav1.Duration_Milliseconds{Milliseconds: 1}}
+		},
+		func(arg *vaccessv1.GetRequestDataPointRequest) { arg.From, arg.To = arg.To, arg.From },
+		func(arg *vaccessv1.GetRequestDataPointRequest) { arg.From = &timestamppb.Timestamp{Nanos: -1} },
+		func(arg *vaccessv1.GetRequestDataPointRequest) {
+			arg.To = &timestamppb.Timestamp{Seconds: 253402300800}
+		},
+		func(arg *vaccessv1.GetRequestDataPointRequest) { arg.PolicyRef = &metav1.ObjectReference{} },
+		func(arg *vaccessv1.GetRequestDataPointRequest) { arg.CatalogRef = &metav1.ObjectReference{} },
+		func(arg *vaccessv1.GetRequestDataPointRequest) { arg.ServiceRef = &metav1.ObjectReference{} },
+		func(arg *vaccessv1.GetRequestDataPointRequest) { arg.UserRef = &metav1.ObjectReference{} },
+	} {
+		arg := proto.Clone(request).(*vaccessv1.GetRequestDataPointRequest)
+		mutate(arg)
+		_, err := client.GetRequestDataPoint(ctx, arg)
+		assert.Equal(t, codes.InvalidArgument, status.Code(err), "%+v", err)
+	}
+	for _, dim := range []vaccessv1.ListReviewTopRequest_Dimension{vaccessv1.ListReviewTopRequest_DIMENSION_UNSET, 99} {
+		_, err := client.ListReviewTop(ctx, &vaccessv1.ListReviewTopRequest{Dimension: dim})
+		assert.Equal(t, codes.InvalidArgument, status.Code(err))
+	}
+	_, err := client.ListRequestTop(ctx, &vaccessv1.ListRequestTopRequest{Dimension: 99})
+	assert.Equal(t, codes.InvalidArgument, status.Code(err))
+	_, err = client.ListReviewTop(ctx, &vaccessv1.ListReviewTopRequest{Dimension: vaccessv1.ListReviewTopRequest_REVIEWER, From: &timestamppb.Timestamp{Nanos: -1}})
+	assert.Equal(t, codes.InvalidArgument, status.Code(err))
+	require.Nil(t, env.srv.db.Close())
+	_, err = client.GetRequestDataPoint(ctx, request)
+	assert.Equal(t, codes.Internal, status.Code(err))
+	_, err = client.ListRequestTop(ctx, &vaccessv1.ListRequestTopRequest{Dimension: vaccessv1.ListRequestTopRequest_REQUESTER})
+	assert.Equal(t, codes.Internal, status.Code(err))
+	_, err = client.ListReviewTop(ctx, &vaccessv1.ListReviewTopRequest{Dimension: vaccessv1.ListReviewTopRequest_REVIEWER})
+	assert.Equal(t, codes.Internal, status.Code(err))
+}
+
+func TestAccessActivityRankingLimitsAndTies(t *testing.T) {
+	env := newRscStoreTestEnv(t)
+	require.NotNil(t, env)
+	now := time.Now().UTC().Truncate(time.Second)
+	for idx := 1; idx <= 30; idx++ {
+		ref := &metav1.ObjectReference{Name: fmt.Sprintf("rank-%02d", idx), Uid: fmt.Sprintf("00000000-0000-4000-8000-%012d", idx)}
+		insertRscStoreObject(t, env, newTstAccessRequest(&tstAccessRequestOpts{name: fmt.Sprintf("request-%d", idx), createdAt: now, policyRef: ref}))
+		insertRscStoreObject(t, env, &accessv1.Review{
+			ApiVersion: "access/v1", Kind: "Review",
+			Metadata: newRscStoreMetadata(fmt.Sprintf("review-%d", idx), now),
+			Spec:     &accessv1.Review_Spec{Decision: accessv1.Review_Spec_DECISION_APPROVE},
+			Status:   &accessv1.Review_Status{UserRef: ref},
+		})
+	}
+	insertRscStoreObject(t, env, newTstAccessRequest(&tstAccessRequestOpts{name: "unbound-request", createdAt: now}))
+	client := vaccessv1.NewResourceServiceClient(newRscStoreRPCClient(t, env))
+	for _, tt := range []struct {
+		limit uint32
+		want  int
+	}{
+		{limit: 0, want: 10}, {limit: 1, want: 1}, {limit: 100, want: 30}, {limit: math.MaxUint32, want: 30},
+	} {
+		request, err := client.ListRequestTop(env.ctx, &vaccessv1.ListRequestTopRequest{Dimension: vaccessv1.ListRequestTopRequest_POLICY, Limit: tt.limit})
+		require.Nil(t, err)
+		review, err := client.ListReviewTop(env.ctx, &vaccessv1.ListReviewTopRequest{Dimension: vaccessv1.ListReviewTopRequest_REVIEWER, Limit: tt.limit})
+		require.Nil(t, err)
+		for _, result := range []*vaccessv1.ListTopResponse{request, review} {
+			require.Len(t, result.Items, tt.want)
+			assert.Equal(t, uint64(30), result.TotalCount)
+			assert.Equal(t, uint64(30-tt.want), result.TotalOther)
+			for idx, item := range result.Items {
+				assert.Equal(t, fmt.Sprintf("00000000-0000-4000-8000-%012d", idx+1), item.Ref.Uid)
+				assert.Equal(t, fmt.Sprintf("rank-%02d", idx+1), item.Ref.Name)
+				assert.Equal(t, uint64(1), item.Count)
+			}
+		}
+	}
+	for _, tt := range []struct {
+		limit uint32
+		want  int
+	}{
+		{limit: 0, want: accessDataPointDefaultSeries}, {limit: 1, want: 1}, {limit: math.MaxUint32, want: accessDataPointMaxSeries},
+	} {
+		result, err := client.GetRequestDataPoint(env.ctx, &vaccessv1.GetRequestDataPointRequest{
+			From: timestamppb.New(now.Add(-time.Minute)), To: timestamppb.New(now.Add(time.Minute)),
+			Interval: &metav1.Duration{Type: &metav1.Duration_Minutes{Minutes: 1}},
+			GroupBy:  vaccessv1.GetRequestDataPointRequest_POLICY, LimitSeries: tt.limit,
+		})
+		require.Nil(t, err)
+		require.Len(t, result.Series, tt.want)
+		for idx, series := range result.Series {
+			assert.Equal(t, fmt.Sprintf("00000000-0000-4000-8000-%012d", idx+1), series.Key)
+			assert.Equal(t, int64(1), series.Total)
+		}
+		var total int64
+		for _, point := range result.Datapoints {
+			total += point.Count
+		}
+		assert.Equal(t, int64(31), total)
+	}
+}
+
+func TestAccessActivityAutomaticIntervals(t *testing.T) {
+	from := time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC)
+	for _, interval := range accessDataPointAutoIntervals {
+		t.Run(interval.String(), func(t *testing.T) {
+			to := from.Add(accessDataPointAutoBuckets * interval)
+			got, err := getAccessDataPointInterval(from, to, nil)
+			require.NoError(t, err)
+			assert.Equal(t, interval, got)
+			buckets := getAccessDataPointBuckets(from, to, got)
+			assert.LessOrEqual(t, len(buckets), accessDataPointAutoBuckets+1)
+			assert.LessOrEqual(t, buckets[0], from.Unix())
+			assert.LessOrEqual(t, buckets[len(buckets)-1], to.Unix())
+		})
+	}
+	interval, err := getAccessDataPointInterval(from, from.AddDate(10, 0, 0), &metav1.Duration{})
+	require.NoError(t, err)
+	assert.Equal(t, 7*24*time.Hour, interval)
 }

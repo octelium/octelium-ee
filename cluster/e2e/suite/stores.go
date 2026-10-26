@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -801,4 +802,337 @@ func testVisibilityScoping(t *testing.T, ch *harness.H) {
 		assert.True(t, grpcerr.IsUnauthorized(err))
 	})
 
+}
+
+func testRscStoreSearchLifecycle(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	oldQuery := h.Name()
+	newQuery := h.Name()
+	oldTag := h.Name()
+	newTag := h.Name()
+	var users []*corev1.User
+	for range 5 {
+		users = append(users, h.CreateUser(t, &corev1.User{
+			Metadata: &metav1.Metadata{
+				Description: oldQuery + " literal%_\\" + oldQuery,
+				Tags:        []string{oldTag},
+			},
+			Spec: &corev1.User_Spec{Type: corev1.User_Spec_WORKLOAD},
+		}))
+	}
+	h.CreateUser(t, &corev1.User{
+		Metadata: &metav1.Metadata{Description: oldQuery, Tags: []string{h.Name()}},
+		Spec:     &corev1.User_Spec{Type: corev1.User_Spec_WORKLOAD},
+	})
+	slices.SortFunc(users, func(a, b *corev1.User) int {
+		return cmp.Compare(a.Metadata.Name, b.Metadata.Name)
+	})
+
+	h.Eventually(t, "the search and tag indexes to include all five Users",
+		eeharness.IngestionBudget, func(ctx context.Context) error {
+			res, err := h.VisibilityCoreC().ListUser(ctx, &vcorev1.ListUserOptions{
+				Common: &vmetav1.CommonListOptions{Query: oldQuery, Tag: oldTag},
+			})
+			if err != nil {
+				return err
+			}
+			if len(res.Items) != len(users) || res.GetListResponseMeta().GetTotalCount() != uint32(len(users)) {
+				return errors.Errorf("the search has not converged to five Users")
+			}
+			return nil
+		})
+
+	t.Run("PaginationAndLiteralSearch", func(t *testing.T) {
+		var got []string
+		var want []string
+		for _, usr := range users {
+			want = append(want, usr.Metadata.Uid)
+		}
+		for page := range uint32(3) {
+			res, err := h.VisibilityCoreC().ListUser(t.Context(), &vcorev1.ListUserOptions{
+				Common: &vmetav1.CommonListOptions{
+					Query: "  " + strings.ToUpper(oldQuery) + "  ", Tag: oldTag,
+					Page: page, ItemsPerPage: 2,
+					OrderBy: &vmetav1.CommonListOptions_OrderBy{
+						Type: vmetav1.CommonListOptions_OrderBy_NAME,
+						Mode: vmetav1.CommonListOptions_OrderBy_ASC,
+					},
+				},
+			})
+			require.Nil(t, err)
+			assert.EqualValues(t, 5, res.ListResponseMeta.TotalCount)
+			assert.Equal(t, page, res.ListResponseMeta.Page)
+			assert.EqualValues(t, 2, res.ListResponseMeta.ItemsPerPage)
+			assert.Equal(t, page < 2, res.ListResponseMeta.HasMore)
+			for _, usr := range res.Items {
+				got = append(got, usr.Metadata.Uid)
+			}
+		}
+		assert.Equal(t, want, got)
+		res, err := h.VisibilityCoreC().ListUser(t.Context(), &vcorev1.ListUserOptions{
+			Common: &vmetav1.CommonListOptions{Query: "%_\\" + oldQuery, Tag: oldTag},
+		})
+		require.Nil(t, err)
+		assert.Len(t, res.Items, 5)
+		res, err = h.VisibilityCoreC().ListUser(t.Context(), &vcorev1.ListUserOptions{
+			Common: &vmetav1.CommonListOptions{Query: "' OR 1=1 --", Tag: oldTag},
+		})
+		require.Nil(t, err)
+		assert.Empty(t, res.Items)
+	})
+
+	for i, usr := range users {
+		usr.Metadata.Description = newQuery
+		usr.Metadata.Tags = []string{newTag}
+		users[i] = h.UpdateUser(t, usr)
+	}
+	waitUpdated := func(ctx context.Context, count uint32) error {
+		old, err := h.VisibilityCoreC().ListUser(ctx, &vcorev1.ListUserOptions{
+			Common: &vmetav1.CommonListOptions{Query: oldQuery, Tag: oldTag},
+		})
+		if err != nil {
+			return err
+		}
+		if len(old.Items) != 0 || old.GetListResponseMeta().GetTotalCount() != 0 {
+			return errors.Errorf("the old search and tag indexes still match updated Users")
+		}
+		res, err := h.VisibilityCoreC().ListUser(ctx, &vcorev1.ListUserOptions{
+			Common: &vmetav1.CommonListOptions{Query: newQuery, Tag: newTag},
+		})
+		if err != nil {
+			return err
+		}
+		if uint32(len(res.Items)) != count || res.GetListResponseMeta().GetTotalCount() != count {
+			return errors.Errorf("the updated search has %d Users, want %d", len(res.Items), count)
+		}
+		for _, usr := range res.Items {
+			if usr.Metadata.Description != newQuery || !slices.Equal(usr.Metadata.Tags, []string{newTag}) {
+				return errors.Errorf("the indexed User does not carry the updated metadata")
+			}
+		}
+		return nil
+	}
+	h.Eventually(t, "metadata updates to replace the searchable values and tags",
+		eeharness.IngestionBudget, func(ctx context.Context) error { return waitUpdated(ctx, 5) })
+
+	_, err := h.CoreC().DeleteUser(t.Context(), &metav1.DeleteOptions{Uid: users[0].Metadata.Uid})
+	require.Nil(t, err)
+	h.Eventually(t, "the search count to drop after deletion", eeharness.IngestionBudget,
+		func(ctx context.Context) error { return waitUpdated(ctx, 4) })
+
+	h.RestartEnterprise(t, "rscstore")
+	h.Eventually(t, "the rebuilt search indexes to preserve updates and deletions",
+		eeharness.IngestionBudget, func(ctx context.Context) error { return waitUpdated(ctx, 4) })
+}
+
+func testRscStoreSummaryWindows(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	first := h.CreateCatalog(t, nil, []string{"default"})
+	second := h.CreateCatalog(t, nil, []string{"default"})
+	from := pbutils.Timestamp(first.Metadata.CreatedAt.AsTime().Add(-time.Second))
+	to := pbutils.Timestamp(second.Metadata.CreatedAt.AsTime().Add(time.Second))
+	futureFrom := pbutils.Timestamp(to.AsTime().Add(24 * time.Hour))
+	futureTo := pbutils.Timestamp(futureFrom.AsTime().Add(time.Hour))
+	var count uint64
+
+	h.Eventually(t, "the windowed Catalog list and summary to agree", eeharness.IngestionBudget,
+		func(ctx context.Context) error {
+			list, err := h.VisibilityAccessC().ListCatalog(ctx, &vaccessv1.ListCatalogOptions{
+				Common: &vmetav1.CommonListOptions{From: from, To: to, ItemsPerPage: 1000},
+			})
+			if err != nil {
+				return err
+			}
+			for _, uid := range []string{first.Metadata.Uid, second.Metadata.Uid} {
+				if !slices.ContainsFunc(list.Items, func(itm *accessv1.Catalog) bool { return itm.Metadata.Uid == uid }) {
+					return errors.Errorf("a Catalog is not in the windowed mirror")
+				}
+			}
+			res, err := h.VisibilityAccessC().GetCatalogSummary(ctx, &vaccessv1.GetCatalogSummaryRequest{
+				Common: &vmetav1.CommonSummaryOptions{
+					From: from, To: to, CompareFrom: futureFrom, CompareTo: futureTo,
+				},
+			})
+			if err != nil {
+				return err
+			}
+			if res.TotalNumber != uint64(list.GetListResponseMeta().GetTotalCount()) ||
+				res.Previous == nil || res.Previous.TotalNumber != 0 {
+				return errors.Errorf("the Catalog summary or its empty comparison window has not converged")
+			}
+			count = res.TotalNumber
+			return nil
+		})
+
+	t.Run("ComparisonUsesItsOwnWindow", func(t *testing.T) {
+		res, err := h.VisibilityAccessC().GetCatalogSummary(t.Context(), &vaccessv1.GetCatalogSummaryRequest{
+			Common: &vmetav1.CommonSummaryOptions{
+				From: futureFrom, To: futureTo, CompareFrom: from, CompareTo: to,
+			},
+		})
+		require.Nil(t, err)
+		assert.Zero(t, res.TotalNumber)
+		require.NotNil(t, res.Previous)
+		assert.Equal(t, count, res.Previous.TotalNumber)
+		assert.Nil(t, res.Previous.Previous)
+	})
+
+	t.Run("ComparisonIsOptional", func(t *testing.T) {
+		res, err := h.VisibilityAccessC().GetCatalogSummary(t.Context(), &vaccessv1.GetCatalogSummaryRequest{
+			Common: &vmetav1.CommonSummaryOptions{From: from, To: to},
+		})
+		require.Nil(t, err)
+		assert.Equal(t, count, res.TotalNumber)
+		assert.Nil(t, res.Previous)
+	})
+}
+
+func testRscStoreAccessActivity(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	c := newAccessCast(t, h)
+	c.alice.User.Metadata.DisplayName = h.Name()
+	c.alice.User = h.UpdateUser(t, c.alice.User)
+	policy := h.CreateAccessPolicy(t, c.reviewRule("visibility-activity",
+		userReviewStep(eeharness.UserReviewer(c.rita.User))))
+	approved := h.CreateRequest(t, c.alice, eeharness.CatalogRequest(c.alphaCatalog, eeharness.Minutes(5)))
+	h.WaitRequestState(t, approved, accessv1.Request_Status_State_PENDING, eeharness.RequestBudget)
+	h.Review(t, c.rita, approved, accessv1.Review_Spec_DECISION_APPROVE)
+	approved = h.WaitRequestState(t, approved, accessv1.Request_Status_State_APPROVED, eeharness.RequestBudget)
+	pending := h.CreateRequest(t, c.bob, eeharness.CatalogRequest(c.alphaCatalog, eeharness.Minutes(5)))
+	pending = h.WaitRequestState(t, pending, accessv1.Request_Status_State_PENDING, eeharness.RequestBudget)
+	from := pbutils.Timestamp(approved.Metadata.CreatedAt.AsTime().Add(-5 * time.Minute).Truncate(time.Minute))
+	to := pbutils.Timestamp(pending.Metadata.CreatedAt.AsTime().Add(5 * time.Minute).Truncate(time.Minute))
+
+	waitCounts := func(ctx context.Context, want map[string]int64) error {
+		res, err := h.VisibilityAccessC().GetRequestDataPoint(ctx, &vaccessv1.GetRequestDataPointRequest{
+			From: from, To: to, Interval: eeharness.Minutes(1),
+			GroupBy:   vaccessv1.GetRequestDataPointRequest_STATE,
+			PolicyRef: umetav1.GetObjectReference(policy), CatalogRef: umetav1.GetObjectReference(c.alphaCatalog),
+		})
+		if err != nil {
+			return err
+		}
+		var total int64
+		for i, point := range res.Datapoints {
+			total += point.Count
+			if i > 0 && point.Timestamp.AsTime().Sub(res.Datapoints[i-1].Timestamp.AsTime()) != time.Minute {
+				return errors.Errorf("the activity datapoints are not a continuous minute series")
+			}
+		}
+		var wantTotal int64
+		for _, count := range want {
+			wantTotal += count
+		}
+		if total != wantTotal || len(res.Series) != len(want) || len(res.Datapoints) < 2 {
+			return errors.Errorf("the activity has total %d and %d state series", total, len(res.Series))
+		}
+		if res.Datapoints[0].Count != 0 || res.Datapoints[len(res.Datapoints)-1].Count != 0 {
+			return errors.Errorf("empty activity buckets are not zero filled")
+		}
+		for _, series := range res.Series {
+			if series.Total != want[series.Key] {
+				return errors.Errorf("the %s series has total %d, want %d", series.Key, series.Total, want[series.Key])
+			}
+			var count int64
+			for _, point := range series.Datapoints {
+				count += point.Count
+			}
+			if count != series.Total || len(series.Datapoints) != len(res.Datapoints) {
+				return errors.Errorf("the %s series does not match its total or bucket count", series.Key)
+			}
+		}
+		return nil
+	}
+	h.Eventually(t, "the activity to count approved and pending Requests once",
+		eeharness.IngestionBudget, func(ctx context.Context) error {
+			return waitCounts(ctx, map[string]int64{"APPROVED": 1, "PENDING": 1})
+		})
+
+	t.Run("RequesterRankingLimitsAndDisplayNames", func(t *testing.T) {
+		h.Eventually(t, "the requester ranking to include enriched Users", eeharness.IngestionBudget,
+			func(ctx context.Context) error {
+				res, err := h.VisibilityAccessC().ListRequestTop(ctx, &vaccessv1.ListRequestTopRequest{
+					Dimension: vaccessv1.ListRequestTopRequest_REQUESTER,
+					From:      from, To: to, CatalogRef: umetav1.GetObjectReference(c.alphaCatalog), Limit: 2,
+				})
+				if err != nil {
+					return err
+				}
+				if len(res.Items) != 2 || res.TotalCount != 2 || res.TotalOther != 0 {
+					return errors.Errorf("the requester ranking has not converged")
+				}
+				for _, itm := range res.Items {
+					if itm.Count != 1 || itm.Ref.Kind != "User" || itm.Ref.ApiVersion != "core/v1" ||
+						(itm.Ref.Uid != c.alice.User.Metadata.Uid && itm.Ref.Uid != c.bob.User.Metadata.Uid) {
+						return errors.Errorf("the ranking contains an unexpected requester")
+					}
+					if itm.Ref.Uid == c.alice.User.Metadata.Uid && itm.DisplayName != c.alice.User.Metadata.DisplayName {
+						return errors.Errorf("the requester displayName is not enriched")
+					}
+				}
+				return nil
+			})
+		res, err := h.VisibilityAccessC().ListRequestTop(t.Context(), &vaccessv1.ListRequestTopRequest{
+			Dimension: vaccessv1.ListRequestTopRequest_REQUESTER,
+			From:      from, To: to, CatalogRef: umetav1.GetObjectReference(c.alphaCatalog), Limit: 1,
+		})
+		require.Nil(t, err)
+		assert.Len(t, res.Items, 1)
+		assert.EqualValues(t, 2, res.TotalCount)
+		assert.EqualValues(t, 1, res.TotalOther)
+	})
+
+	t.Run("ResourceAndPolicyRankings", func(t *testing.T) {
+		for _, tt := range []struct {
+			dimension vaccessv1.ListRequestTopRequest_Dimension
+			ref       *metav1.ObjectReference
+		}{
+			{dimension: vaccessv1.ListRequestTopRequest_RESOURCE, ref: umetav1.GetObjectReference(c.alphaCatalog)},
+			{dimension: vaccessv1.ListRequestTopRequest_POLICY, ref: umetav1.GetObjectReference(policy)},
+		} {
+			res, err := h.VisibilityAccessC().ListRequestTop(t.Context(), &vaccessv1.ListRequestTopRequest{
+				Dimension: tt.dimension, From: from, To: to, CatalogRef: umetav1.GetObjectReference(c.alphaCatalog),
+			})
+			require.Nil(t, err)
+			require.Len(t, res.Items, 1)
+			assert.Equal(t, tt.ref.Uid, res.Items[0].Ref.Uid)
+			assert.EqualValues(t, 2, res.Items[0].Count)
+			assert.EqualValues(t, 1, res.TotalCount)
+			assert.Zero(t, res.TotalOther)
+		}
+	})
+
+	t.Run("ReviewerRanking", func(t *testing.T) {
+		h.Eventually(t, "the approval Review to appear in reviewer activity", eeharness.IngestionBudget,
+			func(ctx context.Context) error {
+				res, err := h.VisibilityAccessC().ListReviewTop(ctx, &vaccessv1.ListReviewTopRequest{
+					Dimension: vaccessv1.ListReviewTopRequest_REVIEWER,
+					From:      from, To: to, Decision: accessv1.Review_Spec_DECISION_APPROVE, Limit: 100,
+				})
+				if err != nil {
+					return err
+				}
+				if !slices.ContainsFunc(res.Items, func(itm *vaccessv1.ListTopResponse_Item) bool {
+					return itm.Ref.Uid == c.rita.User.Metadata.Uid && itm.Count == 1
+				}) {
+					return errors.Errorf("the approving reviewer is not ranked")
+				}
+				return nil
+			})
+	})
+
+	_, err := h.AccessC().RevokeRequest(t.Context(), &accessv1.RevokeRequestRequest{RequestRef: umetav1.GetObjectReference(approved)})
+	require.Nil(t, err)
+	h.WaitRequestState(t, approved, accessv1.Request_Status_State_REVOKED, eeharness.RequestBudget)
+	_, err = h.AccessUserC(c.bob.Conn).CancelRequest(t.Context(), &accessv1.CancelRequestRequest{RequestRef: umetav1.GetObjectReference(pending)})
+	require.Nil(t, err)
+	h.WaitRequestState(t, pending, accessv1.Request_Status_State_CANCELLED, eeharness.RequestBudget)
+	h.Eventually(t, "state changes to move activity between series without increasing totals",
+		eeharness.IngestionBudget, func(ctx context.Context) error {
+			return waitCounts(ctx, map[string]int64{"REVOKED": 1, "CANCELLED": 1})
+		})
+	_, err = h.AccessC().DeleteRequest(t.Context(), &metav1.DeleteOptions{Uid: pending.Metadata.Uid})
+	require.Nil(t, err)
+	h.Eventually(t, "deleting a Request to remove it from activity", eeharness.IngestionBudget,
+		func(ctx context.Context) error { return waitCounts(ctx, map[string]int64{"REVOKED": 1}) })
 }

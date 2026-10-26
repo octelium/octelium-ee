@@ -11,13 +11,17 @@ package rscstore
 import (
 	"context"
 	"fmt"
+	"net"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/common/ovutils"
+	"github.com/octelium/octelium/apis/cluster/caccessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vcordiumv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
@@ -26,6 +30,14 @@ import (
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -721,4 +733,387 @@ func TestDoListRejectsInvalidToTimestamp(t *testing.T) {
 		},
 	})
 	assert.NotNil(t, err)
+}
+
+func newRscStoreRPCClient(t *testing.T, env *rscStoreTestEnv) *grpc.ClientConn {
+	t.Helper()
+	listener := bufconn.Listen(1024 * 1024)
+	server := grpc.NewServer()
+	vcorev1.RegisterResourceServiceServer(server, &srvCore{s: env.srv})
+	venterprisev1.RegisterResourceServiceServer(server, &srvEnterprise{s: env.srv})
+	vaccessv1.RegisterResourceServiceServer(server, &srvAccess{s: env.srv})
+	vcordiumv1.RegisterResourceServiceServer(server, &srvCordium{s: env.srv})
+	caccessv1.RegisterInternalServiceServer(server, &srvClusterAccess{s: env.srv})
+	go server.Serve(listener)
+	conn, err := grpc.NewClient("passthrough:///rscstore-test",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithContextDialer(func(ctx context.Context, addr string) (net.Conn, error) { return listener.DialContext(ctx) }))
+	require.Nil(t, err)
+	t.Cleanup(func() {
+		conn.Close()
+		server.Stop()
+		listener.Close()
+	})
+	return conn
+}
+
+type rscStoreSummaryRPC struct {
+	name string
+	api  string
+	kind string
+	call func(context.Context, *vmetav1.CommonSummaryOptions) (proto.Message, error)
+}
+
+func rscStoreSummaryRPCCases(conn *grpc.ClientConn) []rscStoreSummaryRPC {
+	core := vcorev1.NewResourceServiceClient(conn)
+	enterprise := venterprisev1.NewResourceServiceClient(conn)
+	access := vaccessv1.NewResourceServiceClient(conn)
+	cordium := vcordiumv1.NewResourceServiceClient(conn)
+	return []rscStoreSummaryRPC{
+		{name: "core/Service", api: "core", kind: "Service", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return core.GetServiceSummary(ctx, &vcorev1.GetServiceSummaryRequest{Common: common})
+		}},
+		{name: "core/Session", api: "core", kind: "Session", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return core.GetSessionSummary(ctx, &vcorev1.GetSessionSummaryRequest{Common: common})
+		}},
+		{name: "core/User", api: "core", kind: "User", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return core.GetUserSummary(ctx, &vcorev1.GetUserSummaryRequest{Common: common})
+		}},
+		{name: "core/Policy", api: "core", kind: "Policy", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return core.GetPolicySummary(ctx, &vcorev1.GetPolicySummaryRequest{Common: common})
+		}},
+		{name: "core/Credential", api: "core", kind: "Credential", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return core.GetCredentialSummary(ctx, &vcorev1.GetCredentialSummaryRequest{Common: common})
+		}},
+		{name: "core/Device", api: "core", kind: "Device", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return core.GetDeviceSummary(ctx, &vcorev1.GetDeviceSummaryRequest{Common: common})
+		}},
+		{name: "core/IdentityProvider", api: "core", kind: "IdentityProvider", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return core.GetIdentityProviderSummary(ctx, &vcorev1.GetIdentityProviderSummaryRequest{Common: common})
+		}},
+		{name: "core/Authenticator", api: "core", kind: "Authenticator", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return core.GetAuthenticatorSummary(ctx, &vcorev1.GetAuthenticatorSummaryRequest{Common: common})
+		}},
+		{name: "core/Group", api: "core", kind: "Group", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return core.GetGroupSummary(ctx, &vcorev1.GetGroupSummaryRequest{Common: common})
+		}},
+		{name: "core/Gateway", api: "core", kind: "Gateway", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return core.GetGatewaySummary(ctx, &vcorev1.GetGatewaySummaryRequest{Common: common})
+		}},
+		{name: "core/Region", api: "core", kind: "Region", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return core.GetRegionSummary(ctx, &vcorev1.GetRegionSummaryRequest{Common: common})
+		}},
+		{name: "core/Secret", api: "core", kind: "Secret", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return core.GetSecretSummary(ctx, &vcorev1.GetSecretSummaryRequest{Common: common})
+		}},
+		{name: "core/Namespace", api: "core", kind: "Namespace", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return core.GetNamespaceSummary(ctx, &vcorev1.GetNamespaceSummaryRequest{Common: common})
+		}},
+		{name: "enterprise/CollectorExporter", api: "enterprise", kind: "CollectorExporter", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return enterprise.GetCollectorExporterSummary(ctx, &venterprisev1.GetCollectorExporterSummaryRequest{Common: common})
+		}},
+		{name: "enterprise/Secret", api: "enterprise", kind: "Secret", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return enterprise.GetSecretSummary(ctx, &venterprisev1.GetSecretSummaryRequest{Common: common})
+		}},
+		{name: "enterprise/SecretStore", api: "enterprise", kind: "SecretStore", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return enterprise.GetSecretStoreSummary(ctx, &venterprisev1.GetSecretStoreSummaryRequest{Common: common})
+		}},
+		{name: "enterprise/Certificate", api: "enterprise", kind: "Certificate", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return enterprise.GetCertificateSummary(ctx, &venterprisev1.GetCertificateSummaryRequest{Common: common})
+		}},
+		{name: "enterprise/CertificateIssuer", api: "enterprise", kind: "CertificateIssuer", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return enterprise.GetCertificateIssuerSummary(ctx, &venterprisev1.GetCertificateIssuerSummaryRequest{Common: common})
+		}},
+		{name: "enterprise/DNSProvider", api: "enterprise", kind: "DNSProvider", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return enterprise.GetDNSProviderSummary(ctx, &venterprisev1.GetDNSProviderSummaryRequest{Common: common})
+		}},
+		{name: "enterprise/DirectoryProvider", api: "enterprise", kind: "DirectoryProvider", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return enterprise.GetDirectoryProviderSummary(ctx, &venterprisev1.GetDirectoryProviderSummaryRequest{Common: common})
+		}},
+		{name: "enterprise/DirectoryProviderUser", api: "enterprise", kind: "DirectoryProviderUser", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return enterprise.GetDirectoryProviderUserSummary(ctx, &venterprisev1.GetDirectoryProviderUserSummaryRequest{Common: common})
+		}},
+		{name: "enterprise/DirectoryProviderGroup", api: "enterprise", kind: "DirectoryProviderGroup", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return enterprise.GetDirectoryProviderGroupSummary(ctx, &venterprisev1.GetDirectoryProviderGroupSummaryRequest{Common: common})
+		}},
+		{name: "enterprise/DeviceManager", api: "enterprise", kind: "DeviceManager", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return enterprise.GetDeviceManagerSummary(ctx, &venterprisev1.GetDeviceManagerSummaryRequest{Common: common})
+		}},
+		{name: "access/Policy", api: "access", kind: "Policy", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return access.GetPolicySummary(ctx, &vaccessv1.GetPolicySummaryRequest{Common: common})
+		}},
+		{name: "access/Catalog", api: "access", kind: "Catalog", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return access.GetCatalogSummary(ctx, &vaccessv1.GetCatalogSummaryRequest{Common: common})
+		}},
+		{name: "access/Request", api: "access", kind: "Request", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return access.GetRequestSummary(ctx, &vaccessv1.GetRequestSummaryRequest{Common: common})
+		}},
+		{name: "access/Review", api: "access", kind: "Review", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return access.GetReviewSummary(ctx, &vaccessv1.GetReviewSummaryRequest{Common: common})
+		}},
+		{name: "access/Secret", api: "access", kind: "Secret", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return access.GetSecretSummary(ctx, &vaccessv1.GetSecretSummaryRequest{Common: common})
+		}},
+		{name: "access/Integration", api: "access", kind: "Integration", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return access.GetIntegrationSummary(ctx, &vaccessv1.GetIntegrationSummaryRequest{Common: common})
+		}},
+		{name: "access/IntegrationIdentity", api: "access", kind: "IntegrationIdentity", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return access.GetIntegrationIdentitySummary(ctx, &vaccessv1.GetIntegrationIdentitySummaryRequest{Common: common})
+		}},
+		{name: "access/IntegrationBinding", api: "access", kind: "IntegrationBinding", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return access.GetIntegrationBindingSummary(ctx, &vaccessv1.GetIntegrationBindingSummaryRequest{Common: common})
+		}},
+		{name: "cordium/Workspace", api: "cordium", kind: "Workspace", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return cordium.GetWorkspaceSummary(ctx, &vcordiumv1.GetWorkspaceSummaryRequest{Common: common})
+		}},
+		{name: "cordium/Template", api: "cordium", kind: "Template", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return cordium.GetTemplateSummary(ctx, &vcordiumv1.GetTemplateSummaryRequest{Common: common})
+		}},
+		{name: "cordium/Space", api: "cordium", kind: "Space", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return cordium.GetSpaceSummary(ctx, &vcordiumv1.GetSpaceSummaryRequest{Common: common})
+		}},
+		{name: "cordium/Membership", api: "cordium", kind: "Membership", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return cordium.GetMembershipSummary(ctx, &vcordiumv1.GetMembershipSummaryRequest{Common: common})
+		}},
+		{name: "cordium/GitProvider", api: "cordium", kind: "GitProvider", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return cordium.GetGitProviderSummary(ctx, &vcordiumv1.GetGitProviderSummaryRequest{Common: common})
+		}},
+		{name: "cordium/Secret", api: "cordium", kind: "Secret", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return cordium.GetSecretSummary(ctx, &vcordiumv1.GetSecretSummaryRequest{Common: common})
+		}},
+		{name: "cordium/UserSecret", api: "cordium", kind: "UserSecret", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return cordium.GetUserSecretSummary(ctx, &vcordiumv1.GetUserSecretSummaryRequest{Common: common})
+		}},
+		{name: "cordium/Region", api: "core", kind: "Region", call: func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (proto.Message, error) {
+			return cordium.GetRegionSummary(ctx, &vcordiumv1.GetRegionSummaryRequest{Common: common})
+		}},
+	}
+}
+
+func TestSummaryRPCWindowsAndFailures(t *testing.T) {
+	env := newRscStoreTestEnv(t)
+	require.NotNil(t, env)
+	conn := newRscStoreRPCClient(t, env)
+	cases := rscStoreSummaryRPCCases(conn)
+	base := time.Date(2025, time.January, 2, 12, 0, 0, 0, time.UTC)
+	common := &vmetav1.CommonSummaryOptions{
+		From: timestamppb.New(base), To: timestamppb.New(base.Add(time.Hour)),
+		CompareFrom: timestamppb.New(base.Add(-3 * time.Hour)), CompareTo: timestamppb.New(base.Add(-time.Hour)),
+	}
+	seeded := make(map[string]bool)
+	for _, tt := range cases {
+		key := tt.api + "/" + tt.kind
+		if seeded[key] {
+			continue
+		}
+		seeded[key] = true
+		for idx, createdAt := range []time.Time{base.Add(time.Minute), base.Add(-2 * time.Hour), base.Add(-90 * time.Minute), base.Add(2 * time.Minute)} {
+			item, err := ovutils.NewResourceObject(tt.api, "v1", tt.kind)
+			require.Nil(t, err)
+			md := newRscStoreMetadata(fmt.Sprintf("rpc-%s-%d", strings.ToLower(tt.kind), idx), createdAt)
+			md.IsSystemHidden = idx == 3
+			msg := item.ProtoReflect()
+			fields := msg.Descriptor().Fields()
+			msg.Set(fields.ByName("apiVersion"), protoreflect.ValueOfString(tt.api+"/v1"))
+			msg.Set(fields.ByName("kind"), protoreflect.ValueOfString(tt.kind))
+			msg.Set(fields.ByName("metadata"), protoreflect.ValueOfMessage(md.ProtoReflect()))
+			insertRscStoreObject(t, env, item)
+		}
+	}
+	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	defer cancel()
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			original := proto.Clone(common)
+			response, err := tt.call(ctx, common)
+			require.Nil(t, err)
+			msg := response.ProtoReflect()
+			assert.Equal(t, uint64(1), msg.Get(msg.Descriptor().Fields().ByName("totalNumber")).Uint())
+			previous := msg.Descriptor().Fields().ByName("previous")
+			require.NotNil(t, previous)
+			require.True(t, msg.Has(previous))
+			prev := msg.Get(previous).Message()
+			assert.Equal(t, uint64(2), prev.Get(prev.Descriptor().Fields().ByName("totalNumber")).Uint())
+			assert.True(t, proto.Equal(original, common))
+			for _, invalid := range []*vmetav1.CommonSummaryOptions{
+				{From: &timestamppb.Timestamp{Seconds: 253402300800}},
+				{To: &timestamppb.Timestamp{Nanos: -1}},
+				{From: common.To, To: common.From},
+				{CompareFrom: &timestamppb.Timestamp{Seconds: 253402300800}},
+				{CompareTo: &timestamppb.Timestamp{Nanos: -1}},
+				{CompareFrom: common.To, CompareTo: common.From},
+			} {
+				_, err := tt.call(ctx, invalid)
+				assert.Equal(t, codes.InvalidArgument, status.Code(err), "%+v", err)
+			}
+		})
+	}
+	t.Run("DatabaseUnavailable", func(t *testing.T) {
+		require.Nil(t, env.srv.db.Close())
+		for _, tt := range cases {
+			response, err := tt.call(ctx, nil)
+			assert.NotNil(t, err, "%s", tt.name)
+			assert.True(t, response == nil || !response.ProtoReflect().IsValid(), "%s", tt.name)
+		}
+	})
+}
+
+func TestListRPCDefaultsAndFailures(t *testing.T) {
+	env := newRscStoreTestEnv(t)
+	require.NotNil(t, env)
+	conn := newRscStoreRPCClient(t, env)
+	core := vcorev1.NewResourceServiceClient(conn)
+	enterprise := venterprisev1.NewResourceServiceClient(conn)
+	access := vaccessv1.NewResourceServiceClient(conn)
+	cordium := vcordiumv1.NewResourceServiceClient(conn)
+	cases := []struct {
+		name string
+		api  string
+		kind string
+		call func(context.Context, *vmetav1.CommonListOptions) (proto.Message, error)
+	}{
+		{name: "core/Service", api: "core/v1", kind: "ServiceList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return core.ListService(ctx, &vcorev1.ListServiceOptions{Common: common})
+		}},
+		{name: "core/User", api: "core/v1", kind: "UserList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return core.ListUser(ctx, &vcorev1.ListUserOptions{Common: common})
+		}},
+		{name: "core/Group", api: "core/v1", kind: "GroupList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return core.ListGroup(ctx, &vcorev1.ListGroupOptions{Common: common})
+		}},
+		{name: "core/Namespace", api: "core/v1", kind: "NamespaceList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return core.ListNamespace(ctx, &vcorev1.ListNamespaceOptions{Common: common})
+		}},
+		{name: "core/Policy", api: "core/v1", kind: "PolicyList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return core.ListPolicy(ctx, &vcorev1.ListPolicyOptions{Common: common})
+		}},
+		{name: "core/Region", api: "core/v1", kind: "RegionList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return core.ListRegion(ctx, &vcorev1.ListRegionOptions{Common: common})
+		}},
+		{name: "core/Gateway", api: "core/v1", kind: "GatewayList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return core.ListGateway(ctx, &vcorev1.ListGatewayOptions{Common: common})
+		}},
+		{name: "core/Secret", api: "core/v1", kind: "SecretList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return core.ListSecret(ctx, &vcorev1.ListSecretOptions{Common: common})
+		}},
+		{name: "core/Credential", api: "core/v1", kind: "CredentialList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return core.ListCredential(ctx, &vcorev1.ListCredentialOptions{Common: common})
+		}},
+		{name: "core/IdentityProvider", api: "core/v1", kind: "IdentityProviderList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return core.ListIdentityProvider(ctx, &vcorev1.ListIdentityProviderOptions{Common: common})
+		}},
+		{name: "core/Session", api: "core/v1", kind: "SessionList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return core.ListSession(ctx, &vcorev1.ListSessionOptions{Common: common})
+		}},
+		{name: "core/Device", api: "core/v1", kind: "DeviceList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return core.ListDevice(ctx, &vcorev1.ListDeviceOptions{Common: common})
+		}},
+		{name: "core/Authenticator", api: "core/v1", kind: "AuthenticatorList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return core.ListAuthenticator(ctx, &vcorev1.ListAuthenticatorOptions{Common: common})
+		}},
+		{name: "enterprise/CollectorExporter", api: "enterprise/v1", kind: "CollectorExporterList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return enterprise.ListCollectorExporter(ctx, &venterprisev1.ListCollectorExporterOptions{Common: common})
+		}},
+		{name: "enterprise/Secret", api: "enterprise/v1", kind: "SecretList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return enterprise.ListSecret(ctx, &venterprisev1.ListSecretOptions{Common: common})
+		}},
+		{name: "enterprise/SecretStore", api: "enterprise/v1", kind: "SecretStoreList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return enterprise.ListSecretStore(ctx, &venterprisev1.ListSecretStoreOptions{Common: common})
+		}},
+		{name: "enterprise/Certificate", api: "enterprise/v1", kind: "CertificateList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return enterprise.ListCertificate(ctx, &venterprisev1.ListCertificateOptions{Common: common})
+		}},
+		{name: "enterprise/CertificateIssuer", api: "enterprise/v1", kind: "CertificateIssuerList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return enterprise.ListCertificateIssuer(ctx, &venterprisev1.ListCertificateIssuerOptions{Common: common})
+		}},
+		{name: "enterprise/DNSProvider", api: "enterprise/v1", kind: "DNSProviderList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return enterprise.ListDNSProvider(ctx, &venterprisev1.ListDNSProviderOptions{Common: common})
+		}},
+		{name: "enterprise/DirectoryProvider", api: "enterprise/v1", kind: "DirectoryProviderList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return enterprise.ListDirectoryProvider(ctx, &venterprisev1.ListDirectoryProviderOptions{Common: common})
+		}},
+		{name: "enterprise/DirectoryProviderUser", api: "enterprise/v1", kind: "DirectoryProviderUserList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return enterprise.ListDirectoryProviderUser(ctx, &venterprisev1.ListDirectoryProviderUserOptions{Common: common})
+		}},
+		{name: "enterprise/DirectoryProviderGroup", api: "enterprise/v1", kind: "DirectoryProviderGroupList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return enterprise.ListDirectoryProviderGroup(ctx, &venterprisev1.ListDirectoryProviderGroupOptions{Common: common})
+		}},
+		{name: "enterprise/DeviceManager", api: "enterprise/v1", kind: "DeviceManagerList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return enterprise.ListDeviceManager(ctx, &venterprisev1.ListDeviceManagerOptions{Common: common})
+		}},
+		{name: "access/Policy", api: "access/v1", kind: "PolicyList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return access.ListPolicy(ctx, &vaccessv1.ListPolicyOptions{Common: common})
+		}},
+		{name: "access/Catalog", api: "access/v1", kind: "CatalogList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return access.ListCatalog(ctx, &vaccessv1.ListCatalogOptions{Common: common})
+		}},
+		{name: "access/Request", api: "access/v1", kind: "RequestList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return access.ListRequest(ctx, &vaccessv1.ListRequestOptions{Common: common})
+		}},
+		{name: "access/Review", api: "access/v1", kind: "ReviewList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return access.ListReview(ctx, &vaccessv1.ListReviewOptions{Common: common})
+		}},
+		{name: "access/Secret", api: "access/v1", kind: "SecretList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return access.ListSecret(ctx, &vaccessv1.ListSecretOptions{Common: common})
+		}},
+		{name: "access/Integration", api: "access/v1", kind: "IntegrationList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return access.ListIntegration(ctx, &vaccessv1.ListIntegrationOptions{Common: common})
+		}},
+		{name: "access/IntegrationIdentity", api: "access/v1", kind: "IntegrationIdentityList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return access.ListIntegrationIdentity(ctx, &vaccessv1.ListIntegrationIdentityOptions{Common: common})
+		}},
+		{name: "access/IntegrationBinding", api: "access/v1", kind: "IntegrationBindingList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return access.ListIntegrationBinding(ctx, &vaccessv1.ListIntegrationBindingOptions{Common: common})
+		}},
+		{name: "cordium/Workspace", api: "cordium/v1", kind: "WorkspaceList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return cordium.ListWorkspace(ctx, &vcordiumv1.ListWorkspaceOptions{Common: common})
+		}},
+		{name: "cordium/Template", api: "cordium/v1", kind: "TemplateList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return cordium.ListTemplate(ctx, &vcordiumv1.ListTemplateOptions{Common: common})
+		}},
+		{name: "cordium/Space", api: "cordium/v1", kind: "SpaceList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return cordium.ListSpace(ctx, &vcordiumv1.ListSpaceOptions{Common: common})
+		}},
+		{name: "cordium/Membership", api: "cordium/v1", kind: "MembershipList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return cordium.ListMembership(ctx, &vcordiumv1.ListMembershipOptions{Common: common})
+		}},
+		{name: "cordium/GitProvider", api: "cordium/v1", kind: "GitProviderList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return cordium.ListGitProvider(ctx, &vcordiumv1.ListGitProviderOptions{Common: common})
+		}},
+		{name: "cordium/Secret", api: "cordium/v1", kind: "SecretList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return cordium.ListSecret(ctx, &vcordiumv1.ListSecretOptions{Common: common})
+		}},
+		{name: "cordium/UserSecret", api: "cordium/v1", kind: "UserSecretList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return cordium.ListUserSecret(ctx, &vcordiumv1.ListUserSecretOptions{Common: common})
+		}},
+		{name: "cordium/Region", api: "cordium/v1", kind: "RegionList", call: func(ctx context.Context, common *vmetav1.CommonListOptions) (proto.Message, error) {
+			return cordium.ListRegion(ctx, &vcordiumv1.ListRegionOptions{Common: common})
+		}},
+	}
+	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	defer cancel()
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			res, err := tt.call(ctx, nil)
+			require.Nil(t, err)
+			msg := res.ProtoReflect()
+			fields := msg.Descriptor().Fields()
+			assert.Equal(t, tt.api, msg.Get(fields.ByName("apiVersion")).String())
+			assert.Equal(t, tt.kind, msg.Get(fields.ByName("kind")).String())
+			assert.Zero(t, msg.Get(fields.ByName("items")).List().Len())
+			meta := msg.Get(fields.ByName("listResponseMeta")).Message()
+			require.True(t, meta.IsValid())
+			assert.Zero(t, meta.Get(meta.Descriptor().Fields().ByName("totalCount")).Uint())
+			assert.Equal(t, uint64(defaultItemsPerPage), meta.Get(meta.Descriptor().Fields().ByName("itemsPerPage")).Uint())
+			_, err = tt.call(ctx, &vmetav1.CommonListOptions{Page: 1})
+			assert.Equal(t, codes.NotFound, status.Code(err))
+			_, err = tt.call(ctx, &vmetav1.CommonListOptions{From: &timestamppb.Timestamp{Nanos: -1}})
+			assert.Equal(t, codes.InvalidArgument, status.Code(err))
+		})
+	}
+	require.Nil(t, env.srv.db.Close())
+	for _, tt := range cases {
+		_, err := tt.call(ctx, nil)
+		assert.Equal(t, codes.Internal, status.Code(err), "%s: %+v", tt.name, err)
+	}
 }

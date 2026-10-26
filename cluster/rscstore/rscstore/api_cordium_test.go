@@ -12,6 +12,8 @@ import (
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcordiumv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 func getTstCordiumNames[T interface{ GetMetadata() *metav1.Metadata }](items []T) []string {
@@ -497,5 +499,37 @@ func TestCordiumListRegion(t *testing.T) {
 		})
 		assert.Nil(t, err, "%+v", err)
 		assert.Equal(t, []string{"rgn-disabled"}, getTstCordiumNames(resp.Items))
+	}
+}
+
+func TestCordiumGitProviderTypeVariants(t *testing.T) {
+	env := newRscStoreTestEnv(t)
+	require.NotNil(t, env)
+	srv := &srvCordium{s: env.srv}
+	for _, field := range []string{"github", "gitlab", "oauth2"} {
+		item := &cordiumv1.GitProvider{
+			ApiVersion: "cordium/v1", Kind: "GitProvider",
+			Metadata: newRscStoreMetadata(field, time.Now()),
+			Spec:     &cordiumv1.GitProvider_Spec{},
+		}
+		msg := item.Spec.ProtoReflect()
+		msg.Mutable(msg.Descriptor().Fields().ByName(protoreflect.Name(field)))
+		insertRscStoreObject(t, env, item)
+	}
+	for _, tt := range []struct {
+		typ  vcordiumv1.ListGitProviderOptions_Type
+		name string
+	}{
+		{typ: vcordiumv1.ListGitProviderOptions_GITHUB, name: "github"},
+		{typ: vcordiumv1.ListGitProviderOptions_GITLAB, name: "gitlab"},
+		{typ: vcordiumv1.ListGitProviderOptions_OAUTH2, name: "oauth2"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			res, err := srv.ListGitProvider(env.ctx, &vcordiumv1.ListGitProviderOptions{Type: tt.typ})
+			require.Nil(t, err)
+			require.Len(t, res.Items, 1)
+			assert.Equal(t, tt.name, res.Items[0].Metadata.Name)
+			assert.Equal(t, uint32(1), res.ListResponseMeta.TotalCount)
+		})
 	}
 }

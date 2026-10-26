@@ -9,6 +9,7 @@
 package rscstore
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -19,6 +20,9 @@ import (
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -540,4 +544,167 @@ func TestEnterpriseListFilters(t *testing.T) {
 		assert.Len(t, resp.Items, 1)
 		assert.Equal(t, "visible-secret", resp.Items[0].Metadata.Name)
 	}
+}
+
+func TestEnterpriseProviderTypeVariants(t *testing.T) {
+	env := newRscStoreTestEnv(t)
+	require.NotNil(t, env)
+	srv := &srvEnterprise{s: env.srv}
+	t.Run("CollectorExporter", func(t *testing.T) {
+		cases := []struct {
+			typ   venterprisev1.ListCollectorExporterOptions_Type
+			field string
+		}{
+			{typ: venterprisev1.ListCollectorExporterOptions_OTLP, field: "otlp"},
+			{typ: venterprisev1.ListCollectorExporterOptions_OTLP_HTTP, field: "otlpHTTP"},
+			{typ: venterprisev1.ListCollectorExporterOptions_CLICKHOUSE, field: "clickhouse"},
+			{typ: venterprisev1.ListCollectorExporterOptions_ELASTICSEARCH, field: "elasticsearch"},
+			{typ: venterprisev1.ListCollectorExporterOptions_LOGZIO, field: "logzio"},
+			{typ: venterprisev1.ListCollectorExporterOptions_INFLUXDB, field: "influxDB"},
+			{typ: venterprisev1.ListCollectorExporterOptions_KAFKA, field: "kafka"},
+			{typ: venterprisev1.ListCollectorExporterOptions_DATADOG, field: "datadog"},
+			{typ: venterprisev1.ListCollectorExporterOptions_SPLUNK, field: "splunk"},
+			{typ: venterprisev1.ListCollectorExporterOptions_AZURE_MONITOR, field: "azureMonitor"},
+			{typ: venterprisev1.ListCollectorExporterOptions_AZURE_DATA_EXPLORER, field: "azureDataExplorer"},
+			{typ: venterprisev1.ListCollectorExporterOptions_PROMETHEUS_REMOTE_WRITE, field: "prometheusRemoteWrite"},
+		}
+		var first *enterprisev1.CollectorExporter
+		for idx, tt := range cases {
+			for _, hidden := range []bool{false, true} {
+				item := &enterprisev1.CollectorExporter{
+					ApiVersion: "enterprise/v1", Kind: "CollectorExporter",
+					Metadata: newRscStoreMetadata(fmt.Sprintf("variant-%d-%t", idx, hidden), time.Now()),
+					Spec:     &enterprisev1.CollectorExporter_Spec{},
+				}
+				item.Metadata.IsSystemHidden = hidden
+				msg := item.Spec.ProtoReflect()
+				msg.Mutable(msg.Descriptor().Fields().ByName(protoreflect.Name(tt.field)))
+				insertRscStoreObject(t, env, item)
+				if idx == 0 && !hidden {
+					first = item
+				}
+			}
+		}
+		for _, tt := range cases {
+			t.Run(tt.typ.String(), func(t *testing.T) {
+				res, err := srv.ListCollectorExporter(env.ctx, &venterprisev1.ListCollectorExporterOptions{Type: tt.typ})
+				require.Nil(t, err)
+				require.Len(t, res.Items, 1)
+				assert.Equal(t, uint32(1), res.ListResponseMeta.TotalCount)
+				assert.False(t, res.Items[0].Metadata.IsSystemHidden)
+				msg := res.Items[0].Spec.ProtoReflect()
+				assert.True(t, msg.Has(msg.Descriptor().Fields().ByName(protoreflect.Name(tt.field))))
+			})
+		}
+		updated := proto.Clone(first).(*enterprisev1.CollectorExporter)
+		msg := updated.Spec.ProtoReflect()
+		msg.Mutable(msg.Descriptor().Fields().ByName(protoreflect.Name(cases[1].field)))
+		insertRscStoreObject(t, env, updated)
+		old, err := srv.ListCollectorExporter(env.ctx, &venterprisev1.ListCollectorExporterOptions{Type: cases[0].typ})
+		require.Nil(t, err)
+		assert.Empty(t, old.Items)
+		current, err := srv.ListCollectorExporter(env.ctx, &venterprisev1.ListCollectorExporterOptions{Type: cases[1].typ})
+		require.Nil(t, err)
+		assert.Len(t, current.Items, 2)
+	})
+	t.Run("DNSProvider", func(t *testing.T) {
+		cases := []struct {
+			typ   venterprisev1.ListDNSProviderOptions_Type
+			field string
+		}{
+			{typ: venterprisev1.ListDNSProviderOptions_CLOUDFLARE, field: "cloudflare"},
+			{typ: venterprisev1.ListDNSProviderOptions_AWS, field: "aws"},
+			{typ: venterprisev1.ListDNSProviderOptions_DIGITALOCEAN, field: "digitalocean"},
+			{typ: venterprisev1.ListDNSProviderOptions_GOOGLE, field: "google"},
+			{typ: venterprisev1.ListDNSProviderOptions_AZURE, field: "azure"},
+			{typ: venterprisev1.ListDNSProviderOptions_LINODE, field: "linode"},
+			{typ: venterprisev1.ListDNSProviderOptions_OVH, field: "ovh"},
+		}
+		var first *enterprisev1.DNSProvider
+		for idx, tt := range cases {
+			for _, hidden := range []bool{false, true} {
+				item := &enterprisev1.DNSProvider{
+					ApiVersion: "enterprise/v1", Kind: "DNSProvider",
+					Metadata: newRscStoreMetadata(fmt.Sprintf("variant-%d-%t", idx, hidden), time.Now()),
+					Spec:     &enterprisev1.DNSProvider_Spec{},
+				}
+				item.Metadata.IsSystemHidden = hidden
+				msg := item.Spec.ProtoReflect()
+				msg.Mutable(msg.Descriptor().Fields().ByName(protoreflect.Name(tt.field)))
+				insertRscStoreObject(t, env, item)
+				if idx == 0 && !hidden {
+					first = item
+				}
+			}
+		}
+		for _, tt := range cases {
+			t.Run(tt.typ.String(), func(t *testing.T) {
+				res, err := srv.ListDNSProvider(env.ctx, &venterprisev1.ListDNSProviderOptions{Type: tt.typ})
+				require.Nil(t, err)
+				require.Len(t, res.Items, 1)
+				assert.Equal(t, uint32(1), res.ListResponseMeta.TotalCount)
+				assert.False(t, res.Items[0].Metadata.IsSystemHidden)
+				msg := res.Items[0].Spec.ProtoReflect()
+				assert.True(t, msg.Has(msg.Descriptor().Fields().ByName(protoreflect.Name(tt.field))))
+			})
+		}
+		updated := proto.Clone(first).(*enterprisev1.DNSProvider)
+		msg := updated.Spec.ProtoReflect()
+		msg.Mutable(msg.Descriptor().Fields().ByName(protoreflect.Name(cases[1].field)))
+		insertRscStoreObject(t, env, updated)
+		old, err := srv.ListDNSProvider(env.ctx, &venterprisev1.ListDNSProviderOptions{Type: cases[0].typ})
+		require.Nil(t, err)
+		assert.Empty(t, old.Items)
+		current, err := srv.ListDNSProvider(env.ctx, &venterprisev1.ListDNSProviderOptions{Type: cases[1].typ})
+		require.Nil(t, err)
+		assert.Len(t, current.Items, 2)
+	})
+	t.Run("DirectoryProvider", func(t *testing.T) {
+		cases := []struct {
+			typ   venterprisev1.ListDirectoryProviderOptions_Type
+			field string
+		}{
+			{typ: venterprisev1.ListDirectoryProviderOptions_SCIM, field: "scim"},
+			{typ: venterprisev1.ListDirectoryProviderOptions_GOOGLE_WORKSPACE, field: "googleWorkspace"},
+			{typ: venterprisev1.ListDirectoryProviderOptions_KEYCLOAK, field: "keycloak"},
+		}
+		var first *enterprisev1.DirectoryProvider
+		for idx, tt := range cases {
+			for _, hidden := range []bool{false, true} {
+				item := &enterprisev1.DirectoryProvider{
+					ApiVersion: "enterprise/v1", Kind: "DirectoryProvider",
+					Metadata: newRscStoreMetadata(fmt.Sprintf("variant-%d-%t", idx, hidden), time.Now()),
+					Spec:     &enterprisev1.DirectoryProvider_Spec{},
+				}
+				item.Metadata.IsSystemHidden = hidden
+				msg := item.Spec.ProtoReflect()
+				msg.Mutable(msg.Descriptor().Fields().ByName(protoreflect.Name(tt.field)))
+				insertRscStoreObject(t, env, item)
+				if idx == 0 && !hidden {
+					first = item
+				}
+			}
+		}
+		for _, tt := range cases {
+			t.Run(tt.typ.String(), func(t *testing.T) {
+				res, err := srv.ListDirectoryProvider(env.ctx, &venterprisev1.ListDirectoryProviderOptions{Type: tt.typ})
+				require.Nil(t, err)
+				require.Len(t, res.Items, 1)
+				assert.Equal(t, uint32(1), res.ListResponseMeta.TotalCount)
+				assert.False(t, res.Items[0].Metadata.IsSystemHidden)
+				msg := res.Items[0].Spec.ProtoReflect()
+				assert.True(t, msg.Has(msg.Descriptor().Fields().ByName(protoreflect.Name(tt.field))))
+			})
+		}
+		updated := proto.Clone(first).(*enterprisev1.DirectoryProvider)
+		msg := updated.Spec.ProtoReflect()
+		msg.Mutable(msg.Descriptor().Fields().ByName(protoreflect.Name(cases[1].field)))
+		insertRscStoreObject(t, env, updated)
+		old, err := srv.ListDirectoryProvider(env.ctx, &venterprisev1.ListDirectoryProviderOptions{Type: cases[0].typ})
+		require.Nil(t, err)
+		assert.Empty(t, old.Items)
+		current, err := srv.ListDirectoryProvider(env.ctx, &venterprisev1.ListDirectoryProviderOptions{Type: cases[1].typ})
+		require.Nil(t, err)
+		assert.Len(t, current.Items, 2)
+	})
 }

@@ -9,6 +9,8 @@
 package rscstore
 
 import (
+	"fmt"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -17,6 +19,9 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func insertSubjectUser(t *testing.T, env *rscStoreTestEnv, usr *corev1.User) {
@@ -193,4 +198,92 @@ func TestListSubjectUser(t *testing.T) {
 		})
 		assert.NotNil(t, err)
 	}
+}
+
+func TestSubjectUserRPCBoundariesAndFailures(t *testing.T) {
+	env := newRscStoreTestEnv(t)
+	require.NotNil(t, env)
+	client := caccessv1.NewInternalServiceClient(newRscStoreRPCClient(t, env))
+	for i := range 12 {
+		insertSubjectUser(t, env, &corev1.User{
+			Metadata: newRscStoreMetadata(fmt.Sprintf("subject-%02d", i), time.Now()),
+			Spec:     &corev1.User_Spec{Type: corev1.User_Spec_HUMAN},
+		})
+	}
+	metadata := newRscStoreMetadata("literal-subject", time.Now())
+	metadata.DisplayName = strings.Repeat("x", 100)
+	literal := &corev1.User{
+		Metadata: metadata,
+		Spec: &corev1.User_Spec{
+			Type:  corev1.User_Spec_HUMAN,
+			Email: `literal%_\value@example.com`,
+		},
+	}
+	insertSubjectUser(t, env, literal)
+
+	t.Run("DefaultAndClampedLimits", func(t *testing.T) {
+		for _, tt := range []struct {
+			requested uint32
+			limit     uint32
+			count     int
+			hasMore   bool
+		}{
+			{limit: defaultItemsPerPage, count: 10, hasMore: true},
+			{requested: math.MaxUint32, limit: maxItemsPerPage, count: 13},
+		} {
+			res, err := client.ListSubjectUser(env.ctx, &caccessv1.ListSubjectUserRequest{ItemsPerPage: tt.requested})
+			require.NoError(t, err)
+			assert.Len(t, res.Items, tt.count)
+			assert.Equal(t, tt.limit, res.ListResponseMeta.ItemsPerPage)
+			assert.EqualValues(t, 13, res.ListResponseMeta.TotalCount)
+			assert.Equal(t, tt.hasMore, res.ListResponseMeta.HasMore)
+			assert.Equal(t, ucorev1.APIVersion, res.ApiVersion)
+			assert.Equal(t, "UserList", res.Kind)
+		}
+		res, err := client.ListSubjectUser(env.ctx, &caccessv1.ListSubjectUserRequest{Page: 2})
+		require.NoError(t, err)
+		assert.Empty(t, res.Items)
+		assert.EqualValues(t, 13, res.ListResponseMeta.TotalCount)
+		assert.False(t, res.ListResponseMeta.HasMore)
+	})
+
+	t.Run("LiteralSearchAndLengthBoundary", func(t *testing.T) {
+		for _, query := range []string{`%_\`, "  " + strings.Repeat("x", 100) + "  "} {
+			res, err := client.ListSubjectUser(env.ctx, &caccessv1.ListSubjectUserRequest{Query: query})
+			require.NoError(t, err)
+			require.Len(t, res.Items, 1)
+			assert.Equal(t, literal.Metadata.Uid, res.Items[0].Metadata.Uid)
+		}
+		res, err := client.ListSubjectUser(env.ctx, &caccessv1.ListSubjectUserRequest{Query: "' OR 1=1 --"})
+		require.NoError(t, err)
+		assert.Empty(t, res.Items)
+		_, err = client.ListSubjectUser(env.ctx, &caccessv1.ListSubjectUserRequest{Query: strings.Repeat("x", 101)})
+		assert.Equal(t, codes.InvalidArgument, status.Code(err))
+	})
+
+	t.Run("EligibilityChanges", func(t *testing.T) {
+		literal.Spec.IsDisabled = true
+		insertSubjectUser(t, env, literal)
+		res, err := client.ListSubjectUser(env.ctx, &caccessv1.ListSubjectUserRequest{Query: literal.Metadata.Name})
+		require.NoError(t, err)
+		assert.Empty(t, res.Items)
+		literal.Spec.IsDisabled = false
+		literal.Spec.Type = corev1.User_Spec_WORKLOAD
+		insertSubjectUser(t, env, literal)
+		res, err = client.ListSubjectUser(env.ctx, &caccessv1.ListSubjectUserRequest{Query: literal.Metadata.Name})
+		require.NoError(t, err)
+		assert.Empty(t, res.Items)
+		literal.Spec.Type = corev1.User_Spec_HUMAN
+		insertSubjectUser(t, env, literal)
+		res, err = client.ListSubjectUser(env.ctx, &caccessv1.ListSubjectUserRequest{Query: literal.Metadata.Name})
+		require.NoError(t, err)
+		assert.Len(t, res.Items, 1)
+	})
+
+	t.Run("ClosedDatabase", func(t *testing.T) {
+		require.NoError(t, env.srv.db.Close())
+		res, err := client.ListSubjectUser(env.ctx, &caccessv1.ListSubjectUserRequest{})
+		assert.Nil(t, res)
+		assert.Equal(t, codes.Internal, status.Code(err))
+	})
 }
