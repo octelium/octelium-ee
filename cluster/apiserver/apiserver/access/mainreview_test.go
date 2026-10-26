@@ -15,6 +15,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 )
@@ -69,4 +70,29 @@ func TestMainReview(t *testing.T) {
 		Uid: review.Metadata.Uid,
 	})
 	assert.NotNil(t, err)
+}
+
+func TestValidateMainReview(t *testing.T) {
+	srv := &ServerMain{}
+	for _, decision := range []accessv1.Review_Spec_Decision{
+		accessv1.Review_Spec_DECISION_UNSET,
+		accessv1.Review_Spec_DECISION_APPROVE,
+		accessv1.Review_Spec_DECISION_REJECT,
+	} {
+		arg := &accessv1.Review{Spec: &accessv1.Review_Spec{Decision: decision}, Status: &accessv1.Review_Status{}}
+		assert.Nil(t, srv.validateReview(t.Context(), arg))
+		arg.Status.UserRef = &metav1.ObjectReference{Name: "reviewer"}
+		arg.Status.RequestRef = &metav1.ObjectReference{Name: "request"}
+		assert.Nil(t, srv.validateReview(t.Context(), arg))
+	}
+	for _, arg := range []*accessv1.Review{
+		{},
+		{Spec: &accessv1.Review_Spec{}},
+		{Spec: &accessv1.Review_Spec{Decision: 99}, Status: &accessv1.Review_Status{}},
+		{Spec: &accessv1.Review_Spec{}, Status: &accessv1.Review_Status{UserRef: &metav1.ObjectReference{}}},
+		{Spec: &accessv1.Review_Spec{}, Status: &accessv1.Review_Status{RequestRef: &metav1.ObjectReference{}}},
+	} {
+		err := srv.validateReview(t.Context(), arg)
+		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+	}
 }

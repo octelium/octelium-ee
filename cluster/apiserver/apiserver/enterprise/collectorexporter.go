@@ -10,6 +10,7 @@ package enterprise
 
 import (
 	"context"
+	"math"
 	"net"
 	"net/url"
 	"strconv"
@@ -27,6 +28,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/urscsrv"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/pkg/errors"
+	"golang.org/x/net/http/httpguts"
 )
 
 func (s *Server) CreateCollectorExporter(ctx context.Context, req *enterprisev1.CollectorExporter) (*enterprisev1.CollectorExporter, error) {
@@ -76,6 +78,10 @@ func (s *Server) GetCollectorExporter(ctx context.Context, req *metav1.GetOption
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
 
+	if err := apivalidation.CheckIsSystemHidden(ret); err != nil {
+		return nil, err
+	}
+
 	return ret, nil
 }
 
@@ -90,9 +96,16 @@ func (s *Server) ListCollectorExporter(ctx context.Context, req *enterprisev1.Li
 }
 
 func (s *Server) DeleteCollectorExporter(ctx context.Context, req *metav1.DeleteOptions) (*metav1.OperationResult, error) {
+	if err := apivalidation.CheckDeleteOptions(req, nil); err != nil {
+		return nil, err
+	}
 
 	g, err := s.octeliumC.EnterpriseC().GetCollectorExporter(ctx, apivalidation.DeleteOptionsToRGetOptions(req))
 	if err != nil {
+		return nil, err
+	}
+
+	if err := apivalidation.CheckIsSystem(g); err != nil {
 		return nil, err
 	}
 
@@ -1285,7 +1298,8 @@ func validateOTLPGRCPEndpoint(endpoint string) error {
 	if strings.TrimSpace(host) == "" {
 		return grpcutils.InvalidArg("OTLP endpoint host cannot be empty")
 	}
-	if _, err := strconv.Atoi(port); err != nil {
+	portNum, err := strconv.ParseUint(port, 10, 16)
+	if err != nil || portNum == 0 {
 		return grpcutils.InvalidArg("Invalid OTLP endpoint port")
 	}
 
@@ -1323,42 +1337,49 @@ func metav1DurationToTimeDuration(d *metav1.Duration) (time.Duration, error) {
 		return 0, errors.Errorf("nil duration")
 	}
 
+	convert := func(value uint32, unit time.Duration) (time.Duration, error) {
+		if uint64(value) > uint64(math.MaxInt64)/uint64(unit) {
+			return 0, errors.Errorf("duration is too large")
+		}
+		return time.Duration(value) * unit, nil
+	}
+
 	switch d.Type.(type) {
 	case *metav1.Duration_Milliseconds:
 		if d.GetMilliseconds() == 0 {
 			return 0, errors.Errorf("milliseconds cannot be zero")
 		}
-		return time.Duration(d.GetMilliseconds()) * time.Millisecond, nil
+		return convert(d.GetMilliseconds(), time.Millisecond)
 
 	case *metav1.Duration_Seconds:
 		if d.GetSeconds() == 0 {
 			return 0, errors.Errorf("seconds cannot be zero")
 		}
-		return time.Duration(d.GetSeconds()) * time.Second, nil
+		return convert(d.GetSeconds(), time.Second)
 
 	case *metav1.Duration_Minutes:
 		if d.GetMinutes() == 0 {
 			return 0, errors.Errorf("minutes cannot be zero")
 		}
-		return time.Duration(d.GetMinutes()) * time.Minute, nil
+		return convert(d.GetMinutes(), time.Minute)
 
 	case *metav1.Duration_Hours:
 		if d.GetHours() == 0 {
 			return 0, errors.Errorf("hours cannot be zero")
 		}
-		return time.Duration(d.GetHours()) * time.Hour, nil
+		return convert(d.GetHours(), time.Hour)
 
 	case *metav1.Duration_Days:
 		if d.GetDays() == 0 {
 			return 0, errors.Errorf("days cannot be zero")
 		}
-		return time.Duration(d.GetDays()) * 24 * time.Hour, nil
+		return convert(d.GetDays(), 24*time.Hour)
 
 	case *metav1.Duration_Weeks:
 		if d.GetWeeks() == 0 {
 			return 0, errors.Errorf("weeks cannot be zero")
 		}
-		return time.Duration(d.GetWeeks()) * 7 * 24 * time.Hour, nil
+		return convert(d.GetWeeks(), 7*24*time.Hour)
 
 	case *metav1.Duration_Months:
 		return 0, errors.Errorf("months are not supported for fixed-duration collector fields")
@@ -1373,7 +1394,7 @@ type headerLike interface {
 	GetValue() string
 }
 
-func validateHeaders[T headerLike](name string, headers []T, rejectAuthorization bool) error {
+func validateHeaders[T headerLike](name string, headers []T, httpHeaders bool) error {
 	if len(headers) > 64 {
 		return grpcutils.InvalidArg("%s has too many headers", name)
 	}
@@ -1398,6 +1419,10 @@ func validateHeaders[T headerLike](name string, headers []T, rejectAuthorization
 			return grpcutils.InvalidArg("%s header value is too long", name)
 		}
 
+		if httpHeaders && !httpguts.ValidHeaderFieldValue(h.GetValue()) {
+			return grpcutils.InvalidArg("%s header value contains invalid character", name)
+		}
+
 		for _, r := range key {
 			if r <= 32 || r >= 127 || strings.ContainsRune("()<>@,;:\\\"/[]?={}", r) {
 				return grpcutils.InvalidArg("%s header key contains invalid character", name)
@@ -1410,7 +1435,7 @@ func validateHeaders[T headerLike](name string, headers []T, rejectAuthorization
 		}
 		seen[keyLower] = struct{}{}
 
-		if rejectAuthorization && keyLower == "authorization" {
+		if httpHeaders && keyLower == "authorization" {
 			return grpcutils.InvalidArg("%s Authorization header must be configured through auth", name)
 		}
 	}

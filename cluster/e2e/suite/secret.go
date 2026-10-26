@@ -18,9 +18,14 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/cluster/e2e/harness"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type secretConsumer struct {
@@ -333,4 +338,71 @@ func testSecretConsumersAfterRotation(t *testing.T, ch *harness.H) {
 		sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
 		assert.Equal(t, restartsBefore, h.EnterpriseRestarts(t, "collector"))
 	})
+}
+
+func testEnterpriseSecretAPI(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	attrs, err := structpb.NewStruct(map[string]any{"username": "octelium", "enabled": true})
+	require.Nil(t, err)
+	for _, tt := range []struct {
+		name string
+		data *enterprisev1.Secret_Data
+	}{
+		{name: "Value", data: &enterprisev1.Secret_Data{Type: &enterprisev1.Secret_Data_Value{Value: "updated-value"}}},
+		{name: "Bytes", data: &enterprisev1.Secret_Data{Type: &enterprisev1.Secret_Data_ValueBytes{ValueBytes: []byte{0, 1, 2, 255}}}},
+		{name: "Map", data: &enterprisev1.Secret_Data{Type: &enterprisev1.Secret_Data_DataMap_{DataMap: &enterprisev1.Secret_Data_DataMap{Map: map[string][]byte{"token": []byte("credential"), "certificate": {0, 1, 255}}}}}},
+		{name: "Attrs", data: &enterprisev1.Secret_Data{Type: &enterprisev1.Secret_Data_Attrs{Attrs: attrs}}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx, cancel := h.Ctx(t)
+			defer cancel()
+			sec := h.CreateEnterpriseSecret(t, "initial-value")
+			assert.Nil(t, sec.Data)
+			arg := proto.Clone(sec).(*enterprisev1.Secret)
+			arg.Data = tt.data
+			arg.Metadata.Description = "rotated secret"
+			updated, err := h.EnterpriseC().UpdateSecret(ctx, arg)
+			require.Nil(t, err)
+			assert.Nil(t, updated.Data)
+			assert.Equal(t, sec.Metadata.Uid, updated.Metadata.Uid)
+
+			for _, opts := range []*metav1.GetOptions{{Name: sec.Metadata.Name}, {Uid: sec.Metadata.Uid}} {
+				got, err := h.EnterpriseC().GetSecret(ctx, opts)
+				require.Nil(t, err)
+				assert.Nil(t, got.Data)
+				assert.Equal(t, "rotated secret", got.Metadata.Description)
+			}
+
+			invalid := proto.Clone(arg).(*enterprisev1.Secret)
+			invalid.Data = &enterprisev1.Secret_Data{Type: &enterprisev1.Secret_Data_Value{}}
+			invalid.Metadata.Description = "must not persist"
+			_, err = h.EnterpriseC().UpdateSecret(ctx, invalid)
+			assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+			got, err := h.EnterpriseC().GetSecret(ctx, &metav1.GetOptions{Uid: sec.Metadata.Uid})
+			require.Nil(t, err)
+			assert.Equal(t, "rotated secret", got.Metadata.Description)
+			assert.Nil(t, got.Data)
+
+			_, err = h.EnterpriseC().CreateSecret(ctx, arg)
+			assert.Equal(t, codes.AlreadyExists, status.Code(err), "%+v", err)
+			found := false
+			for page := uint32(0); ; page++ {
+				listed, err := h.EnterpriseC().ListSecret(ctx, &enterprisev1.ListSecretOptions{Common: &metav1.CommonListOptions{Page: page, ItemsPerPage: 50}})
+				require.Nil(t, err)
+				for _, item := range listed.Items {
+					assert.Nil(t, item.Data)
+					found = found || item.Metadata.Uid == sec.Metadata.Uid
+				}
+				if found || len(listed.Items) < 50 {
+					break
+				}
+			}
+			assert.True(t, found)
+
+			_, err = h.EnterpriseC().DeleteSecret(ctx, &metav1.DeleteOptions{Uid: sec.Metadata.Uid})
+			require.Nil(t, err)
+			_, err = h.EnterpriseC().GetSecret(ctx, &metav1.GetOptions{Name: sec.Metadata.Name})
+			assert.True(t, grpcerr.IsNotFound(err), "%+v", err)
+		})
+	}
 }

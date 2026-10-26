@@ -30,6 +30,7 @@ import (
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -46,13 +47,13 @@ func tstNewEd25519Signer(t *testing.T) (*tstLicenseSigner, *licenseVerificationK
 	assert.Nil(t, err, "%+v", err)
 
 	return &tstLicenseSigner{
-			kid:  tstLicenseKID,
-			alg:  jwt.SigningMethodEdDSA.Alg(),
-			priv: priv,
-		}, &licenseVerificationKey{
-			alg: jwt.SigningMethodEdDSA.Alg(),
-			key: pub,
-		}
+		kid:  tstLicenseKID,
+		alg:  jwt.SigningMethodEdDSA.Alg(),
+		priv: priv,
+	}, &licenseVerificationKey{
+		alg: jwt.SigningMethodEdDSA.Alg(),
+		key: pub,
+	}
 }
 
 func tstNewES256Signer(t *testing.T) (*tstLicenseSigner, *licenseVerificationKey) {
@@ -60,13 +61,13 @@ func tstNewES256Signer(t *testing.T) (*tstLicenseSigner, *licenseVerificationKey
 	assert.Nil(t, err, "%+v", err)
 
 	return &tstLicenseSigner{
-			kid:  tstLicenseKID,
-			alg:  jwt.SigningMethodES256.Alg(),
-			priv: priv,
-		}, &licenseVerificationKey{
-			alg: jwt.SigningMethodES256.Alg(),
-			key: &priv.PublicKey,
-		}
+		kid:  tstLicenseKID,
+		alg:  jwt.SigningMethodES256.Alg(),
+		priv: priv,
+	}, &licenseVerificationKey{
+		alg: jwt.SigningMethodES256.Alg(),
+		key: &priv.PublicKey,
+	}
 }
 
 func tstSetLicenseKeys(t *testing.T, keys map[string]*licenseVerificationKey) {
@@ -1483,5 +1484,61 @@ func TestValidateLicenseSecret(t *testing.T) {
 			},
 		}
 		assert.NotNil(t, validateLicenseSecret(sec))
+	}
+}
+
+func TestParseLicenseVerificationKeys(t *testing.T) {
+	original := licenseJWKSBytes
+	t.Cleanup(func() { licenseJWKSBytes = original })
+	keys, err := parseLicenseVerificationKeys()
+	require.Nil(t, err)
+	assert.NotEmpty(t, keys)
+	set := &licenseJWKSet{}
+	require.Nil(t, json.Unmarshal(original, set))
+	set.Keys = append(set.Keys, set.Keys[0])
+	duplicate, err := json.Marshal(set)
+	require.Nil(t, err)
+	for _, tt := range []struct {
+		name string
+		data []byte
+	}{
+		{name: "Malformed", data: []byte(`{`)},
+		{name: "UnknownField", data: []byte(`{"unknown":true}`)},
+		{name: "Empty", data: []byte(`{"keys":[]}`)},
+		{name: "InvalidKey", data: []byte(`{"keys":[{}]}`)},
+		{name: "NilKey", data: []byte(`{"keys":[null]}`)},
+		{name: "DuplicateKey", data: duplicate},
+		{name: "TrailingJSON", data: append(append([]byte{}, original...), []byte(` {}`)...)},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			licenseJWKSBytes = tt.data
+			_, err := parseLicenseVerificationKeys()
+			assert.NotNil(t, err)
+		})
+	}
+}
+
+func TestEnsureLicenseJSONEOF(t *testing.T) {
+	assert.NotNil(t, ensureLicenseJSONEOF(nil))
+	for _, tt := range []struct {
+		data    string
+		invalid bool
+	}{
+		{data: "{}"},
+		{data: "{} \n\t"},
+		{data: "{} {}", invalid: true},
+		{data: "{} invalid", invalid: true},
+	} {
+		t.Run(tt.data, func(t *testing.T) {
+			dec := json.NewDecoder(strings.NewReader(tt.data))
+			var obj any
+			require.Nil(t, dec.Decode(&obj))
+			err := ensureLicenseJSONEOF(dec)
+			if tt.invalid {
+				assert.NotNil(t, err)
+				return
+			}
+			assert.Nil(t, err)
+		})
 	}
 }

@@ -15,11 +15,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/cordiumv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/rcordiumv1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/admin"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/user"
@@ -30,6 +32,10 @@ import (
 	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -649,4 +655,87 @@ func TestValidateConfig(t *testing.T) {
 		err := ValidateConfig(cfg)
 		assert.True(t, grpcerr.IsInvalidArg(err), "%+v: %+v", cfg, err)
 	}
+}
+
+type workspaceTestClient struct {
+	octeliumc.ClientInterface
+	cordiumC rcordiumv1.ResourceServiceClient
+}
+
+func (c *workspaceTestClient) CordiumC() rcordiumv1.ResourceServiceClient {
+	return c.cordiumC
+}
+
+type workspaceLookupClient struct {
+	rcordiumv1.ResourceServiceClient
+	get func(context.Context, *rmetav1.GetOptions) (*cordiumv1.Workspace, error)
+}
+
+func (c *workspaceLookupClient) GetWorkspace(ctx context.Context, req *rmetav1.GetOptions, opts ...grpc.CallOption) (*cordiumv1.Workspace, error) {
+	return c.get(ctx, req)
+}
+
+func TestWorkspaceNameCollisions(t *testing.T) {
+	for _, tt := range []struct {
+		name       string
+		collisions int
+		length     int
+	}{
+		{name: "FirstAttempt", length: 3},
+		{name: "ThreeCharacters", collisions: 49, length: 3},
+		{name: "FourCharacters", collisions: 50, length: 4},
+		{name: "FiveCharacters", collisions: 500, length: 5},
+		{name: "SixCharacters", collisions: 1000, length: 6},
+		{name: "Exhausted", collisions: 10000},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			calls := 0
+			var last string
+			client := &workspaceLookupClient{get: func(ctx context.Context, req *rmetav1.GetOptions) (*cordiumv1.Workspace, error) {
+				assert.Nil(t, ctx.Err())
+				calls++
+				last = req.Name
+				if calls <= tt.collisions {
+					return &cordiumv1.Workspace{}, nil
+				}
+				return nil, status.Error(codes.NotFound, "workspace not found")
+			}}
+			srv := NewServer(&workspaceTestClient{cordiumC: client})
+			name, err := srv.genWorkspaceName(t.Context())
+			if tt.length == 0 {
+				assert.True(t, grpcerr.IsInternal(err), "%+v", err)
+				assert.Empty(t, name)
+				assert.Equal(t, 10000, calls)
+				return
+			}
+			require.Nil(t, err)
+			assert.Len(t, name, tt.length)
+			assert.Regexp(t, `^[a-z0-9]+$`, name)
+			assert.Equal(t, last, name)
+			assert.Equal(t, tt.collisions+1, calls)
+		})
+	}
+}
+
+func TestWorkspaceNameLookupFailure(t *testing.T) {
+	client := &workspaceLookupClient{get: func(ctx context.Context, req *rmetav1.GetOptions) (*cordiumv1.Workspace, error) {
+		return nil, status.Error(codes.Unavailable, "store unavailable")
+	}}
+	name, err := NewServer(&workspaceTestClient{cordiumC: client}).genWorkspaceName(t.Context())
+	assert.Empty(t, name)
+	assert.True(t, grpcerr.IsInternal(err), "%+v", err)
+}
+
+func TestAgentLimitBoundaries(t *testing.T) {
+	limit := &cordiumv1.Workspace_Spec_Limit{
+		Cpu:     &cordiumv1.Workspace_Spec_Limit_CPU{Millicores: maxLimitMillicores},
+		Memory:  &cordiumv1.Workspace_Spec_Limit_Memory{Megabytes: maxLimitMegabytes},
+		Storage: &cordiumv1.Workspace_Spec_Limit_Storage{Megabytes: maxLimitMegabytes},
+	}
+	assert.Nil(t, validateLimit(limit))
+	limit.Memory.Megabytes++
+	assert.True(t, grpcerr.IsInvalidArg(validateLimit(limit)))
+	limit.Memory.Megabytes--
+	limit.Storage.Megabytes++
+	assert.True(t, grpcerr.IsInvalidArg(validateLimit(limit)))
 }

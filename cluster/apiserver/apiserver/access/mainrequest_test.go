@@ -20,6 +20,7 @@ import (
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestMainRequest(t *testing.T) {
@@ -197,4 +198,56 @@ func TestMainRevokeRequest(t *testing.T) {
 		assert.NotNil(t, err)
 		assert.True(t, grpcerr.IsNotFound(err))
 	}
+}
+
+func TestValidateMainRequest(t *testing.T) {
+	srv := &ServerMain{}
+	valid := &accessv1.Request{
+		Spec: &accessv1.Request_Spec{
+			Resource: &accessv1.Request_Spec_Resource{Type: &accessv1.Request_Spec_Resource_ServiceRef{ServiceRef: &metav1.ObjectReference{Name: "service.default"}}},
+		},
+		Status: &accessv1.Request_Status{},
+	}
+	for _, urgency := range []accessv1.Request_Spec_Urgency{
+		accessv1.Request_Spec_URGENCY_UNSET,
+		accessv1.Request_Spec_VERY_LOW,
+		accessv1.Request_Spec_LOW,
+		accessv1.Request_Spec_NORMAL,
+		accessv1.Request_Spec_HIGH,
+		accessv1.Request_Spec_VERY_HIGH,
+		accessv1.Request_Spec_HIGHEST,
+	} {
+		arg := proto.Clone(valid).(*accessv1.Request)
+		arg.Spec.Urgency = urgency
+		assert.Nil(t, srv.validateRequest(t.Context(), arg))
+	}
+	for _, tt := range []struct {
+		name   string
+		mutate func(*accessv1.Request)
+	}{
+		{name: "Spec", mutate: func(arg *accessv1.Request) { arg.Spec = nil }},
+		{name: "Status", mutate: func(arg *accessv1.Request) { arg.Status = nil }},
+		{name: "Resource", mutate: func(arg *accessv1.Request) { arg.Spec.Resource = nil }},
+		{name: "ResourceType", mutate: func(arg *accessv1.Request) { arg.Spec.Resource.Type = nil }},
+		{name: "ServiceRef", mutate: func(arg *accessv1.Request) { arg.Spec.Resource.GetServiceRef().Name = "Invalid Service" }},
+		{name: "NilCatalog", mutate: func(arg *accessv1.Request) { arg.Spec.Resource.Type = &accessv1.Request_Spec_Resource_Catalog_{} }},
+		{name: "CatalogRef", mutate: func(arg *accessv1.Request) {
+			arg.Spec.Resource.Type = &accessv1.Request_Spec_Resource_Catalog_{Catalog: &accessv1.Request_Spec_Resource_Catalog{}}
+		}},
+		{name: "SubjectType", mutate: func(arg *accessv1.Request) { arg.Spec.Subject = &accessv1.Request_Spec_Subject{} }},
+		{name: "SubjectRef", mutate: func(arg *accessv1.Request) {
+			arg.Spec.Subject = &accessv1.Request_Spec_Subject{Type: &accessv1.Request_Spec_Subject_UserRef{}}
+		}},
+		{name: "Urgency", mutate: func(arg *accessv1.Request) { arg.Spec.Urgency = 99 }},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			arg := proto.Clone(valid).(*accessv1.Request)
+			tt.mutate(arg)
+			err := srv.validateRequest(t.Context(), arg)
+			assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+		})
+	}
+	valid.Spec.Resource.Type = &accessv1.Request_Spec_Resource_Catalog_{Catalog: &accessv1.Request_Spec_Resource_Catalog{CatalogRef: &metav1.ObjectReference{Name: "catalog"}}}
+	valid.Spec.Subject = &accessv1.Request_Spec_Subject{Type: &accessv1.Request_Spec_Subject_UserRef{UserRef: &metav1.ObjectReference{Name: "subject"}}}
+	assert.Nil(t, srv.validateRequest(t.Context(), valid))
 }

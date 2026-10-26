@@ -18,12 +18,16 @@ import (
 	eeharness "github.com/octelium/octelium-ee/cluster/e2e/harness"
 	eescenario "github.com/octelium/octelium-ee/cluster/e2e/scenario"
 	"github.com/octelium/octelium/apis/main/corev1"
+	"github.com/octelium/octelium/apis/main/enterprisev1"
+	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/cluster/e2e/harness"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 const settleWindow = 20 * time.Second
@@ -312,4 +316,118 @@ func waitAccessLogGrows(t *testing.T, d *trafficDriver, by uint32) {
 					"while the component log count is %d, was %d",
 				cur, before+by, driven, componentCur, componentBefore)
 		})
+}
+
+func testCollectorExporterAPI(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	ctx, cancel := h.Ctx(t)
+	defer cancel()
+
+	sec := h.CreateEnterpriseSecret(t, "exporter-api-credential")
+	exp := h.CreateCollectorExporter(t, otlpExporter("collector.example.com:4317", sec.Metadata.Name))
+
+	t.Run("NameAndUIDResolveTheSameExporter", func(t *testing.T) {
+		byName, err := h.EnterpriseC().GetCollectorExporter(ctx, &metav1.GetOptions{Name: exp.Metadata.Name})
+		require.Nil(t, err)
+		byUID, err := h.EnterpriseC().GetCollectorExporter(ctx, &metav1.GetOptions{Uid: exp.Metadata.Uid})
+		require.Nil(t, err)
+		assert.True(t, proto.Equal(byName, byUID))
+		assert.True(t, proto.Equal(exp.Spec, byUID.Spec))
+	})
+
+	t.Run("DuplicateCreationPreservesTheExporter", func(t *testing.T) {
+		duplicate := otlpExporter("other.example.com:4317", "")
+		duplicate.Metadata = &metav1.Metadata{Name: exp.Metadata.Name}
+		_, err := h.EnterpriseC().CreateCollectorExporter(ctx, duplicate)
+		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+		got, err := h.EnterpriseC().GetCollectorExporter(ctx, &metav1.GetOptions{Uid: exp.Metadata.Uid})
+		require.Nil(t, err)
+		assert.True(t, proto.Equal(exp.Spec, got.Spec))
+	})
+
+	t.Run("PaginationIncludesEveryExporterOnce", func(t *testing.T) {
+		wanted := map[string]bool{exp.Metadata.Uid: true}
+		for range 3 {
+			item := h.CreateCollectorExporter(t, otlpExporter("collector.example.com:4317", ""))
+			wanted[item.Metadata.Uid] = true
+		}
+		seen := make(map[string]bool)
+		for page := uint32(0); ; page++ {
+			res, err := h.EnterpriseC().ListCollectorExporter(ctx, &enterprisev1.ListCollectorExporterOptions{
+				Common: &metav1.CommonListOptions{
+					Page: page, ItemsPerPage: 2,
+					OrderBy: &metav1.CommonListOptions_OrderBy{Type: metav1.CommonListOptions_OrderBy_NAME, Mode: metav1.CommonListOptions_OrderBy_ASC},
+				},
+			})
+			require.Nil(t, err)
+			assert.LessOrEqual(t, len(res.Items), 2)
+			for _, item := range res.Items {
+				assert.False(t, seen[item.Metadata.Uid], "duplicate exporter %s", item.Metadata.Name)
+				seen[item.Metadata.Uid] = true
+			}
+			if len(res.Items) < 2 {
+				break
+			}
+		}
+		for uid := range wanted {
+			assert.True(t, seen[uid], "missing exporter %s", uid)
+		}
+	})
+
+	t.Run("RejectedUpdatesPreserveTheStoredSpec", func(t *testing.T) {
+		for _, mutate := range []func(*enterprisev1.CollectorExporter){
+			func(arg *enterprisev1.CollectorExporter) { arg.Spec.GetOtlp().Endpoint = "invalid" },
+			func(arg *enterprisev1.CollectorExporter) { arg.Spec.GetOtlp().Endpoint = "collector.example.com:0" },
+			func(arg *enterprisev1.CollectorExporter) { arg.Spec.GetOtlp().Endpoint = "collector.example.com:-1" },
+			func(arg *enterprisev1.CollectorExporter) { arg.Spec.GetOtlp().Endpoint = "collector.example.com:65536" },
+			func(arg *enterprisev1.CollectorExporter) { arg.Spec.GetOtlp().Compression = 99 },
+			func(arg *enterprisev1.CollectorExporter) {
+				arg.Spec.GetOtlp().Timeout = &metav1.Duration{Type: &metav1.Duration_Minutes{Minutes: 307445735}}
+			},
+			func(arg *enterprisev1.CollectorExporter) {
+				arg.Spec.GetOtlp().Headers = []*enterprisev1.CollectorExporter_Spec_OTLP_Header{{Key: "X-Token", Value: "value\r\nInjected: true"}}
+			},
+			func(arg *enterprisev1.CollectorExporter) {
+				arg.Spec.GetOtlp().Auth.GetBearer().Type = &enterprisev1.CollectorExporter_Spec_OTLP_Auth_Bearer_FromSecret{FromSecret: h.Name()}
+			},
+		} {
+			arg := proto.Clone(exp).(*enterprisev1.CollectorExporter)
+			arg.Metadata.Description = "must not persist"
+			mutate(arg)
+			_, err := h.EnterpriseC().UpdateCollectorExporter(ctx, arg)
+			assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+			got, err := h.EnterpriseC().GetCollectorExporter(ctx, &metav1.GetOptions{Uid: exp.Metadata.Uid})
+			require.Nil(t, err)
+			assert.True(t, proto.Equal(exp.Spec, got.Spec))
+			assert.Equal(t, exp.Metadata.Description, got.Metadata.Description)
+		}
+	})
+
+	t.Run("AnExporterCanChangeProtocol", func(t *testing.T) {
+		arg := proto.Clone(exp).(*enterprisev1.CollectorExporter)
+		arg.Spec = otlpHTTPExporter("https://collector.example.com", sec.Metadata.Name).Spec
+		arg.Metadata.Description = "HTTP exporter"
+		updated, err := h.EnterpriseC().UpdateCollectorExporter(ctx, arg)
+		require.Nil(t, err)
+		assert.Equal(t, exp.Metadata.Uid, updated.Metadata.Uid)
+		assert.Equal(t, "HTTP exporter", updated.Metadata.Description)
+		got, err := h.EnterpriseC().GetCollectorExporter(ctx, &metav1.GetOptions{Uid: exp.Metadata.Uid})
+		require.Nil(t, err)
+		assert.True(t, proto.Equal(arg.Spec, got.Spec))
+	})
+
+	t.Run("RecreationDoesNotReuseTheUID", func(t *testing.T) {
+		_, err := h.EnterpriseC().DeleteCollectorExporter(ctx, &metav1.DeleteOptions{Uid: exp.Metadata.Uid})
+		require.Nil(t, err)
+		_, err = h.EnterpriseC().GetCollectorExporter(ctx, &metav1.GetOptions{Name: exp.Metadata.Name})
+		assert.True(t, grpcerr.IsNotFound(err), "%+v", err)
+		replacement := otlpExporter("collector.example.com:4317", "")
+		replacement.Metadata = &metav1.Metadata{Name: exp.Metadata.Name}
+		recreated := h.CreateCollectorExporter(t, replacement)
+		assert.NotEqual(t, exp.Metadata.Uid, recreated.Metadata.Uid)
+		_, err = h.EnterpriseC().DeleteCollectorExporter(ctx, &metav1.DeleteOptions{Uid: exp.Metadata.Uid})
+		assert.True(t, grpcerr.IsNotFound(err), "%+v", err)
+		_, err = h.EnterpriseC().GetCollectorExporter(ctx, &metav1.GetOptions{Uid: recreated.Metadata.Uid})
+		assert.Nil(t, err)
+	})
 }

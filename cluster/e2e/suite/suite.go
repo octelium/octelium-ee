@@ -20,6 +20,9 @@ func Phases() []suite.Phase {
 	return []suite.Phase{
 		{Name: "EnterpriseSDK", Run: testEnterpriseSDK},
 		{Name: "EnterpriseTopology", Run: testEnterpriseTopology},
+		{Name: "CollectorExporterAPI", Run: testCollectorExporterAPI},
+		{Name: "EnterpriseSecretAPI", Run: testEnterpriseSecretAPI},
+		{Name: "EnterpriseAPIAuthorization", Run: testEnterpriseAPIAuthorization},
 
 		{Name: "SCIM", Run: testSCIM},
 		{Name: "SCIMProtocol", Run: testSCIMProtocol},

@@ -13,16 +13,24 @@ import (
 	"testing"
 
 	"github.com/octelium/octelium-ee/cluster/common/tests"
+	"github.com/octelium/octelium/apis/cluster/caccessv1"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/admin"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/user"
 	"github.com/octelium/octelium/cluster/common/tests/tstuser"
+	"github.com/octelium/octelium/cluster/common/userctx"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/grpcerr"
+	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestUserSubjectUser(t *testing.T) {
@@ -225,4 +233,75 @@ func TestUserCreateRequestForSubject(t *testing.T) {
 		})
 		assert.True(t, grpcerr.IsNotFound(err), "%+v", err)
 	}
+}
+
+type subjectLookupClient struct {
+	caccessv1.InternalServiceClient
+	list func(context.Context, *caccessv1.ListSubjectUserRequest) (*corev1.UserList, error)
+}
+
+func (c *subjectLookupClient) ListSubjectUser(ctx context.Context, req *caccessv1.ListSubjectUserRequest, opts ...grpc.CallOption) (*corev1.UserList, error) {
+	return c.list(ctx, req)
+}
+
+func TestListSubjectUserPagination(t *testing.T) {
+	oldMode := ldflags.TestMode
+	ldflags.TestMode = "true"
+	t.Cleanup(func() { ldflags.TestMode = oldMode })
+	ctx := context.WithValue(t.Context(), "octelium-user-ctx", &userctx.UserCtx{})
+	for _, tt := range []struct {
+		name   string
+		common *metav1.CommonListOptions
+		limit  uint32
+		page   uint32
+	}{
+		{name: "Default", limit: 50},
+		{name: "Zero", common: &metav1.CommonListOptions{}, limit: 50},
+		{name: "One", common: &metav1.CommonListOptions{ItemsPerPage: 1}, limit: 1},
+		{name: "Maximum", common: &metav1.CommonListOptions{ItemsPerPage: 50}, limit: 50},
+		{name: "Clamped", common: &metav1.CommonListOptions{ItemsPerPage: 51, Page: 3}, limit: 50, page: 3},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			arg := &accessv1.ListSubjectUserOptions{Query: "  Alice  ", Common: tt.common}
+			original := proto.Clone(arg)
+			meta := &metav1.ListResponseMeta{TotalCount: 123}
+			srv := &ServerUser{rscStoreC: &subjectLookupClient{list: func(got context.Context, req *caccessv1.ListSubjectUserRequest) (*corev1.UserList, error) {
+				assert.Same(t, ctx, got)
+				assert.Equal(t, "Alice", req.Query)
+				assert.Equal(t, tt.limit, req.ItemsPerPage)
+				assert.Equal(t, tt.page, req.Page)
+				return &corev1.UserList{
+					ListResponseMeta: meta,
+					Items: []*corev1.User{{
+						Metadata: &metav1.Metadata{Name: "alice", Uid: "c995d925-cee9-4157-aada-b8f171374539", DisplayName: "Alice", PicURL: "https://example.com/alice.png"},
+						Spec:     &corev1.User_Spec{Type: corev1.User_Spec_HUMAN, Email: "alice@example.com"},
+					}},
+				}, nil
+			}}}
+			res, err := srv.ListSubjectUser(ctx, arg)
+			require.Nil(t, err)
+			assert.Equal(t, "access/v1", res.ApiVersion)
+			assert.Equal(t, "SubjectUserList", res.Kind)
+			assert.Same(t, meta, res.ListResponseMeta)
+			require.Len(t, res.Items, 1)
+			assert.Equal(t, "alice", res.Items[0].UserRef.Name)
+			assert.Equal(t, "Alice", res.Items[0].DisplayName)
+			assert.Equal(t, "alice@example.com", res.Items[0].Email)
+			assert.Equal(t, "https://example.com/alice.png", res.Items[0].PicURL)
+			assert.Equal(t, corev1.User_Spec_HUMAN, res.Items[0].Type)
+			assert.True(t, proto.Equal(original, arg))
+		})
+	}
+
+	srv := &ServerUser{rscStoreC: &subjectLookupClient{list: func(ctx context.Context, req *caccessv1.ListSubjectUserRequest) (*corev1.UserList, error) {
+		return nil, status.Error(codes.Unavailable, "store unavailable")
+	}}}
+	for _, arg := range []*accessv1.ListSubjectUserOptions{nil, {}, {Query: "a"}, {Query: "  a  "}, {Query: "  "}} {
+		_, err := srv.ListSubjectUser(ctx, arg)
+		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+	}
+	_, err := srv.ListSubjectUser(ctx, &accessv1.ListSubjectUserOptions{Query: "al"})
+	assert.True(t, grpcerr.IsInternal(err), "%+v", err)
+	_, err = srv.ListSubjectUser(t.Context(), &accessv1.ListSubjectUserOptions{Query: "al"})
+	assert.NotNil(t, err)
 }

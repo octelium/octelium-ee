@@ -22,10 +22,12 @@ import (
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/cluster/e2e/harness"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func waitIngested(t *testing.T, h *harness.H, what string,
@@ -245,4 +247,50 @@ func testEnterpriseSDK(t *testing.T, h *harness.H) {
 				return nil
 			})
 	})
+}
+
+func testEnterpriseAPIAuthorization(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	ctx, cancel := h.Ctx(t)
+	defer cancel()
+	actor := h.NewActor(t)
+	client := enterprisev1.NewMainServiceClient(actor.Conn)
+	sec := h.CreateEnterpriseSecret(t, "protected-credential")
+	exp := h.CreateCollectorExporter(t, otlpExporter("collector.example.com:4317", ""))
+
+	for _, tt := range []struct {
+		name string
+		call func() error
+	}{
+		{name: "ReadSecret", call: func() error {
+			_, err := client.GetSecret(ctx, &metav1.GetOptions{Uid: sec.Metadata.Uid})
+			return err
+		}},
+		{name: "DeleteSecret", call: func() error {
+			_, err := client.DeleteSecret(ctx, &metav1.DeleteOptions{Uid: sec.Metadata.Uid})
+			return err
+		}},
+		{name: "ListExporters", call: func() error {
+			_, err := client.ListCollectorExporter(ctx, &enterprisev1.ListCollectorExporterOptions{})
+			return err
+		}},
+		{name: "UpdateExporter", call: func() error {
+			_, err := client.UpdateCollectorExporter(ctx, exp)
+			return err
+		}},
+		{name: "DeleteExporter", call: func() error {
+			_, err := client.DeleteCollectorExporter(ctx, &metav1.DeleteOptions{Uid: exp.Metadata.Uid})
+			return err
+		}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.call()
+			assert.True(t, grpcerr.IsUnauthorized(err), "%+v", err)
+		})
+	}
+	_, err := h.EnterpriseC().GetSecret(ctx, &metav1.GetOptions{Uid: sec.Metadata.Uid})
+	assert.Nil(t, err)
+	got, err := h.EnterpriseC().GetCollectorExporter(ctx, &metav1.GetOptions{Uid: exp.Metadata.Uid})
+	require.Nil(t, err)
+	assert.True(t, proto.Equal(exp.Spec, got.Spec))
 }
