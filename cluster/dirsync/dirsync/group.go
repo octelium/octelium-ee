@@ -428,6 +428,12 @@ func (s *server) handlePatchGroup(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(err, &maxBytesErr) {
+			s.setError(w, http.StatusRequestEntityTooLarge, "Request body is too large")
+		} else {
+			s.setErrorBadRequestWithErr(w, err)
+		}
 		return
 	}
 

@@ -331,3 +331,30 @@ func TestDirectorySynchronizationRecordsPartialFailureAndRecovery(t *testing.T) 
 	require.NoError(t, err)
 	assert.Len(t, users.Items, 2)
 }
+
+func newSCIMPatchTestServer(t *testing.T) (*server, http.Handler, *enterprisev1.DirectoryProvider) {
+	t.Helper()
+	tst, err := otests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() { tst.Destroy() })
+	srv, err := newServer(t.Context(), tst.C.OcteliumC)
+	require.NoError(t, err)
+	api := enterprise.NewServer(tst.C.OcteliumC)
+	dp, err := api.CreateDirectoryProvider(t.Context(), &enterprisev1.DirectoryProvider{
+		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
+		Spec: &enterprisev1.DirectoryProvider_Spec{
+			Type: &enterprisev1.DirectoryProvider_Spec_Scim{Scim: &enterprisev1.DirectoryProvider_Spec_SCIM{}},
+		},
+	})
+	require.NoError(t, err)
+	_, err = api.GenerateDirectoryProviderCredential(t.Context(), &enterprisev1.GenerateDirectoryProviderCredentialRequest{
+		DirectoryProviderRef: umetav1.GetObjectReference(dp),
+		Mode:                 enterprisev1.GenerateDirectoryProviderCredentialRequest_BEARER,
+	})
+	require.NoError(t, err)
+	dp, err = tst.C.OcteliumC.EnterpriseC().GetDirectoryProvider(t.Context(), &rmetav1.GetOptions{Uid: dp.Metadata.Uid})
+	require.NoError(t, err)
+	handler, err := srv.getHTTPHandler(t.Context())
+	require.NoError(t, err)
+	return srv, handler, dp
+}

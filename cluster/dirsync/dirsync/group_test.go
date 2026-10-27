@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/gorilla/mux"
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
@@ -550,4 +551,80 @@ func TestSCIMGroupBodyValidationBoundaries(t *testing.T) {
 	value, err := (&server{}).unmarshalGroupSCIMFromReqBody(request, httptest.NewRecorder())
 	require.NoError(t, err)
 	assert.Equal(t, "external", value.ExternalID)
+}
+
+func TestSCIMGroupPatchBodyErrors(t *testing.T) {
+	srv, handler, dp := newSCIMPatchTestServer(t)
+	request := func(method, path string, body io.Reader) *httptest.ResponseRecorder {
+		r := httptest.NewRequest(method, path, body)
+		r.Header.Set("X-Octelium-Session-Uid", dp.Status.SessionRef.Uid)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+		return w
+	}
+	w := request(http.MethodPost, srv.getUserPrefix(dp), strings.NewReader(`{"externalId":"patch-user","userName":"patch@example.com","active":true,"emails":[{"value":"patch@example.com","type":"work","primary":true}]}`))
+	require.Equal(t, http.StatusCreated, w.Code, w.Body.String())
+	var scimUsr resourceUser
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &scimUsr))
+	w = request(http.MethodPost, srv.getGroupPrefix(dp), strings.NewReader(fmt.Sprintf(`{"externalId":"patch-group","displayName":"Before","members":[{"value":%q}]}`, scimUsr.ID)))
+	require.Equal(t, http.StatusCreated, w.Code, w.Body.String())
+	var scimGrp resourceGroup
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &scimGrp))
+	link, err := srv.octeliumC.EnterpriseC().GetDirectoryProviderGroup(t.Context(), &rmetav1.GetOptions{Uid: scimGrp.ID})
+	require.NoError(t, err)
+	grp, err := srv.octeliumC.CoreC().GetGroup(t.Context(), &rmetav1.GetOptions{Uid: link.Status.GroupRef.Uid})
+	require.NoError(t, err)
+	usrLink, err := srv.octeliumC.EnterpriseC().GetDirectoryProviderUser(t.Context(), &rmetav1.GetOptions{Uid: scimUsr.ID})
+	require.NoError(t, err)
+	usr, err := srv.octeliumC.CoreC().GetUser(t.Context(), &rmetav1.GetOptions{Uid: usrLink.Status.UserRef.Uid})
+	require.NoError(t, err)
+	require.Contains(t, usr.Spec.Groups, grp.Metadata.Name)
+	patch, err := json.Marshal(&patchRequest{Operations: []patchRequestOperations{
+		{Op: "Remove", Path: fmt.Sprintf(`members[value eq "%s"]`, scimUsr.ID)},
+	}})
+	require.NoError(t, err)
+	readErr := fmt.Errorf("private transport failure")
+	for _, tc := range []struct {
+		name   string
+		body   io.Reader
+		status int
+	}{
+		{"Oversized", strings.NewReader(string(patch) + strings.Repeat(" ", (1<<20)+1-len(patch))), http.StatusRequestEntityTooLarge},
+		{"ReadFailure", iotest.ErrReader(readErr), http.StatusBadRequest},
+		{"ReadFailureAfterValidPatch", io.MultiReader(bytes.NewReader(patch), iotest.ErrReader(readErr)), http.StatusBadRequest},
+		{"WrappedSizeFailure", iotest.ErrReader(fmt.Errorf("body read: %w", &http.MaxBytesError{Limit: 1 << 20})), http.StatusRequestEntityTooLarge},
+		{"MalformedJSON", strings.NewReader("{"), http.StatusBadRequest},
+		{"ExactLimit", strings.NewReader(string(patch) + strings.Repeat(" ", (1<<20)-len(patch))), http.StatusNoContent},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body := &scimPatchTestBody{Reader: tc.body}
+			w := request(http.MethodPatch, srv.getGroupPrefix(dp)+"/"+scimGrp.ID, body)
+			assert.True(t, body.closed)
+			require.Equal(t, tc.status, w.Code, w.Body.String())
+			assert.Equal(t, "application/scim+json", w.Header().Get("Content-Type"))
+			updatedGrp, err := srv.octeliumC.CoreC().GetGroup(t.Context(), &rmetav1.GetOptions{Uid: grp.Metadata.Uid})
+			require.NoError(t, err)
+			updatedLink, err := srv.octeliumC.EnterpriseC().GetDirectoryProviderGroup(t.Context(), &rmetav1.GetOptions{Uid: link.Metadata.Uid})
+			require.NoError(t, err)
+			updatedUsr, err := srv.octeliumC.CoreC().GetUser(t.Context(), &rmetav1.GetOptions{Uid: usr.Metadata.Uid})
+			require.NoError(t, err)
+			if tc.status == http.StatusNoContent {
+				assert.Equal(t, "Before", updatedGrp.Metadata.DisplayName)
+				assert.NotContains(t, updatedUsr.Spec.Groups, grp.Metadata.Name)
+				assert.Empty(t, w.Body.String())
+				return
+			}
+			assert.Equal(t, grp.Metadata.ResourceVersion, updatedGrp.Metadata.ResourceVersion)
+			assert.Equal(t, "Before", updatedGrp.Metadata.DisplayName)
+			assert.Equal(t, link.Metadata.ResourceVersion, updatedLink.Metadata.ResourceVersion)
+			assert.Equal(t, usr.Metadata.ResourceVersion, updatedUsr.Metadata.ResourceVersion)
+			assert.Contains(t, updatedUsr.Spec.Groups, grp.Metadata.Name)
+			var response responseError
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
+			assert.Equal(t, fmt.Sprint(tc.status), response.Status)
+			assert.Equal(t, []string{"urn:ietf:params:scim:api:messages:2.0:Error"}, response.Schemas)
+			assert.NotEmpty(t, response.Detail)
+			assert.NotContains(t, response.Detail, readErr.Error())
+		})
+	}
 }
