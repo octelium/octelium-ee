@@ -18,12 +18,17 @@ import (
 	eescenario "github.com/octelium/octelium-ee/cluster/e2e/scenario"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/cluster/e2e/harness"
 	"github.com/octelium/octelium/cluster/e2e/scenario"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	batchv1 "k8s.io/api/batch/v1"
+	k8scorev1 "k8s.io/api/core/v1"
+	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const upgradeBudget = 25 * time.Minute
@@ -153,4 +158,76 @@ func testClusterUpgrade(t *testing.T, ch *harness.H) {
 
 		waitAccessLogGrows(t, newTrafficDriver(t, h), 1)
 	})
+}
+
+func testClusterManagerUpgradeLifecycle(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	h.Require(t, scenario.CapUpgrade)
+	ctx := t.Context()
+	info, err := h.ClusterC().GetClusterInfo(ctx, &enterprisev1.GetClusterInfoRequest{})
+	require.NoError(t, err)
+	require.NotNil(t, info.PackageEnterprise)
+	before := h.EnterpriseClusterConfig(t)
+	require.Nil(t, before.Status.UpgradeRequest)
+	jobsBefore, err := h.K8sC().BatchV1().Jobs(vutils.K8sNS).List(ctx, k8smetav1.ListOptions{LabelSelector: "octelium.com/component=genesis"})
+	require.NoError(t, err)
+	existing := map[types.UID]bool{}
+	for _, job := range jobsBefore.Items {
+		existing[job.UID] = true
+	}
+	request := &enterprisev1.UpgradeClusterRequest{Request: &enterprisev1.UpgradeClusterRequest_Request{
+		PackageEnterprise: &enterprisev1.UpgradeClusterRequest_Request_PackageEnterprise{Version: info.PackageEnterprise.CurrentVersion},
+	}}
+	_, err = h.ClusterC().UpgradeCluster(ctx, request)
+	require.NoError(t, err)
+	_, err = h.ClusterC().UpgradeCluster(ctx, request)
+	require.Error(t, err)
+	assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+	h.Eventually(t, "ClusterManager to persist the successful upgrade", upgradeBudget, func(ctx context.Context) error {
+		cc, err := h.EnterpriseC().GetClusterConfig(ctx, &enterprisev1.GetClusterConfigRequest{})
+		if err != nil {
+			return err
+		}
+		if cc.Status.TotalFailedUpgrades != before.Status.TotalFailedUpgrades {
+			return errors.Errorf("the upgrade failed")
+		}
+		if cc.Status.UpgradeRequest != nil || cc.Status.TotalSuccessfulUpgrades != before.Status.TotalSuccessfulUpgrades+1 {
+			return errors.Errorf("the upgrade has not finished")
+		}
+		return nil
+	})
+	after := h.EnterpriseClusterConfig(t)
+	require.NotEmpty(t, after.Status.LastUpgradeRequests)
+	history := after.Status.LastUpgradeRequests[0]
+	assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS, history.State)
+	require.NotNil(t, history.Request)
+	require.NotNil(t, history.Request.PackageEnterprise)
+	assert.Equal(t, info.PackageEnterprise.CurrentVersion, history.Request.PackageEnterprise.Version)
+	assert.Nil(t, history.Request.Core)
+	assert.Nil(t, history.Request.PackageCordium)
+	require.NotNil(t, history.CreatedAt)
+	require.NotNil(t, history.DoneAt)
+	assert.False(t, history.DoneAt.AsTime().Before(history.CreatedAt.AsTime()))
+	assert.LessOrEqual(t, len(after.Status.LastUpgradeRequests), 200)
+	jobsAfter, err := h.K8sC().BatchV1().Jobs(vutils.K8sNS).List(ctx, k8smetav1.ListOptions{LabelSelector: "octelium.com/component=genesis"})
+	require.NoError(t, err)
+	completed := 0
+	for _, job := range jobsAfter.Items {
+		if existing[job.UID] {
+			continue
+		}
+		require.Len(t, job.Spec.Template.Spec.Containers, 1)
+		assert.Equal(t, "octeliumee-genesis", job.Spec.Template.Spec.Containers[0].Name)
+		complete := job.Status.Succeeded > 0
+		for _, condition := range job.Status.Conditions {
+			if condition.Type == batchv1.JobComplete && condition.Status == k8scorev1.ConditionTrue {
+				complete = true
+			}
+		}
+		if complete {
+			completed++
+		}
+	}
+	assert.Equal(t, 1, completed)
+	h.MustWaitDeployment(t, "octeliumee-clusterman")
 }

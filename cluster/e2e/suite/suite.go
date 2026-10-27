@@ -39,6 +39,7 @@ func Phases() []suite.Phase {
 		{Name: "DeviceManagerProbePlan", Run: testDeviceManagerProbePlan},
 		{Name: "DeviceManagerSecretRotation", Run: testDeviceManagerSecretRotation},
 		{Name: "DeviceManagerPostureLifecycle", Run: testDeviceManagerPostureLifecycle},
+		{Name: "DeviceManagerReplacementUIDIsolation", Run: testDeviceManagerReplacementUIDIsolation},
 
 		{Name: "AccessAutoApprove", Run: testAccessAutoApprove},
 		{Name: "AccessSingleStepReview", Run: testAccessSingleStepReview},
@@ -105,6 +106,7 @@ func Phases() []suite.Phase {
 
 		{Name: "ClusterSummaryFanOut", Run: testClusterSummaryFanOut},
 		{Name: "ClusterHealthSubsystems", Run: testClusterHealthSubsystems},
+		{Name: "NocturneReplicaScaling", Run: testNocturneReplicaScaling},
 
 		{Name: "EnterpriseConditionCompiler", Run: testEnterpriseConditionCompiler},
 		{Name: "PublicServerOIDC", Run: testPublicServerOIDC},
@@ -125,6 +127,7 @@ func TailPhases() []suite.Phase {
 		{Name: "RscServerFailover", Run: testRscServerFailover},
 		{Name: "StorePersistence", Run: testStorePersistence},
 		{Name: "ClusterUpgrade", Run: testClusterUpgrade},
+		{Name: "ClusterManagerUpgradeLifecycle", Run: testClusterManagerUpgradeLifecycle},
 	}
 }
 

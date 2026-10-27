@@ -531,3 +531,47 @@ func testDeviceManagerSecretRotation(t *testing.T, ch *harness.H) {
 		waitDeviceManagerState(t, h, dm, enterprisev1.DeviceManager_Status_ERROR, hasCollectionError(true))
 	})
 }
+
+func testDeviceManagerReplacementUIDIsolation(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	token := utilrand.GetRandomStringCanonical(32)
+	secret := h.CreateEnterpriseSecret(t, token)
+	fleet := h.Fleet(t, token, nil)
+	request := fleetDeviceManager(secret.Metadata.Name)
+	request.Spec.GetFleetDM().BaseURL = fleet.URL
+	dm := h.CreateDeviceManager(t, request)
+	waitDeviceManagerState(t, h, dm, enterprisev1.DeviceManager_Status_OK, nil)
+	expected := []string{dm.Metadata.Name + ".hardware-uuid", dm.Metadata.Name + ".hardware-uuid-linux"}
+	waitDeviceManagerProbes(t, h, dm, expected...)
+	_, err := h.EnterpriseC().DeleteDeviceManager(t.Context(), &metav1.DeleteOptions{Uid: dm.Metadata.Uid})
+	require.NoError(t, err)
+	h.Eventually(t, "deleted DeviceManager probes to disappear", eeharness.PropagationBudget, func(ctx context.Context) error {
+		ids, err := deviceManagerProbeIDs(ctx, h, dm)
+		if err != nil {
+			return err
+		}
+		if len(ids) != 0 {
+			return errors.Errorf("deleted DeviceManager still owns probes")
+		}
+		return nil
+	})
+	replacementRequest := fleetDeviceManager(secret.Metadata.Name)
+	replacementRequest.Metadata = &metav1.Metadata{Name: dm.Metadata.Name}
+	replacementRequest.Spec.GetFleetDM().BaseURL = fleet.URL
+	replacement := h.CreateDeviceManager(t, replacementRequest)
+	require.NotEqual(t, dm.Metadata.Uid, replacement.Metadata.Uid)
+	waitDeviceManagerState(t, h, replacement, enterprisev1.DeviceManager_Status_OK, nil)
+	waitDeviceManagerProbes(t, h, replacement, expected...)
+	cc, err := h.CoreC().GetClusterConfig(t.Context(), &corev1.GetClusterConfigRequest{})
+	require.NoError(t, err)
+	counts := map[string]int{}
+	for _, probe := range cc.GetStatus().GetDevice().GetProbes() {
+		assert.NotEqual(t, dm.Metadata.Uid, probe.GetOwnerRef().GetUid())
+		if probe.GetOwnerRef().GetUid() == replacement.Metadata.Uid {
+			counts[probe.Id]++
+		}
+	}
+	for _, id := range expected {
+		assert.Equal(t, 1, counts[id], id)
+	}
+}

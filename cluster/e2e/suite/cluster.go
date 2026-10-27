@@ -10,20 +10,26 @@ package suite
 
 import (
 	"context"
+	"encoding/json"
 	"slices"
 	"testing"
 	"time"
 
 	eeharness "github.com/octelium/octelium-ee/cluster/e2e/harness"
 	"github.com/octelium/octelium/apis/main/accessv1"
+	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
+	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/cluster/e2e/harness"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/encoding/protojson"
+	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const componentLogLookback = 30 * time.Minute
@@ -469,5 +475,91 @@ func testComponentLogAggregations(t *testing.T, ch *harness.H) {
 		for _, itm := range res.Items {
 			assert.Equal(t, want.Type, itm.Component.Type)
 		}
+	})
+}
+
+func testNocturneReplicaScaling(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	ctx := t.Context()
+	names := []string{"octeliumee-collector", "octelium-octovigil", "octelium-ingress-dataplane"}
+	before := pbutils.Clone(h.EnterpriseClusterConfig(t)).(*enterprisev1.ClusterConfig)
+	replicas := make([]int32, len(names))
+	for i, name := range names {
+		deployment, err := h.K8sC().AppsV1().Deployments(vutils.K8sNS).Get(ctx, name, k8smetav1.GetOptions{})
+		require.NoError(t, err)
+		replicas[i] = 1
+		if deployment.Spec.Replicas != nil {
+			replicas[i] = *deployment.Spec.Replicas
+		}
+	}
+	t.Cleanup(func() {
+		restoreCtx, cancel := context.WithTimeout(context.Background(), eeharness.PropagationBudget)
+		defer cancel()
+		current, err := h.EnterpriseC().GetClusterConfig(restoreCtx, &enterprisev1.GetClusterConfigRequest{})
+		if err != nil {
+			t.Errorf("Could not get ClusterConfig during scaling cleanup: %+v", err)
+			return
+		}
+		current.Spec.Scaler = before.Spec.Scaler
+		if _, err := h.EnterpriseC().UpdateClusterConfig(restoreCtx, current); err != nil {
+			t.Errorf("Could not restore cluster scaling: %+v", err)
+			return
+		}
+		err = wait.PollUntilContextCancel(restoreCtx, 250*time.Millisecond, true, func(ctx context.Context) (bool, error) {
+			for i, name := range names {
+				deployment, err := h.K8sC().AppsV1().Deployments(vutils.K8sNS).Get(ctx, name, k8smetav1.GetOptions{})
+				if err != nil {
+					return false, err
+				}
+				actual := int32(1)
+				if deployment.Spec.Replicas != nil {
+					actual = *deployment.Spec.Replicas
+				}
+				if actual != replicas[i] ||
+					deployment.Status.ReadyReplicas < replicas[i] {
+					return false, nil
+				}
+			}
+			return true, nil
+		})
+		if err != nil {
+			t.Errorf("Could not observe restored deployment replicas: %+v", err)
+		}
+	})
+	target := int32(2)
+	if replicas[0] == target {
+		target = 1
+	}
+	payload, err := json.Marshal(map[string]any{"spec": map[string]any{"scaler": map[string]any{
+		"collector": map[string]any{"replicas": target},
+		"octovigil": map[string]any{"replicas": replicas[1]},
+		"ingress":   map[string]any{"replicas": replicas[2]},
+	}}})
+	require.NoError(t, err)
+	desired := &enterprisev1.ClusterConfig{}
+	require.NoError(t, protojson.Unmarshal(payload, desired))
+	current := h.EnterpriseClusterConfig(t)
+	current.Spec.Scaler = desired.Spec.Scaler
+	h.UpdateEnterpriseClusterConfig(t, current)
+	h.Eventually(t, "Nocturne to apply the collector replica change", eeharness.PropagationBudget, func(ctx context.Context) error {
+		for i, name := range names {
+			want := replicas[i]
+			if i == 0 {
+				want = target
+			}
+			deployment, err := h.K8sC().AppsV1().Deployments(vutils.K8sNS).Get(ctx, name, k8smetav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			actual := int32(1)
+			if deployment.Spec.Replicas != nil {
+				actual = *deployment.Spec.Replicas
+			}
+			if actual != want ||
+				deployment.Status.ReadyReplicas < want || deployment.Status.ObservedGeneration < deployment.Generation {
+				return errors.Errorf("%s has not reached %d ready replicas", name, want)
+			}
+		}
+		return nil
 	})
 }
