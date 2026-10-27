@@ -12,8 +12,10 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	stderrors "errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gosimple/slug"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -21,6 +23,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/rlockv1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/admin"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
@@ -171,6 +174,7 @@ func (r *Reconciler) Sync(ctx context.Context, src Source) error {
 		desiredGroupNames[r.genGroupName(g)] = struct{}{}
 	}
 
+	var syncErrors []error
 	userNameByExternalID := make(map[string]string, len(users))
 	for _, u := range users {
 		if u == nil || u.ExternalID == "" {
@@ -180,6 +184,7 @@ func (r *Reconciler) Sync(ctx context.Context, src Source) error {
 		if err != nil {
 			zap.L().Warn("Could not upsert User during directory sync",
 				zap.String("externalID", u.ExternalID), zap.Error(err))
+			syncErrors = append(syncErrors, errors.Wrapf(err, "Could not upsert User %s", u.ExternalID))
 			continue
 		}
 		userNameByExternalID[u.ExternalID] = coreUsr.Metadata.Name
@@ -187,7 +192,8 @@ func (r *Reconciler) Sync(ctx context.Context, src Source) error {
 
 	managedGroupNames, err := r.listManagedGroupNames(ctx)
 	if err != nil {
-		return err
+		syncErrors = append(syncErrors, errors.Wrap(err, "Could not list managed Groups"))
+		return stderrors.Join(syncErrors...)
 	}
 
 	desiredGroupsByUser := make(map[string]map[string]struct{})
@@ -199,6 +205,7 @@ func (r *Reconciler) Sync(ctx context.Context, src Source) error {
 		if err != nil {
 			zap.L().Warn("Could not upsert Group during directory sync",
 				zap.String("externalID", g.ExternalID), zap.Error(err))
+			syncErrors = append(syncErrors, errors.Wrapf(err, "Could not upsert Group %s", g.ExternalID))
 			continue
 		}
 		grpName := coreGrp.Metadata.Name
@@ -216,22 +223,33 @@ func (r *Reconciler) Sync(ctx context.Context, src Source) error {
 		}
 	}
 
+	if len(syncErrors) > 0 {
+		return stderrors.Join(syncErrors...)
+	}
+
 	for _, usrName := range userNameByExternalID {
 		if err := r.reconcileUserGroups(ctx, usrName, managedGroupNames, desiredGroupsByUser[usrName]); err != nil {
 			zap.L().Warn("Could not reconcile User groups during directory sync",
 				zap.String("user", usrName), zap.Error(err))
+			syncErrors = append(syncErrors, errors.Wrapf(err, "Could not reconcile User groups for %s", usrName))
 		}
+	}
+
+	if len(syncErrors) > 0 {
+		return stderrors.Join(syncErrors...)
 	}
 
 	if err := r.pruneUsers(ctx, desiredUserNames); err != nil {
 		zap.L().Warn("Could not prune Users during directory sync", zap.Error(err))
+		syncErrors = append(syncErrors, err)
 	}
 
 	if err := r.pruneGroups(ctx, desiredGroupNames); err != nil {
 		zap.L().Warn("Could not prune Groups during directory sync", zap.Error(err))
+		syncErrors = append(syncErrors, err)
 	}
 
-	return nil
+	return stderrors.Join(syncErrors...)
 }
 
 func (r *Reconciler) upsertUser(ctx context.Context, u *User) (*corev1.User, error) {
@@ -263,7 +281,10 @@ func (r *Reconciler) upsertUser(ctx context.Context, u *User) (*corev1.User, err
 		}
 		if len(usrList.Items) > 0 {
 			coreUsr = usrList.Items[0]
-			directoryOwned = r.isDirectoryOwnedUser(ctx, coreUsr.Metadata.Uid)
+			directoryOwned, err = r.isDirectoryOwnedUser(ctx, coreUsr.Metadata.Uid)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -305,24 +326,24 @@ func (r *Reconciler) upsertUser(ctx context.Context, u *User) (*corev1.User, err
 	return coreUsr, nil
 }
 
-func (r *Reconciler) isDirectoryOwnedUser(ctx context.Context, uid string) bool {
+func (r *Reconciler) isDirectoryOwnedUser(ctx context.Context, uid string) (bool, error) {
 	links, err := r.octeliumC.EnterpriseC().ListDirectoryProviderUser(ctx, &rmetav1.ListOptions{
 		Filters: []*rmetav1.ListOptions_Filter{
 			urscsrv.FilterFieldEQValStr("status.userRef.uid", uid),
 		},
 	})
 	if err != nil {
-		return false
+		return false, err
 	}
 
 	for _, link := range links.Items {
 		if link.Metadata != nil &&
 			link.Metadata.Annotations[directoryOwnedAnnotation] == "true" {
-			return true
+			return true, nil
 		}
 	}
 
-	return false
+	return false, nil
 }
 
 func (r *Reconciler) applyUserSpec(usr *corev1.User, u *User) {
@@ -441,6 +462,9 @@ func (r *Reconciler) listManagedGroupNames(ctx context.Context) (map[string]stru
 		if name == "" {
 			g, err := r.octeliumC.CoreC().GetGroup(ctx, &rmetav1.GetOptions{Uid: itm.Status.GroupRef.Uid})
 			if err != nil {
+				if !grpcerr.IsNotFound(err) {
+					return nil, err
+				}
 				continue
 			}
 			name = g.Metadata.Name
@@ -457,14 +481,17 @@ func (r *Reconciler) pruneUsers(ctx context.Context, desired map[string]struct{}
 		return err
 	}
 
+	var pruneErrors []error
 	for _, dpUsr := range all {
 		if _, ok := desired[dpUsr.Metadata.Name]; ok {
 			continue
 		}
-		r.deleteUser(ctx, dpUsr)
+		if err := r.deleteUser(ctx, dpUsr); err != nil {
+			pruneErrors = append(pruneErrors, errors.Wrapf(err, "Could not prune User %s", dpUsr.Metadata.Name))
+		}
 	}
 
-	return nil
+	return stderrors.Join(pruneErrors...)
 }
 
 func (r *Reconciler) pruneGroups(ctx context.Context, desired map[string]struct{}) error {
@@ -473,94 +500,142 @@ func (r *Reconciler) pruneGroups(ctx context.Context, desired map[string]struct{
 		return err
 	}
 
+	var pruneErrors []error
 	for _, dpGrp := range all {
 		if _, ok := desired[dpGrp.Metadata.Name]; ok {
 			continue
 		}
-		r.deleteGroup(ctx, dpGrp)
+		if err := r.deleteGroup(ctx, dpGrp); err != nil {
+			pruneErrors = append(pruneErrors, errors.Wrapf(err, "Could not prune Group %s", dpGrp.Metadata.Name))
+		}
 	}
 
-	return nil
+	return stderrors.Join(pruneErrors...)
 }
 
-func (r *Reconciler) deleteUser(ctx context.Context, dpUsr *enterprisev1.DirectoryProviderUser) {
+func (r *Reconciler) lockResourceDeletion(ctx context.Context, key string) (context.Context, func() error, error) {
+	lockCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	lockKey := []byte("dirsync/prune/" + key)
+	res, err := r.octeliumC.LockC().Lock(lockCtx, &rlockv1.LockRequest{
+		Key:  lockKey,
+		Ttl:  &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 30}},
+		Wait: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 10}},
+	})
+	if err != nil {
+		cancel()
+		return nil, nil, err
+	}
+	if !res.GetAcquired() || len(res.GetLeaseID()) == 0 {
+		cancel()
+		return nil, nil, errors.Errorf("Could not acquire directory resource deletion lock: %s", key)
+	}
+
+	return lockCtx, func() error {
+		cancel()
+		unlockCtx, cancelUnlock := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+		defer cancelUnlock()
+		_, err := r.octeliumC.LockC().Unlock(unlockCtx, &rlockv1.UnlockRequest{
+			Key:     lockKey,
+			LeaseID: res.GetLeaseID(),
+		})
+		return err
+	}, nil
+}
+
+func (r *Reconciler) deleteUser(ctx context.Context, dpUsr *enterprisev1.DirectoryProviderUser) (retErr error) {
+	if dpUsr.Status != nil && dpUsr.Status.UserRef != nil {
+		lockCtx, unlock, err := r.lockResourceDeletion(ctx, "user/"+dpUsr.Status.UserRef.Uid)
+		if err != nil {
+			return err
+		}
+		ctx = lockCtx
+		defer func() { retErr = stderrors.Join(retErr, unlock()) }()
+	}
+
 	owned := dpUsr.Metadata != nil &&
 		dpUsr.Metadata.Annotations[directoryOwnedAnnotation] == "true"
 	if !owned && dpUsr.Status != nil && dpUsr.Status.UserRef != nil {
 		if usr, err := r.octeliumC.CoreC().GetUser(ctx,
 			&rmetav1.GetOptions{Uid: dpUsr.Status.UserRef.Uid}); err == nil {
 			owned = usr.Metadata.Name == dpUsr.Metadata.Name
+		} else if !grpcerr.IsNotFound(err) {
+			return err
+		}
+	}
+
+	if owned && dpUsr.Status != nil && dpUsr.Status.UserRef != nil {
+		others, err := r.octeliumC.EnterpriseC().ListDirectoryProviderUser(ctx, &rmetav1.ListOptions{
+			Filters: []*rmetav1.ListOptions_Filter{
+				urscsrv.FilterFieldEQValStr("status.userRef.uid", dpUsr.Status.UserRef.Uid),
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		shared := false
+		for _, other := range others.Items {
+			if other.Metadata.Uid != dpUsr.Metadata.Uid {
+				shared = true
+				break
+			}
+		}
+		if !shared {
+			if _, err := r.octeliumC.CoreC().DeleteUser(ctx, &rmetav1.DeleteOptions{
+				Uid: dpUsr.Status.UserRef.Uid,
+			}); err != nil && !grpcerr.IsNotFound(err) {
+				return err
+			}
 		}
 	}
 
 	if _, err := r.octeliumC.EnterpriseC().DeleteDirectoryProviderUser(ctx, &rmetav1.DeleteOptions{
 		Uid: dpUsr.Metadata.Uid,
-	}); err != nil {
-		if !grpcerr.IsNotFound(err) {
-			zap.L().Warn("Could not delete DirectoryProviderUser",
-				zap.String("name", dpUsr.Metadata.Name), zap.Error(err))
-			return
-		}
+	}); err != nil && !grpcerr.IsNotFound(err) {
+		return err
 	}
-
-	if dpUsr.Status == nil || dpUsr.Status.UserRef == nil {
-		return
-	}
-
-	others, err := r.octeliumC.EnterpriseC().ListDirectoryProviderUser(ctx, &rmetav1.ListOptions{
-		Filters: []*rmetav1.ListOptions_Filter{
-			urscsrv.FilterFieldEQValStr("status.userRef.uid", dpUsr.Status.UserRef.Uid),
-		},
-	})
-	if err == nil && len(others.Items) > 0 {
-		return
-	}
-	if !owned {
-		return
-	}
-
-	if _, err := r.octeliumC.CoreC().DeleteUser(ctx, &rmetav1.DeleteOptions{
-		Uid: dpUsr.Status.UserRef.Uid,
-	}); err != nil {
-		if !grpcerr.IsNotFound(err) {
-			zap.L().Warn("Could not delete User",
-				zap.String("dpUser", dpUsr.Metadata.Name), zap.Error(err))
-		}
-	}
+	return nil
 }
 
-func (r *Reconciler) deleteGroup(ctx context.Context, dpGrp *enterprisev1.DirectoryProviderGroup) {
+func (r *Reconciler) deleteGroup(ctx context.Context, dpGrp *enterprisev1.DirectoryProviderGroup) (retErr error) {
+	if dpGrp.Status != nil && dpGrp.Status.GroupRef != nil {
+		lockCtx, unlock, err := r.lockResourceDeletion(ctx, "group/"+dpGrp.Status.GroupRef.Uid)
+		if err != nil {
+			return err
+		}
+		ctx = lockCtx
+		defer func() { retErr = stderrors.Join(retErr, unlock()) }()
+
+		others, err := r.octeliumC.EnterpriseC().ListDirectoryProviderGroup(ctx, &rmetav1.ListOptions{
+			Filters: []*rmetav1.ListOptions_Filter{
+				urscsrv.FilterFieldEQValStr("status.groupRef.uid", dpGrp.Status.GroupRef.Uid),
+			},
+		})
+		if err != nil {
+			return err
+		}
+		shared := false
+		for _, other := range others.Items {
+			if other.Metadata.Uid != dpGrp.Metadata.Uid {
+				shared = true
+				break
+			}
+		}
+		if !shared {
+			if _, err := r.octeliumC.CoreC().DeleteGroup(ctx, &rmetav1.DeleteOptions{
+				Uid: dpGrp.Status.GroupRef.Uid,
+			}); err != nil && !grpcerr.IsNotFound(err) {
+				return err
+			}
+		}
+	}
+
 	if _, err := r.octeliumC.EnterpriseC().DeleteDirectoryProviderGroup(ctx, &rmetav1.DeleteOptions{
 		Uid: dpGrp.Metadata.Uid,
-	}); err != nil {
-		if !grpcerr.IsNotFound(err) {
-			zap.L().Warn("Could not delete DirectoryProviderGroup",
-				zap.String("name", dpGrp.Metadata.Name), zap.Error(err))
-			return
-		}
+	}); err != nil && !grpcerr.IsNotFound(err) {
+		return err
 	}
-
-	if dpGrp.Status == nil || dpGrp.Status.GroupRef == nil {
-		return
-	}
-
-	others, err := r.octeliumC.EnterpriseC().ListDirectoryProviderGroup(ctx, &rmetav1.ListOptions{
-		Filters: []*rmetav1.ListOptions_Filter{
-			urscsrv.FilterFieldEQValStr("status.groupRef.uid", dpGrp.Status.GroupRef.Uid),
-		},
-	})
-	if err == nil && len(others.Items) > 0 {
-		return
-	}
-
-	if _, err := r.octeliumC.CoreC().DeleteGroup(ctx, &rmetav1.DeleteOptions{
-		Uid: dpGrp.Status.GroupRef.Uid,
-	}); err != nil {
-		if !grpcerr.IsNotFound(err) {
-			zap.L().Warn("Could not delete Group",
-				zap.String("dpGroup", dpGrp.Metadata.Name), zap.Error(err))
-		}
-	}
+	return nil
 }
 
 func (r *Reconciler) listAllDPUsers(ctx context.Context) ([]*enterprisev1.DirectoryProviderUser, error) {

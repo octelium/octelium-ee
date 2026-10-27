@@ -98,3 +98,29 @@ func TestSCIMAuthenticationRejectsWrongSessionType(t *testing.T) {
 	handler.ServeHTTP(w, r)
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
+
+func TestSCIMAuthenticationRejectsShortPaths(t *testing.T) {
+	m, dp, ctx := newSCIMAuthFixture(t)
+	called := false
+	m.next = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.WriteHeader(http.StatusNoContent)
+	})
+	for _, path := range []string{"/", "//", "///", "/scim", "/scim/", "/scim//", "///scim///", "/wrong/"} {
+		t.Run(path, func(t *testing.T) {
+			r := httptest.NewRequest(http.MethodGet, path, nil).WithContext(ctx)
+			r.Header.Set("X-Octelium-Session-Uid", dp.Status.SessionRef.Uid)
+			w := httptest.NewRecorder()
+			assert.NotPanics(t, func() { m.ServeHTTP(w, r) })
+			assert.Equal(t, http.StatusUnauthorized, w.Code)
+			assert.False(t, called)
+		})
+	}
+
+	r := httptest.NewRequest(http.MethodGet, "/scim/"+dp.Status.Id+"/Users", nil).WithContext(ctx)
+	r.Header.Set("X-Octelium-Session-Uid", dp.Status.SessionRef.Uid)
+	w := httptest.NewRecorder()
+	m.ServeHTTP(w, r)
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	assert.True(t, called)
+}

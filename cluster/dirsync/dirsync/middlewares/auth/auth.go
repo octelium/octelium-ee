@@ -110,13 +110,12 @@ func (m *middleware) getContext(r *http.Request) (*middlewares.RequestContext, e
 
 	// e.g. /scim/<ID>/User/<UID>
 	pathArgs := strings.Split(r.URL.Path, "/")
-	if len(pathArgs) < 3 {
-		return nil, errors.Errorf("Invalid URL: %s", r.URL.Path)
-	}
-
 	pathArgs = slices.DeleteFunc(pathArgs, func(itm string) bool {
 		return itm == ""
 	})
+	if len(pathArgs) < 2 {
+		return nil, errors.Errorf("Invalid URL: %s", r.URL.Path)
+	}
 
 	if pathArgs[0] != "scim" {
 		return nil, errors.Errorf("Invalid URL...: %s ... %s", r.URL.Path, pathArgs[0])

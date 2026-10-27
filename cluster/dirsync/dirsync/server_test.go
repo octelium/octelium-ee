@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -246,4 +247,87 @@ func TestDirectorySynchronizationHistoryBounded(t *testing.T) {
 		assert.Equal(t, enterprisev1.DirectoryProvider_Status_Synchronization_SUCCESS, history[0].State)
 	}
 	assert.Len(t, history, maxLastSynchronizations)
+}
+
+func TestDirectorySynchronizationRecordsPartialFailureAndRecovery(t *testing.T) {
+	fail := &atomic.Bool{}
+	fail.Store(true)
+	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/realms/test/protocol/openid-connect/token":
+			json.NewEncoder(w).Encode(map[string]any{"access_token": "token", "expires_in": 3600})
+		case "/admin/realms/test/users":
+			if r.URL.Query().Get("first") != "0" {
+				json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			email := "recovered@example.com"
+			if fail.Load() {
+				email = "invalid-email"
+			}
+			json.NewEncoder(w).Encode([]map[string]any{
+				{"id": "valid-user", "email": "valid@example.com", "enabled": true},
+				{"id": "invalid-user", "email": email, "enabled": true},
+			})
+		case "/admin/realms/test/groups":
+			json.NewEncoder(w).Encode([]any{})
+		default:
+			t.Errorf("unexpected Keycloak request: %s", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(provider.Close)
+	tst, err := otests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() { tst.Destroy() })
+	sec, err := tst.C.OcteliumC.EnterpriseC().CreateSecret(t.Context(), &enterprisev1.Secret{
+		Metadata: &metav1.Metadata{Name: "keycloak-credential"},
+		Spec:     &enterprisev1.Secret_Spec{},
+		Data:     &enterprisev1.Secret_Data{Type: &enterprisev1.Secret_Data_Value{Value: "client-secret"}},
+	})
+	require.NoError(t, err)
+	dp, err := tst.C.OcteliumC.EnterpriseC().CreateDirectoryProvider(t.Context(), &enterprisev1.DirectoryProvider{
+		Metadata: &metav1.Metadata{Name: "keycloak-sync"},
+		Spec: &enterprisev1.DirectoryProvider_Spec{
+			Type: &enterprisev1.DirectoryProvider_Spec_Keycloak_{
+				Keycloak: &enterprisev1.DirectoryProvider_Spec_Keycloak{
+					Url:      provider.URL,
+					Realm:    "test",
+					ClientID: "client",
+					ClientSecret: &enterprisev1.DirectoryProvider_Spec_Keycloak_ClientSecret{
+						Type: &enterprisev1.DirectoryProvider_Spec_Keycloak_ClientSecret_FromSecret{FromSecret: sec.Metadata.Name},
+					},
+				},
+			},
+		},
+		Status: &enterprisev1.DirectoryProvider_Status{Id: "keycloak"},
+	})
+	require.NoError(t, err)
+	srv, err := newServer(t.Context(), tst.C.OcteliumC)
+	require.NoError(t, err)
+	err = srv.Synchronize(t.Context(), dp)
+	assert.ErrorContains(t, err, "invalid-email")
+	dp, err = tst.C.OcteliumC.EnterpriseC().GetDirectoryProvider(t.Context(), &rmetav1.GetOptions{Uid: dp.Metadata.Uid})
+	require.NoError(t, err)
+	assert.Equal(t, enterprisev1.DirectoryProvider_Status_Synchronization_FAILED, dp.Status.Synchronization.State)
+	require.Len(t, dp.Status.LastSynchronizations, 1)
+	assert.Equal(t, enterprisev1.DirectoryProvider_Status_Synchronization_FAILED, dp.Status.LastSynchronizations[0].State)
+	assert.NotNil(t, dp.Status.Synchronization.CreatedAt)
+	assert.NotNil(t, dp.Status.Synchronization.CompletedAt)
+	users, err := tst.C.OcteliumC.EnterpriseC().ListDirectoryProviderUser(t.Context(), &rmetav1.ListOptions{})
+	require.NoError(t, err)
+	assert.Len(t, users.Items, 1)
+
+	fail.Store(false)
+	require.NoError(t, srv.Synchronize(t.Context(), dp))
+	dp, err = tst.C.OcteliumC.EnterpriseC().GetDirectoryProvider(t.Context(), &rmetav1.GetOptions{Uid: dp.Metadata.Uid})
+	require.NoError(t, err)
+	assert.Equal(t, enterprisev1.DirectoryProvider_Status_Synchronization_SUCCESS, dp.Status.Synchronization.State)
+	require.Len(t, dp.Status.LastSynchronizations, 2)
+	assert.Equal(t, enterprisev1.DirectoryProvider_Status_Synchronization_SUCCESS, dp.Status.LastSynchronizations[0].State)
+	assert.Equal(t, enterprisev1.DirectoryProvider_Status_Synchronization_FAILED, dp.Status.LastSynchronizations[1].State)
+	users, err = tst.C.OcteliumC.EnterpriseC().ListDirectoryProviderUser(t.Context(), &rmetav1.ListOptions{})
+	require.NoError(t, err)
+	assert.Len(t, users.Items, 2)
 }
