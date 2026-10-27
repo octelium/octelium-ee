@@ -11,6 +11,7 @@ package logstore
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"time"
 
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
@@ -22,6 +23,8 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -59,6 +62,9 @@ type srvLog struct {
 	plogotlp.UnimplementedGRPCServer
 	s       *Server
 	batchCh chan *pendingLogBatch
+
+	enqueueMu sync.RWMutex
+	stopping  chan struct{}
 }
 
 func parseLogRecord(lr plog.LogRecord) (*pendingLog, error) {
@@ -168,15 +174,8 @@ func (s *srvLog) Export(ctx context.Context, req plogotlp.ExportRequest) (plogot
 		done:  make(chan error, 1),
 	}
 
-	timer := time.NewTimer(logEnqueueTimeout)
-	defer timer.Stop()
-
-	select {
-	case s.batchCh <- batch:
-	case <-ctx.Done():
-		return plogotlp.NewExportResponse(), ctx.Err()
-	case <-timer.C:
-		return plogotlp.NewExportResponse(), errors.Errorf("LogStore queue is full")
+	if err := s.enqueue(ctx, batch); err != nil {
+		return plogotlp.NewExportResponse(), err
 	}
 
 	select {
@@ -188,6 +187,31 @@ func (s *srvLog) Export(ctx context.Context, req plogotlp.ExportRequest) (plogot
 
 	case <-ctx.Done():
 		return plogotlp.NewExportResponse(), ctx.Err()
+	}
+}
+
+func (s *srvLog) enqueue(ctx context.Context, batch *pendingLogBatch) error {
+	s.enqueueMu.RLock()
+	defer s.enqueueMu.RUnlock()
+
+	select {
+	case <-s.stopping:
+		return status.Error(codes.Unavailable, "LogStore is shutting down")
+	default:
+	}
+
+	timer := time.NewTimer(logEnqueueTimeout)
+	defer timer.Stop()
+
+	select {
+	case s.batchCh <- batch:
+		return nil
+	case <-s.stopping:
+		return status.Error(codes.Unavailable, "LogStore is shutting down")
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return errors.Errorf("LogStore queue is full")
 	}
 }
 
@@ -282,31 +306,53 @@ func (s *srvLog) startProcessLoop(ctx context.Context) {
 		}
 	}
 
-	for {
+	for ctx.Err() == nil {
 		select {
 		case <-ctx.Done():
-			flushCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), logShutdownTimeout)
-			flush(flushCtx)
-			cancel()
-			return
 
 		case batch := <-s.batchCh:
 			pending = append(pending, batch)
 			itemCount += len(batch.items)
 
-			if itemCount >= logBatchSize {
+			if itemCount >= logBatchSize && ctx.Err() == nil {
 				flush(ctx)
 			}
 
 		case <-ticker.C:
-			flush(ctx)
+			if ctx.Err() == nil {
+				flush(ctx)
+			}
+		}
+	}
+
+	flushCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), logShutdownTimeout)
+	defer cancel()
+
+	if s.stopping != nil {
+		close(s.stopping)
+	}
+	s.enqueueMu.Lock()
+	s.enqueueMu.Unlock()
+
+	for {
+		select {
+		case batch := <-s.batchCh:
+			pending = append(pending, batch)
+			itemCount += len(batch.items)
+			if itemCount >= logBatchSize {
+				flush(flushCtx)
+			}
+		default:
+			flush(flushCtx)
+			return
 		}
 	}
 }
 
 func (s *Server) newSrvLog() *srvLog {
 	return &srvLog{
-		s:       s,
-		batchCh: make(chan *pendingLogBatch, logQueueSize),
+		s:        s,
+		batchCh:  make(chan *pendingLogBatch, logQueueSize),
+		stopping: make(chan struct{}),
 	}
 }

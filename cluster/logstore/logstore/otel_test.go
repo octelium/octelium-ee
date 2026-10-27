@@ -24,6 +24,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func newExportRequest(logs ...[]byte) plogotlp.ExportRequest {
@@ -400,4 +402,161 @@ func TestOTLPProcessorFlushesPendingOnShutdown(t *testing.T) {
 	}
 	assert.Nil(t, <-batch.done)
 	assert.Equal(t, 1, getTableCount(t, ts.srv, "component_logs"))
+}
+
+func TestOTLPProcessorDrainsQueueOnShutdown(t *testing.T) {
+	for _, fail := range []bool{false, true} {
+		t.Run(fmt.Sprintf("DatabaseFailure=%t", fail), func(t *testing.T) {
+			ts := newTestServer(t)
+			require.NotNil(t, ts)
+			srvLog := ts.srv.newSrvLog()
+			now := time.Now().UTC()
+			items := []pendingLog{
+				{table: logTableAccess, data: marshalLog(t, newAccessLog(nil))},
+				{table: logTableAuthentication, data: marshalLog(t, newAuthenticationLog(nil))},
+				{table: logTableAudit, data: marshalLog(t, newAuditLog(nil))},
+				{table: logTableComponent, data: marshalLog(t, newComponentLog(now, corev1.ComponentLog_Entry_INFO, "queued"))},
+			}
+			var batches []*pendingLogBatch
+			for range logQueueSize {
+				batch := &pendingLogBatch{items: items, done: make(chan error, 1)}
+				srvLog.batchCh <- batch
+				batches = append(batches, batch)
+			}
+			if fail {
+				require.NoError(t, ts.srv.db.Close())
+			}
+
+			ctx, cancel := context.WithCancel(ts.ctx)
+			cancel()
+			done := make(chan struct{})
+			go func() {
+				defer close(done)
+				srvLog.startProcessLoop(ctx)
+			}()
+			select {
+			case <-done:
+			case <-time.After(5 * time.Second):
+				t.Fatal("Log processor did not drain its queue")
+			}
+
+			assert.Empty(t, srvLog.batchCh)
+			for _, batch := range batches {
+				select {
+				case err := <-batch.done:
+					if fail {
+						assert.Error(t, err)
+					} else {
+						assert.NoError(t, err)
+					}
+				default:
+					t.Fatal("Accepted batch was not acknowledged")
+				}
+			}
+			if !fail {
+				for _, table := range []string{"access_logs", "authentication_logs", "audit_logs", "component_logs"} {
+					assert.Equal(t, logQueueSize, getTableCount(t, ts.srv, table))
+				}
+			}
+		})
+	}
+}
+
+func TestOTLPExportDuringShutdown(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	srvLog := ts.srv.newSrvLog()
+	data := marshalLog(t, newComponentLog(time.Now().UTC(), corev1.ComponentLog_Entry_INFO, "queued"))
+	var batches []*pendingLogBatch
+	for range logQueueSize {
+		batch := &pendingLogBatch{items: []pendingLog{{table: logTableComponent, data: data}}, done: make(chan error, 1)}
+		srvLog.batchCh <- batch
+		batches = append(batches, batch)
+	}
+
+	ctx, cancel := context.WithTimeout(ts.ctx, 5*time.Second)
+	defer cancel()
+	started := make(chan struct{}, 32)
+	results := make(chan error, 32)
+	for range 32 {
+		go func() {
+			req := newExportRequest(data)
+			started <- struct{}{}
+			_, err := srvLog.Export(ctx, req)
+			results <- err
+		}()
+	}
+	for range 32 {
+		<-started
+	}
+
+	processCtx, stop := context.WithCancel(ts.ctx)
+	stop()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		srvLog.startProcessLoop(processCtx)
+	}()
+
+	for range 32 {
+		select {
+		case err := <-results:
+			assert.Equal(t, codes.Unavailable, status.Code(err))
+		case <-ctx.Done():
+			t.Fatal("Export did not return during shutdown")
+		}
+	}
+	select {
+	case <-done:
+	case <-ctx.Done():
+		t.Fatal("Log processor did not stop")
+	}
+	assert.Empty(t, srvLog.batchCh)
+	for _, batch := range batches {
+		select {
+		case err := <-batch.done:
+			assert.NoError(t, err)
+		default:
+			t.Fatal("Accepted batch was not acknowledged")
+		}
+	}
+	assert.Equal(t, logQueueSize, getTableCount(t, ts.srv, "component_logs"))
+
+	_, err := srvLog.Export(ctx, newExportRequest(data))
+	assert.Equal(t, codes.Unavailable, status.Code(err))
+}
+
+func TestOTLPProcessorShutdownTimeout(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	ts.srv.db.SetMaxOpenConns(1)
+	conn, err := ts.srv.db.Conn(ts.ctx)
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, conn.Close()) })
+	srvLog := ts.srv.newSrvLog()
+	batch := &pendingLogBatch{
+		items: []pendingLog{{table: logTableComponent, data: marshalLog(t, newComponentLog(time.Now().UTC(), corev1.ComponentLog_Entry_INFO, "queued"))}},
+		done:  make(chan error, 1),
+	}
+	srvLog.batchCh <- batch
+	ctx, cancel := context.WithCancel(ts.ctx)
+	cancel()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		srvLog.startProcessLoop(ctx)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(logShutdownTimeout + 2*time.Second):
+		t.Fatal("Log processor exceeded its shutdown timeout")
+	}
+	select {
+	case err := <-batch.done:
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+	default:
+		t.Fatal("Timed out batch was not acknowledged")
+	}
+	assert.Empty(t, srvLog.batchCh)
 }

@@ -157,7 +157,7 @@ var (
 	llmExprUserAgent        = llmJSONStr("entry.info.llm.http.request.userAgent")
 	llmExprReqBodyBytes     = llmJSONInt("entry.info.llm.http.request.bodyBytes")
 	llmExprRespBodyBytes    = llmJSONInt("entry.info.llm.http.response.bodyBytes")
-	llmExprHTTPStatusClass  = fmt.Sprintf(`CAST(%s / 100 AS BIGINT)`, llmExprHTTPCode)
+	llmExprHTTPStatusClass  = fmt.Sprintf(`CAST(floor(%s / 100) AS BIGINT)`, llmExprHTTPCode)
 	llmExprEntryLLM         = llmJSONExists("entry.info.llm")
 	llmExprLatencyMs        = `CAST(date_diff('millisecond', CAST(json_extract(rsc, '$.entry.common.startedAt') AS TIMESTAMP), CAST(json_extract(rsc, '$.entry.common.endedAt') AS TIMESTAMP)) AS DOUBLE)`
 	llmExprTimeToFirstToken = fmt.Sprintf(`COALESCE(TRY_CAST(%s AS DOUBLE), TRY_CAST(%s AS DOUBLE) * 1000)`,

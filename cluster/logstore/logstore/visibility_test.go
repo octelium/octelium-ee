@@ -10,6 +10,7 @@ package logstore
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,10 +19,14 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type richAccessLogOptions struct {
@@ -670,5 +675,177 @@ func TestComponentLogLevelsFilter(t *testing.T) {
 			Levels: make([]corev1.ComponentLog_Entry_Level, maxComponentLevels+1),
 		})
 		assert.NotNil(t, err)
+	}
+}
+
+func TestAccessLogRPCFlagAndInlinePolicyFilters(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	client := visibilityv1.NewAccessLogServiceClient(newLogStoreRPCClient(t, ts))
+	ref := randomObjectReference()
+	ref.Name = "namespace.service"
+	otherRef := randomObjectReference()
+	now := time.Now().UTC()
+
+	var logs []*corev1.AccessLog
+	for i, opts := range []struct {
+		public    bool
+		anonymous bool
+		inline    *metav1.ObjectReference
+		policy    *metav1.ObjectReference
+	}{
+		{},
+		{public: true, inline: ref},
+		{anonymous: true, inline: otherRef},
+		{public: true, anonymous: true, inline: ref},
+		{public: true, anonymous: true, policy: ref},
+	} {
+		log := newAccessLog(&accessLogOptions{CreatedAt: now.Add(time.Duration(i) * time.Second), PolicyRef: opts.policy})
+		log.Entry.Common.IsPublic = opts.public
+		log.Entry.Common.IsAnonymous = opts.anonymous
+		if opts.inline != nil {
+			log.Entry.Common.Reason = &corev1.AccessLog_Entry_Common_Reason{
+				Type: corev1.AccessLog_Entry_Common_Reason_POLICY_MATCH,
+				Details: &corev1.AccessLog_Entry_Common_Reason_Details{
+					Type: &corev1.AccessLog_Entry_Common_Reason_Details_PolicyMatch_{
+						PolicyMatch: &corev1.AccessLog_Entry_Common_Reason_Details_PolicyMatch{
+							Type: &corev1.AccessLog_Entry_Common_Reason_Details_PolicyMatch_InlinePolicy_{
+								InlinePolicy: &corev1.AccessLog_Entry_Common_Reason_Details_PolicyMatch_InlinePolicy{
+									ResourceRef: opts.inline, Name: "allow",
+								},
+							},
+						},
+					},
+				},
+			}
+		}
+		insertLogJSON(t, ts.srv, "access_logs", marshalLog(t, log))
+		logs = append(logs, log)
+	}
+
+	for _, tc := range []struct {
+		name string
+		req  *visibilityv1.ListAccessLogRequest
+		want []int
+	}{
+		{name: "All", req: &visibilityv1.ListAccessLogRequest{}, want: []int{0, 1, 2, 3, 4}},
+		{name: "Public", req: &visibilityv1.ListAccessLogRequest{IsPublic: true}, want: []int{1, 3, 4}},
+		{name: "Anonymous", req: &visibilityv1.ListAccessLogRequest{IsAnonymous: true}, want: []int{2, 3, 4}},
+		{name: "BothFlags", req: &visibilityv1.ListAccessLogRequest{IsPublic: true, IsAnonymous: true}, want: []int{3, 4}},
+		{name: "InlineUID", req: &visibilityv1.ListAccessLogRequest{MatchInlinePolicyRef: &metav1.ObjectReference{Uid: ref.Uid}}, want: []int{1, 3}},
+		{name: "InlineName", req: &visibilityv1.ListAccessLogRequest{MatchInlinePolicyRef: &metav1.ObjectReference{Name: ref.Name}}, want: []int{1, 3}},
+		{name: "InlineBoth", req: &visibilityv1.ListAccessLogRequest{MatchInlinePolicyRef: ref}, want: []int{1, 3}},
+		{name: "InlineMismatch", req: &visibilityv1.ListAccessLogRequest{MatchInlinePolicyRef: &metav1.ObjectReference{Uid: ref.Uid, Name: otherRef.Name}}},
+		{name: "InlineAndFlags", req: &visibilityv1.ListAccessLogRequest{MatchInlinePolicyRef: ref, IsPublic: true, IsAnonymous: true}, want: []int{3}},
+		{name: "InlineAndTime", req: &visibilityv1.ListAccessLogRequest{MatchInlinePolicyRef: ref, From: pbutils.Timestamp(now.Add(2 * time.Second))}, want: []int{3}},
+		{name: "StandalonePolicy", req: &visibilityv1.ListAccessLogRequest{PolicyRef: ref}, want: []int{4}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			res, err := client.ListAccessLog(ts.ctx, tc.req)
+			require.NoError(t, err)
+			assert.EqualValues(t, len(tc.want), res.ListResponseMeta.TotalCount)
+			var got, want []string
+			for _, item := range res.Items {
+				got = append(got, item.Metadata.Id)
+			}
+			for _, i := range tc.want {
+				want = append(want, logs[i].Metadata.Id)
+			}
+			assert.ElementsMatch(t, want, got)
+		})
+	}
+
+	res, err := client.ListAccessLog(ts.ctx, &visibilityv1.ListAccessLogRequest{
+		IsPublic: true, Common: &vmetav1.CommonListOptions{ItemsPerPage: 2, Page: 1},
+	})
+	require.NoError(t, err)
+	assert.EqualValues(t, 3, res.ListResponseMeta.TotalCount)
+	require.Len(t, res.Items, 1)
+	assert.Equal(t, logs[1].Metadata.Id, res.Items[0].Metadata.Id)
+
+	for _, ref := range []*metav1.ObjectReference{
+		{},
+		{Uid: "invalid"},
+		{Name: "invalid/name"},
+		{Name: strings.Repeat("parent.", 9) + "resource"},
+	} {
+		_, err := client.ListAccessLog(ts.ctx, &visibilityv1.ListAccessLogRequest{MatchInlinePolicyRef: ref})
+		assert.Equal(t, codes.InvalidArgument, status.Code(err))
+	}
+}
+
+func TestAuditLogRPCSummaryResourceFilter(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	client := visibilityv1.NewAuditLogServiceClient(newLogStoreRPCClient(t, ts))
+	ref := randomObjectReference()
+	ref.Name = "namespace.service"
+	ref.Kind = "Service"
+	otherRef := randomObjectReference()
+	otherRef.Kind = "User"
+	userRef, deviceRef, sessionRef := randomObjectReference(), randomObjectReference(), randomObjectReference()
+	base := time.Now().UTC().Truncate(time.Hour)
+
+	for _, entry := range []struct {
+		at     time.Time
+		ref    *metav1.ObjectReference
+		method string
+	}{
+		{base.Add(10 * time.Minute), ref, "CreateService"},
+		{base.Add(20 * time.Minute), ref, "UpdateService"},
+		{base.Add(-90 * time.Minute), ref, "DeleteService"},
+		{base.Add(30 * time.Minute), otherRef, "DeleteUser"},
+		{base.Add(-100 * time.Minute), otherRef, "CreateUser"},
+	} {
+		log := newAuditLog(&auditLogOptions{
+			CreatedAt: entry.at, ResourceRef: entry.ref,
+			UserRef: userRef, DeviceRef: deviceRef, SessionRef: sessionRef,
+		})
+		log.Entry.Method = entry.method
+		insertLogJSON(t, ts.srv, "audit_logs", marshalLog(t, log))
+	}
+
+	for _, ref := range []*metav1.ObjectReference{
+		{Uid: ref.Uid},
+		{Name: ref.Name},
+		ref,
+	} {
+		res, err := client.GetAuditLogSummary(ts.ctx, &visibilityv1.GetAuditLogSummaryRequest{
+			ResourceRef: ref, From: pbutils.Timestamp(base), To: pbutils.Timestamp(base.Add(time.Hour)),
+			CompareFrom: pbutils.Timestamp(base.Add(-2 * time.Hour)), CompareTo: pbutils.Timestamp(base.Add(-time.Hour)),
+		})
+		require.NoError(t, err)
+		assert.EqualValues(t, 2, res.TotalNumber)
+		assert.EqualValues(t, 1, res.TotalResource)
+		assert.EqualValues(t, 1, res.TotalUser)
+		assert.EqualValues(t, 1, res.TotalDevice)
+		assert.EqualValues(t, 1, res.TotalSession)
+		assert.EqualValues(t, 1, res.TotalCreate)
+		assert.EqualValues(t, 1, res.TotalUpdate)
+		assert.Zero(t, res.TotalDelete)
+		assert.Zero(t, res.TotalOther)
+		assert.Equal(t, map[string]uint64{"Service": 2}, res.TotalByResourceKind)
+		require.NotNil(t, res.Previous)
+		assert.EqualValues(t, 1, res.Previous.TotalNumber)
+		assert.EqualValues(t, 1, res.Previous.TotalDelete)
+		assert.Equal(t, map[string]uint64{"Service": 1}, res.Previous.TotalByResourceKind)
+	}
+
+	res, err := client.GetAuditLogSummary(ts.ctx, &visibilityv1.GetAuditLogSummaryRequest{
+		ResourceRef: &metav1.ObjectReference{Uid: ref.Uid, Name: otherRef.Name},
+	})
+	require.NoError(t, err)
+	assert.Zero(t, res.TotalNumber)
+	assert.Zero(t, res.TotalResource)
+	assert.Empty(t, res.TotalByResourceKind)
+
+	for _, ref := range []*metav1.ObjectReference{
+		{},
+		{Uid: "invalid"},
+		{Name: "invalid/name"},
+		{Name: strings.Repeat("parent.", 9) + "resource"},
+	} {
+		_, err := client.GetAuditLogSummary(ts.ctx, &visibilityv1.GetAuditLogSummaryRequest{ResourceRef: ref})
+		assert.Equal(t, codes.InvalidArgument, status.Code(err))
 	}
 }

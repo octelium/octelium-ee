@@ -225,10 +225,17 @@ func (s *Server) listAccessLog(ctx context.Context, req *visibilityv1.ListAccess
 	if err != nil {
 		return nil, err
 	}
+	filters, err = appendRefFilter(filters, req.MatchInlinePolicyRef, &apivalidation.CheckGetOptionsOpts{
+		ParentsMax: 8,
+	}, "", "entry.common.reason.details.policyMatch.inlinePolicy.resourceRef")
+	if err != nil {
+		return nil, err
+	}
 
 	filters = appendAccessStatusFilter(filters, req.Status)
 
 	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
+	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
 
 	filters = appendTimeFilters(filters, req.From, req.To)
 
@@ -1492,6 +1499,12 @@ func (s *Server) doSummaryAuditLog(ctx context.Context, req *visibilityv1.GetAud
 		return nil, err
 	}
 	filters, err = appendRefFilter(filters, req.SessionRef, nil, "", "entry.sessionRef")
+	if err != nil {
+		return nil, err
+	}
+	filters, err = appendRefFilter(filters, req.ResourceRef, &apivalidation.CheckGetOptionsOpts{
+		ParentsMax: 8,
+	}, "", "entry.resourceRef")
 	if err != nil {
 		return nil, err
 	}

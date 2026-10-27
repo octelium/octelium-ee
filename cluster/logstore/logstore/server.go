@@ -54,6 +54,7 @@ type Server struct {
 	dbPath          string
 	cleanupDuration time.Duration
 	querySem        chan struct{}
+	grpcDone        chan struct{}
 
 	statfsFn func(path string) (uint64, uint64, error)
 }
@@ -149,7 +150,13 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
-	if err := DoRun(ctx, octeliumC); err != nil {
+	s, err := newServer(ctx, octeliumC)
+	if err != nil {
+		return err
+	}
+	defer s.db.Close()
+
+	if err := s.Run(ctx); err != nil {
 		return err
 	}
 
@@ -157,12 +164,28 @@ func Run(ctx context.Context) error {
 	zap.S().Infof("LogStore is running...")
 
 	<-ctx.Done()
+	<-s.grpcDone
 
 	return nil
 }
 
 func (s *Server) initGRPC(ctx context.Context) error {
 	cred, err := spiffec.GetGRPCServerCred(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	lis, err := net.Listen("tcp", func() string {
+		if ovutils.IsMockMode() {
+			return "localhost:40001"
+		}
+
+		if ldflags.IsTest() {
+			return tstAddr
+		}
+
+		return ":8080"
+	}())
 	if err != nil {
 		return err
 	}
@@ -175,8 +198,11 @@ func (s *Server) initGRPC(ctx context.Context) error {
 	)
 
 	srvLog := s.newSrvLog()
-
-	go srvLog.startProcessLoop(ctx)
+	processDone := make(chan struct{})
+	go func() {
+		defer close(processDone)
+		srvLog.startProcessLoop(ctx)
+	}()
 
 	plogotlp.RegisterGRPCServer(grpcSrv, srvLog)
 
@@ -202,24 +228,29 @@ func (s *Server) initGRPC(ctx context.Context) error {
 
 	zap.L().Debug("Starting gRPC sever", zap.Bool("mockMode", ovutils.IsMockMode()))
 
+	go grpcSrv.Serve(lis)
+
+	grpcDone := make(chan struct{})
+	s.grpcDone = grpcDone
 	go func() {
+		defer close(grpcDone)
+		<-ctx.Done()
 
-		lis, err := net.Listen("tcp", func() string {
+		stopped := make(chan struct{})
+		go func() {
+			grpcSrv.GracefulStop()
+			close(stopped)
+		}()
 
-			if ovutils.IsMockMode() {
-				return "localhost:40001"
-			}
-
-			if ldflags.IsTest() {
-				return tstAddr
-			}
-
-			return ":8080"
-		}())
-		if err != nil {
-			return
+		timer := time.NewTimer(logShutdownTimeout)
+		defer timer.Stop()
+		select {
+		case <-stopped:
+		case <-timer.C:
+			grpcSrv.Stop()
 		}
-		grpcSrv.Serve(lis)
+
+		<-processDone
 	}()
 
 	return nil

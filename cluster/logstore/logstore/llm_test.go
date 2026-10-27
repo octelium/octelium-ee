@@ -1597,3 +1597,73 @@ func TestLLMRPCFilterAndLimitValidation(t *testing.T) {
 		assert.Equal(t, codes.InvalidArgument, status.Code(err))
 	}
 }
+
+func TestLLMRPCHTTPStatusClassBoundaries(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	client := vllmv1.NewLLMServiceClient(newLogStoreRPCClient(t, ts))
+
+	insertLLMAccessLog(t, ts, &llmAccessLogOptions{HTTPCode: 199})
+	for _, first := range []uint32{200, 300, 400, 500} {
+		for _, offset := range []uint32{0, 49, 50, 51, 98, 99} {
+			insertLLMAccessLog(t, ts, &llmAccessLogOptions{HTTPCode: first + offset})
+		}
+	}
+
+	for _, class := range []vllmv1.HTTPStatusClass{
+		vllmv1.HTTPStatusClass_SUCCESS,
+		vllmv1.HTTPStatusClass_REDIRECT,
+		vllmv1.HTTPStatusClass_CLIENT_ERROR,
+		vllmv1.HTTPStatusClass_SERVER_ERROR,
+	} {
+		t.Run(class.String(), func(t *testing.T) {
+			filter := &vllmv1.Filter{HttpStatusClasses: []vllmv1.HTTPStatusClass{class}}
+			list, err := client.ListAccessLog(ts.ctx, &vllmv1.ListAccessLogRequest{Filter: filter})
+			require.NoError(t, err)
+			assert.EqualValues(t, 6, list.ListResponseMeta.TotalCount)
+			require.Len(t, list.Items, 6)
+			first := uint32(200)
+			switch class {
+			case vllmv1.HTTPStatusClass_REDIRECT:
+				first = 300
+			case vllmv1.HTTPStatusClass_CLIENT_ERROR:
+				first = 400
+			case vllmv1.HTTPStatusClass_SERVER_ERROR:
+				first = 500
+			}
+			for _, item := range list.Items {
+				code := item.Entry.Info.GetLlm().Http.Response.Code
+				assert.GreaterOrEqual(t, code, first)
+				assert.Less(t, code, first+100)
+			}
+
+			summary, err := client.GetSummary(ts.ctx, &vllmv1.GetSummaryRequest{Filter: filter})
+			require.NoError(t, err)
+			assert.EqualValues(t, 6, summary.Stats.Requests.Total)
+			if class == vllmv1.HTTPStatusClass_CLIENT_ERROR {
+				assert.EqualValues(t, 6, summary.Stats.Requests.ClientError)
+				assert.Zero(t, summary.Stats.Requests.ServerError)
+			}
+			if class == vllmv1.HTTPStatusClass_SERVER_ERROR {
+				assert.EqualValues(t, 6, summary.Stats.Requests.ServerError)
+				assert.Zero(t, summary.Stats.Requests.ClientError)
+			}
+
+			top, err := client.ListTopDimension(ts.ctx, &vllmv1.ListTopDimensionRequest{
+				Filter: filter, Dimension: vllmv1.Dimension_HTTP_STATUS_CLASS,
+			})
+			require.NoError(t, err)
+			require.Len(t, top.Items, 1)
+			assert.Equal(t, class.String(), top.Items[0].Key)
+			assert.EqualValues(t, 6, top.Items[0].Stats.Requests.Total)
+		})
+	}
+
+	list, err := client.ListAccessLog(ts.ctx, &vllmv1.ListAccessLogRequest{Filter: &vllmv1.Filter{
+		HttpStatusClasses: []vllmv1.HTTPStatusClass{vllmv1.HTTPStatusClass_SUCCESS, vllmv1.HTTPStatusClass_CLIENT_ERROR},
+		HttpStatusCodes:   []uint32{250, 299, 450, 499, 500},
+	}})
+	require.NoError(t, err)
+	assert.EqualValues(t, 4, list.ListResponseMeta.TotalCount)
+	assert.Len(t, list.Items, 4)
+}

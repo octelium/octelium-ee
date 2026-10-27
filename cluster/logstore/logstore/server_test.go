@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/corev1"
@@ -1531,4 +1532,59 @@ func TestLogRPCComponentSelectorBoundaries(t *testing.T) {
 		err := conn.Invoke(ts.ctx, logStoreRPCName(method), request, dynamicpb.NewMessage(method.Output()))
 		assert.Equal(t, codes.InvalidArgument, status.Code(err))
 	}
+}
+
+func TestLogStoreListenerBindFailure(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	addr := tstAddr
+	if ovutils.IsMockMode() {
+		addr = "localhost:40001"
+	}
+	listener, err := net.Listen("tcp", addr)
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, listener.Close()) })
+	ctx, cancel := context.WithCancel(ts.ctx)
+	defer cancel()
+
+	err = ts.srv.Run(ctx)
+	require.Error(t, err)
+	var netErr *net.OpError
+	require.ErrorAs(t, err, &netErr)
+	assert.Equal(t, "listen", netErr.Op)
+}
+
+func TestLogStoreGRPCLifecycle(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	addr := tstAddr
+	if ovutils.IsMockMode() {
+		addr = "localhost:40001"
+	}
+
+	for range 2 {
+		ctx, cancel := context.WithCancel(ts.ctx)
+		t.Cleanup(cancel)
+		require.NoError(t, ts.srv.Run(ctx))
+		conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		require.NoError(t, err)
+		t.Cleanup(func() { assert.NoError(t, conn.Close()) })
+		rpcCtx, rpcCancel := context.WithTimeout(ts.ctx, 5*time.Second)
+		_, err = plogotlp.NewGRPCClient(conn).Export(rpcCtx, newExportRequest(
+			marshalLog(t, newComponentLog(time.Now().UTC(), corev1.ComponentLog_Entry_INFO, "listener")),
+		))
+		rpcCancel()
+		require.NoError(t, err)
+		cancel()
+
+		require.Eventually(t, func() bool {
+			listener, err := net.Listen("tcp", addr)
+			if err != nil {
+				return false
+			}
+			assert.NoError(t, listener.Close())
+			return true
+		}, 3*time.Second, 10*time.Millisecond)
+	}
+	assert.Equal(t, 2, getTableCount(t, ts.srv, "component_logs"))
 }
