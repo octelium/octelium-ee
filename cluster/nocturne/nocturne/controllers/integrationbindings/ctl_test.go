@@ -25,11 +25,13 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type slackFake struct {
@@ -613,4 +615,59 @@ func TestBindingReconcileConflictDuringDelivery(t *testing.T) {
 	})
 	assert.Nil(t, err, "%+v", err)
 	assert.Equal(t, accessv1.Request_Status_State_APPROVED, req.Status.State.Status)
+}
+
+func TestBindingRetryBoundsAndClosedState(t *testing.T) {
+	assert.Equal(t, baseBackoff, backoff(0))
+	assert.Equal(t, baseBackoff, backoff(1))
+	assert.Equal(t, 2*baseBackoff, backoff(2))
+	assert.Equal(t, maxBackoff, backoff(^uint32(0)))
+	req := &accessv1.Request{Spec: &accessv1.Request_Spec{}, Status: &accessv1.Request_Status{
+		State:  &accessv1.Request_Status_State{Status: accessv1.Request_Status_State_PENDING},
+		Review: &accessv1.Request_Status_Review{CurrentStep: 1},
+	}}
+	binding := &accessv1.IntegrationBinding{Status: &accessv1.IntegrationBinding_Status{Purpose: accessv1.IntegrationBinding_Status_REVIEW_SURFACE, StepIndex: 1}}
+	assert.False(t, isClosed(binding, req))
+	binding.Status.StepIndex = 0
+	assert.True(t, isClosed(binding, req))
+	binding.Status.Purpose = accessv1.IntegrationBinding_Status_NOTIFICATION
+	assert.False(t, isClosed(binding, req))
+	req.Status.State = nil
+	assert.True(t, isClosed(binding, req))
+}
+
+func TestBindingDesiredRevisionUpdateIsIsolated(t *testing.T) {
+	b := newBindingTest(t)
+	req := b.createRequest(t)
+	binding := b.createBinding(t, req)
+	require.NoError(t, b.ctrl.setDesiredRevision(b.ctx, binding, "new-revision"))
+	assert.Empty(t, binding.Status.DesiredRevision)
+	current, err := b.octeliumC.AccessC().GetIntegrationBinding(b.ctx, &rmetav1.GetOptions{Uid: binding.Metadata.Uid})
+	require.NoError(t, err)
+	assert.Equal(t, "new-revision", current.Status.DesiredRevision)
+	before := current.Metadata.ResourceVersion
+	require.NoError(t, b.ctrl.setDesiredRevision(b.ctx, current, "new-revision"))
+	current, err = b.octeliumC.AccessC().GetIntegrationBinding(b.ctx, &rmetav1.GetOptions{Uid: binding.Metadata.Uid})
+	require.NoError(t, err)
+	assert.Equal(t, before, current.Metadata.ResourceVersion)
+	_, err = b.octeliumC.AccessC().DeleteIntegrationBinding(b.ctx, &rmetav1.DeleteOptions{Uid: binding.Metadata.Uid})
+	require.NoError(t, err)
+	require.NoError(t, b.ctrl.setDesiredRevision(b.ctx, binding, "later-revision"))
+	require.NoError(t, b.ctrl.OnDelete(b.ctx, binding))
+}
+
+func TestBindingRecipientCacheAndMissingUser(t *testing.T) {
+	b := newBindingTest(t)
+	binding := &accessv1.IntegrationBinding{Metadata: &metav1.Metadata{Name: "recipient"}, Status: &accessv1.IntegrationBinding_Status{}}
+	recipient, err := b.ctrl.getRecipientID(b.ctx, b.integration, nil, binding)
+	require.NoError(t, err)
+	assert.Empty(t, recipient)
+	binding.Status.UserRef = &metav1.ObjectReference{Uid: vutils.UUIDv4()}
+	binding.Status.ExternalRecipientID = "cached-recipient"
+	recipient, err = b.ctrl.getRecipientID(b.ctx, b.integration, nil, binding)
+	require.NoError(t, err)
+	assert.Equal(t, "cached-recipient", recipient)
+	binding.Status.ExternalRecipientID = ""
+	_, err = b.ctrl.getRecipientID(b.ctx, b.integration, nil, binding)
+	assert.ErrorContains(t, err, "no longer exists")
 }

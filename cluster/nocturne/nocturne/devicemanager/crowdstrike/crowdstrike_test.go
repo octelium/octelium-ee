@@ -21,9 +21,14 @@ import (
 
 	"github.com/crowdstrike/gofalcon/falcon"
 	"github.com/crowdstrike/gofalcon/falcon/models"
+	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/devicemanager/devicemgrcommon"
 	"github.com/octelium/octelium/apis/main/corev1"
+	"github.com/octelium/octelium/apis/main/enterprisev1"
+	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func TestParseExternalID(t *testing.T) {
@@ -336,5 +341,79 @@ func TestCollect(t *testing.T) {
 		assert.Empty(t, fleet.DegradedReason())
 		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN,
 			fleet.MatchExternalID(aid1).Entry.Posture.RiskLevel)
+	}
+}
+
+func TestConstructorCredentialsAndConfiguration(t *testing.T) {
+	tst, err := tests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() { tst.Destroy() })
+	_, err = tst.C.OcteliumC.EnterpriseC().CreateSecret(t.Context(), &enterprisev1.Secret{
+		Metadata: &metav1.Metadata{Name: "provider-credential"},
+		Spec:     &enterprisev1.Secret_Spec{},
+		Data:     &enterprisev1.Secret_Data{Type: &enterprisev1.Secret_Data_Value{Value: "test-token"}},
+	})
+	require.NoError(t, err)
+	configuration := func(t *testing.T) *enterprisev1.DeviceManager {
+		t.Helper()
+		ret := &enterprisev1.DeviceManager{}
+		require.NoError(t, protojson.Unmarshal([]byte("{\"metadata\": {\"name\": \"constructor-test\"}, \"spec\": {\"crowdStrike\": {\"clientID\": \"client\", \"clientSecret\": {\"fromSecret\": \"provider-credential\"}}}}"), ret))
+		ret.Spec.GetCrowdStrike().Region = enterprisev1.DeviceManager_Spec_CrowdStrike_US_1
+		return ret
+	}
+	dm := configuration(t)
+	manager, err := New(t.Context(), tst.C.OcteliumC, &devicemgrcommon.ManagerOpts{DeviceManager: dm})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+	assert.Equal(t, enterprisev1.DeviceManager_Status_CROWDSTRIKE, manager.Type())
+	require.NoError(t, manager.Close())
+	wrong := &enterprisev1.DeviceManager{Metadata: &metav1.Metadata{Name: "wrong"}, Spec: &enterprisev1.DeviceManager_Spec{}}
+	_, err = New(t.Context(), tst.C.OcteliumC, &devicemgrcommon.ManagerOpts{DeviceManager: wrong})
+	require.Error(t, err)
+	for _, field := range []string{"clientSecret", "clientID"} {
+		t.Run("Missing/"+field, func(t *testing.T) {
+			encoded, err := protojson.Marshal(configuration(t))
+			require.NoError(t, err)
+			var document map[string]any
+			require.NoError(t, json.Unmarshal(encoded, &document))
+			delete(document["spec"].(map[string]any)["crowdStrike"].(map[string]any), field)
+			encoded, err = json.Marshal(document)
+			require.NoError(t, err)
+			bad := &enterprisev1.DeviceManager{}
+			require.NoError(t, protojson.Unmarshal(encoded, bad))
+			_, err = New(t.Context(), tst.C.OcteliumC, &devicemgrcommon.ManagerOpts{DeviceManager: bad})
+			assert.Error(t, err)
+		})
+	}
+	encoded, err := protojson.Marshal(configuration(t))
+	require.NoError(t, err)
+	var document map[string]any
+	require.NoError(t, json.Unmarshal(encoded, &document))
+	document["spec"].(map[string]any)["crowdStrike"].(map[string]any)["clientSecret"] = map[string]any{"fromSecret": "missing-credential"}
+	encoded, err = json.Marshal(document)
+	require.NoError(t, err)
+	missing := &enterprisev1.DeviceManager{}
+	require.NoError(t, protojson.Unmarshal(encoded, missing))
+	_, err = New(t.Context(), tst.C.OcteliumC, &devicemgrcommon.ManagerOpts{DeviceManager: missing})
+	assert.Error(t, err)
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	_, err = New(ctx, tst.C.OcteliumC, &devicemgrcommon.ManagerOpts{DeviceManager: configuration(t)})
+	assert.Error(t, err)
+
+}
+
+func TestExplicitCloudRegions(t *testing.T) {
+	for _, tc := range []struct {
+		region enterprisev1.DeviceManager_Spec_CrowdStrike_Region
+		cloud  falcon.CloudType
+	}{
+		{enterprisev1.DeviceManager_Spec_CrowdStrike_US_1, falcon.CloudUs1},
+		{enterprisev1.DeviceManager_Spec_CrowdStrike_US_2, falcon.CloudUs2},
+		{enterprisev1.DeviceManager_Spec_CrowdStrike_EU_1, falcon.CloudEu1},
+		{enterprisev1.DeviceManager_Spec_CrowdStrike_US_GOV_1, falcon.CloudUsGov1},
+		{enterprisev1.DeviceManager_Spec_CrowdStrike_US_GOV_2, falcon.CloudUsGov2},
+	} {
+		assert.Equal(t, tc.cloud, cloudFromRegion(tc.region))
 	}
 }

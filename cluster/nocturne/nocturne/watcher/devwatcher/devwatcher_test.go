@@ -12,19 +12,24 @@ import (
 	"context"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/devicemanager/devicemgrcommon"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/rcorev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 )
 
 type tstReconciler struct {
@@ -186,4 +191,50 @@ func TestSweep(t *testing.T) {
 		assert.Equal(t, uint32(1), linking.Conflicts)
 		assert.Equal(t, uint32(1), linking.FailedUpdates)
 	}
+}
+
+type nudgedTestCore struct {
+	rcorev1.ResourceServiceClient
+	calls atomic.Int32
+}
+
+func (c *nudgedTestCore) ListDevice(context.Context, *rmetav1.ListOptions, ...grpc.CallOption) (*corev1.DeviceList, error) {
+	c.calls.Add(1)
+	return &corev1.DeviceList{}, nil
+}
+
+type nudgedTestClient struct {
+	octeliumc.ClientInterface
+	core *nudgedTestCore
+}
+
+func (c *nudgedTestClient) CoreC() rcorev1.ResourceServiceClient { return c.core }
+
+func TestDeviceWatcherCoalescesNudgesAndStops(t *testing.T) {
+	tst, err := tests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() { tst.Destroy() })
+	core := &nudgedTestCore{ResourceServiceClient: tst.C.OcteliumC.CoreC()}
+	client := &nudgedTestClient{ClientInterface: tst.C.OcteliumC, core: core}
+	w, err := NewWatcher(&Opts{
+		OcteliumC: client, Resolver: devicemgrcommon.NewRegistry(),
+		Reconciler: &tstReconciler{resets: map[string]string{}}, Interval: time.Hour,
+	})
+	require.NoError(t, err)
+	for range 100 {
+		w.Nudge()
+	}
+	assert.Len(t, w.nudgeCh, 1)
+	ctx, cancel := context.WithCancel(t.Context())
+	done := make(chan struct{})
+	go func() { defer close(done); w.run(ctx) }()
+	t.Cleanup(func() {
+		cancel()
+		select {
+		case <-done:
+		case <-time.After(2 * time.Second):
+			t.Error("device watcher did not stop")
+		}
+	})
+	require.Eventually(t, func() bool { return core.calls.Load() >= 2 }, 2*time.Second, 5*time.Millisecond)
 }

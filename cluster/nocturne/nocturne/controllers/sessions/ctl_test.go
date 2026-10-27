@@ -29,6 +29,7 @@ import (
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 	"google.golang.org/grpc"
@@ -322,5 +323,79 @@ func TestRunFailures(t *testing.T) {
 		}, 30*time.Second, 100*time.Millisecond)
 		assert.Equal(t, enterprisev1.AuthenticationLog_Entry_Failure_LIMIT_EXCEEDED,
 			client.getLogs()[2].Entry.Failure.Reason)
+	}
+}
+
+func TestSessionEventLoggingAndReplayGuards(t *testing.T) {
+	logs := &fakeLogClient{}
+	ctl := &Controller{client: logs}
+	sess := &corev1.Session{
+		Metadata: &metav1.Metadata{Uid: vutils.UUIDv4(), Name: "session", CreatedAt: pbutils.Now()},
+		Status:   &corev1.Session_Status{TotalAuthentications: 1, Authentication: &corev1.Session_Status_Authentication{SetAt: pbutils.Now()}},
+	}
+	require.NoError(t, ctl.OnAdd(t.Context(), sess))
+	require.Len(t, logs.getLogs(), 1)
+	assert.Zero(t, logs.getLogs()[0].Entry.AuthenticationIndex)
+	old := pbutils.Clone(sess).(*corev1.Session)
+	sess.Metadata.UpdatedAt = pbutils.Now()
+	require.NoError(t, ctl.OnAdd(t.Context(), sess))
+	require.NoError(t, ctl.OnUpdate(t.Context(), sess, old))
+	assert.Len(t, logs.getLogs(), 1)
+	sess.Status.TotalAuthentications = 3
+	sess.Status.Authentication.SetAt = pbutils.Timestamp(time.Now().Add(time.Second))
+	require.NoError(t, ctl.OnUpdate(t.Context(), sess, old))
+	require.Len(t, logs.getLogs(), 2)
+	assert.EqualValues(t, 2, logs.getLogs()[1].Entry.AuthenticationIndex)
+	old.Metadata.CreatedAt = pbutils.Timestamp(time.Now().Add(-2 * time.Minute))
+	require.NoError(t, ctl.OnAdd(t.Context(), old))
+	require.NoError(t, ctl.OnDelete(t.Context(), old))
+	assert.Len(t, logs.getLogs(), 2)
+}
+
+type ackFailureClient struct {
+	rpubsubv1.MainServiceClient
+	err error
+}
+
+func (c *ackFailureClient) Acknowledge(context.Context, *rpubsubv1.AcknowledgeRequest, ...grpc.CallOption) (*rpubsubv1.AcknowledgeResponse, error) {
+	return &rpubsubv1.AcknowledgeResponse{}, c.err
+}
+
+func TestFailureBatchAcknowledgementErrorsAndPoisonMessages(t *testing.T) {
+	for _, invalidOnly := range []bool{false, true} {
+		failure := errors.New("acknowledgement unavailable")
+		pubsub := &fakePubSub{MainServiceClient: &ackFailureClient{err: failure}}
+		logs := &fakeLogClient{}
+		ctl := &Controller{octeliumC: &fakeOcteliumC{pubSubC: pubsub}, client: logs}
+		msgs := []*rpubsubv1.Message{{Id: []byte("invalid"), Type: &rpubsubv1.Message_Data{Data: []byte("invalid")}}}
+		if !invalidOnly {
+			msg := newFailureMessage(t, &authevents.Failure{CreatedAt: time.Now(), Reason: authevents.ReasonInvalidCredential})
+			msg.Id = []byte("valid")
+			msgs = append(msgs, msg)
+		}
+		assert.ErrorIs(t, ctl.handleFailures(t.Context(), msgs), failure)
+		assert.Len(t, pubsub.getAcked(), len(msgs))
+		if invalidOnly {
+			assert.Empty(t, logs.getLogs())
+		} else {
+			assert.Len(t, logs.getLogs(), 1)
+		}
+	}
+}
+
+func TestFailureSubscriptionStopsOnCanceledContext(t *testing.T) {
+	tst, err := tests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() { tst.Destroy() })
+	ctl := &Controller{octeliumC: tst.C.OcteliumC, client: &fakeLogClient{}}
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	assert.Error(t, ctl.doRunFailures(ctx))
+	done := make(chan struct{})
+	go func() { defer close(done); ctl.runFailures(ctx) }()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("failure subscription did not stop")
 	}
 }

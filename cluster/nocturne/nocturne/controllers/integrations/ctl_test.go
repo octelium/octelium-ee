@@ -15,6 +15,7 @@ import (
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/tests"
@@ -26,6 +27,8 @@ import (
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 type integrationTest struct {
@@ -239,4 +242,59 @@ func TestIntegrationOnDeleteRemovesChildren(t *testing.T) {
 		Uid: other.Metadata.Uid,
 	})
 	assert.Nil(t, err, "%+v", err)
+}
+
+func TestIntegrationSynchronizationHistoryIsBoundedAndCloned(t *testing.T) {
+	item := &accessv1.Integration{Status: &accessv1.Integration_Status{}}
+	for i := range maxSynchronizations + 3 {
+		item.Status.Synchronization = &accessv1.Integration_Status_Synchronization{
+			State:     accessv1.Integration_Status_Synchronization_SUCCESS,
+			CreatedAt: pbutils.Timestamp(time.Unix(int64(i), 0)),
+		}
+		appendSynchronization(item)
+		item.Status.Synchronization.State = accessv1.Integration_Status_Synchronization_FAILED
+		assert.Equal(t, accessv1.Integration_Status_Synchronization_SUCCESS, item.Status.LastSynchronizations[0].State)
+	}
+	assert.Len(t, item.Status.LastSynchronizations, maxSynchronizations)
+	assert.EqualValues(t, 12, item.Status.LastSynchronizations[0].CreatedAt.Seconds)
+	assert.EqualValues(t, 3, item.Status.LastSynchronizations[maxSynchronizations-1].CreatedAt.Seconds)
+	for _, state := range []accessv1.Integration_Status_Synchronization_State{
+		accessv1.Integration_Status_Synchronization_SYNCING,
+		accessv1.Integration_Status_Synchronization_SUCCESS,
+		accessv1.Integration_Status_Synchronization_FAILED,
+	} {
+		item.Status.Synchronization.State = state
+		assert.False(t, (&Controller{}).needsSynchronization(item))
+	}
+	item.Status.Synchronization = nil
+	assert.True(t, (&Controller{}).needsSynchronization(item))
+}
+
+func TestIntegrationDegradesAndRecoversAfterSuccessfulValidation(t *testing.T) {
+	env := newIntegrationTest(t)
+	item := env.createIntegration(t)
+	require.NoError(t, env.ctrl.OnAdd(env.ctx, item))
+	item = env.getIntegration(t, item.Metadata.Uid)
+	require.Equal(t, accessv1.Integration_Status_READY, item.Status.State)
+	success := pbutils.Clone(item.Status.LastSuccessAt)
+	env.slackFail.Store(true)
+	item.Status.Synchronization = &accessv1.Integration_Status_Synchronization{State: accessv1.Integration_Status_Synchronization_SYNC_REQUESTED}
+	item, err := env.octeliumC.AccessC().UpdateIntegration(env.ctx, item)
+	require.NoError(t, err)
+	require.NoError(t, env.ctrl.OnUpdate(env.ctx, item, nil))
+	item = env.getIntegration(t, item.Metadata.Uid)
+	assert.Equal(t, accessv1.Integration_Status_DEGRADED, item.Status.State)
+	assert.NotEmpty(t, item.Status.LastError)
+	assert.NotNil(t, item.Status.LastFailureAt)
+	assert.True(t, proto.Equal(success, item.Status.LastSuccessAt))
+	env.slackFail.Store(false)
+	item.Status.Synchronization = &accessv1.Integration_Status_Synchronization{State: accessv1.Integration_Status_Synchronization_SYNC_REQUESTED}
+	item, err = env.octeliumC.AccessC().UpdateIntegration(env.ctx, item)
+	require.NoError(t, err)
+	require.NoError(t, env.ctrl.OnUpdate(env.ctx, item, nil))
+	item = env.getIntegration(t, item.Metadata.Uid)
+	assert.Equal(t, accessv1.Integration_Status_READY, item.Status.State)
+	assert.Empty(t, item.Status.LastError)
+	require.Len(t, item.Status.LastSynchronizations, 3)
+	assert.Equal(t, accessv1.Integration_Status_Synchronization_FAILED, item.Status.LastSynchronizations[1].State)
 }

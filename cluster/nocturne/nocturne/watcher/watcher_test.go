@@ -10,7 +10,9 @@ package watcher
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -21,12 +23,16 @@ import (
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/raccessv1"
+	"github.com/octelium/octelium/apis/rsc/rcorev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 )
 
 func newWatcherTest(t *testing.T) (context.Context, *Watcher, octeliumc.ClientInterface) {
@@ -484,4 +490,184 @@ func TestWatcherTerminalRequestsUntouched(t *testing.T) {
 		assert.Equal(t, status, reqG.Status.State.Status)
 		assert.Equal(t, req.Metadata.ResourceVersion, reqG.Metadata.ResourceVersion, "%s", status)
 	}
+}
+
+type watcherPagingConn struct {
+	invoke func(context.Context, string, any, any) error
+}
+
+func (c *watcherPagingConn) Invoke(ctx context.Context, method string, req, reply any, opts ...grpc.CallOption) error {
+	return c.invoke(ctx, method, req, reply)
+}
+func (c *watcherPagingConn) NewStream(context.Context, *grpc.StreamDesc, string, ...grpc.CallOption) (grpc.ClientStream, error) {
+	return nil, errors.New("unexpected stream")
+}
+
+type watcherPagingClient struct {
+	octeliumc.ClientInterface
+	conn *watcherPagingConn
+}
+
+func (c *watcherPagingClient) CoreC() rcorev1.ResourceServiceClient {
+	return rcorev1.NewResourceServiceClient(c.conn)
+}
+func (c *watcherPagingClient) AccessC() raccessv1.ResourceServiceClient {
+	return raccessv1.NewResourceServiceClient(c.conn)
+}
+
+func watcherListNames(ctx context.Context, w *Watcher, kind string) ([]string, error) {
+	var names []string
+	switch kind {
+	case "Request":
+		items, err := w.listRequests(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, item := range items {
+			names = append(names, item.Metadata.Name)
+		}
+	case "PolicyTrigger":
+		items, err := w.listPolicyTriggers(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, item := range items {
+			names = append(names, item.Metadata.Name)
+		}
+	case "IntegrationBinding":
+		items, err := w.listIntegrationBindings(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, item := range items {
+			names = append(names, item.Metadata.Name)
+		}
+	}
+	return names, nil
+}
+
+func TestWatcherListsEveryPage(t *testing.T) {
+	for _, kind := range []string{"Request", "PolicyTrigger", "IntegrationBinding"} {
+		for _, failAt := range []int{-1, 0, 1} {
+			t.Run(fmt.Sprintf("%s/%d", kind, failAt), func(t *testing.T) {
+				failure := errors.New("page unavailable")
+				calls := 0
+				conn := &watcherPagingConn{invoke: func(ctx context.Context, method string, req, reply any) error {
+					opts := req.(*rmetav1.ListOptions)
+					assert.True(t, opts.Paginate)
+					assert.EqualValues(t, 500, opts.ItemsPerPage)
+					assert.EqualValues(t, calls, opts.Page)
+					page := calls
+					calls++
+					if page == failAt {
+						return failure
+					}
+					md := &metav1.Metadata{Name: fmt.Sprintf("page-%d", page)}
+					meta := &metav1.ListResponseMeta{HasMore: page == 0}
+					switch list := reply.(type) {
+					case *accessv1.RequestList:
+						list.Items = []*accessv1.Request{{Metadata: md}}
+						list.ListResponseMeta = meta
+					case *corev1.PolicyTriggerList:
+						list.Items = []*corev1.PolicyTrigger{{Metadata: md}}
+						list.ListResponseMeta = meta
+					case *accessv1.IntegrationBindingList:
+						list.Items = []*accessv1.IntegrationBinding{{Metadata: md}}
+						list.ListResponseMeta = meta
+					}
+					return nil
+				}}
+				w := InitWatcher(&watcherPagingClient{conn: conn}, nil)
+				names, err := watcherListNames(t.Context(), w, kind)
+				if failAt >= 0 {
+					assert.ErrorIs(t, err, failure)
+					assert.Nil(t, names)
+					assert.Equal(t, failAt+1, calls)
+				} else {
+					require.NoError(t, err)
+					assert.Equal(t, []string{"page-0", "page-1"}, names)
+					assert.Equal(t, 2, calls)
+				}
+			})
+		}
+	}
+}
+
+func TestIntegrationBindingDueScheduling(t *testing.T) {
+	now := time.Now()
+	for _, tc := range []struct {
+		name    string
+		binding *accessv1.IntegrationBinding
+		due     bool
+	}{
+		{"Nil", nil, false},
+		{"NoStatus", &accessv1.IntegrationBinding{}, false},
+		{"Ready", &accessv1.IntegrationBinding{Status: &accessv1.IntegrationBinding_Status{State: accessv1.IntegrationBinding_Status_READY, AppliedRevision: "same", DesiredRevision: "same"}}, false},
+		{"Closed", &accessv1.IntegrationBinding{Status: &accessv1.IntegrationBinding_Status{State: accessv1.IntegrationBinding_Status_CLOSED, AppliedRevision: "same", DesiredRevision: "same"}}, false},
+		{"Changed", &accessv1.IntegrationBinding{Status: &accessv1.IntegrationBinding_Status{State: accessv1.IntegrationBinding_Status_READY, AppliedRevision: "old", DesiredRevision: "new"}}, true},
+		{"Deferred", &accessv1.IntegrationBinding{Status: &accessv1.IntegrationBinding_Status{NextAttemptAt: pbutils.Timestamp(now.Add(time.Hour))}}, false},
+		{"Retry", &accessv1.IntegrationBinding{Status: &accessv1.IntegrationBinding_Status{NextAttemptAt: pbutils.Timestamp(now.Add(-time.Hour))}}, true},
+		{"New", &accessv1.IntegrationBinding{Status: &accessv1.IntegrationBinding_Status{}}, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) { assert.Equal(t, tc.due, isIntegrationBindingDue(tc.binding)) })
+	}
+}
+
+func TestWatchIntervalEnvironmentValidation(t *testing.T) {
+	for _, tc := range []struct {
+		value string
+		want  time.Duration
+	}{
+		{"", time.Minute}, {"invalid", time.Minute}, {"0s", time.Minute}, {"-1s", time.Minute}, {"250ms", 250 * time.Millisecond}, {"24h", 24 * time.Hour},
+	} {
+		t.Setenv("OCTELIUM_TEST_WATCH_INTERVAL", tc.value)
+		assert.Equal(t, tc.want, durationFromEnv("OCTELIUM_TEST_WATCH_INTERVAL", time.Minute))
+	}
+}
+
+type watcherRetryReconciler struct{ calls atomic.Int32 }
+
+func (r *watcherRetryReconciler) Reconcile(context.Context, *accessv1.IntegrationBinding) error {
+	r.calls.Add(1)
+	return errors.New("presentation temporarily unavailable")
+}
+
+func TestWatchersPollAndStopOnCancellation(t *testing.T) {
+	originalAccess, originalBinding := accessWatchInterval, integrationBindingWatchInterval
+	accessWatchInterval, integrationBindingWatchInterval = 10*time.Millisecond, 10*time.Millisecond
+	ctx, cancel := context.WithCancel(t.Context())
+	done := make(chan struct{}, 3)
+	t.Cleanup(func() {
+		cancel()
+		for range 3 {
+			select {
+			case <-done:
+			case <-time.After(2 * time.Second):
+				t.Error("watcher did not stop")
+			}
+		}
+		accessWatchInterval, integrationBindingWatchInterval = originalAccess, originalBinding
+	})
+	var requestCalls, policyCalls atomic.Int32
+	reconciler := &watcherRetryReconciler{}
+	conn := &watcherPagingConn{invoke: func(ctx context.Context, method string, req, reply any) error {
+		switch list := reply.(type) {
+		case *accessv1.RequestList:
+			requestCalls.Add(1)
+			return errors.New("request page temporarily unavailable")
+		case *corev1.PolicyTriggerList:
+			policyCalls.Add(1)
+		case *accessv1.IntegrationBindingList:
+			list.Items = []*accessv1.IntegrationBinding{
+				{Metadata: &metav1.Metadata{Name: "due"}, Status: &accessv1.IntegrationBinding_Status{}},
+				{Metadata: &metav1.Metadata{Name: "ready"}, Status: &accessv1.IntegrationBinding_Status{State: accessv1.IntegrationBinding_Status_READY}},
+			}
+		}
+		return nil
+	}}
+	w := InitWatcher(&watcherPagingClient{conn: conn}, reconciler)
+	for _, run := range []func(context.Context){w.runRequests, w.runPolicyTriggers, w.runIntegrationBindings} {
+		go func() { defer func() { done <- struct{}{} }(); run(ctx) }()
+	}
+	require.Eventually(t, func() bool { return requestCalls.Load() > 0 && policyCalls.Load() > 0 && reconciler.calls.Load() > 0 }, 2*time.Second, 5*time.Millisecond)
 }

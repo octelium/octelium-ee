@@ -27,6 +27,7 @@ import (
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
 
@@ -693,4 +694,59 @@ func TestPollOptions(t *testing.T) {
 	}
 	assert.Equal(t, minPollInterval, pollInterval(dm))
 	assert.Equal(t, 45*time.Second, pollTimeout(dm))
+}
+
+type stoppingTestManager struct {
+	tstManager
+	started chan struct{}
+	closed  atomic.Int32
+}
+
+func (m *stoppingTestManager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
+	close(m.started)
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+func (m *stoppingTestManager) Close() error { m.closed.Add(1); return nil }
+
+func TestWorkerStopCancelsCollectionAndClosesProvider(t *testing.T) {
+	env := newTstEnv(t)
+	dm := env.createDeviceManager(t, "unused")
+	manager := &stoppingTestManager{started: make(chan struct{})}
+	w := newWorker(env.ctx, env.octeliumC, env.registry, env.nudger, dm, manager, "version")
+	w.interval = time.Hour
+	go w.run()
+	t.Cleanup(func() { w.cancel(); <-w.done })
+	select {
+	case <-manager.started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("collection did not start")
+	}
+	done := make(chan struct{})
+	go func() { defer close(done); w.stop() }()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("worker did not stop")
+	}
+	assert.EqualValues(t, 1, manager.closed.Load())
+}
+
+type failingResetter struct{ err error }
+
+func (r *failingResetter) ResetBindingsForOwner(context.Context, string) error { return r.err }
+
+func TestDeviceManagerDeletionReturnsResetFailure(t *testing.T) {
+	env := newTstEnv(t)
+	dm := env.createDeviceManager(t, "unused")
+	env.registry.SetOwner(devicemgrcommon.NewPendingOwner(dm))
+	failure := errors.New("binding reset unavailable")
+	env.ctrl.resetter = &failingResetter{err: failure}
+	_, err := env.octeliumC.EnterpriseC().DeleteDeviceManager(env.ctx, &rmetav1.DeleteOptions{Uid: dm.Metadata.Uid})
+	require.NoError(t, err)
+	assert.ErrorIs(t, env.ctrl.OnDelete(env.ctx, dm), failure)
+	_, exists := env.registry.GetOwner(dm.Metadata.Uid)
+	assert.False(t, exists)
+	env.ctrl.resetter = &failingResetter{}
+	require.NoError(t, env.ctrl.OnDelete(env.ctx, dm))
 }

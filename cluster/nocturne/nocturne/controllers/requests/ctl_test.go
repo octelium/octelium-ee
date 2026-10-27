@@ -21,10 +21,14 @@ import (
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/celengine"
+	"github.com/octelium/octelium/cluster/common/vutils"
+	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func newControllerTest(t *testing.T) (context.Context, *Controller, octeliumc.ClientInterface) {
@@ -1251,4 +1255,193 @@ func TestGetAccessRequestAllowPriority(t *testing.T) {
 			assert.Equal(t, tt.want, getAccessRequestAllowPriority(tt.cc))
 		})
 	}
+}
+
+func TestRequestGroupConditionsUseTheDelegatedSubject(t *testing.T) {
+	ctx, ctl, client := newControllerTest(t)
+	group, err := client.CoreC().CreateGroup(ctx, &corev1.Group{Metadata: &metav1.Metadata{Name: "request-group"}, Spec: &corev1.Group_Spec{}, Status: &corev1.Group_Status{}})
+	require.NoError(t, err)
+	member, err := client.CoreC().CreateUser(ctx, &corev1.User{Metadata: &metav1.Metadata{Name: "member"}, Spec: &corev1.User_Spec{Type: corev1.User_Spec_HUMAN, Groups: []string{group.Metadata.Name}}, Status: &corev1.User_Status{}})
+	require.NoError(t, err)
+	requester, err := client.CoreC().CreateUser(ctx, &corev1.User{Metadata: &metav1.Metadata{Name: "requester"}, Spec: &corev1.User_Spec{Type: corev1.User_Spec_HUMAN}, Status: &corev1.User_Status{}})
+	require.NoError(t, err)
+	req := baseRequest(umetav1.GetObjectReference(requester), objRef("Service"))
+	req.Spec.Subject = &accessv1.Request_Spec_Subject{Type: &accessv1.Request_Spec_Subject_UserRef{UserRef: umetav1.GetObjectReference(member)}}
+	condition := &accessv1.Policy_Spec_Rule_Condition{Type: &accessv1.Policy_Spec_Rule_Condition_Subject_{
+		Subject: &accessv1.Policy_Spec_Rule_Condition_Subject{Type: &accessv1.Policy_Spec_Rule_Condition_Subject_GroupRef{GroupRef: umetav1.GetObjectReference(group)}},
+	}}
+	matched, err := ctl.matchCondition(ctx, req, condition)
+	require.NoError(t, err)
+	assert.True(t, matched)
+	req.Spec.Subject = nil
+	matched, err = ctl.matchCondition(ctx, req, condition)
+	require.NoError(t, err)
+	assert.False(t, matched)
+	for _, userRef := range []*metav1.ObjectReference{nil, {}, {Uid: vutils.UUIDv4()}} {
+		matched, err := ctl.matchSubjectGroup(ctx, userRef, umetav1.GetObjectReference(group))
+		require.NoError(t, err)
+		assert.False(t, matched)
+	}
+	matched, err = ctl.matchSubjectGroup(ctx, umetav1.GetObjectReference(member), &metav1.ObjectReference{Uid: vutils.UUIDv4()})
+	require.NoError(t, err)
+	assert.False(t, matched)
+	canceled, cancel := context.WithCancel(ctx)
+	cancel()
+	_, err = ctl.matchSubjectGroup(canceled, umetav1.GetObjectReference(member), umetav1.GetObjectReference(group))
+	assert.Error(t, err)
+}
+
+func TestRequestResourceAndLogicalConditions(t *testing.T) {
+	ctl := &Controller{}
+	anyMatch := func() *accessv1.Policy_Spec_Rule_Condition {
+		return &accessv1.Policy_Spec_Rule_Condition{Type: &accessv1.Policy_Spec_Rule_Condition_MatchAny{MatchAny: true}}
+	}
+	service := objRef("Service")
+	catalog := objRef("Catalog")
+	req := baseRequest(objRef("User"), service)
+	for _, tc := range []struct {
+		condition *accessv1.Policy_Spec_Rule_Condition
+		want      bool
+	}{
+		{nil, false},
+		{&accessv1.Policy_Spec_Rule_Condition{}, false},
+		{&accessv1.Policy_Spec_Rule_Condition{Type: &accessv1.Policy_Spec_Rule_Condition_Resource_{Resource: &accessv1.Policy_Spec_Rule_Condition_Resource{Type: &accessv1.Policy_Spec_Rule_Condition_Resource_ServiceRef{ServiceRef: service}}}}, true},
+		{&accessv1.Policy_Spec_Rule_Condition{Type: &accessv1.Policy_Spec_Rule_Condition_Resource_{Resource: &accessv1.Policy_Spec_Rule_Condition_Resource{Type: &accessv1.Policy_Spec_Rule_Condition_Resource_ServiceRef{ServiceRef: objRef("Service")}}}}, false},
+		{allOf(), false},
+		{allOf(anyMatch(), &accessv1.Policy_Spec_Rule_Condition{Type: &accessv1.Policy_Spec_Rule_Condition_MatchAny{MatchAny: false}}), false},
+		{&accessv1.Policy_Spec_Rule_Condition{Type: &accessv1.Policy_Spec_Rule_Condition_Any_{Any: &accessv1.Policy_Spec_Rule_Condition_Any{}}}, false},
+		{&accessv1.Policy_Spec_Rule_Condition{Type: &accessv1.Policy_Spec_Rule_Condition_Any_{Any: &accessv1.Policy_Spec_Rule_Condition_Any{Of: []*accessv1.Policy_Spec_Rule_Condition{nil, anyMatch()}}}}, true},
+	} {
+		matched, err := ctl.matchCondition(t.Context(), req, tc.condition)
+		require.NoError(t, err)
+		assert.Equal(t, tc.want, matched)
+	}
+	req.Spec.Resource = &accessv1.Request_Spec_Resource{Type: &accessv1.Request_Spec_Resource_Catalog_{Catalog: &accessv1.Request_Spec_Resource_Catalog{CatalogRef: catalog}}}
+	assert.True(t, ctl.matchResource(req, &accessv1.Policy_Spec_Rule_Condition_Resource{Type: &accessv1.Policy_Spec_Rule_Condition_Resource_CatalogRef{CatalogRef: catalog}}))
+	assert.False(t, ctl.matchResource(req, nil))
+	assert.False(t, ctl.matchResource(req, &accessv1.Policy_Spec_Rule_Condition_Resource{}))
+}
+
+func TestCatalogRequestTargetsServicesAndNamespaces(t *testing.T) {
+	ctx, ctl, client := newControllerTest(t)
+	svc, err := client.CoreC().CreateService(ctx, &corev1.Service{Metadata: &metav1.Metadata{Name: "catalog-service.default"}, Spec: &corev1.Service_Spec{}, Status: &corev1.Service_Status{}})
+	require.NoError(t, err)
+	ns, err := client.CoreC().CreateNamespace(ctx, &corev1.Namespace{Metadata: &metav1.Metadata{Name: "catalog-namespace"}, Spec: &corev1.Namespace_Spec{}, Status: &corev1.Namespace_Status{}})
+	require.NoError(t, err)
+	catalog, err := client.AccessC().CreateCatalog(ctx, &accessv1.Catalog{
+		Metadata: &metav1.Metadata{Name: "test-catalog"},
+		Spec: &accessv1.Catalog_Spec{ResourceCollection: &accessv1.Catalog_Spec_ResourceCollection{Service: &accessv1.Catalog_Spec_ResourceCollection_Service{
+			Services:   []string{"", svc.Metadata.Name, "missing.default"},
+			Namespaces: []string{"", ns.Metadata.Name, "missing"},
+		}}},
+	})
+	require.NoError(t, err)
+	req := baseRequest(objRef("User"), nil)
+	req.Spec.Resource = &accessv1.Request_Spec_Resource{Type: &accessv1.Request_Spec_Resource_Catalog_{Catalog: &accessv1.Request_Spec_Resource_Catalog{CatalogRef: umetav1.GetObjectReference(catalog)}}}
+	target, err := ctl.buildTargetPreCondition(ctx, req)
+	require.NoError(t, err)
+	require.NotNil(t, target.GetAny())
+	require.Len(t, target.GetAny().Of, 2)
+	assert.Equal(t, svc.Metadata.Uid, target.GetAny().Of[0].GetServiceRef().Uid)
+	assert.Equal(t, ns.Metadata.Uid, target.GetAny().Of[1].GetNamespaceRef().Uid)
+	assert.Empty(t, target.GetAny().Of[0].GetServiceRef().ResourceVersion)
+	catalog.Spec.ResourceCollection.Service.Services = nil
+	target, err = ctl.buildCatalogTargetPreCondition(ctx, req, catalog)
+	require.NoError(t, err)
+	assert.Equal(t, ns.Metadata.Uid, target.GetNamespaceRef().Uid)
+	catalog.Spec.ResourceCollection.Service.Namespaces = []string{"missing"}
+	_, err = ctl.buildCatalogTargetPreCondition(ctx, req, catalog)
+	assert.ErrorContains(t, err, "does not resolve")
+	catalog.Spec.ResourceCollection = nil
+	_, err = ctl.buildCatalogTargetPreCondition(ctx, req, catalog)
+	assert.ErrorContains(t, err, "no Service resource collection")
+}
+
+func TestInvalidRequestTargetReferencesAreRejected(t *testing.T) {
+	ctx, ctl, _ := newControllerTest(t)
+	for _, resource := range []*accessv1.Request_Spec_Resource{
+		nil,
+		{},
+		{Type: &accessv1.Request_Spec_Resource_ServiceRef{}},
+		{Type: &accessv1.Request_Spec_Resource_Catalog_{Catalog: &accessv1.Request_Spec_Resource_Catalog{}}},
+		{Type: &accessv1.Request_Spec_Resource_Catalog_{Catalog: &accessv1.Request_Spec_Resource_Catalog{CatalogRef: &metav1.ObjectReference{Uid: vutils.UUIDv4()}}}},
+	} {
+		req := baseRequest(objRef("User"), nil)
+		req.Spec.Resource = resource
+		_, err := ctl.buildTargetPreCondition(ctx, req)
+		assert.Error(t, err)
+	}
+	catalog, err := ctl.getCatalog(ctx, nil)
+	require.NoError(t, err)
+	assert.Nil(t, catalog)
+	group, err := ctl.getGroup(ctx, nil)
+	require.NoError(t, err)
+	assert.Nil(t, group)
+}
+
+func TestReviewActionValidationBoundaries(t *testing.T) {
+	base := func() *accessv1.Policy_Spec_Rule_Action_Review {
+		return &accessv1.Policy_Spec_Rule_Action_Review{Steps: []*accessv1.Policy_Spec_Rule_Action_Review_Step{anyStep(userReviewer(objRef("User")))}}
+	}
+	assert.Error(t, validateReviewAction(nil))
+	assert.Error(t, validateReviewAction(&accessv1.Policy_Spec_Rule_Action_Review{}))
+	assert.Error(t, validateReviewAction(&accessv1.Policy_Spec_Rule_Action_Review{Steps: []*accessv1.Policy_Spec_Rule_Action_Review_Step{nil}}))
+	for _, mutate := range []func(*accessv1.Policy_Spec_Rule_Action_Review_Step){
+		func(step *accessv1.Policy_Spec_Rule_Action_Review_Step) { step.Reviewers = nil },
+		func(step *accessv1.Policy_Spec_Rule_Action_Review_Step) { step.ApprovalCount = 1 },
+		func(step *accessv1.Policy_Spec_Rule_Action_Review_Step) {
+			step.ApprovalRequirement = accessv1.Policy_Spec_Rule_Action_Review_Step_ALL
+			step.ApprovalCount = 1
+		},
+		func(step *accessv1.Policy_Spec_Rule_Action_Review_Step) {
+			step.ApprovalRequirement = accessv1.Policy_Spec_Rule_Action_Review_Step_COUNT
+		},
+		func(step *accessv1.Policy_Spec_Rule_Action_Review_Step) {
+			step.ApprovalRequirement = accessv1.Policy_Spec_Rule_Action_Review_Step_APPROVAL_REQUIREMENT_UNSET
+		},
+		func(step *accessv1.Policy_Spec_Rule_Action_Review_Step) { step.ApprovalRequirement = 999 },
+		func(step *accessv1.Policy_Spec_Rule_Action_Review_Step) { step.OnTimeout = 999 },
+	} {
+		review := base()
+		mutate(review.Steps[0])
+		assert.Error(t, validateReviewAction(review))
+	}
+	for _, requirement := range []accessv1.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement{
+		accessv1.Policy_Spec_Rule_Action_Review_Step_ANY, accessv1.Policy_Spec_Rule_Action_Review_Step_ALL, accessv1.Policy_Spec_Rule_Action_Review_Step_COUNT,
+	} {
+		review := base()
+		review.Steps[0].ApprovalRequirement = requirement
+		if requirement == accessv1.Policy_Spec_Rule_Action_Review_Step_COUNT {
+			review.Steps[0].ApprovalCount = 1
+		}
+		require.NoError(t, validateReviewAction(review))
+	}
+}
+
+func TestAccessDurationLimitsAndPolicyCopyIsolation(t *testing.T) {
+	ctl := &Controller{}
+	for _, tc := range []struct{ requested, maximum, want uint32 }{
+		{0, 0, 86400}, {3600, 7200, 3600}, {10800, 7200, 7200}, {0, 7200, 7200},
+	} {
+		req := baseRequest(objRef("User"), objRef("Service"))
+		req.Spec.Duration = &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: tc.requested}}
+		authz := &accessv1.Policy_Spec_Rule_Authorization{MaxAccessDuration: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: tc.maximum}}}
+		ctl.setEffectiveDuration(req, authz)
+		assert.EqualValues(t, tc.want, req.Status.EffectiveDuration.GetSeconds())
+	}
+	original := buildDefaultAccessRequestInlinePolicy(10)
+	saved := pbutils.Clone(original).(*corev1.InlinePolicy)
+	clones := cloneInlinePolicies([]*corev1.InlinePolicy{nil, original})
+	require.Len(t, clones, 1)
+	proto.Reset(clones[0].Spec)
+	assert.True(t, proto.Equal(saved, original))
+	ref := &metav1.ObjectReference{Uid: "uid", Name: "original", ResourceVersion: "version"}
+	copy := cloneRef(ref)
+	assert.Empty(t, copy.ResourceVersion)
+	copy.Name = "changed"
+	assert.Equal(t, "original", ref.Name)
+	assert.Equal(t, "version", ref.ResourceVersion)
+	assert.Nil(t, cloneRef(nil))
+	req := baseRequest(nil, nil)
+	assert.Equal(t, PolicyTriggerNamePrefix+req.Metadata.Name, policyTriggerName(req))
 }
