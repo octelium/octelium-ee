@@ -23,6 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/collector/collector/octeliumotlpexporter"
+	"github.com/octelium/octelium-ee/cluster/collector/collector/octeliumotlpreceiver"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/corev1"
@@ -45,15 +47,22 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/splunkhecexporter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
 	"go.opentelemetry.io/collector/exporter/otlphttpexporter"
+	"go.opentelemetry.io/collector/otelcol"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
+	"go.opentelemetry.io/collector/processor"
+	"go.opentelemetry.io/collector/processor/batchprocessor"
+	"go.opentelemetry.io/collector/processor/memorylimiterprocessor"
+	"go.opentelemetry.io/collector/receiver"
+	"go.opentelemetry.io/collector/service/telemetry/otelconftelemetry"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
@@ -1797,6 +1806,83 @@ func TestCollectorVendorSchemaCompatibility(t *testing.T) {
 			info, err := p.getExporter(t.Context(), collectorExporterFromJSON(t, tc.spec))
 			require.NoError(t, err)
 			require.NoError(t, confmap.NewFromStringMap(info.exporterMap).Unmarshal(tc.factory.CreateDefaultConfig()))
+		})
+	}
+}
+
+func TestSplunkExporterConfigurationLoadsWithRegisteredFactory(t *testing.T) {
+	factories := otelcol.Factories{Telemetry: otelconftelemetry.NewFactory()}
+	var err error
+	factories.Receivers, err = otelcol.MakeFactoryMap[receiver.Factory](octeliumotlpreceiver.NewFactory())
+	require.NoError(t, err)
+	factories.Processors, err = otelcol.MakeFactoryMap[processor.Factory](memorylimiterprocessor.NewFactory(), batchprocessor.NewFactory())
+	require.NoError(t, err)
+	factories.Exporters, err = otelcol.MakeFactoryMap[exporter.Factory](octeliumotlpexporter.NewFactory(), splunkhecexporter.NewFactory())
+	require.NoError(t, err)
+
+	for _, tc := range []struct {
+		name    string
+		signals []enterprisev1.ClusterConfig_Spec_Collector_Pipeline_Type
+	}{
+		{name: "Unreferenced"},
+		{name: "Logs", signals: []enterprisev1.ClusterConfig_Spec_Collector_Pipeline_Type{enterprisev1.ClusterConfig_Spec_Collector_Pipeline_LOGS}},
+		{name: "Metrics", signals: []enterprisev1.ClusterConfig_Spec_Collector_Pipeline_Type{enterprisev1.ClusterConfig_Spec_Collector_Pipeline_METRICS}},
+		{name: "BothSignals", signals: []enterprisev1.ClusterConfig_Spec_Collector_Pipeline_Type{enterprisev1.ClusterConfig_Spec_Collector_Pipeline_LOGS, enterprisev1.ClusterConfig_Spec_Collector_Pipeline_METRICS}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p := newCollectorProviderTest(t)
+			exp := collectorExporterFromJSON(t, `{"splunk":{"endpoint":"https://splunk.example/services/collector","token":{"fromSecret":"mapping-credential"}}}`)
+			exp.Metadata = &metav1.Metadata{Name: "splunk-config"}
+			exp, err := p.octeliumC.EnterpriseC().CreateCollectorExporter(t.Context(), exp)
+			require.NoError(t, err)
+			cc, err := p.octeliumC.EnterpriseV1Utils().GetClusterConfig(t.Context())
+			require.NoError(t, err)
+			cc.Spec.Collector = &enterprisev1.ClusterConfig_Spec_Collector{}
+			for _, signal := range tc.signals {
+				name := "splunk-logs"
+				if signal == enterprisev1.ClusterConfig_Spec_Collector_Pipeline_METRICS {
+					name = "splunk-metrics"
+				}
+				cc.Spec.Collector.Pipelines = append(cc.Spec.Collector.Pipelines, &enterprisev1.ClusterConfig_Spec_Collector_Pipeline{
+					Name: name, Type: signal, Exporters: []string{exp.Metadata.Name},
+				})
+			}
+			_, err = p.octeliumC.EnterpriseC().UpdateClusterConfig(t.Context(), cc)
+			require.NoError(t, err)
+
+			configProvider, err := otelcol.NewConfigProvider((&Server{p: p}).getConfigProviderSettings())
+			require.NoError(t, err)
+			t.Cleanup(func() {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				assert.NoError(t, configProvider.Shutdown(ctx))
+			})
+			configuration, err := configProvider.Get(t.Context(), factories)
+			require.NoError(t, err)
+			require.NoError(t, confmap.Validate(configuration))
+
+			splunkID := component.NewIDWithName(splunkhecexporter.NewFactory().Type(), exp.Metadata.Uid)
+			require.Contains(t, configuration.Exporters, splunkID)
+			assert.NotContains(t, configuration.Exporters, component.NewIDWithName(component.MustNewType("splunk"), exp.Metadata.Uid))
+			decoded, ok := configuration.Exporters[splunkID].(*splunkhecexporter.Config)
+			require.True(t, ok)
+			assert.Equal(t, "https://splunk.example/services/collector", decoded.ClientConfig.Endpoint)
+			assert.Equal(t, "credential-value", string(decoded.Token))
+
+			pipelines := make(map[string][]component.ID)
+			for id, pipeline := range configuration.Service.Pipelines {
+				pipelines[id.String()] = pipeline.Exporters
+			}
+			assert.Equal(t, []component.ID{component.NewIDWithName(octeliumotlpexporter.NewFactory().Type(), "logstore")}, pipelines["logs"])
+			assert.Equal(t, []component.ID{component.NewIDWithName(octeliumotlpexporter.NewFactory().Type(), "metricstore")}, pipelines["metrics"])
+			require.Len(t, pipelines, len(tc.signals)+2)
+			for _, signal := range tc.signals {
+				name := "logs/splunk-logs"
+				if signal == enterprisev1.ClusterConfig_Spec_Collector_Pipeline_METRICS {
+					name = "metrics/splunk-metrics"
+				}
+				assert.Equal(t, []component.ID{splunkID}, pipelines[name])
+			}
 		})
 	}
 }

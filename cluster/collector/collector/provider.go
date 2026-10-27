@@ -894,7 +894,7 @@ func (p *provider) getType(exp *enterprisev1.CollectorExporter) string {
 	case *enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_:
 		return "prometheusremotewrite"
 	case *enterprisev1.CollectorExporter_Spec_Splunk_:
-		return "splunk"
+		return "splunk_hec"
 	case *enterprisev1.CollectorExporter_Spec_Clickhouse_:
 		return "clickhouse"
 	default:
