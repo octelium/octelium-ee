@@ -57,12 +57,13 @@ func (s *Server) listSubjectUser(ctx context.Context, req *caccessv1.ListSubject
 	} else if limit > maxItemsPerPage {
 		limit = maxItemsPerPage
 	}
+	offset := uint64(req.Page) * uint64(limit)
 
 	ds := goqu.From("resources").
 		Prepared(true).
 		Where(filters...).
 		Select(goqu.L(fmt.Sprintf(`CAST(rsc AS %s)`, kindVarchar))).
-		Offset(uint(req.Page * limit)).
+		Offset(uint(offset)).
 		Limit(uint(limit)).
 		OrderAppend(goqu.L(colName).Asc())
 
@@ -115,7 +116,7 @@ func (s *Server) listSubjectUser(ctx context.Context, req *caccessv1.ListSubject
 		}
 	}
 
-	if listMeta.TotalCount > (listMeta.Page+1)*listMeta.ItemsPerPage {
+	if uint64(listMeta.TotalCount) > offset+uint64(limit) {
 		listMeta.HasMore = true
 	}
 

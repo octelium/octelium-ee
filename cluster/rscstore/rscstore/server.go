@@ -687,6 +687,17 @@ func (s *Server) watchCordiumResources(ctx context.Context) error {
 		return err
 	}
 
+	if err := w.Membership(ctx, nil,
+		func(ctx context.Context, item *cordiumv1.Membership) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *cordiumv1.Membership) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *cordiumv1.Membership) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
 	if err := w.GitProvider(ctx, nil,
 		func(ctx context.Context, item *cordiumv1.GitProvider) error {
 			return s.insertResource(ctx, item)

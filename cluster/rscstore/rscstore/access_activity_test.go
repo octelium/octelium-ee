@@ -1001,3 +1001,165 @@ func TestAccessActivityAutomaticIntervals(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 7*24*time.Hour, interval)
 }
+
+func TestAccessDataPointIntervalOverflow(t *testing.T) {
+	from := time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC)
+	for _, tt := range []struct {
+		name string
+		unit time.Duration
+		make func(uint32) *metav1.Duration
+	}{
+		{name: "Milliseconds", unit: time.Millisecond, make: func(value uint32) *metav1.Duration {
+			return &metav1.Duration{Type: &metav1.Duration_Milliseconds{Milliseconds: value}}
+		}},
+		{name: "Seconds", unit: time.Second, make: func(value uint32) *metav1.Duration {
+			return &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: value}}
+		}},
+		{name: "Minutes", unit: time.Minute, make: func(value uint32) *metav1.Duration {
+			return &metav1.Duration{Type: &metav1.Duration_Minutes{Minutes: value}}
+		}},
+		{name: "Hours", unit: time.Hour, make: func(value uint32) *metav1.Duration {
+			return &metav1.Duration{Type: &metav1.Duration_Hours{Hours: value}}
+		}},
+		{name: "Days", unit: 24 * time.Hour, make: func(value uint32) *metav1.Duration {
+			return &metav1.Duration{Type: &metav1.Duration_Days{Days: value}}
+		}},
+		{name: "Weeks", unit: 7 * 24 * time.Hour, make: func(value uint32) *metav1.Duration {
+			return &metav1.Duration{Type: &metav1.Duration_Weeks{Weeks: value}}
+		}},
+		{name: "Months", unit: 30 * 24 * time.Hour, make: func(value uint32) *metav1.Duration {
+			return &metav1.Duration{Type: &metav1.Duration_Months{Months: value}}
+		}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			limit := min(uint64(math.MaxUint32), uint64(math.MaxInt64)/uint64(tt.unit))
+			got, err := getAccessDataPointInterval(from, from.Add(time.Minute), tt.make(uint32(limit)))
+			require.Nil(t, err)
+			assert.Equal(t, (time.Duration(limit) * tt.unit).Truncate(time.Second), got)
+			if limit < math.MaxUint32 {
+				for _, value := range []uint32{uint32(limit + 1), math.MaxUint32} {
+					got, err := getAccessDataPointInterval(from, from.Add(time.Minute), tt.make(value))
+					assert.Equal(t, codes.InvalidArgument, status.Code(err))
+					assert.Zero(t, got)
+				}
+			}
+		})
+	}
+	got, err := getAccessDataPointInterval(from, from.Add(time.Minute),
+		&metav1.Duration{Type: &metav1.Duration_Minutes{Minutes: 307445735}})
+	assert.Equal(t, codes.InvalidArgument, status.Code(err))
+	assert.Zero(t, got)
+}
+
+func TestAccessDataPointBucketLimit(t *testing.T) {
+	for _, tt := range []struct {
+		name     string
+		from     time.Time
+		to       time.Time
+		interval *metav1.Duration
+		count    int
+	}{
+		{name: "TruncatedInterval", from: time.Unix(0, 0), to: time.Unix(1500, 0),
+			interval: &metav1.Duration{Type: &metav1.Duration_Milliseconds{Milliseconds: 1999}}},
+		{name: "InclusiveLimit", from: time.Unix(0, 0), to: time.Unix(1000, 0),
+			interval: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 1}}},
+		{name: "UnalignedLimit", from: time.Unix(0, 900000000), to: time.Unix(1000, 100000000),
+			interval: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 1}}},
+		{name: "NegativeLimit", from: time.Unix(-1000, 0), to: time.Unix(0, 0),
+			interval: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 1}}},
+		{name: "AutomaticLimit", from: time.Unix(0, 0), to: time.Unix(1000*7*24*60*60, 0)},
+		{name: "MaximumBuckets", from: time.Unix(0, 0), to: time.Unix(999, 0), count: 1000,
+			interval: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 1}}},
+		{name: "MaximumTruncatedBuckets", from: time.Unix(0, 0), to: time.Unix(999, 0), count: 1000,
+			interval: &metav1.Duration{Type: &metav1.Duration_Milliseconds{Milliseconds: 1999}}},
+		{name: "MaximumUnalignedBuckets", from: time.Unix(0, 900000000), to: time.Unix(999, 900000000), count: 1000,
+			interval: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 1}}},
+		{name: "MaximumNegativeBuckets", from: time.Unix(-999, 0), to: time.Unix(0, 0), count: 1000,
+			interval: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 1}}},
+		{name: "MaximumAutomaticBuckets", from: time.Unix(0, 0), to: time.Unix(999*7*24*60*60, 0), count: 1000},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			interval, err := getAccessDataPointInterval(tt.from, tt.to, tt.interval)
+			if tt.count == 0 {
+				assert.Equal(t, codes.InvalidArgument, status.Code(err))
+				assert.Zero(t, interval)
+				return
+			}
+			require.Nil(t, err)
+			assert.Len(t, getAccessDataPointBuckets(tt.from, tt.to, interval), tt.count)
+		})
+	}
+}
+
+func TestAccessDataPointBucketAlignment(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		from time.Time
+		to   time.Time
+		want []int64
+	}{
+		{name: "Negative", from: time.Unix(-61, 0), to: time.Unix(-1, 0), want: []int64{-120, -60}},
+		{name: "NegativeFraction", from: time.Unix(-1, 500000000), to: time.Unix(-1, 900000000), want: []int64{-60}},
+		{name: "CrossingEpoch", from: time.Unix(-1, 0), to: time.Unix(1, 0), want: []int64{-60, 0}},
+		{name: "ExactNegativeBoundary", from: time.Unix(-60, 0), to: time.Unix(-60, 0), want: []int64{-60}},
+		{name: "ExactEpoch", from: time.Unix(0, 0), to: time.Unix(0, 0), want: []int64{0}},
+		{name: "PositiveFraction", from: time.Unix(0, 500000000), to: time.Unix(60, 500000000), want: []int64{0, 60}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, getAccessDataPointBuckets(tt.from, tt.to, time.Minute))
+		})
+	}
+}
+
+func TestAccessActivityRPCIntervalLimits(t *testing.T) {
+	env := newRscStoreTestEnv(t)
+	require.NotNil(t, env)
+	client := vaccessv1.NewResourceServiceClient(newRscStoreRPCClient(t, env))
+	for _, tt := range []struct {
+		name     string
+		to       int64
+		interval *metav1.Duration
+	}{
+		{name: "Overflow", to: 60, interval: &metav1.Duration{Type: &metav1.Duration_Minutes{Minutes: 307445735}}},
+		{name: "Truncation", to: 1500, interval: &metav1.Duration{Type: &metav1.Duration_Milliseconds{Milliseconds: 1999}}},
+		{name: "InclusiveBuckets", to: 1000, interval: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 1}}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			res, err := client.GetRequestDataPoint(env.ctx, &vaccessv1.GetRequestDataPointRequest{
+				From: timestamppb.New(time.Unix(0, 0)), To: timestamppb.New(time.Unix(tt.to, 0)), Interval: tt.interval,
+			})
+			assert.Equal(t, codes.InvalidArgument, status.Code(err))
+			assert.Nil(t, res)
+		})
+	}
+}
+
+func TestAccessActivityPreEpochRequests(t *testing.T) {
+	env := newRscStoreTestEnv(t)
+	require.NotNil(t, env)
+	for _, timestamp := range []int64{-120, -119, -61, -1, 0, 60, 61} {
+		insertRscStoreObject(t, env, newTstAccessRequest(&tstAccessRequestOpts{
+			name: fmt.Sprintf("epoch-%d", timestamp), createdAt: time.Unix(timestamp, 0).UTC(),
+			state: accessv1.Request_Status_State_APPROVED,
+		}))
+	}
+	client := vaccessv1.NewResourceServiceClient(newRscStoreRPCClient(t, env))
+	res, err := client.GetRequestDataPoint(env.ctx, &vaccessv1.GetRequestDataPointRequest{
+		From: timestamppb.New(time.Unix(-119, 0)), To: timestamppb.New(time.Unix(60, 0)),
+		Interval: &metav1.Duration{Type: &metav1.Duration_Minutes{Minutes: 1}},
+		GroupBy:  vaccessv1.GetRequestDataPointRequest_STATE,
+	})
+	require.Nil(t, err)
+	require.Len(t, res.Datapoints, 4)
+	for i, count := range []int64{2, 1, 1, 1} {
+		assert.Equal(t, count, res.Datapoints[i].Count)
+		assert.Equal(t, int64(-120+i*60), res.Datapoints[i].Timestamp.Seconds)
+	}
+	require.Len(t, res.Series, 1)
+	assert.Equal(t, "APPROVED", res.Series[0].Key)
+	assert.EqualValues(t, 5, res.Series[0].Total)
+	require.Len(t, res.Series[0].Datapoints, len(res.Datapoints))
+	for i, point := range res.Datapoints {
+		assert.True(t, proto.Equal(point, res.Series[0].Datapoints[i]))
+	}
+}

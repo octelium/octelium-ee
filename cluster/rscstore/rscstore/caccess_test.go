@@ -287,3 +287,34 @@ func TestSubjectUserRPCBoundariesAndFailures(t *testing.T) {
 		assert.Equal(t, codes.Internal, status.Code(err))
 	})
 }
+
+func TestSubjectUserRPCPageOverflow(t *testing.T) {
+	env := newRscStoreTestEnv(t)
+	require.NotNil(t, env)
+	for i := range 5 {
+		insertSubjectUser(t, env, &corev1.User{
+			Metadata: newRscStoreMetadata(fmt.Sprintf("paged-subject-%d", i), time.Now()),
+			Spec:     &corev1.User_Spec{Type: corev1.User_Spec_HUMAN},
+		})
+	}
+	client := caccessv1.NewInternalServiceClient(newRscStoreRPCClient(t, env))
+	for _, tt := range []struct {
+		page  uint32
+		limit uint32
+	}{
+		{page: 1 << 30, limit: 4},
+		{page: 1 << 29, limit: 8},
+		{page: math.MaxUint32, limit: 1},
+		{page: math.MaxUint32},
+		{page: math.MaxUint32, limit: math.MaxUint32},
+	} {
+		t.Run(fmt.Sprintf("%d/%d", tt.page, tt.limit), func(t *testing.T) {
+			res, err := client.ListSubjectUser(env.ctx, &caccessv1.ListSubjectUserRequest{Page: tt.page, ItemsPerPage: tt.limit})
+			require.Nil(t, err)
+			assert.Empty(t, res.Items)
+			assert.Equal(t, tt.page, res.ListResponseMeta.Page)
+			assert.EqualValues(t, 5, res.ListResponseMeta.TotalCount)
+			assert.False(t, res.ListResponseMeta.HasMore)
+		})
+	}
+}

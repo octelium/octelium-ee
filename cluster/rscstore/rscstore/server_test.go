@@ -23,6 +23,8 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vcordiumv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
@@ -388,4 +390,54 @@ func TestServerStartupFailures(t *testing.T) {
 		require.NoError(t, env.srv.db.Close())
 		assert.Error(t, env.srv.Run(env.ctx))
 	})
+}
+
+func TestCordiumMembershipWatchLifecycle(t *testing.T) {
+	env := newRscStoreTestEnv(t)
+	require.NotNil(t, env)
+	ctx, cancel := context.WithCancel(env.ctx)
+	defer cancel()
+	client := env.srv.octeliumC.CordiumC()
+	fixture := newRscStoreWatchTest("cordium", "Membership", &cordiumv1.Membership{
+		Spec: &cordiumv1.Membership_Spec{Role: cordiumv1.Membership_Spec_USER},
+	}, client.CreateMembership, client.UpdateMembership, client.DeleteMembership)
+	existing, err := fixture.create(ctx)
+	require.Nil(t, err)
+	require.Nil(t, env.srv.watchCordiumResources(ctx))
+	require.Nil(t, env.srv.watchCordiumResources(ctx))
+	visibility := vcordiumv1.NewResourceServiceClient(newRscStoreRPCClient(t, env))
+	wait := func(item umetav1.ResourceObjectI) {
+		t.Helper()
+		require.Eventually(t, func() bool {
+			res, err := visibility.ListMembership(ctx, &vcordiumv1.ListMembershipOptions{
+				Common: &vmetav1.CommonListOptions{Query: item.GetMetadata().Name},
+			})
+			return err == nil && len(res.Items) == 1 && proto.Equal(item, res.Items[0])
+		}, 5*time.Second, 10*time.Millisecond)
+	}
+	wait(existing)
+	created, err := fixture.create(ctx)
+	require.Nil(t, err)
+	wait(created)
+	updated := proto.Clone(created).(*cordiumv1.Membership)
+	updated.Spec.Role = cordiumv1.Membership_Spec_ADMIN
+	updated.Metadata.Description = "updated-membership"
+	updated, err = client.UpdateMembership(ctx, updated)
+	require.Nil(t, err)
+	assert.NotEqual(t, created.GetMetadata().ResourceVersion, updated.Metadata.ResourceVersion)
+	wait(updated)
+	require.Nil(t, fixture.remove(ctx, updated.Metadata.Uid))
+	require.Eventually(t, func() bool {
+		res, err := visibility.ListMembership(ctx, &vcordiumv1.ListMembershipOptions{
+			Common: &vmetav1.CommonListOptions{Query: updated.Metadata.Name},
+		})
+		return err == nil && len(res.Items) == 0 && res.GetListResponseMeta().GetTotalCount() == 0
+	}, 5*time.Second, 10*time.Millisecond)
+	assert.True(t, env.srv.isRemovedResource(updated))
+	require.Nil(t, env.srv.insertResource(ctx, created))
+	res, err := visibility.ListMembership(ctx, &vcordiumv1.ListMembershipOptions{
+		Common: &vmetav1.CommonListOptions{Query: updated.Metadata.Name},
+	})
+	require.Nil(t, err)
+	assert.Empty(t, res.Items)
 }

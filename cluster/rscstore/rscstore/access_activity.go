@@ -11,6 +11,7 @@ package rscstore
 import (
 	"context"
 	"fmt"
+	"math"
 	"sort"
 	"time"
 
@@ -23,7 +24,6 @@ import (
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
-	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -83,17 +83,41 @@ func getAccessWindow(from, to *timestamppb.Timestamp) (time.Time, time.Time, err
 
 func getAccessDataPointInterval(from, to time.Time, interval *metav1.Duration) (time.Duration, error) {
 	if interval != nil && interval.Type != nil {
-		d := umetav1.ToDuration(interval).ToGo()
+		var value uint32
+		var unit time.Duration
+		switch interval.Type.(type) {
+		case *metav1.Duration_Milliseconds:
+			value, unit = interval.GetMilliseconds(), time.Millisecond
+		case *metav1.Duration_Seconds:
+			value, unit = interval.GetSeconds(), time.Second
+		case *metav1.Duration_Minutes:
+			value, unit = interval.GetMinutes(), time.Minute
+		case *metav1.Duration_Hours:
+			value, unit = interval.GetHours(), time.Hour
+		case *metav1.Duration_Days:
+			value, unit = interval.GetDays(), 24*time.Hour
+		case *metav1.Duration_Weeks:
+			value, unit = interval.GetWeeks(), 7*24*time.Hour
+		case *metav1.Duration_Months:
+			value, unit = interval.GetMonths(), 30*24*time.Hour
+		default:
+			return 0, grpcutils.InvalidArg("Invalid interval")
+		}
+
+		if uint64(value) > uint64(math.MaxInt64)/uint64(unit) {
+			return 0, grpcutils.InvalidArg("The interval is too large")
+		}
+		d := (time.Duration(value) * unit).Truncate(time.Second)
 		if d < time.Second {
 			return 0, grpcutils.InvalidArg("Invalid interval")
 		}
 
-		if to.Sub(from)/d > accessDataPointMaxBuckets {
+		if getAccessDataPointBucketCount(from, to, d) > accessDataPointMaxBuckets {
 			return 0, grpcutils.InvalidArg(
 				"The time range and the interval produce more than %d buckets", accessDataPointMaxBuckets)
 		}
 
-		return d.Truncate(time.Second), nil
+		return d, nil
 	}
 
 	for _, d := range accessDataPointAutoIntervals {
@@ -103,18 +127,32 @@ func getAccessDataPointInterval(from, to time.Time, interval *metav1.Duration) (
 	}
 
 	d := accessDataPointAutoIntervals[len(accessDataPointAutoIntervals)-1]
-	if to.Sub(from)/d > accessDataPointMaxBuckets {
+	if getAccessDataPointBucketCount(from, to, d) > accessDataPointMaxBuckets {
 		return 0, grpcutils.InvalidArg("The time range is too large")
 	}
 
 	return d, nil
 }
 
+func getAccessDataPointBucket(t time.Time, d time.Duration) int64 {
+	secs := int64(d / time.Second)
+	value := t.Unix()
+	bucket := value / secs
+	if value%secs < 0 {
+		bucket--
+	}
+	return bucket * secs
+}
+
+func getAccessDataPointBucketCount(from, to time.Time, d time.Duration) int64 {
+	return (getAccessDataPointBucket(to, d)-getAccessDataPointBucket(from, d))/int64(d/time.Second) + 1
+}
+
 func getAccessDataPointBuckets(from, to time.Time, d time.Duration) []int64 {
 	secs := int64(d / time.Second)
 
 	var ret []int64
-	for cur := (from.Unix() / secs) * secs; cur <= to.Unix(); cur += secs {
+	for cur := getAccessDataPointBucket(from, d); cur <= to.Unix(); cur += secs {
 		ret = append(ret, cur)
 	}
 

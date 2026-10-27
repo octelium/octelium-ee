@@ -50,6 +50,16 @@ func (c *CordiumV1Watcher) Space(
 	return runWatcherCordiumV1(ctx, c.octeliumC, opts, ucordiumv1.KindSpace, onCreate, onUpdate, onDelete)
 }
 
+func (c *CordiumV1Watcher) Membership(
+	ctx context.Context,
+	opts *watchers.Opts,
+	onCreate func(ctx context.Context, item *cordiumv1.Membership) error,
+	onUpdate func(ctx context.Context, new, old *cordiumv1.Membership) error,
+	onDelete func(ctx context.Context, item *cordiumv1.Membership) error,
+) error {
+	return runWatcherCordiumV1(ctx, c.octeliumC, opts, ucordiumv1.KindMembership, onCreate, onUpdate, onDelete)
+}
+
 func (c *CordiumV1Watcher) GitProvider(
 	ctx context.Context,
 	opts *watchers.Opts,
