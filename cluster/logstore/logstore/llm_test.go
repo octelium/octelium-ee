@@ -9,6 +9,7 @@
 package logstore
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -19,7 +20,11 @@ import (
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/utils/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type llmGuardrailOptions struct {
@@ -1419,5 +1424,176 @@ func TestLLMSummaryComparison(t *testing.T) {
 			CompareFrom: pbutils.Timestamp(now.Add(-3 * time.Hour)),
 		})
 		assert.NotNil(t, err)
+	}
+}
+
+func TestLLMRPCAllDimensionsAndMetrics(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	client := vllmv1.NewLLMServiceClient(newLogStoreRPCClient(t, ts))
+	ref := randomObjectReference()
+	for i := range 3 {
+		insertLLMAccessLog(t, ts, &llmAccessLogOptions{
+			CreatedAt: time.Now().Add(time.Duration(i) * time.Second), Duration: time.Duration(i+1) * time.Second,
+			UserRef: ref, SessionRef: ref, DeviceRef: ref, ServiceRef: ref, NamespaceRef: ref, RegionRef: ref, PolicyRef: ref,
+			ModelRequested: "requested", ModelEffective: "effective", ModelReported: "reported", ModelPlugin: "model-plugin",
+			HasUsage: true, InputTokens: 10, OutputTokens: 5, TotalTokens: 15,
+			TimeToFirstTokenMS: 20, HTTPCode: 200, UserAgent: "client",
+			Tools: []string{"offered"}, CalledTools: []string{"called"}, RemovedTools: []string{"removed"},
+			Guardrails:      []*llmGuardrailOptions{{Result: corev1.AccessLog_Entry_Info_LLM_Guardrail_MODIFIED, Plugin: "guardrail"}},
+			RateLimitPlugin: "rate-limit", CachePlugin: "cache", RouterPlugin: "router", RouterRoute: "route", RouterModel: "routed",
+			ReasoningEffort: "high", RawFinishReason: "stop",
+		})
+	}
+	for value := range vllmv1.Dimension_name {
+		dimension := vllmv1.Dimension(value)
+		if dimension == vllmv1.Dimension_DIMENSION_UNSET {
+			continue
+		}
+		t.Run("Dimension/"+dimension.String(), func(t *testing.T) {
+			res, err := client.ListTopDimension(ts.ctx, &vllmv1.ListTopDimensionRequest{Dimension: dimension, Limit: 1})
+			require.Nil(t, err)
+			assert.GreaterOrEqual(t, res.TotalCount, uint64(len(res.Items)))
+			for _, item := range res.Items {
+				assert.NotEmpty(t, item.Key)
+				assert.Greater(t, item.Stats.GetRequests().GetTotal(), uint64(0))
+			}
+		})
+	}
+	for value := range vllmv1.Metric_name {
+		metric := vllmv1.Metric(value)
+		t.Run("Metric/"+metric.String(), func(t *testing.T) {
+			res, err := client.ListTopDimension(ts.ctx, &vllmv1.ListTopDimensionRequest{Dimension: vllmv1.Dimension_MODEL, OrderBy: metric})
+			require.Nil(t, err)
+			require.Len(t, res.Items, 1)
+			assert.EqualValues(t, 3, res.Items[0].Stats.GetRequests().GetTotal())
+			if llmMetricNeedsQuantiles(metric) {
+				assert.Greater(t, res.Items[0].Stats.GetLatency().GetP95Ms(), float64(0))
+				assert.Greater(t, res.Items[0].Stats.GetTimeToFirstToken().GetP95Ms(), float64(0))
+			}
+		})
+	}
+}
+
+func TestLLMRPCListOrderingAndPagination(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	client := vllmv1.NewLLMServiceClient(newLogStoreRPCClient(t, ts))
+	var logs []*corev1.AccessLog
+	base := time.Now().UTC().Add(-time.Hour)
+	for i := range 3 {
+		log := newLLMAccessLog(&llmAccessLogOptions{
+			CreatedAt: base.Add(time.Duration(i) * time.Minute), Duration: time.Duration(i+1) * time.Second,
+			HasUsage: true, InputTokens: uint64(i + 1), OutputTokens: uint64(i + 1), TotalTokens: uint64(2 * (i + 1)),
+			EstimatedInputTokens: uint64(i + 1), ToolCallCount: uint32(i + 1), TimeToFirstTokenMS: uint32(10 * (i + 1)),
+		})
+		logs = append(logs, log)
+		insertLogJSON(t, ts.srv, "access_logs", marshalLog(t, log))
+	}
+	for value := range vllmv1.ListAccessLogRequest_OrderBy_Type_name {
+		for _, mode := range []vllmv1.ListAccessLogRequest_OrderBy_Mode{vllmv1.ListAccessLogRequest_OrderBy_ASC, vllmv1.ListAccessLogRequest_OrderBy_DESC} {
+			order := vllmv1.ListAccessLogRequest_OrderBy_Type(value)
+			t.Run(order.String()+"/"+mode.String(), func(t *testing.T) {
+				for page := range uint32(3) {
+					res, err := client.ListAccessLog(ts.ctx, &vllmv1.ListAccessLogRequest{
+						Page: page, ItemsPerPage: 1, OrderBy: &vllmv1.ListAccessLogRequest_OrderBy{Type: order, Mode: mode},
+					})
+					require.Nil(t, err)
+					require.Len(t, res.Items, 1)
+					index := int(page)
+					if mode == vllmv1.ListAccessLogRequest_OrderBy_DESC {
+						index = 2 - index
+					}
+					assert.Equal(t, logs[index].Metadata.Id, res.Items[0].Metadata.Id)
+					assert.EqualValues(t, 3, res.ListResponseMeta.TotalCount)
+					assert.Equal(t, page < 2, res.ListResponseMeta.HasMore)
+				}
+			})
+		}
+	}
+	_, err := client.ListAccessLog(ts.ctx, &vllmv1.ListAccessLogRequest{Page: 100001})
+	assert.Equal(t, codes.InvalidArgument, status.Code(err))
+	_, err = client.ListAccessLog(ts.ctx, &vllmv1.ListAccessLogRequest{OrderBy: &vllmv1.ListAccessLogRequest_OrderBy{Type: 999}})
+	assert.Equal(t, codes.InvalidArgument, status.Code(err))
+}
+
+func TestLLMRPCStringFilterBoundaries(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	client := vllmv1.NewLLMServiceClient(newLogStoreRPCClient(t, ts))
+	insertLLMAccessLog(t, ts, &llmAccessLogOptions{ModelEffective: "ordinary-model", Tools: []string{"ordinary-tool"}})
+	fields := (&vllmv1.Filter{}).ProtoReflect().Descriptor().Fields()
+	for i := range fields.Len() {
+		field := fields.Get(i)
+		if !field.IsList() || field.Kind() != protoreflect.StringKind {
+			continue
+		}
+		t.Run(string(field.Name()), func(t *testing.T) {
+			for _, values := range [][]string{{""}, {strings.Repeat("x", 257)}, make([]string, llmMaxFilterValues+1)} {
+				filter := &vllmv1.Filter{}
+				list := filter.ProtoReflect().Mutable(field).List()
+				for _, value := range values {
+					list.Append(protoreflect.ValueOfString(value))
+				}
+				_, err := client.ListAccessLog(ts.ctx, &vllmv1.ListAccessLogRequest{Filter: filter})
+				assert.Equal(t, codes.InvalidArgument, status.Code(err))
+			}
+			for _, values := range [][]string{{strings.Repeat("x", 256)}, {"' OR TRUE --"}, {"%_\\"}} {
+				filter := &vllmv1.Filter{}
+				list := filter.ProtoReflect().Mutable(field).List()
+				for _, value := range values {
+					list.Append(protoreflect.ValueOfString(value))
+				}
+				res, err := client.ListAccessLog(ts.ctx, &vllmv1.ListAccessLogRequest{Filter: filter})
+				require.Nil(t, err)
+				assert.Empty(t, res.Items)
+			}
+		})
+	}
+}
+
+func TestLLMRPCFilterAndLimitValidation(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	client := vllmv1.NewLLMServiceClient(newLogStoreRPCClient(t, ts))
+	for _, filter := range []*vllmv1.Filter{
+		{EntryScope: 999},
+		{Models: []string{"model"}, ModelField: 999},
+		{HttpStatusCodes: []uint32{99}},
+		{HttpStatusCodes: []uint32{600}},
+		{HttpStatusCodes: make([]uint32, llmMaxFilterValues+1)},
+		{HttpStatusClasses: []vllmv1.HTTPStatusClass{999}},
+	} {
+		_, err := client.ListAccessLog(ts.ctx, &vllmv1.ListAccessLogRequest{Filter: filter})
+		assert.Equal(t, codes.InvalidArgument, status.Code(err))
+	}
+	for _, class := range []vllmv1.HTTPStatusClass{vllmv1.HTTPStatusClass_SUCCESS, vllmv1.HTTPStatusClass_REDIRECT, vllmv1.HTTPStatusClass_CLIENT_ERROR, vllmv1.HTTPStatusClass_SERVER_ERROR} {
+		res, err := client.ListAccessLog(ts.ctx, &vllmv1.ListAccessLogRequest{Filter: &vllmv1.Filter{HttpStatusClasses: []vllmv1.HTTPStatusClass{class}}})
+		require.Nil(t, err)
+		assert.Empty(t, res.Items)
+	}
+	for _, req := range []*vllmv1.ListTopDimensionRequest{
+		{Dimension: 999}, {Dimension: vllmv1.Dimension_MODEL, OrderBy: 999}, {Dimension: vllmv1.Dimension_MODEL, Limit: 101},
+	} {
+		_, err := client.ListTopDimension(ts.ctx, req)
+		assert.Equal(t, codes.InvalidArgument, status.Code(err))
+	}
+	for _, req := range []*vllmv1.ListTopModelRequest{{Field: 999}, {Limit: 101}} {
+		_, err := client.ListTopModel(ts.ctx, req)
+		assert.Equal(t, codes.InvalidArgument, status.Code(err))
+	}
+	for _, req := range []*vllmv1.ListTopToolRequest{{Scope: 999}, {Limit: 101}} {
+		_, err := client.ListTopTool(ts.ctx, req)
+		assert.Equal(t, codes.InvalidArgument, status.Code(err))
+	}
+	for _, req := range []*vllmv1.GetSummaryRequest{
+		{Breakdowns: make([]*vllmv1.BreakdownRequest, llmMaxBreakdowns+1)},
+		{Cardinalities: make([]vllmv1.Dimension, llmMaxCardinalities+1)},
+		{Cardinalities: []vllmv1.Dimension{vllmv1.Dimension_MODEL, vllmv1.Dimension_MODEL}},
+		{Breakdowns: []*vllmv1.BreakdownRequest{{Dimension: vllmv1.Dimension_MODEL}, {Dimension: vllmv1.Dimension_MODEL}}},
+		{Breakdowns: []*vllmv1.BreakdownRequest{{Dimension: vllmv1.Dimension_MODEL, Limit: 101}}},
+	} {
+		_, err := client.GetSummary(ts.ctx, req)
+		assert.Equal(t, codes.InvalidArgument, status.Code(err))
 	}
 }

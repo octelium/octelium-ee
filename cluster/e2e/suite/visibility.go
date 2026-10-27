@@ -21,6 +21,7 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/cluster/e2e/harness"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
@@ -482,4 +483,183 @@ func testAuthenticationLogTrail(t *testing.T, ch *harness.H) {
 		assert.True(t, res.TotalSession <= res.TotalNumber)
 		assert.True(t, res.TotalUser <= res.TotalNumber)
 	})
+}
+
+func testLogStoreWindowPagination(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	usr := h.CreateWorkloadUser(t, &corev1.User_Spec_Authorization{InlinePolicies: harness.InlineAllowAny("allow")})
+	svc := h.NewPublicService(t, "default")
+	probe := h.Probe(t, usr, svc)
+	from := pbutils.Timestamp(time.Now().Add(-time.Minute))
+	for range 12 {
+		probe.MustBeAllowed(t)
+	}
+	to := pbutils.Timestamp(time.Now().Add(time.Minute))
+	h.Eventually(t, "the windowed log pages to match the complete scoped list", eeharness.IngestionBudget,
+		func(ctx context.Context) error {
+			all, err := h.AccessLogC().ListAccessLog(ctx, &visibilityv1.ListAccessLogRequest{
+				UserRef: umetav1.GetObjectReference(usr), ServiceRef: umetav1.GetObjectReference(svc),
+				From: from, To: to, Common: &vmetav1.CommonListOptions{ItemsPerPage: 1000},
+			})
+			if err != nil {
+				return err
+			}
+			if len(all.Items) < 12 || uint32(len(all.Items)) != all.GetListResponseMeta().GetTotalCount() {
+				return errors.Errorf("the complete window has not converged")
+			}
+			want := make(map[string]int)
+			for _, itm := range all.Items {
+				want[itm.Metadata.Id]++
+			}
+			seen := make(map[string]int)
+			count := 0
+			for page := uint32(0); ; page++ {
+				res, err := h.AccessLogC().ListAccessLog(ctx, &visibilityv1.ListAccessLogRequest{
+					UserRef: umetav1.GetObjectReference(usr), ServiceRef: umetav1.GetObjectReference(svc),
+					From: from, To: to, Common: &vmetav1.CommonListOptions{Page: page, ItemsPerPage: 3},
+				})
+				if err != nil {
+					return err
+				}
+				meta := res.GetListResponseMeta()
+				if meta.TotalCount != uint32(len(all.Items)) || meta.Page != page || meta.ItemsPerPage != 3 || len(res.Items) > 3 {
+					return errors.Errorf("page %d has inconsistent pagination metadata", page)
+				}
+				for _, itm := range res.Items {
+					if seen[itm.Metadata.Id] >= want[itm.Metadata.Id] || itm.Entry.Common.UserRef.Uid != usr.Metadata.Uid || itm.Entry.Common.ServiceRef.Uid != svc.Metadata.Uid {
+						return errors.Errorf("page %d has a duplicate or unexpected log", page)
+					}
+					seen[itm.Metadata.Id]++
+					count++
+				}
+				if !meta.HasMore {
+					break
+				}
+				if len(res.Items) != 3 || page >= uint32(len(all.Items)) {
+					return errors.Errorf("pagination did not advance")
+				}
+			}
+			if count != len(all.Items) {
+				return errors.Errorf("pagination returned %d of %d logs", count, len(all.Items))
+			}
+			return nil
+		})
+}
+
+func testLogStoreWindowedSeries(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	svc := h.NewPublicService(t, "default")
+	allowed := h.CreateWorkloadUser(t, &corev1.User_Spec_Authorization{InlinePolicies: harness.InlineAllowAny("allow")})
+	denied := h.CreateWorkloadUser(t, nil)
+	allowedProbe := h.Probe(t, allowed, svc)
+	deniedProbe := h.Probe(t, denied, svc)
+	from := pbutils.Timestamp(time.Now().Add(-5 * time.Minute).Truncate(time.Minute))
+	for range 3 {
+		allowedProbe.MustBeAllowed(t)
+		deniedProbe.MustBeDenied(t)
+	}
+	to := pbutils.Timestamp(time.Now().Add(5 * time.Minute).Truncate(time.Minute))
+	previousFrom := pbutils.Timestamp(from.AsTime().Add(-24 * time.Hour))
+	previousTo := pbutils.Timestamp(previousFrom.AsTime().Add(time.Hour))
+	h.Eventually(t, "windowed totals, status series and ranking remainder to agree", eeharness.IngestionBudget,
+		func(ctx context.Context) error {
+			ref := umetav1.GetObjectReference(svc)
+			summary, err := h.AccessLogC().GetAccessLogSummary(ctx, &visibilityv1.GetAccessLogSummaryRequest{
+				ServiceRef: ref, From: from, To: to, CompareFrom: previousFrom, CompareTo: previousTo,
+			})
+			if err != nil {
+				return err
+			}
+			if summary.TotalAllowed < 3 || summary.TotalDenied < 3 || summary.Previous == nil || summary.Previous.TotalNumber != 0 {
+				return errors.Errorf("the summary or its comparison window has not converged")
+			}
+			points, err := h.AccessLogC().GetAccessLogDataPoint(ctx, &visibilityv1.GetAccessLogDataPointRequest{
+				ServiceRef: ref, From: from, To: to, Interval: eeharness.Minutes(1), GroupBy: visibilityv1.GetAccessLogDataPointRequest_STATUS,
+			})
+			if err != nil {
+				return err
+			}
+			var total int64
+			for i, point := range points.Datapoints {
+				total += point.Count
+				if i > 0 && point.Timestamp.AsTime().Sub(points.Datapoints[i-1].Timestamp.AsTime()) != time.Minute {
+					return errors.Errorf("the buckets are not continuous minutes")
+				}
+			}
+			if uint64(total) != summary.TotalNumber || len(points.Series) != 2 || len(points.Datapoints) < 2 {
+				return errors.Errorf("the series and summary totals differ")
+			}
+			if points.Datapoints[0].Count != 0 || points.Datapoints[len(points.Datapoints)-1].Count != 0 {
+				return errors.Errorf("empty edge buckets were not zero filled")
+			}
+			for _, series := range points.Series {
+				want := summary.TotalAllowed
+				if series.Key == "DENIED" {
+					want = summary.TotalDenied
+				} else if series.Key != "ALLOWED" {
+					return errors.Errorf("unexpected status series %q", series.Key)
+				}
+				var count int64
+				for _, point := range series.Datapoints {
+					count += point.Count
+				}
+				if uint64(series.Total) != want || count != series.Total || len(series.Datapoints) != len(points.Datapoints) {
+					return errors.Errorf("the %s series is inconsistent", series.Key)
+				}
+			}
+			top, err := h.AccessLogC().ListAccessLogTopUser(ctx, &visibilityv1.ListAccessLogTopUserRequest{ServiceRef: ref, From: from, To: to, Limit: 1})
+			if err != nil {
+				return err
+			}
+			if len(top.Items) != 1 || top.TotalCount != 2 || uint64(top.Items[0].Count)+top.TotalOther != summary.TotalNumber {
+				return errors.Errorf("the limited ranking does not account for all requests")
+			}
+			return nil
+		})
+}
+
+func testLogStoreAuditResourceTrail(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	from := pbutils.Timestamp(time.Now().Add(-time.Minute))
+	usr := h.CreateWorkloadUser(t, nil)
+	ref := umetav1.GetObjectReference(usr)
+	wait := func(method string) {
+		t.Helper()
+		h.Eventually(t, "the audit log to retain "+method+" for the User", eeharness.IngestionBudget,
+			func(ctx context.Context) error {
+				res, err := h.AuditLogC().ListAuditLog(ctx, &visibilityv1.ListAuditLogRequest{
+					ResourceRef: ref, From: from, Common: &vmetav1.CommonListOptions{ItemsPerPage: 100},
+				})
+				if err != nil {
+					return err
+				}
+				for _, itm := range res.Items {
+					if itm.Entry.ResourceRef.GetUid() != usr.Metadata.Uid {
+						return errors.Errorf("a scoped audit entry belongs to another resource")
+					}
+					if itm.Entry.Method == method && itm.Metadata.Id != "" && itm.Entry.SessionRef.GetUid() != "" {
+						return nil
+					}
+				}
+				return errors.Errorf("the %s audit entry is missing", method)
+			})
+	}
+	wait("CreateUser")
+	usr.Metadata.DisplayName = h.Name()
+	usr = h.UpdateUser(t, usr)
+	wait("UpdateUser")
+	_, err := h.CoreC().DeleteUser(t.Context(), &metav1.DeleteOptions{Uid: usr.Metadata.Uid})
+	require.Nil(t, err)
+	wait("DeleteUser")
+	res, err := h.AuditLogC().ListAuditLog(t.Context(), &visibilityv1.ListAuditLogRequest{
+		ResourceRef: ref, From: from, Common: &vmetav1.CommonListOptions{ItemsPerPage: 100},
+	})
+	require.Nil(t, err)
+	var methods []string
+	for _, itm := range res.Items {
+		methods = append(methods, itm.Entry.Method)
+	}
+	assert.Contains(t, methods, "CreateUser")
+	assert.Contains(t, methods, "UpdateUser")
+	assert.Contains(t, methods, "DeleteUser")
 }

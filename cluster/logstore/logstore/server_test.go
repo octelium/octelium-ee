@@ -11,6 +11,8 @@ package logstore
 import (
 	"context"
 	"fmt"
+	"net"
+	"strings"
 	"testing"
 	"time"
 
@@ -20,6 +22,7 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vllmv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/admin"
@@ -30,11 +33,17 @@ import (
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/test/bufconn"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 type testServer struct {
@@ -1276,5 +1285,250 @@ func TestLimitQueries(t *testing.T) {
 				return nil, nil
 			})
 		assert.Nil(t, err, "%+v", err)
+	}
+}
+
+func newLogStoreRPCClient(t *testing.T, ts *testServer) *grpc.ClientConn {
+	t.Helper()
+	listener := bufconn.Listen(1024 * 1024)
+	srv := grpc.NewServer(grpc.UnaryInterceptor(ts.srv.limitQueries))
+	processor, _ := startTestLogProcessor(t, ts.ctx, ts.srv)
+	plogotlp.RegisterGRPCServer(srv, processor)
+	visibilityv1.RegisterAccessLogServiceServer(srv, &srvAccessLog{s: ts.srv})
+	visibilityv1.RegisterAuthenticationLogServiceServer(srv, &srvAuthenticationLog{s: ts.srv})
+	visibilityv1.RegisterAuditLogServiceServer(srv, &srvAuditLog{s: ts.srv})
+	visibilityv1.RegisterComponentLogServiceServer(srv, &srvComponentLog{s: ts.srv})
+	vllmv1.RegisterLLMServiceServer(srv, &srvLLM{s: ts.srv})
+	go func() { _ = srv.Serve(listener) }()
+	conn, err := grpc.NewClient("passthrough:///logstore-test",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return listener.Dial() }),
+	)
+	require.Nil(t, err)
+	t.Cleanup(func() {
+		assert.Nil(t, conn.Close())
+		srv.Stop()
+		assert.Nil(t, listener.Close())
+	})
+	return conn
+}
+
+func logStoreRPCMethods() []protoreflect.MethodDescriptor {
+	var ret []protoreflect.MethodDescriptor
+	for _, service := range []protoreflect.ServiceDescriptor{
+		visibilityv1.File_visibilityv1_proto.Services().ByName("AccessLogService"),
+		visibilityv1.File_visibilityv1_proto.Services().ByName("AuthenticationLogService"),
+		visibilityv1.File_visibilityv1_proto.Services().ByName("AuditLogService"),
+		visibilityv1.File_visibilityv1_proto.Services().ByName("ComponentLogService"),
+		vllmv1.File_vllmv1_proto.Services().ByName("LLMService"),
+	} {
+		for i := range service.Methods().Len() {
+			ret = append(ret, service.Methods().Get(i))
+		}
+	}
+	return ret
+}
+
+func newLogStoreRPCRequest(method protoreflect.MethodDescriptor) *dynamicpb.Message {
+	ret := dynamicpb.NewMessage(method.Input())
+	if string(method.Name()) == "ListTopDimension" {
+		ret.Set(ret.Descriptor().Fields().ByName("dimension"), protoreflect.ValueOfEnum(protoreflect.EnumNumber(vllmv1.Dimension_STATUS)))
+	}
+	return ret
+}
+
+func logStoreRPCName(method protoreflect.MethodDescriptor) string {
+	return "/" + string(method.Parent().FullName()) + "/" + string(method.Name())
+}
+
+func TestLogStoreRPCDefaultsAndFailures(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	conn := newLogStoreRPCClient(t, ts)
+	for _, method := range logStoreRPCMethods() {
+		t.Run(string(method.FullName()), func(t *testing.T) {
+			res := dynamicpb.NewMessage(method.Output())
+			err := conn.Invoke(ts.ctx, logStoreRPCName(method), newLogStoreRPCRequest(method), res)
+			if string(method.Name()) == "GetSSHSession" {
+				assert.Equal(t, codes.NotFound, status.Code(err))
+				return
+			}
+			require.Nil(t, err)
+			fields := res.Descriptor().Fields()
+			if field := fields.ByName("items"); field != nil {
+				assert.Zero(t, res.Get(field).List().Len())
+			}
+			for _, name := range []protoreflect.Name{"totalCount", "totalNumber", "totalOther"} {
+				if field := fields.ByName(name); field != nil {
+					assert.EqualValues(t, 0, res.Get(field).Interface())
+				}
+			}
+			if field := fields.ByName("previous"); field != nil {
+				assert.False(t, res.Has(field))
+			}
+		})
+	}
+	t.Run("DatabaseUnavailable", func(t *testing.T) {
+		require.Nil(t, ts.srv.db.Close())
+		for _, method := range logStoreRPCMethods() {
+			res := dynamicpb.NewMessage(method.Output())
+			err := conn.Invoke(ts.ctx, logStoreRPCName(method), newLogStoreRPCRequest(method), res)
+			assert.NotNil(t, err, "%s", method.FullName())
+		}
+	})
+}
+
+func TestLogStoreRPCReferenceValidation(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	conn := newLogStoreRPCClient(t, ts)
+	for _, method := range logStoreRPCMethods() {
+		request := newLogStoreRPCRequest(method)
+		container := request.ProtoReflect()
+		if field := request.Descriptor().Fields().ByName("filter"); field != nil {
+			container = request.Mutable(field).Message()
+		}
+		fields := container.Descriptor().Fields()
+		for i := range fields.Len() {
+			field := fields.Get(i)
+			if field.Name() == "matchInlinePolicyRef" || (method.Name() == "GetAuditLogSummary" && field.Name() == "resourceRef") {
+				continue
+			}
+			if field.Kind() != protoreflect.MessageKind || field.Message().FullName() != "octelium.api.main.meta.v1.ObjectReference" {
+				continue
+			}
+			t.Run(string(method.FullName())+"/"+string(field.Name()), func(t *testing.T) {
+				for _, ref := range []*metav1.ObjectReference{{}, {Uid: "invalid-uid"}} {
+					container.Set(field, protoreflect.ValueOfMessage(ref.ProtoReflect()))
+					res := dynamicpb.NewMessage(method.Output())
+					err := conn.Invoke(ts.ctx, logStoreRPCName(method), request, res)
+					assert.Equal(t, codes.InvalidArgument, status.Code(err))
+				}
+				container.Clear(field)
+			})
+		}
+	}
+}
+
+func TestLogStoreRPCIngestionVisibility(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	conn := newLogStoreRPCClient(t, ts)
+	now := time.Now().UTC()
+	access := newAccessLog(&accessLogOptions{CreatedAt: now})
+	authentication := newAuthenticationLog(&authenticationLogOptions{CreatedAt: now})
+	audit := newAuditLog(&auditLogOptions{CreatedAt: now})
+	component := newComponentLog(now, corev1.ComponentLog_Entry_INFO, "rpc-ingestion")
+	_, err := plogotlp.NewGRPCClient(conn).Export(ts.ctx, newExportRequest(
+		marshalLog(t, access), marshalLog(t, authentication), marshalLog(t, audit), marshalLog(t, component),
+	))
+	require.Nil(t, err)
+	for _, method := range logStoreRPCMethods() {
+		var want proto.Message
+		switch method.Name() {
+		case "ListAccessLog":
+			if method.Parent().Name() == "AccessLogService" {
+				want = access
+			}
+		case "ListAuthenticationLog":
+			want = authentication
+		case "ListAuditLog":
+			want = audit
+		case "ListComponentLog":
+			want = component
+		}
+		if want == nil {
+			continue
+		}
+		res := dynamicpb.NewMessage(method.Output())
+		require.Nil(t, conn.Invoke(ts.ctx, logStoreRPCName(method), newLogStoreRPCRequest(method), res))
+		items := res.Get(res.Descriptor().Fields().ByName("items")).List()
+		require.Equal(t, 1, items.Len())
+		got := want.ProtoReflect().Type().New().Interface()
+		data, err := proto.Marshal(items.Get(0).Message().Interface())
+		require.Nil(t, err)
+		require.Nil(t, proto.Unmarshal(data, got))
+		assert.True(t, proto.Equal(want, got))
+	}
+}
+
+func TestLogQueryLimiterReleasesSlots(t *testing.T) {
+	srv := &Server{querySem: make(chan struct{}, 1)}
+	info := &grpc.UnaryServerInfo{FullMethod: "/visibility/Test"}
+	wantErr := status.Error(codes.Internal, "handler failed")
+	before := time.Now()
+	_, err := srv.limitQueries(context.Background(), "request", info, func(ctx context.Context, req any) (any, error) {
+		deadline, ok := ctx.Deadline()
+		assert.True(t, ok)
+		assert.WithinDuration(t, before.Add(queryTimeout), deadline, time.Second)
+		assert.Equal(t, "request", req)
+		return nil, wantErr
+	})
+	assert.ErrorIs(t, err, wantErr)
+	assert.Empty(t, srv.querySem)
+	assert.Panics(t, func() {
+		_, _ = srv.limitQueries(context.Background(), nil, info, func(context.Context, any) (any, error) { panic("handler") })
+	})
+	assert.Empty(t, srv.querySem)
+}
+
+func TestLogStoreCleanupLoopCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan struct{})
+	go func() { defer close(done); (&Server{}).startCleanupLoop(ctx) }()
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("Cleanup loop did not stop")
+	}
+}
+
+func TestLogStoreClosedDatabaseStartup(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	require.Nil(t, ts.srv.db.Close())
+	assert.NotNil(t, ts.srv.Run(ts.ctx))
+}
+
+func TestLogRPCComponentSelectorBoundaries(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	conn := newLogStoreRPCClient(t, ts)
+	for _, method := range logStoreRPCMethods() {
+		if method.Parent().Name() != "ComponentLogService" {
+			continue
+		}
+		request := newLogStoreRPCRequest(method)
+		componentField := request.Descriptor().Fields().ByName("component")
+		if componentField == nil {
+			continue
+		}
+		component := request.Mutable(componentField).Message()
+		for _, name := range []protoreflect.Name{"type", "namespace", "uid"} {
+			field := component.Descriptor().Fields().ByName(name)
+			for _, length := range []int{120, 121} {
+				component.Set(field, protoreflect.ValueOfString(strings.Repeat("x", length)))
+				res := dynamicpb.NewMessage(method.Output())
+				err := conn.Invoke(ts.ctx, logStoreRPCName(method), request, res)
+				if length == 120 {
+					assert.Nil(t, err)
+				} else {
+					assert.Equal(t, codes.InvalidArgument, status.Code(err))
+				}
+			}
+			component.Clear(field)
+		}
+		levelsField := request.Descriptor().Fields().ByName("levels")
+		if levelsField == nil {
+			continue
+		}
+		levels := request.Mutable(levelsField).List()
+		for range maxComponentLevels + 1 {
+			levels.Append(protoreflect.ValueOfEnum(0))
+		}
+		err := conn.Invoke(ts.ctx, logStoreRPCName(method), request, dynamicpb.NewMessage(method.Output()))
+		assert.Equal(t, codes.InvalidArgument, status.Code(err))
 	}
 }

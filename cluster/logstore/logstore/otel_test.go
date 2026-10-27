@@ -10,6 +10,8 @@ package logstore
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -19,6 +21,8 @@ import (
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 )
 
@@ -239,4 +243,161 @@ func TestOTLPDropsDebugComponentLogsInProduction(t *testing.T) {
 		assert.Nil(t, err, "%+v", err)
 		assert.Equal(t, 2, getTableCount(t, ts.srv, "component_logs"))
 	}
+}
+
+func TestParseLogRecordEncodingsAndLimits(t *testing.T) {
+	for _, tt := range []struct {
+		kind  string
+		table logTable
+		limit int
+	}{
+		{kind: "AccessLog", table: logTableAccess, limit: maxAccessLogSize},
+		{kind: "ComponentLog", table: logTableComponent, limit: maxLogRecordSize},
+		{kind: "AuthenticationLog", table: logTableAuthentication, limit: maxLogRecordSize},
+		{kind: "AuditLog", table: logTableAudit, limit: maxLogRecordSize},
+	} {
+		t.Run(tt.kind, func(t *testing.T) {
+			base := `{"kind":"` + tt.kind + `","padding":""}`
+			body := strings.Replace(base, `"padding":""`, `"padding":"`+strings.Repeat("x", tt.limit-len(base))+`"`, 1)
+			require.Len(t, body, tt.limit)
+			lr := plog.NewLogRecord()
+			lr.Body().SetStr(body)
+			parsed, err := parseLogRecord(lr)
+			require.Nil(t, err)
+			assert.Equal(t, tt.table, parsed.table)
+			assert.Equal(t, body, string(parsed.data))
+			lr.Body().SetStr(body + " ")
+			_, err = parseLogRecord(lr)
+			assert.NotNil(t, err)
+			lr.Body().SetEmptyMap().PutStr("kind", tt.kind)
+			parsed, err = parseLogRecord(lr)
+			require.Nil(t, err)
+			before := append([]byte(nil), parsed.data...)
+			lr.Body().Map().PutStr("kind", "changed")
+			assert.Equal(t, before, parsed.data)
+		})
+	}
+	for _, setup := range []func(plog.LogRecord){
+		func(lr plog.LogRecord) { lr.Body().SetStr("") },
+		func(lr plog.LogRecord) { lr.Body().SetBool(true) },
+		func(lr plog.LogRecord) { lr.Body().SetEmptyBytes().FromRaw([]byte("data")) },
+		func(lr plog.LogRecord) { lr.Body().SetEmptySlice() },
+		func(lr plog.LogRecord) { lr.Body().SetEmptyMap().PutDouble("value", math.NaN()) },
+	} {
+		lr := plog.NewLogRecord()
+		setup(lr)
+		_, err := parseLogRecord(lr)
+		assert.NotNil(t, err)
+	}
+}
+
+func TestOTLPExportCancellationAndBackpressure(t *testing.T) {
+	body := marshalLog(t, newComponentLog(time.Now(), corev1.ComponentLog_Entry_INFO, "queue"))
+	t.Run("BeforeEnqueue", func(t *testing.T) {
+		srv := &srvLog{batchCh: make(chan *pendingLogBatch)}
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		_, err := srv.Export(ctx, newExportRequest(body))
+		assert.ErrorIs(t, err, context.Canceled)
+	})
+	t.Run("WaitingForCommit", func(t *testing.T) {
+		srv := &srvLog{batchCh: make(chan *pendingLogBatch, 1)}
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		done := make(chan error, 1)
+		go func() { _, err := srv.Export(ctx, newExportRequest(body)); done <- err }()
+		batch := <-srv.batchCh
+		cancel()
+		select {
+		case err := <-done:
+			assert.ErrorIs(t, err, context.Canceled)
+		case <-time.After(time.Second):
+			t.Fatal("Canceled export did not return")
+		}
+		batch.done <- nil
+	})
+	t.Run("QueueFull", func(t *testing.T) {
+		srv := &srvLog{batchCh: make(chan *pendingLogBatch, 1)}
+		srv.batchCh <- &pendingLogBatch{}
+		ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+		defer cancel()
+		_, err := srv.Export(ctx, newExportRequest(body))
+		require.NotNil(t, err)
+		assert.Contains(t, err.Error(), "queue is full")
+		assert.Len(t, srv.batchCh, 1)
+	})
+}
+
+func TestOTLPMultipleScopesAndConcurrentExports(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	srv, _ := startTestLogProcessor(t, ts.ctx, ts.srv)
+	req := plogotlp.NewExportRequest()
+	for i := range 3 {
+		resource := req.Logs().ResourceLogs().AppendEmpty()
+		for j := range 2 {
+			scope := resource.ScopeLogs().AppendEmpty()
+			scope.LogRecords().AppendEmpty().Body().SetStr(string(marshalLog(t,
+				newComponentLog(time.Now(), corev1.ComponentLog_Entry_INFO, fmt.Sprintf("scope-%d-%d", i, j)))))
+		}
+	}
+	_, err := srv.Export(ts.ctx, req)
+	require.Nil(t, err)
+	assert.Equal(t, 6, getTableCount(t, ts.srv, "component_logs"))
+	requests := make([]plogotlp.ExportRequest, 12)
+	for i := range requests {
+		requests[i] = newExportRequest(marshalLog(t, newAccessLog(&accessLogOptions{CreatedAt: time.Now()})))
+	}
+	results := make(chan error, len(requests))
+	for _, request := range requests {
+		go func() { _, err := srv.Export(ts.ctx, request); results <- err }()
+	}
+	for range requests {
+		select {
+		case err := <-results:
+			assert.Nil(t, err)
+		case <-time.After(5 * time.Second):
+			t.Fatal("Concurrent export did not finish")
+		}
+	}
+	assert.Equal(t, len(requests), getTableCount(t, ts.srv, "access_logs"))
+}
+
+func TestOTLPInsertBatchRollbackAndRecovery(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	valid := pendingLog{table: logTableComponent, data: marshalLog(t, newComponentLog(time.Now(), corev1.ComponentLog_Entry_INFO, "rollback"))}
+	for _, invalid := range []pendingLog{{table: logTableUnknown, data: []byte(`{}`)}, {table: logTableAudit, data: []byte(`{invalid`)}} {
+		err := ts.srv.insertLogBatches(ts.ctx, []*pendingLogBatch{{items: []pendingLog{valid}}, {items: []pendingLog{invalid}}})
+		assert.NotNil(t, err)
+		assert.Zero(t, getTableCount(t, ts.srv, "component_logs"))
+	}
+	ctx, cancel := context.WithCancel(ts.ctx)
+	cancel()
+	assert.ErrorIs(t, ts.srv.insertLogBatches(ctx, []*pendingLogBatch{{items: []pendingLog{valid}}}), context.Canceled)
+	require.Nil(t, ts.srv.insertLogBatches(ts.ctx, []*pendingLogBatch{{items: []pendingLog{valid}}}))
+	assert.Equal(t, 1, getTableCount(t, ts.srv, "component_logs"))
+}
+
+func TestOTLPProcessorFlushesPendingOnShutdown(t *testing.T) {
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	ctx, cancel := context.WithCancel(ts.ctx)
+	srv := ts.srv.newSrvLog()
+	batch := &pendingLogBatch{
+		items: []pendingLog{{table: logTableComponent, data: marshalLog(t, newComponentLog(time.Now(), corev1.ComponentLog_Entry_INFO, "shutdown"))}},
+		done:  make(chan error, 1),
+	}
+	done := make(chan struct{})
+	go func() { defer close(done); srv.startProcessLoop(ctx) }()
+	srv.batchCh <- batch
+	require.Eventually(t, func() bool { return len(srv.batchCh) == 0 }, time.Second, time.Millisecond)
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(3 * time.Second):
+		t.Fatal("Log processor did not stop")
+	}
+	assert.Nil(t, <-batch.done)
+	assert.Equal(t, 1, getTableCount(t, ts.srv, "component_logs"))
 }
