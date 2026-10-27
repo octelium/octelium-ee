@@ -80,6 +80,9 @@ func Phases() []suite.Phase {
 		{Name: "CollectorLiveUpdate", Run: testCollectorLiveUpdate},
 		{Name: "CollectorOutageRecovery", Run: testCollectorOutageRecovery},
 		{Name: "CollectorSignalRouting", Run: testCollectorSignalRouting},
+		{Name: "CollectorSecretRotation", Run: testCollectorSecretRotation},
+		{Name: "CollectorMetricsOnlyAndPipelineReactivation", Run: testCollectorMetricsOnlyAndPipelineReactivation},
+		{Name: "CollectorExporterReplacementRouting", Run: testCollectorExporterReplacementRouting},
 
 		{Name: "LogStoreQueryPath", Run: testLogStoreQueryPath},
 		{Name: "AccessLogLifecycle", Run: testAccessLogLifecycle},

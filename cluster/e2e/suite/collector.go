@@ -11,6 +11,7 @@ package suite
 import (
 	"context"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -430,4 +431,113 @@ func testCollectorExporterAPI(t *testing.T, ch *harness.H) {
 		_, err = h.EnterpriseC().GetCollectorExporter(ctx, &metav1.GetOptions{Uid: recreated.Metadata.Uid})
 		assert.Nil(t, err)
 	})
+}
+
+func setCollectorExclusivePipelines(t *testing.T, h *eeharness.H, pipelines ...*enterprisev1.ClusterConfig_Spec_Collector_Pipeline) {
+	t.Helper()
+	h.SetCollectorPipelines(t)
+	cc := h.EnterpriseClusterConfig(t)
+	if cc.Spec.Collector == nil {
+		cc.Spec.Collector = &enterprisev1.ClusterConfig_Spec_Collector{}
+	}
+	cc.Spec.Collector.Pipelines = pipelines
+	h.UpdateEnterpriseClusterConfig(t, cc)
+}
+
+func waitCollectorExportedLogs(t *testing.T, h *eeharness.H, driver *trafficDriver, sink *eeharness.Sink) {
+	t.Helper()
+	h.Eventually(t, "Collector to export fresh traffic", eeharness.IngestionBudget, func(ctx context.Context) error {
+		if err := driver.driveContext(ctx); err != nil {
+			return err
+		}
+		if !strings.Contains(sink.Logs(t), "resourceLogs") {
+			return errors.New("the sink has not received logs")
+		}
+		return nil
+	})
+}
+
+func testCollectorSecretRotation(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	h.Require(t, eescenario.CapOTLPSink)
+	sink := h.Sink(t)
+	t.Cleanup(func() { sink.SetToken(t, sink.Token) })
+	for _, protocol := range []string{"GRPC", "HTTP"} {
+		t.Run(protocol, func(t *testing.T) {
+			sink.SetToken(t, sink.Token)
+			sink.Truncate(t)
+			secret := h.CreateEnterpriseSecret(t, sink.Token)
+			request := otlpExporter(sink.AuthGRPCEndpoint, secret.Metadata.Name)
+			if protocol == "HTTP" {
+				request = otlpHTTPExporter(sink.AuthHTTPEndpoint, secret.Metadata.Name)
+			}
+			exporter := h.CreateCollectorExporter(t, request)
+			setCollectorExclusivePipelines(t, h, logsPipeline(h.Name(), exporter.Metadata.Name))
+			restarts := h.EnterpriseRestarts(t, "collector")
+			driver := newTrafficDriver(t, h)
+			waitCollectorExportedLogs(t, h, driver, sink)
+			rotated := utilrand.GetRandomStringCanonical(40)
+			sink.SetToken(t, rotated)
+			secret.Data = &enterprisev1.Secret_Data{Type: &enterprisev1.Secret_Data_Value{Value: rotated}}
+			_, err := h.EnterpriseC().UpdateSecret(t.Context(), secret)
+			require.NoError(t, err)
+			sink.Truncate(t)
+			waitCollectorExportedLogs(t, h, driver, sink)
+			waitAccessLogGrows(t, driver, 1)
+			assert.Equal(t, restarts, h.EnterpriseRestarts(t, "collector"))
+		})
+	}
+}
+
+func testCollectorMetricsOnlyAndPipelineReactivation(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	h.Require(t, eescenario.CapOTLPSink)
+	sink := h.Sink(t)
+	exporter := h.CreateCollectorExporter(t, otlpExporter(sink.GRPCEndpoint, ""))
+	setCollectorExclusivePipelines(t, h, metricsPipeline(h.Name(), exporter.Metadata.Name))
+	restarts := h.EnterpriseRestarts(t, "collector")
+	time.Sleep(eeharness.PropagationBudget)
+	sink.Truncate(t)
+	driver := newTrafficDriver(t, h)
+	driver.drive(t)
+	sink.WaitMetrics(t, "resourceMetrics", eeharness.IngestionBudget)
+	sink.MustStayEmpty(t, "logs.json", settleWindow)
+	pipeline := logsPipeline(h.Name(), exporter.Metadata.Name)
+	pipeline.IsDisabled = true
+	setCollectorExclusivePipelines(t, h, pipeline)
+	time.Sleep(eeharness.PropagationBudget)
+	sink.Truncate(t)
+	driver.drive(t)
+	sink.MustStayEmpty(t, "logs.json", settleWindow)
+	waitAccessLogGrows(t, driver, 1)
+	pipeline.IsDisabled = false
+	setCollectorExclusivePipelines(t, h, pipeline)
+	waitCollectorExportedLogs(t, h, driver, sink)
+	assert.Equal(t, restarts, h.EnterpriseRestarts(t, "collector"))
+}
+
+func testCollectorExporterReplacementRouting(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	h.Require(t, eescenario.CapOTLPSink)
+	sink := h.Sink(t)
+	sink.Truncate(t)
+	exporter := h.CreateCollectorExporter(t, otlpExporter(sink.GRPCEndpoint, ""))
+	setCollectorExclusivePipelines(t, h, logsPipeline(h.Name(), exporter.Metadata.Name))
+	restarts := h.EnterpriseRestarts(t, "collector")
+	driver := newTrafficDriver(t, h)
+	waitCollectorExportedLogs(t, h, driver, sink)
+	cc := h.EnterpriseClusterConfig(t)
+	cc.Spec.Collector.Pipelines = nil
+	h.UpdateEnterpriseClusterConfig(t, cc)
+	_, err := h.EnterpriseC().DeleteCollectorExporter(t.Context(), &metav1.DeleteOptions{Uid: exporter.Metadata.Uid})
+	require.NoError(t, err)
+	request := otlpHTTPExporter(sink.HTTPEndpoint, "")
+	request.Metadata = &metav1.Metadata{Name: exporter.Metadata.Name}
+	replacement := h.CreateCollectorExporter(t, request)
+	require.NotEqual(t, exporter.Metadata.Uid, replacement.Metadata.Uid)
+	setCollectorExclusivePipelines(t, h, logsPipeline(h.Name(), replacement.Metadata.Name))
+	sink.Truncate(t)
+	waitCollectorExportedLogs(t, h, driver, sink)
+	waitAccessLogGrows(t, driver, 1)
+	assert.Equal(t, restarts, h.EnterpriseRestarts(t, "collector"))
 }
