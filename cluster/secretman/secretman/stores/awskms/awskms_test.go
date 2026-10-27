@@ -9,8 +9,10 @@
 package awskms
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
@@ -22,6 +24,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestServer(t *testing.T) {
@@ -128,4 +131,51 @@ func TestServer(t *testing.T) {
 
 	_, err = store.Decrypt(ctx, "different-dek-uid", ciphertext)
 	assert.NotNil(t, err)
+}
+
+func TestStoreAEADPayloadBoundaries(t *testing.T) {
+	for _, size := range []int{16, 24, 32} {
+		key := bytes.Repeat([]byte{byte(size)}, size)
+		for _, plaintext := range [][]byte{nil, {0}, bytes.Repeat([]byte{0, 255, 128, 1}, 16384)} {
+			blob, err := gcmSeal(key, plaintext, []byte("resource-one"))
+			require.NoError(t, err)
+			got, err := gcmOpen(key, blob, []byte("resource-one"))
+			require.NoError(t, err)
+			assert.True(t, bytes.Equal(plaintext, got))
+			_, err = gcmOpen(key, blob, []byte("resource-two"))
+			assert.Error(t, err)
+			for _, length := range []int{0, 1, 11, len(blob) - 1} {
+				_, err = gcmOpen(key, blob[:length], []byte("resource-one"))
+				assert.Error(t, err)
+			}
+			blob[len(blob)-1] ^= 1
+			_, err = gcmOpen(key, blob, []byte("resource-one"))
+			assert.Error(t, err)
+		}
+	}
+	_, err := gcmSeal([]byte("invalid"), []byte("value"), nil)
+	assert.Error(t, err)
+	_, err = gcmOpen([]byte("invalid"), nil, nil)
+	assert.Error(t, err)
+}
+
+func TestStoreRejectsMissingConfiguration(t *testing.T) {
+	for _, opts := range []*stores.StoreOpts{nil, {}, {SecretStore: &enterprisev1.SecretStore{}}, {SecretStore: &enterprisev1.SecretStore{Metadata: &metav1.Metadata{Uid: "uid"}}}} {
+		_, err := NewStore(t.Context(), opts)
+		assert.Error(t, err)
+	}
+}
+
+func TestAWSRoleSessionNameBoundaries(t *testing.T) {
+	for _, value := range []string{"", "---", "us-east-1", "region with spaces / ?", strings.Repeat("a", 200), "地区"} {
+		name := roleSessionName(value)
+		assert.NotEmpty(t, name)
+		assert.LessOrEqual(t, len(name), maxRoleSessionNameLen)
+		for _, char := range name {
+			assert.True(t, isRoleSessionNameChar(char))
+		}
+	}
+	assert.Equal(t, "octelium-secretman-default", roleSessionName(""))
+	assert.NotEqual(t, dataAAD("one"), dataAAD("two"))
+	assert.Equal(t, "uid", encryptionContext("uid")["uid"])
 }

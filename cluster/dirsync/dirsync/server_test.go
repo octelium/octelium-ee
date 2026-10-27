@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -27,6 +28,9 @@ import (
 	utils_types "github.com/octelium/octelium/pkg/utils/types"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestServer(t *testing.T) {
@@ -163,4 +167,83 @@ func TestServer(t *testing.T) {
 		assert.Equal(t, "User", resp.Resources[0].Name)
 		assert.Equal(t, "userName", resp.Resources[0].Attributes[0].Name)
 	}
+}
+
+func TestSCIMQueryPaginationBoundaries(t *testing.T) {
+	for _, tc := range []struct {
+		query              string
+		count, start, page uint32
+	}{
+		{"", maxItemsPerPage, 1, 0},
+		{"?count=0", 0, 1, 0},
+		{"?count=-1&startIndex=-1", maxItemsPerPage, 1, 0},
+		{"?count=invalid&startIndex=invalid", maxItemsPerPage, 1, 0},
+		{"?count=1000000&startIndex=100001", maxItemsPerPage, 1, 0},
+		{"?count=2&startIndex=5", 2, 5, 2},
+		{"?count=3&startIndex=2", 3, 2, 0},
+	} {
+		r := httptest.NewRequest(http.MethodGet, "/scim/provider/Users"+tc.query, nil)
+		assert.Equal(t, tc.count, getItemsPerPage(r))
+		assert.Equal(t, tc.count, getSCIMCount(r))
+		assert.Equal(t, tc.start, getSCIMStartIndex(r))
+		assert.Equal(t, tc.page, getBackendPage(r))
+	}
+}
+
+func TestSCIMErrorResponsesHideInternalDetails(t *testing.T) {
+	for _, tc := range []struct {
+		code codes.Code
+		want int
+	}{
+		{codes.NotFound, http.StatusNotFound},
+		{codes.InvalidArgument, http.StatusBadRequest},
+		{codes.Canceled, http.StatusBadRequest},
+		{codes.DeadlineExceeded, http.StatusBadRequest},
+		{codes.Unauthenticated, http.StatusForbidden},
+		{codes.PermissionDenied, http.StatusForbidden},
+		{codes.Internal, http.StatusInternalServerError},
+	} {
+		w := httptest.NewRecorder()
+		(&server{}).setErrorFromAPI(w, status.Error(tc.code, "private database password"))
+		assert.Equal(t, tc.want, w.Code)
+		var body responseError
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
+		assert.Equal(t, fmt.Sprint(tc.want), body.Status)
+		assert.Equal(t, []string{"urn:ietf:params:scim:api:messages:2.0:Error"}, body.Schemas)
+		assert.NotContains(t, body.Detail, "password")
+	}
+}
+
+func TestSCIMMetadataDocuments(t *testing.T) {
+	srv := &server{}
+	for _, tc := range []struct {
+		name   string
+		handle func(http.ResponseWriter, *http.Request)
+	}{
+		{"ServiceProviderConfig", srv.handleServiceProviderConfig},
+		{"Schemas", srv.handleSchemas},
+		{"ResourceTypes", srv.handleResourceTypes},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			tc.handle(w, httptest.NewRequest(http.MethodGet, "/scim/provider/"+tc.name, nil))
+			assert.Equal(t, http.StatusOK, w.Code)
+			assert.Equal(t, "application/scim+json", w.Header().Get("Content-Type"))
+			var doc map[string]any
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &doc))
+			assert.NotEmpty(t, doc)
+		})
+	}
+}
+
+func TestDirectorySynchronizationHistoryBounded(t *testing.T) {
+	var history []*enterprisev1.DirectoryProvider_Status_Synchronization
+	for range maxLastSynchronizations + 3 {
+		rec := &enterprisev1.DirectoryProvider_Status_Synchronization{State: enterprisev1.DirectoryProvider_Status_Synchronization_SUCCESS}
+		history = appendLastSync(history, rec)
+		assert.NotSame(t, rec, history[0])
+		rec.State = enterprisev1.DirectoryProvider_Status_Synchronization_FAILED
+		assert.Equal(t, enterprisev1.DirectoryProvider_Status_Synchronization_SUCCESS, history[0].State)
+	}
+	assert.Len(t, history, maxLastSynchronizations)
 }

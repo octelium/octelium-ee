@@ -10,6 +10,7 @@ package metricstore
 
 import (
 	"context"
+	"net"
 	"testing"
 	"time"
 
@@ -20,8 +21,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/test/bufconn"
 )
 
 func newTestSrvMetric(t *testing.T) *srvMetric {
@@ -768,4 +773,213 @@ func TestCounterBaselineIsTakenFromBeforeTheQueryWindow(t *testing.T) {
 		assert.Equal(t, float64(30), point.GetAsDouble(),
 			"bucket %s lost its baseline sample", point.Timestamp.AsTime())
 	}
+}
+
+func newMetricStoreRPCConn(t *testing.T) (*grpc.ClientConn, *srvMetric) {
+	t.Helper()
+	s := &Server{db: newTestDuckDB(t), dbRecoverCh: make(chan struct{}, 1)}
+	metric := s.newSrvMetric()
+	done := make(chan struct{})
+	go func() { defer close(done); metric.startProcessLoop(t.Context()) }()
+	listener := bufconn.Listen(8 << 20)
+	server := grpc.NewServer(grpc.MaxRecvMsgSize(8 << 20))
+	pmetricotlp.RegisterGRPCServer(server, metric)
+	vmetricsv1.RegisterMetricsServiceServer(server, metric)
+	go server.Serve(listener)
+	conn, err := grpc.NewClient("passthrough:///metricstore", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return listener.Dial() }))
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		conn.Close()
+		server.Stop()
+		listener.Close()
+		metric.stopAccepting()
+		metric.closeQueue()
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			t.Error("metric processor did not drain")
+		}
+	})
+	return conn, metric
+}
+
+func metricStoreAllKindsExport(at time.Time, index int) pmetricotlp.ExportRequest {
+	metrics, sm := newVigilResourceMetrics()
+	appendTestCounter(sm, "test.requests", at.Add(-time.Duration(index+1)*time.Minute), at, int64(100+index*10), nil)
+	appendTestUpDownCounter(sm, "test.inflight", at.Add(-time.Duration(index+1)*time.Minute), at, int64(20+index), nil)
+	gauge := sm.Metrics().AppendEmpty()
+	gauge.SetName("test.gauge")
+	point := gauge.SetEmptyGauge().DataPoints().AppendEmpty()
+	point.SetTimestamp(pcommon.NewTimestampFromTime(at))
+	point.SetDoubleValue(float64(2 + index))
+	hist := sm.Metrics().AppendEmpty()
+	hist.SetName("test.histogram")
+	hist.SetUnit("ms")
+	h := hist.SetEmptyHistogram()
+	h.SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+	hp := h.DataPoints().AppendEmpty()
+	hp.SetTimestamp(pcommon.NewTimestampFromTime(at))
+	hp.SetStartTimestamp(pcommon.NewTimestampFromTime(at.Add(-10 * time.Second)))
+	hp.ExplicitBounds().FromRaw([]float64{1, 2})
+	hp.BucketCounts().FromRaw([]uint64{1, 1, 1})
+	hp.SetCount(3)
+	hp.SetSum(6)
+	hp.SetMin(0.5)
+	hp.SetMax(3)
+	exp := sm.Metrics().AppendEmpty()
+	exp.SetName("test.exponential")
+	exp.SetUnit("ms")
+	e := exp.SetEmptyExponentialHistogram()
+	e.SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+	ep := e.DataPoints().AppendEmpty()
+	ep.SetTimestamp(pcommon.NewTimestampFromTime(at))
+	ep.SetStartTimestamp(pcommon.NewTimestampFromTime(at.Add(-10 * time.Second)))
+	ep.SetScale(0)
+	ep.SetZeroCount(1)
+	ep.SetZeroThreshold(0.5)
+	ep.Positive().SetOffset(0)
+	ep.Positive().BucketCounts().FromRaw([]uint64{1, 1})
+	ep.Negative().SetOffset(0)
+	ep.Negative().BucketCounts().FromRaw([]uint64{1})
+	ep.SetCount(4)
+	ep.SetSum(3)
+	ep.SetMin(-2)
+	ep.SetMax(4)
+	return pmetricotlp.NewExportRequestFromMetrics(metrics)
+}
+
+func TestMetricStoreRPCIngestionAndAllQueryKinds(t *testing.T) {
+	conn, metric := newMetricStoreRPCConn(t)
+	exporter := pmetricotlp.NewGRPCClient(conn)
+	client := vmetricsv1.NewMetricsServiceClient(conn)
+	base := time.Now().UTC().Truncate(time.Minute).Add(-5 * time.Minute)
+	for i := range 3 {
+		_, err := exporter.Export(t.Context(), metricStoreAllKindsExport(base.Add(time.Duration(i)*time.Minute+10*time.Second), i))
+		require.NoError(t, err)
+	}
+	assert.EqualValues(t, 3, metric.acceptedExports.Load())
+	assert.EqualValues(t, 15, metric.storedPoints.Load())
+	descriptors, err := client.ListMetricDescriptors(t.Context(), &vmetricsv1.ListMetricDescriptorsRequest{})
+	require.NoError(t, err)
+	require.Len(t, descriptors.Items, 5)
+	for _, descriptor := range descriptors.Items {
+		assert.True(t, isValidContentID(descriptor.Id))
+		assert.NotEmpty(t, descriptor.Name)
+	}
+	caps, err := client.GetMetricsCapabilities(t.Context(), &vmetricsv1.GetMetricsCapabilitiesRequest{})
+	require.NoError(t, err)
+	assert.EqualValues(t, maxSeriesPerQuery, caps.QueryLimits.MaximumSeries)
+	assert.EqualValues(t, maxDataPointsPerExport, caps.IngestionLimits.MaximumDataPointsPerExport)
+	query := func(t *testing.T, name string, operation *vmetricsv1.QueryOperation, aggregation vmetricsv1.QueryMetricsRequest_SeriesAggregation) *vmetricsv1.QueryMetricsResponse {
+		t.Helper()
+		req := &vmetricsv1.QueryMetricsRequest{
+			Metric:             &vmetricsv1.MetricSelector{Selector: &vmetricsv1.MetricSelector_Name{Name: name}},
+			TimeRange:          testMetricTimeRange(base, base.Add(3*time.Minute)),
+			Step:               testMetricStep(),
+			Operation:          operation,
+			SeriesAggregation:  aggregation,
+			IncludeTotalSeries: true,
+		}
+		if operation.GetCounter().GetFunction() == vmetricsv1.CounterOperation_RAW {
+			req.Step = nil
+		}
+		res, err := client.QueryMetrics(t.Context(), req)
+		require.NoError(t, err)
+		require.NotEmpty(t, res.Series)
+		require.NotNil(t, res.SourceDescriptor)
+		assert.NotNil(t, res.SnapshotTime)
+		return res
+	}
+	for _, fn := range []vmetricsv1.CounterOperation_Function{vmetricsv1.CounterOperation_RAW, vmetricsv1.CounterOperation_RATE, vmetricsv1.CounterOperation_INCREASE} {
+		t.Run("Counter/"+fn.String(), func(t *testing.T) {
+			aggregation := vmetricsv1.QueryMetricsRequest_SUM
+			if fn == vmetricsv1.CounterOperation_RAW {
+				aggregation = vmetricsv1.QueryMetricsRequest_NONE
+			}
+			res := query(t, "test.requests", &vmetricsv1.QueryOperation{Type: &vmetricsv1.QueryOperation_Counter{Counter: &vmetricsv1.CounterOperation{Function: fn}}}, aggregation)
+			require.Len(t, res.Series, 1)
+			require.NotEmpty(t, res.Series[0].GetNumber().Points)
+			if fn == vmetricsv1.CounterOperation_RAW {
+				assert.Len(t, res.Series[0].GetNumber().Points, 3)
+				assert.EqualValues(t, 100, res.Series[0].GetNumber().Points[0].GetAsInt())
+			}
+		})
+	}
+	for _, name := range []string{"test.gauge", "test.inflight"} {
+		for _, fn := range []vmetricsv1.GaugeOperation_Function{vmetricsv1.GaugeOperation_LAST, vmetricsv1.GaugeOperation_AVG, vmetricsv1.GaugeOperation_MIN, vmetricsv1.GaugeOperation_MAX, vmetricsv1.GaugeOperation_SUM} {
+			t.Run(name+"/"+fn.String(), func(t *testing.T) {
+				res := query(t, name, &vmetricsv1.QueryOperation{Type: &vmetricsv1.QueryOperation_Gauge{Gauge: &vmetricsv1.GaugeOperation{Function: fn}}}, vmetricsv1.QueryMetricsRequest_SUM)
+				require.Len(t, res.Series, 1)
+				assert.Len(t, res.Series[0].GetNumber().Points, 3)
+			})
+		}
+	}
+	for _, name := range []string{"test.histogram", "test.exponential"} {
+		for _, fn := range []vmetricsv1.HistogramOperation_Function{vmetricsv1.HistogramOperation_BUCKETS, vmetricsv1.HistogramOperation_QUANTILE, vmetricsv1.HistogramOperation_AVG, vmetricsv1.HistogramOperation_COUNT, vmetricsv1.HistogramOperation_SUM, vmetricsv1.HistogramOperation_MIN, vmetricsv1.HistogramOperation_MAX} {
+			t.Run(name+"/"+fn.String(), func(t *testing.T) {
+				op := &vmetricsv1.HistogramOperation{Function: fn}
+				if fn == vmetricsv1.HistogramOperation_QUANTILE {
+					op.Quantiles = []float64{0, 0.5, 1}
+				}
+				res := query(t, name, &vmetricsv1.QueryOperation{Type: &vmetricsv1.QueryOperation_Histogram{Histogram: op}}, vmetricsv1.QueryMetricsRequest_MERGE)
+				if fn == vmetricsv1.HistogramOperation_QUANTILE {
+					assert.Len(t, res.Series, 3)
+				} else {
+					assert.Len(t, res.Series, 1)
+				}
+				if fn == vmetricsv1.HistogramOperation_BUCKETS {
+					if name == "test.histogram" {
+						assert.Len(t, res.Series[0].GetHistogram().Points, 3)
+						assert.EqualValues(t, 3, res.Series[0].GetHistogram().Points[0].Count)
+					} else {
+						assert.Len(t, res.Series[0].GetExponentialHistogram().Points, 3)
+						assert.EqualValues(t, 4, res.Series[0].GetExponentialHistogram().Points[0].Count)
+					}
+				} else {
+					for _, series := range res.Series {
+						assert.Len(t, series.GetNumber().Points, 3)
+					}
+				}
+			})
+		}
+	}
+}
+
+func TestMetricStoreRPCResponseLimitsAndRetryDeduplication(t *testing.T) {
+	conn, metric := newMetricStoreRPCConn(t)
+	exporter := pmetricotlp.NewGRPCClient(conn)
+	client := vmetricsv1.NewMetricsServiceClient(conn)
+	base := time.Now().UTC().Truncate(time.Minute).Add(-4 * time.Minute)
+	for i := range 3 {
+		_, err := exporter.Export(t.Context(), metricStoreAllKindsExport(base.Add(time.Duration(i)*time.Minute+10*time.Second), i))
+		require.NoError(t, err)
+	}
+	_, err := exporter.Export(t.Context(), metricStoreAllKindsExport(base.Add(10*time.Second), 0))
+	require.NoError(t, err)
+	var count int
+	require.NoError(t, metric.s.database().QueryRow(`SELECT COUNT(*) FROM metric_number_points`).Scan(&count))
+	assert.Equal(t, 9, count)
+	req := &vmetricsv1.QueryMetricsRequest{
+		Metric:    &vmetricsv1.MetricSelector{Selector: &vmetricsv1.MetricSelector_Name{Name: "test.gauge"}},
+		TimeRange: testMetricTimeRange(base, base.Add(3*time.Minute)),
+		Step:      testMetricStep(),
+		Operation: &vmetricsv1.QueryOperation{
+			Type: &vmetricsv1.QueryOperation_Gauge{Gauge: &vmetricsv1.GaugeOperation{Function: vmetricsv1.GaugeOperation_LAST}},
+		},
+		SeriesAggregation:    vmetricsv1.QueryMetricsRequest_SUM,
+		LimitPointsPerSeries: 1,
+	}
+	_, err = client.QueryMetrics(t.Context(), req)
+	assert.Equal(t, codes.ResourceExhausted, status.Code(err))
+	req.LimitBehavior = vmetricsv1.QueryMetricsRequest_TRUNCATE
+	res, err := client.QueryMetrics(t.Context(), req)
+	require.NoError(t, err)
+	require.Len(t, res.Series, 1)
+	require.Len(t, res.Series[0].GetNumber().Points, 1)
+	assert.Equal(t, base.Add(3*time.Minute), res.Series[0].GetNumber().Points[0].Timestamp.AsTime())
+	assert.True(t, res.Truncation.PointsTruncated)
+	req.Filters = []*vmetricsv1.AttributeFilter{{Key: "unknown", Operator: vmetricsv1.AttributeFilter_EXISTS}}
+	res, err = client.QueryMetrics(t.Context(), req)
+	require.NoError(t, err)
+	assert.Empty(t, res.Series)
 }

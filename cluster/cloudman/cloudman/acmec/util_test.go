@@ -19,6 +19,7 @@ import (
 
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNormalizeDomain(t *testing.T) {
@@ -136,4 +137,32 @@ func TestACMEHTTPClient(t *testing.T) {
 		_, err := newACMEHTTPClient(ctx).Get(srv.URL)
 		assert.NotNil(t, err)
 	}
+}
+
+func TestACMEClientCancellationWhileReadingResponse(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.(http.Flusher).Flush()
+		<-r.Context().Done()
+	}))
+	t.Cleanup(srv.Close)
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	response, err := newACMEHTTPClient(ctx).Get(srv.URL)
+	require.NoError(t, err)
+	defer response.Body.Close()
+	cancel()
+	_, err = io.ReadAll(response.Body)
+	assert.Error(t, err)
+}
+
+func TestACMEClientRedirectBoundaries(t *testing.T) {
+	client := newACMEHTTPClient(t.Context())
+	secure, err := http.NewRequest(http.MethodGet, "https://acme.example.com", nil)
+	require.NoError(t, err)
+	assert.NoError(t, client.CheckRedirect(secure, nil))
+	assert.Error(t, client.CheckRedirect(secure, make([]*http.Request, 10)))
+	invalid, err := http.NewRequest(http.MethodGet, "ftp://acme.example.com", nil)
+	require.NoError(t, err)
+	assert.Error(t, client.CheckRedirect(invalid, nil))
 }

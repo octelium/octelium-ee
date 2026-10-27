@@ -224,3 +224,27 @@ func peerCertificate(ctx context.Context, fqdn string) (*x509.Certificate, error
 
 	return certs[0], nil
 }
+
+func testCloudmanNamespaceReplacement(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	namespace := h.CreateNamespace(t, nil)
+	original := waitNamespaceCertificate(t, h, namespace)
+	_, err := h.CoreC().DeleteNamespace(t.Context(), &metav1.DeleteOptions{Uid: namespace.Metadata.Uid})
+	require.NoError(t, err)
+	h.Eventually(t, "cloudman to remove the deleted Namespace Certificate", eeharness.PropagationBudget, func(ctx context.Context) error {
+		_, err := h.EnterpriseC().GetCertificate(ctx, &metav1.GetOptions{Uid: original.Metadata.Uid})
+		if grpcerr.IsNotFound(err) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		return errors.Errorf("old certificate still exists")
+	})
+	replacement := h.CreateNamespace(t, &corev1.Namespace{Metadata: &metav1.Metadata{Name: namespace.Metadata.Name}})
+	assert.NotEqual(t, namespace.Metadata.Uid, replacement.Metadata.Uid)
+	current := waitNamespaceCertificate(t, h, replacement)
+	assert.NotEqual(t, original.Metadata.Uid, current.Metadata.Uid)
+	assert.Equal(t, original.Metadata.Name, current.Metadata.Name)
+	assert.Equal(t, replacement.Metadata.Uid, current.Status.NamespaceRef.Uid)
+}

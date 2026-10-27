@@ -10,10 +10,19 @@ package metricstore
 
 import (
 	"context"
+	"math"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestMetricAttributeGroupCapability(t *testing.T) {
@@ -156,4 +165,124 @@ func TestUnknownMetricDimensionsAreValidEmptyMatches(t *testing.T) {
 	}
 	descriptor := &vmetricsv1.MetricDescriptor{Kind: vmetricsv1.MetricDescriptor_COUNTER}
 	assert.NoError(t, validateQueryForDescriptor(query, descriptor))
+}
+
+func TestMetricQueryValidationBoundaries(t *testing.T) {
+	base := time.Now().UTC().Truncate(time.Minute).Add(-time.Hour)
+	valid := &vmetricsv1.QueryMetricsRequest{
+		Metric:    &vmetricsv1.MetricSelector{Selector: &vmetricsv1.MetricSelector_Name{Name: "metric"}},
+		TimeRange: testMetricTimeRange(base, base.Add(30*time.Minute)),
+		Step:      testMetricStep(),
+		Operation: &vmetricsv1.QueryOperation{
+			Type: &vmetricsv1.QueryOperation_Gauge{Gauge: &vmetricsv1.GaugeOperation{Function: vmetricsv1.GaugeOperation_LAST}},
+		},
+	}
+	for _, tc := range []struct {
+		name   string
+		change func(*vmetricsv1.QueryMetricsRequest)
+	}{
+		{"Selector", func(r *vmetricsv1.QueryMetricsRequest) { r.Metric = nil }},
+		{"EmptySelector", func(r *vmetricsv1.QueryMetricsRequest) { r.Metric = &vmetricsv1.MetricSelector{} }},
+		{"LongName", func(r *vmetricsv1.QueryMetricsRequest) {
+			r.Metric.Selector = &vmetricsv1.MetricSelector_Name{Name: strings.Repeat("m", maxMetricNameLength+1)}
+		}},
+		{"InvalidID", func(r *vmetricsv1.QueryMetricsRequest) {
+			r.Metric.Selector = &vmetricsv1.MetricSelector_DescriptorID{DescriptorID: "invalid"}
+		}},
+		{"MissingRange", func(r *vmetricsv1.QueryMetricsRequest) { r.TimeRange = nil }},
+		{"MissingFrom", func(r *vmetricsv1.QueryMetricsRequest) { r.TimeRange.From = nil }},
+		{"InvalidTimestamp", func(r *vmetricsv1.QueryMetricsRequest) { r.TimeRange.From = &timestamppb.Timestamp{Nanos: -1} }},
+		{"Reversed", func(r *vmetricsv1.QueryMetricsRequest) { r.TimeRange.To = r.TimeRange.From }},
+		{"Future", func(r *vmetricsv1.QueryMetricsRequest) {
+			r.TimeRange = testMetricTimeRange(time.Now(), time.Now().Add(maximumFutureSkew+time.Hour))
+		}},
+		{"Old", func(r *vmetricsv1.QueryMetricsRequest) {
+			r.TimeRange = testMetricTimeRange(time.Now().Add(-rawMetricRetention-time.Hour), base)
+		}},
+		{"NoOperation", func(r *vmetricsv1.QueryMetricsRequest) { r.Operation = nil }},
+		{"NoStep", func(r *vmetricsv1.QueryMetricsRequest) { r.Step = nil }},
+		{"SmallStep", func(r *vmetricsv1.QueryMetricsRequest) {
+			r.Step = &metav1.Duration{Type: &metav1.Duration_Milliseconds{Milliseconds: 1}}
+		}},
+		{"Months", func(r *vmetricsv1.QueryMetricsRequest) {
+			r.Step = &metav1.Duration{Type: &metav1.Duration_Months{Months: 1}}
+		}},
+		{"TooManyBuckets", func(r *vmetricsv1.QueryMetricsRequest) {
+			r.TimeRange = testMetricTimeRange(base.Add(-2*time.Hour), base)
+			r.Step = &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 1}}
+		}},
+		{"InvalidLimitBehavior", func(r *vmetricsv1.QueryMetricsRequest) { r.LimitBehavior = 999 }},
+		{"ComponentTooLong", func(r *vmetricsv1.QueryMetricsRequest) {
+			r.Component = &vmetricsv1.ComponentSelector{Type: strings.Repeat("a", 129)}
+		}},
+		{"RawWithStep", func(r *vmetricsv1.QueryMetricsRequest) {
+			r.Operation = &vmetricsv1.QueryOperation{
+				Type: &vmetricsv1.QueryOperation_Counter{Counter: &vmetricsv1.CounterOperation{Function: vmetricsv1.CounterOperation_RAW}},
+			}
+		}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := proto.Clone(valid).(*vmetricsv1.QueryMetricsRequest)
+			tc.change(r)
+			_, err := (&srvMetric{}).validateQueryRequest(t.Context(), r)
+			assert.Equal(t, codes.InvalidArgument, status.Code(err))
+		})
+	}
+	_, err := (&srvMetric{}).validateQueryRequest(t.Context(), nil)
+	assert.Equal(t, codes.InvalidArgument, status.Code(err))
+	valid.LimitSeries = math.MaxUint32
+	valid.LimitPointsPerSeries = math.MaxUint32
+	valid.LimitTotalPoints = math.MaxUint32
+	q, err := (&srvMetric{}).validateQueryRequest(t.Context(), valid)
+	require.NoError(t, err)
+	assert.Equal(t, maxSeriesPerQuery, q.limitSeries)
+	assert.Equal(t, maxPointsPerSeries, q.limitPointsPerSeries)
+	assert.Equal(t, maxTotalPoints, q.limitTotalPoints)
+	assert.EqualValues(t, 30, q.bucketCount())
+}
+
+func TestMetricAttributeFilterValidationMatrix(t *testing.T) {
+	value := &vmetricsv1.AttributeValue{Value: &vmetricsv1.AttributeValue_StringValue{StringValue: "value"}}
+	for _, filters := range [][]*vmetricsv1.AttributeFilter{
+		{nil}, {{Key: "", Operator: vmetricsv1.AttributeFilter_EXISTS}}, {{Key: strings.Repeat("x", maxAttributeKeyBytes+1), Operator: vmetricsv1.AttributeFilter_EXISTS}},
+		{{Key: "a", Operator: 999}}, {{Key: "a", Operator: vmetricsv1.AttributeFilter_EQ}},
+		{{Key: "a", Operator: vmetricsv1.AttributeFilter_EXISTS, Value: value}},
+		{{Key: "a", Operator: vmetricsv1.AttributeFilter_IN}},
+		{{Key: "a", Operator: vmetricsv1.AttributeFilter_IN, Values: []*vmetricsv1.AttributeValue{nil}}},
+		{{
+			Key:      "a",
+			Operator: vmetricsv1.AttributeFilter_IN,
+			Values:   []*vmetricsv1.AttributeValue{value, value},
+		}},
+		{{Key: "a", Operator: vmetricsv1.AttributeFilter_EXISTS}, {Key: " a ", Operator: vmetricsv1.AttributeFilter_NOT_EXISTS}},
+	} {
+		_, err := validateAttributeFilters(filters)
+		assert.Equal(t, codes.InvalidArgument, status.Code(err))
+	}
+	for _, op := range []vmetricsv1.AttributeFilter_Operator{vmetricsv1.AttributeFilter_EQ, vmetricsv1.AttributeFilter_NOT_EQ, vmetricsv1.AttributeFilter_IN, vmetricsv1.AttributeFilter_EXISTS, vmetricsv1.AttributeFilter_NOT_EXISTS} {
+		f := &vmetricsv1.AttributeFilter{Key: " key ", Operator: op}
+		if op == vmetricsv1.AttributeFilter_IN {
+			f.Values = []*vmetricsv1.AttributeValue{value}
+		} else if op == vmetricsv1.AttributeFilter_EQ || op == vmetricsv1.AttributeFilter_NOT_EQ {
+			f.Value = value
+		}
+		filters, err := validateAttributeFilters([]*vmetricsv1.AttributeFilter{f})
+		require.NoError(t, err)
+		assert.Equal(t, "key", filters[0].Key)
+	}
+	for _, values := range [][]string{{""}, {"a", " a "}, {strings.Repeat("x", maxAttributeKeyBytes+1)}, make([]string, maxGroupByAttributes+1)} {
+		_, err := validateGroupBy(values)
+		assert.Error(t, err)
+	}
+	group, err := validateGroupBy([]string{" z ", "a"})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"a", "z"}, group)
+	for _, v := range []*vmetricsv1.AttributeValue{nil, {}, {
+		Value: &vmetricsv1.AttributeValue_StringValue{StringValue: strings.Repeat("a", maxAttributeValueBytes+1)},
+	}, {Value: &vmetricsv1.AttributeValue_DoubleValue{DoubleValue: math.NaN()}}, {Value: &vmetricsv1.AttributeValue_DoubleValue{DoubleValue: math.Inf(1)}}} {
+		assert.Error(t, validateProtoAttributeValue(v))
+	}
+	for _, v := range []*vmetricsv1.AttributeValue{{Value: &vmetricsv1.AttributeValue_BoolValue{BoolValue: true}}, {Value: &vmetricsv1.AttributeValue_IntValue{IntValue: -1}}, {Value: &vmetricsv1.AttributeValue_DoubleValue{DoubleValue: 1}}} {
+		assert.NoError(t, validateProtoAttributeValue(v))
+	}
 }

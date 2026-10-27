@@ -11,6 +11,7 @@ package suite
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,6 +23,8 @@ import (
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func metricDuration(in *metav1.Duration) time.Duration {
@@ -227,4 +230,49 @@ func testMetricStoreLimits(t *testing.T, ch *harness.H) {
 				return queryAnyCatalogMetric(ctx, h)
 			})
 	})
+}
+
+func testMetricStoreDescriptorRoundTrip(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	var descriptor *vmetricsv1.MetricDescriptor
+	h.Eventually(t, "a queryable gauge descriptor", eeharness.PropagationBudget, func(ctx context.Context) error {
+		list, err := h.MetricsC().ListMetricDescriptors(ctx, &vmetricsv1.ListMetricDescriptorsRequest{Kinds: []vmetricsv1.MetricDescriptor_Kind{vmetricsv1.MetricDescriptor_GAUGE}})
+		if err != nil {
+			return err
+		}
+		if len(list.Items) == 0 {
+			return errNotProvisioned("gauge descriptors")
+		}
+		descriptor = list.Items[0]
+		return nil
+	})
+	to := time.Now().UTC().Truncate(time.Minute)
+	req := &vmetricsv1.QueryMetricsRequest{
+		Metric:             &vmetricsv1.MetricSelector{Selector: &vmetricsv1.MetricSelector_DescriptorID{DescriptorID: descriptor.Id}},
+		TimeRange:          metricTimeRange(to.Add(-10*time.Minute), to),
+		Step:               eeharness.Minutes(1),
+		Operation:          gaugeLast(),
+		SeriesAggregation:  vmetricsv1.QueryMetricsRequest_SUM,
+		IncludeTotalSeries: true,
+	}
+	res, err := h.MetricsC().QueryMetrics(t.Context(), req)
+	require.NoError(t, err)
+	require.NotNil(t, res.SourceDescriptor)
+	assert.Equal(t, descriptor.Id, res.SourceDescriptor.Id)
+	assert.Equal(t, descriptor.Name, res.SourceDescriptor.Name)
+	assert.NotNil(t, res.SnapshotTime)
+	req.Filters = []*vmetricsv1.AttributeFilter{{
+		Key:      "missing." + h.Name(),
+		Operator: vmetricsv1.AttributeFilter_EQ,
+		Value:    &vmetricsv1.AttributeValue{Value: &vmetricsv1.AttributeValue_BoolValue{BoolValue: true}},
+	}}
+	res, err = h.MetricsC().QueryMetrics(t.Context(), req)
+	require.NoError(t, err)
+	assert.Empty(t, res.Series)
+	require.NotNil(t, res.TotalSeries)
+	assert.Zero(t, *res.TotalSeries)
+	req.Filters = nil
+	req.Metric.Selector = &vmetricsv1.MetricSelector_DescriptorID{DescriptorID: "v1:sha256:" + strings.Repeat("0", 64)}
+	_, err = h.MetricsC().QueryMetrics(t.Context(), req)
+	assert.Equal(t, codes.NotFound, status.Code(err))
 }

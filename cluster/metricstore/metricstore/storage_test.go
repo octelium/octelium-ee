@@ -548,3 +548,21 @@ ON CONFLICT (id) DO UPDATE SET updated_at = EXCLUDED.updated_at
 		`SELECT updated_at FROM metric_series WHERE id = 'series-1'`).Scan(&updatedAt))
 	assert.Equal(t, metricTimeToDB(now), updatedAt)
 }
+
+func TestMetricDiagnosticsAndWorkerCancellation(t *testing.T) {
+	s := newTestStorageServer(t)
+	s.metricSrv = s.newSrvMetric()
+	s.logDiagnostics(t.Context())
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	s.logDiagnostics(ctx)
+	for _, run := range []func(context.Context){s.runDiagnosticsLoop, s.runRetentionLoop} {
+		done := make(chan struct{})
+		go func() { defer close(done); run(ctx) }()
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("metric worker did not stop")
+		}
+	}
+}

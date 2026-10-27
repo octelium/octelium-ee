@@ -33,6 +33,7 @@ func Phases() []suite.Phase {
 		{Name: "KeycloakFailureRecovery", Run: testKeycloakFailureRecovery},
 		{Name: "DirectoryProviderIsolation", Run: testDirectoryProviderIsolation},
 		{Name: "DirectoryLocalUserOwnership", Run: testDirectoryLocalUserOwnership},
+		{Name: "DirectoryUserReactivation", Run: testDirectoryUserReactivation},
 
 		{Name: "DeviceManagerAPI", Run: testDeviceManagerAPI},
 		{Name: "DeviceManagerProbePlan", Run: testDeviceManagerProbePlan},
@@ -62,6 +63,7 @@ func Phases() []suite.Phase {
 		{Name: "PolicyPortalParity", Run: testPolicyPortalParity},
 		{Name: "PolicyPortalUnderChurn", Run: testPolicyPortalUnderChurn},
 		{Name: "PolicyPortalWithPolicyTrigger", Run: testPolicyPortalWithPolicyTrigger},
+		{Name: "PolicyPortalAdditionalIsolation", Run: testPolicyPortalAdditionalIsolation},
 
 		{Name: "SecretDurability", Run: testSecretDurability},
 		{Name: "SecretLiveRotation", Run: testSecretLiveRotation},
@@ -69,6 +71,7 @@ func Phases() []suite.Phase {
 		{Name: "SecretStoreVaultFailure", Run: testSecretStoreVaultFailure},
 		{Name: "SecretStoreVaultKeyRotation", Run: testSecretStoreVaultKeyRotation},
 		{Name: "SecretConsumersAfterRotation", Run: testSecretConsumersAfterRotation},
+		{Name: "SecretConsumerIsolation", Run: testSecretConsumerIsolation},
 
 		{Name: "CollectorExportOTLP", Run: testCollectorExportOTLP},
 		{Name: "CollectorExportOTLPHTTP", Run: testCollectorExportOTLPHTTP},
@@ -89,6 +92,7 @@ func Phases() []suite.Phase {
 		{Name: "LogStoreAuditResourceTrail", Run: testLogStoreAuditResourceTrail},
 		{Name: "MetricStoreQueryPath", Run: testMetricStoreQueryPath},
 		{Name: "MetricStoreLimits", Run: testMetricStoreLimits},
+		{Name: "MetricStoreDescriptorRoundTrip", Run: testMetricStoreDescriptorRoundTrip},
 		{Name: "RscStoreReconciliation", Run: testRscStoreReconciliation},
 		{Name: "RscStoreResourceReplacement", Run: testRscStoreResourceReplacement},
 		{Name: "RscStoreAccessResources", Run: testRscStoreAccessResources},
@@ -104,8 +108,11 @@ func Phases() []suite.Phase {
 
 		{Name: "EnterpriseConditionCompiler", Run: testEnterpriseConditionCompiler},
 		{Name: "PublicServerOIDC", Run: testPublicServerOIDC},
+		{Name: "PublicServerIntegrationCallback", Run: testPublicServerIntegrationCallback},
+		{Name: "PublicServerMetadataHeaders", Run: testPublicServerMetadataHeaders},
 
 		{Name: "Certificate", Run: testCertificateSetAndServe},
+		{Name: "CloudmanNamespaceReplacement", Run: testCloudmanNamespaceReplacement},
 		{Name: "License", Run: testLicenseLifecycle},
 		{Name: "ClusterInfo", Run: testClusterInfo},
 		{Name: "Agent", Run: testAgent},

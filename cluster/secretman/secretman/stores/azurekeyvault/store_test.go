@@ -9,8 +9,10 @@
 package azurekeyvault
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
@@ -22,6 +24,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestServer(t *testing.T) {
@@ -209,4 +212,84 @@ func TestServer(t *testing.T) {
 		_, err = store.Decrypt(ctx, uid, []byte("invalid"))
 		assert.NotNil(t, err)
 	}
+}
+
+func TestStoreAEADPayloadBoundaries(t *testing.T) {
+	for _, size := range []int{16, 24, 32} {
+		key := bytes.Repeat([]byte{byte(size)}, size)
+		for _, plaintext := range [][]byte{nil, {0}, bytes.Repeat([]byte{0, 255, 128, 1}, 16384)} {
+			blob, err := gcmSeal(key, plaintext, []byte("resource-one"))
+			require.NoError(t, err)
+			got, err := gcmOpen(key, blob, []byte("resource-one"))
+			require.NoError(t, err)
+			assert.True(t, bytes.Equal(plaintext, got))
+			_, err = gcmOpen(key, blob, []byte("resource-two"))
+			assert.Error(t, err)
+			for _, length := range []int{0, 1, 11, len(blob) - 1} {
+				_, err = gcmOpen(key, blob[:length], []byte("resource-one"))
+				assert.Error(t, err)
+			}
+			blob[len(blob)-1] ^= 1
+			_, err = gcmOpen(key, blob, []byte("resource-one"))
+			assert.Error(t, err)
+		}
+	}
+	_, err := gcmSeal([]byte("invalid"), []byte("value"), nil)
+	assert.Error(t, err)
+	_, err = gcmOpen([]byte("invalid"), nil, nil)
+	assert.Error(t, err)
+}
+
+func TestStoreRejectsMissingConfiguration(t *testing.T) {
+	for _, opts := range []*stores.StoreOpts{nil, {}, {SecretStore: &enterprisev1.SecretStore{}}, {SecretStore: &enterprisev1.SecretStore{Metadata: &metav1.Metadata{Uid: "uid"}}}} {
+		_, err := NewStore(t.Context(), opts)
+		assert.Error(t, err)
+	}
+}
+
+func TestAzureEnvelopeRoundTripAndTruncation(t *testing.T) {
+	wrapped := bytes.Repeat([]byte{1}, 32)
+	sealed := bytes.Repeat([]byte{2}, minGCMBlobSz)
+	blob, err := encodeBlob(algAzureRSAOAEP256, "key-name", "version", wrapped, sealed)
+	require.NoError(t, err)
+	header, gotWrapped, gotSealed, err := decodeBlob(blob)
+	require.NoError(t, err)
+	assert.Equal(t, algAzureRSAOAEP256, header.algID)
+	assert.Equal(t, "key-name", header.keyName)
+	assert.Equal(t, "version", header.keyVersion)
+	assert.Equal(t, wrapped, gotWrapped)
+	assert.Equal(t, sealed, gotSealed)
+	for size := range len(blob) {
+		_, _, _, err := decodeBlob(blob[:size])
+		assert.Error(t, err)
+	}
+	bad := bytes.Clone(blob)
+	bad[0] ^= 1
+	_, _, _, err = decodeBlob(bad)
+	assert.Error(t, err)
+	bad = bytes.Clone(blob)
+	bad[len(blobMagic)]++
+	_, _, _, err = decodeBlob(bad)
+	assert.Error(t, err)
+	for _, tc := range []struct {
+		alg             byte
+		name, version   string
+		wrapped, sealed []byte
+	}{
+		{0, "name", "", wrapped, sealed}, {algLocalTest, "", "", wrapped, sealed}, {algLocalTest, "name", "", nil, sealed}, {algLocalTest, "name", "", wrapped, nil},
+		{algLocalTest, strings.Repeat("x", maxLenPrefixedField+1), "", wrapped, sealed}, {algLocalTest, "name", strings.Repeat("x", maxLenPrefixedField+1), wrapped, sealed}, {algLocalTest, "name", "", bytes.Repeat([]byte{1}, maxLenPrefixedField+1), sealed},
+	} {
+		_, err := encodeBlob(tc.alg, tc.name, tc.version, tc.wrapped, tc.sealed)
+		assert.Error(t, err)
+	}
+	for _, input := range [][]byte{nil, {0}, {0, 2, 1}} {
+		_, _, err := readLenPrefixed(input)
+		assert.Error(t, err)
+	}
+}
+
+func TestAzureAADSeparatesWrappingAndData(t *testing.T) {
+	s := &store{}
+	assert.NotEqual(t, s.dataAAD(algLocalTest, "key", "version", "uid"), s.wrapAAD(algLocalTest, "key", "version", "uid"))
+	assert.NotEqual(t, s.dataAAD(algLocalTest, "key", "version", "uid"), s.dataAAD(algLocalTest, "key", "other-version", "uid"))
 }

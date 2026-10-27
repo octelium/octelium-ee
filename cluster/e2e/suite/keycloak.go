@@ -366,3 +366,31 @@ func octeliumGroupName(t *testing.T, h *eeharness.H,
 
 	return displayName
 }
+
+func testDirectoryUserReactivation(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	h.Require(t, eescenario.CapKeycloak)
+	k := h.Keycloak(t)
+	k.SeedRealm(t)
+	id := k.CreateUser(t, "reactivated", "reactivated@octelium.com", "Directory", "User")
+	group := k.CreateGroup(t, "reactivation-team")
+	k.AddMember(t, id, group)
+	secret := h.CreateEnterpriseSecret(t, k.Secret)
+	dp := h.CreateDirectoryProvider(t, keycloakProvider(h, k, secret.Metadata.Name))
+	h.SynchronizeDirectoryProvider(t, dp)
+	h.WaitDirectorySynchronized(t, dp, enterprisev1.DirectoryProvider_Status_Synchronization_SUCCESS, eeharness.SyncBudget)
+	original := keycloakUser(t, h, dp, "reactivated@octelium.com")
+	local := h.CreateGroup(t, nil)
+	original.Spec.Groups = append(original.Spec.Groups, local.Metadata.Name)
+	h.UpdateUser(t, original)
+	for _, enabled := range []bool{false, true} {
+		k.SetUserEnabled(t, id, enabled)
+		h.SynchronizeDirectoryProvider(t, dp)
+		h.WaitDirectorySynchronized(t, dp, enterprisev1.DirectoryProvider_Status_Synchronization_SUCCESS, eeharness.SyncBudget)
+		current := keycloakUser(t, h, dp, "reactivated@octelium.com")
+		assert.Equal(t, original.Metadata.Uid, current.Metadata.Uid)
+		assert.Equal(t, !enabled, current.Spec.IsDisabled)
+		assert.Contains(t, current.Spec.Groups, local.Metadata.Name)
+		assert.Contains(t, current.Spec.Groups, octeliumGroupName(t, h, dp, "reactivation-team"))
+	}
+}

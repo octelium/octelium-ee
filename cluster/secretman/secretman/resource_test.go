@@ -298,3 +298,13 @@ func TestCheckAndUpdateSecretResource(t *testing.T) {
 		assert.NotNil(t, err)
 	}
 }
+
+func TestSecretResourceEnvelopeValidation(t *testing.T) {
+	srv := &server{}
+	for _, input := range []string{`{`, `[]`, `{"data":{},"kind":"Secret","metadata":{}}`, `{"data":{},"apiVersion":"core/v1","metadata":{}}`, `{"data":{},"apiVersion":"core/v1","kind":"Secret"}`, `{"data":{},"apiVersion":"core/v1","kind":"Secret","metadata":"invalid"}`} {
+		assert.Error(t, srv.checkAndUpdateSecretResource(t.Context(), []byte(input)), input)
+	}
+	for _, input := range []string{`null`, `{}`, `{"data":null}`} {
+		assert.NoError(t, srv.checkAndUpdateSecretResource(t.Context(), []byte(input)))
+	}
+}

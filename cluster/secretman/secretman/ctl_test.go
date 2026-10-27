@@ -218,3 +218,50 @@ func TestSync(t *testing.T) {
 			ss.Status.LastSynchronizations[0].State)
 	}
 }
+
+func TestSecretStoreSyncTransitions(t *testing.T) {
+	for _, tc := range []struct {
+		old  enterprisev1.SecretStore_Status_Synchronization_State
+		new  enterprisev1.SecretStore_Status_Synchronization_State
+		want bool
+	}{
+		{enterprisev1.SecretStore_Status_Synchronization_SUCCESS, enterprisev1.SecretStore_Status_Synchronization_SYNC_REQUESTED, true},
+		{enterprisev1.SecretStore_Status_Synchronization_FAILED, enterprisev1.SecretStore_Status_Synchronization_SYNC_REQUESTED, true},
+		{enterprisev1.SecretStore_Status_Synchronization_SYNC_REQUESTED, enterprisev1.SecretStore_Status_Synchronization_SYNCING, false},
+		{enterprisev1.SecretStore_Status_Synchronization_SYNCING, enterprisev1.SecretStore_Status_Synchronization_SUCCESS, false},
+		{enterprisev1.SecretStore_Status_Synchronization_SYNC_REQUESTED, enterprisev1.SecretStore_Status_Synchronization_SYNC_REQUESTED, false},
+	} {
+		old := &enterprisev1.SecretStore{
+			Status: &enterprisev1.SecretStore_Status{Synchronization: &enterprisev1.SecretStore_Status_Synchronization{State: tc.old}},
+		}
+		cur := &enterprisev1.SecretStore{
+			Status: &enterprisev1.SecretStore_Status{Synchronization: &enterprisev1.SecretStore_Status_Synchronization{State: tc.new}},
+		}
+		assert.Equal(t, tc.want, (&server{}).shouldSync(cur, old))
+	}
+	assert.True(t, (&server{}).shouldSync(
+		&enterprisev1.SecretStore{
+			Status: &enterprisev1.SecretStore_Status{
+				Synchronization: &enterprisev1.SecretStore_Status_Synchronization{State: enterprisev1.SecretStore_Status_Synchronization_SYNC_REQUESTED},
+			},
+		},
+		&enterprisev1.SecretStore{Status: &enterprisev1.SecretStore_Status{}},
+	))
+}
+
+func TestSecretStoreSynchronizationHistoryLimit(t *testing.T) {
+	var history []*enterprisev1.SecretStore_Status_Synchronization
+	for range maxLastSecretStoreSynchronizations + 5 {
+		rec := &enterprisev1.SecretStore_Status_Synchronization{
+			State:       enterprisev1.SecretStore_Status_Synchronization_SUCCESS,
+			CreatedAt:   pbutils.Now(),
+			CompletedAt: pbutils.Now(),
+		}
+		history = appendSecretStoreSync(history, rec)
+		assert.Equal(t, rec.State, history[0].State)
+		assert.NotSame(t, rec, history[0])
+		rec.State = enterprisev1.SecretStore_Status_Synchronization_FAILED
+		assert.Equal(t, enterprisev1.SecretStore_Status_Synchronization_SUCCESS, history[0].State)
+	}
+	assert.Len(t, history, maxLastSecretStoreSynchronizations)
+}

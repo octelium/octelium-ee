@@ -18,6 +18,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -31,6 +32,7 @@ import (
 	utils_types "github.com/octelium/octelium/pkg/utils/types"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
@@ -421,4 +423,16 @@ func TestUser(t *testing.T) {
 
 	}
 
+}
+
+func TestSCIMUserBodyValidationBoundaries(t *testing.T) {
+	for _, input := range []string{"", "{", "[]", strings.Repeat("x", (1<<20)+1)} {
+		request := httptest.NewRequest(http.MethodPost, "/scim/provider/Users", strings.NewReader(input))
+		_, err := (&server{}).unmarshalUserSCIMFromReqBody(request, httptest.NewRecorder())
+		assert.Error(t, err)
+	}
+	request := httptest.NewRequest(http.MethodPost, "/scim/provider/Users", strings.NewReader(`{"externalId":"external"}`))
+	value, err := (&server{}).unmarshalUserSCIMFromReqBody(request, httptest.NewRecorder())
+	require.NoError(t, err)
+	assert.Equal(t, "external", value.ExternalID)
 }

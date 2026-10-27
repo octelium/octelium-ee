@@ -9,11 +9,13 @@
 package secretman
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDEKAAD(t *testing.T) {
@@ -124,5 +126,41 @@ func TestDEKInvalidKey(t *testing.T) {
 		out, err := k.decrypt(res.Ciphertext)
 		assert.Nil(t, err, "%+v", err)
 		assert.Equal(t, []byte("octelium"), out)
+	}
+}
+
+func TestDEKKeyLengthsAndPayloadBoundaries(t *testing.T) {
+	for _, size := range []int{16, 24, 32} {
+		key := &dek{uid: vutils.UUIDv4(), key: utilrand.GetRandomBytesMust(size)}
+		for _, data := range [][]byte{nil, {}, {0}, bytes.Repeat([]byte{0, 255, 128, 1}, 16384)} {
+			aad := []byte("resource identity")
+			first, err := key.encryptWithAAD(data, aad)
+			require.NoError(t, err)
+			second, err := key.encryptWithAAD(data, aad)
+			require.NoError(t, err)
+			assert.NotEqual(t, first.Ciphertext, second.Ciphertext)
+			assert.Equal(t, key.uid, first.KeyUID)
+			got, err := key.decryptWithAAD(first.Ciphertext, aad)
+			require.NoError(t, err)
+			assert.True(t, bytes.Equal(data, got))
+			_, err = key.decryptWithAAD(first.Ciphertext, []byte("other resource"))
+			assert.Error(t, err)
+		}
+	}
+}
+
+func TestDEKCiphertextTruncationAndTampering(t *testing.T) {
+	key := &dek{uid: vutils.UUIDv4(), key: utilrand.GetRandomBytesMust(32)}
+	out, err := key.encrypt([]byte("value"))
+	require.NoError(t, err)
+	for length := range len(out.Ciphertext) {
+		_, err := key.decrypt(out.Ciphertext[:length])
+		assert.Error(t, err)
+	}
+	for i := range out.Ciphertext {
+		changed := bytes.Clone(out.Ciphertext)
+		changed[i] ^= 1
+		_, err := key.decrypt(changed)
+		assert.Error(t, err)
 	}
 }

@@ -406,3 +406,17 @@ func testEnterpriseSecretAPI(t *testing.T, ch *harness.H) {
 		})
 	}
 }
+
+func testSecretConsumerIsolation(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	first, second := newSecretConsumer(t, h), newSecretConsumer(t, h)
+	for range 3 {
+		first.rotate(t, h)
+		second.probe(t)
+		second.rotate(t, h)
+		first.probe(t)
+	}
+	h.RestartEnterprise(t, "secretman")
+	first.probe(t)
+	second.probe(t)
+}

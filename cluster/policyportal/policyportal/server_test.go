@@ -11,6 +11,7 @@ package policyportal
 import (
 	"context"
 	"fmt"
+	"net"
 	"testing"
 
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
@@ -25,6 +26,13 @@ import (
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/proto"
 )
 
 type policyPortalTestEnv struct {
@@ -485,4 +493,167 @@ func TestIsAuthorizedReturnsNotFoundForMissingSession(t *testing.T) {
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)
 	assert.True(t, grpcerr.IsNotFound(err), "%+v", err)
+}
+
+func newPolicyPortalRPCClient(t *testing.T, env *policyPortalTestEnv) enterprisev1.PolicyPortalServiceClient {
+	t.Helper()
+	listener := bufconn.Listen(1024 * 1024)
+	srv := grpc.NewServer()
+	enterprisev1.RegisterPolicyPortalServiceServer(srv, env.srv)
+	go srv.Serve(listener)
+	conn, err := grpc.NewClient("passthrough:///policyportal", grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return listener.Dial() }))
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		conn.Close()
+		srv.Stop()
+		listener.Close()
+	})
+	return enterprisev1.NewPolicyPortalServiceClient(conn)
+}
+
+func TestCloneAdditionalAuthorizationIsolation(t *testing.T) {
+	assert.Nil(t, cloneAdditionalAuthorization(nil))
+	original := &enterprisev1.IsAuthorizedRequest_Additional{
+		Policies:       []string{"named-policy"},
+		InlinePolicies: []*corev1.InlinePolicy{nil, policyPortalInlinePolicy("inline", corev1.Policy_Spec_Rule_ALLOW)},
+	}
+	copy := cloneAdditionalAuthorization(original)
+	require.Len(t, copy.InlinePolicies, 2)
+	assert.Nil(t, copy.InlinePolicies[0])
+	copy.Policies[0] = "changed"
+	copy.InlinePolicies[1].Name = "changed"
+	copy.InlinePolicies[1].Spec.Rules[0].Effect = corev1.Policy_Spec_Rule_DENY
+	assert.Equal(t, "named-policy", original.Policies[0])
+	assert.Equal(t, "inline", original.InlinePolicies[1].Name)
+	assert.Equal(t, corev1.Policy_Spec_Rule_ALLOW, original.InlinePolicies[1].Spec.Rules[0].Effect)
+}
+
+func TestPolicyPortalRPCDownstreamAndUpstreamMatrix(t *testing.T) {
+	env := newPolicyPortalTestEnv(t)
+	require.NotNil(t, env)
+	group, err := env.srv.octeliumC.CoreC().CreateGroup(env.ctx, &corev1.Group{
+		Metadata: &metav1.Metadata{Name: "policy-group-" + utilrand.GetRandomStringCanonical(8)},
+		Spec:     &corev1.Group_Spec{},
+	})
+	require.NoError(t, err)
+	env.user.Spec.Groups = append(env.user.Spec.Groups, group.Metadata.Name)
+	_, err = env.srv.octeliumC.CoreC().UpdateUser(env.ctx, env.user)
+	require.NoError(t, err)
+	env.session.Status.DeviceRef = umetav1.GetObjectReference(env.device)
+	_, err = env.srv.octeliumC.CoreC().UpdateSession(env.ctx, env.session)
+	require.NoError(t, err)
+	env.service.Spec.IsPublic = true
+	_, err = env.srv.octeliumC.CoreC().UpdateService(env.ctx, env.service)
+	require.NoError(t, err)
+	client := newPolicyPortalRPCClient(t, env)
+	for _, downstream := range []string{"session", "device", "user"} {
+		for _, upstream := range []string{"namespace", "service"} {
+			if downstream == "user" && upstream == "namespace" {
+				continue
+			}
+			for _, byName := range []bool{false, true} {
+				t.Run(fmt.Sprintf("%s/%s/Name=%t", downstream, upstream, byName), func(t *testing.T) {
+					ref := func(md *metav1.Metadata) *metav1.ObjectReference {
+						if byName {
+							return &metav1.ObjectReference{Name: md.Name}
+						}
+						return &metav1.ObjectReference{Uid: md.Uid}
+					}
+					req := policyPortalSessionNamespaceRequest(env, policyPortalInlinePolicy("allow", corev1.Policy_Spec_Rule_ALLOW))
+					switch downstream {
+					case "session":
+						req.Downstream = &enterprisev1.IsAuthorizedRequest_SessionRef{SessionRef: ref(env.session.Metadata)}
+					case "device":
+						req.Downstream = &enterprisev1.IsAuthorizedRequest_DeviceRef{DeviceRef: ref(env.device.Metadata)}
+					case "user":
+						req.Downstream = &enterprisev1.IsAuthorizedRequest_UserRef{UserRef: ref(env.user.Metadata)}
+					}
+					if upstream == "service" {
+						req.Upstream = &enterprisev1.IsAuthorizedRequest_ServiceRef{ServiceRef: ref(env.service.Metadata)}
+					} else {
+						req.Upstream = &enterprisev1.IsAuthorizedRequest_NamespaceRef{NamespaceRef: ref(env.namespace.Metadata)}
+					}
+					res, err := client.IsAuthorized(env.ctx, req)
+					require.NoError(t, err)
+					assert.True(t, res.IsAuthorized)
+					require.NotNil(t, res.Reason)
+					assert.Equal(t, corev1.AccessLog_Entry_Common_Reason_POLICY_MATCH, res.Reason.Type)
+				})
+			}
+		}
+	}
+}
+
+func TestPolicyPortalRPCInvalidReferences(t *testing.T) {
+	env := newPolicyPortalTestEnv(t)
+	require.NotNil(t, env)
+	client := newPolicyPortalRPCClient(t, env)
+	for _, invalid := range []*metav1.ObjectReference{nil, {}, {Uid: "invalid"}, {Name: "invalid/name"}} {
+		for _, selector := range []string{"session", "device", "user", "service", "namespace"} {
+			req := policyPortalSessionNamespaceRequest(env)
+			switch selector {
+			case "session":
+				req.Downstream = &enterprisev1.IsAuthorizedRequest_SessionRef{SessionRef: invalid}
+			case "device":
+				req.Downstream = &enterprisev1.IsAuthorizedRequest_DeviceRef{DeviceRef: invalid}
+			case "user":
+				req.Downstream = &enterprisev1.IsAuthorizedRequest_UserRef{UserRef: invalid}
+			case "service":
+				req.Upstream = &enterprisev1.IsAuthorizedRequest_ServiceRef{ServiceRef: invalid}
+			case "namespace":
+				req.Upstream = &enterprisev1.IsAuthorizedRequest_NamespaceRef{NamespaceRef: invalid}
+			}
+			_, err := client.IsAuthorized(env.ctx, req)
+			assert.Equal(t, codes.InvalidArgument, status.Code(err), selector)
+		}
+	}
+	_, err := env.srv.IsAuthorized(env.ctx, nil)
+	assert.Equal(t, codes.InvalidArgument, status.Code(err))
+}
+
+func TestPolicyPortalRPCMissingResources(t *testing.T) {
+	env := newPolicyPortalTestEnv(t)
+	require.NotNil(t, env)
+	client := newPolicyPortalRPCClient(t, env)
+	for _, selector := range []string{"device", "user", "service", "namespace"} {
+		req := policyPortalSessionNamespaceRequest(env)
+		ref := &metav1.ObjectReference{Uid: vutils.UUIDv4()}
+		switch selector {
+		case "device":
+			req.Downstream = &enterprisev1.IsAuthorizedRequest_DeviceRef{DeviceRef: ref}
+		case "user":
+			req.Downstream = &enterprisev1.IsAuthorizedRequest_UserRef{UserRef: ref}
+		case "service":
+			req.Upstream = &enterprisev1.IsAuthorizedRequest_ServiceRef{ServiceRef: ref}
+		case "namespace":
+			req.Upstream = &enterprisev1.IsAuthorizedRequest_NamespaceRef{NamespaceRef: ref}
+		}
+		res, err := client.IsAuthorized(env.ctx, req)
+		assert.Nil(t, res)
+		assert.Equal(t, codes.NotFound, status.Code(err), selector)
+	}
+}
+
+func TestPolicyPortalAdditionalInputRemainsUnchanged(t *testing.T) {
+	env := newPolicyPortalTestEnv(t)
+	require.NotNil(t, env)
+	req := policyPortalSessionNamespaceRequest(env, policyPortalInlinePolicy("allow", corev1.Policy_Spec_Rule_ALLOW))
+	before := proto.Clone(req)
+	for range 3 {
+		res, err := env.srv.IsAuthorized(env.ctx, req)
+		require.NoError(t, err)
+		assert.True(t, res.IsAuthorized)
+		assert.True(t, proto.Equal(before, req))
+	}
+}
+
+func TestPolicyPortalCanceledRequest(t *testing.T) {
+	env := newPolicyPortalTestEnv(t)
+	require.NotNil(t, env)
+	ctx, cancel := context.WithCancel(env.ctx)
+	cancel()
+	res, err := newPolicyPortalRPCClient(t, env).IsAuthorized(ctx, policyPortalSessionNamespaceRequest(env))
+	assert.Nil(t, res)
+	assert.Equal(t, codes.Canceled, status.Code(err))
 }

@@ -12,6 +12,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"testing"
@@ -172,5 +173,22 @@ func TestGetRetryDelay(t *testing.T) {
 	{
 		assert.True(t, getRetryDelay(0, errors.Errorf("Could not do it")) >= time.Second)
 		assert.True(t, getRetryDelay(1000, errors.Errorf("Could not do it")) <= maxRetryDelay)
+	}
+}
+
+func TestACMERetryErrorsUnwrapAndClamp(t *testing.T) {
+	cause := errors.New("upstream failure")
+	assert.ErrorIs(t, &deferredError{err: cause, delay: time.Second}, cause)
+	assert.ErrorIs(t, &permanentError{err: cause}, cause)
+	assert.Equal(t, cause.Error(), (&deferredError{err: cause}).Error())
+	assert.Equal(t, cause.Error(), (&permanentError{err: cause}).Error())
+	assert.Equal(t, time.Second, clampRetryDelay(-time.Hour))
+	assert.Equal(t, maxRetryDelay, clampRetryDelay(10*maxRetryDelay))
+	for _, err := range []error{&deferredError{err: cause, delay: time.Second}, &permanentError{err: cause}, io.EOF, cause} {
+		for _, failures := range []uint32{0, 1, 100, math.MaxUint32} {
+			delay := getRetryDelay(failures, err)
+			assert.GreaterOrEqual(t, delay, time.Second)
+			assert.LessOrEqual(t, delay, maxRetryDelay)
+		}
 	}
 }

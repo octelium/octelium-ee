@@ -13,12 +13,15 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
@@ -206,5 +209,30 @@ func TestHandleIntegration(t *testing.T) {
 		body := []byte(`{"type":"url_verification","challenge":"abc123"}`)
 		w := doRequest(fmt.Sprintf("%s/slack/events", basePath), body, true, "application/json")
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	}
+}
+
+func TestIntegrationRequestBoundaries(t *testing.T) {
+	for _, method := range []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodDelete, http.MethodOptions} {
+		w := httptest.NewRecorder()
+		(&Server{}).ServeHTTP(w, httptest.NewRequest(method, integrationPathPrefix+"unknown/events", nil))
+		assert.Equal(t, http.StatusMethodNotAllowed, w.Code)
+		assert.Equal(t, "POST", w.Header().Get("Allow"))
+	}
+	for _, path := range []string{integrationPathPrefix, integrationPathPrefix + "/"} {
+		w := httptest.NewRecorder()
+		(&Server{}).ServeHTTP(w, httptest.NewRequest(http.MethodPost, path, nil))
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	}
+	for _, tc := range []struct {
+		body io.Reader
+		code int
+	}{
+		{strings.NewReader(strings.Repeat("x", maxIntegrationBodyBytes+1)), http.StatusRequestEntityTooLarge},
+		{iotest.ErrReader(errors.New("body failed")), http.StatusBadRequest},
+	} {
+		w := httptest.NewRecorder()
+		(&Server{}).ServeHTTP(w, httptest.NewRequest(http.MethodPost, integrationPathPrefix+"unknown/events", tc.body))
+		assert.Equal(t, tc.code, w.Code)
 	}
 }

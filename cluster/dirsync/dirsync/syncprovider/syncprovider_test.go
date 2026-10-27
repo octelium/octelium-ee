@@ -10,6 +10,8 @@ package syncprovider
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"testing"
 
 	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/enterprise"
@@ -17,6 +19,7 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
@@ -160,5 +163,48 @@ func TestSync(t *testing.T) {
 		usr, err := fakeC.OcteliumC.CoreC().GetUser(ctx, &rmetav1.GetOptions{Name: usr1Name})
 		assert.Nil(t, err, "%+v", err)
 		assert.Contains(t, usr.Spec.Groups, grp1Name)
+	}
+}
+
+type failingDirectorySource struct {
+	usersErr, groupsErr     error
+	usersCalls, groupsCalls int
+}
+
+func (s *failingDirectorySource) ListUsers(context.Context) ([]*User, error) {
+	s.usersCalls++
+	return nil, s.usersErr
+}
+func (s *failingDirectorySource) ListGroups(context.Context) ([]*Group, error) {
+	s.groupsCalls++
+	return nil, s.groupsErr
+}
+
+func TestSyncStopsBeforeWritesOnSourceFailure(t *testing.T) {
+	failure := errors.New("provider unavailable")
+	for _, source := range []*failingDirectorySource{{usersErr: failure}, {groupsErr: failure}} {
+		err := (&Reconciler{}).Sync(t.Context(), source)
+		assert.ErrorIs(t, err, failure)
+		assert.Equal(t, 1, source.usersCalls)
+		if source.usersErr != nil {
+			assert.Zero(t, source.groupsCalls)
+		} else {
+			assert.Equal(t, 1, source.groupsCalls)
+		}
+	}
+}
+
+func TestDirectoryGeneratedNameBoundaries(t *testing.T) {
+	r := &Reconciler{
+		dp: &enterprisev1.DirectoryProvider{Status: &enterprisev1.DirectoryProvider_Status{Id: "provider"}},
+	}
+	for _, external := range []string{"", "short", "12345678-0000-4000-8000-000000000000", "UPPER Case", "你好", strings.Repeat("id", 100)} {
+		for _, readable := range []string{"", "person@example.com", "á ü 你好", strings.Repeat("a", 200), "---"} {
+			name := r.genReadableName(readable, external)
+			assert.NoError(t, apivalidation.ValidateName(name, 0, 0), name)
+			assert.LessOrEqual(t, len(name), maxNameLen)
+			assert.Equal(t, name, r.genReadableName(readable, external))
+		}
+		assert.Len(t, externalIDTag(external), userTagLen)
 	}
 }

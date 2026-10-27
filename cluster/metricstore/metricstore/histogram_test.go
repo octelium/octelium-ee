@@ -9,10 +9,12 @@
 package metricstore
 
 import (
+	"math"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDeltaExplicitHistogramPoint(t *testing.T) {
@@ -76,4 +78,21 @@ func TestDeltaExponentialHistogramResetOnScaleChange(t *testing.T) {
 	assert.Equal(t, current.count, delta.count)
 	assert.Equal(t, current.scale, delta.scale)
 	assert.Equal(t, current.positive, delta.positive)
+}
+
+func TestExplicitHistogramQuantileBoundaryBuckets(t *testing.T) {
+	for _, tc := range []struct{ quantile, want float64 }{{0, 10}, {0.5, 10}, {1, 100}} {
+		value, ok := explicitHistogramQuantile(tc.quantile, []float64{10, 100}, []uint64{1, 0, 1}, 2)
+		assert.True(t, ok)
+		assert.Equal(t, tc.want, value)
+	}
+	_, ok := explicitHistogramQuantile(0.5, []float64{1}, []uint64{0, 0}, 0)
+	assert.False(t, ok)
+	_, ok = explicitHistogramQuantile(0.5, []float64{1}, []uint64{1}, 1)
+	assert.False(t, ok)
+	buckets := cumulativeExplicitBuckets([]float64{1, 2}, []uint64{1, 2, 3})
+	require.Len(t, buckets, 3)
+	assert.EqualValues(t, 6, buckets[2].Count)
+	assert.True(t, buckets[2].IsInf)
+	assert.Nil(t, cumulativeExplicitBuckets([]float64{1}, []uint64{math.MaxUint64, 1}))
 }

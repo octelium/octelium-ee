@@ -18,11 +18,13 @@ import (
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
+	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/cluster/e2e/harness"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func isAuthorized(t *testing.T, h *eeharness.H,
@@ -216,4 +218,28 @@ func testPolicyPortalWithPolicyTrigger(t *testing.T, ch *harness.H) {
 		accessv1.Request_Status_State_APPROVED, eeharness.RequestBudget)
 
 	waitParity(t, h, c.alice.User, c.alpha, probe, true)
+}
+
+func testPolicyPortalAdditionalIsolation(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	user := h.CreateWorkloadUser(t, nil)
+	service := h.NewPublicService(t, "default")
+	waitAuthorization(t, h, user, service, false)
+	req := &enterprisev1.IsAuthorizedRequest{
+		Downstream: &enterprisev1.IsAuthorizedRequest_UserRef{UserRef: umetav1.GetObjectReference(user)},
+		Upstream:   &enterprisev1.IsAuthorizedRequest_ServiceRef{ServiceRef: umetav1.GetObjectReference(service)},
+	}
+	for range 3 {
+		req.Additional = &enterprisev1.IsAuthorizedRequest_Additional{InlinePolicies: harness.InlineAllowAny("request-only")}
+		res, err := h.PolicyPortalC().IsAuthorized(t.Context(), req)
+		require.NoError(t, err)
+		assert.True(t, res.IsAuthorized)
+		req.Additional = nil
+		res, err = h.PolicyPortalC().IsAuthorized(t.Context(), req)
+		require.NoError(t, err)
+		assert.False(t, res.IsAuthorized)
+	}
+	current, err := h.CoreC().GetUser(t.Context(), &metav1.GetOptions{Uid: user.Metadata.Uid})
+	require.NoError(t, err)
+	assert.True(t, proto.Equal(user.Spec.Authorization, current.Spec.Authorization))
 }
