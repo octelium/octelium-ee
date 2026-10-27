@@ -29,12 +29,14 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	utils_types "github.com/octelium/octelium/pkg/utils/types"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestUser(t *testing.T) {
@@ -508,6 +510,191 @@ func TestSCIMUserPatchBodyErrors(t *testing.T) {
 			assert.Equal(t, []string{"urn:ietf:params:scim:api:messages:2.0:Error"}, response.Schemas)
 			assert.NotEmpty(t, response.Detail)
 			assert.NotContains(t, response.Detail, readErr.Error())
+		})
+	}
+}
+
+func TestSCIMUserConversionRejectsNullEntries(t *testing.T) {
+	srv := &server{}
+	dp := &enterprisev1.DirectoryProvider{Status: &enterprisev1.DirectoryProvider_Status{Id: "provider"}}
+	for _, tc := range []struct {
+		name string
+		user *resourceUser
+	}{
+		{"NilUser", nil},
+		{"NullEmail", &resourceUser{Emails: []*resourceUserEmail{nil}}},
+		{"TrailingNullEmail", &resourceUser{Emails: []*resourceUserEmail{{Primary: true, Value: "user@example.com"}, nil}}},
+		{"NullPhoto", &resourceUser{Photos: []*resourceUserPhoto{nil}}},
+		{"TrailingNullPhoto", &resourceUser{Photos: []*resourceUserPhoto{{Primary: true, Value: "https://example.com/avatar.png"}, nil}}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			require.NotPanics(t, func() {
+				usr, err := srv.getUserFromSCIM(tc.user, dp)
+				assert.Error(t, err)
+				assert.Nil(t, usr)
+			})
+		})
+	}
+}
+
+func TestSCIMUserNestedEntryValidation(t *testing.T) {
+	srv, handler, dp := newSCIMPatchTestServer(t)
+	request := func(method, path, body string) *httptest.ResponseRecorder {
+		r := httptest.NewRequest(method, path, strings.NewReader(body))
+		r.Header.Set("X-Octelium-Session-Uid", dp.Status.SessionRef.Uid)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+		return w
+	}
+	bodyFor := func(name, fields string, active bool) string {
+		if fields != "" {
+			fields = "," + fields
+		}
+		return fmt.Sprintf(`{"externalId":%q,"userName":%q,"active":%t,"displayName":"Nested User"%s}`, name, name, active, fields)
+	}
+	w := request(http.MethodPost, srv.getUserPrefix(dp), bodyFor("existing@example.com", `"emails":[{"primary":true,"value":"existing@example.com"}]`, true))
+	require.Equal(t, http.StatusCreated, w.Code, w.Body.String())
+	var existing resourceUser
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &existing))
+	link, err := srv.octeliumC.EnterpriseC().GetDirectoryProviderUser(t.Context(), &rmetav1.GetOptions{Uid: existing.ID})
+	require.NoError(t, err)
+	usr, err := srv.octeliumC.CoreC().GetUser(t.Context(), &rmetav1.GetOptions{Uid: link.Status.UserRef.Uid})
+	require.NoError(t, err)
+	users, err := srv.octeliumC.CoreC().ListUser(t.Context(), &rmetav1.ListOptions{})
+	require.NoError(t, err)
+	links, err := srv.octeliumC.EnterpriseC().ListDirectoryProviderUser(t.Context(), &rmetav1.ListOptions{})
+	require.NoError(t, err)
+	for _, method := range []string{http.MethodPost, http.MethodPut} {
+		for i, tc := range []struct {
+			name, fields string
+		}{
+			{"NullEmail", `"emails":[null]`},
+			{"LeadingNullEmail", `"emails":[null,{"primary":true,"value":"candidate@example.com"}]`},
+			{"TrailingNullEmail", `"emails":[{"primary":true,"value":"candidate@example.com"},null]`},
+			{"NullPhoto", `"photos":[null]`},
+			{"LeadingNullPhoto", `"photos":[null,{"primary":true,"value":"https://example.com/avatar.png"}]`},
+			{"TrailingNullPhoto", `"photos":[{"primary":true,"value":"https://example.com/avatar.png"},null]`},
+			{"NullEmailAndPhoto", `"emails":[null],"photos":[null]`},
+			{"InvalidEmailType", `"emails":["invalid"]`},
+			{"InvalidPhotoType", `"photos":[123]`},
+		} {
+			t.Run(method+"/"+tc.name, func(t *testing.T) {
+				path := srv.getUserPrefix(dp)
+				if method == http.MethodPut {
+					path += "/" + existing.ID
+				}
+				var w *httptest.ResponseRecorder
+				require.NotPanics(t, func() {
+					w = request(method, path, bodyFor(fmt.Sprintf("candidate%d@example.com", i), tc.fields, false))
+				})
+				require.Equal(t, http.StatusBadRequest, w.Code, w.Body.String())
+				assert.Equal(t, "application/scim+json", w.Header().Get("Content-Type"))
+				var response responseError
+				require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
+				assert.Equal(t, "400", response.Status)
+				assert.Equal(t, []string{"urn:ietf:params:scim:api:messages:2.0:Error"}, response.Schemas)
+				assert.NotEmpty(t, response.Detail)
+				updatedUsr, err := srv.octeliumC.CoreC().GetUser(t.Context(), &rmetav1.GetOptions{Uid: usr.Metadata.Uid})
+				require.NoError(t, err)
+				assert.True(t, proto.Equal(usr, updatedUsr))
+				updatedLink, err := srv.octeliumC.EnterpriseC().GetDirectoryProviderUser(t.Context(), &rmetav1.GetOptions{Uid: link.Metadata.Uid})
+				require.NoError(t, err)
+				assert.True(t, proto.Equal(link, updatedLink))
+				updatedUsers, err := srv.octeliumC.CoreC().ListUser(t.Context(), &rmetav1.ListOptions{})
+				require.NoError(t, err)
+				assert.Len(t, updatedUsers.Items, len(users.Items))
+				updatedLinks, err := srv.octeliumC.EnterpriseC().ListDirectoryProviderUser(t.Context(), &rmetav1.ListOptions{})
+				require.NoError(t, err)
+				assert.Len(t, updatedLinks.Items, len(links.Items))
+			})
+		}
+	}
+
+	for i, tc := range []struct {
+		name, fields, email, photo string
+	}{
+		{name: "Omitted"},
+		{name: "NullArrays", fields: `"emails":null,"photos":null`},
+		{name: "EmptyArrays", fields: `"emails":[],"photos":[]`},
+		{
+			name:   "ValidEntries",
+			fields: `"emails":[{"value":"secondary@example.com"},{"primary":true,"value":"profile@example.com"}],"photos":[{"value":"https://example.com/secondary.png","type":"thumbnail"},{"primary":true,"type":"photo","value":"https://example.com/avatar.png"}]`,
+			email:  "profile@example.com",
+			photo:  "https://example.com/avatar.png",
+		},
+	} {
+		t.Run("Valid/"+tc.name, func(t *testing.T) {
+			body := bodyFor(fmt.Sprintf("valid%d@example.com", i), tc.fields, false)
+			w := request(http.MethodPost, srv.getUserPrefix(dp), body)
+			require.Equal(t, http.StatusCreated, w.Code, w.Body.String())
+			var response resourceUser
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
+			link, err := srv.octeliumC.EnterpriseC().GetDirectoryProviderUser(t.Context(), &rmetav1.GetOptions{Uid: response.ID})
+			require.NoError(t, err)
+			usr, err := srv.octeliumC.CoreC().GetUser(t.Context(), &rmetav1.GetOptions{Uid: link.Status.UserRef.Uid})
+			require.NoError(t, err)
+			assert.Equal(t, tc.email, usr.Spec.Email)
+			assert.Equal(t, tc.photo, usr.Metadata.PicURL)
+			assert.True(t, usr.Spec.IsDisabled)
+			body = bodyFor(fmt.Sprintf("valid%d@example.com", i), tc.fields, true)
+			w = request(http.MethodPut, srv.getUserPrefix(dp)+"/"+response.ID, body)
+			require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+			updatedUsr, err := srv.octeliumC.CoreC().GetUser(t.Context(), &rmetav1.GetOptions{Uid: usr.Metadata.Uid})
+			require.NoError(t, err)
+			assert.False(t, updatedUsr.Spec.IsDisabled)
+			assert.Equal(t, tc.email, updatedUsr.Spec.Email)
+			assert.Equal(t, tc.photo, updatedUsr.Metadata.PicURL)
+		})
+	}
+}
+
+func TestSCIMStoredUserNullEntriesReturnErrors(t *testing.T) {
+	for _, field := range []string{"emails", "photos"} {
+		t.Run(field, func(t *testing.T) {
+			srv, handler, dp := newSCIMPatchTestServer(t)
+			request := func(method, path, body string) *httptest.ResponseRecorder {
+				r := httptest.NewRequest(method, path, strings.NewReader(body))
+				r.Header.Set("X-Octelium-Session-Uid", dp.Status.SessionRef.Uid)
+				w := httptest.NewRecorder()
+				handler.ServeHTTP(w, r)
+				return w
+			}
+			body := `{"externalId":"stored-user","userName":"stored@example.com","active":true,"emails":[{"primary":true,"value":"stored@example.com","type":"work"}],"photos":[{"primary":true,"value":"https://example.com/avatar.png"}]}`
+			w := request(http.MethodPost, srv.getUserPrefix(dp), body)
+			require.Equal(t, http.StatusCreated, w.Code, w.Body.String())
+			var response resourceUser
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
+			link, err := srv.octeliumC.EnterpriseC().GetDirectoryProviderUser(t.Context(), &rmetav1.GetOptions{Uid: response.ID})
+			require.NoError(t, err)
+			usr, err := srv.octeliumC.CoreC().GetUser(t.Context(), &rmetav1.GetOptions{Uid: link.Status.UserRef.Uid})
+			require.NoError(t, err)
+			attrs, err := pbutils.ConvertToMap(link.Status.Attrs)
+			require.NoError(t, err)
+			attrs[field] = append(attrs[field].([]any), nil)
+			link.Status.Attrs, err = pbutils.MapToStruct(attrs)
+			require.NoError(t, err)
+			link, err = srv.octeliumC.EnterpriseC().UpdateDirectoryProviderUser(t.Context(), link)
+			require.NoError(t, err)
+			path := srv.getUserPrefix(dp) + "/" + response.ID
+			require.NotPanics(t, func() {
+				w = request(http.MethodPatch, path, `{"Operations":[{"op":"Replace","path":"emails[type eq \"work\"].value","value":"changed@example.com"}]}`)
+			})
+			require.Equal(t, http.StatusInternalServerError, w.Code, w.Body.String())
+			var errorResponse responseError
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &errorResponse))
+			assert.Equal(t, "500", errorResponse.Status)
+			assert.Equal(t, []string{"urn:ietf:params:scim:api:messages:2.0:Error"}, errorResponse.Schemas)
+			assert.Equal(t, "Internal error", errorResponse.Detail)
+			updatedUsr, err := srv.octeliumC.CoreC().GetUser(t.Context(), &rmetav1.GetOptions{Uid: usr.Metadata.Uid})
+			require.NoError(t, err)
+			assert.True(t, proto.Equal(usr, updatedUsr))
+			updatedLink, err := srv.octeliumC.EnterpriseC().GetDirectoryProviderUser(t.Context(), &rmetav1.GetOptions{Uid: link.Metadata.Uid})
+			require.NoError(t, err)
+			assert.True(t, proto.Equal(link, updatedLink))
+			w = request(http.MethodPut, path, body)
+			require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+			w = request(http.MethodGet, path, "")
+			require.Equal(t, http.StatusOK, w.Code, w.Body.String())
 		})
 	}
 }

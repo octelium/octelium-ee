@@ -302,6 +302,23 @@ func (s *server) isDirectoryOwnedUser(ctx context.Context, uid string) bool {
 	return false
 }
 
+func (s *server) validateUserSCIM(i *resourceUser) error {
+	if i == nil {
+		return errors.Errorf("Nil SCIM User")
+	}
+	for idx, email := range i.Emails {
+		if email == nil {
+			return errors.Errorf("Nil SCIM User email at index %d", idx)
+		}
+	}
+	for idx, photo := range i.Photos {
+		if photo == nil {
+			return errors.Errorf("Nil SCIM User photo at index %d", idx)
+		}
+	}
+	return nil
+}
+
 func (s *server) unmarshalUserSCIMFromReqBody(r *http.Request, w http.ResponseWriter) (*resourceUser, error) {
 	defer r.Body.Close()
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
@@ -315,11 +332,18 @@ func (s *server) unmarshalUserSCIMFromReqBody(r *http.Request, w http.ResponseWr
 
 		return nil, err
 	}
+	if err := s.validateUserSCIM(scimUser); err != nil {
+		return nil, err
+	}
 
 	return scimUser, nil
 }
 
 func (s *server) getUserFromSCIM(i *resourceUser, dp *enterprisev1.DirectoryProvider) (*corev1.User, error) {
+	if err := s.validateUserSCIM(i); err != nil {
+		return nil, err
+	}
+
 	ret := &corev1.User{
 		Metadata: &metav1.Metadata{
 			Name:        s.genUserName(i, dp),
@@ -498,6 +522,10 @@ func (s *server) handlePatchUser(w http.ResponseWriter, r *http.Request) {
 
 	scimUsr, err := s.toUserSCIM(dpUsr)
 	if err != nil {
+		s.setErrorInternal(w, err)
+		return
+	}
+	if err := s.validateUserSCIM(scimUsr); err != nil {
 		s.setErrorInternal(w, err)
 		return
 	}
