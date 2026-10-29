@@ -114,12 +114,12 @@ func testSecretDurability(t *testing.T, ch *harness.H) {
 
 	t.Run("AfterSecretManRestart", func(t *testing.T) {
 		h.RestartEnterprise(t, "secretman")
-		consumer.probe(t)
+		probeStoredSecret(t, h, consumer)
 	})
 
 	t.Run("AfterRscServerRestart", func(t *testing.T) {
 		h.RestartEnterprise(t, "rscserver")
-		consumer.probe(t)
+		probeStoredSecret(t, h, consumer)
 	})
 
 	t.Run("EnterpriseSecretShapes", func(t *testing.T) {
@@ -205,7 +205,7 @@ func testSecretStoreVault(t *testing.T, ch *harness.H) {
 
 	t.Run("AfterSecretManRestart", func(t *testing.T) {
 		h.RestartEnterprise(t, "secretman")
-		consumer.probe(t)
+		probeStoredSecret(t, h, consumer)
 	})
 
 	t.Run("BackToKubernetes", func(t *testing.T) {
@@ -417,6 +417,6 @@ func testSecretConsumerIsolation(t *testing.T, ch *harness.H) {
 		first.probe(t)
 	}
 	h.RestartEnterprise(t, "secretman")
-	first.probe(t)
-	second.probe(t)
+	probeStoredSecret(t, h, first)
+	probeStoredSecret(t, h, second)
 }
