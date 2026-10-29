@@ -352,27 +352,7 @@ func testCollectorExporterAPI(t *testing.T, ch *harness.H) {
 			item := h.CreateCollectorExporter(t, otlpExporter("collector.example.com:4317", ""))
 			wanted[item.Metadata.Uid] = true
 		}
-		seen := make(map[string]bool)
-		for page := uint32(0); ; page++ {
-			res, err := h.EnterpriseC().ListCollectorExporter(ctx, &enterprisev1.ListCollectorExporterOptions{
-				Common: &metav1.CommonListOptions{
-					Page: page, ItemsPerPage: 2,
-					OrderBy: &metav1.CommonListOptions_OrderBy{Type: metav1.CommonListOptions_OrderBy_NAME, Mode: metav1.CommonListOptions_OrderBy_ASC},
-				},
-			})
-			require.Nil(t, err)
-			assert.LessOrEqual(t, len(res.Items), 2)
-			for _, item := range res.Items {
-				assert.False(t, seen[item.Metadata.Uid], "duplicate exporter %s", item.Metadata.Name)
-				seen[item.Metadata.Uid] = true
-			}
-			if len(res.Items) < 2 {
-				break
-			}
-		}
-		for uid := range wanted {
-			assert.True(t, seen[uid], "missing exporter %s", uid)
-		}
+		checkCollectorExporterPagination(t, ctx, h.EnterpriseC(), wanted)
 	})
 
 	t.Run("RejectedUpdatesPreserveTheStoredSpec", func(t *testing.T) {
@@ -431,6 +411,37 @@ func testCollectorExporterAPI(t *testing.T, ch *harness.H) {
 		_, err = h.EnterpriseC().GetCollectorExporter(ctx, &metav1.GetOptions{Uid: recreated.Metadata.Uid})
 		assert.Nil(t, err)
 	})
+}
+
+func checkCollectorExporterPagination(t *testing.T, ctx context.Context, c enterprisev1.MainServiceClient, wanted map[string]bool) {
+	t.Helper()
+
+	seen := make(map[string]bool)
+	for page := uint32(0); ; page++ {
+		res, err := c.ListCollectorExporter(ctx, &enterprisev1.ListCollectorExporterOptions{
+			Common: &metav1.CommonListOptions{
+				Page: page, ItemsPerPage: 2,
+				OrderBy: &metav1.CommonListOptions_OrderBy{Type: metav1.CommonListOptions_OrderBy_NAME, Mode: metav1.CommonListOptions_OrderBy_ASC},
+			},
+		})
+		require.Nil(t, err)
+		require.NotNil(t, res.ListResponseMeta)
+		assert.Equal(t, page, res.ListResponseMeta.Page)
+		assert.Equal(t, uint32(2), res.ListResponseMeta.ItemsPerPage)
+		assert.LessOrEqual(t, len(res.Items), 2)
+		for _, item := range res.Items {
+			require.False(t, seen[item.Metadata.Uid], "duplicate exporter %s", item.Metadata.Name)
+			seen[item.Metadata.Uid] = true
+		}
+		if !res.ListResponseMeta.HasMore {
+			assert.Len(t, seen, int(res.ListResponseMeta.TotalCount))
+			break
+		}
+		require.Len(t, res.Items, 2)
+	}
+	for uid := range wanted {
+		assert.True(t, seen[uid], "missing exporter %s", uid)
+	}
 }
 
 func setCollectorExclusivePipelines(t *testing.T, h *eeharness.H, pipelines ...*enterprisev1.ClusterConfig_Spec_Collector_Pipeline) {
