@@ -1731,6 +1731,10 @@
                     },
                     "type": "object",
                     "description": "QueryParams is the map of HTTP request query params. Params only assumes single-valued query params. If you want to check multi-valued params then you need to instead parse the URI field."
+                },
+                "isBodyOmitted": {
+                    "type": "boolean",
+                    "description": "IsBodyOmitted is set when the request body is too large to be included in Body and BodyMap. Policy rules whose Conditions reference the request body are then evaluated conservatively: DENY rules are considered matched while ALLOW rules are considered not matched."
                 }
             },
             "additionalProperties": false,

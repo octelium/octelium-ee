@@ -145,12 +145,51 @@
                 "isAnonymous": {
                     "type": "boolean",
                     "description": "IsAnonymous shows whether the request was served anonymously"
+                },
+                "network": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Network",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Common",
             "description": "Common is the information that is common to every AccessLog entry regardless of the Service's mode"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Common.Network": {
+            "properties": {
+                "downstream": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint",
+                    "additionalProperties": false
+                },
+                "upstreamLocal": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint",
+                    "additionalProperties": false
+                },
+                "upstreamRemote": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint",
+                    "additionalProperties": false
+                },
+                "forwardedClientIP": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Network"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint": {
+            "properties": {
+                "ip": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Endpoint"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason": {
             "properties": {
@@ -1739,6 +1778,9 @@
                 "applicationName": {
                     "type": "string",
                     "description": "ApplicationName is the application_name parameter set by the downstream in the initial startup message"
+                },
+                "backendPID": {
+                    "type": "integer"
                 }
             },
             "additionalProperties": false,
@@ -1998,7 +2040,8 @@
                     "enum": [
                         "TYPE_UNKNOWN",
                         "START",
-                        "END"
+                        "END",
+                        "CONNECTED"
                     ],
                     "type": "string",
                     "title": "Type",

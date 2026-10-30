@@ -236,6 +236,11 @@
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
                     "description": "PreferredRegionRef is the reference of the Region that the spec's preferredRegion resolves to."
+                },
+                "agentWorkspaceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "AgentWorkspaceRef is the reference of the Workspace that runs the User's Cordium AI agent. It is set via the InitializeAgent method and it is unset once that Workspace is deleted."
                 }
             },
             "additionalProperties": false,

@@ -11741,7 +11741,11 @@ export enum AccessLog_Entry_Info_TCP_Type {
      *
      * @generated from protobuf enum value: END = 2;
      */
-    END = 2
+    END = 2,
+    /**
+     * @generated from protobuf enum value: CONNECTED = 3;
+     */
+    CONNECTED = 3
 }
 /**
  * SSH is the SSH-specific information
@@ -12120,6 +12124,10 @@ export interface AccessLog_Entry_Info_Postgres_Start {
      * @generated from protobuf field: string applicationName = 5
      */
     applicationName: string;
+    /**
+     * @generated from protobuf field: uint32 backendPID = 6
+     */
+    backendPID: number;
 }
 /**
  * Query is the details of a PostgreSQL query message
@@ -14017,6 +14025,44 @@ export interface AccessLog_Entry_Common {
      * @generated from protobuf field: bool isAnonymous = 16
      */
     isAnonymous: boolean;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Network network = 17
+     */
+    network?: AccessLog_Entry_Common_Network;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.AccessLog.Entry.Common.Network
+ */
+export interface AccessLog_Entry_Common_Network {
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint downstream = 1
+     */
+    downstream?: AccessLog_Entry_Common_Network_Endpoint;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint upstreamLocal = 2
+     */
+    upstreamLocal?: AccessLog_Entry_Common_Network_Endpoint;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint upstreamRemote = 3
+     */
+    upstreamRemote?: AccessLog_Entry_Common_Network_Endpoint;
+    /**
+     * @generated from protobuf field: string forwardedClientIP = 4
+     */
+    forwardedClientIP: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint
+ */
+export interface AccessLog_Entry_Common_Network_Endpoint {
+    /**
+     * @generated from protobuf field: string ip = 1
+     */
+    ip: string;
+    /**
+     * @generated from protobuf field: uint32 port = 2
+     */
+    port: number;
 }
 /**
  * Reason is why the request was allowed or denied
@@ -17267,6 +17313,15 @@ export interface RequestContext_Request_HTTP {
     queryParams: {
         [key: string]: string;
     };
+    /**
+     * IsBodyOmitted is set when the request body is too large to be
+     * included in Body and BodyMap. Policy rules whose Conditions reference
+     * the request body are then evaluated conservatively: DENY rules are
+     * considered matched while ALLOW rules are considered not matched.
+     *
+     * @generated from protobuf field: bool isBodyOmitted = 12
+     */
+    isBodyOmitted: boolean;
 }
 /**
  * SSH is the SSH-specific request details
@@ -37175,7 +37230,8 @@ class AccessLog_Entry_Info_Postgres_Start$Type extends MessageType<AccessLog_Ent
             { no: 2, name: "database", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 3, name: "requestedUser", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 4, name: "requestedDatabase", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 5, name: "applicationName", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 5, name: "applicationName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "backendPID", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<AccessLog_Entry_Info_Postgres_Start>): AccessLog_Entry_Info_Postgres_Start {
@@ -37185,6 +37241,7 @@ class AccessLog_Entry_Info_Postgres_Start$Type extends MessageType<AccessLog_Ent
         message.requestedUser = "";
         message.requestedDatabase = "";
         message.applicationName = "";
+        message.backendPID = 0;
         if (value !== undefined)
             reflectionMergePartial<AccessLog_Entry_Info_Postgres_Start>(this, message, value);
         return message;
@@ -37208,6 +37265,9 @@ class AccessLog_Entry_Info_Postgres_Start$Type extends MessageType<AccessLog_Ent
                     break;
                 case /* string applicationName */ 5:
                     message.applicationName = reader.string();
+                    break;
+                case /* uint32 backendPID */ 6:
+                    message.backendPID = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -37236,6 +37296,9 @@ class AccessLog_Entry_Info_Postgres_Start$Type extends MessageType<AccessLog_Ent
         /* string applicationName = 5; */
         if (message.applicationName !== "")
             writer.tag(5, WireType.LengthDelimited).string(message.applicationName);
+        /* uint32 backendPID = 6; */
+        if (message.backendPID !== 0)
+            writer.tag(6, WireType.Varint).uint32(message.backendPID);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -39254,7 +39317,8 @@ class AccessLog_Entry_Common$Type extends MessageType<AccessLog_Entry_Common> {
             { no: 13, name: "sessionID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 14, name: "sequence", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 15, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 16, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 16, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 17, name: "network", kind: "message", T: () => AccessLog_Entry_Common_Network }
         ]);
     }
     create(value?: PartialMessage<AccessLog_Entry_Common>): AccessLog_Entry_Common {
@@ -39323,6 +39387,9 @@ class AccessLog_Entry_Common$Type extends MessageType<AccessLog_Entry_Common> {
                 case /* bool isAnonymous */ 16:
                     message.isAnonymous = reader.bool();
                     break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Network network */ 17:
+                    message.network = AccessLog_Entry_Common_Network.internalBinaryRead(reader, reader.uint32(), options, message.network);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -39383,6 +39450,9 @@ class AccessLog_Entry_Common$Type extends MessageType<AccessLog_Entry_Common> {
         /* bool isAnonymous = 16; */
         if (message.isAnonymous !== false)
             writer.tag(16, WireType.Varint).bool(message.isAnonymous);
+        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Network network = 17; */
+        if (message.network)
+            AccessLog_Entry_Common_Network.internalBinaryWrite(message.network, writer.tag(17, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -39393,6 +39463,129 @@ class AccessLog_Entry_Common$Type extends MessageType<AccessLog_Entry_Common> {
  * @generated MessageType for protobuf message octelium.api.main.core.v1.AccessLog.Entry.Common
  */
 export const AccessLog_Entry_Common = new AccessLog_Entry_Common$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class AccessLog_Entry_Common_Network$Type extends MessageType<AccessLog_Entry_Common_Network> {
+    constructor() {
+        super("octelium.api.main.core.v1.AccessLog.Entry.Common.Network", [
+            { no: 1, name: "downstream", kind: "message", T: () => AccessLog_Entry_Common_Network_Endpoint },
+            { no: 2, name: "upstreamLocal", kind: "message", T: () => AccessLog_Entry_Common_Network_Endpoint },
+            { no: 3, name: "upstreamRemote", kind: "message", T: () => AccessLog_Entry_Common_Network_Endpoint },
+            { no: 4, name: "forwardedClientIP", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<AccessLog_Entry_Common_Network>): AccessLog_Entry_Common_Network {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.forwardedClientIP = "";
+        if (value !== undefined)
+            reflectionMergePartial<AccessLog_Entry_Common_Network>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: AccessLog_Entry_Common_Network): AccessLog_Entry_Common_Network {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint downstream */ 1:
+                    message.downstream = AccessLog_Entry_Common_Network_Endpoint.internalBinaryRead(reader, reader.uint32(), options, message.downstream);
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint upstreamLocal */ 2:
+                    message.upstreamLocal = AccessLog_Entry_Common_Network_Endpoint.internalBinaryRead(reader, reader.uint32(), options, message.upstreamLocal);
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint upstreamRemote */ 3:
+                    message.upstreamRemote = AccessLog_Entry_Common_Network_Endpoint.internalBinaryRead(reader, reader.uint32(), options, message.upstreamRemote);
+                    break;
+                case /* string forwardedClientIP */ 4:
+                    message.forwardedClientIP = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: AccessLog_Entry_Common_Network, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint downstream = 1; */
+        if (message.downstream)
+            AccessLog_Entry_Common_Network_Endpoint.internalBinaryWrite(message.downstream, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint upstreamLocal = 2; */
+        if (message.upstreamLocal)
+            AccessLog_Entry_Common_Network_Endpoint.internalBinaryWrite(message.upstreamLocal, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint upstreamRemote = 3; */
+        if (message.upstreamRemote)
+            AccessLog_Entry_Common_Network_Endpoint.internalBinaryWrite(message.upstreamRemote, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* string forwardedClientIP = 4; */
+        if (message.forwardedClientIP !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.forwardedClientIP);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.AccessLog.Entry.Common.Network
+ */
+export const AccessLog_Entry_Common_Network = new AccessLog_Entry_Common_Network$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class AccessLog_Entry_Common_Network_Endpoint$Type extends MessageType<AccessLog_Entry_Common_Network_Endpoint> {
+    constructor() {
+        super("octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint", [
+            { no: 1, name: "ip", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "port", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<AccessLog_Entry_Common_Network_Endpoint>): AccessLog_Entry_Common_Network_Endpoint {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.ip = "";
+        message.port = 0;
+        if (value !== undefined)
+            reflectionMergePartial<AccessLog_Entry_Common_Network_Endpoint>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: AccessLog_Entry_Common_Network_Endpoint): AccessLog_Entry_Common_Network_Endpoint {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string ip */ 1:
+                    message.ip = reader.string();
+                    break;
+                case /* uint32 port */ 2:
+                    message.port = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: AccessLog_Entry_Common_Network_Endpoint, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string ip = 1; */
+        if (message.ip !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.ip);
+        /* uint32 port = 2; */
+        if (message.port !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.port);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.AccessLog.Entry.Common.Network.Endpoint
+ */
+export const AccessLog_Entry_Common_Network_Endpoint = new AccessLog_Entry_Common_Network_Endpoint$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class AccessLog_Entry_Common_Reason$Type extends MessageType<AccessLog_Entry_Common_Reason> {
     constructor() {
@@ -45298,7 +45491,8 @@ class RequestContext_Request_HTTP$Type extends MessageType<RequestContext_Reques
             { no: 8, name: "body", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
             { no: 9, name: "bodyMap", kind: "message", T: () => Struct },
             { no: 10, name: "uri", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 11, name: "queryParams", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 9 /*ScalarType.STRING*/ } }
+            { no: 11, name: "queryParams", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 9 /*ScalarType.STRING*/ } },
+            { no: 12, name: "isBodyOmitted", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<RequestContext_Request_HTTP>): RequestContext_Request_HTTP {
@@ -45313,6 +45507,7 @@ class RequestContext_Request_HTTP$Type extends MessageType<RequestContext_Reques
         message.body = new Uint8Array(0);
         message.uri = "";
         message.queryParams = {};
+        message.isBodyOmitted = false;
         if (value !== undefined)
             reflectionMergePartial<RequestContext_Request_HTTP>(this, message, value);
         return message;
@@ -45354,6 +45549,9 @@ class RequestContext_Request_HTTP$Type extends MessageType<RequestContext_Reques
                     break;
                 case /* map<string, string> queryParams */ 11:
                     this.binaryReadMap11(message.queryParams, reader, options);
+                    break;
+                case /* bool isBodyOmitted */ 12:
+                    message.isBodyOmitted = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -45432,6 +45630,9 @@ class RequestContext_Request_HTTP$Type extends MessageType<RequestContext_Reques
         /* map<string, string> queryParams = 11; */
         for (let k of globalThis.Object.keys(message.queryParams))
             writer.tag(11, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.LengthDelimited).string(message.queryParams[k]).join();
+        /* bool isBodyOmitted = 12; */
+        if (message.isBodyOmitted !== false)
+            writer.tag(12, WireType.Varint).bool(message.isBodyOmitted);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
