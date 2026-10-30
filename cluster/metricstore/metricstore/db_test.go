@@ -9,11 +9,13 @@
 package metricstore
 
 import (
+	"compress/gzip"
 	"context"
 	"database/sql"
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -23,6 +25,8 @@ import (
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -430,6 +434,77 @@ func TestRemoveMetricStoreDatabaseWithoutAPath(t *testing.T) {
 	assert.Nil(t, removeMetricStoreDatabase(filepath.Join(t.TempDir(), "does-not-exist.db")))
 }
 
+func TestInitDBRemovesOnlyLegacyMetricStoreStorage(t *testing.T) {
+	metricsTable := `CREATE TABLE metrics (
+	timestamp TIMESTAMP, name VARCHAR, resource JSON, scope JSON, attributes JSON,
+	component_type VARCHAR, component_namespace VARCHAR, histogram_bucket_counts JSON
+)`
+	for _, tc := range []struct {
+		name       string
+		statements []string
+		remove     bool
+	}{
+		{"Metricstore", []string{metricsTable}, true},
+		{"Logstore", []string{`CREATE TABLE access_logs (rsc JSON)`}, false},
+		{"Rscstore", []string{`CREATE TABLE resources (uid VARCHAR)`}, false},
+		{"Mixed", []string{metricsTable, `CREATE TABLE resources (uid VARCHAR)`}, false},
+		{"Unknown", []string{`CREATE TABLE metrics (timestamp TIMESTAMP, name VARCHAR)`}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s := newTestStorageServer(t)
+			seedTestMetricPoints(t, s, "series-1", time.Minute)
+			dir := filepath.Dir(s.dbConfig.database)
+			legacy := filepath.Join(dir, "store.db")
+			db, err := sql.Open("duckdb", legacy+"?storage_compatibility_version=v1.5.5")
+			require.NoError(t, err)
+			defer db.Close()
+			for _, statement := range tc.statements {
+				_, err := db.Exec(statement)
+				require.NoError(t, err)
+			}
+			require.NoError(t, db.Close())
+
+			legacyTempDir := filepath.Join(dir, "metricstore-tmp")
+			for _, tempDir := range []string{legacyTempDir, legacy + ".tmp"} {
+				require.NoError(t, os.MkdirAll(tempDir, 0o700))
+				require.NoError(t, os.WriteFile(filepath.Join(tempDir, "spill"), []byte("tmp"), 0o600))
+			}
+
+			require.NoError(t, s.initDB(context.Background()))
+			assert.NoDirExists(t, legacyTempDir)
+			if tc.remove {
+				assert.NoFileExists(t, legacy)
+				assert.NoDirExists(t, legacy+".tmp")
+			} else {
+				assert.FileExists(t, legacy)
+				assert.FileExists(t, filepath.Join(legacy+".tmp", "spill"))
+			}
+			assert.Equal(t, []string{"series-1-1m0s"}, testMetricPointIDs(t, s))
+		})
+	}
+}
+
+func TestRemoveLegacyMetricStoreStorageKeepsTheConfiguredDatabase(t *testing.T) {
+	database := filepath.Join(t.TempDir(), "store.db")
+	require.NoError(t, os.WriteFile(database, []byte("configured database"), 0o600))
+	require.NoError(t, removeLegacyMetricStoreStorage(context.Background(), database))
+	assert.FileExists(t, database)
+	assert.NoError(t, removeLegacyMetricStoreStorage(context.Background(), ""))
+}
+
+func TestInitDBKeepsUnreadableLegacyStorage(t *testing.T) {
+	s := newTestStorageServer(t)
+	legacy := filepath.Join(filepath.Dir(s.dbConfig.database), "store.db")
+	data := []byte("unrecognized database")
+	require.NoError(t, os.WriteFile(legacy, data, 0o600))
+
+	require.NoError(t, s.initDB(context.Background()))
+	stored, err := os.ReadFile(legacy)
+	require.NoError(t, err)
+	assert.Equal(t, data, stored)
+	require.NoError(t, s.database().PingContext(context.Background()))
+}
+
 func TestReopenDatabaseReplacesTheDatabaseHandle(t *testing.T) {
 	s := newTestStorageServer(t)
 	ctx := context.Background()
@@ -512,5 +587,195 @@ func TestCreateMetricStoreTablesIsIdempotent(t *testing.T) {
 		require.NoError(t, db.QueryRowContext(context.Background(),
 			`SELECT COUNT(*) FROM duckdb_indexes() WHERE table_name = ?`, table).Scan(&count))
 		assert.Zero(t, count, table)
+	}
+}
+
+func newTestUpgradeMetrics(at time.Time) pmetric.Metrics {
+	metrics, sm := newVigilResourceMetrics()
+	start := at.Add(-time.Hour)
+	appendTestCounter(sm, "upgrade.counter", start, at, 42, map[string]any{
+		"state": "ok", "authorized": true, "attempt": int64(2),
+	})
+	appendTestHistogram(sm, "upgrade.histogram", "us", start, at)
+
+	metric := sm.Metrics().AppendEmpty()
+	metric.SetName("upgrade.gauge")
+	point := metric.SetEmptyGauge().DataPoints().AppendEmpty()
+	point.SetTimestamp(pcommon.NewTimestampFromTime(at))
+	point.SetDoubleValue(1.25)
+	point.Attributes().PutDouble("ratio", 0.5)
+
+	metric = sm.Metrics().AppendEmpty()
+	metric.SetName("upgrade.exponential_histogram")
+	histogram := metric.SetEmptyExponentialHistogram()
+	histogram.SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+	hp := histogram.DataPoints().AppendEmpty()
+	hp.SetStartTimestamp(pcommon.NewTimestampFromTime(start))
+	hp.SetTimestamp(pcommon.NewTimestampFromTime(at))
+	hp.SetScale(2)
+	hp.SetCount(10)
+	hp.SetSum(25)
+	hp.SetZeroCount(1)
+	hp.Positive().SetOffset(-1)
+	hp.Positive().BucketCounts().FromRaw([]uint64{4, 3})
+	hp.Negative().SetOffset(1)
+	hp.Negative().BucketCounts().FromRaw([]uint64{2})
+
+	return metrics
+}
+
+func TestMetricStoreRecreatesADuckDBV155Database(t *testing.T) {
+	testMetricStoreUpgrade(t, false)
+}
+
+func TestMetricStoreRecreatesADuckDBV155DatabaseWithWAL(t *testing.T) {
+	testMetricStoreUpgrade(t, true)
+}
+
+func TestMetricStoreRollsBackAnAppenderFlushFailure(t *testing.T) {
+	srv := newTestSrvMetric(t)
+	ctx := context.Background()
+	_, err := srv.s.database().ExecContext(ctx, `CREATE OR REPLACE TABLE metric_number_staging (
+	point_id VARCHAR NOT NULL,
+	timestamp BIGINT NOT NULL,
+	ingested_at BIGINT NOT NULL,
+	start_timestamp BIGINT,
+	series_id VARCHAR NOT NULL,
+	number_int BIGINT CHECK (number_int <> 42),
+	number_double DOUBLE
+)`)
+	require.NoError(t, err)
+
+	metrics := newTestUpgradeMetrics(time.Now().UTC())
+	err = storeTestMetricsErr(t, srv, metrics)
+	require.ErrorContains(t, err, "CHECK constraint failed")
+	for _, table := range []string{
+		"metric_descriptors", "metric_series", "metric_series_attributes", "metric_attribute_keys",
+		"metric_number_staging", "metric_number_points", "metric_histogram_points", "metric_exponential_histogram_points",
+	} {
+		assert.Zero(t, testTableCount(t, srv.s, table), table)
+	}
+
+	metrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics().At(0).Sum().DataPoints().At(0).SetIntValue(43)
+	require.NoError(t, storeTestMetricsErr(t, srv, metrics))
+	assert.Equal(t, int64(4), testTableCount(t, srv.s, "metric_descriptors"))
+	assert.Equal(t, int64(2), testTableCount(t, srv.s, "metric_number_points"))
+	assert.Equal(t, int64(1), testTableCount(t, srv.s, "metric_histogram_points"))
+	assert.Equal(t, int64(1), testTableCount(t, srv.s, "metric_exponential_histogram_points"))
+}
+
+func restoreTestDatabaseFile(t *testing.T, database, fixture string) {
+	t.Helper()
+
+	file, err := os.Open(fixture)
+	require.NoError(t, err)
+	defer file.Close()
+	reader, err := gzip.NewReader(file)
+	require.NoError(t, err)
+	defer reader.Close()
+	dst, err := os.OpenFile(database, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+	require.NoError(t, err)
+	_, err = io.Copy(dst, reader)
+	require.NoError(t, dst.Close())
+	require.NoError(t, err)
+}
+
+func testMetricStoreUpgrade(t *testing.T, recoverWAL bool) {
+	t.Helper()
+
+	t.Setenv("OCTELIUM_METRICSTORE_DUCKDB_PATH", t.TempDir())
+	dbConfig, err := getMetricStoreDBConfig()
+	require.NoError(t, err)
+	if dbConfig.cleanupFn != nil {
+		defer dbConfig.cleanupFn()
+	}
+
+	restoreTestDatabaseFile(t, dbConfig.database, "testdata/duckdb-v1.5.5.db.gz")
+	numberPoints := int64(2)
+	if recoverWAL {
+		restoreTestDatabaseFile(t, dbConfig.database+".wal", "testdata/duckdb-v1.5.5.db.wal.gz")
+		numberPoints++
+	}
+
+	s := &Server{dbConfig: dbConfig}
+	t.Cleanup(func() {
+		if db := s.database(); db != nil {
+			_ = db.Close()
+		}
+	})
+	ctx := context.Background()
+	db, err := openMetricStoreDB(dbConfig)
+	require.NoError(t, err)
+	s.setDatabase(db)
+	version, err := s.getSchemaVersion(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 4, version)
+	require.Equal(t, numberPoints, testTableCount(t, s, "metric_number_points"))
+	before := testDatabaseSize(t, s)
+
+	require.NoError(t, s.initDB(ctx))
+	assert.NotSame(t, db, s.database())
+	assert.Less(t, testDatabaseSize(t, s), before)
+	for _, table := range []string{
+		"metric_descriptors", "metric_series", "metric_series_attributes", "metric_attribute_keys",
+		"metric_number_points", "metric_histogram_points", "metric_exponential_histogram_points",
+	} {
+		assert.Zero(t, testTableCount(t, s, table), table)
+	}
+	version, err = s.getSchemaVersion(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, metricStoreSchemaVersion, version)
+
+	at := time.Date(2026, time.October, 1, 12, 1, 0, 0, time.UTC)
+	srv := &srvMetric{s: s}
+	require.NoError(t, storeTestMetricsErr(t, srv, newTestUpgradeMetrics(at)))
+	require.NoError(t, storeTestMetricsErr(t, srv, newTestUpgradeMetrics(at)))
+	require.NoError(t, s.checkpointStorage(ctx))
+	require.NoError(t, s.database().Close())
+
+	for i := 0; i < 2; i++ {
+		db, err := openMetricStoreDB(dbConfig)
+		require.NoError(t, err)
+		s.setDatabase(db)
+		require.NoError(t, s.initDB(ctx))
+		assert.Same(t, db, s.database())
+		var storageVersion string
+		require.NoError(t, db.QueryRow(`SELECT tags['storage_version'] FROM duckdb_databases() WHERE path = ?`, dbConfig.database).Scan(&storageVersion))
+		assert.Equal(t, "v2.0.0+", storageVersion)
+		assert.Equal(t, int64(4), testTableCount(t, s, "metric_descriptors"))
+		assert.Equal(t, int64(4), testTableCount(t, s, "metric_series"))
+		assert.Equal(t, int64(2), testTableCount(t, s, "metric_number_points"))
+		assert.Equal(t, int64(1), testTableCount(t, s, "metric_histogram_points"))
+		assert.Equal(t, int64(1), testTableCount(t, s, "metric_exponential_histogram_points"))
+		if recoverWAL {
+			var count int
+			require.NoError(t, db.QueryRow(`SELECT COUNT(*) FROM metric_number_points WHERE point_id = 'wal-point'`).Scan(&count))
+			assert.Zero(t, count)
+		}
+
+		var intValue int64
+		var doubleValue float64
+		require.NoError(t, db.QueryRow(`SELECT MIN(number_int), MIN(number_double) FROM metric_number_points`).Scan(&intValue, &doubleValue))
+		assert.Equal(t, int64(42), intValue)
+		assert.Equal(t, 1.25, doubleValue)
+
+		var bounds, buckets, positive, negative string
+		require.NoError(t, db.QueryRow(`SELECT CAST(explicit_bounds AS VARCHAR) FROM metric_descriptors WHERE name = 'upgrade.histogram'`).Scan(&bounds))
+		require.NoError(t, db.QueryRow(`SELECT CAST(bucket_counts AS VARCHAR) FROM metric_histogram_points LIMIT 1`).Scan(&buckets))
+		require.NoError(t, db.QueryRow(`SELECT CAST(positive_counts AS VARCHAR), CAST(negative_counts AS VARCHAR) FROM metric_exponential_histogram_points LIMIT 1`).Scan(&positive, &negative))
+		assert.JSONEq(t, `[10,100]`, bounds)
+		assert.JSONEq(t, `[1,1,1]`, buckets)
+		assert.JSONEq(t, `[4,3]`, positive)
+		assert.JSONEq(t, `[2]`, negative)
+
+		var attributes int
+		require.NoError(t, db.QueryRow(`SELECT COUNT(*) FROM metric_series_attributes WHERE
+	(key = 'state' AND value_string = 'ok') OR
+	(key = 'authorized' AND value_bool = true) OR
+	(key = 'attempt' AND value_int = 2) OR
+	(key = 'ratio' AND value_double = 0.5)`).Scan(&attributes))
+		assert.Equal(t, 4, attributes)
+
+		require.NoError(t, db.Close())
 	}
 }

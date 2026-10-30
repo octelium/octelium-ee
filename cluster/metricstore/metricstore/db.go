@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
@@ -21,7 +22,7 @@ import (
 )
 
 const (
-	metricStoreSchemaVersion = 4
+	metricStoreSchemaVersion = 5
 	rawMetricRetention       = 48 * time.Hour
 	retentionInterval        = 30 * time.Minute
 	retentionDeleteChunkSize = 50000
@@ -46,7 +47,15 @@ func (s *Server) initDB(ctx context.Context) error {
 		}
 	}
 
-	return s.createSchema(ctx)
+	if err := s.createSchema(ctx); err != nil {
+		return err
+	}
+	if s.dbConfig != nil {
+		if err := removeLegacyMetricStoreStorage(ctx, s.dbConfig.database); err != nil {
+			zap.L().Warn("Could not remove legacy metricstore storage", zap.Error(err))
+		}
+	}
+	return nil
 }
 
 func (s *Server) createSchema(ctx context.Context) error {
@@ -119,6 +128,62 @@ func removeMetricStoreDatabase(database string) error {
 	}
 
 	return os.RemoveAll(database + ".tmp")
+}
+
+func removeLegacyMetricStoreStorage(ctx context.Context, database string) error {
+	if database == "" {
+		return nil
+	}
+
+	database = filepath.Clean(database)
+	dir := filepath.Dir(database)
+	legacyTempDir := filepath.Join(dir, "metricstore-tmp")
+	if legacyTempDir != database {
+		if err := os.RemoveAll(legacyTempDir); err != nil {
+			return err
+		}
+	}
+
+	legacyDatabase := filepath.Join(dir, "store.db")
+	if legacyDatabase == database {
+		return nil
+	}
+	info, err := os.Lstat(legacyDatabase)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if !info.Mode().IsRegular() {
+		return nil
+	}
+
+	db, err := sql.Open("duckdb", legacyDatabase+"?access_mode=read_only&enable_external_access=false&threads=1")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var tables, columns int
+	if err := db.QueryRowContext(ctx, `SELECT
+	(SELECT COUNT(*) FROM information_schema.tables
+	 WHERE table_catalog = current_database() AND table_schema = 'main'),
+	(SELECT COUNT(*) FROM information_schema.columns
+	 WHERE table_catalog = current_database() AND table_schema = 'main' AND table_name = 'metrics'
+	 AND column_name IN ('timestamp', 'name', 'resource', 'scope', 'attributes',
+		'component_type', 'component_namespace', 'histogram_bucket_counts'))`).Scan(&tables, &columns); err != nil {
+		return err
+	}
+	if tables != 1 || columns != 8 {
+		return nil
+	}
+	if err := db.Close(); err != nil {
+		return err
+	}
+
+	zap.L().Warn("Removing legacy metricstore storage", zap.String("database", legacyDatabase))
+	return removeMetricStoreDatabase(legacyDatabase)
 }
 
 func (s *Server) countStoredTables(ctx context.Context) (int, error) {

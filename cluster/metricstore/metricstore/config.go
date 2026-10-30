@@ -33,7 +33,6 @@ const (
 type metricStoreDBConfig struct {
 	dsn       string
 	database  string
-	tempDir   string
 	cleanupFn func()
 }
 
@@ -83,14 +82,6 @@ func getMetricStoreDBConfig() (*metricStoreDBConfig, error) {
 		return nil, fmt.Errorf("invalid metricstore DuckDB database name: %s", databaseName)
 	}
 
-	tempDir := filepath.Join(dir, "metricstore-tmp")
-	if err := os.MkdirAll(tempDir, 0o700); err != nil {
-		if cleanupFn != nil {
-			cleanupFn()
-		}
-		return nil, err
-	}
-
 	threads := 2
 	if runtime.GOMAXPROCS(0) < threads {
 		threads = runtime.GOMAXPROCS(0)
@@ -130,6 +121,7 @@ func getMetricStoreDBConfig() (*metricStoreDBConfig, error) {
 	values.Set("memory_limit", memoryLimit)
 	values.Set("max_temp_directory_size", maxTempSize)
 	values.Set("preserve_insertion_order", "false")
+	values.Set("storage_compatibility_version", "v2.0.0")
 	values.Set("threads", strconv.Itoa(threads))
 	values.Set("write_buffer_row_group_count", "1")
 
@@ -138,7 +130,6 @@ func getMetricStoreDBConfig() (*metricStoreDBConfig, error) {
 	return &metricStoreDBConfig{
 		dsn:       database + "?" + values.Encode(),
 		database:  database,
-		tempDir:   tempDir,
 		cleanupFn: cleanupFn,
 	}, nil
 }

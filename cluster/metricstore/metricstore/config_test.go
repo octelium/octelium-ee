@@ -9,6 +9,7 @@
 package metricstore
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -37,4 +38,28 @@ func TestMetricStoreDBConfigEnablesTheAllocatorBackgroundThreads(t *testing.T) {
 	var value string
 	require.NoError(t, db.QueryRow(`SELECT current_setting('allocator_background_threads')`).Scan(&value))
 	assert.Equal(t, "true", value)
+}
+
+func TestMetricStoreDBConfigUsesTheDuckDBV2StorageFormat(t *testing.T) {
+	t.Setenv("OCTELIUM_METRICSTORE_DUCKDB_PATH", t.TempDir())
+
+	dbConfig, err := getMetricStoreDBConfig()
+	require.NoError(t, err)
+	if dbConfig.cleanupFn != nil {
+		defer dbConfig.cleanupFn()
+	}
+
+	for i := 0; i < 2; i++ {
+		db, err := openMetricStoreDB(dbConfig)
+		require.NoError(t, err)
+		defer db.Close()
+		s := &Server{db: db, dbConfig: dbConfig}
+		require.NoError(t, s.initDB(context.Background()))
+
+		var version string
+		require.NoError(t, db.QueryRow(`SELECT tags['storage_version'] FROM duckdb_databases() WHERE path = ?`, dbConfig.database).Scan(&version))
+		assert.Equal(t, "v2.0.0+", version)
+		require.NoError(t, s.checkpointStorage(context.Background()))
+		require.NoError(t, db.Close())
+	}
 }

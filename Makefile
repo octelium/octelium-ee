@@ -60,15 +60,15 @@ build-clusterman:
 build-console:
 	CGO_ENABLED=0 GOOS=linux go build $(LDFLAGS) -o bin/octeliumee-console github.com/octelium/octelium-ee/cluster/console
 build-mockapiserver:
-	CGO_ENABLED=1 GOOS=linux go build $(LDFLAGS) -o bin/octeliumee-mockapiserver github.com/octelium/octelium-ee/cluster/mockapiserver
+	cd cluster/mockapiserver && GOWORK=off CGO_ENABLED=1 GOOS=linux go build $(LDFLAGS) -o ../../bin/octeliumee-mockapiserver .
 build-publicserver:
 	CGO_ENABLED=0 GOOS=linux go build $(LDFLAGS) -o bin/octeliumee-publicserver github.com/octelium/octelium-ee/cluster/publicserver
 build-logstore:
-	CGO_ENABLED=1 GOOS=linux go build $(LDFLAGS) -o bin/octeliumee-logstore github.com/octelium/octelium-ee/cluster/logstore
+	cd cluster/logstore && GOWORK=off CGO_ENABLED=1 GOOS=linux go build $(LDFLAGS) -o ../../bin/octeliumee-logstore .
 build-rscstore:
-	CGO_ENABLED=1 GOOS=linux go build $(LDFLAGS) -o bin/octeliumee-rscstore github.com/octelium/octelium-ee/cluster/rscstore
+	cd cluster/rscstore && GOWORK=off CGO_ENABLED=1 GOOS=linux go build $(LDFLAGS) -o ../../bin/octeliumee-rscstore .
 build-metricstore:
-	CGO_ENABLED=1 GOOS=linux go build $(LDFLAGS) -o bin/octeliumee-metricstore github.com/octelium/octelium-ee/cluster/metricstore
+	cd cluster/metricstore && GOWORK=off CGO_ENABLED=1 GOOS=linux go build $(LDFLAGS) -o ../../bin/octeliumee-metricstore .
 build-policyportal:
 	CGO_ENABLED=0 GOOS=linux go build $(LDFLAGS) -o bin/octeliumee-policyportal github.com/octelium/octelium-ee/cluster/policyportal
 build-e2e:

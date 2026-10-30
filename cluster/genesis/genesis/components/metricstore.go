@@ -59,6 +59,9 @@ func getMetricStoreDeployment(o *CommonOpts) *appsv1.Deployment {
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: nil,
+			Strategy: appsv1.DeploymentStrategy{
+				Type: appsv1.RecreateDeploymentStrategyType,
+			},
 			Selector: &metav1.LabelSelector{
 				MatchLabels: getComponentLabels(componentMetricStore),
 			},
