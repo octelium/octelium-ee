@@ -29,7 +29,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { twMerge } from "@/lib/utils";
 import { AgentClient } from "./client";
 import { formatCount, matchesTerms, searchTerms } from "./utils";
@@ -295,7 +295,11 @@ const useModels = (client: AgentClient, enabled: boolean) => {
         queryKey: ["agent", client.baseUrl, "info"],
       });
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) =>
+      notifications.show({
+        color: "red",
+        message: err.message,
+      }),
   });
 
   return { query, mutation };
@@ -565,7 +569,11 @@ const ModelsDrawer = (props: {
       void queryClient.invalidateQueries({ queryKey: providersKey });
       void queryClient.invalidateQueries({ queryKey: modelsKey });
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) =>
+      notifications.show({
+        color: "red",
+        message: err.message,
+      }),
   });
 
   return (
@@ -662,11 +670,12 @@ const ModelsDrawer = (props: {
                 queryKey: ["agent", client.baseUrl, "info"],
               });
               if (session.status === "completed") {
-                toast.success(
-                  session.model
+                notifications.show({
+                  color: "green",
+                  message: session.model
                     ? `Signed in. Now using ${modelLabel(session.model)}`
                     : "Signed in",
-                );
+                });
                 setSigningIn(undefined);
               }
             }}

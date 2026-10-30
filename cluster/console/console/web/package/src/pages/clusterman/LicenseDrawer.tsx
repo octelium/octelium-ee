@@ -18,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { Field, LICENSE_TYPE_LABEL, LicenseStateBadge } from "./components";
 import { clustermanKeys } from "./queries";
 
@@ -104,7 +104,7 @@ const LicenseDrawer = (props: {
       return response;
     },
     onSuccess: () => {
-      toast.success("License applied");
+      notifications.show({ color: "green", message: "License applied" });
       invalidateKey(clustermanKeys.license);
       invalidateKey(clustermanKeys.config);
       props.onClose();

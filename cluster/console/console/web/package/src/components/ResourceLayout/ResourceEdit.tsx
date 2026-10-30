@@ -12,7 +12,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Save } from "lucide-react";
 import * as React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import ResourceForm from "./ResourceForm";
 import { useContextResource } from "./utils";
 
@@ -57,9 +57,10 @@ export const ResourceEdit = (props: {
         });
       }
       if (!props.noPostUpdateToast) {
-        toast.success(
-          `${response.kind} ${response.metadata?.name} updated successfully`,
-        );
+        notifications.show({
+          color: "green",
+          message: `${response.kind} ${response.metadata?.name} updated successfully`,
+        });
       }
     },
     onError: (err: unknown) => onError(err as any),

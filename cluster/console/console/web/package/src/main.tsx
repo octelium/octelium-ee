@@ -10,6 +10,7 @@ import { MantineProvider } from "@mantine/core";
 import { Provider } from "react-redux";
 import { RouterProvider } from "react-router-dom";
 
+import Notifications from "@/components/Notifications";
 import store from "@/store";
 
 import router from "@/router";
@@ -35,6 +36,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           defaultColorScheme={DEFAULT_COLOR_SCHEME}
           cssVariablesResolver={cssVariablesResolver}
         >
+          <Notifications />
           <QueryClientProvider client={queryClient}>
             <RouterProvider router={router} />
           </QueryClientProvider>

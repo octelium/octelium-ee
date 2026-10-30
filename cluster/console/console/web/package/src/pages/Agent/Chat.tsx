@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { useSearchParams } from "react-router-dom";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { twMerge } from "@/lib/utils";
 import { type BlockContext } from "./Blocks";
 import { AgentClient } from "./client";
@@ -304,9 +304,10 @@ const Chat = (props: {
   const addFiles = async (files: File[]) => {
     for (const file of files) {
       if (file.size > info.capabilities.uploads.maxBytes) {
-        toast.error(
-          `${file.name} exceeds the maximum size of ${formatBytes(info.capabilities.uploads.maxBytes)}`,
-        );
+        notifications.show({
+          color: "red",
+          message: `${file.name} exceeds the maximum size of ${formatBytes(info.capabilities.uploads.maxBytes)}`,
+        });
         continue;
       }
       const key = `${file.name}-${file.size}-${Math.random()}`;
@@ -319,7 +320,10 @@ const Chat = (props: {
           setPreviews((current) => ({ ...current, [uploaded.id]: url }));
         }
       } catch (err) {
-        toast.error(`Could not upload ${file.name}: ${(err as Error).message}`);
+        notifications.show({
+          color: "red",
+          message: `Could not upload ${file.name}: ${(err as Error).message}`,
+        });
       } finally {
         setUploads((current) => current.filter((itm) => itm.key !== key));
       }
@@ -367,7 +371,7 @@ const Chat = (props: {
           await client.renameConversation(target.id, title),
         );
       } catch (err) {
-        toast.error((err as Error).message);
+        notifications.show({ color: "red", message: (err as Error).message });
       }
     },
     [client, onConversationUpdated],
@@ -384,7 +388,10 @@ const Chat = (props: {
     if (selected === target.id) {
       setSelected(undefined);
     }
-    toast.success("The conversation is deleted");
+    notifications.show({
+      color: "green",
+      message: "The conversation is deleted",
+    });
   };
 
   const exportConversation = () => {

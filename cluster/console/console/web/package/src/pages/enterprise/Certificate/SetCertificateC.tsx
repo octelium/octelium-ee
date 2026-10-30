@@ -13,7 +13,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
 import { AlertTriangle, ShieldCheck, Upload, X } from "lucide-react";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 
 const isCertificatePEM = (value: string) =>
   value.includes("-----BEGIN CERTIFICATE-----") &&
@@ -47,7 +47,10 @@ export const SetCertificateC = (props: { item: Certificate }) => {
       invalidateResource(props.item);
       invalidateResourceList(props.item);
       clearAndClose();
-      toast.success("Certificate set successfully");
+      notifications.show({
+        color: "green",
+        message: "Certificate set successfully",
+      });
     },
     onError,
   });

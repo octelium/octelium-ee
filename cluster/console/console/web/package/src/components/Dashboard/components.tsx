@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { twMerge } from "@/lib/utils";
 import { snapshotSection } from "./snapshot";
 import {
@@ -72,9 +72,12 @@ export const PanelMenu = (props: { title: string; onAsk?: () => void }) => {
     const url = `${window.location.href.split("#")[0]}#section-${widget!.id}`;
     try {
       await navigator.clipboard.writeText(url);
-      toast("Link copied");
+      notifications.show({ message: "Link copied" });
     } catch {
-      toast.error("The link could not be copied");
+      notifications.show({
+        color: "red",
+        message: "The link could not be copied",
+      });
     }
   };
 

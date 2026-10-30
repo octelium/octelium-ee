@@ -26,7 +26,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import {
   Callout,
   CopyField,
@@ -79,7 +79,10 @@ const SynchronizeButton = (props: { item: AccessC.Integration }) => {
         })
       ).response,
     onSuccess: () => {
-      toast.success("Synchronization requested");
+      notifications.show({
+        color: "green",
+        message: "Synchronization requested",
+      });
       invalidateResource(props.item);
       invalidateResourceList(props.item);
     },

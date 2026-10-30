@@ -40,7 +40,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { twMerge } from "@/lib/utils";
 import Chat from "./Chat";
 import { AgentClient } from "./client";
@@ -340,7 +340,11 @@ const WorkspaceMenu = (props: {
         props.onSelect(res.workspace.metadata.uid);
       }
     },
-    onError: (err) => toast.error(getErrorMessage(err)),
+    onError: (err) =>
+      notifications.show({
+        color: "red",
+        message: getErrorMessage(err),
+      }),
   });
 
   const running = ws.status?.state === Workspace_Status_State.RUNNING;
@@ -539,11 +543,17 @@ const OutdatedBanner = () => {
       (await getClientAgent().initializeAgent({})).response,
     onSuccess: (data) => {
       queryClient.setQueryData(agentKey, data);
-      toast.success(
-        "The agent environment is updated. Restart the Workspace to use the new configuration",
-      );
+      notifications.show({
+        color: "green",
+        message:
+          "The agent environment is updated. Restart the Workspace to use the new configuration",
+      });
     },
-    onError: (err) => toast.error(getErrorMessage(err)),
+    onError: (err) =>
+      notifications.show({
+        color: "red",
+        message: getErrorMessage(err),
+      }),
   });
 
   return (
@@ -612,7 +622,7 @@ const WorkspaceRunner = (props: {
       queryClient.invalidateQueries({ queryKey: workspaceKey(uid) }),
     onError: (err) => {
       if ((err as RpcError).code !== "ALREADY_EXISTS") {
-        toast.error(getErrorMessage(err));
+        notifications.show({ color: "red", message: getErrorMessage(err) });
       }
     },
   });
@@ -629,7 +639,11 @@ const WorkspaceRunner = (props: {
       ),
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: workspaceKey(uid) }),
-    onError: (err) => toast.error(getErrorMessage(err)),
+    onError: (err) =>
+      notifications.show({
+        color: "red",
+        message: getErrorMessage(err),
+      }),
   });
 
   React.useEffect(() => {
@@ -836,7 +850,11 @@ const AgentEnvironment = () => {
     mutationFn: async () =>
       (await getClientAgent().initializeAgent({})).response,
     onSuccess: (data) => queryClient.setQueryData(agentKey, data),
-    onError: (err) => toast.error(getErrorMessage(err)),
+    onError: (err) =>
+      notifications.show({
+        color: "red",
+        message: getErrorMessage(err),
+      }),
   });
 
   const select = (uid: string) => {

@@ -8,7 +8,7 @@ import { Alert, Button, Loader, Switch } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, KeyRound, ShieldCheck, ShieldX } from "lucide-react";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 
 const DEFAULT_PRIORITY = -1;
 const PRIORITIES = [-4, -3, -2, -1, 0];
@@ -262,7 +262,10 @@ export default () => {
       noMetadata
       onUpdateDone={() => {
         invalidateKey(["access", "clusterconfig"]);
-        toast.success("Access ClusterConfig successfully updated");
+        notifications.show({
+          color: "green",
+          message: "Access ClusterConfig successfully updated",
+        });
       }}
     />
   );

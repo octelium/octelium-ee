@@ -11,7 +11,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
 import { Ban, Loader2, ShieldAlert, X } from "lucide-react";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 
 const REVOCABLE_STATES = new Set([
   AccessPB.Request_Status_State_Status.STATUS_UNKNOWN,
@@ -36,7 +36,10 @@ const RevokeRequest = (props: { item: AccessPB.Request }) => {
       close();
       invalidateResource(props.item);
       invalidateResourceList(props.item);
-      toast.success(`Request ${props.item.metadata?.name} revoked`);
+      notifications.show({
+        color: "green",
+        message: `Request ${props.item.metadata?.name} revoked`,
+      });
     },
     onError,
   });

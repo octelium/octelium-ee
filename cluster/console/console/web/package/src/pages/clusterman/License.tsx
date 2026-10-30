@@ -25,7 +25,7 @@ import {
   X,
 } from "lucide-react";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import {
   Field,
   LICENSE_PLAN_LABEL,
@@ -54,7 +54,7 @@ const RemoveLicense = (props: { opened: boolean; onClose: () => void }) => {
       return response;
     },
     onSuccess: () => {
-      toast.success("License removed");
+      notifications.show({ color: "green", message: "License removed" });
       invalidateKey(clustermanKeys.license);
       invalidateKey(clustermanKeys.config);
       props.onClose();

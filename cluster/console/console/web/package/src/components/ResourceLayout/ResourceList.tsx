@@ -36,7 +36,7 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { twMerge } from "@/lib/utils";
 import RpcError from "@/components/RpcError";
 import CopyText from "../CopyText";
@@ -956,14 +956,16 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
       setSelected(new Set(failed.map((item) => item.metadata!.uid)));
       setDeleteModalOpened(false);
       if (succeeded.length > 0) {
-        toast.success(
-          `${succeeded.length} ${succeeded.length === 1 ? "resource" : "resources"} deleted`,
-        );
+        notifications.show({
+          color: "green",
+          message: `${succeeded.length} ${succeeded.length === 1 ? "resource" : "resources"} deleted`,
+        });
       }
       if (failed.length > 0) {
-        toast.error(
-          `${failed.length} ${failed.length === 1 ? "resource" : "resources"} could not be deleted and remain selected`,
-        );
+        notifications.show({
+          color: "red",
+          message: `${failed.length} ${failed.length === 1 ? "resource" : "resources"} could not be deleted and remain selected`,
+        });
       }
     },
   });

@@ -8,7 +8,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Activity, ScrollText, ShieldAlert } from "lucide-react";
 import { Provider } from "react-redux";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
-import { Toaster } from "sonner";
 
 import type {
   AgentEvent,
@@ -31,6 +30,7 @@ import {
 } from "@/components/CommandPalette";
 import { useTrackVisits } from "@/components/CommandPalette/track";
 import PageHeader from "@/components/PageHeader";
+import Notifications from "@/components/Notifications";
 import {
   DashboardControls,
   MiniStat,
@@ -519,7 +519,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                     </Routes>
                   </div>
                   <AgentDockHost />
-                  <Toaster />
+                  <Notifications />
                 </CommandPaletteProvider>
               </AgentProvider>
             </PageHeaderProvider>

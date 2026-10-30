@@ -20,7 +20,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 
 const pipelineTypes = EnterpriseP.ClusterConfig_Spec_Collector_Pipeline_Type;
 
@@ -163,7 +163,10 @@ export default () => {
       noMetadata
       onUpdateDone={() => {
         invalidateKey(["enterprise", "clusterconfig"]);
-        toast.success("Enterprise ClusterConfig successfully updated");
+        notifications.show({
+          color: "green",
+          message: "Enterprise ClusterConfig successfully updated",
+        });
       }}
     />
   );

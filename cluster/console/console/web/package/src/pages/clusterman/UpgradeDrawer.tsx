@@ -26,7 +26,7 @@ import {
   X,
 } from "lucide-react";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { twMerge } from "@/lib/utils";
 import { VersionDelta } from "./components";
 import {
@@ -273,7 +273,10 @@ const UpgradeDrawer = (props: {
       return response;
     },
     onSuccess: () => {
-      toast.success("Cluster upgrade started");
+      notifications.show({
+        color: "green",
+        message: "Cluster upgrade started",
+      });
       invalidateKey(clustermanKeys.config);
       invalidateKey(clustermanKeys.info);
       props.onClose();

@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { twMerge } from "@/lib/utils";
 import { useAgent, type PinnedContext } from "./context";
 import {
@@ -274,9 +274,10 @@ const DockChat = (props: ReadyChatProps) => {
     for (const file of files) {
       if (version !== uploadVersionRef.current) return;
       if (file.size > info.capabilities.uploads.maxBytes) {
-        toast.error(
-          `${file.name} exceeds the maximum size of ${formatBytes(info.capabilities.uploads.maxBytes)}`,
-        );
+        notifications.show({
+          color: "red",
+          message: `${file.name} exceeds the maximum size of ${formatBytes(info.capabilities.uploads.maxBytes)}`,
+        });
         continue;
       }
       const key = `${file.name}-${file.size}-${Math.random()}`;
@@ -292,7 +293,10 @@ const DockChat = (props: ReadyChatProps) => {
         }
       } catch (err) {
         if (version === uploadVersionRef.current) {
-          toast.error(`Could not upload ${file.name}: ${(err as Error).message}`);
+          notifications.show({
+            color: "red",
+            message: `Could not upload ${file.name}: ${(err as Error).message}`,
+          });
         }
       } finally {
         if (version === uploadVersionRef.current) {

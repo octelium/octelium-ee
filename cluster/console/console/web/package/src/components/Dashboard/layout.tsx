@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { useLocation } from "react-router-dom";
-import { toast } from "sonner";
+import { showActionNotification } from "@/utils/notifications";
 import { Deferred } from "./components";
 import { WidgetContext } from "./widget";
 
@@ -447,8 +447,9 @@ export const DashboardLayout = (props: {
     const previous = layout;
     save(next);
     if (message) {
-      toast(message, {
-        action: { label: "Undo", onClick: () => save(previous) },
+      showActionNotification(message, {
+        label: "Undo",
+        onClick: () => save(previous),
       });
     }
   };

@@ -29,7 +29,7 @@ import {
   Table,
 } from "lucide-react";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { twMerge } from "@/lib/utils";
 import Message from "./Message";
 import { defaultEndpoint, messageText, supportsStreaming } from "./protocols";
@@ -531,7 +531,12 @@ const LLMPlayground = (props: { service: Service }) => {
           `${item.role === "user" ? "You" : "Assistant"}:\n${messageText(item)}`,
       )
       .join("\n\n");
-    if (await copyText(text)) toast.success("The transcript is copied");
+    if (await copyText(text)) {
+      notifications.show({
+        color: "green",
+        message: "The transcript is copied",
+      });
+    }
   };
 
   const exportTranscript = () =>
@@ -545,7 +550,10 @@ const LLMPlayground = (props: { service: Service }) => {
   const addFiles = async (files: File[]) => {
     const images = files.filter((file) => file.type.startsWith("image/"));
     if (images.length < files.length) {
-      toast.error("Only images can be attached to a prompt");
+      notifications.show({
+        color: "red",
+        message: "Only images can be attached to a prompt",
+      });
     }
     for (const file of images) {
       const uploadKey = `${file.name}-${file.size}-${Math.random()}`;
@@ -557,7 +565,10 @@ const LLMPlayground = (props: { service: Service }) => {
         const attachment = await readFile(file);
         setAttachments((current) => [...current, attachment]);
       } catch (err) {
-        toast.error(`Could not read ${file.name}: ${getErrorMessage(err)}`);
+        notifications.show({
+          color: "red",
+          message: `Could not read ${file.name}: ${getErrorMessage(err)}`,
+        });
       } finally {
         setUploads((current) => current.filter((itm) => itm.key !== uploadKey));
       }

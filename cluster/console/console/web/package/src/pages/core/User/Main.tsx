@@ -17,7 +17,7 @@ import { useMutation } from "@tanstack/react-query";
 import { KeyRound, Plus, Shield, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
 import Edit from "../Credential/Edit";
@@ -144,7 +144,7 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
     },
     onError: (err: unknown) => {
       if (err instanceof Error) {
-        toast.error(err.message);
+        notifications.show({ color: "red", message: err.message });
       }
     },
   });

@@ -11,7 +11,7 @@ import {
 } from "@/apis/consoleagent/protocol";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { AgentClient } from "./client";
 import { conversationsKey as getConversationsKey } from "./environment";
 import { applyEvent, emptyChatState, type ChatState } from "./reducer";
@@ -92,7 +92,7 @@ export const useConversation = (props: {
         setOptimistic(undefined);
       } catch (err) {
         if (loadedRef.current === id) {
-          toast.error((err as Error).message);
+          notifications.show({ color: "red", message: (err as Error).message });
           setChat(emptyChatState);
         }
       } finally {
@@ -237,7 +237,7 @@ export const useConversation = (props: {
       }
       return true;
     } catch (err) {
-      toast.error((err as Error).message);
+      notifications.show({ color: "red", message: (err as Error).message });
       setOptimistic(undefined);
       return false;
     } finally {
@@ -250,7 +250,7 @@ export const useConversation = (props: {
     try {
       await client.cancelRun(run.id);
     } catch (err) {
-      toast.error((err as Error).message);
+      notifications.show({ color: "red", message: (err as Error).message });
     }
   };
 
@@ -269,7 +269,7 @@ export const useConversation = (props: {
           reason,
         );
       } catch (err) {
-        toast.error((err as Error).message);
+        notifications.show({ color: "red", message: (err as Error).message });
       }
     },
     [client],

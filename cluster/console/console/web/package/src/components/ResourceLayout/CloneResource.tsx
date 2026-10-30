@@ -14,7 +14,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Copy, Loader2, X } from "lucide-react";
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 
 const makeCloneName = (name: string) => {
   const dot = name.indexOf(".");
@@ -67,11 +67,16 @@ const CloneResource = (props: {
       if (!response) return;
       invalidateResourceList(response);
       close();
-      toast.success(`${kind} cloned successfully`);
+      notifications.show({
+        color: "green",
+        message: `${kind} cloned successfully`,
+      });
       navigate(getResourcePath(response));
     },
     onError: (err: unknown) => {
-      if (err instanceof Error) toast.error(err.message);
+      if (err instanceof Error) {
+        notifications.show({ color: "red", message: err.message });
+      }
       onError(err as any);
     },
   });

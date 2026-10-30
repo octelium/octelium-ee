@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import CopyText from "../CopyText";
 import ResourceYAML from "../ResourceYAML";
 
@@ -69,7 +69,10 @@ const DeleteResource = (props: {
       if (!props.doNotNavigateAfter) {
         navigate(getResourceListPathFromResource(item));
       }
-      toast.success(`${item.kind} ${metadata.name} deleted`);
+      notifications.show({
+        color: "green",
+        message: `${item.kind} ${metadata.name} deleted`,
+      });
     },
     onError,
   });

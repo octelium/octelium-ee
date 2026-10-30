@@ -33,7 +33,7 @@ import {
   X,
 } from "lucide-react";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { twMerge } from "@/lib/utils";
 import {
   DirectoryProviderInventoryLabels,
@@ -63,7 +63,10 @@ const SynchronizeButton = (props: { item: EnterpriseC.DirectoryProvider }) => {
         })
       ).response,
     onSuccess: () => {
-      toast.success("Synchronization requested");
+      notifications.show({
+        color: "green",
+        message: "Synchronization requested",
+      });
       invalidateResource(props.item);
       invalidateResourceList(props.item);
     },

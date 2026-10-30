@@ -25,7 +25,7 @@ import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Copy, FileText, Loader2, Save } from "lucide-react";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { match } from "ts-pattern";
 
 const Editor = React.lazy(() => import("../Editor"));
@@ -93,9 +93,10 @@ const ResourceYAML = (props: {
       props.onResourceChange?.(response);
       invalidateResource(response);
       invalidateResourceList(response);
-      toast.success(
-        `${response.kind} ${response.metadata?.name} updated successfully`,
-      );
+      notifications.show({
+        color: "green",
+        message: `${response.kind} ${response.metadata?.name} updated successfully`,
+      });
     },
     onError,
   });

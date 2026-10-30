@@ -1,7 +1,7 @@
 import { resolveTrail } from "@/components/Navigation/catalog";
 import * as React from "react";
 import { useLocation } from "react-router-dom";
-import { toast } from "sonner";
+import { showActionNotification } from "@/utils/notifications";
 import {
   AgentAskContext,
   AgentContext,
@@ -123,9 +123,9 @@ export const AgentProvider = (props: { children: React.ReactNode }) => {
     if (openedRef.current || hidden || previous === activity) return;
     const action = { label: "Open", onClick: () => setOpened(true) };
     if (activity === "approval") {
-      toast("The agent is waiting for your approval", { action });
+      showActionNotification("The agent is waiting for your approval", action);
     } else if (!activity && previous) {
-      toast("The agent has answered", { action });
+      showActionNotification("The agent has answered", action);
     }
   }, [activity, hidden]);
 

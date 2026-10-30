@@ -1,7 +1,7 @@
 import { ActionIcon, Button, Modal, Tooltip } from "@mantine/core";
 import { Check, Copy, Sparkles, Trash2, type LucideIcon } from "lucide-react";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { twMerge } from "@/lib/utils";
 
 export const isMac =
@@ -110,7 +110,10 @@ export const copyText = async (value: string): Promise<boolean> => {
     await navigator.clipboard.writeText(value);
     return true;
   } catch {
-    toast.error("Could not copy to the clipboard");
+    notifications.show({
+      color: "red",
+      message: "Could not copy to the clipboard",
+    });
     return false;
   }
 };
@@ -161,7 +164,7 @@ export const ConfirmModal = (props: {
       await props.onConfirm();
       props.onClose();
     } catch (err) {
-      toast.error((err as Error).message);
+      notifications.show({ color: "red", message: (err as Error).message });
     } finally {
       setPending(false);
     }

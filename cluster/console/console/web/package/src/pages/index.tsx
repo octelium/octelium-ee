@@ -8,7 +8,6 @@ import PageHeader from "@/components/PageHeader";
 import { PageHeaderProvider } from "@/components/PageHeader/context";
 import ConsoleShell from "@/components/SideBar/Shell";
 import TopBar from "@/components/TopBar";
-import { Toaster } from "@/components/ui/sonner";
 import { setStatus } from "@/features/settings/slice";
 import { getClientUser } from "@/utils/client";
 import { useAppDispatch } from "@/utils/hooks";
@@ -81,11 +80,6 @@ export default function Root() {
         </ConsoleShell>
 
         <AgentDockHost />
-
-        <Toaster
-          position="bottom-center"
-          toastOptions={{ className: "bg-slate-900 font-semibold text-white" }}
-        />
       </div>
     </ShellProviders>
   );

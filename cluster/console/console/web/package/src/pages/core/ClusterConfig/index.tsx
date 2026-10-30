@@ -28,7 +28,7 @@ import {
 import { AlertTriangle, Network } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { match } from "ts-pattern";
 
 const Edit = (props: {
@@ -1661,7 +1661,7 @@ export default () => {
         {status.secretManager?.address && <div><div className="text-micro font-semibold uppercase tracking-wide text-slate-500">Secret manager</div><div className="flex flex-wrap items-center gap-2"><CopyText value={status.secretManager.address} /><span className="text-xs font-normal text-slate-500">{status.secretManager.tls ? "TLS" : "No TLS"}</span></div></div>}
         {!!status.device?.probes.length && <div><div className="text-micro font-semibold uppercase tracking-wide text-slate-500">Device probes</div><div className="mt-1 text-sm font-semibold text-slate-700">{status.device.probes.length.toLocaleString()}</div></div>}
       </div></section>}
-      <ResourceEdit item={item} specComponent={({ item, onUpdate }) => <Edit item={item as CoreP.ClusterConfig} onUpdate={(next) => onUpdate(next)} />} noPostUpdateNavigation noPostUpdateToast noMetadata onUpdateDone={() => { invalidateKey(["core", "clusterconfig"]); toast.success("ClusterConfig successfully updated"); }} />
+      <ResourceEdit item={item} specComponent={({ item, onUpdate }) => <Edit item={item as CoreP.ClusterConfig} onUpdate={(next) => onUpdate(next)} />} noPostUpdateNavigation noPostUpdateToast noMetadata onUpdateDone={() => { invalidateKey(["core", "clusterconfig"]); notifications.show({ color: "green", message: "ClusterConfig successfully updated" }); }} />
     </div>
   );
 };
