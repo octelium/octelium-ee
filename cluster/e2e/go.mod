@@ -5,10 +5,10 @@ go 1.27.3
 require (
 	github.com/go-resty/resty/v2 v2.17.2
 	github.com/octelium/octelium/apis v0.42.0
-	github.com/octelium/octelium/cluster/common v0.0.0-20261024220214-efdf00b04d33
-	github.com/octelium/octelium/cluster/e2e v0.0.0-20261024220214-efdf00b04d33
-	github.com/octelium/octelium/octelium-go v0.42.1-0.20261024220214-efdf00b04d33
-	github.com/octelium/octelium/pkg v0.0.0-20261024220214-efdf00b04d33
+	github.com/octelium/octelium/cluster/common v0.0.0-20261030212353-1ff6460fa877
+	github.com/octelium/octelium/cluster/e2e v0.0.0-20261030212353-1ff6460fa877
+	github.com/octelium/octelium/octelium-go v0.42.1-0.20261030212353-1ff6460fa877
+	github.com/octelium/octelium/pkg v0.0.0-20261030212353-1ff6460fa877
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/zap v1.28.0
@@ -39,11 +39,10 @@ require (
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.1 // indirect
-	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.7.1 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.6 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
@@ -91,8 +90,8 @@ require (
 	github.com/nats-io/nats.go v1.46.1 // indirect
 	github.com/nats-io/nkeys v0.4.11 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/octelium/octelium/client/common v0.0.0-20261024220214-efdf00b04d33 // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261024220214-efdf00b04d33 // indirect
+	github.com/octelium/octelium/client/common v0.0.0-20261030212353-1ff6460fa877 // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261030212353-1ff6460fa877 // indirect
 	github.com/openai/openai-go/v3 v3.2.0 // indirect
 	github.com/paulmach/orb v0.11.1 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
@@ -144,7 +143,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gvisor.dev/gvisor v0.0.0-20250503011706-39ed1f5ac29c // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
