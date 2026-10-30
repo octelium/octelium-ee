@@ -69,6 +69,8 @@ describe("Console shared presentation and controls", () => {
           "white",
           "slate-50",
           "slate-200",
+          "slate-500",
+          "slate-900",
           "terminal",
           "terminal-panel",
           "terminal-text",
@@ -91,6 +93,27 @@ describe("Console shared presentation and controls", () => {
         color: style.color,
       };
     }, border);
+  const contrast = (foreground, background) =>
+    page.evaluate(({ foreground, background }) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 1;
+      const context = canvas.getContext("2d");
+      const luminance = (color) => {
+        context.fillStyle = color;
+        context.fillRect(0, 0, 1, 1);
+        const channels = Array.from(context.getImageData(0, 0, 1, 1).data)
+          .slice(0, 3)
+          .map((value) => {
+            const channel = value / 255;
+            return channel <= 0.04045
+              ? channel / 12.92
+              : ((channel + 0.055) / 1.055) ** 2.4;
+          });
+        return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+      };
+      const values = [luminance(foreground), luminance(background)];
+      return (Math.max(...values) + 0.05) / (Math.min(...values) + 0.05);
+    }, { foreground, background });
   const labelShape = (locator) =>
     locator.evaluate((element) => {
       const style = getComputedStyle(element);
@@ -367,6 +390,60 @@ describe("Console shared presentation and controls", () => {
     assert.equal((await calls("listUser")).length, 2);
     assert.equal((await calls("unrelated")).length, 1);
   });
+
+  for (const theme of ["light", "dark"]) {
+    for (const [resourceKind, path] of [
+      ["User", "/core/users"],
+      ["Service", "/core/services"],
+    ]) {
+      it(`dims all ${resourceKind} name parents across list layouts in ${theme} mode`, async () => {
+        const names = [
+          "child",
+          "child.parent",
+          "child.parent.grandparent",
+          "child.parent.grandparent.root",
+        ];
+        await load("resource", {
+          theme,
+          resourceKind,
+          route: path,
+          names: names.join(","),
+        });
+        await page.getByRole("link", { name: names[0], exact: true }).waitFor();
+        const colors = await palette();
+        for (const background of [colors.white, colors["slate-50"]]) {
+          assert.ok(await contrast(colors["slate-500"], background) >= 4.5);
+        }
+        for (const density of ["comfortable", "compact", "table"]) {
+          const control = page.locator(`input[value="${density}"]`);
+          await control.locator("..").click();
+          assert.equal(await control.isChecked(), true);
+          await page.mouse.move(0, 0);
+          for (const name of names) {
+            const title = page.getByRole("link", { name, exact: true });
+            await title.waitFor();
+            assert.equal(await title.textContent(), name);
+            assert.equal(await title.getAttribute("href"), `${path}/${name}`);
+            assert.equal((await surface(title)).color, colors["slate-900"]);
+            assert.equal(
+              await title.evaluate((element) => element.firstChild.textContent),
+              "child",
+            );
+            const parents = title.locator("span");
+            if (name === "child") {
+              assert.equal(await parents.count(), 0);
+            } else {
+              assert.equal(await parents.textContent(), name.slice(5));
+              assert.equal((await surface(parents)).color, colors["slate-500"]);
+              await title.hover();
+              assert.equal((await surface(parents)).color, colors["slate-500"]);
+              await page.mouse.move(0, 0);
+            }
+          }
+        }
+      });
+    }
+  }
 
   for (const [kind, method, title] of [
     ["access", "listAccessLog", "No log entries found"],

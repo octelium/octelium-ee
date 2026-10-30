@@ -270,20 +270,32 @@ const RowTitleLink = (props: {
   item: Resource;
   returnTo: string;
   stretched?: boolean;
-}) => (
-  <Link
-    to={`${getResourcePath(props.item)}${searchFromReturnTo(props.returnTo)}`}
-    state={{ returnTo: props.returnTo }}
-    preventScrollReset
-    className={twMerge(
-      "min-w-0 truncate rounded text-sm font-semibold text-slate-900",
-      "outline-none transition-colors hover:text-black focus-visible:ring-2 focus-visible:ring-blue-500/40",
-      props.stretched && "after:absolute after:inset-0 after:content-['']",
-    )}
-  >
-    {props.item.metadata!.name}
-  </Link>
-);
+}) => {
+  const name = props.item.metadata!.name;
+  const separatorIndex = name.indexOf(".");
+
+  return (
+    <Link
+      to={`${getResourcePath(props.item)}${searchFromReturnTo(props.returnTo)}`}
+      state={{ returnTo: props.returnTo }}
+      preventScrollReset
+      className={twMerge(
+        "min-w-0 truncate rounded text-sm font-semibold text-slate-900",
+        "outline-none transition-colors hover:text-black focus-visible:ring-2 focus-visible:ring-blue-500/40",
+        props.stretched && "after:absolute after:inset-0 after:content-['']",
+      )}
+    >
+      {separatorIndex > 0 ? (
+        <>
+          {name.slice(0, separatorIndex)}
+          <span className="text-slate-500">{name.slice(separatorIndex)}</span>
+        </>
+      ) : (
+        name
+      )}
+    </Link>
+  );
+};
 
 const SelectBox = (props: {
   item: Resource;

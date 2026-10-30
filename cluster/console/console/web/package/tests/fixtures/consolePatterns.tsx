@@ -6,6 +6,8 @@ import {
   ComponentLog,
   Device,
   Policy,
+  Service,
+  ServiceList,
   Session,
   User,
   UserList,
@@ -70,6 +72,7 @@ import {
 const params = new URLSearchParams(window.location.search);
 const scenario = params.get("scenario") ?? "counts";
 const kind = params.get("kind") ?? "access";
+const resourceKind = params.get("resourceKind") === "Service" ? "Service" : "User";
 const calls: { name: string; request?: any }[] = [];
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
@@ -103,17 +106,17 @@ for (const client of [
       calls.push({ name: method.localName, request });
       if (state.failure) throw new RpcError("Fixture failure", "INTERNAL");
       const response =
-        method.localName === "listUser"
-          ? UserList.create({
+        method.localName === `list${resourceKind}`
+          ? (resourceKind === "Service" ? ServiceList : UserList).create({
               apiVersion: "core/v1",
-              kind: "UserList",
-              items: [
-                User.create({
+              kind: `${resourceKind}List`,
+              items: (params.get("names") ?? "alice").split(",").map((name) =>
+                (resourceKind === "Service" ? Service : User).create({
                   apiVersion: "core/v1",
-                  kind: "User",
-                  metadata: { name: "alice", uid: "user-uid" },
+                  kind: resourceKind,
+                  metadata: { name, uid: `${name}-uid` },
                 }),
-              ],
+              ),
             })
           : method.O.create();
       if (state.hold && method.localName === "listUser") {
@@ -128,7 +131,7 @@ for (const client of [
 
 const info: ResourceComponentInfo = {
   API: "core",
-  Kind: "User",
+  Kind: resourceKind,
   List: {},
   Item: {},
   unCreatable: true,
