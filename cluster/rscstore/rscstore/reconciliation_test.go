@@ -11,6 +11,7 @@ package rscstore
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -131,6 +132,44 @@ func TestReconcileCreatesMirror(t *testing.T) {
 	for _, uid := range uids {
 		assert.True(t, localExists(ctx, t, srv, uid))
 	}
+}
+
+func TestReconcileRepopulatesAfterDuckDBFormatReset(t *testing.T) {
+	env := newRscStoreTestEnv(t)
+	require.NotNil(t, env)
+	ctx := env.ctx
+	usr := createUser(ctx, t, env.srv.octeliumC)
+	grp := createGroup(ctx, t, env.srv.octeliumC)
+	require.NoError(t, env.srv.db.Close())
+
+	database := filepath.Join(t.TempDir(), "store.db")
+	restoreRscStoreTestDatabase(t, database, true)
+	db, err := openRscStoreDB(ctx, database)
+	require.NoError(t, err)
+	env.srv.db = db
+	require.NoError(t, env.srv.initDB(ctx))
+	assert.False(t, localExists(ctx, t, env.srv, "legacy-user"))
+	assert.False(t, localExists(ctx, t, env.srv, "wal-user"))
+	assert.False(t, localExists(ctx, t, env.srv, usr.Metadata.Uid))
+
+	require.NoError(t, env.srv.reconcileAllResources(ctx))
+	assert.True(t, localExists(ctx, t, env.srv, usr.Metadata.Uid))
+	assert.True(t, localExists(ctx, t, env.srv, grp.Metadata.Uid))
+	assert.Equal(t, usr.Metadata.ResourceVersion, localResourceVersion(ctx, t, env.srv, usr.Metadata.Uid))
+
+	usr.Spec.Email = "updated@example.com"
+	usr, err = env.srv.octeliumC.CoreC().UpdateUser(ctx, usr)
+	require.NoError(t, err)
+	require.NoError(t, env.srv.reconcileAllResources(ctx))
+	assert.Equal(t, usr.Metadata.ResourceVersion, localResourceVersion(ctx, t, env.srv, usr.Metadata.Uid))
+
+	require.NoError(t, db.Close())
+	db, err = openRscStoreDB(ctx, database)
+	require.NoError(t, err)
+	env.srv.db = db
+	require.NoError(t, env.srv.initDB(ctx))
+	assert.True(t, localExists(ctx, t, env.srv, grp.Metadata.Uid))
+	assert.Equal(t, usr.Metadata.ResourceVersion, localResourceVersion(ctx, t, env.srv, usr.Metadata.Uid))
 }
 
 func TestReconcileRemovesOrphan(t *testing.T) {

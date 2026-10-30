@@ -226,13 +226,13 @@ func (s *Server) doSummaryCorePolicy(ctx context.Context, common *vmetav1.Common
 			goqu.L(`COALESCE(SUM(
 			len(list_filter(
 				CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-				x -> json_extract_string(x, '$.effect') = 'ALLOW'
+				lambda x : json_extract_string(x, '$.effect') = 'ALLOW'
 			))
 		), 0) AS count_rules_allowed`),
 			goqu.L(`COALESCE(SUM(
 			len(list_filter(
 				CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-				x -> json_extract_string(x, '$.effect') = 'DENY'
+				lambda x : json_extract_string(x, '$.effect') = 'DENY'
 			))
 		), 0) AS count_rules_denied`),
 		)

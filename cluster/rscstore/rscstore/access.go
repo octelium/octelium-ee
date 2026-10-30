@@ -43,71 +43,71 @@ func (s *Server) doSummaryAccessPolicy(ctx context.Context, common *vmetav1.Comm
 			goqu.L(`COALESCE(SUM(
 				len(list_filter(
 					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-					x -> json_extract_string(x, '$.effect') = 'DENY'
+					lambda x : json_extract_string(x, '$.effect') = 'DENY'
 				))
 			), 0) AS count_rules_deny`),
 			goqu.L(`COALESCE(SUM(
 				len(list_filter(
 					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-					x -> json_extract_string(x, '$.effect') = 'REVIEW'
+					lambda x : json_extract_string(x, '$.effect') = 'REVIEW'
 				))
 			), 0) AS count_rules_review`),
 			goqu.L(`COALESCE(SUM(
 				len(list_filter(
 					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-					x -> json_extract_string(x, '$.effect') = 'AUTO_APPROVE'
+					lambda x : json_extract_string(x, '$.effect') = 'AUTO_APPROVE'
 				))
 			), 0) AS count_rules_auto_approve`),
 			goqu.L(`COALESCE(SUM(
 				len(list_filter(
 					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-					x -> json_extract(x, '$.authorization') IS NOT NULL
+					lambda x : json_extract(x, '$.authorization') IS NOT NULL
 				))
 			), 0) AS count_rules_authorization`),
 			goqu.L(`COALESCE(SUM(
 				len(list_filter(
 					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-					x -> json_extract(x, '$.authorization.maxAccessDuration') IS NOT NULL
+					lambda x : json_extract(x, '$.authorization.maxAccessDuration') IS NOT NULL
 				))
 			), 0) AS count_rules_max_access_duration`),
 			goqu.L(`COALESCE(SUM(
 				list_sum(list_transform(
 					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-					x -> COALESCE(json_array_length(x, '$.action.review.steps'), 0)
+					lambda x : COALESCE(json_array_length(x, '$.action.review.steps'), 0)
 				))
 			), 0) AS count_review_steps`),
 			goqu.L(`COALESCE(SUM(
 				list_sum(list_transform(
 					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-					x -> list_sum(list_transform(
+					lambda x : list_sum(list_transform(
 						COALESCE(CAST(json_extract(x, '$.action.review.steps') AS JSON[]), []),
-						y -> COALESCE(json_array_length(y, '$.reviewers'), 0)
+						lambda y : COALESCE(json_array_length(y, '$.reviewers'), 0)
 					))
 				))
 			), 0) AS count_reviewers`),
 			goqu.L(`COALESCE(SUM(
 				len(list_filter(
 					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-					x -> COALESCE(json_array_length(x, '$.notifications'), 0) > 0
+					lambda x : COALESCE(json_array_length(x, '$.notifications'), 0) > 0
 				))
 			), 0) AS count_rules_notification`),
 			goqu.L(`COALESCE(SUM(
 				list_sum(list_transform(
 					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-					x -> list_sum(list_transform(
+					lambda x : list_sum(list_transform(
 						COALESCE(CAST(json_extract(x, '$.action.review.steps') AS JSON[]), []),
-						y -> COALESCE(json_array_length(y, '$.surfaces'), 0)
+						lambda y : COALESCE(json_array_length(y, '$.surfaces'), 0)
 					))
 				))
 			), 0) AS count_review_surfaces`),
 			goqu.L(`COALESCE(SUM(
 				list_sum(list_transform(
 					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-					x -> list_sum(list_transform(
+					lambda x : list_sum(list_transform(
 						COALESCE(CAST(json_extract(x, '$.action.review.steps') AS JSON[]), []),
-						y -> len(list_filter(
+						lambda y : len(list_filter(
 							COALESCE(CAST(json_extract(y, '$.surfaces') AS JSON[]), []),
-							z -> json_extract_string(z, '$.interactionMode') = 'INTERACTIVE'
+							lambda z : json_extract_string(z, '$.interactionMode') = 'INTERACTIVE'
 						))
 					))
 				))
@@ -715,6 +715,6 @@ func getPolicyRuleConditionRefFilter(ref *metav1.ObjectReference, parent, field 
 	pattern := fmt.Sprintf(`"%s"\s*:\s*\{\s*"%s"\s*:\s*\{[^{}]*"%s"\s*:\s*"%s"`,
 		parent, field, key, regexp.QuoteMeta(val))
 
-	return goqu.L(`len(list_filter(CAST(json_extract(rsc, '$.spec.rules') AS JSON[]), x -> regexp_matches(CAST(json_extract(x, '$.condition') AS VARCHAR), ?))) > 0`,
+	return goqu.L(`len(list_filter(CAST(json_extract(rsc, '$.spec.rules') AS JSON[]), lambda x : regexp_matches(CAST(json_extract(x, '$.condition') AS VARCHAR), ?))) > 0`,
 		pattern)
 }

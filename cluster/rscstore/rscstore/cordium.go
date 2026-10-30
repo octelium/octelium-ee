@@ -31,7 +31,7 @@ func getCordiumBuildCountExpr(state string) string {
 	return fmt.Sprintf(`COALESCE(SUM(
 				len(list_filter(
 					CAST(json_extract(rsc, '$.status.buildInfo.builds') AS JSON[]),
-					x -> json_extract_string(x, '$.state') = '%s'
+					lambda x : json_extract_string(x, '$.state') = '%s'
 				))
 			), 0)`, state)
 }
@@ -130,7 +130,7 @@ func (s *Server) doSummaryCordiumTemplate(ctx context.Context, common *vmetav1.C
 			goqu.L(`COALESCE(SUM(
 				len(list_filter(
 					CAST(json_extract(rsc, '$.status.buildInfo.builds') AS JSON[]),
-					x -> json_extract_string(x, '$.isCanceled') = 'true'
+					lambda x : json_extract_string(x, '$.isCanceled') = 'true'
 				))
 			), 0) AS count_build_canceled`),
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE COALESCE(%s, '') != '') AS count_with_ready_build`, colStatusReadyBuildID)),

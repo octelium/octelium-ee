@@ -11,7 +11,12 @@ package rscstore
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 	"net"
+	"net/url"
+	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -88,7 +93,7 @@ func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 
 	ret.clusterDomain = cc.Status.Domain
 
-	ret.db, err = sql.Open("duckdb", ovutils.GetDuckDBDSN())
+	ret.db, err = openRscStoreDB(ctx, ovutils.GetDuckDBDSN())
 	if err != nil {
 		return nil, err
 	}
@@ -249,6 +254,73 @@ func (s *Server) initDB(ctx context.Context) error {
 	s.dropLegacyFTSIndex(ctx)
 
 	return nil
+}
+
+func openRscStoreDB(ctx context.Context, dsn string) (*sql.DB, error) {
+	database, rawQuery, _ := strings.Cut(dsn, "?")
+	values, err := url.ParseQuery(rawQuery)
+	if err != nil {
+		return nil, err
+	}
+	values.Set("storage_compatibility_version", "v2.0.0")
+	dsn = database + "?" + values.Encode()
+
+	db, err := sql.Open("duckdb", dsn)
+	if err != nil {
+		return nil, err
+	}
+	if database == "" || database == ":memory:" {
+		return db, nil
+	}
+
+	var storageVersion string
+	if err := db.QueryRowContext(ctx, `
+SELECT tags['storage_version'] FROM duckdb_databases() WHERE database_name = current_database()
+`).Scan(&storageVersion); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+	if storageVersion == "v2.0.0+" {
+		return db, nil
+	}
+
+	var tables, resourceTables, resourceColumns int
+	if err := db.QueryRowContext(ctx, `SELECT
+	(SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'main'),
+	(SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'main'
+	 AND table_name IN ('resources', 'versioned_resources')),
+	(SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'main'
+	 AND table_name = 'resources' AND column_name IN ('api', 'version', 'kind', 'uid', 'resource_version', 'rsc'))
+`).Scan(&tables, &resourceTables, &resourceColumns); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+	if tables != resourceTables || (tables > 0 && resourceColumns != 6) {
+		_ = db.Close()
+		return nil, fmt.Errorf("cannot reset a database that does not contain rscstore storage: %s", database)
+	}
+	if err := db.Close(); err != nil {
+		return nil, err
+	}
+
+	zap.L().Warn("Resetting rscstore storage to use the DuckDB v2 format",
+		zap.String("database", database), zap.String("storageVersion", storageVersion))
+	if err := removeRscStoreDatabase(database); err != nil {
+		return nil, err
+	}
+	return sql.Open("duckdb", dsn)
+}
+
+func removeRscStoreDatabase(database string) error {
+	if database == "" {
+		return nil
+	}
+	for _, path := range []string{database, database + ".wal"} {
+		if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+	}
+	return os.RemoveAll(database + ".tmp")
 }
 
 func (s *Server) dropLegacyFTSIndex(ctx context.Context) {

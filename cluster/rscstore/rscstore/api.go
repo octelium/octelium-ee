@@ -1103,7 +1103,7 @@ func (s *srvAccess) ListPolicy(ctx context.Context, req *vaccessv1.ListPolicyOpt
 
 	if req.Effect != accessv1.Policy_Spec_Rule_EFFECT_UNSET {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(`len(list_filter(CAST(json_extract(rsc, '$.spec.rules') AS JSON[]), x -> json_extract_string(x, '$.effect') = ?)) > 0`,
+			goqu.L(`len(list_filter(CAST(json_extract(rsc, '$.spec.rules') AS JSON[]), lambda x : json_extract_string(x, '$.effect') = ?)) > 0`,
 				req.Effect.String()))
 	}
 
@@ -1221,9 +1221,9 @@ func (s *srvAccess) ListRequest(ctx context.Context, req *vaccessv1.ListRequestO
 			goqu.L(fmt.Sprintf(`len(list_filter(
 				flatten(list_transform(
 					COALESCE(CAST(json_extract(rsc, '$.status.rule.action.review.steps') AS JSON[]), []),
-					s -> COALESCE(CAST(json_extract(s, '$.reviewers') AS JSON[]), [])
+					lambda s : COALESCE(CAST(json_extract(s, '$.reviewers') AS JSON[]), [])
 				)),
-				r -> json_extract_string(r, '%s') = ?
+				lambda r : json_extract_string(r, '%s') = ?
 			)) > 0`, pth), val))
 	}
 
