@@ -25,6 +25,8 @@ import type { SetLicenseResponse } from "./enterprisev1";
 import type { SetLicenseRequest } from "./enterprisev1";
 import type { GetClusterInfoResponse } from "./enterprisev1";
 import type { GetClusterInfoRequest } from "./enterprisev1";
+import type { JoinClusterResponse } from "./enterprisev1";
+import type { JoinClusterRequest } from "./enterprisev1";
 import type { UpgradeClusterResponse } from "./enterprisev1";
 import type { UpgradeClusterRequest } from "./enterprisev1";
 import { PolicyPortalService } from "./enterprisev1";
@@ -814,18 +816,30 @@ export class PolicyPortalServiceClient implements IPolicyPortalServiceClient, Se
 }
 /**
  * ClusterService provides the Cluster lifecycle management operations (i.e.
- * version information, upgrades and License management).
+ * version information, upgrades, joining new Regions and License management).
  *
  * @generated from protobuf service octelium.api.main.enterprise.v1.ClusterService
  */
 export interface IClusterServiceClient {
     /**
      * UpgradeCluster requests an upgrade of the Cluster components to a specific
-     * version.
+     * version. The upgrade is applied to every Region of the Cluster starting
+     * with the `default` Region.
      *
      * @generated from protobuf rpc: UpgradeCluster
      */
     upgradeCluster(input: UpgradeClusterRequest, options?: RpcOptions): UnaryCall<UpgradeClusterRequest, UpgradeClusterResponse>;
+    /**
+     * JoinCluster requests joining an additional Kubernetes cluster to the
+     * Cluster as a new Region. The Kubernetes cluster shares the same primary
+     * and secondary storages (i.e. PostgreSQL and Redis) of the Cluster which
+     * must therefore be reachable from it. The join is performed asynchronously
+     * and its progress is reported by the `joinRequest` field of the enterprise
+     * ClusterConfig status.
+     *
+     * @generated from protobuf rpc: JoinCluster
+     */
+    joinCluster(input: JoinClusterRequest, options?: RpcOptions): UnaryCall<JoinClusterRequest, JoinClusterResponse>;
     /**
      * GetClusterInfo retrieves the currently installed and latest available
      * versions of the Cluster packages.
@@ -854,7 +868,7 @@ export interface IClusterServiceClient {
 }
 /**
  * ClusterService provides the Cluster lifecycle management operations (i.e.
- * version information, upgrades and License management).
+ * version information, upgrades, joining new Regions and License management).
  *
  * @generated from protobuf service octelium.api.main.enterprise.v1.ClusterService
  */
@@ -866,7 +880,8 @@ export class ClusterServiceClient implements IClusterServiceClient, ServiceInfo 
     }
     /**
      * UpgradeCluster requests an upgrade of the Cluster components to a specific
-     * version.
+     * version. The upgrade is applied to every Region of the Cluster starting
+     * with the `default` Region.
      *
      * @generated from protobuf rpc: UpgradeCluster
      */
@@ -875,13 +890,27 @@ export class ClusterServiceClient implements IClusterServiceClient, ServiceInfo 
         return stackIntercept<UpgradeClusterRequest, UpgradeClusterResponse>("unary", this._transport, method, opt, input);
     }
     /**
+     * JoinCluster requests joining an additional Kubernetes cluster to the
+     * Cluster as a new Region. The Kubernetes cluster shares the same primary
+     * and secondary storages (i.e. PostgreSQL and Redis) of the Cluster which
+     * must therefore be reachable from it. The join is performed asynchronously
+     * and its progress is reported by the `joinRequest` field of the enterprise
+     * ClusterConfig status.
+     *
+     * @generated from protobuf rpc: JoinCluster
+     */
+    joinCluster(input: JoinClusterRequest, options?: RpcOptions): UnaryCall<JoinClusterRequest, JoinClusterResponse> {
+        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        return stackIntercept<JoinClusterRequest, JoinClusterResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
      * GetClusterInfo retrieves the currently installed and latest available
      * versions of the Cluster packages.
      *
      * @generated from protobuf rpc: GetClusterInfo
      */
     getClusterInfo(input: GetClusterInfoRequest, options?: RpcOptions): UnaryCall<GetClusterInfoRequest, GetClusterInfoResponse> {
-        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        const method = this.methods[2], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetClusterInfoRequest, GetClusterInfoResponse>("unary", this._transport, method, opt, input);
     }
     /**
@@ -890,7 +919,7 @@ export class ClusterServiceClient implements IClusterServiceClient, ServiceInfo 
      * @generated from protobuf rpc: SetLicense
      */
     setLicense(input: SetLicenseRequest, options?: RpcOptions): UnaryCall<SetLicenseRequest, SetLicenseResponse> {
-        const method = this.methods[2], opt = this._transport.mergeOptions(options);
+        const method = this.methods[3], opt = this._transport.mergeOptions(options);
         return stackIntercept<SetLicenseRequest, SetLicenseResponse>("unary", this._transport, method, opt, input);
     }
     /**
@@ -899,7 +928,7 @@ export class ClusterServiceClient implements IClusterServiceClient, ServiceInfo 
      * @generated from protobuf rpc: GetLicense
      */
     getLicense(input: GetLicenseRequest, options?: RpcOptions): UnaryCall<GetLicenseRequest, GetLicenseResponse> {
-        const method = this.methods[3], opt = this._transport.mergeOptions(options);
+        const method = this.methods[4], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetLicenseRequest, GetLicenseResponse>("unary", this._transport, method, opt, input);
     }
     /**
@@ -908,7 +937,7 @@ export class ClusterServiceClient implements IClusterServiceClient, ServiceInfo 
      * @generated from protobuf rpc: DeleteLicense
      */
     deleteLicense(input: DeleteLicenseRequest, options?: RpcOptions): UnaryCall<DeleteLicenseRequest, DeleteLicenseResponse> {
-        const method = this.methods[4], opt = this._transport.mergeOptions(options);
+        const method = this.methods[5], opt = this._transport.mergeOptions(options);
         return stackIntercept<DeleteLicenseRequest, DeleteLicenseResponse>("unary", this._transport, method, opt, input);
     }
 }

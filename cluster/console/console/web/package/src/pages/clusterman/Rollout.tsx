@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "@/lib/utils";
-import { UpgradeStateBadge, VersionChips } from "./components";
+import { RegionProgress, UpgradeStateBadge, VersionChips } from "./components";
 import { isUpgradeActive } from "./queries";
 
 const PREVIEW = 4;
@@ -63,6 +63,11 @@ const ActiveBanner = (props: {
       <div className="mt-2">
         <VersionChips request={props.request.request} />
       </div>
+      {props.request.regions.length > 1 && (
+        <div className="mt-2">
+          <RegionProgress regions={props.request.regions} />
+        </div>
+      )}
     </div>
   </div>
 );
@@ -95,6 +100,9 @@ const Entry = (props: {
 }) => {
   const { item } = props;
   const elapsed = took(item.createdAt, item.doneAt);
+  const failedRegion = item.regions.find(
+    (rgn) => rgn.state === ClusterConfig_Status_UpgradeRequest_State.FAILED,
+  );
 
   return (
     <li className="relative flex gap-3 pb-3 last:pb-0">
@@ -123,6 +131,15 @@ const Entry = (props: {
           <TimeAgo rfc3339={item.doneAt ?? item.createdAt} />
           {elapsed && <span className="ml-1.5">· took {elapsed}</span>}
         </span>
+        {failedRegion && (
+          <span
+            title={failedRegion.message || undefined}
+            className="w-full truncate text-micro font-normal text-red-600"
+          >
+            Failed in the Region {failedRegion.regionRef?.name}
+            {failedRegion.message && `: ${failedRegion.message}`}
+          </span>
+        )}
       </div>
     </li>
   );

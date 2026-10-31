@@ -47,9 +47,14 @@ func (s *Server) UpgradeCluster(ctx context.Context, req *enterprisev1.UpgradeCl
 		cc.Status = &enterprisev1.ClusterConfig_Status{}
 	}
 
+	if isActiveJoinRequest(cc.Status.JoinRequest) &&
+		!isStaleJoinRequest(cc.Status.JoinRequest, staleJoinRequestAfter) {
+		return nil, grpcutils.InvalidArg("A Region join is currently requested or in progress")
+	}
+
 	if cc.Status.UpgradeRequest != nil {
 		if isActiveUpgradeRequest(cc.Status.UpgradeRequest) &&
-			!isStaleUpgradeRequest(cc.Status.UpgradeRequest, staleUpgradeRequestAfter) {
+			!isStaleUpgradeRequest(cc.Status.UpgradeRequest, s.getUpgradeStaleAfter(ctx)) {
 			return nil, grpcutils.InvalidArg("Cluster upgrade is already requested or in progress")
 		}
 

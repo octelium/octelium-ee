@@ -11,6 +11,7 @@ package genesis
 import (
 	"database/sql"
 
+	nadclientset "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/client/clientset/versioned"
 	_ "github.com/lib/pq"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	iocteliumc "github.com/octelium/octelium/cluster/common/octeliumc"
@@ -20,6 +21,7 @@ import (
 
 type Genesis struct {
 	k8sC          kubernetes.Interface
+	nadC          nadclientset.Interface
 	octeliumC     octeliumc.ClientInterface
 	octeliumCInit iocteliumc.ClientInterface
 	db            *sql.DB
@@ -38,7 +40,13 @@ func NewGenesis() (*Genesis, error) {
 		return nil, err
 	}
 
+	nadC, err := nadclientset.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	ret.k8sC = k8sClientSet
+	ret.nadC = nadC
 
 	return ret, nil
 }

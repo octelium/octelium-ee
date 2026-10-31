@@ -44,9 +44,11 @@ func (g *Genesis) RunUpgrade(ctx context.Context, o *UpgradeOpts) error {
 
 	zap.S().Debugf("Installing components")
 
-	if err := g.setVolumes(ctx); err != nil {
-		zap.L().Warn("Could not setVolumes", zap.Error(err))
-		return err
+	if region.Metadata.Name == "default" {
+		if err := g.setVolumes(ctx); err != nil {
+			zap.L().Warn("Could not setVolumes", zap.Error(err))
+			return err
+		}
 	}
 
 	if err := g.installComponents(ctx, &components.CommonOpts{

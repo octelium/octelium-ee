@@ -114,7 +114,7 @@ func (g *Genesis) installComponents(ctx context.Context, opts *components.Common
 		}
 	}
 
-	if isInit {
+	if isInit && region.Metadata.Name == "default" {
 		if err := components.CreateClusterMan(ctx, opts); err != nil {
 			return err
 		}

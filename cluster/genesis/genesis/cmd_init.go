@@ -71,9 +71,11 @@ func (g *Genesis) RunInit(ctx context.Context, o *InitOpts) error {
 		return err
 	}
 
-	if err := g.setVolumes(ctx); err != nil {
-		zap.L().Warn("Could not setVolumes", zap.Error(err))
-		return err
+	if rgn.Metadata.Name == "default" {
+		if err := g.setVolumes(ctx); err != nil {
+			zap.L().Warn("Could not setVolumes", zap.Error(err))
+			return err
+		}
 	}
 
 	if err := g.installComponents(ctx, &components.CommonOpts{

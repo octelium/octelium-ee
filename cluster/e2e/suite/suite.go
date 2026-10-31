@@ -120,6 +120,7 @@ func Phases() []suite.Phase {
 		{Name: "CloudmanNamespaceReplacement", Run: testCloudmanNamespaceReplacement},
 		{Name: "License", Run: testLicenseLifecycle},
 		{Name: "ClusterInfo", Run: testClusterInfo},
+		{Name: "RegionJoin", Run: testRegionJoin},
 		{Name: "Agent", Run: testAgent},
 	}
 }

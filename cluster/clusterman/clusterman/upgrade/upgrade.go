@@ -10,26 +10,35 @@ package upgrade
 
 import (
 	"context"
-	"fmt"
+	"slices"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/clusterman/clusterman/genesisjob"
+	"github.com/octelium/octelium-ee/cluster/clusterman/clusterman/regionk8s"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
+	"github.com/octelium/octelium-ee/cluster/common/regionutils"
+	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
+	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/client/octops/commands/install"
-	"github.com/octelium/octelium/cluster/common/vutils"
-	"github.com/octelium/octelium/pkg/utils/utilrand"
+	"github.com/octelium/octelium/pkg/apiutils/umetav1"
+	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	batchv1 "k8s.io/api/batch/v1"
-	k8scorev1 "k8s.io/api/core/v1"
-	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
+
+const RegionTimeout = 20 * time.Minute
+
+const maxMessageLen = 1024
 
 type UpgradeClusterOpts struct {
 	OcteliumC      octeliumc.ClientInterface
 	K8sC           kubernetes.Interface
 	UpgradeRequest *enterprisev1.ClusterConfig_Status_UpgradeRequest
+	NewRegionK8sC  regionk8s.NewClientFn
+	OnRegions      func(ctx context.Context, regions []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region)
 }
 
 func UpgradeCluster(ctx context.Context, o *UpgradeClusterOpts) error {
@@ -43,11 +52,13 @@ func UpgradeCluster(ctx context.Context, o *UpgradeClusterOpts) error {
 }
 
 type controller struct {
-	octeliumC octeliumc.ClientInterface
-	k8sC      kubernetes.Interface
-	req       *enterprisev1.ClusterConfig_Status_UpgradeRequest
-	domain    string
-	spiffe    *install.SPIFFEOpts
+	octeliumC     octeliumc.ClientInterface
+	k8sC          kubernetes.Interface
+	req           *enterprisev1.ClusterConfig_Status_UpgradeRequest
+	domain        string
+	spiffe        *install.SPIFFEOpts
+	newRegionK8sC regionk8s.NewClientFn
+	onRegions     func(ctx context.Context, regions []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region)
 }
 
 func newController(ctx context.Context, o *UpgradeClusterOpts) (*controller, error) {
@@ -56,9 +67,15 @@ func newController(ctx context.Context, o *UpgradeClusterOpts) (*controller, err
 	}
 
 	ret := &controller{
-		octeliumC: o.OcteliumC,
-		k8sC:      o.K8sC,
-		req:       o.UpgradeRequest,
+		octeliumC:     o.OcteliumC,
+		k8sC:          o.K8sC,
+		req:           o.UpgradeRequest,
+		newRegionK8sC: o.NewRegionK8sC,
+		onRegions:     o.OnRegions,
+	}
+
+	if ret.newRegionK8sC == nil {
+		ret.newRegionK8sC = regionk8s.NewClientFactory(o.OcteliumC)
 	}
 
 	cc, err := o.OcteliumC.CoreV1Utils().GetClusterConfig(ctx)
@@ -79,80 +96,173 @@ func newController(ctx context.Context, o *UpgradeClusterOpts) (*controller, err
 	return ret, nil
 }
 
-/*
+type regionTarget struct {
+	region *corev1.Region
+	k8sC   kubernetes.Interface
+}
+
 func (c *controller) run(ctx context.Context) error {
 	if c.req == nil || c.req.Request == nil {
 		zap.L().Debug("Nil upgrade request. Nothing to be done...")
 		return nil
 	}
 
-	if c.req.Request.Core != nil {
-
-		job := getGenesisJob(c.domain, vutils.GetMyRegionName(), "octelium", c.req.Request.Core.Version)
-		if _, err := c.k8sC.BatchV1().Jobs(vutils.K8sNS).Create(ctx,
-			job,
-			k8smetav1.CreateOptions{}); err != nil {
-			return err
-		}
-
-		time.Sleep(3 * time.Second)
-		if err := c.waitUpgrade(ctx, job); err != nil {
-			zap.L().Warn("Could not waitUpgrade", zap.Any("job", job), zap.Error(err))
-		}
+	if err := validateRequest(c.req.Request); err != nil {
+		return err
 	}
 
-	if c.req.Request.PackageEnterprise != nil {
-		job := getGenesisJob(c.domain, vutils.GetMyRegionName(),
-			"octeliumee", c.req.Request.PackageEnterprise.Version)
-		if _, err := c.k8sC.BatchV1().Jobs(vutils.K8sNS).Create(ctx,
-			job,
-			k8smetav1.CreateOptions{}); err != nil {
-			return err
-		}
-		time.Sleep(3 * time.Second)
-		if err := c.waitUpgrade(ctx, job); err != nil {
-			zap.L().Warn("Could not waitUpgrade ee", zap.Any("job", job), zap.Error(err))
-		}
+	if c.req.Request.Core == nil && c.req.Request.PackageEnterprise == nil && c.req.Request.PackageCordium == nil {
+		zap.L().Debug("No package to be upgraded. Nothing to be done...")
+		return nil
 	}
 
-	if c.req.Request.PackageCordium != nil {
-		job := getGenesisJob(c.domain, vutils.GetMyRegionName(),
-			"cordium", c.req.Request.PackageCordium.Version)
-		if _, err := c.k8sC.BatchV1().Jobs(vutils.K8sNS).Create(ctx,
-			job,
-			k8smetav1.CreateOptions{}); err != nil {
-			return err
-		}
-		time.Sleep(3 * time.Second)
-		if err := c.waitUpgrade(ctx, job); err != nil {
-			zap.L().Warn("Could not waitUpgrade for cordium", zap.Any("job", job), zap.Error(err))
-		}
+	targets, err := c.getTargets(ctx)
+	if err != nil {
+		return err
+	}
+
+	return c.runTargets(ctx, targets)
+}
+
+func validateRequest(req *enterprisev1.UpgradeClusterRequest_Request) error {
+	if req.Core != nil && req.Core.Version == "" {
+		return errors.Errorf("core upgrade failed: empty upgrade version for package %s", regionutils.PackageCore)
+	}
+
+	if req.PackageEnterprise != nil && req.PackageEnterprise.Version == "" {
+		return errors.Errorf("enterprise package upgrade failed: empty upgrade version for package %s",
+			regionutils.PackageEnterprise)
+	}
+
+	if req.PackageCordium != nil && req.PackageCordium.Version == "" {
+		return errors.Errorf("cordium package upgrade failed: empty upgrade version for package %s",
+			regionutils.PackageCordium)
 	}
 
 	return nil
 }
-*/
 
-func (c *controller) run(ctx context.Context) error {
-	if c.req == nil || c.req.Request == nil {
-		zap.L().Debug("Nil upgrade request. Nothing to be done...")
-		return nil
+func (c *controller) getTargets(ctx context.Context) ([]*regionTarget, error) {
+	rgnList, err := c.octeliumC.CoreC().ListRegion(ctx, &rmetav1.ListOptions{})
+	if err != nil {
+		return nil, err
 	}
 
-	if c.req.Request.Core != nil {
-		if err := c.runUpgradeJob(ctx, "octelium", c.req.Request.Core.Version); err != nil {
+	var ret []*regionTarget
+	var others []*corev1.Region
+
+	for _, rgn := range rgnList.Items {
+		switch {
+		case rgn.Metadata.Name == regionutils.DefaultRegion:
+			ret = append(ret, &regionTarget{
+				region: rgn,
+				k8sC:   c.k8sC,
+			})
+		case regionutils.IsJoinCompleted(rgn):
+			others = append(others, rgn)
+		default:
+			zap.L().Debug("Skipping a Region that is not managed by the Cluster",
+				zap.String("region", rgn.Metadata.Name))
+		}
+	}
+
+	if len(ret) == 0 {
+		return nil, errors.Errorf("Could not find the default Region")
+	}
+
+	slices.SortFunc(others, func(a, b *corev1.Region) int {
+		return int(a.Status.Index) - int(b.Status.Index)
+	})
+
+	for _, rgn := range others {
+		extInfo, err := regionutils.GetRegionExtInfo(rgn)
+		if err != nil {
+			return nil, err
+		}
+
+		k8sC, err := c.newRegionK8sC(ctx, extInfo.Kubernetes)
+		if err != nil {
+			return nil, errors.Errorf("Could not create the Kubernetes client of the Region %s: %+v",
+				rgn.Metadata.Name, err)
+		}
+
+		ret = append(ret, &regionTarget{
+			region: rgn,
+			k8sC:   k8sC,
+		})
+	}
+
+	return ret, nil
+}
+
+func (c *controller) runTargets(ctx context.Context, targets []*regionTarget) error {
+	regions := make([]*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region, 0, len(targets))
+	for _, t := range targets {
+		regions = append(regions, &enterprisev1.ClusterConfig_Status_UpgradeRequest_Region{
+			RegionRef: umetav1.GetObjectReference(t.region),
+			State:     enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED,
+		})
+	}
+
+	c.reportRegions(ctx, regions)
+
+	for i, t := range targets {
+		regions[i].State = enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING
+		c.reportRegions(ctx, regions)
+
+		if err := c.runTarget(ctx, t); err != nil {
+			regions[i].State = enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED
+			regions[i].DoneAt = pbutils.Now()
+			regions[i].Message = truncateMessage(err.Error())
+			c.reportRegions(ctx, regions)
+
+			return errors.Errorf("Could not upgrade the Region %s: %+v", t.region.Metadata.Name, err)
+		}
+
+		regions[i].State = enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS
+		regions[i].DoneAt = pbutils.Now()
+		c.reportRegions(ctx, regions)
+	}
+
+	return nil
+}
+
+func (c *controller) reportRegions(ctx context.Context, regions []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region) {
+	if c.onRegions == nil {
+		return
+	}
+
+	ret := make([]*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region, 0, len(regions))
+	for _, rgn := range regions {
+		ret = append(ret, pbutils.Clone(rgn).(*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region))
+	}
+
+	c.onRegions(ctx, ret)
+}
+
+func (c *controller) runTarget(ctx context.Context, t *regionTarget) error {
+	ctx, cancel := context.WithTimeout(ctx, RegionTimeout)
+	defer cancel()
+
+	req := c.req.Request
+	isDefault := t.region.Metadata.Name == regionutils.DefaultRegion
+
+	zap.L().Info("Upgrading Region", zap.String("region", t.region.Metadata.Name))
+
+	if req.Core != nil {
+		if err := c.runUpgradeJob(ctx, t, regionutils.PackageCore, req.Core.Version); err != nil {
 			return errors.Errorf("core upgrade failed: %+v", err)
 		}
 	}
 
-	if c.req.Request.PackageEnterprise != nil {
-		if err := c.runUpgradeJob(ctx, "octeliumee", c.req.Request.PackageEnterprise.Version); err != nil {
+	if req.PackageEnterprise != nil {
+		if err := c.runUpgradeJob(ctx, t, regionutils.PackageEnterprise, req.PackageEnterprise.Version); err != nil {
 			return errors.Errorf("enterprise package upgrade failed: %+v", err)
 		}
 	}
 
-	if c.req.Request.PackageCordium != nil {
-		if err := c.runUpgradeJob(ctx, "cordium", c.req.Request.PackageCordium.Version); err != nil {
+	if req.PackageCordium != nil && (isDefault || regionutils.HasPackage(t.region, regionutils.PackageCordium)) {
+		if err := c.runUpgradeJob(ctx, t, regionutils.PackageCordium, req.PackageCordium.Version); err != nil {
 			return errors.Errorf("cordium package upgrade failed: %+v", err)
 		}
 	}
@@ -160,182 +270,42 @@ func (c *controller) run(ctx context.Context) error {
 	return nil
 }
 
-func (c *controller) runUpgradeJob(ctx context.Context, pkg string, version string) error {
+func (c *controller) runUpgradeJob(ctx context.Context, t *regionTarget, pkg string, version string) error {
 	if version == "" {
 		return errors.Errorf("empty upgrade version for package %s", pkg)
 	}
 
-	job := getGenesisJob(c.domain, vutils.GetMyRegionName(), pkg, version, c.spiffe)
+	job := getGenesisJob(c.domain, t.region.Metadata.Name, pkg, version, c.spiffe)
 
-	if _, err := c.k8sC.BatchV1().Jobs(vutils.K8sNS).Create(ctx, job, k8smetav1.CreateOptions{}); err != nil {
-		return errors.Errorf("could not create upgrade job %s for package %s version %s: %+v",
-			job.Name, pkg, version, err)
-	}
-
-	zap.L().Info("Created upgrade job",
+	zap.L().Info("Running upgrade job",
 		zap.String("job", job.Name),
+		zap.String("region", t.region.Metadata.Name),
 		zap.String("pkg", pkg),
 		zap.String("version", version),
 	)
 
-	if err := c.waitUpgrade(ctx, job); err != nil {
-		return errors.Errorf("upgrade job %s for package %s version %s did not complete successfully: %+v",
-			job.Name, pkg, version, err)
+	if err := genesisjob.Run(ctx, t.k8sC, job, genesisjob.DefaultTimeout); err != nil {
+		return errors.Errorf("package %s version %s: %+v", pkg, version, err)
 	}
-
-	zap.L().Info("Upgrade job completed successfully",
-		zap.String("job", job.Name),
-		zap.String("pkg", pkg),
-		zap.String("version", version),
-	)
 
 	return nil
 }
 
-func (c *controller) waitUpgrade(ctx context.Context, job *batchv1.Job) error {
-	if job == nil {
-		return errors.Errorf("nil job")
-	}
-	if job.Name == "" {
-		return errors.Errorf("empty job name")
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, 20*time.Minute)
-	defer cancel()
-
-	// initial wait to avoid k8s api race condition
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-time.After(3 * time.Second):
-	}
-
-	ticker := time.NewTicker(3 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		if err := c.checkUpgradeJob(ctx, job.Name); err != nil {
-			if isTerminalUpgradeJobErr(err) {
-				return err
-			}
-
-			zap.L().Debug("Upgrade job has not completed yet",
-				zap.String("job", job.Name),
-				zap.Error(err),
-			)
-		} else {
-			return nil
-		}
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-ticker.C:
-		}
-	}
-}
-
-type terminalUpgradeJobErr struct {
-	err error
-}
-
-func (e *terminalUpgradeJobErr) Error() string {
-	if e == nil || e.err == nil {
-		return "terminal upgrade job error"
-	}
-	return e.err.Error()
-}
-
-func (e *terminalUpgradeJobErr) Unwrap() error {
-	if e == nil {
-		return nil
-	}
-	return e.err
-}
-
-func isTerminalUpgradeJobErr(err error) bool {
-	var terminalErr *terminalUpgradeJobErr
-	return errors.As(err, &terminalErr)
-}
-
-func terminalUpgradeErr(format string, args ...any) error {
-	return &terminalUpgradeJobErr{
-		err: errors.Errorf(format, args...),
-	}
-}
-
-func (c *controller) checkUpgradeJob(ctx context.Context, jobName string) error {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
-	job, err := c.k8sC.BatchV1().Jobs(vutils.K8sNS).Get(ctx, jobName, k8smetav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	for _, cond := range job.Status.Conditions {
-		switch cond.Type {
-		case batchv1.JobComplete:
-			if cond.Status == k8scorev1.ConditionTrue {
-				return nil
-			}
-
-		case batchv1.JobFailed:
-			if cond.Status == k8scorev1.ConditionTrue {
-				return terminalUpgradeErr(
-					"upgrade job %s failed: reason=%s message=%s",
-					jobName,
-					cond.Reason,
-					cond.Message,
-				)
-			}
-		}
-	}
-
-	if job.Status.Succeeded > 0 {
-		return nil
-	}
-
-	return errors.Errorf(
-		"upgrade job %s is not complete yet: active=%d succeeded=%d failedAttempts=%d",
-		jobName,
-		job.Status.Active,
-		job.Status.Succeeded,
-		job.Status.Failed,
-	)
-}
-
 func getGenesisJob(domain string, regionName string, pkg string, version string,
 	spiffe *install.SPIFFEOpts) *batchv1.Job {
-	labels := map[string]string{
-		"app":                         "octelium",
-		"octelium.com/component":      "genesis",
-		"octelium.com/component-type": "cluster",
-	}
+	return genesisjob.GetJob(&genesisjob.Opts{
+		Domain:  domain,
+		Region:  regionName,
+		Package: pkg,
+		Cmd:     "upgrade",
+		Version: version,
+		SPIFFE:  spiffe,
+	})
+}
 
-	ret := &batchv1.Job{
-		ObjectMeta: k8smetav1.ObjectMeta{
-			Name:      fmt.Sprintf("octelium-genesis-upgrade-%s", utilrand.GetRandomStringLowercase(6)),
-			Namespace: vutils.K8sNS,
-			Labels:    labels,
-		},
-		Spec: batchv1.JobSpec{
-			Template: k8scorev1.PodTemplateSpec{
-				ObjectMeta: k8smetav1.ObjectMeta{
-					Labels: labels,
-				},
-				Spec: install.GetGenesisPodSpec(&install.GenesisPodSpecOpts{
-					Domain:     domain,
-					Cmd:        "upgrade",
-					Version:    version,
-					SvcAccount: "octelium-nocturne",
-					Package:    pkg,
-					Region:     regionName,
-					SPIFFE:     spiffe,
-				}),
-			},
-		},
+func truncateMessage(msg string) string {
+	if len(msg) > maxMessageLen {
+		return msg[:maxMessageLen]
 	}
-
-	return ret
+	return msg
 }

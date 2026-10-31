@@ -1,4 +1,6 @@
+import { ListRegionOptions, Region } from "@/apis/corev1/corev1";
 import {
+  ClusterConfig_Status_JoinRequest_State,
   ClusterConfig_Status_UpgradeRequest_State,
   GetClusterInfoRequest,
   GetClusterInfoResponse,
@@ -6,7 +8,11 @@ import {
   UpgradeClusterRequest,
 } from "@/apis/enterprisev1/enterprisev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
-import { getClientCluster, getClientEnterprise } from "@/utils/client";
+import {
+  getClientCluster,
+  getClientCore,
+  getClientEnterprise,
+} from "@/utils/client";
 import { retryQuery } from "@/utils/queryPolicy";
 import { useQuery } from "@tanstack/react-query";
 import { Boxes, Cpu, LucideIcon, Sparkles } from "lucide-react";
@@ -16,6 +22,7 @@ export const clustermanKeys = {
   info: ["clusterman", "info"],
   config: ["clusterman", "main", "getCluster"],
   license: ["clusterman", "license"],
+  regions: ["clusterman", "regions"],
 };
 
 export type PackageKey = "core" | "packageEnterprise" | "packageCordium";
@@ -69,6 +76,44 @@ export const isUpgradeActive = (
   state === ClusterConfig_Status_UpgradeRequest_State.UPGRADE_REQUESTED ||
   state === ClusterConfig_Status_UpgradeRequest_State.UPGRADING;
 
+export const isJoinActive = (state?: ClusterConfig_Status_JoinRequest_State) =>
+  state === ClusterConfig_Status_JoinRequest_State.JOIN_REQUESTED ||
+  state === ClusterConfig_Status_JoinRequest_State.JOINING;
+
+export const DEFAULT_REGION = "default";
+
+export const isDefaultRegion = (region: Region) =>
+  region.metadata?.name === DEFAULT_REGION;
+
+export const regionVersion = (region: Region, pkg: string) =>
+  region.status?.versionInfoMap[pkg]?.version;
+
+export const isJoinedRegion = (region: Region) =>
+  !!region.status?.ext["enterpriseV1"]?.fields["kubernetes"];
+
+export const isJoinIncomplete = (region: Region) =>
+  isJoinedRegion(region) && !regionVersion(region, "octeliumee");
+
+export const sortRegions = (regions: Region[]) =>
+  [...regions].sort((a, b) => {
+    if (isDefaultRegion(a)) return -1;
+    if (isDefaultRegion(b)) return 1;
+    return (a.status?.index ?? 0) - (b.status?.index ?? 0);
+  });
+
+export const useRegions = () =>
+  useQuery({
+    queryKey: clustermanKeys.regions,
+    queryFn: async () => {
+      const { response } = await getClientCore().listRegion(
+        ListRegionOptions.create({}),
+      );
+      return response;
+    },
+    refetchOnWindowFocus: false,
+    refetchInterval: 30_000,
+  });
+
 export const useClusterVersionInfo = () =>
   useQuery({
     queryKey: clustermanKeys.info,
@@ -92,7 +137,8 @@ export const useClusterConfig = () =>
     },
     refetchOnWindowFocus: false,
     refetchInterval: (query) =>
-      isUpgradeActive(query.state.data?.status?.upgradeRequest?.state)
+      isUpgradeActive(query.state.data?.status?.upgradeRequest?.state) ||
+      isJoinActive(query.state.data?.status?.joinRequest?.state)
         ? 5_000
         : 30_000,
   });

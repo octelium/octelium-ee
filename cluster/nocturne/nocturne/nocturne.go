@@ -70,6 +70,27 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
+	{
+		ccCtl := cccontroller.NewController(octeliumC, k8sC)
+		if err := watchers.NewEnterpriseV1(octeliumC).ClusterConfig(ctx, nil, ccCtl.OnUpdate); err != nil {
+			return err
+		}
+	}
+
+	if vutils.IsDefaultRegion() {
+		if err := runDefaultRegionControllers(ctx, octeliumC); err != nil {
+			return err
+		}
+	}
+
+	zap.L().Info("Enterprise Nocturne is now running...")
+	healthcheck.Run(vutils.HealthCheckPortMain)
+	<-ctx.Done()
+
+	return nil
+}
+
+func runDefaultRegionControllers(ctx context.Context, octeliumC octeliumc.ClientInterface) error {
 	celEngine, err := celengine.New(ctx, nil)
 	if err != nil {
 		return err
@@ -98,13 +119,6 @@ func Run(ctx context.Context) error {
 	dmCtl, err := devicemanagers.NewController(ctx, octeliumC, registry, devWatcher, devCtl)
 	if err != nil {
 		return err
-	}
-
-	{
-		ccCtl := cccontroller.NewController(octeliumC, k8sC)
-		if err := watcher.ClusterConfig(ctx, nil, ccCtl.OnUpdate); err != nil {
-			return err
-		}
 	}
 
 	if err := dmCtl.Resync(ctx); err != nil {
@@ -193,10 +207,6 @@ func Run(ctx context.Context) error {
 	}
 
 	ewatcher.InitWatcher(octeliumC, bindingCtl).Run(ctx)
-
-	zap.L().Info("Enterprise Nocturne is now running...")
-	healthcheck.Run(vutils.HealthCheckPortMain)
-	<-ctx.Done()
 
 	return nil
 }

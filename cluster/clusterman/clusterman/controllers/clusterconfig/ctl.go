@@ -12,6 +12,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/clusterman/clusterman/regionk8s"
 	"github.com/octelium/octelium-ee/cluster/clusterman/clusterman/upgrade"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/genesis/genesis/components"
@@ -24,9 +25,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const maxUpgradeDuration = 24 * time.Hour
+
 type Controller struct {
-	octeliumC octeliumc.ClientInterface
-	k8sC      kubernetes.Interface
+	octeliumC     octeliumc.ClientInterface
+	k8sC          kubernetes.Interface
+	newRegionK8sC regionk8s.NewClientFn
 }
 
 func NewController(
@@ -34,8 +38,9 @@ func NewController(
 	k8sC kubernetes.Interface,
 ) *Controller {
 	return &Controller{
-		octeliumC: octeliumC,
-		k8sC:      k8sC,
+		octeliumC:     octeliumC,
+		k8sC:          k8sC,
+		newRegionK8sC: regionk8s.NewClientFactory(octeliumC),
 	}
 }
 
@@ -45,12 +50,16 @@ func (c *Controller) OnUpdate(ctx context.Context, new, old *enterprisev1.Cluste
 		c.update(new)
 	}
 
+	if !pbutils.IsEqual(new.Status, old.Status) && new.Status.JoinRequest != nil {
+		c.join(new)
+	}
+
 	return nil
 }
 
 func (c *Controller) update(cluster *enterprisev1.ClusterConfig) {
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)
+		ctx, cancel := context.WithTimeout(context.Background(), maxUpgradeDuration)
 		defer cancel()
 		if err := c.doUpgrade(ctx, cluster); err != nil {
 			zap.L().Warn("Could not doUpdate", zap.Error(err))
@@ -118,14 +127,16 @@ func (c *Controller) doUpgrade(ctx context.Context, cluster *enterprisev1.Cluste
 	}
 
 	{
-
-		ctx, cancel := context.WithTimeout(ctx, 20*time.Minute)
-		defer cancel()
+		upgradeReq := cluster.Status.UpgradeRequest
 
 		if err := upgrade.UpgradeCluster(ctx, &upgrade.UpgradeClusterOpts{
 			OcteliumC:      c.octeliumC,
 			K8sC:           c.k8sC,
-			UpgradeRequest: cluster.Status.UpgradeRequest,
+			UpgradeRequest: upgradeReq,
+			NewRegionK8sC:  c.newRegionK8sC,
+			OnRegions: func(ctx context.Context, regions []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region) {
+				c.setUpgradeRegions(ctx, upgradeReq, regions)
+			},
 		}); err != nil {
 			zap.L().Warn("Could not upgradeCluster", zap.Error(err))
 			cluster, err = c.octeliumC.EnterpriseV1Utils().GetClusterConfig(ctx)

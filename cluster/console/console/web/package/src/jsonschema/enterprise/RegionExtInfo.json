@@ -4,13 +4,149 @@
     "definitions": {
         "RegionExtInfo": {
             "properties": {
-                "version": {
-                    "type": "string"
+                "kubernetes": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes",
+                    "additionalProperties": false,
+                    "description": "Kubernetes is the connection to the Kubernetes cluster of a Region that joined the Cluster via the JoinCluster method. It is used by the Cluster to manage the Region (e.g. upgrades). It is unset for the `default` Region."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Region Ext Info"
+            "title": "Region Ext Info",
+            "description": "RegionExtInfo is the enterprise-specific information of a Region that is stored in the Region's status extension data."
+        },
+        "octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes": {
+            "properties": {
+                "kubeconfig": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.Kubeconfig",
+                    "additionalProperties": false,
+                    "description": "Kubeconfig sets the connection from a kubeconfig."
+                },
+                "bearerToken": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.BearerToken",
+                    "additionalProperties": false,
+                    "description": "BearerToken sets the connection from a bearer token."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "kubeconfig"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "bearerToken"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "kubeconfig"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "bearerToken"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Kubernetes",
+            "description": "Kubernetes sets how the Cluster connects to the API server of the Kubernetes cluster that joins the Cluster"
+        },
+        "octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.BearerToken": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the bearer token."
+                },
+                "server": {
+                    "type": "string",
+                    "description": "Server is the URL of the Kubernetes API server (e.g. `https://203.0.113.10:6443`). Required."
+                },
+                "trustedCAs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "TrustedCAs is the list of the PEM-encoded root certificate authorities that are trusted to verify the API server's certificate. If unset, the system root certificate authorities are used."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Bearer Token",
+            "description": "BearerToken sets the connection from a bearer token (e.g. the token of a Kubernetes ServiceAccount)"
+        },
+        "octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.Kubeconfig": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the kubeconfig."
+                },
+                "context": {
+                    "type": "string",
+                    "description": "Context is the kubeconfig context (e.g. \"kubernetes-admin@kubernetes\"). If unset, the current context of the kubeconfig is used."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Kubeconfig",
+            "description": "Kubeconfig sets the connection from a kubeconfig"
         }
     }
 }

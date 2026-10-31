@@ -1958,6 +1958,7 @@ var PolicyPortalService_ServiceDesc = grpc.ServiceDesc{
 
 const (
 	ClusterService_UpgradeCluster_FullMethodName = "/octelium.api.main.enterprise.v1.ClusterService/UpgradeCluster"
+	ClusterService_JoinCluster_FullMethodName    = "/octelium.api.main.enterprise.v1.ClusterService/JoinCluster"
 	ClusterService_GetClusterInfo_FullMethodName = "/octelium.api.main.enterprise.v1.ClusterService/GetClusterInfo"
 	ClusterService_SetLicense_FullMethodName     = "/octelium.api.main.enterprise.v1.ClusterService/SetLicense"
 	ClusterService_GetLicense_FullMethodName     = "/octelium.api.main.enterprise.v1.ClusterService/GetLicense"
@@ -1969,11 +1970,19 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // ClusterService provides the Cluster lifecycle management operations (i.e.
-// version information, upgrades and License management).
+// version information, upgrades, joining new Regions and License management).
 type ClusterServiceClient interface {
 	// UpgradeCluster requests an upgrade of the Cluster components to a specific
-	// version.
+	// version. The upgrade is applied to every Region of the Cluster starting
+	// with the `default` Region.
 	UpgradeCluster(ctx context.Context, in *UpgradeClusterRequest, opts ...grpc.CallOption) (*UpgradeClusterResponse, error)
+	// JoinCluster requests joining an additional Kubernetes cluster to the
+	// Cluster as a new Region. The Kubernetes cluster shares the same primary
+	// and secondary storages (i.e. PostgreSQL and Redis) of the Cluster which
+	// must therefore be reachable from it. The join is performed asynchronously
+	// and its progress is reported by the `joinRequest` field of the enterprise
+	// ClusterConfig status.
+	JoinCluster(ctx context.Context, in *JoinClusterRequest, opts ...grpc.CallOption) (*JoinClusterResponse, error)
 	// GetClusterInfo retrieves the currently installed and latest available
 	// versions of the Cluster packages.
 	GetClusterInfo(ctx context.Context, in *GetClusterInfoRequest, opts ...grpc.CallOption) (*GetClusterInfoResponse, error)
@@ -1997,6 +2006,16 @@ func (c *clusterServiceClient) UpgradeCluster(ctx context.Context, in *UpgradeCl
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpgradeClusterResponse)
 	err := c.cc.Invoke(ctx, ClusterService_UpgradeCluster_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clusterServiceClient) JoinCluster(ctx context.Context, in *JoinClusterRequest, opts ...grpc.CallOption) (*JoinClusterResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(JoinClusterResponse)
+	err := c.cc.Invoke(ctx, ClusterService_JoinCluster_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2048,11 +2067,19 @@ func (c *clusterServiceClient) DeleteLicense(ctx context.Context, in *DeleteLice
 // for forward compatibility.
 //
 // ClusterService provides the Cluster lifecycle management operations (i.e.
-// version information, upgrades and License management).
+// version information, upgrades, joining new Regions and License management).
 type ClusterServiceServer interface {
 	// UpgradeCluster requests an upgrade of the Cluster components to a specific
-	// version.
+	// version. The upgrade is applied to every Region of the Cluster starting
+	// with the `default` Region.
 	UpgradeCluster(context.Context, *UpgradeClusterRequest) (*UpgradeClusterResponse, error)
+	// JoinCluster requests joining an additional Kubernetes cluster to the
+	// Cluster as a new Region. The Kubernetes cluster shares the same primary
+	// and secondary storages (i.e. PostgreSQL and Redis) of the Cluster which
+	// must therefore be reachable from it. The join is performed asynchronously
+	// and its progress is reported by the `joinRequest` field of the enterprise
+	// ClusterConfig status.
+	JoinCluster(context.Context, *JoinClusterRequest) (*JoinClusterResponse, error)
 	// GetClusterInfo retrieves the currently installed and latest available
 	// versions of the Cluster packages.
 	GetClusterInfo(context.Context, *GetClusterInfoRequest) (*GetClusterInfoResponse, error)
@@ -2074,6 +2101,9 @@ type UnimplementedClusterServiceServer struct{}
 
 func (UnimplementedClusterServiceServer) UpgradeCluster(context.Context, *UpgradeClusterRequest) (*UpgradeClusterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpgradeCluster not implemented")
+}
+func (UnimplementedClusterServiceServer) JoinCluster(context.Context, *JoinClusterRequest) (*JoinClusterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method JoinCluster not implemented")
 }
 func (UnimplementedClusterServiceServer) GetClusterInfo(context.Context, *GetClusterInfoRequest) (*GetClusterInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetClusterInfo not implemented")
@@ -2122,6 +2152,24 @@ func _ClusterService_UpgradeCluster_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ClusterServiceServer).UpgradeCluster(ctx, req.(*UpgradeClusterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ClusterService_JoinCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JoinClusterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterServiceServer).JoinCluster(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClusterService_JoinCluster_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterServiceServer).JoinCluster(ctx, req.(*JoinClusterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2208,6 +2256,10 @@ var ClusterService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpgradeCluster",
 			Handler:    _ClusterService_UpgradeCluster_Handler,
+		},
+		{
+			MethodName: "JoinCluster",
+			Handler:    _ClusterService_JoinCluster_Handler,
 		},
 		{
 			MethodName: "GetClusterInfo",

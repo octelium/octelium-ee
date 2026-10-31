@@ -1,6 +1,8 @@
 import {
+  ClusterConfig_Status_JoinRequest_State,
   ClusterConfig_Status_LicenseInfo_State,
   ClusterConfig_Status_UpgradeRequest,
+  ClusterConfig_Status_UpgradeRequest_Region,
   ClusterConfig_Status_UpgradeRequest_State,
   License_Plan_Support_Type,
   License_Plan_Type,
@@ -48,7 +50,11 @@ export const UpgradeStateBadge = (props: {
       <span
         className={twMerge(BADGE, "border-blue-200 bg-blue-50 text-blue-700")}
       >
-        <Loader2 size={9} strokeWidth={2.5} className="motion-safe:animate-spin" />
+        <Loader2
+          size={9}
+          strokeWidth={2.5}
+          className="motion-safe:animate-spin"
+        />
         Upgrading
       </span>
     ))
@@ -64,6 +70,69 @@ export const UpgradeStateBadge = (props: {
       </span>
     ))
     .otherwise(() => null);
+
+export const JoinStateBadge = (props: {
+  state: ClusterConfig_Status_JoinRequest_State;
+}) =>
+  match(props.state)
+    .with(ClusterConfig_Status_JoinRequest_State.SUCCESS, () => (
+      <span
+        className={twMerge(
+          BADGE,
+          "border-emerald-200 bg-emerald-50 text-emerald-700",
+        )}
+      >
+        <CheckCircle2 size={9} strokeWidth={2.5} />
+        Joined
+      </span>
+    ))
+    .with(ClusterConfig_Status_JoinRequest_State.FAILED, () => (
+      <span className={twMerge(BADGE, "border-red-200 bg-red-50 text-red-700")}>
+        <XCircle size={9} strokeWidth={2.5} />
+        Failed
+      </span>
+    ))
+    .with(ClusterConfig_Status_JoinRequest_State.JOINING, () => (
+      <span
+        className={twMerge(BADGE, "border-blue-200 bg-blue-50 text-blue-700")}
+      >
+        <Loader2
+          size={9}
+          strokeWidth={2.5}
+          className="motion-safe:animate-spin"
+        />
+        Joining
+      </span>
+    ))
+    .with(ClusterConfig_Status_JoinRequest_State.JOIN_REQUESTED, () => (
+      <span
+        className={twMerge(
+          BADGE,
+          "border-amber-200 bg-amber-50 text-amber-700",
+        )}
+      >
+        <Clock size={9} strokeWidth={2.5} />
+        Requested
+      </span>
+    ))
+    .otherwise(() => null);
+
+export const RegionProgress = (props: {
+  regions: ClusterConfig_Status_UpgradeRequest_Region[];
+}) => (
+  <div className="flex flex-wrap items-center gap-1.5">
+    {props.regions.map((item, index) => (
+      <span
+        key={item.regionRef?.uid ?? index}
+        title={item.message || undefined}
+        className="inline-flex items-center gap-1.5 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-micro font-semibold text-slate-700"
+      >
+        {item.regionRef?.name ?? "Unknown"}
+        <UpgradeStateBadge state={item.state} />
+      </span>
+    ))}
+  </div>
+);
 
 export const LICENSE_STATE_LABEL: Record<number, string> = {
   [ClusterConfig_Status_LicenseInfo_State.NONE]: "No license",

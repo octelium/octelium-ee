@@ -3641,6 +3641,18 @@ export interface ClusterConfig_Status {
      * @generated from protobuf field: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo licenseInfo = 5
      */
     licenseInfo?: ClusterConfig_Status_LicenseInfo;
+    /**
+     * JoinRequest is the currently ongoing or last requested Region join.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest joinRequest = 6
+     */
+    joinRequest?: ClusterConfig_Status_JoinRequest;
+    /**
+     * LastJoinRequests is the list of the most recent Region joins.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest lastJoinRequests = 7
+     */
+    lastJoinRequests: ClusterConfig_Status_JoinRequest[];
 }
 /**
  * UpgradeRequest is the state of a Cluster upgrade that was requested via
@@ -3674,6 +3686,47 @@ export interface ClusterConfig_Status_UpgradeRequest {
      * @generated from protobuf field: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request request = 4
      */
     request?: UpgradeClusterRequest_Request;
+    /**
+     * Regions is the list of the per-Region states of the upgrade in the
+     * order in which the Regions are upgraded. The `default` Region always
+     * comes first.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region regions = 5
+     */
+    regions: ClusterConfig_Status_UpgradeRequest_Region[];
+}
+/**
+ * Region is the state of the upgrade within a single Region
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region
+ */
+export interface ClusterConfig_Status_UpgradeRequest_Region {
+    /**
+     * RegionRef is the reference of the Region.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference regionRef = 1
+     */
+    regionRef?: ObjectReference;
+    /**
+     * State is the current state of the upgrade within the Region.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.State state = 2
+     */
+    state: ClusterConfig_Status_UpgradeRequest_State;
+    /**
+     * DoneAt is the date at which the upgrade of the Region completed or
+     * failed.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp doneAt = 3
+     */
+    doneAt?: Timestamp;
+    /**
+     * Message is a human-readable description of the reason of the
+     * failure, if any.
+     *
+     * @generated from protobuf field: string message = 4
+     */
+    message: string;
 }
 /**
  * State is the current state of the upgrade.
@@ -3708,6 +3761,91 @@ export enum ClusterConfig_Status_UpgradeRequest_State {
     SUCCESS = 3,
     /**
      * FAILED means that the upgrade has failed.
+     *
+     * @generated from protobuf enum value: FAILED = 4;
+     */
+    FAILED = 4
+}
+/**
+ * JoinRequest is the state of a Region join that was requested via the
+ * JoinCluster method
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest
+ */
+export interface ClusterConfig_Status_JoinRequest {
+    /**
+     * CreatedAt is the date at which the join was requested.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp createdAt = 1
+     */
+    createdAt?: Timestamp;
+    /**
+     * State is the current state of the join.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.State state = 2
+     */
+    state: ClusterConfig_Status_JoinRequest_State;
+    /**
+     * DoneAt is the date at which the join completed or failed.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp doneAt = 3
+     */
+    doneAt?: Timestamp;
+    /**
+     * Request is the join request that was originally supplied to the
+     * JoinCluster method.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.JoinClusterRequest request = 4
+     */
+    request?: JoinClusterRequest;
+    /**
+     * RegionRef is the reference of the joined Region. It is set once the
+     * Region is created.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference regionRef = 5
+     */
+    regionRef?: ObjectReference;
+    /**
+     * Message is a human-readable description of the reason of the failure,
+     * if any.
+     *
+     * @generated from protobuf field: string message = 6
+     */
+    message: string;
+}
+/**
+ * State is the current state of the join.
+ *
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.State
+ */
+export enum ClusterConfig_Status_JoinRequest_State {
+    /**
+     * STATE_UNSET is the default unset value.
+     *
+     * @generated from protobuf enum value: STATE_UNSET = 0;
+     */
+    STATE_UNSET = 0,
+    /**
+     * JOIN_REQUESTED means that the join has been requested and is not
+     * started yet.
+     *
+     * @generated from protobuf enum value: JOIN_REQUESTED = 1;
+     */
+    JOIN_REQUESTED = 1,
+    /**
+     * JOINING means that the join is currently in progress.
+     *
+     * @generated from protobuf enum value: JOINING = 2;
+     */
+    JOINING = 2,
+    /**
+     * SUCCESS means that the join has successfully completed.
+     *
+     * @generated from protobuf enum value: SUCCESS = 3;
+     */
+    SUCCESS = 3,
+    /**
+     * FAILED means that the join has failed.
      *
      * @generated from protobuf enum value: FAILED = 4;
      */
@@ -10569,6 +10707,161 @@ export interface UpgradeClusterRequest_Request_PackageCordium {
  * @generated from protobuf message octelium.api.main.enterprise.v1.UpgradeClusterResponse
  */
 export interface UpgradeClusterResponse {
+}
+/**
+ * JoinClusterRequest is the request of the JoinCluster method.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.JoinClusterRequest
+ */
+export interface JoinClusterRequest {
+    /**
+     * Name is the name of the new Region (e.g. `us-east-1`). It cannot be
+     * `default`. Required.
+     *
+     * @generated from protobuf field: string name = 1
+     */
+    name: string;
+    /**
+     * DisplayName is an optional human-readable name of the Region.
+     *
+     * @generated from protobuf field: string displayName = 2
+     */
+    displayName: string;
+    /**
+     * Kubernetes sets the connection to the Kubernetes cluster that joins the
+     * Cluster. Required. The Kubernetes nodes must be already labeled as
+     * Octelium control-plane and data-plane nodes similar to the initial
+     * installation.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes kubernetes = 3
+     */
+    kubernetes?: JoinClusterRequest_Kubernetes;
+}
+/**
+ * Kubernetes sets how the Cluster connects to the API server of the
+ * Kubernetes cluster that joins the Cluster
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes
+ */
+export interface JoinClusterRequest_Kubernetes {
+    /**
+     * Type sets the credentials used to connect to the Kubernetes cluster.
+     * The credentials must be authorized to manage every Kubernetes resource
+     * (i.e. similar to the credentials used upon the initial installation).
+     *
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "kubeconfig";
+        /**
+         * Kubeconfig sets the connection from a kubeconfig.
+         *
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.Kubeconfig kubeconfig = 1
+         */
+        kubeconfig: JoinClusterRequest_Kubernetes_Kubeconfig;
+    } | {
+        oneofKind: "bearerToken";
+        /**
+         * BearerToken sets the connection from a bearer token.
+         *
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.BearerToken bearerToken = 2
+         */
+        bearerToken: JoinClusterRequest_Kubernetes_BearerToken;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * Kubeconfig sets the connection from a kubeconfig
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.Kubeconfig
+ */
+export interface JoinClusterRequest_Kubernetes_Kubeconfig {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "fromSecret";
+        /**
+         * FromSecret sets the name of the Secret whose value contains the
+         * kubeconfig.
+         *
+         * @generated from protobuf field: string fromSecret = 1
+         */
+        fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
+    /**
+     * Context is the kubeconfig context (e.g.
+     * "kubernetes-admin@kubernetes"). If unset, the current context of the
+     * kubeconfig is used.
+     *
+     * @generated from protobuf field: string context = 2
+     */
+    context: string;
+}
+/**
+ * BearerToken sets the connection from a bearer token (e.g. the token of
+ * a Kubernetes ServiceAccount)
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.BearerToken
+ */
+export interface JoinClusterRequest_Kubernetes_BearerToken {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "fromSecret";
+        /**
+         * FromSecret sets the name of the Secret whose value contains the
+         * bearer token.
+         *
+         * @generated from protobuf field: string fromSecret = 1
+         */
+        fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
+    /**
+     * Server is the URL of the Kubernetes API server (e.g.
+     * `https://203.0.113.10:6443`). Required.
+     *
+     * @generated from protobuf field: string server = 2
+     */
+    server: string;
+    /**
+     * TrustedCAs is the list of the PEM-encoded root certificate authorities
+     * that are trusted to verify the API server's certificate. If unset, the
+     * system root certificate authorities are used.
+     *
+     * @generated from protobuf field: repeated string trustedCAs = 3
+     */
+    trustedCAs: string[];
+}
+/**
+ * JoinClusterResponse is the response of the JoinCluster method.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.JoinClusterResponse
+ */
+export interface JoinClusterResponse {
+}
+/**
+ * RegionExtInfo is the enterprise-specific information of a Region that is
+ * stored in the Region's status extension data.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.RegionExtInfo
+ */
+export interface RegionExtInfo {
+    /**
+     * Kubernetes is the connection to the Kubernetes cluster of a Region that
+     * joined the Cluster via the JoinCluster method. It is used by the Cluster
+     * to manage the Region (e.g. upgrades). It is unset for the `default`
+     * Region.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes kubernetes = 1
+     */
+    kubernetes?: JoinClusterRequest_Kubernetes;
 }
 /**
  * SynchronizeSecretStoreRequest is the request of the SynchronizeSecretStore
@@ -17517,7 +17810,9 @@ class ClusterConfig_Status$Type extends MessageType<ClusterConfig_Status> {
             { no: 2, name: "lastUpgradeRequests", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ClusterConfig_Status_UpgradeRequest },
             { no: 3, name: "totalSuccessfulUpgrades", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 4, name: "totalFailedUpgrades", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 5, name: "licenseInfo", kind: "message", T: () => ClusterConfig_Status_LicenseInfo }
+            { no: 5, name: "licenseInfo", kind: "message", T: () => ClusterConfig_Status_LicenseInfo },
+            { no: 6, name: "joinRequest", kind: "message", T: () => ClusterConfig_Status_JoinRequest },
+            { no: 7, name: "lastJoinRequests", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ClusterConfig_Status_JoinRequest }
         ]);
     }
     create(value?: PartialMessage<ClusterConfig_Status>): ClusterConfig_Status {
@@ -17525,6 +17820,7 @@ class ClusterConfig_Status$Type extends MessageType<ClusterConfig_Status> {
         message.lastUpgradeRequests = [];
         message.totalSuccessfulUpgrades = 0;
         message.totalFailedUpgrades = 0;
+        message.lastJoinRequests = [];
         if (value !== undefined)
             reflectionMergePartial<ClusterConfig_Status>(this, message, value);
         return message;
@@ -17548,6 +17844,12 @@ class ClusterConfig_Status$Type extends MessageType<ClusterConfig_Status> {
                     break;
                 case /* octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo licenseInfo */ 5:
                     message.licenseInfo = ClusterConfig_Status_LicenseInfo.internalBinaryRead(reader, reader.uint32(), options, message.licenseInfo);
+                    break;
+                case /* octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest joinRequest */ 6:
+                    message.joinRequest = ClusterConfig_Status_JoinRequest.internalBinaryRead(reader, reader.uint32(), options, message.joinRequest);
+                    break;
+                case /* repeated octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest lastJoinRequests */ 7:
+                    message.lastJoinRequests.push(ClusterConfig_Status_JoinRequest.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -17576,6 +17878,12 @@ class ClusterConfig_Status$Type extends MessageType<ClusterConfig_Status> {
         /* octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo licenseInfo = 5; */
         if (message.licenseInfo)
             ClusterConfig_Status_LicenseInfo.internalBinaryWrite(message.licenseInfo, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest joinRequest = 6; */
+        if (message.joinRequest)
+            ClusterConfig_Status_JoinRequest.internalBinaryWrite(message.joinRequest, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest lastJoinRequests = 7; */
+        for (let i = 0; i < message.lastJoinRequests.length; i++)
+            ClusterConfig_Status_JoinRequest.internalBinaryWrite(message.lastJoinRequests[i], writer.tag(7, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -17593,12 +17901,14 @@ class ClusterConfig_Status_UpgradeRequest$Type extends MessageType<ClusterConfig
             { no: 1, name: "createdAt", kind: "message", T: () => Timestamp },
             { no: 2, name: "state", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.State", ClusterConfig_Status_UpgradeRequest_State] },
             { no: 3, name: "doneAt", kind: "message", T: () => Timestamp },
-            { no: 4, name: "request", kind: "message", T: () => UpgradeClusterRequest_Request }
+            { no: 4, name: "request", kind: "message", T: () => UpgradeClusterRequest_Request },
+            { no: 5, name: "regions", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ClusterConfig_Status_UpgradeRequest_Region }
         ]);
     }
     create(value?: PartialMessage<ClusterConfig_Status_UpgradeRequest>): ClusterConfig_Status_UpgradeRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.state = 0;
+        message.regions = [];
         if (value !== undefined)
             reflectionMergePartial<ClusterConfig_Status_UpgradeRequest>(this, message, value);
         return message;
@@ -17619,6 +17929,9 @@ class ClusterConfig_Status_UpgradeRequest$Type extends MessageType<ClusterConfig
                     break;
                 case /* octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request request */ 4:
                     message.request = UpgradeClusterRequest_Request.internalBinaryRead(reader, reader.uint32(), options, message.request);
+                    break;
+                case /* repeated octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region regions */ 5:
+                    message.regions.push(ClusterConfig_Status_UpgradeRequest_Region.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -17644,6 +17957,9 @@ class ClusterConfig_Status_UpgradeRequest$Type extends MessageType<ClusterConfig
         /* octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request request = 4; */
         if (message.request)
             UpgradeClusterRequest_Request.internalBinaryWrite(message.request, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region regions = 5; */
+        for (let i = 0; i < message.regions.length; i++)
+            ClusterConfig_Status_UpgradeRequest_Region.internalBinaryWrite(message.regions[i], writer.tag(5, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -17654,6 +17970,158 @@ class ClusterConfig_Status_UpgradeRequest$Type extends MessageType<ClusterConfig
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest
  */
 export const ClusterConfig_Status_UpgradeRequest = new ClusterConfig_Status_UpgradeRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Status_UpgradeRequest_Region$Type extends MessageType<ClusterConfig_Status_UpgradeRequest_Region> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region", [
+            { no: 1, name: "regionRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "state", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.State", ClusterConfig_Status_UpgradeRequest_State] },
+            { no: 3, name: "doneAt", kind: "message", T: () => Timestamp },
+            { no: 4, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Status_UpgradeRequest_Region>): ClusterConfig_Status_UpgradeRequest_Region {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.state = 0;
+        message.message = "";
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Status_UpgradeRequest_Region>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Status_UpgradeRequest_Region): ClusterConfig_Status_UpgradeRequest_Region {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference regionRef */ 1:
+                    message.regionRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.regionRef);
+                    break;
+                case /* octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.State state */ 2:
+                    message.state = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp doneAt */ 3:
+                    message.doneAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.doneAt);
+                    break;
+                case /* string message */ 4:
+                    message.message = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Status_UpgradeRequest_Region, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference regionRef = 1; */
+        if (message.regionRef)
+            ObjectReference.internalBinaryWrite(message.regionRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.State state = 2; */
+        if (message.state !== 0)
+            writer.tag(2, WireType.Varint).int32(message.state);
+        /* google.protobuf.Timestamp doneAt = 3; */
+        if (message.doneAt)
+            Timestamp.internalBinaryWrite(message.doneAt, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* string message = 4; */
+        if (message.message !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.message);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region
+ */
+export const ClusterConfig_Status_UpgradeRequest_Region = new ClusterConfig_Status_UpgradeRequest_Region$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Status_JoinRequest$Type extends MessageType<ClusterConfig_Status_JoinRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest", [
+            { no: 1, name: "createdAt", kind: "message", T: () => Timestamp },
+            { no: 2, name: "state", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.State", ClusterConfig_Status_JoinRequest_State] },
+            { no: 3, name: "doneAt", kind: "message", T: () => Timestamp },
+            { no: 4, name: "request", kind: "message", T: () => JoinClusterRequest },
+            { no: 5, name: "regionRef", kind: "message", T: () => ObjectReference },
+            { no: 6, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Status_JoinRequest>): ClusterConfig_Status_JoinRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.state = 0;
+        message.message = "";
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Status_JoinRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Status_JoinRequest): ClusterConfig_Status_JoinRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* google.protobuf.Timestamp createdAt */ 1:
+                    message.createdAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.createdAt);
+                    break;
+                case /* octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.State state */ 2:
+                    message.state = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp doneAt */ 3:
+                    message.doneAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.doneAt);
+                    break;
+                case /* octelium.api.main.enterprise.v1.JoinClusterRequest request */ 4:
+                    message.request = JoinClusterRequest.internalBinaryRead(reader, reader.uint32(), options, message.request);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference regionRef */ 5:
+                    message.regionRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.regionRef);
+                    break;
+                case /* string message */ 6:
+                    message.message = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Status_JoinRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* google.protobuf.Timestamp createdAt = 1; */
+        if (message.createdAt)
+            Timestamp.internalBinaryWrite(message.createdAt, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.State state = 2; */
+        if (message.state !== 0)
+            writer.tag(2, WireType.Varint).int32(message.state);
+        /* google.protobuf.Timestamp doneAt = 3; */
+        if (message.doneAt)
+            Timestamp.internalBinaryWrite(message.doneAt, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.JoinClusterRequest request = 4; */
+        if (message.request)
+            JoinClusterRequest.internalBinaryWrite(message.request, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference regionRef = 5; */
+        if (message.regionRef)
+            ObjectReference.internalBinaryWrite(message.regionRef, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* string message = 6; */
+        if (message.message !== "")
+            writer.tag(6, WireType.LengthDelimited).string(message.message);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest
+ */
+export const ClusterConfig_Status_JoinRequest = new ClusterConfig_Status_JoinRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class ClusterConfig_Status_LicenseInfo$Type extends MessageType<ClusterConfig_Status_LicenseInfo> {
     constructor() {
@@ -31814,6 +32282,336 @@ class UpgradeClusterResponse$Type extends MessageType<UpgradeClusterResponse> {
  */
 export const UpgradeClusterResponse = new UpgradeClusterResponse$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class JoinClusterRequest$Type extends MessageType<JoinClusterRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.JoinClusterRequest", [
+            { no: 1, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "displayName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "kubernetes", kind: "message", T: () => JoinClusterRequest_Kubernetes }
+        ]);
+    }
+    create(value?: PartialMessage<JoinClusterRequest>): JoinClusterRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.name = "";
+        message.displayName = "";
+        if (value !== undefined)
+            reflectionMergePartial<JoinClusterRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: JoinClusterRequest): JoinClusterRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string name */ 1:
+                    message.name = reader.string();
+                    break;
+                case /* string displayName */ 2:
+                    message.displayName = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes kubernetes */ 3:
+                    message.kubernetes = JoinClusterRequest_Kubernetes.internalBinaryRead(reader, reader.uint32(), options, message.kubernetes);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: JoinClusterRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string name = 1; */
+        if (message.name !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.name);
+        /* string displayName = 2; */
+        if (message.displayName !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.displayName);
+        /* octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes kubernetes = 3; */
+        if (message.kubernetes)
+            JoinClusterRequest_Kubernetes.internalBinaryWrite(message.kubernetes, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.JoinClusterRequest
+ */
+export const JoinClusterRequest = new JoinClusterRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class JoinClusterRequest_Kubernetes$Type extends MessageType<JoinClusterRequest_Kubernetes> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes", [
+            { no: 1, name: "kubeconfig", kind: "message", oneof: "type", T: () => JoinClusterRequest_Kubernetes_Kubeconfig },
+            { no: 2, name: "bearerToken", kind: "message", oneof: "type", T: () => JoinClusterRequest_Kubernetes_BearerToken }
+        ]);
+    }
+    create(value?: PartialMessage<JoinClusterRequest_Kubernetes>): JoinClusterRequest_Kubernetes {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<JoinClusterRequest_Kubernetes>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: JoinClusterRequest_Kubernetes): JoinClusterRequest_Kubernetes {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.Kubeconfig kubeconfig */ 1:
+                    message.type = {
+                        oneofKind: "kubeconfig",
+                        kubeconfig: JoinClusterRequest_Kubernetes_Kubeconfig.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).kubeconfig)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.BearerToken bearerToken */ 2:
+                    message.type = {
+                        oneofKind: "bearerToken",
+                        bearerToken: JoinClusterRequest_Kubernetes_BearerToken.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).bearerToken)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: JoinClusterRequest_Kubernetes, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.Kubeconfig kubeconfig = 1; */
+        if (message.type.oneofKind === "kubeconfig")
+            JoinClusterRequest_Kubernetes_Kubeconfig.internalBinaryWrite(message.type.kubeconfig, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.BearerToken bearerToken = 2; */
+        if (message.type.oneofKind === "bearerToken")
+            JoinClusterRequest_Kubernetes_BearerToken.internalBinaryWrite(message.type.bearerToken, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes
+ */
+export const JoinClusterRequest_Kubernetes = new JoinClusterRequest_Kubernetes$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class JoinClusterRequest_Kubernetes_Kubeconfig$Type extends MessageType<JoinClusterRequest_Kubernetes_Kubeconfig> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.Kubeconfig", [
+            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "context", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<JoinClusterRequest_Kubernetes_Kubeconfig>): JoinClusterRequest_Kubernetes_Kubeconfig {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        message.context = "";
+        if (value !== undefined)
+            reflectionMergePartial<JoinClusterRequest_Kubernetes_Kubeconfig>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: JoinClusterRequest_Kubernetes_Kubeconfig): JoinClusterRequest_Kubernetes_Kubeconfig {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string fromSecret */ 1:
+                    message.type = {
+                        oneofKind: "fromSecret",
+                        fromSecret: reader.string()
+                    };
+                    break;
+                case /* string context */ 2:
+                    message.context = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: JoinClusterRequest_Kubernetes_Kubeconfig, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string fromSecret = 1; */
+        if (message.type.oneofKind === "fromSecret")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
+        /* string context = 2; */
+        if (message.context !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.context);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.Kubeconfig
+ */
+export const JoinClusterRequest_Kubernetes_Kubeconfig = new JoinClusterRequest_Kubernetes_Kubeconfig$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class JoinClusterRequest_Kubernetes_BearerToken$Type extends MessageType<JoinClusterRequest_Kubernetes_BearerToken> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.BearerToken", [
+            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "server", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "trustedCAs", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<JoinClusterRequest_Kubernetes_BearerToken>): JoinClusterRequest_Kubernetes_BearerToken {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        message.server = "";
+        message.trustedCAs = [];
+        if (value !== undefined)
+            reflectionMergePartial<JoinClusterRequest_Kubernetes_BearerToken>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: JoinClusterRequest_Kubernetes_BearerToken): JoinClusterRequest_Kubernetes_BearerToken {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string fromSecret */ 1:
+                    message.type = {
+                        oneofKind: "fromSecret",
+                        fromSecret: reader.string()
+                    };
+                    break;
+                case /* string server */ 2:
+                    message.server = reader.string();
+                    break;
+                case /* repeated string trustedCAs */ 3:
+                    message.trustedCAs.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: JoinClusterRequest_Kubernetes_BearerToken, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string fromSecret = 1; */
+        if (message.type.oneofKind === "fromSecret")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
+        /* string server = 2; */
+        if (message.server !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.server);
+        /* repeated string trustedCAs = 3; */
+        for (let i = 0; i < message.trustedCAs.length; i++)
+            writer.tag(3, WireType.LengthDelimited).string(message.trustedCAs[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.BearerToken
+ */
+export const JoinClusterRequest_Kubernetes_BearerToken = new JoinClusterRequest_Kubernetes_BearerToken$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class JoinClusterResponse$Type extends MessageType<JoinClusterResponse> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.JoinClusterResponse", []);
+    }
+    create(value?: PartialMessage<JoinClusterResponse>): JoinClusterResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<JoinClusterResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: JoinClusterResponse): JoinClusterResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: JoinClusterResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.JoinClusterResponse
+ */
+export const JoinClusterResponse = new JoinClusterResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class RegionExtInfo$Type extends MessageType<RegionExtInfo> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.RegionExtInfo", [
+            { no: 1, name: "kubernetes", kind: "message", T: () => JoinClusterRequest_Kubernetes }
+        ]);
+    }
+    create(value?: PartialMessage<RegionExtInfo>): RegionExtInfo {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<RegionExtInfo>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: RegionExtInfo): RegionExtInfo {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes kubernetes */ 1:
+                    message.kubernetes = JoinClusterRequest_Kubernetes.internalBinaryRead(reader, reader.uint32(), options, message.kubernetes);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: RegionExtInfo, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes kubernetes = 1; */
+        if (message.kubernetes)
+            JoinClusterRequest_Kubernetes.internalBinaryWrite(message.kubernetes, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.RegionExtInfo
+ */
+export const RegionExtInfo = new RegionExtInfo$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class SynchronizeSecretStoreRequest$Type extends MessageType<SynchronizeSecretStoreRequest> {
     constructor() {
         super("octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest", [
@@ -33142,6 +33940,7 @@ export const PolicyPortalService = new ServiceType("octelium.api.main.enterprise
  */
 export const ClusterService = new ServiceType("octelium.api.main.enterprise.v1.ClusterService", [
     { name: "UpgradeCluster", options: {}, I: UpgradeClusterRequest, O: UpgradeClusterResponse },
+    { name: "JoinCluster", options: {}, I: JoinClusterRequest, O: JoinClusterResponse },
     { name: "GetClusterInfo", options: {}, I: GetClusterInfoRequest, O: GetClusterInfoResponse },
     { name: "SetLicense", options: {}, I: SetLicenseRequest, O: SetLicenseResponse },
     { name: "GetLicense", options: {}, I: GetLicenseRequest, O: GetLicenseResponse },

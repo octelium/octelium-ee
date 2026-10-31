@@ -1,37 +1,47 @@
 import { PILL } from "@/components/Dashboard/components";
 import Meta from "@/components/Meta";
-import {
-  PageActions,
-  PageTitleAddon,
-} from "@/components/PageHeader/context";
+import { PageActions, PageTitleAddon } from "@/components/PageHeader/context";
 import RefreshButton from "@/components/RefreshButton";
 import { Alert, Button } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useIsFetching, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import {
-  ArrowUpCircle,
-  CheckCircle2,
-  Loader2,
-  Sparkles,
-} from "lucide-react";
+import { ArrowUpCircle, CheckCircle2, Loader2, Sparkles } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "@/lib/utils";
 import License from "./License";
 import RpcError from "@/components/RpcError";
+import JoinRegionDrawer from "./JoinRegionDrawer";
 import Packages from "./Packages";
 import {
   clustermanKeys,
+  isJoinActive,
   isUpgradeActive,
   PackageKey,
   upgradableCount,
   useClusterConfig,
   useClusterVersionInfo,
 } from "./queries";
+import Regions from "./Regions";
 import Rollout from "./Rollout";
 import UpgradeDrawer from "./UpgradeDrawer";
 
-const StatusPill = (props: { active: boolean; updates: number }) => {
+const StatusPill = (props: {
+  active: boolean;
+  joining: boolean;
+  updates: number;
+}) => {
+  if (props.joining) {
+    return (
+      <span
+        className={twMerge(PILL, "border-blue-200 bg-blue-50 text-blue-700")}
+      >
+        <Loader2 size={9} className="motion-safe:animate-spin" />
+        Joining a Region
+      </span>
+    );
+  }
+
   if (props.active) {
     return (
       <span
@@ -74,10 +84,12 @@ const Main = () => {
   const fetching = useIsFetching({ queryKey: clustermanKeys.all });
 
   const [opened, drawer] = useDisclosure(false);
+  const [joinOpened, joinDrawer] = useDisclosure(false);
   const [preselect, setPreselect] = React.useState<PackageKey | undefined>();
 
   const status = config.data?.status;
   const active = isUpgradeActive(status?.upgradeRequest?.state);
+  const joining = isJoinActive(status?.joinRequest?.state);
   const updates = upgradableCount(versions.data);
 
   const openUpgrade = (key?: PackageKey) => {
@@ -95,7 +107,9 @@ const Main = () => {
       <Meta title="Cluster management" />
 
       <PageTitleAddon>
-        {!versions.isLoading && <StatusPill active={active} updates={updates} />}
+        {!versions.isLoading && (
+          <StatusPill active={active} joining={joining} updates={updates} />
+        )}
       </PageTitleAddon>
 
       <PageActions>
@@ -112,18 +126,20 @@ const Main = () => {
           color="ink"
           size="xs"
           leftSection={<ArrowUpCircle size={14} strokeWidth={2.5} />}
-          disabled={active || versions.isLoading}
+          disabled={active || joining || versions.isLoading}
           onClick={() => openUpgrade(undefined)}
         >
           {active
             ? "Upgrade in progress"
-            : versions.isLoading
-              ? "Checking versions…"
-              : "Upgrade Cluster"}
+            : joining
+              ? "Join in progress"
+              : versions.isLoading
+                ? "Checking versions…"
+                : "Upgrade Cluster"}
         </Button>
       </PageActions>
 
-      <Packages upgradeActive={active} onUpgrade={openUpgrade} />
+      <Packages upgradeActive={active || joining} onUpgrade={openUpgrade} />
 
       {config.isError ? (
         <Alert color="red" title="Could not load the Cluster status">
@@ -140,6 +156,11 @@ const Main = () => {
         </Alert>
       ) : status ? (
         <>
+          <Regions
+            status={status}
+            disabled={active || joining}
+            onJoin={joinDrawer.open}
+          />
           <Rollout status={status} />
           <License info={status.licenseInfo} />
         </>
@@ -155,6 +176,8 @@ const Main = () => {
         onClose={drawer.close}
         preselect={preselect}
       />
+
+      <JoinRegionDrawer opened={joinOpened} onClose={joinDrawer.close} />
     </motion.div>
   );
 };

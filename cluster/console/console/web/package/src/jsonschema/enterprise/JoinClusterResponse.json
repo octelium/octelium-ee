@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/JoinClusterResponse",
+    "definitions": {
+        "JoinClusterResponse": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Join Cluster Response",
+            "description": "JoinClusterResponse is the response of the JoinCluster method."
+        }
+    }
+}

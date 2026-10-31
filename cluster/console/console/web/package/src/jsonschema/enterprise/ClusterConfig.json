@@ -634,12 +634,69 @@
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo",
                     "additionalProperties": false,
                     "description": "LicenseInfo is the information about the Cluster's currently set License."
+                },
+                "joinRequest": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest",
+                    "additionalProperties": false,
+                    "description": "JoinRequest is the currently ongoing or last requested Region join."
+                },
+                "lastJoinRequests": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "LastJoinRequests is the list of the most recent Region joins."
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Status",
             "description": "Status is the current status of the ClusterConfig"
+        },
+        "octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest": {
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the date at which the join was requested.",
+                    "format": "date-time"
+                },
+                "state": {
+                    "enum": [
+                        "STATE_UNSET",
+                        "JOIN_REQUESTED",
+                        "JOINING",
+                        "SUCCESS",
+                        "FAILED"
+                    ],
+                    "type": "string",
+                    "title": "State",
+                    "description": "State is the current state of the join."
+                },
+                "doneAt": {
+                    "type": "string",
+                    "description": "DoneAt is the date at which the join completed or failed.",
+                    "format": "date-time"
+                },
+                "request": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.JoinClusterRequest",
+                    "additionalProperties": false,
+                    "description": "Request is the join request that was originally supplied to the JoinCluster method."
+                },
+                "regionRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "RegionRef is the reference of the joined Region. It is set once the Region is created."
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Message is a human-readable description of the reason of the failure, if any."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Join Request",
+            "description": "JoinRequest is the state of a Region join that was requested via the JoinCluster method"
         },
         "octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo": {
             "properties": {
@@ -705,12 +762,208 @@
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request",
                     "additionalProperties": false,
                     "description": "Request is the upgrade request that was originally supplied to the UpgradeCluster method."
+                },
+                "regions": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Regions is the list of the per-Region states of the upgrade in the order in which the Regions are upgraded. The `default` Region always comes first."
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Upgrade Request",
             "description": "UpgradeRequest is the state of a Cluster upgrade that was requested via the UpgradeCluster method"
+        },
+        "octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region": {
+            "properties": {
+                "regionRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "RegionRef is the reference of the Region."
+                },
+                "state": {
+                    "enum": [
+                        "STATE_UNSET",
+                        "UPGRADE_REQUESTED",
+                        "UPGRADING",
+                        "SUCCESS",
+                        "FAILED"
+                    ],
+                    "type": "string",
+                    "title": "State",
+                    "description": "State is the current state of the upgrade."
+                },
+                "doneAt": {
+                    "type": "string",
+                    "description": "DoneAt is the date at which the upgrade of the Region completed or failed.",
+                    "format": "date-time"
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Message is a human-readable description of the reason of the failure, if any."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Region",
+            "description": "Region is the state of the upgrade within a single Region"
+        },
+        "octelium.api.main.enterprise.v1.JoinClusterRequest": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the new Region (e.g. `us-east-1`). It cannot be `default`. Required."
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is an optional human-readable name of the Region."
+                },
+                "kubernetes": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes",
+                    "additionalProperties": false,
+                    "description": "Kubernetes sets the connection to the Kubernetes cluster that joins the Cluster. Required. The Kubernetes nodes must be already labeled as Octelium control-plane and data-plane nodes similar to the initial installation."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Join Cluster Request",
+            "description": "JoinClusterRequest is the request of the JoinCluster method."
+        },
+        "octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes": {
+            "properties": {
+                "kubeconfig": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.Kubeconfig",
+                    "additionalProperties": false,
+                    "description": "Kubeconfig sets the connection from a kubeconfig."
+                },
+                "bearerToken": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.BearerToken",
+                    "additionalProperties": false,
+                    "description": "BearerToken sets the connection from a bearer token."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "kubeconfig"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "bearerToken"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "kubeconfig"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "bearerToken"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Kubernetes",
+            "description": "Kubernetes sets how the Cluster connects to the API server of the Kubernetes cluster that joins the Cluster"
+        },
+        "octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.BearerToken": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the bearer token."
+                },
+                "server": {
+                    "type": "string",
+                    "description": "Server is the URL of the Kubernetes API server (e.g. `https://203.0.113.10:6443`). Required."
+                },
+                "trustedCAs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "TrustedCAs is the list of the PEM-encoded root certificate authorities that are trusted to verify the API server's certificate. If unset, the system root certificate authorities are used."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Bearer Token",
+            "description": "BearerToken sets the connection from a bearer token (e.g. the token of a Kubernetes ServiceAccount)"
+        },
+        "octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.Kubeconfig": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the kubeconfig."
+                },
+                "context": {
+                    "type": "string",
+                    "description": "Context is the kubeconfig context (e.g. \"kubernetes-admin@kubernetes\"). If unset, the current context of the kubeconfig is used."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Kubeconfig",
+            "description": "Kubeconfig sets the connection from a kubeconfig"
         },
         "octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request": {
             "properties": {

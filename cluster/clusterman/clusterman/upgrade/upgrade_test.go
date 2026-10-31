@@ -12,14 +12,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
+	"github.com/octelium/octelium-ee/cluster/common/regionutils"
+	otests "github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
+	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/client/octops/commands/install"
 	cocteliumc "github.com/octelium/octelium/cluster/common/octeliumc"
 	"github.com/octelium/octelium/cluster/common/vutils"
@@ -28,8 +29,8 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	batchv1 "k8s.io/api/batch/v1"
 	k8scorev1 "k8s.io/api/core/v1"
-	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	ktesting "k8s.io/client-go/testing"
 )
@@ -51,6 +52,50 @@ func (u *upgradeTestCoreUtils) GetClusterConfig(ctx context.Context) (*corev1.Cl
 		return nil, err
 	}
 	return u.config, u.err
+}
+
+func getTestRegion(name string, index int32) *corev1.Region {
+	return &corev1.Region{
+		Metadata: &metav1.Metadata{Name: name, Uid: name + "-uid"},
+		Spec:     &corev1.Region_Spec{},
+		Status:   &corev1.Region_Status{Index: index},
+	}
+}
+
+func getTestJoinedRegion(t *testing.T, name string, index int32, packages ...string) *corev1.Region {
+	ret := getTestRegion(name, index)
+	ret.Status.VersionInfoMap = map[string]*corev1.Region_Status_VersionInfo{}
+	for _, pkg := range packages {
+		ret.Status.VersionInfoMap[pkg] = &corev1.Region_Status_VersionInfo{Package: pkg, Version: "1.0.0"}
+	}
+	require.NoError(t, regionutils.SetRegionExtInfo(ret, &enterprisev1.RegionExtInfo{
+		Kubernetes: &enterprisev1.JoinClusterRequest_Kubernetes{
+			Type: &enterprisev1.JoinClusterRequest_Kubernetes_Kubeconfig_{
+				Kubeconfig: &enterprisev1.JoinClusterRequest_Kubernetes_Kubeconfig{
+					Type: &enterprisev1.JoinClusterRequest_Kubernetes_Kubeconfig_FromSecret{
+						FromSecret: name + "-kubeconfig",
+					},
+				},
+			},
+		},
+	}))
+	return ret
+}
+
+func newCompletingK8sC(order *[]string, region string, fail bool) *fake.Clientset {
+	k8sC := fake.NewSimpleClientset()
+	k8sC.PrependReactor("create", "jobs", func(action ktesting.Action) (bool, runtime.Object, error) {
+		job := action.(ktesting.CreateAction).GetObject().(*batchv1.Job).DeepCopy()
+		*order = append(*order, region+"/"+job.Spec.Template.Spec.Containers[0].Name)
+		if fail {
+			job.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobFailed, Status: k8scorev1.ConditionTrue, Reason: "BackoffLimitExceeded"}}
+		} else {
+			job.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: k8scorev1.ConditionTrue}}
+		}
+		err := k8sC.Tracker().Create(batchv1.SchemeGroupVersion.WithResource("jobs"), job, job.Namespace)
+		return true, job, err
+	})
+	return k8sC
 }
 
 func TestNewUpgradeControllerConfiguration(t *testing.T) {
@@ -129,62 +174,6 @@ func TestGenesisJobPackageIdentityAndSPIFFE(t *testing.T) {
 	}
 }
 
-func TestUpgradeJobStatusClassification(t *testing.T) {
-	for _, tc := range []struct {
-		name              string
-		status            batchv1.JobStatus
-		success, terminal bool
-	}{
-		{name: "Complete", status: batchv1.JobStatus{Conditions: []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: k8scorev1.ConditionTrue}}}, success: true},
-		{name: "Succeeded", status: batchv1.JobStatus{Succeeded: 1}, success: true},
-		{name: "Active", status: batchv1.JobStatus{Active: 1}},
-		{name: "Retrying", status: batchv1.JobStatus{Failed: 1}},
-		{name: "FalseComplete", status: batchv1.JobStatus{Conditions: []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: k8scorev1.ConditionFalse}}}},
-		{name: "FalseFailed", status: batchv1.JobStatus{Conditions: []batchv1.JobCondition{{Type: batchv1.JobFailed, Status: k8scorev1.ConditionFalse}}}},
-		{name: "TerminalFailure", status: batchv1.JobStatus{Conditions: []batchv1.JobCondition{{Type: batchv1.JobFailed, Status: k8scorev1.ConditionTrue, Reason: "BackoffLimitExceeded", Message: "genesis failed"}}}, terminal: true},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			k8sC := fake.NewSimpleClientset(&batchv1.Job{ObjectMeta: k8smetav1.ObjectMeta{Name: "upgrade", Namespace: vutils.K8sNS}, Status: tc.status})
-			err := (&controller{k8sC: k8sC}).checkUpgradeJob(t.Context(), "upgrade")
-			if tc.success {
-				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
-			}
-			assert.Equal(t, tc.terminal, isTerminalUpgradeJobErr(err))
-			if tc.terminal {
-				assert.ErrorContains(t, err, "BackoffLimitExceeded")
-				assert.ErrorContains(t, err, "genesis failed")
-				assert.True(t, isTerminalUpgradeJobErr(fmt.Errorf("wrapped: %w", err)))
-			}
-		})
-	}
-}
-
-func TestUpgradeJobGetFailureIsRetriable(t *testing.T) {
-	failure := errors.New("Kubernetes temporarily unavailable")
-	k8sC := fake.NewSimpleClientset()
-	k8sC.PrependReactor("get", "jobs", func(ktesting.Action) (bool, runtime.Object, error) { return true, nil, failure })
-	err := (&controller{k8sC: k8sC}).checkUpgradeJob(t.Context(), "upgrade")
-	assert.ErrorIs(t, err, failure)
-	assert.False(t, isTerminalUpgradeJobErr(err))
-	_, err = k8sC.BatchV1().Jobs(vutils.K8sNS).Get(t.Context(), "missing", k8smetav1.GetOptions{})
-	assert.Error(t, err)
-}
-
-func TestUpgradeWaitValidationAndCancellation(t *testing.T) {
-	ctl := &controller{k8sC: fake.NewSimpleClientset()}
-	assert.Error(t, ctl.waitUpgrade(t.Context(), nil))
-	assert.Error(t, ctl.waitUpgrade(t.Context(), &batchv1.Job{}))
-	ctx, cancel := context.WithCancel(t.Context())
-	cancel()
-	assert.ErrorIs(t, ctl.waitUpgrade(ctx, &batchv1.Job{ObjectMeta: k8smetav1.ObjectMeta{Name: "upgrade"}}), context.Canceled)
-	ctx, cancel = context.WithTimeout(t.Context(), 20*time.Millisecond)
-	defer cancel()
-	assert.ErrorIs(t, ctl.waitUpgrade(ctx, &batchv1.Job{ObjectMeta: k8smetav1.ObjectMeta{Name: "upgrade"}}), context.DeadlineExceeded)
-	assert.Empty(t, ctl.k8sC.(*fake.Clientset).Actions())
-}
-
 func TestUpgradeRejectsEmptyVersionBeforeCreatingJob(t *testing.T) {
 	for _, tc := range []struct {
 		pkg     string
@@ -209,46 +198,98 @@ func TestUpgradeRejectsEmptyVersionBeforeCreatingJob(t *testing.T) {
 func TestUpgradeJobCreationFailure(t *testing.T) {
 	k8sC := fake.NewSimpleClientset()
 	k8sC.PrependReactor("create", "jobs", func(ktesting.Action) (bool, runtime.Object, error) { return true, nil, errors.New("forbidden") })
-	err := (&controller{k8sC: k8sC, domain: "example.com"}).runUpgradeJob(t.Context(), "octeliumee", "v1.2.3")
+	err := (&controller{domain: "example.com"}).runUpgradeJob(t.Context(),
+		&regionTarget{region: getTestRegion("default", 0), k8sC: k8sC}, "octeliumee", "v1.2.3")
 	assert.ErrorContains(t, err, "could not create upgrade job")
 	assert.ErrorContains(t, err, "forbidden")
+	assert.ErrorContains(t, (&controller{}).runUpgradeJob(t.Context(),
+		&regionTarget{region: getTestRegion("default", 0), k8sC: k8sC}, "octeliumee", ""), "empty upgrade version")
 }
 
 func TestUpgradeAllPackagesRunInOrder(t *testing.T) {
-	k8sC := fake.NewSimpleClientset()
 	var order []string
-	k8sC.PrependReactor("create", "jobs", func(action ktesting.Action) (bool, runtime.Object, error) {
-		job := action.(ktesting.CreateAction).GetObject().(*batchv1.Job).DeepCopy()
-		order = append(order, job.Spec.Template.Spec.Containers[0].Name)
-		job.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: k8scorev1.ConditionTrue}}
-		err := k8sC.Tracker().Create(batchv1.SchemeGroupVersion.WithResource("jobs"), job, job.Namespace)
-		return true, job, err
-	})
-	ctl := &controller{k8sC: k8sC, domain: "example.com", req: &enterprisev1.ClusterConfig_Status_UpgradeRequest{Request: &enterprisev1.UpgradeClusterRequest_Request{
+	ctl := &controller{domain: "example.com", req: &enterprisev1.ClusterConfig_Status_UpgradeRequest{Request: &enterprisev1.UpgradeClusterRequest_Request{
 		Core:              &enterprisev1.UpgradeClusterRequest_Request_Core{Version: "v1.2.3"},
 		PackageEnterprise: &enterprisev1.UpgradeClusterRequest_Request_PackageEnterprise{Version: "v1.2.3"},
 		PackageCordium:    &enterprisev1.UpgradeClusterRequest_Request_PackageCordium{Version: "v1.2.3"},
 	}}}
-	require.NoError(t, ctl.run(t.Context()))
-	assert.Equal(t, []string{"octelium-genesis", "octeliumee-genesis", "cordium-genesis"}, order)
+	require.NoError(t, ctl.runTargets(t.Context(), []*regionTarget{
+		{region: getTestRegion("default", 0), k8sC: newCompletingK8sC(&order, "default", false)},
+	}))
+	assert.Equal(t, []string{"default/octelium-genesis", "default/octeliumee-genesis", "default/cordium-genesis"}, order)
+}
+
+func TestUpgradeAllRegionsRunInOrder(t *testing.T) {
+	var order []string
+	var reports [][]*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region
+	ctl := &controller{
+		domain: "example.com",
+		req: &enterprisev1.ClusterConfig_Status_UpgradeRequest{Request: &enterprisev1.UpgradeClusterRequest_Request{
+			Core:           &enterprisev1.UpgradeClusterRequest_Request_Core{Version: "v1.2.3"},
+			PackageCordium: &enterprisev1.UpgradeClusterRequest_Request_PackageCordium{Version: "v1.2.3"},
+		}},
+		onRegions: func(ctx context.Context, regions []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region) {
+			reports = append(reports, regions)
+		},
+	}
+
+	targets := []*regionTarget{
+		{region: getTestRegion("default", 0), k8sC: newCompletingK8sC(&order, "default", false)},
+		{region: getTestJoinedRegion(t, "west", 1, regionutils.PackageEnterprise), k8sC: newCompletingK8sC(&order, "west", false)},
+		{region: getTestJoinedRegion(t, "east", 2, regionutils.PackageEnterprise, regionutils.PackageCordium), k8sC: newCompletingK8sC(&order, "east", false)},
+	}
+
+	require.NoError(t, ctl.runTargets(t.Context(), targets))
+	assert.Equal(t, []string{
+		"default/octelium-genesis", "default/cordium-genesis",
+		"west/octelium-genesis",
+		"east/octelium-genesis", "east/cordium-genesis",
+	}, order)
+
+	require.Len(t, reports, 7)
+	for _, rgn := range reports[0] {
+		assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED, rgn.State)
+	}
+	assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING, reports[1][0].State)
+	assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED, reports[1][1].State)
+	last := reports[len(reports)-1]
+	require.Len(t, last, 3)
+	for i, name := range []string{"default", "west", "east"} {
+		assert.Equal(t, name, last[i].RegionRef.Name)
+		assert.Equal(t, name+"-uid", last[i].RegionRef.Uid)
+		assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS, last[i].State)
+		assert.NotNil(t, last[i].DoneAt)
+	}
 }
 
 func TestUpgradeStopsAfterTerminalCoreFailure(t *testing.T) {
-	k8sC := fake.NewSimpleClientset()
-	creates := 0
-	k8sC.PrependReactor("create", "jobs", func(action ktesting.Action) (bool, runtime.Object, error) {
-		creates++
-		job := action.(ktesting.CreateAction).GetObject().(*batchv1.Job).DeepCopy()
-		job.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobFailed, Status: k8scorev1.ConditionTrue, Reason: "BackoffLimitExceeded"}}
-		err := k8sC.Tracker().Create(batchv1.SchemeGroupVersion.WithResource("jobs"), job, job.Namespace)
-		return true, job, err
+	var order []string
+	var reports [][]*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region
+	ctl := &controller{
+		domain: "example.com",
+		req: &enterprisev1.ClusterConfig_Status_UpgradeRequest{Request: &enterprisev1.UpgradeClusterRequest_Request{
+			Core:              &enterprisev1.UpgradeClusterRequest_Request_Core{Version: "v1.2.3"},
+			PackageEnterprise: &enterprisev1.UpgradeClusterRequest_Request_PackageEnterprise{Version: "v1.2.3"},
+		}},
+		onRegions: func(ctx context.Context, regions []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region) {
+			reports = append(reports, regions)
+		},
+	}
+	err := ctl.runTargets(t.Context(), []*regionTarget{
+		{region: getTestRegion("default", 0), k8sC: newCompletingK8sC(&order, "default", false)},
+		{region: getTestJoinedRegion(t, "west", 1, regionutils.PackageEnterprise), k8sC: newCompletingK8sC(&order, "west", true)},
+		{region: getTestJoinedRegion(t, "east", 2, regionutils.PackageEnterprise), k8sC: newCompletingK8sC(&order, "east", false)},
 	})
-	ctl := &controller{k8sC: k8sC, domain: "example.com", req: &enterprisev1.ClusterConfig_Status_UpgradeRequest{Request: &enterprisev1.UpgradeClusterRequest_Request{
-		Core:              &enterprisev1.UpgradeClusterRequest_Request_Core{Version: "v1.2.3"},
-		PackageEnterprise: &enterprisev1.UpgradeClusterRequest_Request_PackageEnterprise{Version: "v1.2.3"},
-	}}}
-	assert.ErrorContains(t, ctl.run(t.Context()), "BackoffLimitExceeded")
-	assert.Equal(t, 1, creates)
+	assert.ErrorContains(t, err, "BackoffLimitExceeded")
+	assert.ErrorContains(t, err, "west")
+	assert.Equal(t, []string{"default/octelium-genesis", "default/octeliumee-genesis", "west/octelium-genesis"}, order)
+
+	last := reports[len(reports)-1]
+	assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS, last[0].State)
+	assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED, last[1].State)
+	assert.Contains(t, last[1].Message, "BackoffLimitExceeded")
+	assert.NotNil(t, last[1].DoneAt)
+	assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED, last[2].State)
 }
 
 func TestUpgradeCancellationAfterJobSubmission(t *testing.T) {
@@ -259,34 +300,54 @@ func TestUpgradeCancellationAfterJobSubmission(t *testing.T) {
 		cancel()
 		return false, nil, nil
 	})
-	err := (&controller{k8sC: k8sC}).runUpgradeJob(ctx, "octeliumee", "v1.2.3")
+	err := (&controller{}).runUpgradeJob(ctx, &regionTarget{region: getTestRegion("default", 0), k8sC: k8sC}, "octeliumee", "v1.2.3")
 	assert.ErrorContains(t, err, context.Canceled.Error())
 }
 
-func TestTerminalUpgradeErrorUnwrap(t *testing.T) {
-	failure := errors.New("genesis terminated")
-	err := &terminalUpgradeJobErr{err: failure}
-	assert.ErrorIs(t, err, failure)
-	assert.True(t, isTerminalUpgradeJobErr(fmt.Errorf("wrapped: %w", err)))
-	var nilErr *terminalUpgradeJobErr
-	assert.NotEmpty(t, nilErr.Error())
-	assert.Nil(t, nilErr.Unwrap())
-	assert.NotEmpty(t, (&terminalUpgradeJobErr{}).Error())
-}
+func TestUpgradeTargets(t *testing.T) {
+	ctx := t.Context()
 
-func TestUpgradeWaitRetriesTransientKubernetesReadFailure(t *testing.T) {
-	job := &batchv1.Job{ObjectMeta: k8smetav1.ObjectMeta{Name: "upgrade", Namespace: vutils.K8sNS}, Status: batchv1.JobStatus{
-		Conditions: []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: k8scorev1.ConditionTrue}},
-	}}
-	k8sC := fake.NewSimpleClientset(job)
-	calls := 0
-	k8sC.PrependReactor("get", "jobs", func(ktesting.Action) (bool, runtime.Object, error) {
-		calls++
-		if calls == 1 {
-			return true, nil, errors.New("temporary API failure")
-		}
-		return false, nil, nil
-	})
-	require.NoError(t, (&controller{k8sC: k8sC}).waitUpgrade(t.Context(), job))
-	assert.Equal(t, 2, calls)
+	tst, err := otests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() { tst.Destroy() })
+
+	for _, rgn := range []*corev1.Region{
+		getTestJoinedRegion(t, "east", 5, regionutils.PackageCore, regionutils.PackageEnterprise),
+		getTestJoinedRegion(t, "west", 2, regionutils.PackageCore, regionutils.PackageEnterprise),
+		getTestJoinedRegion(t, "partial", 3, regionutils.PackageCore),
+		getTestRegion("manual", 4),
+	} {
+		rgn.Metadata.Uid = ""
+		_, err := tst.C.OcteliumC.CoreC().CreateRegion(ctx, rgn)
+		require.NoError(t, err)
+	}
+
+	defaultK8sC := fake.NewSimpleClientset()
+	var secrets []string
+	ctl := &controller{
+		octeliumC: tst.C.OcteliumC,
+		k8sC:      defaultK8sC,
+		newRegionK8sC: func(ctx context.Context, k *enterprisev1.JoinClusterRequest_Kubernetes) (kubernetes.Interface, error) {
+			secrets = append(secrets, k.GetKubeconfig().GetFromSecret())
+			return fake.NewSimpleClientset(), nil
+		},
+	}
+
+	targets, err := ctl.getTargets(ctx)
+	require.NoError(t, err)
+	require.Len(t, targets, 3)
+	assert.Equal(t, "default", targets[0].region.Metadata.Name)
+	assert.Same(t, defaultK8sC, targets[0].k8sC)
+	assert.Equal(t, "west", targets[1].region.Metadata.Name)
+	assert.Equal(t, "east", targets[2].region.Metadata.Name)
+	assert.Equal(t, []string{"west-kubeconfig", "east-kubeconfig"}, secrets)
+
+	failure := errors.New("kubeconfig is invalid")
+	ctl.newRegionK8sC = func(ctx context.Context, k *enterprisev1.JoinClusterRequest_Kubernetes) (kubernetes.Interface, error) {
+		return nil, failure
+	}
+	_, err = ctl.getTargets(ctx)
+	assert.ErrorContains(t, err, failure.Error())
+	assert.ErrorContains(t, err, "west")
+	assert.Empty(t, defaultK8sC.Actions())
 }

@@ -56,6 +56,24 @@ var upgradeCmd = &cobra.Command{
 	},
 }
 
+var joinCmd = &cobra.Command{
+	Use: "join",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		g, err := genesis.NewGenesis()
+		if err != nil {
+			return err
+		}
+
+		if err := g.RunJoin(context.Background(), &genesis.JoinOpts{
+			CoreVersion: cmdArgs.CoreVersion,
+		}); err != nil {
+			return err
+		}
+
+		return nil
+	},
+}
+
 var cmdArgs args
 
 type args struct {
@@ -63,6 +81,7 @@ type args struct {
 	SPIFFECSIDriver         string
 	SPIFFETrustDomain       string
 	EnableIngressFrontProxy bool
+	CoreVersion             string
 }
 
 func setDeprecatedFlags(cmd *cobra.Command) {
@@ -82,6 +101,8 @@ func setDeprecatedFlags(cmd *cobra.Command) {
 func init() {
 	setDeprecatedFlags(initCmd)
 	setDeprecatedFlags(upgradeCmd)
+
+	joinCmd.Flags().StringVar(&cmdArgs.CoreVersion, "core-version", "", "The version of the core package that is installed in the Region")
 }
 
 func init() {
@@ -94,7 +115,7 @@ func main() {
 	components.RunComponent(func(ctx context.Context) error {
 		rootCmd.AddCommand(initCmd)
 		rootCmd.AddCommand(upgradeCmd)
-		// rootCmd.AddCommand(joinCmd)
+		rootCmd.AddCommand(joinCmd)
 
 		if err := commoninit.Run(ctx, nil); err != nil {
 			return err
