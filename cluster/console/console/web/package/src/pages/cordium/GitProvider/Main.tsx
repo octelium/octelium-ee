@@ -9,6 +9,7 @@ import {
   spaceRefOf,
   userRefOf,
 } from "../utils";
+import { Boxes, GitBranch, KeyRound, UserRound } from "lucide-react";
 
 export const MainInfo = (props: {
   item: CordiumP.GitProvider;
@@ -21,18 +22,33 @@ export const MainInfo = (props: {
 
   return {
     status: { label: typeLabel, tone: "info" },
-    groupOrder: ["GitProvider details", "OAuth2 client"],
+    groupOrder: [{ title: "OAuth2 client", icon: KeyRound }],
     items: [
       {
         label: "Type",
         primary: true,
+        icon: GitBranch,
         value: <Label>{typeLabel}</Label>,
       },
       ...(spaceRef
-        ? [{ label: "Space", value: <ResourceListLabel itemRef={spaceRef} /> }]
+        ? [
+            {
+              label: "Space",
+              primary: true,
+              icon: Boxes,
+              value: <ResourceListLabel itemRef={spaceRef} />,
+            },
+          ]
         : []),
       ...(userRef
-        ? [{ label: "User", value: <ResourceListLabel itemRef={userRef} /> }]
+        ? [
+            {
+              label: "User",
+              primary: true,
+              icon: UserRound,
+              value: <ResourceListLabel itemRef={userRef} />,
+            },
+          ]
         : []),
       ...(config?.clientID
         ? [

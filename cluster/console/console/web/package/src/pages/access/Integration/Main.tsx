@@ -3,6 +3,7 @@ import { ObjectReference } from "@/apis/metav1/metav1";
 import InfoItem from "@/components/InfoItem";
 import TimeAgo from "@/components/TimeAgo";
 import { twMerge } from "@/lib/utils";
+import { ResourceActionButton } from "@/components/ResourceLayout/overview";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { getDomain, onError } from "@/utils";
 import { getClientAccess } from "@/utils/client";
@@ -11,19 +12,24 @@ import {
   invalidateResource,
   invalidateResourceList,
 } from "@/utils/pb";
-import { Button, Tooltip } from "@mantine/core";
+import { Tooltip } from "@mantine/core";
 import { useMutation } from "@tanstack/react-query";
 import {
   Activity,
   AlertTriangle,
   BookOpen,
+  Cable,
   Check,
   Hash,
   KeyRound,
+  Link2,
   Loader2,
   PowerOff,
   RefreshCw,
+  Send,
   ShieldCheck,
+  Sparkles,
+  Workflow,
 } from "lucide-react";
 import * as React from "react";
 import { notifications } from "@mantine/notifications";
@@ -90,11 +96,9 @@ const SynchronizeButton = (props: { item: AccessC.Integration }) => {
   });
 
   return (
-    <Button
-      type="button"
-      color="ink"
-      size="compact-xs"
-      leftSection={<RefreshCw size={12} />}
+    <ResourceActionButton
+      tone="primary"
+      icon={RefreshCw}
       disabled={props.item.spec?.isDisabled || !p.isConfigured}
       loading={mutation.isPending || p.isSynchronizing}
       title={
@@ -105,7 +109,7 @@ const SynchronizeButton = (props: { item: AccessC.Integration }) => {
       onClick={() => mutation.mutate()}
     >
       Synchronize now
-    </Button>
+    </ResourceActionButton>
   );
 };
 
@@ -478,26 +482,29 @@ export const MainInfo = (props: {
     actions: <SynchronizeButton item={item} />,
     header: <HealthHeader item={item} />,
     groupOrder: [
-      "Connection",
-      "Callback URLs",
-      "Used by",
-      "Capabilities",
-      "Synchronization",
+      { title: "Connection", icon: Cable },
+      { title: "Callback URLs", icon: Link2 },
+      { title: "Used by", icon: Workflow },
+      { title: "Capabilities", icon: Sparkles },
+      { title: "Synchronization", icon: RefreshCw },
     ],
     items: [
       {
         label: "Deliveries",
         primary: true,
+        icon: Send,
         value: <DeliveriesTile item={item} />,
       },
       {
         label: "Linked accounts",
         primary: true,
+        icon: Link2,
         value: <LinkedAccountsTile item={item} />,
       },
       {
         label: "Used by",
         primary: true,
+        icon: Workflow,
         value: <UsedByTile item={item} />,
       },
 

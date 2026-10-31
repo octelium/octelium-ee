@@ -2,6 +2,7 @@ import * as AccessC from "@/apis/accessv1/accessv1";
 import { ObjectReference } from "@/apis/metav1/metav1";
 import Label from "@/components/Label";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
+import { ResourceActionButton } from "@/components/ResourceLayout/overview";
 import { ResourceListLabel } from "@/components/ResourceList";
 import { onError } from "@/utils";
 import { getClientAccess } from "@/utils/client";
@@ -72,15 +73,9 @@ const ResolveIdentity = (props: { item: AccessC.Integration }) => {
 
   return (
     <>
-      <Button
-        type="button"
-        variant="default"
-        size="compact-xs"
-        leftSection={<Link2 size={12} />}
-        onClick={open}
-      >
+      <ResourceActionButton icon={Link2} onClick={open}>
         Resolve identity
-      </Button>
+      </ResourceActionButton>
       <Modal
         opened={opened}
         onClose={handleClose}

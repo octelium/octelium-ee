@@ -4,6 +4,7 @@ import Label from "@/components/Label";
 import { ResourceListLabel } from "@/components/ResourceList";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { getUserSecretTypeLabel, userRefOf } from "../utils";
+import { EyeOff, KeyRound, UserRound } from "lucide-react";
 
 export const MainInfo = (props: {
   item: CordiumP.UserSecret;
@@ -15,31 +16,40 @@ export const MainInfo = (props: {
 
   return {
     status: { label: typeLabel, tone: "neutral" },
+    groupOrder: [{ title: "Key", icon: KeyRound }],
     items: [
       {
         label: "Type",
         primary: true,
+        icon: KeyRound,
         value: <Label>{typeLabel}</Label>,
       },
       ...(userRef
-        ? [{ label: "User", value: <ResourceListLabel itemRef={userRef} /> }]
+        ? [
+            {
+              label: "User",
+              primary: true,
+              icon: UserRound,
+              value: <ResourceListLabel itemRef={userRef} />,
+            },
+          ]
         : []),
       ...(details?.oneofKind === "sshKey" && details.sshKey.publicKey
         ? [
             {
               label: "SSH public key",
+              group: "Key",
               span: "full" as const,
               value: <CopyText value={details.sshKey.publicKey} />,
             },
           ]
         : []),
       {
-        label: "Data",
-        value: (
-          <span className="text-xs font-normal text-slate-500">
-            The UserSecret data is never exposed by the visibility API.
-          </span>
-        ),
+        label: "Value",
+        primary: true,
+        icon: EyeOff,
+        value: <Label>Write-only</Label>,
+        hint: "The visibility API never returns the value.",
       },
     ],
   };

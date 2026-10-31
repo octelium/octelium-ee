@@ -21,13 +21,21 @@ import {
   Check,
   CircleSlash,
   Clock3,
+  FileText,
   Hourglass,
   Inbox,
   KeyRound,
   Layers,
+  ListOrdered,
+  Scale,
+  ScrollText,
+  Send,
   Server,
   Shield,
+  Siren,
+  Timer,
   User,
+  Users,
   X,
 } from "lucide-react";
 import * as React from "react";
@@ -517,16 +525,24 @@ export const MainInfo = (props: {
       tone: getStatusTone(status?.state?.status),
     },
     header: <StatusHero item={item} />,
-    groupOrder: ["Request", "Review workflow", "Decision", "Delivered to", "History"],
+    groupOrder: [
+      { title: "Request", icon: FileText },
+      { title: "Review workflow", icon: ListOrdered },
+      { title: "Decision", icon: Scale },
+      { title: "Delivered to", icon: Send },
+      { title: "History", icon: ScrollText },
+    ],
     items: [
       {
         label: "Who",
         primary: true,
+        icon: Users,
         value: <PeopleValue item={item} />,
       },
       {
         label: "Resource",
         primary: true,
+        icon: Server,
         value: resourceRef ? (
           <RefChip
             itemRef={resourceRef}
@@ -539,6 +555,7 @@ export const MainInfo = (props: {
       {
         label: "Duration",
         primary: true,
+        icon: Timer,
         value: (
           <span className="flex flex-wrap items-baseline gap-1.5">
             <span className="font-semibold">
@@ -558,6 +575,7 @@ export const MainInfo = (props: {
       {
         label: "Urgency",
         primary: true,
+        icon: Siren,
         value: (
           <span className="inline-flex items-center gap-1.5 font-semibold" style={{ color: getUrgencyColor(urgency) }}>
             <span

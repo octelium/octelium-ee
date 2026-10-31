@@ -43,6 +43,12 @@ export interface ResourceStatusInfo {
   control?: React.ReactNode;
 }
 
+export type ResourceInfoIcon = React.ComponentType<{
+  size?: number | string;
+  strokeWidth?: number | string;
+  className?: string;
+}>;
+
 export interface ResourceInfoSection {
   value: string;
   label: string;
@@ -50,11 +56,17 @@ export interface ResourceInfoSection {
   content: React.ReactNode;
 }
 
+export interface ResourceInfoGroup {
+  title: string;
+  icon?: ResourceInfoIcon;
+  description?: string;
+}
+
 export interface ResourceMainInfo {
   items?: ResourceInfoMainItem[];
   status?: ResourceStatusInfo;
   actions?: React.ReactNode;
-  groupOrder?: string[];
+  groupOrder?: (string | ResourceInfoGroup)[];
   sections?: ResourceInfoSection[];
   header?: React.ReactNode;
 }
@@ -65,6 +77,7 @@ export interface ResourceInfoMainItem {
   span?: "half" | "full";
   group?: string;
   primary?: boolean;
+  icon?: ResourceInfoIcon;
   hint?: string;
   layout?: "inline" | "stacked";
 }

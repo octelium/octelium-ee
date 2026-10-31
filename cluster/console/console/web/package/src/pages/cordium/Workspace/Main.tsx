@@ -4,8 +4,27 @@ import Label from "@/components/Label";
 import { ResourceListLabel } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
 import { ResourceMainInfo } from "@/pages/utils/types";
-import { AlertTriangle } from "lucide-react";
-import { twMerge } from "@/lib/utils";
+import {
+  AlertTriangle,
+  Boxes,
+  Cpu,
+  History,
+  LayoutTemplate,
+  Loader2,
+  MapPinned,
+  Package,
+  Play,
+  Share2,
+  Square,
+  UserRound,
+} from "lucide-react";
+import {
+  HeroStat,
+  MutedValue,
+  OverviewHero,
+  OverviewNotice,
+  TonePill,
+} from "@/components/ResourceLayout/overview";
 import {
   getFailureLabel,
   getImageSource,
@@ -14,12 +33,83 @@ import {
   getSpaceTypeLabel,
   getStoppingReasonLabel,
   getWorkspaceMeta,
+  isWorkspaceStarting,
   regionRefOf,
   sessionRefOf,
   spaceRefOf,
   templateRefOf,
   userRefOf,
 } from "../utils";
+
+const WorkspaceHero = (props: { item: CordiumP.Workspace }) => {
+  const { item } = props;
+  const status = item.status;
+  const meta = getWorkspaceMeta(item);
+  const starting = isWorkspaceStarting(status?.state);
+  const failure = status?.run?.failure;
+  const running = status?.state === CordiumP.Workspace_Status_State.RUNNING;
+
+  return (
+    <OverviewHero
+      tone={meta.tone}
+      icon={
+        starting ? (
+          <Loader2 size={18} className="motion-safe:animate-spin" />
+        ) : failure ? (
+          <AlertTriangle size={18} strokeWidth={2.2} />
+        ) : running ? (
+          <Play size={18} strokeWidth={2.2} />
+        ) : (
+          <Square size={16} strokeWidth={2.2} />
+        )
+      }
+      title={
+        <>
+          {meta.label}
+          {status?.currentStateSetAt && (
+            <span className="font-normal text-slate-500">
+              {" "}
+              · since <TimeAgo rfc3339={status.currentStateSetAt} />
+            </span>
+          )}
+        </>
+      }
+      detail={[
+        `${getSpaceTypeLabel(status?.spaceType)} Workspace`,
+        status?.userRef?.name && `of ${status.userRef.name}`,
+        item.spec?.isEphemeral ? "ephemeral storage" : "persistent storage",
+        status?.hostname,
+      ]
+        .filter(Boolean)
+        .join(" · ")}
+      meta={
+        <>
+          {status?.isBuild && <TonePill tone="info">Build Workspace</TonePill>}
+          {item.spec?.runtime?.autoStop && <TonePill>Auto-stop</TonePill>}
+          {getLimitItems(status?.limit).map((limit) => (
+            <TonePill key={limit.label}>
+              {limit.label} {limit.value}
+            </TonePill>
+          ))}
+        </>
+      }
+      aside={
+        status?.lastActivityAt && (
+          <HeroStat
+            label="Last activity"
+            value={<TimeAgo rfc3339={status.lastActivityAt} />}
+          />
+        )
+      }
+    >
+      {failure && (
+        <OverviewNotice tone="danger" icon={AlertTriangle} title={`${getFailureLabel(failure)} failed.`}>
+          {failure.message || "The last run of the Workspace failed."}
+        </OverviewNotice>
+      )}
+    </OverviewHero>
+  );
+};
 
 export const MainInfo = (props: {
   item: CordiumP.Workspace;
@@ -39,48 +129,63 @@ export const MainInfo = (props: {
 
   return {
     status: { label: meta.label, tone: meta.tone },
+    header: <WorkspaceHero item={item} />,
     groupOrder: [
-      "Workspace details",
-      "Current run",
-      "Lifecycle",
-      "Compute",
-      "Image",
-      "Sharing",
+      { title: "Current run", icon: Play },
+      { title: "Lifecycle", icon: History },
+      { title: "Compute", icon: Cpu },
+      { title: "Image", icon: Package },
+      { title: "Sharing", icon: Share2 },
     ],
     items: [
       {
-        label: "State",
+        label: "User",
         primary: true,
-        value: (
-          <span className={twMerge("font-semibold", meta.className)}>
-            {meta.label}
-          </span>
+        icon: UserRound,
+        value: userRef ? (
+          <ResourceListLabel itemRef={userRef} />
+        ) : (
+          <MutedValue>Unknown</MutedValue>
         ),
       },
       {
-        label: "Space type",
+        label: "Space",
         primary: true,
-        value: <Label>{getSpaceTypeLabel(status?.spaceType)}</Label>,
+        icon: Boxes,
+        value: spaceRef ? (
+          <ResourceListLabel itemRef={spaceRef} />
+        ) : (
+          <MutedValue>Unknown</MutedValue>
+        ),
       },
-      ...(userRef
-        ? [{ label: "User", value: <ResourceListLabel itemRef={userRef} /> }]
-        : []),
-      ...(spaceRef
-        ? [{ label: "Space", value: <ResourceListLabel itemRef={spaceRef} /> }]
-        : []),
-      ...(templateRef
+      {
+        label: "Template",
+        primary: true,
+        icon: LayoutTemplate,
+        value: templateRef ? (
+          <ResourceListLabel itemRef={templateRef} />
+        ) : (
+          <MutedValue>None</MutedValue>
+        ),
+      },
+      {
+        label: "Region",
+        primary: true,
+        icon: MapPinned,
+        value: regionRef ? (
+          <ResourceListLabel itemRef={regionRef} />
+        ) : lastRegionRef ? (
+          <ResourceListLabel itemRef={lastRegionRef} />
+        ) : (
+          <MutedValue>Not scheduled</MutedValue>
+        ),
+      },
+      ...(status?.hostname
         ? [
             {
-              label: "Template",
-              value: <ResourceListLabel itemRef={templateRef} />,
-            },
-          ]
-        : []),
-      ...(regionRef
-        ? [
-            {
-              label: "Region",
-              value: <ResourceListLabel itemRef={regionRef} />,
+              label: "Hostname",
+              group: "Current run",
+              value: <CopyText value={status.hostname} />,
             },
           ]
         : []),
@@ -88,40 +193,12 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Session",
+              group: "Current run",
               value: <ResourceListLabel itemRef={sessionRef} />,
-              hint: "The dedicated Session that the Cluster created for the current run of the Workspace.",
+              hint: "Created by the Cluster for this run",
             },
           ]
         : []),
-      ...(status?.hostname
-        ? [
-            {
-              label: "Hostname",
-              value: <CopyText value={status.hostname} />,
-            },
-          ]
-        : []),
-      {
-        label: "Mode",
-        value: (
-          <div className="flex flex-wrap gap-1.5">
-            <Label size="sm" outlined>
-              {spec?.isEphemeral ? "Ephemeral" : "Persistent"}
-            </Label>
-            {status?.isBuild && (
-              <Label size="sm" tone="info">
-                Build
-              </Label>
-            )}
-            {spec?.runtime?.autoStop && (
-              <Label size="sm" outlined>
-                Auto-stop
-              </Label>
-            )}
-          </div>
-        ),
-        hint: "Ephemeral Workspaces lose their storage once stopped.",
-      },
 
       ...(run?.id
         ? [
@@ -147,28 +224,6 @@ export const MainInfo = (props: {
               label: "Stopped",
               group: "Current run",
               value: <TimeAgo rfc3339={run.stoppedAt} />,
-            },
-          ]
-        : []),
-      ...(run?.failure
-        ? [
-            {
-              label: "Failure",
-              group: "Current run",
-              span: "full" as const,
-              value: (
-                <div className="flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
-                  <AlertTriangle size={13} className="mt-0.5 shrink-0" />
-                  <span>
-                    {getFailureLabel(run.failure)}
-                    {run.failure.message && (
-                      <span className="ml-1.5 font-normal">
-                        {run.failure.message}
-                      </span>
-                    )}
-                  </span>
-                </div>
-              ),
             },
           ]
         : []),
@@ -259,15 +314,6 @@ export const MainInfo = (props: {
                   {getStoppingReasonLabel(status.lastStoppingReason)}
                 </Label>
               ),
-            },
-          ]
-        : []),
-      ...(lastRegionRef && !regionRef
-        ? [
-            {
-              label: "Last Region",
-              group: "Lifecycle",
-              value: <ResourceListLabel itemRef={lastRegionRef} />,
             },
           ]
         : []),

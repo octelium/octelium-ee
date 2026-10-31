@@ -3,6 +3,15 @@ import Label from "@/components/Label";
 import { ResourceListLabel } from "@/components/ResourceList";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { getLimitItems, getSpaceTypeLabel, userRefOf } from "../utils";
+import {
+  Boxes,
+  Gauge,
+  Link2,
+  SquareTerminal,
+  Terminal,
+  UserRound,
+} from "lucide-react";
+import { MutedValue } from "@/components/ResourceLayout/overview";
 
 export const MainInfo = (props: { item: CordiumP.Space }): ResourceMainInfo => {
   const { item } = props;
@@ -28,16 +37,32 @@ export const MainInfo = (props: { item: CordiumP.Space }): ResourceMainInfo => {
           ? "info"
           : "neutral",
     },
-    groupOrder: ["Space details", "Limits", "Runtime", "Related resources"],
+    groupOrder: [
+      { title: "Limits", icon: Gauge },
+      { title: "Runtime", icon: Terminal },
+      { title: "Related resources", icon: Link2 },
+    ],
     items: [
       {
         label: "Type",
         primary: true,
+        icon: Boxes,
         value: <Label>{getSpaceTypeLabel(status?.type)}</Label>,
+      },
+      {
+        label: "Owner",
+        primary: true,
+        icon: UserRound,
+        value: userRef ? (
+          <ResourceListLabel itemRef={userRef} />
+        ) : (
+          <MutedValue>Organization</MutedValue>
+        ),
       },
       {
         label: "SSH",
         primary: true,
+        icon: SquareTerminal,
         value: (
           <Label tone={sshDisabled ? "warning" : "success"}>
             {sshDisabled ? "Disabled" : "Enabled"}
@@ -45,14 +70,6 @@ export const MainInfo = (props: { item: CordiumP.Space }): ResourceMainInfo => {
         ),
         hint: "Whether the Space members can access its Workspaces over SSH.",
       },
-      ...(userRef
-        ? [
-            {
-              label: "Owner",
-              value: <ResourceListLabel itemRef={userRef} />,
-            },
-          ]
-        : []),
 
       ...getLimitItems(spec?.limit?.defaultLimit).map((limit) => ({
         label: `Default ${limit.label}`,

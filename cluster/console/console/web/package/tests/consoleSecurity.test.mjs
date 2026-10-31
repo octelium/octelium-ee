@@ -351,7 +351,7 @@ describe("Console security regressions", () => {
     });
     await load({ mode: "service" });
     const popupPromise = context.waitForEvent("page");
-    await page.getByRole("link", { name: "Visit" }).click();
+    await page.getByRole("link", { name: "Open" }).click();
     const popup = await popupPromise;
     await popup.waitForLoadState();
     assert.equal(await popup.evaluate(() => window.opener), null);

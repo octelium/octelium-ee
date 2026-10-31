@@ -2,38 +2,69 @@ import * as E from "@/apis/enterprisev1/enterprisev1";
 import CopyText from "@/components/CopyText";
 import { ResourceListLabel } from "@/components/ResourceList";
 import { ResourceMainInfo } from "@/pages/utils/types";
-import { AlertTriangle, CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
-import { twMerge } from "@/lib/utils";
+import {
+  AlertTriangle,
+  Globe2,
+  Landmark,
+  Loader2,
+  Mail,
+  Waypoints,
+} from "lucide-react";
+import Label from "@/components/Label";
+import {
+  MutedValue,
+  OverviewHero,
+  OverviewNotice,
+} from "@/components/ResourceLayout/overview";
 import { getIssuerPresentation } from "./List";
 
 export default (_props: { item: E.CertificateIssuer }) => <></>;
 
-const StateValue = (props: { item: E.CertificateIssuer }) => {
+const stateTone = (state?: E.CertificateIssuer_Status_State) =>
+  state === E.CertificateIssuer_Status_State.READY
+    ? ("success" as const)
+    : state === E.CertificateIssuer_Status_State.PREPARING
+      ? ("info" as const)
+      : state === E.CertificateIssuer_Status_State.NOT_READY
+        ? ("danger" as const)
+        : ("neutral" as const);
+
+const IssuerHero = (props: { item: E.CertificateIssuer }) => {
   const p = getIssuerPresentation(props.item);
+  const tone = stateTone(p.state);
+
   return (
-    <span className="inline-flex items-center gap-1.5">
-      {p.state === E.CertificateIssuer_Status_State.READY ? (
-        <CheckCircle2 size={13} className="text-emerald-500" />
-      ) : p.state === E.CertificateIssuer_Status_State.PREPARING ? (
-        <Loader2 size={13} className="motion-safe:animate-spin text-blue-500" />
-      ) : p.state === E.CertificateIssuer_Status_State.NOT_READY ? (
-        <AlertTriangle size={13} className="text-red-500" />
-      ) : null}
-      <span
-        className={twMerge(
-          "text-sm font-semibold",
-          p.state === E.CertificateIssuer_Status_State.READY
-            ? "text-emerald-600"
-            : p.state === E.CertificateIssuer_Status_State.PREPARING
-              ? "text-blue-600"
-              : p.state === E.CertificateIssuer_Status_State.NOT_READY
-                ? "text-red-600"
-                : "text-slate-500",
-        )}
-      >
-        {p.stateLabel}
-      </span>
-    </span>
+    <OverviewHero
+      tone={tone}
+      icon={
+        p.state === E.CertificateIssuer_Status_State.PREPARING ? (
+          <Loader2 size={18} className="motion-safe:animate-spin" />
+        ) : p.state === E.CertificateIssuer_Status_State.NOT_READY ? (
+          <AlertTriangle size={18} strokeWidth={2.2} />
+        ) : (
+          <Landmark size={18} strokeWidth={2.2} />
+        )
+      }
+      title={
+        p.state === E.CertificateIssuer_Status_State.READY
+          ? "Ready to issue certificates"
+          : p.state === E.CertificateIssuer_Status_State.PREPARING
+            ? "Preparing the ACME account"
+            : p.state === E.CertificateIssuer_Status_State.NOT_READY
+              ? "Not ready"
+              : p.stateLabel
+      }
+      detail={[p.type, p.serverHost, `${p.solver} challenges`]
+        .filter(Boolean)
+        .join(" · ")}
+    >
+      {p.state === E.CertificateIssuer_Status_State.NOT_READY && (
+        <OverviewNotice tone="danger" icon={AlertTriangle} title="Managed Certificates cannot be issued.">
+          The API does not expose a readiness reason; inspect the component
+          logs for the underlying failure.
+        </OverviewNotice>
+      )}
+    </OverviewHero>
   );
 };
 
@@ -44,62 +75,70 @@ export const MainInfo = (props: {
   const p = getIssuerPresentation(item);
 
   return {
+    header: <IssuerHero item={item} />,
+    status: { label: p.stateLabel, tone: stateTone(p.state) },
+    groupOrder: [{ title: "ACME", icon: Landmark }],
     items: [
       {
-        label: "Operational status",
-        value: <StateValue item={item} />,
-      },
-      {
         label: "Type",
-        value: <ResourceListLabel label="Type">{p.type}</ResourceListLabel>,
+        primary: true,
+        icon: Landmark,
+        value: <Label>{p.type}</Label>,
       },
       {
         label: "Challenge solver",
-        value: (
-          <ResourceListLabel label="Solver">{p.solver}</ResourceListLabel>
+        primary: true,
+        icon: Waypoints,
+        value: <span className="font-semibold">{p.solver}</span>,
+      },
+      {
+        label: "Directory",
+        primary: true,
+        icon: Globe2,
+        value: p.serverHost ? (
+          <span className="font-semibold">{p.serverHost}</span>
+        ) : (
+          <MutedValue>Not configured</MutedValue>
+        ),
+      },
+      {
+        label: "Account email",
+        primary: true,
+        icon: Mail,
+        value: p.acme?.email ? (
+          <CopyText value={p.acme.email} />
+        ) : (
+          <MutedValue>Not set</MutedValue>
         ),
       },
       ...(p.acme?.server
         ? [
             {
-              label: "ACME directory URL",
+              label: "Directory URL",
+              group: "ACME",
               value: <CopyText value={p.acme.server} />,
               span: "full" as const,
-            },
-          ]
-        : []),
-      ...(p.acme?.email
-        ? [
-            {
-              label: "ACME account email",
-              value: <CopyText value={p.acme.email} />,
             },
           ]
         : []),
       ...(p.accountSecret?.name
         ? [
             {
-              label: "ACME account secret",
+              label: "Account key",
+              group: "ACME",
               value: <ResourceListLabel itemRef={p.accountSecret} />,
             },
           ]
         : []),
       {
         label: "Usage",
+        group: "ACME",
         span: "full" as const,
         value: (
-          <div className="flex items-start gap-2 rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2.5">
-            <ShieldCheck
-              size={14}
-              className="mt-0.5 shrink-0 text-blue-600"
-            />
-            <p className="text-xs font-semibold leading-relaxed text-blue-800/80">
-              Managed Certificates use this issuer to request and renew
-              certificates through the configured ACME provider.
-              {p.state === E.CertificateIssuer_Status_State.NOT_READY &&
-                " The API does not expose a readiness reason; inspect component logs for the underlying failure."}
-            </p>
-          </div>
+          <MutedValue>
+            Managed Certificates use this issuer to request and renew their
+            certificates.
+          </MutedValue>
         ),
       },
     ],

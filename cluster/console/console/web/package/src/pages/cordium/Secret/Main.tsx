@@ -2,6 +2,8 @@ import * as CordiumP from "@/apis/cordiumv1/cordiumv1";
 import { ResourceListLabel } from "@/components/ResourceList";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { spaceRefOf, userRefOf } from "../utils";
+import Label from "@/components/Label";
+import { Boxes, EyeOff, UserRound } from "lucide-react";
 
 export const MainInfo = (props: {
   item: CordiumP.Secret;
@@ -17,6 +19,7 @@ export const MainInfo = (props: {
             {
               label: "Space",
               primary: true,
+              icon: Boxes,
               value: <ResourceListLabel itemRef={spaceRef} />,
             },
           ]
@@ -24,19 +27,19 @@ export const MainInfo = (props: {
       ...(userRef
         ? [
             {
-              label: "User",
+              label: "Created by",
+              primary: true,
+              icon: UserRound,
               value: <ResourceListLabel itemRef={userRef} />,
-              hint: "The User that created the Secret.",
             },
           ]
         : []),
       {
-        label: "Data",
-        value: (
-          <span className="text-xs font-normal text-slate-500">
-            The Secret data is never exposed by the visibility API.
-          </span>
-        ),
+        label: "Value",
+        primary: true,
+        icon: EyeOff,
+        value: <Label>Write-only</Label>,
+        hint: "The visibility API never returns the value.",
       },
     ],
   };

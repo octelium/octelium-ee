@@ -14,7 +14,33 @@ import { getResourcePath, getResourceRef } from "@/utils/pb";
 import { Button, Drawer, Switch } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
-import { KeyRound, Plus, Shield, X } from "lucide-react";
+import {
+  Ban,
+  Bot,
+  Fingerprint,
+  KeyRound,
+  Link2,
+  Lock,
+  Mail,
+  Plus,
+  ShieldCheck,
+  Tags,
+  Timer,
+  UserRound,
+  Users,
+  X,
+} from "lucide-react";
+import {
+  formatDuration,
+  MutedValue,
+  OverviewNotice,
+  ResourceActionButton,
+} from "@/components/ResourceLayout/overview";
+import {
+  attrsItems,
+  authorizationItems,
+} from "@/components/ResourceLayout/overviewItems";
+import { CountryFlag } from "@/components/SelectCountry";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
@@ -151,15 +177,9 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
 
   return (
     <div className="flex items-center">
-      <Button
-        variant="filled"
-        color="ink"
-        size="compact-sm"
-        leftSection={<Plus size={12} strokeWidth={2.5} />}
-        onClick={open}
-      >
+      <ResourceActionButton tone="primary" icon={Plus} onClick={open}>
         Create credential
-      </Button>
+      </ResourceActionButton>
       <Drawer
         opened={opened}
         onClose={close}
@@ -259,47 +279,228 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
   );
 };
 
+const UserNotices = (props: { item: CoreC.User }) => {
+  const { item } = props;
+  if (!item.spec?.isDisabled && !item.status?.isLocked) return null;
+  return (
+    <div className="flex flex-col gap-2 border-b border-slate-200 bg-white px-4 py-3">
+      {item.spec?.isDisabled && (
+        <OverviewNotice tone="danger" icon={Ban} title="Disabled.">
+          The User cannot authenticate and its Sessions cannot access any
+          Service.
+        </OverviewNotice>
+      )}
+      {item.status?.isLocked && (
+        <OverviewNotice tone="danger" icon={Lock} title="Locked by the Cluster.">
+          Every request of this User is rejected until it is unlocked.
+        </OverviewNotice>
+      )}
+    </div>
+  );
+};
+
 export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
   const { item } = props;
+  const spec = item.spec!;
   const related = useUserRelatedResources(item);
+  const isWorkload = spec.type === CoreC.User_Spec_Type.WORKLOAD;
+  const info = spec.info;
+  const fullName = [info?.firstName, info?.middleName, info?.lastName]
+    .filter(Boolean)
+    .join(" ");
+  const identities = spec.authentication?.identities ?? [];
+  const session = spec.session;
 
   return {
+    header: <UserNotices item={item} />,
     actions: <CreateUserCredential item={item} />,
-    groupOrder: ["Identity", "Authorization", "Related resources"],
+    groupOrder: [
+      { title: "Profile", icon: UserRound },
+      { title: "Identities", icon: Fingerprint },
+      { title: "Session policy", icon: Timer },
+      { title: "Authorization", icon: ShieldCheck },
+      { title: "Related resources", icon: Link2 },
+      { title: "Attributes", icon: Tags },
+    ],
     items: [
       {
         label: "Type",
-        group: "Identity",
         primary: true,
+        icon: isWorkload ? Bot : UserRound,
         value: (
-          <Label>
-            {match(item.spec!.type)
-              .with(CoreC.User_Spec_Type.HUMAN, () => "Human")
-              .with(CoreC.User_Spec_Type.WORKLOAD, () => "Workload")
-              .otherwise(() => "")}
-          </Label>
+          <span className="flex flex-col">
+            <span className="font-semibold">
+              {match(spec.type)
+                .with(CoreC.User_Spec_Type.HUMAN, () => "Human")
+                .with(CoreC.User_Spec_Type.WORKLOAD, () => "Workload")
+                .otherwise(() => "Unknown")}
+            </span>
+            <span className="text-xs font-normal text-slate-500">
+              {isWorkload ? "Machine identity" : "Person signing in"}
+            </span>
+          </span>
+        ),
+      },
+      {
+        label: "Email",
+        primary: true,
+        icon: Mail,
+        value: spec.email ? (
+          <CopyText value={spec.email} />
+        ) : (
+          <MutedValue>Not set</MutedValue>
+        ),
+      },
+      {
+        label: "Groups",
+        primary: true,
+        icon: Users,
+        value: (
+          <span className="font-semibold tabular-nums">
+            {spec.groups.length}
+          </span>
+        ),
+      },
+      {
+        label: "Identities",
+        primary: true,
+        icon: Fingerprint,
+        value: (
+          <span className="font-semibold tabular-nums">{identities.length}</span>
         ),
       },
 
-      ...(item.spec?.email
+      ...(fullName
+        ? [{ label: "Name", group: "Profile", value: fullName }]
+        : []),
+      ...(info?.country
         ? [
             {
-              label: "Email",
-              group: "Identity",
-              primary: true,
-              value: <CopyText value={item.spec.email} />,
+              label: "Country",
+              group: "Profile",
+              value: (
+                <span className="inline-flex items-center gap-1.5">
+                  <CountryFlag code={info.country} />
+                  {info.country}
+                </span>
+              ),
+            },
+          ]
+        : []),
+      ...(info?.locale
+        ? [{ label: "Locale", group: "Profile", value: info.locale }]
+        : []),
+      ...(info?.phone
+        ? [{ label: "Phone", group: "Profile", value: <CopyText value={info.phone} /> }]
+        : []),
+      ...(info?.website
+        ? [
+            {
+              label: "Website",
+              group: "Profile",
+              value: <CopyText value={info.website} />,
             },
           ]
         : []),
 
-      ...(item.spec!.groups.length > 0
+      ...(identities.length > 0
+        ? [
+            {
+              label: "Linked identities",
+              hint: "Accounts that sign in as this User",
+              group: "Identities",
+              span: "full" as const,
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {identities.map((identity) => (
+                    <ResourceListLabel
+                      key={`${identity.identityProvider}-${identity.identifier}`}
+                      label={identity.identityProvider || "Any provider"}
+                    >
+                      {identity.identifier}
+                    </ResourceListLabel>
+                  ))}
+                </div>
+              ),
+            },
+          ]
+        : []),
+
+      ...(session
+        ? [
+            ...(session.clientDuration
+              ? [
+                  {
+                    label: "Client Sessions",
+                    group: "Session policy",
+                    value: formatDuration(session.clientDuration),
+                  },
+                ]
+              : []),
+            ...(session.clientlessDuration
+              ? [
+                  {
+                    label: "Clientless Sessions",
+                    group: "Session policy",
+                    value: formatDuration(session.clientlessDuration),
+                  },
+                ]
+              : []),
+            ...(session.accessTokenDuration
+              ? [
+                  {
+                    label: "Access tokens",
+                    group: "Session policy",
+                    value: formatDuration(session.accessTokenDuration),
+                  },
+                ]
+              : []),
+            ...(session.refreshTokenDuration
+              ? [
+                  {
+                    label: "Refresh tokens",
+                    group: "Session policy",
+                    value: formatDuration(session.refreshTokenDuration),
+                  },
+                ]
+              : []),
+            ...(session.maxPerUser > 0
+              ? [
+                  {
+                    label: "Max Sessions",
+                    group: "Session policy",
+                    value: (
+                      <span className="font-semibold tabular-nums">
+                        {session.maxPerUser}
+                      </span>
+                    ),
+                  },
+                ]
+              : []),
+            ...(session.defaultState !== CoreC.Session_Spec_State.STATE_UNKNOWN
+              ? [
+                  {
+                    label: "New Sessions",
+                    group: "Session policy",
+                    value: match(session.defaultState)
+                      .with(CoreC.Session_Spec_State.ACTIVE, () => "Active")
+                      .with(CoreC.Session_Spec_State.PENDING, () => "Pending approval")
+                      .with(CoreC.Session_Spec_State.REJECTED, () => "Rejected")
+                      .otherwise(() => "Default"),
+                  },
+                ]
+              : []),
+          ]
+        : []),
+
+      ...(spec.groups.length > 0
         ? [
             {
               label: "Groups",
               group: "Authorization",
               value: (
                 <div className="flex flex-wrap gap-1">
-                  {item.spec!.groups.map((x) => (
+                  {spec.groups.map((x) => (
                     <ResourceListLabel
                       key={x}
                       itemRef={ObjectReference.create({
@@ -315,71 +516,27 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
             },
           ]
         : []),
+      ...authorizationItems(spec.authorization),
 
-      ...(item.spec!.authorization &&
-      item.spec!.authorization?.policies.length > 0
-        ? [
-            {
-              label: "Policies",
-              group: "Authorization",
-              value: (
-                <div className="flex flex-wrap gap-1">
-                  {item.spec!.authorization!.policies.map((x) => (
-                    <ResourceListLabel
-                      key={x}
-                      itemRef={ObjectReference.create({
-                        apiVersion: "core/v1",
-                        kind: "Policy",
-                        name: x,
-                      })}
-                    />
-                  ))}
-                </div>
-              ),
-              span: "full" as const,
-            },
-          ]
-        : []),
-
-      ...(item.spec?.authorization?.inlinePolicies.length
-        ? [
-            {
-              label: "Inline policies",
-              group: "Authorization",
-              value: (
-                <div className="flex flex-wrap gap-1">
-                  {item.spec.authorization.inlinePolicies.map((policy) => (
-                    <ResourceListLabel key={policy.name} label="Inline policy">
-                      <Shield size={12} strokeWidth={2.5} />
-                      {policy.name}
-                    </ResourceListLabel>
-                  ))}
-                </div>
-              ),
-              span: "full" as const,
-            },
-          ]
-        : []),
-
-      ...(related.length > 0
-        ? [
-            {
-              label: "Linked resources",
-              group: "Related resources",
-              value: (
-                <div className="flex flex-wrap gap-1">
-                  {related.map(({ label, count, path, icon: Icon }) => (
-                    <ResourceListLabel key={label} label={label} to={path}>
-                      <Icon size={12} strokeWidth={2.5} />
-                      {count === undefined ? "…" : count.toLocaleString()}
-                    </ResourceListLabel>
-                  ))}
-                </div>
-              ),
-              span: "full" as const,
-            },
-          ]
-        : []),
+      {
+        label: "Linked resources",
+        group: "Related resources",
+        value:
+          related.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {related.map(({ label, count, path, icon: Icon }) => (
+                <ResourceListLabel key={label} label={label} to={path}>
+                  <Icon size={12} strokeWidth={2.5} />
+                  {count === undefined ? "…" : count.toLocaleString()}
+                </ResourceListLabel>
+              ))}
+            </div>
+          ) : (
+            <MutedValue>No Sessions, Devices or Credentials yet</MutedValue>
+          ),
+        span: "full" as const,
+      },
+      ...attrsItems(spec.attrs),
     ],
   };
 };

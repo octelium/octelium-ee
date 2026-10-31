@@ -6,7 +6,17 @@ import { twMerge } from "@/lib/utils";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { getClientAccess } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Layers, Server, User, X } from "lucide-react";
+import {
+  Check,
+  FileText,
+  Layers,
+  ListOrdered,
+  ScrollText,
+  Send,
+  Server,
+  User,
+  X,
+} from "lucide-react";
 import { normalizeRef, RefChip, TONE_SOFT, ToneBadge } from "../common";
 import { OriginValue, hasOrigin } from "../Origin";
 import { getStatusMeta, getStatusTone, getUrgencyColor, getUrgencyLabel } from "../Request/utils";
@@ -220,16 +230,21 @@ export const MainInfo = (props: { item: AccessC.Review }): ResourceMainInfo => {
   return {
     status: { label: meta.label, tone: decisionTone(item.spec?.decision) },
     header: <DecisionHero item={item} />,
-    groupOrder: ["Request", "History"],
+    groupOrder: [
+      { title: "Request", icon: FileText },
+      { title: "History", icon: ScrollText },
+    ],
     items: [
       {
         label: "Reviewer",
         primary: true,
+        icon: User,
         value: reviewerRef ? <RefChip itemRef={reviewerRef} icon={User} /> : "Unknown",
       },
       {
         label: "Step",
         primary: true,
+        icon: ListOrdered,
         value: (
           <span className="font-semibold">
             {status?.stepName || `Step ${(status?.stepIndex ?? 0) + 1}`}
@@ -239,6 +254,7 @@ export const MainInfo = (props: { item: AccessC.Review }): ResourceMainInfo => {
       {
         label: "Decided from",
         primary: true,
+        icon: Send,
         value: hasOrigin(status?.origin) ? (
           <OriginValue origin={status!.origin!} />
         ) : (

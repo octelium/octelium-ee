@@ -3,6 +3,8 @@ import CopyText from "@/components/CopyText";
 import { ResourceListLabel } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
 import { ResourceMainInfo } from "@/pages/utils/types";
+import { MutedValue } from "@/components/ResourceLayout/overview";
+import { Cable, Fingerprint, Globe2, MapPinned, Zap } from "lucide-react";
 
 export default (props: { item: CoreC.Gateway }) => {
   const { item } = props;
@@ -12,40 +14,90 @@ export default (props: { item: CoreC.Gateway }) => {
 export const MainInfo = (props: { item: CoreC.Gateway }): ResourceMainInfo => {
   const { item } = props;
   const status = item.status;
+  const wireguard = status?.wireguard;
 
   return {
+    groupOrder: [
+      { title: "Networking", icon: Globe2 },
+      { title: "Tunnels", icon: Cable },
+      { title: "Identity", icon: Fingerprint },
+    ],
     items: [
-      ...(status?.id
+      {
+        label: "Region",
+        primary: true,
+        icon: MapPinned,
+        value: status?.regionRef?.name || status?.regionRef?.uid ? (
+          <ResourceListLabel itemRef={status.regionRef} />
+        ) : (
+          <MutedValue>Unknown</MutedValue>
+        ),
+      },
+      {
+        label: "Public IP",
+        primary: true,
+        icon: Globe2,
+        value: status?.publicIPs.length ? (
+          <CopyText value={status.publicIPs[0]} />
+        ) : (
+          <MutedValue>None</MutedValue>
+        ),
+      },
+      {
+        label: "WireGuard",
+        primary: true,
+        icon: Cable,
+        value: wireguard?.port ? (
+          <span className="font-semibold tabular-nums">:{wireguard.port}</span>
+        ) : (
+          <MutedValue>Disabled</MutedValue>
+        ),
+      },
+      {
+        label: "QUIC",
+        primary: true,
+        icon: Zap,
+        value: status?.quicv0?.port ? (
+          <span className="font-semibold tabular-nums">:{status.quicv0.port}</span>
+        ) : (
+          <MutedValue>Disabled</MutedValue>
+        ),
+      },
+
+      ...(status?.hostname
         ? [
             {
-              label: "ID",
-              value: <CopyText value={status.id} />,
+              label: "Hostname",
+              group: "Networking",
+              span: "full" as const,
+              value: <CopyText value={status.hostname} />,
             },
           ]
         : []),
-
-      ...(status?.regionRef?.name || status?.regionRef?.uid
+      ...(status?.publicIPs.length
         ? [
             {
-              label: "Region",
-              value: <ResourceListLabel itemRef={item.status!.regionRef} />,
+              label: "Public IPs",
+              group: "Networking",
+              span: "full" as const,
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {status.publicIPs.map((ip) => (
+                    <ResourceListLabel key={ip} label="Address">
+                      <CopyText value={ip} />
+                    </ResourceListLabel>
+                  ))}
+                </div>
+              ),
             },
           ]
         : []),
-
-      ...(status?.index !== undefined
-        ? [
-            {
-              label: "Index",
-              value: <span className="font-semibold">{status.index}</span>,
-            },
-          ]
-        : []),
-
       ...(status?.cidr?.v4 || status?.cidr?.v6
         ? [
             {
-              label: "CIDR",
+              label: "Client CIDR",
+              group: "Networking",
+              span: "full" as const,
               value: (
                 <div className="flex flex-wrap gap-1">
                   {status.cidr.v4 && (
@@ -64,86 +116,68 @@ export const MainInfo = (props: { item: CoreC.Gateway }): ResourceMainInfo => {
           ]
         : []),
 
-      ...(status?.publicIPs && status.publicIPs.length > 0
+      ...(wireguard?.publicKey
         ? [
             {
-              label: "Public IPs",
-              value: (
-                <div className="flex flex-wrap gap-1">
-                  {status.publicIPs.map((ip) => (
-                    <ResourceListLabel key={ip} label="Address">
-                      <CopyText value={ip} />
-                    </ResourceListLabel>
-                  ))}
-                </div>
-              ),
-            },
-          ]
-        : []),
-
-      ...(status?.hostname
-        ? [
-            {
-              label: "Hostname",
-              value: <CopyText value={status.hostname} />,
-            },
-          ]
-        : []),
-
-      ...(status?.wireguard &&
-      (status.wireguard.port > 0 ||
-        !!status.wireguard.publicKey ||
-        !!status.wireguard.keyRotatedAt)
-        ? [
-            {
-              label: "WireGuard",
+              label: "WireGuard public key",
+              group: "Tunnels",
               span: "full" as const,
-              value: (
-                <div className="flex flex-col gap-1.5 w-full">
-                  {status.wireguard.port > 0 && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-24 shrink-0">
-                        Port
-                      </span>
-                      <span className="text-body font-semibold text-slate-700">
-                        {status.wireguard.port}
-                      </span>
-                    </div>
-                  )}
-                  {status.wireguard.publicKey && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-24 shrink-0">
-                        Public Key
-                      </span>
-                      <CopyText
-                        value={status.wireguard.publicKey}
-                        truncate={32}
-                      />
-                    </div>
-                  )}
-                  {status.wireguard.keyRotatedAt && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-24 shrink-0">
-                        Key Rotated
-                      </span>
-                      <span className="text-body font-semibold text-slate-700">
-                        <TimeAgo rfc3339={status.wireguard.keyRotatedAt} />
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ),
+              value: <CopyText value={wireguard.publicKey} />,
+            },
+          ]
+        : []),
+      ...(wireguard?.keyRotatedAt
+        ? [
+            {
+              label: "Key rotated",
+              group: "Tunnels",
+              value: <TimeAgo rfc3339={wireguard.keyRotatedAt} />,
+            },
+          ]
+        : []),
+      ...(wireguard?.port
+        ? [
+            {
+              label: "WireGuard port",
+              group: "Tunnels",
+              value: <span className="tabular-nums">{wireguard.port}</span>,
+            },
+          ]
+        : []),
+      ...(status?.quicv0?.port
+        ? [
+            {
+              label: "QUIC port",
+              group: "Tunnels",
+              value: <span className="tabular-nums">{status.quicv0.port}</span>,
             },
           ]
         : []),
 
-      ...(status?.quicv0 && status.quicv0.port > 0
+      ...(status?.id
         ? [
             {
-              label: "QUICv0",
-              value: (
-                <span className="font-semibold">:{status.quicv0.port}</span>
-              ),
+              label: "Gateway ID",
+              group: "Identity",
+              value: <CopyText value={status.id} />,
+            },
+          ]
+        : []),
+      ...(status?.index !== undefined
+        ? [
+            {
+              label: "Index",
+              group: "Identity",
+              value: <span className="tabular-nums">{status.index}</span>,
+            },
+          ]
+        : []),
+      ...(status?.nodeRef?.name
+        ? [
+            {
+              label: "Node",
+              group: "Identity",
+              value: status.nodeRef.name,
             },
           ]
         : []),

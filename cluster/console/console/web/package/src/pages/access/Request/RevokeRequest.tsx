@@ -12,6 +12,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Ban, Loader2, ShieldAlert, X } from "lucide-react";
 import * as React from "react";
 import { notifications } from "@mantine/notifications";
+import { ResourceActionButton } from "@/components/ResourceLayout/overview";
 
 const REVOCABLE_STATES = new Set([
   AccessPB.Request_Status_State_Status.STATUS_UNKNOWN,
@@ -60,16 +61,9 @@ const RevokeRequest = (props: { item: AccessPB.Request }) => {
 
   return (
     <>
-      <Button
-        type="button"
-        size="compact-xs"
-        variant="outline"
-        color="red.7"
-        leftSection={<Ban size={12} strokeWidth={2.25} />}
-        onClick={open}
-      >
+      <ResourceActionButton tone="danger" icon={Ban} onClick={open}>
         Revoke
-      </Button>
+      </ResourceActionButton>
 
       <Modal
         opened={opened}

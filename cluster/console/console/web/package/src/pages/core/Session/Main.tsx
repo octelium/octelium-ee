@@ -1,14 +1,29 @@
 import { Space_Status_Type } from "@/apis/cordiumv1/cordiumv1";
 import * as CoreC from "@/apis/corev1/corev1";
 import * as CoreP from "@/apis/corev1/corev1";
-import { ObjectReference } from "@/apis/metav1/metav1";
 import AccessLogViewer from "@/components/AccessLogViewer";
-import InfoItem from "@/components/InfoItem";
 import Label from "@/components/Label";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
+import {
+  formatSeconds,
+  HeroStat,
+  Meter,
+  MutedValue,
+  OverviewHero,
+  OverviewNotice,
+  remainingPercent,
+  toDate,
+  TONE_TEXT,
+  TonePill,
+} from "@/components/ResourceLayout/overview";
+import {
+  authorizationItems,
+  RefLabel,
+} from "@/components/ResourceLayout/overviewItems";
 import { ResourceListLabel } from "@/components/ResourceList";
-import TimeAgo from "@/components/TimeAgo";
+import TimeAgo, { useNow } from "@/components/TimeAgo";
 import TimestampPicker from "@/components/TimestampPicker";
+import { twMerge } from "@/lib/utils";
 import {
   getSpaceTypeLabel,
   spaceRefOf,
@@ -18,191 +33,73 @@ import {
 import { useUpdateResource } from "@/pages/utils/resource";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { getResourceRef } from "@/utils/pb";
-import { Select } from "@mantine/core";
-import { Shield } from "lucide-react";
-import { twMerge } from "@/lib/utils";
-import { match } from "ts-pattern";
-import { getType } from "./List";
 import {
-  SessionCompactSecurityInfo,
-  SessionOperationalDetails,
+  Ban,
+  Boxes,
+  Clock3,
+  Fingerprint,
+  Laptop,
+  Lock,
+  MapPin,
+  MonitorSmartphone,
+  Network,
+  Server,
+  ShieldCheck,
+  ShieldQuestion,
+  UserRound,
+} from "lucide-react";
+import {
+  authenticationItems,
+  ClientIcon,
+  clientItems,
+  connectionItems,
+  describeClient,
+  formatLocation,
+  getAALMeta,
+  getAuthenticationSource,
+  getAuthenticatorAction,
+  getExpiry,
+  getMethodLabel,
+  getSignIn,
+  getTransportLabel,
+  LocationValue,
+  scopeItems,
+  servedItems,
 } from "./Info";
 import { getCordiumSessionInfo } from "./utils";
-
-export const ItemInfo = (props: { item: CoreC.Session }) => {
-  let { item } = props;
-  const mutationUpdate = useUpdateResource();
-  const updateItem = (update: (item: CoreC.Session) => void) => {
-    const clone = CoreC.Session.clone(item);
-    update(clone);
-    mutationUpdate.mutate(clone);
-  };
-
-  return (
-    <>
-      <InfoItem title="Type">
-        <Label>{getType(item)}</Label>
-      </InfoItem>
-      {item.status!.isConnected && (
-        <InfoItem title="Connected">
-          <div className="flex items-center">
-            <div className="flex relative w-[10px] h-[10px]">
-              <div className="bg-green-500 rounded-full w-[10px] h-[10px] motion-safe:animate-ping absolute"></div>
-              <div className="bg-green-500 rounded-full w-[10px] h-[10px]"></div>
-            </div>
-            <span className="ml-1">Yes</span>
-          </div>
-        </InfoItem>
-      )}
-
-      {item.spec?.expiresAt && (
-        <InfoItem title="Expiration">
-          <div className="w-full flex items-center">
-            <EditItemWrap
-              mutation={mutationUpdate}
-              showComponent={
-                <span className="flex-1 mr-2">
-                  <TimeAgo rfc3339={item.spec.expiresAt} />
-                </span>
-              }
-              editComponent={
-                <TimestampPicker
-                  label="Expires at"
-                  description="Set the expiration time for the Session"
-                  isFuture
-                  value={item.spec.expiresAt}
-                  onChange={(v) => {
-                    updateItem((clone) => {
-                      clone.spec!.expiresAt = v;
-                    });
-                  }}
-                />
-              }
-            />
-          </div>
-        </InfoItem>
-      )}
-      {item.status?.authentication &&
-        item.status.authentication.setAt && (
-          <InfoItem title="Last Authentication">
-            <TimeAgo rfc3339={item.status.authentication.setAt} />
-          </InfoItem>
-        )}
-
-      {item.status?.authentication &&
-        item.status.authentication.info &&
-        item.status.authentication.info.downstream && (
-          <>
-            {item.status.authentication.info.downstream.userAgent && (
-              <InfoItem title="User Agent">
-                {item.status.authentication.info.downstream.userAgent}
-              </InfoItem>
-            )}
-
-            {item.status.authentication.info.downstream.ipAddress && (
-              <InfoItem title="IP Address">
-                {item.status.authentication.info.downstream.ipAddress}
-              </InfoItem>
-            )}
-
-            {item.status.authentication.info.downstream.clientVersion && (
-              <InfoItem title="Client Version">
-                {item.status.authentication.info.downstream.clientVersion}
-              </InfoItem>
-            )}
-          </>
-        )}
-
-      <InfoItem title="State">
-        <EditItemWrap
-          mutation={mutationUpdate}
-          showComponent={
-            <span
-              className={twMerge(
-                match(item.spec!.state)
-                  .with(CoreP.Session_Spec_State.REJECTED, () => "text-red-600")
-                  .with(
-                    CoreP.Session_Spec_State.PENDING,
-                    () => "text-yellow-600",
-                  )
-                  .otherwise(() => undefined),
-              )}
-            >
-              {match(item.spec!.state)
-                .with(CoreP.Session_Spec_State.ACTIVE, () => "Active")
-                .with(CoreP.Session_Spec_State.REJECTED, () => "Rejected")
-                .with(CoreP.Session_Spec_State.PENDING, () => "Pending")
-                .otherwise(() => "")}
-            </span>
-          }
-          editComponent={
-            <Select
-              data={[
-                {
-                  label: "Active",
-                  value:
-                    CoreP.Session_Spec_State[CoreP.Session_Spec_State.ACTIVE],
-                },
-                {
-                  label: "Pending",
-                  value:
-                    CoreP.Session_Spec_State[CoreP.Session_Spec_State.PENDING],
-                },
-                {
-                  label: "Rejected",
-                  value:
-                    CoreP.Session_Spec_State[CoreP.Session_Spec_State.REJECTED],
-                },
-              ]}
-              value={CoreP.Session_Spec_State[item.spec!.state]}
-              onChange={(v) => {
-                if (!v) {
-                  return;
-                }
-                updateItem((clone) => {
-                  clone.spec!.state = CoreP.Session_Spec_State[v as "ACTIVE"];
-                });
-              }}
-            />
-          }
-        />
-      </InfoItem>
-    </>
-  );
-};
 
 export const AccessLog = (props: { item: CoreC.Session }) => {
   return <AccessLogViewer sessionRef={getResourceRef(props.item)} />;
 };
 
-export default (props: { item: CoreC.Session }) => {
-  let { item } = props;
-  return (
-    <div className="w-full">
-      <div className="w-full mb-4">
-        <ItemInfo item={item} />
-      </div>
-    </div>
-  );
-};
-
 const SessionExpirationControl = (props: { item: CoreC.Session }) => {
   const { item } = props;
+  const now = useNow();
   const mutationUpdate = useUpdateResource();
+  const expiry = getExpiry(item, now);
+
+  const show = (
+    <span
+      className={twMerge(
+        "text-sm font-bold tabular-nums",
+        TONE_TEXT[expiry.tone],
+      )}
+    >
+      {item.spec?.expiresAt ? (
+        <TimeAgo rfc3339={item.spec.expiresAt} />
+      ) : (
+        "Not set"
+      )}
+    </span>
+  );
+
+  if (item.metadata?.isSystem) return show;
 
   return (
     <EditItemWrap
       mutation={mutationUpdate}
       label="expiration"
-      showComponent={
-        <span className="text-body font-normal text-slate-600">
-          {item.spec?.expiresAt ? (
-            <TimeAgo rfc3339={item.spec.expiresAt} />
-          ) : (
-            "Not set"
-          )}
-        </span>
-      }
+      showComponent={show}
       editComponent={
         <TimestampPicker
           label="Expires at"
@@ -220,59 +117,217 @@ const SessionExpirationControl = (props: { item: CoreC.Session }) => {
   );
 };
 
+const LiveDot = () => (
+  <span className="relative ml-2 inline-flex h-2 w-2 align-middle">
+    <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 motion-safe:animate-ping" />
+    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+  </span>
+);
+
+const SessionHero = (props: { item: CoreC.Session }) => {
+  const { item } = props;
+  const now = useNow();
+  const status = item.status;
+  const state = item.spec?.state;
+  const isClient = status?.type === CoreP.Session_Status_Type.CLIENT;
+  const connection = isClient && status?.isConnected ? status.connection : undefined;
+  const expiry = getExpiry(item, now);
+  const action = getAuthenticatorAction(item);
+  const signIn = getSignIn(item);
+  const source = getAuthenticationSource(signIn);
+  const info = status?.authentication?.info;
+  const location = formatLocation(info?.geoip);
+  const lifetime = remainingPercent(
+    toDate(item.metadata?.createdAt),
+    expiry.expiresAt,
+    now,
+  );
+
+  const tone =
+    state === CoreP.Session_Spec_State.REJECTED ||
+    status?.isLocked ||
+    expiry.isExpired
+      ? "danger"
+      : state === CoreP.Session_Spec_State.PENDING
+        ? "warning"
+        : connection || !isClient
+          ? "success"
+          : "neutral";
+
+  const detail = isClient
+    ? [
+        describeClient(item),
+        connection?.startedAt && (
+          <>
+            connected <TimeAgo rfc3339={connection.startedAt} />
+          </>
+        ),
+        connection?.lastSeenAt && (
+          <>
+            last seen <TimeAgo rfc3339={connection.lastSeenAt} />
+          </>
+        ),
+      ]
+    : [
+        source && (
+          <>
+            Signed in via {source.name || source.uid}
+            {signIn?.setAt && (
+              <>
+                {" "}
+                <TimeAgo rfc3339={signIn.setAt} />
+              </>
+            )}
+          </>
+        ),
+        info?.downstream?.ipAddress,
+        location,
+      ];
+
+  return (
+    <OverviewHero
+      tone={tone}
+      icon={<ClientIcon item={item} />}
+      title={
+        isClient ? (
+          connection ? (
+            <>
+              Connected via {getTransportLabel(connection.type)}
+              <LiveDot />
+            </>
+          ) : (
+            "Client not connected"
+          )
+        ) : (
+          describeClient(item)
+        )
+      }
+      detail={detail.filter(Boolean).map((part, index) => (
+        <span key={index}>
+          {index > 0 && " · "}
+          {part}
+        </span>
+      ))}
+      meter={
+        lifetime !== undefined &&
+        expiry.left !== undefined &&
+        !expiry.isExpired && (
+          <Meter
+            value={lifetime}
+            label="Session lifetime left"
+            tone={expiry.tone === "warning" ? "warning" : "success"}
+            caption={`${formatSeconds(expiry.left)} of the Session lifetime left`}
+          />
+        )
+      }
+      aside={
+        <HeroStat
+          label="Expires"
+          value={<SessionExpirationControl item={item} />}
+        />
+      }
+    >
+      {status?.isLocked && (
+        <OverviewNotice tone="danger" icon={Lock} title="Locked by the Cluster.">
+          Every request of this Session is rejected until it is unlocked.
+        </OverviewNotice>
+      )}
+      {expiry.isExpired && (
+        <OverviewNotice tone="danger" icon={Clock3} title="Expired.">
+          The Session can no longer authenticate or access any Service.
+        </OverviewNotice>
+      )}
+      {state === CoreP.Session_Spec_State.REJECTED && (
+        <OverviewNotice tone="danger" icon={Ban} title="Rejected.">
+          The Session cannot access any Service.
+        </OverviewNotice>
+      )}
+      {state === CoreP.Session_Spec_State.PENDING && (
+        <OverviewNotice tone="warning" icon={Clock3} title="Pending activation.">
+          The Session cannot access any Service until it is set to Active.
+        </OverviewNotice>
+      )}
+      {action && (
+        <OverviewNotice tone={action.tone} icon={ShieldQuestion} title={action.title}>
+          {action.detail}
+          {status?.requiredAuthenticatorRef &&
+            (status.requiredAuthenticatorRef.name ||
+              status.requiredAuthenticatorRef.uid) && (
+              <span className="ml-1 inline-flex align-middle">
+                <RefLabel itemRef={status.requiredAuthenticatorRef} />
+              </span>
+            )}
+        </OverviewNotice>
+      )}
+    </OverviewHero>
+  );
+};
+
 export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
   const { item } = props;
+  const status = item.status;
+  const info = status?.authentication?.info;
+  const aal = getAALMeta(info?.aal);
   const cordiumInfo = getCordiumSessionInfo(item);
   const workspaceRef = workspaceRefOf(cordiumInfo?.workspaceRef);
   const spaceRef = spaceRefOf(cordiumInfo?.spaceRef);
   const templateRef = templateRefOf(cordiumInfo?.templateRef);
 
   return {
-    groupOrder: ["Cordium", "Security", "Authorization"],
+    header: <SessionHero item={item} />,
+    groupOrder: [
+      { title: "Authentication", icon: Fingerprint },
+      { title: "Client & location", icon: MonitorSmartphone },
+      { title: "Connection", icon: Network },
+      { title: "Served Services", icon: Server },
+      { title: "Authorization", icon: ShieldCheck },
+      { title: "Cordium", icon: Boxes },
+    ],
     items: [
-      ...(item.status?.userRef?.name || item.status?.userRef?.uid
-        ? [
-            {
-              label: "User",
-              primary: true,
-              value: <ResourceListLabel itemRef={item.status.userRef} />,
-            },
-          ]
-        : []),
-      ...(item.status?.deviceRef?.name || item.status?.deviceRef?.uid
-        ? [
-            {
-              label: "Device",
-              primary: true,
-              value: <ResourceListLabel itemRef={item.status!.deviceRef} />,
-            },
-          ]
-        : []),
       {
-        label: "Type",
+        label: "User",
         primary: true,
-        value: <Label>{getType(item)}</Label>,
+        icon: UserRound,
+        value: status?.userRef?.name || status?.userRef?.uid ? (
+          <ResourceListLabel itemRef={status.userRef} />
+        ) : (
+          <MutedValue>Unknown</MutedValue>
+        ),
+      },
+      {
+        label: "Device",
+        primary: true,
+        icon: Laptop,
+        value: status?.deviceRef?.name || status?.deviceRef?.uid ? (
+          <ResourceListLabel itemRef={status.deviceRef} />
+        ) : (
+          <MutedValue>No Device</MutedValue>
+        ),
+      },
+      {
+        label: "Authentication",
+        primary: true,
+        icon: Fingerprint,
+        value: (
+          <span className="flex flex-wrap items-center gap-1.5">
+            <span className="font-semibold">{getMethodLabel(info?.type)}</span>
+            {aal && <TonePill tone={aal.tone}>{aal.label}</TonePill>}
+          </span>
+        ),
+      },
+      {
+        label: "Location",
+        primary: true,
+        icon: MapPin,
+        value: <LocationValue info={info} />,
       },
 
-      ...(item.status?.isConnected
-        ? [
-            {
-              label: "Connected",
-              primary: true,
-              value: (
-                <span className="flex items-center gap-1.5">
-                  <span className="relative flex w-2.5 h-2.5 shrink-0">
-                    <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full w-2.5 h-2.5 bg-emerald-500" />
-                  </span>
-                  <span className="text-body font-semibold text-emerald-600">
-                    Live
-                  </span>
-                </span>
-              ),
-            },
-          ]
-        : []),
+      ...authenticationItems(item, "Authentication"),
+      ...clientItems(item, "Client & location"),
+      ...connectionItems(item, "Connection"),
+      ...servedItems(item, "Served Services"),
+      ...authorizationItems(item.spec?.authorization),
+      ...scopeItems(item, "Authorization"),
 
       ...(workspaceRef
         ? [
@@ -311,79 +366,6 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
             },
           ]
         : []),
-
-      {
-        label: "Security signals",
-        group: "Security",
-        value: (
-          <div className="flex flex-wrap gap-1">
-            <SessionCompactSecurityInfo item={item} />
-          </div>
-        ),
-        span: "full",
-      },
-
-      {
-        label: "Expires",
-        group: "Security",
-        value: <SessionExpirationControl item={item} />,
-      },
-
-      ...(item.spec?.authorization?.policies.length
-        ? [
-            {
-              label: "Policies",
-              group: "Authorization",
-              value: (
-                <div className="flex flex-wrap gap-1">
-                  {item.spec.authorization.policies.map((policy) => (
-                    <ResourceListLabel
-                      key={policy}
-                      itemRef={ObjectReference.create({
-                        apiVersion: "core/v1",
-                        kind: "Policy",
-                        name: policy,
-                      })}
-                    />
-                  ))}
-                </div>
-              ),
-              span: "full" as const,
-            },
-          ]
-        : []),
-
-      ...(item.spec?.authorization?.inlinePolicies.length
-        ? [
-            {
-              label: "Inline policies",
-              group: "Authorization",
-              value: (
-                <div className="flex flex-wrap gap-1">
-                  {item.spec.authorization.inlinePolicies.map(
-                    (policy, index) => (
-                      <ResourceListLabel
-                        key={`${policy.name}-${index}`}
-                        label="Inline policy"
-                      >
-                        <Shield size={12} strokeWidth={2.5} />
-                        {policy.name || `Inline policy ${index + 1}`}
-                      </ResourceListLabel>
-                    ),
-                  )}
-                </div>
-              ),
-              span: "full" as const,
-            },
-          ]
-        : []),
-
-      {
-        label: "Session status",
-        group: "Security",
-        value: <SessionOperationalDetails item={item} />,
-        span: "full",
-      },
     ],
   };
 };

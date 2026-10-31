@@ -7,7 +7,15 @@ import { ResourceMainInfo } from "@/pages/utils/types";
 import { getClientVisibilityAccess } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight, BellRing, Filter, KeyRound, ListOrdered, Zap } from "lucide-react";
+import {
+  ArrowUpRight,
+  BellRing,
+  Filter,
+  KeyRound,
+  ListOrdered,
+  Scale,
+  Zap,
+} from "lucide-react";
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { EFFECT_META, EffectBadge, EffectKey, getEffectKey, normalizeRef, RefChip } from "../common";
@@ -270,16 +278,20 @@ export const MainInfo = (props: { item: AccessC.Policy }): ResourceMainInfo => {
 
   return {
     header: <Activity item={item} />,
-    groupOrder: ["Rules"],
+    groupOrder: [
+      { title: "Rules", icon: ListOrdered },
+    ],
     items: [
       {
         label: "Rules",
         primary: true,
+        icon: ListOrdered,
         value: <span className="font-semibold">{rules.length}</span>,
       },
       {
         label: "Effects",
         primary: true,
+        icon: Scale,
         value:
           mix.length === 0 ? (
             "None"
@@ -297,6 +309,7 @@ export const MainInfo = (props: { item: AccessC.Policy }): ResourceMainInfo => {
       {
         label: "Presented on",
         primary: true,
+        icon: BellRing,
         value: <Integrations rules={rules} />,
       },
       {

@@ -3,9 +3,32 @@ import CopyText from "@/components/CopyText";
 import Label from "@/components/Label";
 import TimeAgo from "@/components/TimeAgo";
 import { ResourceMainInfo } from "@/pages/utils/types";
-import { Alert } from "@mantine/core";
-import { AlertTriangle, Loader2 } from "lucide-react";
-import { twMerge } from "@/lib/utils";
+import {
+  Activity,
+  AlertTriangle,
+  History,
+  Loader2,
+  RefreshCw,
+  LockKeyhole,
+} from "lucide-react";
+import {
+  HeroStat,
+  HistoryList,
+  MutedValue,
+  OverviewHero,
+  OverviewNotice,
+  ResourceActionButton,
+  TonePill,
+} from "@/components/ResourceLayout/overview";
+import { onError } from "@/utils";
+import { getClientEnterprise } from "@/utils/client";
+import {
+  getResourceRef,
+  invalidateResource,
+  invalidateResourceList,
+} from "@/utils/pb";
+import { notifications } from "@mantine/notifications";
+import { useMutation } from "@tanstack/react-query";
 import {
   getSecretStorePresentation,
   getSecretStoreSyncState,
@@ -20,81 +43,124 @@ const copied = (value?: string) =>
 
 export default (_props: { item: EnterpriseP.SecretStore }) => <></>;
 
+const Sync = EnterpriseP.SecretStore_Status_Synchronization_State;
+
+const isSyncing = (state?: EnterpriseP.SecretStore_Status_Synchronization_State) =>
+  state === Sync.SYNC_REQUESTED || state === Sync.SYNCING;
+
+const SynchronizeButton = (props: { item: EnterpriseP.SecretStore }) => {
+  const presentation = getSecretStorePresentation(props.item);
+  const mutation = useMutation({
+    mutationFn: async () =>
+      (
+        await getClientEnterprise().synchronizeSecretStore({
+          secretStoreRef: getResourceRef(props.item),
+        })
+      ).response,
+    onSuccess: () => {
+      notifications.show({
+        color: "green",
+        message: "Synchronization requested",
+      });
+      invalidateResource(props.item);
+      invalidateResourceList(props.item);
+    },
+    onError,
+  });
+
+  return (
+    <ResourceActionButton
+      tone="primary"
+      icon={RefreshCw}
+      loading={mutation.isPending || isSyncing(presentation.currentSync?.state)}
+      onClick={() => mutation.mutate()}
+    >
+      Synchronize now
+    </ResourceActionButton>
+  );
+};
+
+const SecretStoreHero = (props: { item: EnterpriseP.SecretStore }) => {
+  const { item } = props;
+  const p = getSecretStorePresentation(item);
+  const failed = p.currentSync?.state === Sync.FAILED;
+  const syncing = isSyncing(p.currentSync?.state);
+  const lastSync = p.lastSuccessfulSync;
+
+  return (
+    <OverviewHero
+      tone={failed ? "danger" : syncing ? "info" : p.runtimeState.tone}
+      icon={
+        syncing || item.status?.state === EnterpriseP.SecretStore_Status_State.LOADING ? (
+          <Loader2 size={18} className="motion-safe:animate-spin" />
+        ) : (
+          <LockKeyhole size={18} strokeWidth={2.2} />
+        )
+      }
+      title={p.type}
+      detail={
+        <>
+          {p.runtimeState.label}
+          {syncing && " · synchronizing"}
+          {lastSync?.completedAt && (
+            <>
+              {" · last synchronized "}
+              <TimeAgo rfc3339={lastSync.completedAt} />
+            </>
+          )}
+        </>
+      }
+      aside={
+        p.currentSync && (
+          <HeroStat
+            label="Synchronization"
+            tone={p.syncState.tone}
+            value={p.syncState.label}
+          />
+        )
+      }
+    >
+      {failed && (
+        <OverviewNotice tone="danger" icon={AlertTriangle} title="The last synchronization failed.">
+          The API does not expose a failure reason; inspect the component logs
+          and synchronize again.
+        </OverviewNotice>
+      )}
+    </OverviewHero>
+  );
+};
+
 export const MainInfo = (props: {
   item: EnterpriseP.SecretStore;
 }): ResourceMainInfo => {
   const { item } = props;
   const presentation = getSecretStorePresentation(item);
   const type = item.spec?.type;
-  const items: NonNullable<ResourceMainInfo["items"]> = [
-    {
-      label: "Store type",
-      value: <Label>{presentation.type}</Label>,
-    },
-    {
-      label: "Runtime state",
-      value: (
-        <span
-          className={twMerge(
-            "inline-flex items-center gap-1.5 font-semibold",
-            presentation.runtimeState.tone === "success"
-              ? "text-emerald-600"
-              : presentation.runtimeState.tone === "info"
-                ? "text-blue-600"
-                : "text-slate-500",
-          )}
-        >
-          {item.status?.state === EnterpriseP.SecretStore_Status_State.LOADING && (
-            <Loader2 size={13} className="motion-safe:animate-spin" />
-          )}
-          {presentation.runtimeState.label}
-        </span>
-      ),
-    },
-  ];
-
-  if (
-    item.status?.type &&
-    presentation.runtimeType !== "Unknown" &&
-    presentation.runtimeType !== presentation.type
-  ) {
-    items.push({
-      label: "Runtime backend",
-      value: <Label>{presentation.runtimeType}</Label>,
-    });
-  }
+  const config: { label: string; value: React.ReactNode; span?: "full" }[] = [];
 
   if (type?.oneofKind === "kubernetes") {
-    items.push({
+    config.push({
       label: "Storage",
       value: "Cluster-native Kubernetes key storage",
       span: "full",
     });
   }
   if (type?.oneofKind === "hashicorpVault") {
-    items.push(
-      {
-        label: "Vault address",
-        value: copied(type.hashicorpVault.address),
-        span: "full",
-      },
+    config.push(
+      { label: "Vault address", value: copied(type.hashicorpVault.address), span: "full" },
       { label: "Role", value: copied(type.hashicorpVault.role) },
       { label: "Key", value: copied(type.hashicorpVault.key) },
     );
   }
   if (type?.oneofKind === "awsKeyManagementService") {
-    items.push(
+    config.push(
       { label: "Key ID", value: copied(type.awsKeyManagementService.keyID) },
       { label: "Region", value: type.awsKeyManagementService.region || "Not configured" },
-      {
-        label: "Role ARN",
-        value: copied(type.awsKeyManagementService.roleARN),
-        span: "full",
-      },
+      { label: "Role ARN", value: copied(type.awsKeyManagementService.roleARN), span: "full" },
     );
   }
   if (type?.oneofKind === "googleCloudKeyManagementService") {
-    items.push(
+    config.push(
       { label: "Project", value: copied(type.googleCloudKeyManagementService.project) },
       { label: "Location", value: type.googleCloudKeyManagementService.location || "Not configured" },
       { label: "Key ring", value: copied(type.googleCloudKeyManagementService.keyRing) },
@@ -102,117 +168,108 @@ export const MainInfo = (props: {
     );
   }
   if (type?.oneofKind === "azureKeyVault") {
-    items.push(
+    config.push(
+      { label: "Vault URL", value: copied(type.azureKeyVault.vaultURL), span: "full" },
       { label: "Client ID", value: copied(type.azureKeyVault.clientID) },
       { label: "Tenant ID", value: copied(type.azureKeyVault.tenantID) },
-      {
-        label: "Vault URL",
-        value: copied(type.azureKeyVault.vaultURL),
-        span: "full",
-      },
       { label: "Key", value: copied(type.azureKeyVault.key) },
     );
   }
 
-  if (presentation.currentSync) {
-    const sync = presentation.currentSync;
-    items.push({
-      label: "Current synchronization",
-      span: "full",
-      value: (
-        <div className="flex flex-wrap items-center gap-2">
-          {(sync.state ===
-            EnterpriseP.SecretStore_Status_Synchronization_State.SYNC_REQUESTED ||
-            sync.state ===
-              EnterpriseP.SecretStore_Status_Synchronization_State.SYNCING) && (
-            <Loader2 size={13} className="motion-safe:animate-spin text-blue-500" />
-          )}
-          <span
-            className={twMerge(
-              "font-semibold",
-              presentation.syncState.tone === "success"
-                ? "text-emerald-600"
-                : presentation.syncState.tone === "danger"
-                  ? "text-red-600"
-                  : "text-blue-600",
-            )}
-          >
-            {presentation.syncState.label}
+  return {
+    header: <SecretStoreHero item={item} />,
+    actions: <SynchronizeButton item={item} />,
+    groupOrder: [
+      { title: "Backend", icon: LockKeyhole },
+      { title: "Synchronization", icon: RefreshCw },
+    ],
+    items: [
+      {
+        label: "Type",
+        primary: true,
+        icon: LockKeyhole,
+        value: <Label>{presentation.type}</Label>,
+      },
+      {
+        label: "Runtime",
+        primary: true,
+        icon: Activity,
+        value: (
+          <TonePill tone={presentation.runtimeState.tone}>
+            {presentation.runtimeState.label}
+          </TonePill>
+        ),
+        hint:
+          item.status?.type &&
+          presentation.runtimeType !== "Unknown" &&
+          presentation.runtimeType !== presentation.type
+            ? `Backend ${presentation.runtimeType}`
+            : undefined,
+      },
+      {
+        label: "Last synchronized",
+        primary: true,
+        icon: History,
+        value: presentation.lastSuccessfulSync?.completedAt ? (
+          <TimeAgo rfc3339={presentation.lastSuccessfulSync.completedAt} />
+        ) : (
+          <MutedValue>Never</MutedValue>
+        ),
+      },
+      {
+        label: "Synchronizations",
+        primary: true,
+        icon: RefreshCw,
+        value: (
+          <span className="font-semibold tabular-nums">
+            {presentation.allSynchronizations.length}
           </span>
-          {sync.createdAt && (
-            <span className="text-xs font-normal text-slate-500">
-              Started <TimeAgo rfc3339={sync.createdAt} />
-            </span>
-          )}
-          {sync.completedAt && (
-            <span className="text-xs font-normal text-slate-500">
-              Completed <TimeAgo rfc3339={sync.completedAt} />
-            </span>
-          )}
-        </div>
-      ),
-    });
-  }
-
-  if (presentation.allSynchronizations.length) {
-    items.push({
-      label: "Synchronization history",
-      span: "full",
-      value: (
-        <div className="w-full overflow-hidden rounded-lg border border-slate-200">
-          {presentation.allSynchronizations.slice(0, 6).map((entry, index) => {
-            const state = getSecretStoreSyncState(entry.state);
-            return (
-              <div
-                key={`${entry.createdAt?.seconds ?? 0}-${entry.completedAt?.seconds ?? 0}-${index}`}
-                className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-white px-3 py-2 last:border-0"
-              >
-                <span
-                  className={twMerge(
-                    "text-xs font-semibold",
-                    state.tone === "success"
-                      ? "text-emerald-600"
-                      : state.tone === "danger"
-                        ? "text-red-600"
-                        : "text-blue-600",
-                  )}
-                >
-                  {index === 0 && presentation.currentSync === entry
-                    ? "Current · "
-                    : ""}
-                  {state.label}
-                </span>
-                <div className="flex gap-3 text-xs font-normal text-slate-500">
-                  {entry.createdAt && (
-                    <span>Started <TimeAgo rfc3339={entry.createdAt} /></span>
-                  )}
-                  {entry.completedAt && (
-                    <span>Completed <TimeAgo rfc3339={entry.completedAt} /></span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ),
-    });
-  }
-
-  if (
-    presentation.currentSync?.state ===
-    EnterpriseP.SecretStore_Status_Synchronization_State.FAILED
-  ) {
-    items.push({
-      label: "Synchronization failure",
-      span: "full",
-      value: (
-        <Alert color="red" icon={<AlertTriangle size={14} />}>
-          The API does not expose a failure reason. Inspect component logs for
-          more information.
-        </Alert>
-      ),
-    });
-  }
-
-  return { items };
+        ),
+      },
+      ...config.map((entry) => ({ ...entry, group: "Backend" })),
+      ...(presentation.allSynchronizations.length
+        ? [
+            {
+              label: "History",
+              group: "Synchronization",
+              layout: "stacked" as const,
+              value: (
+                <HistoryList
+                  entries={presentation.allSynchronizations
+                    .slice(0, 6)
+                    .map((entry, index) => {
+                      const state = getSecretStoreSyncState(entry.state);
+                      return {
+                        key: `${entry.createdAt?.seconds ?? 0}-${entry.completedAt?.seconds ?? 0}-${index}`,
+                        tone: state.tone,
+                        label: `${index === 0 && presentation.currentSync === entry ? "Current · " : ""}${state.label}`,
+                        meta: (
+                          <>
+                            {entry.createdAt && (
+                              <span>
+                                Started <TimeAgo rfc3339={entry.createdAt} />
+                              </span>
+                            )}
+                            {entry.completedAt && (
+                              <span>
+                                Completed <TimeAgo rfc3339={entry.completedAt} />
+                              </span>
+                            )}
+                          </>
+                        ),
+                      };
+                    })}
+                />
+              ),
+            },
+          ]
+        : [
+            {
+              label: "History",
+              group: "Synchronization",
+              value: <MutedValue>Never synchronized</MutedValue>,
+            },
+          ]),
+    ],
+  };
 };

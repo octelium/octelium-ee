@@ -5,7 +5,6 @@ import {
 } from "@/apis/enterprisev1/enterprisev1";
 import InfoItem from "@/components/InfoItem";
 import { ResourceListLabel } from "@/components/ResourceList";
-import TimeAgo from "@/components/TimeAgo";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { onError } from "@/utils";
 import { getClientEnterprise } from "@/utils/client";
@@ -17,8 +16,35 @@ import {
 import { Alert, Button, Modal } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
-import { AlertTriangle, Loader2, RefreshCcw, ShieldCheck, X } from "lucide-react";
-import { twMerge } from "@/lib/utils";
+import {
+  Activity,
+  AlertTriangle,
+  Clock3,
+  FileBadge,
+  Globe2,
+  Landmark,
+  Loader2,
+  RefreshCcw,
+  Server,
+  ShieldCheck,
+  Upload,
+  X,
+} from "lucide-react";
+import CopyText from "@/components/CopyText";
+import TimeAgo, { useNow } from "@/components/TimeAgo";
+import {
+  formatSeconds,
+  HeroStat,
+  HistoryList,
+  Meter,
+  MutedValue,
+  OverviewHero,
+  OverviewNotice,
+  remainingPercent,
+  ResourceActionButton,
+  toDate,
+  TonePill,
+} from "@/components/ResourceLayout/overview";
 import { match } from "ts-pattern";
 import { getCertificatePresentation, getIssuanceState } from "./List";
 import { SetCertificateC } from "./SetCertificateC";
@@ -45,15 +71,14 @@ export const IssueC = (props: { item: Certificate }) => {
 
   return (
     <>
-      <Button
-        type="button"
-        size="compact-sm"
-        color="ink"
-        leftSection={<RefreshCcw size={13} />}
+      <ResourceActionButton
+        tone="primary"
+        icon={RefreshCcw}
+        loading={presentation.isInProgress}
         onClick={open}
       >
-        {presentation.successfulIssuance ? "Re-issue certificate" : "Issue certificate"}
-      </Button>
+        {presentation.successfulIssuance ? "Re-issue" : "Issue certificate"}
+      </ResourceActionButton>
       <Modal
         opened={opened}
         onClose={close}
@@ -176,55 +201,277 @@ export default (props: { item: Certificate }) => {
   );
 };
 
+const issuanceTone = (state?: Certificate_Status_Issuance_State) =>
+  match(state)
+    .with(Certificate_Status_Issuance_State.SUCCESS, () => "success" as const)
+    .with(Certificate_Status_Issuance_State.FAILED, () => "danger" as const)
+    .with(
+      Certificate_Status_Issuance_State.ISSUING,
+      Certificate_Status_Issuance_State.ISSUANCE_REQUESTED,
+      () => "info" as const,
+    )
+    .otherwise(() => "neutral" as const);
+
+const expiryTone = (state: string) =>
+  state === "valid"
+    ? ("success" as const)
+    : state === "expiring"
+      ? ("warning" as const)
+      : state === "expired"
+        ? ("danger" as const)
+        : ("neutral" as const);
+
+const MAX_DNS_NAMES = 4;
+
+const CertificateHero = (props: { item: Certificate }) => {
+  const { item } = props;
+  const now = useNow();
+  const p = getCertificatePresentation(item);
+  const info = item.status?.info;
+  const notBefore = toDate(info?.notBefore ?? p.successfulIssuance?.issuanceCompletedAt);
+  const left = p.expiresAt ? (p.expiresAt.getTime() - now) / 1000 : undefined;
+  const validity = remainingPercent(notBefore, p.expiresAt, now);
+  const isManaged = item.spec?.mode === Certificate_Spec_Mode.MANAGED;
+  const tone = p.isInProgress && p.expiryState === "unknown" ? "info" : expiryTone(p.expiryState);
+  const dnsNames = info?.dnsNames ?? [];
+  const failed =
+    p.issuance?.state === Certificate_Status_Issuance_State.FAILED;
+  const expiresAtTimestamp =
+    p.successfulIssuance?.expiresAt ?? info?.notAfter;
+
+  return (
+    <OverviewHero
+      tone={failed && p.expiryState === "unknown" ? "danger" : tone}
+      icon={<ShieldCheck size={18} strokeWidth={2.2} />}
+      title={info?.commonName || dnsNames[0] || item.metadata?.name}
+      detail={[
+        isManaged
+          ? `Managed by ${item.status?.certificateIssuerRef?.name || "the default CertificateIssuer"}`
+          : "Manually provided",
+        info?.issuer && `issued by ${info.issuer}`,
+      ]
+        .filter(Boolean)
+        .join(" · ")}
+      meta={
+        dnsNames.length > 0 && (
+          <>
+            {dnsNames.slice(0, MAX_DNS_NAMES).map((name) => (
+              <TonePill key={name} icon={Globe2}>
+                {name}
+              </TonePill>
+            ))}
+            {dnsNames.length > MAX_DNS_NAMES && (
+              <TonePill>+{dnsNames.length - MAX_DNS_NAMES} more</TonePill>
+            )}
+          </>
+        )
+      }
+      meter={
+        validity !== undefined &&
+        left !== undefined &&
+        left > 0 && (
+          <Meter
+            value={validity}
+            label="Certificate validity left"
+            tone={p.expiryState === "expiring" ? "warning" : "success"}
+            caption={`${formatSeconds(left)} of validity left`}
+          />
+        )
+      }
+      aside={
+        <HeroStat
+          label={left !== undefined && left <= 0 ? "Expired" : "Expires"}
+          tone={expiryTone(p.expiryState)}
+          value={
+            expiresAtTimestamp ? (
+              <TimeAgo rfc3339={expiresAtTimestamp} />
+            ) : (
+              "Unknown"
+            )
+          }
+        />
+      }
+    >
+      {p.isInProgress && (
+        <OverviewNotice tone="info" icon={Loader2} title="Issuance in progress.">
+          The CertificateIssuer is issuing a new certificate.
+        </OverviewNotice>
+      )}
+      {failed && (
+        <OverviewNotice tone="danger" icon={AlertTriangle} title="The last issuance failed.">
+          {p.successfulIssuance
+            ? "The previous certificate is still served."
+            : "No certificate is served yet."}
+        </OverviewNotice>
+      )}
+      {p.expiryState === "expired" && (
+        <OverviewNotice tone="danger" icon={AlertTriangle} title="Expired.">
+          {isManaged ? "Re-issue the certificate" : "Set a new certificate"} to
+          restore TLS for the associated resource.
+        </OverviewNotice>
+      )}
+      {p.expiryState === "expiring" && !isManaged && (
+        <OverviewNotice tone="warning" icon={Clock3} title="Expiring soon.">
+          Set a renewed certificate before it expires.
+        </OverviewNotice>
+      )}
+      {p.expiryState === "unknown" && !p.isInProgress && !failed && (
+        <OverviewNotice tone="warning" icon={ShieldCheck} title="No certificate yet.">
+          {isManaged
+            ? "Issue the certificate to start serving it."
+            : "Set a certificate and its private key to start serving it."}
+        </OverviewNotice>
+      )}
+    </OverviewHero>
+  );
+};
+
 export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
   const { item } = props;
   const presentation = getCertificatePresentation(item);
   const issuance = presentation.issuance;
   const lastSuccess = presentation.successfulIssuance;
-
-  const isInProgress =
-    issuance?.state === Certificate_Status_Issuance_State.ISSUING ||
-    issuance?.state === Certificate_Status_Issuance_State.ISSUANCE_REQUESTED;
+  const info = item.status?.info;
+  const isManaged = item.spec?.mode === Certificate_Spec_Mode.MANAGED;
+  const usedBy = item.status?.serviceRef?.name
+    ? item.status.serviceRef
+    : item.status?.namespaceRef?.name
+      ? item.status.namespaceRef
+      : undefined;
+  const history = [
+    ...(issuance ? [issuance] : []),
+    ...(item.status?.lastIssuances ?? []),
+  ]
+    .sort((a, b) => {
+      const aTime = a.issuanceCompletedAt ?? a.createdAt;
+      const bTime = b.issuanceCompletedAt ?? b.createdAt;
+      return (
+        (bTime ? Number(bTime.seconds) : 0) - (aTime ? Number(aTime.seconds) : 0)
+      );
+    })
+    .slice(0, 6);
 
   return {
+    header: <CertificateHero item={item} />,
+    actions: isManaged ? <IssueC item={item} /> : <SetCertificateC item={item} />,
+    groupOrder: [
+      { title: "Certificate", icon: FileBadge },
+      { title: "Issuance", icon: RefreshCcw },
+    ],
     items: [
       {
         label: "Mode",
+        primary: true,
+        icon: isManaged ? RefreshCcw : Upload,
         value: (
-          <span className="text-sm font-semibold text-slate-700">
-            {presentation.mode}
+          <span className="flex flex-col">
+            <span className="font-semibold">{presentation.mode}</span>
+            <span className="text-xs font-normal text-slate-500">
+              {isManaged ? "Issued via ACME" : "Uploaded by an administrator"}
+            </span>
           </span>
         ),
       },
-      ...(presentation.expiryState !== "unknown"
+      {
+        label: "Issuer",
+        primary: true,
+        icon: Landmark,
+        value: item.status?.certificateIssuerRef?.name ? (
+          <ResourceListLabel
+            label="Issuer"
+            itemRef={item.status.certificateIssuerRef}
+          />
+        ) : (
+          <MutedValue>{isManaged ? "Cluster default" : "External CA"}</MutedValue>
+        ),
+      },
+      {
+        label: "Serves",
+        primary: true,
+        icon: Server,
+        value: usedBy ? (
+          <ResourceListLabel itemRef={usedBy} />
+        ) : (
+          <MutedValue>The Cluster</MutedValue>
+        ),
+      },
+      {
+        label: "Issuances",
+        primary: true,
+        icon: Activity,
+        value: (
+          <span className="font-semibold tabular-nums">
+            {(item.status?.successfulIssuances ?? 0).toLocaleString()}
+            {(item.status?.failedIssuances ?? 0) > 0 && (
+              <span className="ml-1.5 text-xs font-normal text-red-600">
+                {item.status!.failedIssuances.toLocaleString()} failed
+              </span>
+            )}
+          </span>
+        ),
+      },
+
+      ...(info?.commonName
         ? [
             {
-              label: "Certificate health",
-              value: (
-                <span
-                  className={twMerge(
-                    "font-semibold capitalize",
-                    presentation.expiryState === "valid"
-                      ? "text-emerald-600"
-                      : presentation.expiryState === "expiring"
-                        ? "text-amber-600"
-                        : "text-red-600",
-                  )}
-                >
-                  {presentation.expiryState === "expiring"
-                    ? "Expiring soon"
-                    : presentation.expiryState}
-                </span>
-              ),
+              label: "Common name",
+              group: "Certificate",
+              value: <CopyText value={info.commonName} />,
             },
           ]
         : []),
-      ...(item.status?.certificateIssuerRef?.name
+      ...(info?.notBefore
         ? [
             {
-              label: "Certificate issuer",
+              label: "Valid from",
+              group: "Certificate",
+              value: <TimeAgo rfc3339={info.notBefore} />,
+            },
+          ]
+        : []),
+      ...(info?.notAfter
+        ? [
+            {
+              label: "Valid until",
+              group: "Certificate",
+              value: <TimeAgo rfc3339={info.notAfter} />,
+            },
+          ]
+        : []),
+      ...(info?.subject
+        ? [
+            {
+              label: "Subject",
+              group: "Certificate",
+              span: "full" as const,
+              value: info.subject,
+            },
+          ]
+        : []),
+      ...(info?.issuer
+        ? [
+            {
+              label: "Issued by",
+              group: "Certificate",
+              span: "full" as const,
+              value: info.issuer,
+            },
+          ]
+        : []),
+      ...(info?.dnsNames.length
+        ? [
+            {
+              label: "DNS names",
+              group: "Certificate",
+              span: "full" as const,
               value: (
-                <ResourceListLabel itemRef={item.status.certificateIssuerRef} />
+                <div className="flex flex-wrap gap-1">
+                  {info.dnsNames.map((name) => (
+                    <ResourceListLabel key={name} label="DNS">
+                      <CopyText value={name} />
+                    </ResourceListLabel>
+                  ))}
+                </div>
               ),
             },
           ]
@@ -232,293 +479,92 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
       ...(item.status?.secretRef?.name
         ? [
             {
-              label: "Certificate secret",
+              label: "Stored in",
+              group: "Certificate",
               value: <ResourceListLabel itemRef={item.status.secretRef} />,
             },
           ]
         : []),
-      ...(item.status?.namespaceRef?.name
+      ...(!info
         ? [
             {
-              label: "Namespace",
-              value: (
-                <ResourceListLabel
-                  itemRef={item.status!.namespaceRef}
-                ></ResourceListLabel>
-              ),
+              label: "Details",
+              group: "Certificate",
+              value: <MutedValue>No certificate is available yet.</MutedValue>,
             },
           ]
         : []),
-      ...(item.status?.serviceRef?.name
-        ? [
-            {
-              label: "Service",
-              value: (
-                <ResourceListLabel
-                  itemRef={item.status!.serviceRef}
-                ></ResourceListLabel>
-              ),
-            },
-          ]
-        : []),
+
       ...(issuance
         ? [
             {
-              label: "Issuance state",
+              label: "Current state",
+              group: "Issuance",
               value: (
-                <span className="flex items-center gap-1.5">
-                  {isInProgress && (
-                    <Loader2
-                      size={13}
-                      strokeWidth={2.5}
-                      className="motion-safe:animate-spin text-blue-500 shrink-0"
-                    />
-                  )}
-                  <span
-                    className={twMerge(
-                      "text-sm font-semibold",
-                      match(issuance.state)
-                        .with(
-                          Certificate_Status_Issuance_State.SUCCESS,
-                          () => "text-emerald-600",
-                        )
-                        .with(
-                          Certificate_Status_Issuance_State.FAILED,
-                          () => "text-red-500",
-                        )
-                        .with(
-                          Certificate_Status_Issuance_State.ISSUING,
-                          () => "text-blue-500",
-                        )
-                        .with(
-                          Certificate_Status_Issuance_State.ISSUANCE_REQUESTED,
-                          () => "text-amber-500",
-                        )
-                        .otherwise(() => "text-slate-600"),
-                    )}
-                  >
-                    {getIssuanceState(issuance.state)}
-                  </span>
-                </span>
+                <TonePill
+                  tone={issuanceTone(issuance.state)}
+                  icon={presentation.isInProgress ? Loader2 : undefined}
+                >
+                  {getIssuanceState(issuance.state)}
+                </TonePill>
               ),
             },
           ]
         : []),
-
-      ...(issuance?.issuanceStartedAt
+      ...(lastSuccess?.issuanceCompletedAt || lastSuccess?.createdAt
         ? [
             {
-              label: "Issuance started",
-              value: <TimeAgo rfc3339={issuance.issuanceStartedAt} />,
-            },
-          ]
-        : []),
-
-      ...(issuance?.issuanceCompletedAt
-        ? [
-            {
-              label: "Issuance completed",
-              value: <TimeAgo rfc3339={issuance.issuanceCompletedAt} />,
-            },
-          ]
-        : []),
-
-      ...(lastSuccess?.createdAt
-        ? [
-            {
-              label: "Last issuance",
+              label: "Last success",
+              group: "Issuance",
               value: (
-                <span className="text-sm font-semibold text-slate-700">
-                  <TimeAgo rfc3339={lastSuccess.createdAt} />
-                </span>
+                <TimeAgo
+                  rfc3339={lastSuccess.issuanceCompletedAt ?? lastSuccess.createdAt}
+                />
               ),
             },
           ]
         : []),
-
-      ...(lastSuccess?.expiresAt
+      ...(history.length > 0
         ? [
             {
-              label: "Expiration",
+              label: "History",
+              group: "Issuance",
+              layout: "stacked" as const,
               value: (
-                <span className="text-sm font-semibold text-slate-700">
-                  <TimeAgo rfc3339={lastSuccess.expiresAt} />
-                </span>
-              ),
-            },
-          ]
-        : []),
-
-      ...((item.status?.successfulIssuances ?? 0) > 0
-        ? [
-            {
-              label: "Successful issuances",
-              value: item.status!.successfulIssuances.toLocaleString(),
-            },
-          ]
-        : []),
-      ...((item.status?.failedIssuances ?? 0) > 0
-        ? [
-            {
-              label: "Failed issuances",
-              value: (
-                <span className="font-semibold text-red-600">
-                  {item.status!.failedIssuances.toLocaleString()}
-                </span>
-              ),
-            },
-          ]
-        : []),
-
-      ...(item.status?.info
-        ? [
-            {
-              label: "Certificate Info",
-              span: "full" as const,
-              value: (
-                <div className="flex flex-col gap-1.5 w-full">
-                  {item.status.info.commonName && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
-                        Common Name
-                      </span>
-                      <span className="text-body font-semibold text-slate-700">
-                        {item.status.info.commonName}
-                      </span>
-                    </div>
-                  )}
-                  {item.status.info.subject && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
-                        Subject
-                      </span>
-                      <span className="truncate text-body font-semibold text-slate-700">
-                        {item.status.info.subject}
-                      </span>
-                    </div>
-                  )}
-                  {item.status.info.issuer && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
-                        Issuer
-                      </span>
-                      <span className="truncate text-body font-semibold text-slate-700">
-                        {item.status.info.issuer}
-                      </span>
-                    </div>
-                  )}
-                  {item.status.info.notBefore && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
-                        Not Before
-                      </span>
-                      <span className="text-body font-semibold text-slate-700">
-                        <TimeAgo rfc3339={item.status.info.notBefore} />
-                      </span>
-                    </div>
-                  )}
-                  {item.status.info.notAfter && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
-                        Not After
-                      </span>
-                      <span className="text-body font-semibold text-slate-700">
-                        <TimeAgo rfc3339={item.status.info.notAfter} />
-                      </span>
-                    </div>
-                  )}
-                  {item.status.info.dnsNames.length > 0 && (
-                    <div className="flex items-start gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0 pt-0.5">
-                        DNS Names
-                      </span>
-                      <div className="flex flex-wrap gap-1">
-                        {item.status.info.dnsNames.map((name) => (
-                          <span
-                            key={name}
-                            className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-xs font-normal text-slate-600"
-                          >
-                            {name}
+                <HistoryList
+                  entries={history.map((entry, index) => ({
+                    key: `${entry.createdAt?.seconds ?? 0}-${entry.state}-${index}`,
+                    tone: issuanceTone(entry.state),
+                    label: getIssuanceState(entry.state),
+                    meta: (
+                      <>
+                        {(entry.issuanceCompletedAt ?? entry.createdAt) && (
+                          <span>
+                            {entry.issuanceCompletedAt ? "Completed" : "Requested"}{" "}
+                            <TimeAgo
+                              rfc3339={entry.issuanceCompletedAt ?? entry.createdAt}
+                            />
                           </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                        )}
+                        {entry.expiresAt && (
+                          <span>
+                            Expires <TimeAgo rfc3339={entry.expiresAt} />
+                          </span>
+                        )}
+                      </>
+                    ),
+                  }))}
+                />
               ),
             },
           ]
-        : []),
-
-      ...(item.status?.lastIssuances.length
-        ? [
+        : [
             {
-              label: "Issuance history",
-              span: "full" as const,
-              value: (
-                <div className="w-full overflow-hidden rounded-lg border border-slate-200">
-                  {[...item.status.lastIssuances]
-                    .sort((a, b) => {
-                      const aTime = a.issuanceCompletedAt ?? a.createdAt;
-                      const bTime = b.issuanceCompletedAt ?? b.createdAt;
-                      return (
-                        (bTime ? Number(bTime.seconds) : 0) -
-                        (aTime ? Number(aTime.seconds) : 0)
-                      );
-                    })
-                    .slice(0, 5)
-                    .map((entry, index) => (
-                      <div
-                        key={`${entry.createdAt?.seconds ?? 0}-${entry.state}-${index}`}
-                        className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-white px-3 py-2 last:border-0"
-                      >
-                        <span
-                          className={twMerge(
-                            "text-xs font-semibold",
-                            entry.state ===
-                              Certificate_Status_Issuance_State.SUCCESS
-                              ? "text-emerald-600"
-                              : entry.state ===
-                                  Certificate_Status_Issuance_State.FAILED
-                                ? "text-red-600"
-                                : "text-blue-600",
-                          )}
-                        >
-                          {getIssuanceState(entry.state)}
-                        </span>
-                        <div className="flex items-center gap-3 text-xs font-normal text-slate-500">
-                          {entry.issuanceCompletedAt && (
-                            <span>
-                              Completed <TimeAgo rfc3339={entry.issuanceCompletedAt} />
-                            </span>
-                          )}
-                          {entry.expiresAt && (
-                            <span>
-                              Expires <TimeAgo rfc3339={entry.expiresAt} />
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              ),
+              label: "History",
+              group: "Issuance",
+              value: <MutedValue>No issuance yet</MutedValue>,
             },
-          ]
-        : []),
-
-      ...(item.spec?.mode === Certificate_Spec_Mode.MANAGED
-        ? [
-            {
-              label: "Issue",
-              value: <IssueC item={item} />,
-            },
-          ]
-        : []),
-
-      {
-        label: "Set",
-        value: <SetCertificateC item={item} />,
-      },
+          ]),
     ],
   };
 };

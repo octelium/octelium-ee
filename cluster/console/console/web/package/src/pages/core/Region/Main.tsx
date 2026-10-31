@@ -7,7 +7,12 @@ import { ResourceMainInfo } from "@/pages/utils/types";
 import { getClientCore } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
-import { Network, PanelTop } from "lucide-react";
+import { Globe2, Hash, Network, Package, PanelTop } from "lucide-react";
+import Label from "@/components/Label";
+import {
+  HistoryList,
+  MutedValue,
+} from "@/components/ResourceLayout/overview";
 
 export const AccessLog = (props: { item: CoreC.Region }) => {
   return <AccessLogViewer regionRef={getResourceRef(props.item)} />;
@@ -37,73 +42,83 @@ export const MainInfo = (props: { item: CoreC.Region }): ResourceMainInfo => {
         CoreC.ListServiceOptions.create({ regionRef: itemRef }),
       ).response,
   });
+  const versions = Object.entries(status?.versionInfoMap ?? {});
 
   return {
+    groupOrder: [
+      { title: "Networking", icon: Globe2 },
+      { title: "Components", icon: Package },
+    ],
     items: [
-      ...(status?.index !== undefined && status.index > 0
-        ? [
-            {
-              label: "Index",
-              value: <span className="font-semibold">{status.index}</span>,
-            },
-          ]
-        : []),
-
-      ...(status?.version
-        ? [
-            {
-              label: "Version",
-              value: (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 border border-slate-200 text-slate-700">
-                  {status.version}
-                </span>
-              ),
-            },
-          ]
-        : []),
-
       {
-        label: "Related resources",
-        value: (
-          <div className="flex flex-wrap gap-1">
-            <ResourceListLabel
-              label="Gateways"
-              to={`/core/gateways?regionRef.name=${encodeURIComponent(itemName)}`}
-            >
-              <Network size={12} strokeWidth={2.5} />
-              {qryGateways.data?.listResponseMeta?.totalCount?.toLocaleString() ??
-                "…"}
-            </ResourceListLabel>
-            <ResourceListLabel
-              label="Services"
-              to={`/core/services?regionRef.name=${encodeURIComponent(itemName)}`}
-            >
-              <PanelTop size={12} strokeWidth={2.5} />
-              {qryServices.data?.listResponseMeta?.totalCount?.toLocaleString() ??
-                "…"}
-            </ResourceListLabel>
-          </div>
+        label: "Version",
+        primary: true,
+        icon: Package,
+        value: status?.version ? (
+          <Label>{status.version}</Label>
+        ) : (
+          <MutedValue>Unknown</MutedValue>
         ),
-        span: "full",
+      },
+      {
+        label: "Gateways",
+        primary: true,
+        icon: Network,
+        value: (
+          <ResourceListLabel
+            label="Gateways"
+            to={`/core/gateways?regionRef.name=${encodeURIComponent(itemName)}`}
+          >
+            {qryGateways.data?.listResponseMeta?.totalCount?.toLocaleString() ??
+              "…"}
+          </ResourceListLabel>
+        ),
+      },
+      {
+        label: "Services",
+        primary: true,
+        icon: PanelTop,
+        value: (
+          <ResourceListLabel
+            label="Services"
+            to={`/core/services?regionRef.name=${encodeURIComponent(itemName)}`}
+          >
+            {qryServices.data?.listResponseMeta?.totalCount?.toLocaleString() ??
+              "…"}
+          </ResourceListLabel>
+        ),
+      },
+      {
+        label: "Index",
+        primary: true,
+        icon: Hash,
+        value: (
+          <span className="font-semibold tabular-nums">{status?.index ?? 0}</span>
+        ),
       },
 
-      ...(status?.publicHostname
+      {
+        label: "Public hostname",
+        group: "Networking",
+        span: "full" as const,
+        value: status?.publicHostname ? (
+          <CopyText value={status.publicHostname} />
+        ) : (
+          <MutedValue>Not set</MutedValue>
+        ),
+      },
+      ...(status?.ingressAddresses.length
         ? [
             {
-              label: "Public Hostname",
-              value: <CopyText value={status.publicHostname} />,
-            },
-          ]
-        : []),
-
-      ...(status?.ingressAddresses && status.ingressAddresses.length > 0
-        ? [
-            {
-              label: "Ingress Addresses",
+              label: "Ingress addresses",
+              group: "Networking",
+              span: "full" as const,
               value: (
-                <div className="flex flex-col gap-0.5">
+                <div className="flex flex-wrap gap-1">
                   {status.ingressAddresses.map((addr) => (
-                    <CopyText key={addr} value={addr} />
+                    <ResourceListLabel key={addr} label="Address">
+                      <CopyText value={addr} />
+                    </ResourceListLabel>
                   ))}
                 </div>
               ),
@@ -111,65 +126,32 @@ export const MainInfo = (props: { item: CoreC.Region }): ResourceMainInfo => {
           ]
         : []),
 
-      ...(status?.versionInfoMap &&
-      Object.keys(status.versionInfoMap).length > 0
+      ...(versions.length
         ? [
             {
-              label: "Version Info",
-              span: "full" as const,
+              label: "",
+              group: "Components",
+              layout: "stacked" as const,
               value: (
-                <div className="flex flex-col gap-2 w-full">
-                  {Object.entries(status.versionInfoMap).map(([key, info]) => (
-                    <div
-                      key={key}
-                      className="flex flex-col gap-1 p-3 rounded-lg border border-slate-100 bg-slate-50/60"
-                    >
-                      <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500 mb-0.5">
-                        {key}
-                      </span>
-                      <div className="flex flex-col gap-1">
-                        {info.version && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
-                              Version
-                            </span>
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-white border border-slate-200 text-slate-700">
-                              {info.version}
-                            </span>
-                          </div>
-                        )}
-                        {info.package && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
-                              Package
-                            </span>
-                            <span className="text-body font-normal text-slate-600">
-                              {info.package}
-                            </span>
-                          </div>
-                        )}
-                        {info.id && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
-                              ID
-                            </span>
-                            <CopyText value={info.id} />
-                          </div>
-                        )}
+                <HistoryList
+                  entries={versions.map(([key, info]) => ({
+                    key,
+                    tone: "neutral" as const,
+                    label: key,
+                    meta: (
+                      <>
+                        {info.version && <Label size="sm">{info.version}</Label>}
+                        {info.package && <span>{info.package}</span>}
                         {info.setAt && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
-                              Set At
-                            </span>
-                            <span className="text-body font-normal text-slate-600">
-                              <TimeAgo rfc3339={info.setAt} />
-                            </span>
-                          </div>
+                          <span>
+                            Set <TimeAgo rfc3339={info.setAt} />
+                          </span>
                         )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      </>
+                    ),
+                    detail: info.id ? <CopyText value={info.id} /> : undefined,
+                  }))}
+                />
               ),
             },
           ]

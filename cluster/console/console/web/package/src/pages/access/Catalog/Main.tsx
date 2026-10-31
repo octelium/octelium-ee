@@ -17,7 +17,16 @@ import { ResourceMainInfo } from "@/pages/utils/types";
 import { getClientVisibilityAccess } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight, Folder, Server, Shield } from "lucide-react";
+import {
+  ArrowUpRight,
+  Folder,
+  Hourglass,
+  KeyRound,
+  Layers,
+  Scale,
+  Server,
+  Shield,
+} from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { EffectBadge, EmptyNote, RefChip } from "../common";
 import { LiveRow, PendingRow, useNow } from "../Overview/Queues";
@@ -330,16 +339,23 @@ export const MainInfo = (props: { item: AccessC.Catalog }): ResourceMainInfo => 
 
   return {
     header: <Activity item={item} />,
-    groupOrder: ["Contents", "Decided by", "Live access", "Waiting for a decision"],
+    groupOrder: [
+      { title: "Contents", icon: Folder },
+      { title: "Decided by", icon: Scale },
+      { title: "Live access", icon: KeyRound },
+      { title: "Waiting for a decision", icon: Hourglass },
+    ],
     items: [
       {
         label: "Services",
         primary: true,
+        icon: Server,
         value: <span className="font-semibold">{services.length}</span>,
       },
       {
         label: "Namespaces",
         primary: true,
+        icon: Layers,
         value: <span className="font-semibold">{namespaces.length}</span>,
       },
       {

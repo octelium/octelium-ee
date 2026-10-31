@@ -1,5 +1,5 @@
 import { ResourceComponentInfo } from "@/pages/utils/types";
-import { lazyNamed, lazySpec } from "@/pages/utils/lazy";
+import { lazyNamed, lazyResourceInfo, lazySpec } from "@/pages/utils/lazy";
 import { Secret, Secret_Spec } from "@/apis/enterprisev1/enterprisev1";
 
 const resourceComponentInfo: ResourceComponentInfo = {
@@ -21,6 +21,8 @@ const resourceComponentInfo: ResourceComponentInfo = {
         status: {},
       }),
   },
+
+  infoItemsGetter: lazyResourceInfo(() => import("./Main")),
 };
 
 export default resourceComponentInfo;

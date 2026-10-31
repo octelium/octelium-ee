@@ -11,6 +11,7 @@ import {
   userRefOf,
   workspaceRefOf,
 } from "../utils";
+import { BadgeCheck, Boxes, GitBranch, UserRound } from "lucide-react";
 
 export const MainInfo = (props: {
   item: CordiumP.Membership;
@@ -24,11 +25,12 @@ export const MainInfo = (props: {
 
   return {
     status: { label: meta.label, tone: meta.tone },
-    groupOrder: ["Membership details", "Git providers"],
+    groupOrder: [{ title: "Git providers", icon: GitBranch }],
     items: [
       {
         label: "Role",
         primary: true,
+        icon: BadgeCheck,
         value: (
           <span className={twMerge("font-semibold", meta.className)}>
             {meta.label}
@@ -36,15 +38,31 @@ export const MainInfo = (props: {
         ),
       },
       ...(userRef
-        ? [{ label: "User", value: <ResourceListLabel itemRef={userRef} /> }]
+        ? [
+            {
+              label: "User",
+              primary: true,
+              icon: UserRound,
+              value: <ResourceListLabel itemRef={userRef} />,
+            },
+          ]
         : []),
       ...(spaceRef
-        ? [{ label: "Space", value: <ResourceListLabel itemRef={spaceRef} /> }]
+        ? [
+            {
+              label: "Space",
+              primary: true,
+              icon: Boxes,
+              value: <ResourceListLabel itemRef={spaceRef} />,
+            },
+          ]
         : []),
       ...(status?.userInfo?.displayName
         ? [
             {
               label: "Display name",
+              primary: true,
+              icon: UserRound,
               value: (
                 <span className="font-semibold text-slate-700">
                   {status.userInfo.displayName}

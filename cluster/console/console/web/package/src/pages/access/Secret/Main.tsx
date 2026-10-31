@@ -4,6 +4,8 @@ import Label from "@/components/Label";
 import { ResourceListLabel } from "@/components/ResourceList";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { useSecretUsage } from "./List";
+import TimeAgo from "@/components/TimeAgo";
+import { EyeOff, History, Workflow } from "lucide-react";
 
 const Usage = (props: { item: AccessC.Secret }) => {
   const usage = useSecretUsage(props.item.metadata?.name);
@@ -61,14 +63,28 @@ export const MainInfo = (props: {
   const { item } = props;
 
   return {
+    groupOrder: [{ title: "Used by", icon: Workflow }],
     items: [
       {
-        label: "Data",
+        label: "Value",
+        primary: true,
+        icon: EyeOff,
         value: <Label>Write-only</Label>,
-        hint: "The data of an access Secret is only ever read by the Cluster itself and it is never returned by the API.",
+        hint: "Only the Cluster reads the value; the API never returns it.",
       },
       {
-        label: "Used by",
+        label: "Last changed",
+        primary: true,
+        icon: History,
+        value: (
+          <TimeAgo
+            rfc3339={item.metadata?.updatedAt ?? item.metadata?.createdAt}
+          />
+        ),
+      },
+      {
+        label: "Integrations",
+        group: "Used by",
         span: "full" as const,
         value: <Usage item={item} />,
       },

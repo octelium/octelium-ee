@@ -87,9 +87,9 @@ const CloneResource = (props: {
     <>
       {!props.hideTrigger && (
         <Button
-          size="compact-xs"
-          variant="outline"
-          leftSection={<Copy size={11} />}
+          size="compact-sm"
+          variant="default"
+          leftSection={<Copy size={13} strokeWidth={2.25} />}
           onClick={(e: React.MouseEvent) => {
             e.stopPropagation();
             open();

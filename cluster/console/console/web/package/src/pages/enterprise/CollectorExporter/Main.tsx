@@ -8,6 +8,8 @@ import { ResourceMainInfo } from "@/pages/utils/types";
 import { cloneResource } from "@/utils/pb";
 import { twMerge } from "@/lib/utils";
 import { getDestination, getType } from "./List";
+import { OverviewNotice } from "@/components/ResourceLayout/overview";
+import { Ban, KeyRound, Radio, Send, SlidersHorizontal } from "lucide-react";
 
 const secretLabel = (name: string) => <ResourceListLabel itemRef={ObjectReference.create({ apiVersion: "enterprise/v1", kind: "Secret", name })} />;
 
@@ -45,18 +47,33 @@ export const MainInfo = (props: { item: CollectorExporter }): ResourceMainInfo =
   const type = item.spec?.type;
   const auth = getAuthInfo(item);
   const items: NonNullable<ResourceMainInfo["items"]> = [
-    { label: "Type", value: <Label>{getType(item)}</Label> },
-    ...(destination ? [{ label: "Destination", value: <CopyText value={destination} />, span: "full" as const }] : []),
-    ...(auth ? [{ label: "Authentication", value: auth.method }, ...(auth.secret ? [{ label: "Credential Secret", value: secretLabel(auth.secret) }] : [])] : []),
+    { label: "Type", primary: true, icon: Radio, value: <Label>{getType(item)}</Label> },
+    { label: "Authentication", primary: true, icon: KeyRound, value: auth?.method ?? <span className="text-slate-500">None</span> },
+    ...(auth?.secret ? [{ label: "Credential", primary: true, icon: KeyRound, value: secretLabel(auth.secret) }] : []),
+    ...(destination ? [{ label: "Destination", group: "Destination", value: <CopyText value={destination} />, span: "full" as const }] : []),
   ];
 
-  if (type?.oneofKind === "kafka") items.push({ label: "Brokers", value: type.kafka.brokers.join(", ") || "Not configured", span: "full" }, { label: "Logs topic", value: type.kafka.logs?.topic || "Not configured" }, { label: "Metrics topic", value: type.kafka.metrics?.topic || "Not configured" });
-  if (type?.oneofKind === "elasticsearch") items.push({ label: "Logs index", value: type.elasticsearch.logsIndex || "Default" }, { label: "Metrics index", value: type.elasticsearch.metricsIndex || "Default" }, { label: "Configured endpoints", value: String(type.elasticsearch.endpoints.length || (type.elasticsearch.endpoint ? 1 : 0)) });
-  if (type?.oneofKind === "influxDB") items.push({ label: "Organization", value: type.influxDB.org || "Not configured" }, { label: "Bucket", value: type.influxDB.bucket || "Not configured" });
-  if (type?.oneofKind === "clickhouse") items.push({ label: "Database", value: type.clickhouse.database || "Default" }, { label: "Logs table", value: type.clickhouse.logsTableName || "Default" });
-  if (type?.oneofKind === "datadog") items.push({ label: "Hostname", value: type.datadog.hostname || "Automatically detected" }, { label: "Site", value: type.datadog.api?.site || "Default" });
-  if (type?.oneofKind === "splunk") items.push({ label: "Index", value: type.splunk.index || "Default" }, { label: "Source type", value: type.splunk.sourceType || "Default" });
-  if (type?.oneofKind === "azureDataExplorer") items.push({ label: "Database", value: type.azureDataExplorer.database || "Not configured" }, { label: "Logs table", value: type.azureDataExplorer.logsTable || "Not configured" }, { label: "Metrics table", value: type.azureDataExplorer.metricsTable || "Not configured" });
+  const settings: NonNullable<ResourceMainInfo["items"]> = [];
+  if (type?.oneofKind === "kafka") settings.push({ label: "Brokers", value: type.kafka.brokers.join(", ") || "Not configured", span: "full" }, { label: "Logs topic", value: type.kafka.logs?.topic || "Not configured" }, { label: "Metrics topic", value: type.kafka.metrics?.topic || "Not configured" });
+  if (type?.oneofKind === "elasticsearch") settings.push({ label: "Logs index", value: type.elasticsearch.logsIndex || "Default" }, { label: "Metrics index", value: type.elasticsearch.metricsIndex || "Default" }, { label: "Configured endpoints", value: String(type.elasticsearch.endpoints.length || (type.elasticsearch.endpoint ? 1 : 0)) });
+  if (type?.oneofKind === "influxDB") settings.push({ label: "Organization", value: type.influxDB.org || "Not configured" }, { label: "Bucket", value: type.influxDB.bucket || "Not configured" });
+  if (type?.oneofKind === "clickhouse") settings.push({ label: "Database", value: type.clickhouse.database || "Default" }, { label: "Logs table", value: type.clickhouse.logsTableName || "Default" });
+  if (type?.oneofKind === "datadog") settings.push({ label: "Hostname", value: type.datadog.hostname || "Automatically detected" }, { label: "Site", value: type.datadog.api?.site || "Default" });
+  if (type?.oneofKind === "splunk") settings.push({ label: "Index", value: type.splunk.index || "Default" }, { label: "Source type", value: type.splunk.sourceType || "Default" });
+  if (type?.oneofKind === "azureDataExplorer") settings.push({ label: "Database", value: type.azureDataExplorer.database || "Not configured" }, { label: "Logs table", value: type.azureDataExplorer.logsTable || "Not configured" }, { label: "Metrics table", value: type.azureDataExplorer.metricsTable || "Not configured" });
 
-  return { items };
+  return {
+    header: item.spec?.isDisabled ? (
+      <div className="border-b border-slate-200 bg-white px-4 py-3">
+        <OverviewNotice tone="danger" icon={Ban} title="Disabled.">
+          No logs or metrics are exported to this destination.
+        </OverviewNotice>
+      </div>
+    ) : undefined,
+    groupOrder: [
+      { title: "Destination", icon: Send },
+      { title: "Settings", icon: SlidersHorizontal },
+    ],
+    items: [...items, ...settings.map((entry) => ({ ...entry, group: "Settings" }))],
+  };
 };

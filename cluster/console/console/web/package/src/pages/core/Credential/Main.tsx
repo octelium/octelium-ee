@@ -23,17 +23,35 @@ import CopyText from "@/components/CopyText";
 import InfoItem from "@/components/InfoItem";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
 import { ResourceListLabel } from "@/components/ResourceList";
-import TimeAgo from "@/components/TimeAgo";
+import TimeAgo, { useNow } from "@/components/TimeAgo";
+import {
+  HeroStat,
+  Meter,
+  MutedValue,
+  OverviewHero,
+  OverviewNotice,
+  ResourceActionButton,
+  toDate,
+} from "@/components/ResourceLayout/overview";
+import { authorizationItems } from "@/components/ResourceLayout/overviewItems";
 import { useUpdateResource } from "@/pages/utils/resource";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { useDisclosure } from "@mantine/hooks";
 import {
+  Activity,
   AlertTriangle,
+  Ban,
+  CalendarClock,
   Check,
+  Clock3,
   Copy,
+  Fingerprint,
   KeyRound,
+  Lock,
+  MonitorSmartphone,
   RefreshCw,
-  Shield,
+  ShieldCheck,
+  UserRound,
   X,
 } from "lucide-react";
 import * as React from "react";
@@ -272,12 +290,130 @@ export default (props: { item: CoreC.Credential }) => {
   );
 };
 
+const typeLabel = (type: CoreP.Credential_Spec_Type) =>
+  match(type)
+    .with(CoreP.Credential_Spec_Type.AUTH_TOKEN, () => "Authentication Token")
+    .with(CoreP.Credential_Spec_Type.OAUTH2, () => "OAuth2 Client Credential")
+    .with(CoreP.Credential_Spec_Type.ACCESS_TOKEN, () => "Access Token")
+    .otherwise(() => "Unknown type");
+
+const sessionTypeLabel = (type?: CoreC.Session_Status_Type) =>
+  type === CoreC.Session_Status_Type.CLIENT
+    ? "Client"
+    : type === CoreC.Session_Status_Type.CLIENTLESS
+      ? "Clientless"
+      : "Not set";
+
+const CredentialHero = (props: { item: CoreC.Credential }) => {
+  const { item } = props;
+  const now = useNow();
+  const spec = item.spec!;
+  const status = item.status;
+  const expiresAt = toDate(spec.expiresAt);
+  const left = expiresAt ? (expiresAt.getTime() - now) / 1000 : undefined;
+  const isExpired = left !== undefined && left <= 0;
+  const max = spec.maxAuthentications;
+  const used = status?.totalAuthentications ?? 0;
+  const exhausted = max > 0 && used >= max;
+  const neverIssued = !status?.lastRotationAt && !status?.totalRotations;
+  const tone =
+    spec.isDisabled || status?.isLocked || isExpired || exhausted
+      ? "danger"
+      : neverIssued || (left !== undefined && left <= 7 * 86400)
+        ? "warning"
+        : "success";
+
+  return (
+    <OverviewHero
+      tone={tone}
+      icon={<KeyRound size={18} strokeWidth={2.2} />}
+      title={typeLabel(spec.type)}
+      detail={
+        <>
+          For {status?.userRef?.name || spec.user || "an unknown User"} ·{" "}
+          {sessionTypeLabel(spec.sessionType).toLowerCase()} Sessions ·{" "}
+          {status?.lastRotationAt ? (
+            <>
+              token rotated <TimeAgo rfc3339={status.lastRotationAt} />
+            </>
+          ) : (
+            "no token generated yet"
+          )}
+        </>
+      }
+      meter={
+        max > 0 && (
+          <Meter
+            value={Math.min(100, (used / max) * 100)}
+            label="Authentications used"
+            tone={exhausted ? "danger" : used / max >= 0.8 ? "warning" : "success"}
+            caption={`${used.toLocaleString()} of ${max.toLocaleString()} authentications used`}
+          />
+        )
+      }
+      aside={
+        <HeroStat
+          label="Expires"
+          tone={isExpired ? "danger" : left !== undefined && left <= 7 * 86400 ? "warning" : "neutral"}
+          value={spec.expiresAt ? <TimeAgo rfc3339={spec.expiresAt} /> : "Never"}
+        />
+      }
+    >
+      {spec.isDisabled && (
+        <OverviewNotice tone="danger" icon={Ban} title="Disabled.">
+          The Credential cannot be used to authenticate.
+        </OverviewNotice>
+      )}
+      {status?.isLocked && (
+        <OverviewNotice tone="danger" icon={Lock} title="Locked by the Cluster.">
+          Authentications with this Credential are rejected.
+        </OverviewNotice>
+      )}
+      {isExpired && (
+        <OverviewNotice tone="danger" icon={Clock3} title="Expired.">
+          Generate a new token or extend the expiration to use it again.
+        </OverviewNotice>
+      )}
+      {exhausted && (
+        <OverviewNotice tone="danger" icon={AlertTriangle} title="Usage limit reached.">
+          {spec.autoDelete
+            ? "The Credential is deleted automatically."
+            : "Raise the maximum authentications to use it again."}
+        </OverviewNotice>
+      )}
+      {neverIssued && !spec.isDisabled && (
+        <OverviewNotice tone="warning" icon={KeyRound} title="No token generated yet.">
+          Generate a token to start using this Credential.
+        </OverviewNotice>
+      )}
+    </OverviewHero>
+  );
+};
+
+const GenerateTokenAction = (props: { item: CoreC.Credential }) => {
+  const [opened, { open, close }] = useDisclosure(false);
+  const neverIssued =
+    !props.item.status?.lastRotationAt && !props.item.status?.totalRotations;
+
+  return (
+    <>
+      <ResourceActionButton
+        tone="primary"
+        icon={neverIssued ? KeyRound : RefreshCw}
+        onClick={open}
+      >
+        {neverIssued ? "Generate token" : "Rotate token"}
+      </ResourceActionButton>
+      <GenerateTokenModal item={props.item} opened={opened} onClose={close} />
+    </>
+  );
+};
+
 export const MainInfo = (props: {
   item: CoreC.Credential;
 }): ResourceMainInfo => {
   const { item } = props;
   const mutationUpdate = useUpdateResource();
-  const [opened, { open, close }] = useDisclosure(false);
   const userRef =
     item.status?.userRef?.name || item.status?.userRef?.uid
       ? item.status.userRef
@@ -286,50 +422,34 @@ export const MainInfo = (props: {
           kind: "User",
           name: item.spec!.user,
         });
+  const max = item.spec!.maxAuthentications;
 
   return {
-    groupOrder: ["Usage", "Security", "Authorization"],
-    actions: (
-      <>
-        <Button
-          variant="default"
-          size="compact-sm"
-          leftSection={<RefreshCw size={11} strokeWidth={2.5} />}
-          onClick={open}
-        >
-          Generate / Rotate
-        </Button>
-        <GenerateTokenModal item={item} opened={opened} onClose={close} />
-      </>
-    ),
+    header: <CredentialHero item={item} />,
+    actions: <GenerateTokenAction item={item} />,
+    groupOrder: [
+      { title: "Token", icon: KeyRound },
+      { title: "Lifecycle", icon: CalendarClock },
+      { title: "Authorization", icon: ShieldCheck },
+    ],
     items: [
       {
         label: "User",
         primary: true,
+        icon: UserRound,
         value: <ResourceListLabel itemRef={userRef} />,
       },
       {
         label: "Type",
+        primary: true,
+        icon: Fingerprint,
         value: (
           <EditItemWrap
             mutation={mutationUpdate}
             label="type"
             showComponent={
-              <span className="text-body font-semibold text-slate-700">
-                {match(item.spec!.type)
-                  .with(
-                    CoreP.Credential_Spec_Type.AUTH_TOKEN,
-                    () => "Authentication Token",
-                  )
-                  .with(
-                    CoreP.Credential_Spec_Type.OAUTH2,
-                    () => "OAuth2 Client Credential",
-                  )
-                  .with(
-                    CoreP.Credential_Spec_Type.ACCESS_TOKEN,
-                    () => "Access Token",
-                  )
-                  .otherwise(() => "")}
+              <span className="font-semibold text-slate-900">
+                {typeLabel(item.spec!.type)}
               </span>
             }
             editComponent={
@@ -371,163 +491,93 @@ export const MainInfo = (props: {
           />
         ),
       },
-
-      ...(item.spec!.expiresAt
-        ? [
-            {
-              label: "Expires",
-              primary: true,
-              value: (
-                <span className="text-body font-normal text-slate-600">
-                  <TimeAgo rfc3339={item.spec!.expiresAt} />
-                </span>
-              ),
-            },
-          ]
-        : []),
-
-      ...(item.status!.lastRotationAt
-        ? [
-            {
-              label: "Last rotation",
-              group: "Usage",
-              value: (
-                <span className="text-body font-normal text-slate-600">
-                  <TimeAgo rfc3339={item.status!.lastRotationAt} />
-                </span>
-              ),
-            },
-          ]
-        : []),
-
-      ...(item.status!.totalRotations > 0
-        ? [
-            {
-              label: "Total rotations",
-              group: "Usage",
-              value: (
-                <span className="text-body font-semibold text-slate-700 tabular-nums">
-                  {item.status!.totalRotations}
-                </span>
-              ),
-            },
-          ]
-        : []),
-
-      ...(item.status!.totalAuthentications > 0
-        ? [
-            {
-              label: "Total authentications",
-              group: "Usage",
-              value: (
-                <span className="text-body font-semibold text-slate-700 tabular-nums">
-                  {item.status!.totalAuthentications}
-                  {item.spec!.maxAuthentications > 0 && (
-                    <span className="text-slate-500 font-medium ml-1">
-                      / {item.spec!.maxAuthentications} max
-                    </span>
-                  )}
-                </span>
-              ),
-            },
-          ]
-        : []),
-
-      ...(item.spec!.maxAuthentications > 0
-        ? [
-            {
-              label: "Max authentications",
-              group: "Usage",
-              value: (
-                <span className="text-body font-semibold text-slate-700 tabular-nums">
-                  {item.spec!.maxAuthentications}
-                </span>
-              ),
-            },
-          ]
-        : []),
-
       {
         label: "Session type",
-        group: "Usage",
-        value:
-          item.spec!.sessionType === CoreC.Session_Status_Type.CLIENT
-            ? "Client"
-            : item.spec!.sessionType === CoreC.Session_Status_Type.CLIENTLESS
-              ? "Clientless"
-              : "Not set",
+        primary: true,
+        icon: MonitorSmartphone,
+        value: (
+          <span className="font-semibold">
+            {sessionTypeLabel(item.spec!.sessionType)}
+          </span>
+        ),
+      },
+      {
+        label: "Authentications",
+        primary: true,
+        icon: Activity,
+        value: (
+          <span className="font-semibold tabular-nums">
+            {item.status!.totalAuthentications.toLocaleString()}
+            {max > 0 && (
+              <span className="ml-1 text-xs font-normal text-slate-500">
+                of {max.toLocaleString()}
+              </span>
+            )}
+          </span>
+        ),
       },
 
-      ...(item.spec!.autoDelete
+      ...(item.status?.tokenID
         ? [
             {
-              label: "Lifecycle",
-              group: "Usage",
-              value: "Automatically delete after reaching the usage limit",
+              label: "Token ID",
+              group: "Token",
+              value: <CopyText value={item.status.tokenID} />,
               span: "full" as const,
             },
           ]
         : []),
+      {
+        label: "Last rotation",
+        group: "Token",
+        value: item.status!.lastRotationAt ? (
+          <TimeAgo rfc3339={item.status!.lastRotationAt} />
+        ) : (
+          <MutedValue>Never</MutedValue>
+        ),
+      },
+      {
+        label: "Rotations",
+        group: "Token",
+        value: (
+          <span className="font-semibold tabular-nums">
+            {item.status!.totalRotations.toLocaleString()}
+          </span>
+        ),
+      },
 
-      ...(item.status?.isLocked
-        ? [
-            {
-              label: "Security state",
-              group: "Security",
-              value: <span className="font-semibold text-red-600">Locked</span>,
-            },
-          ]
-        : []),
+      {
+        label: "Expires",
+        group: "Lifecycle",
+        value: item.spec!.expiresAt ? (
+          <TimeAgo rfc3339={item.spec!.expiresAt} />
+        ) : (
+          <MutedValue>Never</MutedValue>
+        ),
+      },
+      {
+        label: "Max authentications",
+        group: "Lifecycle",
+        value:
+          max > 0 ? (
+            <span className="font-semibold tabular-nums">
+              {max.toLocaleString()}
+            </span>
+          ) : (
+            <MutedValue>Unlimited</MutedValue>
+          ),
+      },
+      {
+        label: "Auto-delete",
+        group: "Lifecycle",
+        value: item.spec!.autoDelete ? (
+          "After reaching the usage limit"
+        ) : (
+          <MutedValue>Disabled</MutedValue>
+        ),
+      },
 
-      ...(item.spec?.authorization?.policies.length
-        ? [
-            {
-              label: "Policies",
-              group: "Authorization",
-              value: (
-                <div className="flex flex-wrap gap-1">
-                  {item.spec.authorization.policies.map((policy) => (
-                    <ResourceListLabel
-                      key={policy}
-                      itemRef={ObjectReference.create({
-                        apiVersion: "core/v1",
-                        kind: "Policy",
-                        name: policy,
-                      })}
-                    />
-                  ))}
-                </div>
-              ),
-              span: "full" as const,
-            },
-          ]
-        : []),
-
-      ...(item.spec?.authorization?.inlinePolicies.length
-        ? [
-            {
-              label: "Inline policies",
-              group: "Authorization",
-              value: (
-                <div className="flex flex-wrap gap-1">
-                  {item.spec.authorization.inlinePolicies.map(
-                    (policy, index) => (
-                      <ResourceListLabel
-                        key={`${policy.name}-${index}`}
-                        label="Inline policy"
-                      >
-                        <Shield size={12} strokeWidth={2.5} />
-                        {policy.name || `Inline policy ${index + 1}`}
-                      </ResourceListLabel>
-                    ),
-                  )}
-                </div>
-              ),
-              span: "full" as const,
-            },
-          ]
-        : []),
-
+      ...authorizationItems(item.spec?.authorization),
     ],
   };
 };

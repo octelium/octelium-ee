@@ -18,7 +18,7 @@ describe("Session Cordium information", () => {
       `${origin}tests/fixtures/sessionCordium.html?scenario=${scenario}&view=${view}`,
     );
     await page
-      .getByText(view === "list" ? "Active" : "Security signals", { exact: true })
+      .getByText(view === "list" ? "Active" : "Authorization", { exact: true })
       .waitFor();
   };
 

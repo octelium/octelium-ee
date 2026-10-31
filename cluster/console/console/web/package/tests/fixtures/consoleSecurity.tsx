@@ -18,7 +18,7 @@ import TopBar from "@/components/TopBar";
 import TopList from "@/components/TopList";
 import { setStatus } from "@/features/settings/slice";
 import Settings from "@/pages/Settings";
-import { ItemInfo } from "@/pages/core/Service/Main";
+import serviceInfo from "@/pages/core/Service/router";
 import Leaderboard, { fromResource } from "@/pages/visibility/Main/Leaderboard";
 import store from "@/store";
 import { getDomain, isDev } from "@/utils";
@@ -140,15 +140,20 @@ if (mode === "avatars") {
     />
   );
 } else if (mode === "service") {
+  path = "/core/services/web";
+  queryClient.setQueryData([getGetKeyFromPath(path), "web"], {
+    response: Service.create({
+      apiVersion: "core/v1",
+      kind: "Service",
+      metadata: { name: "web", uid: "web" },
+      spec: { mode: Service_Spec_Mode.WEB, isPublic: true },
+      status: {},
+    }),
+  });
   content = (
-    <ItemInfo
-      item={Service.create({
-        apiVersion: "core/v1",
-        kind: "Service",
-        metadata: { name: "web", uid: "web" },
-        spec: { mode: Service_Spec_Mode.WEB, isPublic: true },
-        status: {},
-      })}
+    <ResourceItemMainPage
+      infoComponent={serviceInfo.infoItemsGetter}
+      unDeletable
     />
   );
 } else if (mode === "error") {
@@ -168,6 +173,7 @@ createRoot(document.getElementById("root")!).render(
         <MemoryRouter initialEntries={[path]}>
           <Routes>
             <Route path="/core/users/:name" element={content} />
+            <Route path="/core/services/:name" element={content} />
             <Route path="*" element={content} />
           </Routes>
         </MemoryRouter>

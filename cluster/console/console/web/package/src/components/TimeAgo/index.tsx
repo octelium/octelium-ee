@@ -59,12 +59,11 @@ const subscribe = (listener: () => void) => {
 
 const getSnapshot = () => now;
 
+export const useNow = () =>
+  React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+
 const TimeAgo = (props: { rfc3339?: Timestamp }) => {
-  const currentTime = React.useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getSnapshot,
-  );
+  const currentTime = useNow();
 
   if (!props.rfc3339) {
     return <></>;

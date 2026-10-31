@@ -1,6 +1,7 @@
 import { Metadata } from "@/apis/metav1/metav1";
 import {
   ResourceInfoComponent,
+  ResourceInfoGroup,
   ResourceInfoMainItem,
   ResourceMainInfo,
 } from "@/pages/utils/types";
@@ -78,18 +79,38 @@ const InfoCell = ({
         </span>
       )}
     </div>
-    <div className="min-w-0 flex-1 text-sm font-normal leading-6 text-slate-800">
+    <div className="min-w-0 flex-1 text-sm font-normal leading-6 text-slate-800 [overflow-wrap:anywhere]">
       {children}
     </div>
   </div>
 );
 
-const SectionHeading = ({ title }: { title: string }) => (
-  <div className="flex items-center gap-3 border-y border-slate-200 bg-slate-50/70 px-4 py-2">
-    <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
+const SectionHeading = ({
+  title,
+  icon: Icon,
+  description,
+}: {
+  title: string;
+  icon?: ResourceInfoGroup["icon"];
+  description?: string;
+}) => (
+  <div className="flex min-w-0 items-center gap-2 border-y border-slate-200 bg-slate-50/70 px-4 py-2">
+    {Icon && (
+      <Icon
+        size={13}
+        strokeWidth={2.25}
+        className="shrink-0 text-slate-500"
+      />
+    )}
+    <h3 className="shrink-0 text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
       {title}
-    </span>
-    <div className="h-px flex-1 bg-slate-200" />
+    </h3>
+    {description && (
+      <span className="min-w-0 truncate text-xs font-normal text-slate-500">
+        {description}
+      </span>
+    )}
+    <div className="h-px min-w-4 flex-1 bg-slate-200" />
   </div>
 );
 
@@ -117,7 +138,7 @@ const StackedCell = ({
         )}
       </div>
     )}
-    <div className="min-w-0 text-sm font-normal leading-6 text-slate-800">
+    <div className="min-w-0 text-sm font-normal leading-6 text-slate-800 [overflow-wrap:anywhere]">
       {children}
     </div>
   </div>
@@ -180,18 +201,24 @@ const InfoGrid = ({ items }: { items: ResourceInfoMainItem[] }) => {
 };
 
 const PrimaryTiles = ({ items }: { items: ResourceInfoMainItem[] }) => (
-  <div className="flex flex-wrap gap-3 border-b border-slate-200 bg-slate-50/40 px-4 py-4">
-    {items.map((item) => (
+  <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] gap-3 border-b border-slate-200 bg-slate-50/40 px-4 py-4">
+    {items.map(({ label, value, hint, icon: Icon }) => (
       <div
-        key={item.label}
-        className="flex min-w-[168px] max-w-[320px] flex-1 flex-col gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5"
+        key={label}
+        className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5"
       >
-        <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500">
-          {item.label}
+        <span className="flex min-w-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.05em] text-slate-500">
+          {Icon && <Icon size={12} strokeWidth={2.25} className="shrink-0" />}
+          <span className="truncate">{label}</span>
         </span>
-        <div className="min-w-0 text-sm font-medium leading-6 text-slate-900">
-          {item.value}
+        <div className="min-w-0 text-sm font-medium leading-6 text-slate-900 [overflow-wrap:anywhere]">
+          {value}
         </div>
+        {hint && (
+          <span className="text-xs font-normal leading-4 text-slate-500">
+            {hint}
+          </span>
+        )}
       </div>
     ))}
   </div>
@@ -521,7 +548,12 @@ const ResourceOverview = (props: {
   const detailItems = specificItems.filter((entry) => !entry.primary);
   const defaultGroup = `${item.kind} details`;
 
-  const groups: { title: string; items: ResourceInfoMainItem[] }[] = [];
+  const groupMeta = (info.groupOrder ?? []).map(
+    (entry): ResourceInfoGroup =>
+      typeof entry === "string" ? { title: entry } : entry,
+  );
+  const groups: (ResourceInfoGroup & { items: ResourceInfoMainItem[] })[] =
+    [];
   const groupIndex = new Map<string, number>();
 
   const push = (title: string, entry: ResourceInfoMainItem) => {
@@ -529,7 +561,10 @@ const ResourceOverview = (props: {
     if (index === undefined) {
       index = groups.length;
       groupIndex.set(title, index);
-      groups.push({ title, items: [] });
+      groups.push({
+        ...(groupMeta.find((meta) => meta.title === title) ?? { title }),
+        items: [],
+      });
     }
     groups[index].items.push(entry);
   };
@@ -537,7 +572,7 @@ const ResourceOverview = (props: {
   for (const entry of detailItems) push(entry.group ?? defaultGroup, entry);
   const metadataItems = buildMetadataItems(md);
 
-  const order = info.groupOrder ?? [];
+  const order = groupMeta.map((meta) => meta.title);
   groups.sort((a, b) => {
     const ai = order.indexOf(a.title);
     const bi = order.indexOf(b.title);
@@ -591,11 +626,19 @@ const ResourceOverview = (props: {
                   {md.displayName}
                 </p>
               )}
+              {md.description && (
+                <p
+                  className="line-clamp-2 max-w-2xl text-xs font-normal leading-5 text-slate-500 [overflow-wrap:anywhere]"
+                  title={md.description}
+                >
+                  {md.description}
+                </p>
+              )}
             </div>
           </div>
 
           <div
-            className="flex shrink-0 flex-wrap items-center gap-1.5"
+            className="flex min-w-0 shrink-0 flex-wrap items-center gap-1.5"
             role="toolbar"
             aria-label={`Actions for ${md.name}`}
           >
@@ -605,11 +648,18 @@ const ResourceOverview = (props: {
                 <props.mainAction item={item} />
               </React.Suspense>
             )}
+            {(!!info.actions || !!props.mainAction) &&
+              (props.cloneable || (!props.unDeletable && !md.isSystem)) && (
+                <span
+                  aria-hidden="true"
+                  className="mx-0.5 h-5 w-px bg-slate-200 first:hidden last:hidden"
+                />
+              )}
             {props.cloneable && <CloneResource item={item} />}
             {!props.unDeletable && !md.isSystem && (
               <DeleteResource
                 item={item}
-                btnSize="compact-xs"
+                btnSize="compact-sm"
                 btnVariant="outline"
                 btnColor="red.7"
                 btnLabel="Delete"
@@ -618,12 +668,13 @@ const ResourceOverview = (props: {
           </div>
         </header>
 
-        <div className="border-b border-slate-200 bg-white p-2">
+        <div className="overflow-x-auto border-b border-slate-200 bg-white p-2">
           <SegmentedControl
             fullWidth
             value={section}
             onChange={(value) => setSection(value as OverviewSection)}
             aria-label="Overview content"
+            styles={{ root: { minWidth: "max-content" } }}
             data={[
               {
                 value: "details",
@@ -668,7 +719,11 @@ const ResourceOverview = (props: {
             {primaryItems.length > 0 && <PrimaryTiles items={primaryItems} />}
             {groups.map((group) => (
               <React.Fragment key={group.title}>
-                <SectionHeading title={group.title} />
+                <SectionHeading
+                  title={group.title}
+                  icon={group.icon}
+                  description={group.description}
+                />
                 <InfoGrid items={group.items} />
               </React.Fragment>
             ))}

@@ -14,6 +14,7 @@ import { useMutation } from "@tanstack/react-query";
 import { AlertTriangle, ShieldCheck, Upload, X } from "lucide-react";
 import * as React from "react";
 import { notifications } from "@mantine/notifications";
+import { ResourceActionButton } from "@/components/ResourceLayout/overview";
 
 const isCertificatePEM = (value: string) =>
   value.includes("-----BEGIN CERTIFICATE-----") &&
@@ -61,15 +62,9 @@ export const SetCertificateC = (props: { item: Certificate }) => {
 
   return (
     <>
-      <Button
-        type="button"
-        variant="default"
-        size="compact-sm"
-        leftSection={<Upload size={13} strokeWidth={2.4} />}
-        onClick={open}
-      >
+      <ResourceActionButton tone="primary" icon={Upload} onClick={open}>
         Set certificate
-      </Button>
+      </ResourceActionButton>
 
       <Modal
         opened={opened}

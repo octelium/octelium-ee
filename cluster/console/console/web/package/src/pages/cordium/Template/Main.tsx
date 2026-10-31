@@ -6,6 +6,23 @@ import TimeAgo from "@/components/TimeAgo";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { twMerge } from "@/lib/utils";
 import {
+  AlertTriangle,
+  Boxes,
+  Cpu,
+  GitBranch,
+  Hammer,
+  Loader2,
+  Package,
+  UserRound,
+} from "lucide-react";
+import {
+  HeroStat,
+  MutedValue,
+  OverviewHero,
+  OverviewNotice,
+  TonePill,
+} from "@/components/ResourceLayout/overview";
+import {
   getBuildStateMeta,
   getFailureLabel,
   getImageSource,
@@ -63,6 +80,65 @@ const BuildRow = (props: {
   );
 };
 
+const TemplateHero = (props: { item: CordiumP.Template }) => {
+  const { item } = props;
+  const meta = getTemplateMeta(item);
+  const latest = getLatestBuild(item);
+  const buildInfo = item.status?.buildInfo;
+  const running = !!buildInfo?.currentRunningBuildID;
+  const image = getImageSource(item.spec?.image);
+
+  return (
+    <OverviewHero
+      tone={running ? "info" : meta.tone}
+      icon={
+        running ? (
+          <Loader2 size={18} className="motion-safe:animate-spin" />
+        ) : latest?.failure ? (
+          <AlertTriangle size={18} strokeWidth={2.2} />
+        ) : (
+          <Hammer size={18} strokeWidth={2.2} />
+        )
+      }
+      title={
+        running
+          ? "Building"
+          : latest
+            ? `Latest build ${meta.label.toLowerCase()}`
+            : "Never built"
+      }
+      detail={[
+        image && `${image.label} image`,
+        image?.value,
+        buildInfo?.currentReadyBuildID &&
+          `new Workspaces use ${buildInfo.currentReadyBuildID}`,
+      ]
+        .filter(Boolean)
+        .join(" · ")}
+      meta={getLimitItems(item.spec?.limit).map((limit) => (
+        <TonePill key={limit.label}>
+          {limit.label} {limit.value}
+        </TonePill>
+      ))}
+      aside={
+        latest?.doneAt && (
+          <HeroStat
+            label="Last build"
+            value={<TimeAgo rfc3339={latest.doneAt} />}
+          />
+        )
+      }
+    >
+      {latest?.failure && (
+        <OverviewNotice tone="danger" icon={AlertTriangle} title={`${getFailureLabel(latest.failure)} failed.`}>
+          {latest.failure.message ||
+            "The latest build failed; new Workspaces use the last ready build."}
+        </OverviewNotice>
+      )}
+    </OverviewHero>
+  );
+};
+
 export const MainInfo = (props: {
   item: CordiumP.Template;
 }): ResourceMainInfo => {
@@ -80,38 +156,51 @@ export const MainInfo = (props: {
 
   return {
     status: { label: meta.label, tone: meta.tone },
-    groupOrder: ["Template details", "Builds", "Image", "Compute"],
+    header: <TemplateHero item={item} />,
+    groupOrder: [
+      { title: "Builds", icon: Hammer },
+      { title: "Image", icon: Package },
+      { title: "Compute", icon: Cpu },
+    ],
     items: [
       {
-        label: "Latest build",
+        label: "Space",
         primary: true,
-        value: (
-          <span className={twMerge("font-semibold", meta.className)}>
-            {meta.label}
-          </span>
+        icon: Boxes,
+        value: spaceRef ? (
+          <ResourceListLabel itemRef={spaceRef} />
+        ) : (
+          <MutedValue>Unknown</MutedValue>
+        ),
+      },
+      {
+        label: "Created by",
+        primary: true,
+        icon: UserRound,
+        value: userRef ? (
+          <ResourceListLabel itemRef={userRef} />
+        ) : (
+          <MutedValue>Unknown</MutedValue>
         ),
       },
       {
         label: "Builds",
         primary: true,
+        icon: Hammer,
         value: (
-          <span className="font-semibold text-slate-700">{builds.length}</span>
+          <span className="font-semibold tabular-nums">{builds.length}</span>
         ),
       },
-      ...(spaceRef
-        ? [{ label: "Space", value: <ResourceListLabel itemRef={spaceRef} /> }]
-        : []),
-      ...(userRef
-        ? [{ label: "User", value: <ResourceListLabel itemRef={userRef} /> }]
-        : []),
-      ...(gitProviderRef
-        ? [
-            {
-              label: "Git provider",
-              value: <ResourceListLabel itemRef={gitProviderRef} />,
-            },
-          ]
-        : []),
+      {
+        label: "Git provider",
+        primary: true,
+        icon: GitBranch,
+        value: gitProviderRef ? (
+          <ResourceListLabel itemRef={gitProviderRef} />
+        ) : (
+          <MutedValue>None</MutedValue>
+        ),
+      },
       ...(buildInfo?.currentReadyBuildID
         ? [
             {

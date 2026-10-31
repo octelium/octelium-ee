@@ -5,6 +5,7 @@ import Label from "@/components/Label";
 import { ResourceListLabel } from "@/components/ResourceList";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { getDNSProviderType } from "./List";
+import { Cloud, KeyRound, ShieldCheck } from "lucide-react";
 
 const secretRef = (name?: string) =>
   name ? (
@@ -28,12 +29,7 @@ export const MainInfo = (props: {
   item: EnterpriseP.DNSProvider;
 }): ResourceMainInfo => {
   const type = props.item.spec?.type;
-  const items: NonNullable<ResourceMainInfo["items"]> = [
-    {
-      label: "Provider type",
-      value: <Label>{getDNSProviderType(props.item)}</Label>,
-    },
-  ];
+  const items: NonNullable<ResourceMainInfo["items"]> = [];
 
   if (type?.oneofKind === "cloudflare") {
     items.push(
@@ -137,5 +133,36 @@ export const MainInfo = (props: {
     );
   }
 
-  return { items };
+  const credential = items.find((entry) =>
+    /Secret$/.test(entry.label),
+  );
+
+  return {
+    groupOrder: [{ title: "Account", icon: KeyRound }],
+    items: [
+      {
+        label: "Provider",
+        primary: true,
+        icon: Cloud,
+        value: <Label>{getDNSProviderType(props.item)}</Label>,
+      },
+      {
+        label: "Credential",
+        primary: true,
+        icon: KeyRound,
+        value: credential?.value ?? (
+          <span className="text-slate-500">Not configured</span>
+        ),
+      },
+      {
+        label: "Used for",
+        primary: true,
+        icon: ShieldCheck,
+        value: <span className="font-semibold">ACME DNS-01 challenges</span>,
+      },
+      ...items
+        .filter((entry) => entry !== credential)
+        .map((entry) => ({ ...entry, group: "Account" })),
+    ],
+  };
 };
