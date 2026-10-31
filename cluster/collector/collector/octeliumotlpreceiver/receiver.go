@@ -40,8 +40,7 @@ type octeliumOTLPReceiver struct {
 
 	mu sync.RWMutex
 
-	started    bool
-	startCount int
+	started bool
 
 	serverGRPC *grpc.Server
 	listener   net.Listener
@@ -130,15 +129,12 @@ func (r *octeliumOTLPReceiver) Start(ctx context.Context, host component.Host) e
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.startCount++
-
 	if r.started {
 		return nil
 	}
 
 	cred, err := spiffec.GetGRPCServerCred(ctx, nil)
 	if err != nil {
-		r.startCount--
 		return err
 	}
 
@@ -163,7 +159,6 @@ func (r *octeliumOTLPReceiver) Start(ctx context.Context, host component.Host) e
 
 	listener, err := net.Listen("tcp", r.cfg.Endpoint)
 	if err != nil {
-		r.startCount--
 		return err
 	}
 
@@ -208,17 +203,8 @@ func (r *octeliumOTLPReceiver) serve(host component.Host, serverGRPC *grpc.Serve
 func (r *octeliumOTLPReceiver) Shutdown(ctx context.Context) error {
 	r.mu.Lock()
 
-	if r.startCount > 0 {
-		r.startCount--
-	}
-
-	if r.startCount > 0 {
-		r.mu.Unlock()
-		return nil
-	}
-
 	if !r.started {
-		receiverRegistry.Delete(r.registryKey)
+		receiverRegistry.CompareAndDelete(r.registryKey, r)
 		r.mu.Unlock()
 		return nil
 	}
@@ -232,7 +218,7 @@ func (r *octeliumOTLPReceiver) Shutdown(ctx context.Context) error {
 	r.nextLogs = nil
 	r.nextMetrics = nil
 
-	receiverRegistry.Delete(r.registryKey)
+	receiverRegistry.CompareAndDelete(r.registryKey, r)
 
 	r.mu.Unlock()
 

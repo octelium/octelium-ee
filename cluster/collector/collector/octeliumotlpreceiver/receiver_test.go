@@ -15,6 +15,7 @@ import (
 	"net"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -128,10 +129,14 @@ func TestReceiverRegistryIsolationAndValidation(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { replacement.Shutdown(t.Context()) })
 	assert.NotSame(t, first, replacement)
+	require.NoError(t, first.Shutdown(t.Context()))
+	stored, found := receiverRegistry.Load(replacement.registryKey)
+	require.True(t, found)
+	assert.Same(t, replacement, stored)
 	assert.False(t, replacement.Capabilities().MutatesData)
 }
 
-func TestReceiverFactorySharesSignalsAndReferenceCounts(t *testing.T) {
+func TestReceiverFactorySharesSignalsAndStopsOnce(t *testing.T) {
 	t.Setenv("OCTELIUM_ENABLE_SPIFFE_CSI", "false")
 	t.Setenv("SPIFFE_ENDPOINT_SOCKET", "")
 	factory := NewFactory()
@@ -149,8 +154,9 @@ func TestReceiverFactorySharesSignalsAndReferenceCounts(t *testing.T) {
 	r := lr.(*octeliumOTLPReceiver)
 	t.Cleanup(func() { r.Shutdown(context.Background()) })
 	require.NoError(t, lr.Start(t.Context(), nil))
+	listener := r.listener
 	require.NoError(t, mr.Start(t.Context(), nil))
-	assert.Equal(t, 2, r.startCount)
+	assert.Same(t, listener, r.listener)
 	conn := receiverTestConn(t, r)
 	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Second)
 	defer cancel()
@@ -161,15 +167,14 @@ func TestReceiverFactorySharesSignalsAndReferenceCounts(t *testing.T) {
 	assert.Equal(t, 1, logs.LogRecordCount())
 	assert.Equal(t, 1, metrics.DataPointCount())
 	require.NoError(t, lr.Shutdown(ctx))
-	assert.True(t, r.started)
-	_, err = pmetricotlp.NewGRPCClient(conn).Export(ctx, pmetricotlp.NewExportRequestFromMetrics(receiverTestMetrics()))
-	require.NoError(t, err)
-	assert.Equal(t, 2, metrics.DataPointCount())
+	assert.False(t, r.started)
+	_, err = pmetricotlp.NewGRPCClient(conn).Export(ctx, pmetricotlp.NewExportRequestFromMetrics(receiverTestMetrics()), grpc.WaitForReady(false))
+	require.Error(t, err)
+	assert.Equal(t, 1, metrics.DataPointCount())
 	require.NoError(t, mr.Shutdown(ctx))
 	assert.False(t, r.started)
 	assert.Nil(t, r.getLogsConsumer())
 	assert.Nil(t, r.getMetricsConsumer())
-	assert.Equal(t, 0, r.startCount)
 	_, found := receiverRegistry.Load(r.registryKey)
 	assert.False(t, found)
 }
@@ -181,11 +186,10 @@ func TestReceiverBindFailureCanBeRetried(t *testing.T) {
 	r := newReceiverTest(t)
 	r.cfg.Endpoint = listener.Addr().String()
 	require.Error(t, r.Start(t.Context(), nil))
-	assert.Zero(t, r.startCount)
 	assert.False(t, r.started)
 	require.NoError(t, listener.Close())
 	require.NoError(t, r.Start(t.Context(), nil))
-	assert.Equal(t, 1, r.startCount)
+	assert.True(t, r.started)
 }
 
 func TestReceiverEmptyAndMissingPipelines(t *testing.T) {
@@ -290,6 +294,61 @@ func TestReceiverShutdownCancelsActiveRPC(t *testing.T) {
 	}
 }
 
+func TestReceiverShutdownStopsIntakeBeforeDownstreamProcessors(t *testing.T) {
+	r := newReceiverTest(t)
+	var stopped atomic.Bool
+	entered, release := make(chan struct{}), make(chan struct{})
+	finish := sync.OnceFunc(func() { close(release) })
+	defer finish()
+	metrics, err := consumer.NewMetrics(func(context.Context, pmetric.Metrics) error {
+		if stopped.Load() {
+			close(entered)
+			<-release
+		}
+		return nil
+	})
+	require.NoError(t, err)
+	r.registerLogsConsumer(&consumertest.LogsSink{})
+	r.registerMetricsConsumer(metrics)
+	require.NoError(t, r.Start(t.Context(), nil))
+	require.NoError(t, r.Start(t.Context(), nil))
+	conn := receiverTestConn(t, r)
+	client := pmetricotlp.NewGRPCClient(conn)
+	_, err = client.Export(t.Context(), pmetricotlp.NewExportRequestFromMetrics(receiverTestMetrics()))
+	require.NoError(t, err)
+
+	require.NoError(t, r.Shutdown(t.Context()))
+	stopped.Store(true)
+	requestDone := make(chan error, 1)
+	go func() {
+		_, err := client.Export(t.Context(), pmetricotlp.NewExportRequestFromMetrics(receiverTestMetrics()), grpc.WaitForReady(false))
+		requestDone <- err
+	}()
+	select {
+	case <-entered:
+	case err := <-requestDone:
+		require.Error(t, err)
+	case <-time.After(time.Second):
+		t.Fatal("request did not finish")
+	}
+
+	shutdownDone := make(chan error, 1)
+	go func() { shutdownDone <- r.Shutdown(context.Background()) }()
+	select {
+	case err := <-shutdownDone:
+		require.NoError(t, err)
+	case <-time.After(time.Second):
+		assert.Fail(t, "shared receiver waited for a request sent to a stopped downstream processor")
+		finish()
+		require.NoError(t, <-shutdownDone)
+	}
+	select {
+	case <-entered:
+		t.Error("shared receiver accepted a request after downstream shutdown")
+	default:
+	}
+}
+
 func TestReceiverCredentialFailureDoesNotRetainStartReference(t *testing.T) {
 	r := newReceiverTest(t)
 	t.Setenv("OCTELIUM_ENABLE_SPIFFE_CSI", "true")
@@ -297,7 +356,6 @@ func TestReceiverCredentialFailureDoesNotRetainStartReference(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	require.Error(t, r.Start(ctx, nil))
-	assert.Zero(t, r.startCount)
 	assert.False(t, r.started)
 	assert.Nil(t, r.serverGRPC)
 }
