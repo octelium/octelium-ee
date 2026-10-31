@@ -2,9 +2,9 @@ import { getDomain, isDev } from "@/utils";
 import { getClientAuth } from "@/utils/client";
 import { Button, Modal } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { notifications } from "@mantine/notifications";
 import { useMutation } from "@tanstack/react-query";
 import { ArrowUpRight, LockKeyhole, LogOut } from "lucide-react";
-import { toast } from "sonner";
 
 const RightSidebar = () => {
   const [opened, { open, close }] = useDisclosure(false);
@@ -17,7 +17,10 @@ const RightSidebar = () => {
       window.location.reload();
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Could not log out");
+      notifications.show({
+        color: "red",
+        message: error instanceof Error ? error.message : "Could not log out",
+      });
     },
   });
 

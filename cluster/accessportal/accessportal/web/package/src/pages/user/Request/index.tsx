@@ -1,5 +1,6 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import { Button, Pagination, SegmentedControl } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import {
   keepPreviousData,
   useMutation,
@@ -9,7 +10,6 @@ import {
 import { ChevronRight, Inbox, Plus, SearchX } from "lucide-react";
 import * as React from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { toast } from "sonner";
 
 import { ResourceIcon } from "@/components/Access/icons";
 import TimeAgo, { Countdown, Elapsed } from "@/components/TimeAgo";
@@ -217,13 +217,16 @@ const Requests = () => {
       return response;
     },
     onSuccess: (_, name) => {
-      toast.success("Request cancelled");
+      notifications.show({ color: "green", message: "Request cancelled" });
       setCancelName(undefined);
       queryClient.invalidateQueries({ queryKey: ["user", "listRequest"] });
       queryClient.invalidateQueries({ queryKey: ["user", "getRequest", name] });
     },
     onError: (e) => {
-      toast.error(e instanceof Error ? e.message : "Failed to cancel request");
+      notifications.show({
+        color: "red",
+        message: e instanceof Error ? e.message : "Failed to cancel request",
+      });
     },
   });
 

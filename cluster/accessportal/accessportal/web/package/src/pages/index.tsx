@@ -1,12 +1,12 @@
 import Footer from "@/components/Footer";
 import PortalShell from "@/components/SideBar/Shell";
 import TopBar from "@/components/TopBar";
-import { Toaster } from "@/components/ui/sonner";
 import { Loading } from "@/ui";
 import { setStatus } from "@/features/settings/slice";
 import { useAppDispatch } from "@/utils/hooks";
 import { getUserMainClient } from "@/utils/client";
 import { getRedirectPath } from "@/utils/redirect";
+import { Notifications } from "@mantine/notifications";
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import { Navigate, Outlet, ScrollRestoration } from "react-router-dom";
@@ -61,10 +61,7 @@ const Root = () => {
         <Footer />
       </PortalShell>
 
-      <Toaster
-        position="bottom-center"
-        toastOptions={{ className: "bg-slate-900 font-semibold text-white" }}
-      />
+      <Notifications position="bottom-center" limit={3} autoClose={4000} />
     </div>
   );
 };

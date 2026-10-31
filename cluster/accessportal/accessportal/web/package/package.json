@@ -33,6 +33,7 @@
     "@mantine/core": "^9.7.3",
     "@mantine/dates": "^9.7.3",
     "@mantine/hooks": "^9.7.3",
+    "@mantine/notifications": "^9.7.3",
     "@protobuf-ts/grpcweb-transport": "^2.11.1",
     "@protobuf-ts/runtime": "^2.11.1",
     "@protobuf-ts/runtime-rpc": "^2.11.1",
@@ -45,7 +46,6 @@
     "react-dom": "^19.3.1",
     "react-redux": "^9.3.0",
     "react-router-dom": "^7.18.4",
-    "sonner": "^2.0.8",
     "tailwind-merge": "^3.7.0",
     "ts-pattern": "^5.9.2"
   },

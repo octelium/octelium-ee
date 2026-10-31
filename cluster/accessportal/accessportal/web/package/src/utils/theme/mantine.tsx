@@ -4,6 +4,7 @@ import {
   Drawer,
   Input,
   Modal,
+  Notification,
   NumberInput,
   Pagination,
   Popover,
@@ -145,6 +146,31 @@ const theme = createTheme({
     Modal: Modal.extend({ defaultProps: { zIndex: OVERLAY_Z_INDEX } }),
 
     Drawer: Drawer.extend({ defaultProps: { zIndex: OVERLAY_Z_INDEX } }),
+
+    Notification: Notification.extend({
+      defaultProps: {
+        closeButtonProps: { "aria-label": "Dismiss notification" },
+      },
+      styles: {
+        root: {
+          backgroundColor: "var(--color-white)",
+          border: "1px solid var(--color-slate-200)",
+          borderRadius: "8px",
+          boxShadow: "var(--shadow-raised)",
+        },
+        title: {
+          fontSize: SIZE_BODY,
+          fontWeight: 600,
+          color: "var(--color-slate-900)",
+        },
+        description: {
+          fontSize: SIZE_BODY,
+          fontWeight: 500,
+          color: "var(--color-slate-700)",
+        },
+        closeButton: { color: "var(--color-slate-500)" },
+      },
+    }),
 
     Input: Input.extend({ styles: { ...labelStyles, ...inputStyles } }),
 

@@ -1,5 +1,6 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import { ActionIcon, Button, Modal, Tooltip } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import {
   AlertCircle,
   ArrowLeft,
@@ -15,7 +16,6 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { toast } from "sonner";
 import { twMerge } from "@/lib/utils";
 
 import { Tone, decisionMeta, statusMeta, toneClasses, urgencyMeta } from "../utils";
@@ -454,7 +454,10 @@ export const CopyValue = (props: {
       window.clearTimeout(timer.current);
       timer.current = window.setTimeout(() => setCopied(false), 1600);
     } catch {
-      toast.error("Could not copy to the clipboard");
+      notifications.show({
+        color: "red",
+        message: "Could not copy to the clipboard",
+      });
     }
   };
 

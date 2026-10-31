@@ -2,6 +2,7 @@ import * as AccessP from "@/apis/accessv1/accessv1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import * as MetaP from "@/apis/metav1/metav1";
 import { Button, SegmentedControl, Textarea, Tooltip } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
@@ -14,7 +15,6 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { toast } from "sonner";
 import { twMerge } from "@/lib/utils";
 
 import { useCatalogs, useService } from "@/components/Access/hooks";
@@ -270,7 +270,7 @@ const NewRequest = () => {
       return response;
     },
     onSuccess: (response) => {
-      toast.success("Access request submitted");
+      notifications.show({ color: "green", message: "Access request submitted" });
       setSubmitOpen(false);
       queryClient.invalidateQueries({ queryKey: ["user", "listRequest"] });
       unsavedChanges.allowNavigation(() =>
@@ -278,7 +278,10 @@ const NewRequest = () => {
       );
     },
     onError: (e) => {
-      toast.error(e instanceof Error ? e.message : "Failed to submit request");
+      notifications.show({
+        color: "red",
+        message: e instanceof Error ? e.message : "Failed to submit request",
+      });
     },
   });
 

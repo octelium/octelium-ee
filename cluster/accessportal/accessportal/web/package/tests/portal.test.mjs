@@ -130,6 +130,62 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
       assert.equal(await scheme(), "dark");
     });
 
+    for (const [state, options, message] of [
+      ["success", {}, "Access request submitted"],
+      ["error", { failCreate: "1" }, "Submission failed"],
+    ]) {
+      it(`keeps ${state} notifications readable at the bottom center in both themes`, async () => {
+        await load("/user/new", options);
+        await page.getByRole("button", { name: /Database/ }).click();
+        await page.getByRole("button", { name: "Submit Request", exact: true }).click();
+        await page.getByRole("dialog", { name: "Submit this access request?", exact: true })
+          .getByRole("button", { name: "Submit request", exact: true }).click();
+        const notification = page.locator(".mantine-Notification-root", { hasText: message });
+        await notification.waitFor();
+        const backgrounds = new Set();
+        for (const colorScheme of ["dark", "light"]) {
+          await page.emulateMedia({ colorScheme });
+          await page.waitForFunction((value) => document.documentElement.dataset.mantineColorScheme === value, colorScheme);
+          for (const width of [1440, 320]) {
+            await page.setViewportSize({ width, height: 1000 });
+            await notification.hover();
+            const { background, contrast } = await notification.evaluate((element) => {
+              const canvas = document.createElement("canvas");
+              canvas.width = canvas.height = 1;
+              const context = canvas.getContext("2d");
+              const luminance = (color) => {
+                context.fillStyle = color;
+                context.fillRect(0, 0, 1, 1);
+                const [r, g, b] = [...context.getImageData(0, 0, 1, 1).data]
+                  .slice(0, 3)
+                  .map((value) => value / 255)
+                  .map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+                return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+              };
+              const background = getComputedStyle(element).backgroundColor;
+              const foreground = luminance(getComputedStyle(element.querySelector(".mantine-Notification-description")).color);
+              const surface = luminance(background);
+              return {
+                background,
+                contrast: (Math.max(foreground, surface) + 0.05) / (Math.min(foreground, surface) + 0.05),
+              };
+            });
+            backgrounds.add(background);
+            assert.ok(contrast >= 4.5, `${colorScheme} ${state} notification contrast: ${contrast}`);
+            const bounds = await notification.boundingBox();
+            assert.ok(Math.abs(bounds.x + bounds.width / 2 - width / 2) <= 1);
+            assert.ok(bounds.x >= 0);
+            assert.ok(bounds.x + bounds.width <= width);
+            assert.ok(bounds.y + bounds.height <= 1000);
+            assert.ok(1000 - bounds.y - bounds.height <= 32);
+          }
+        }
+        assert.equal(backgrounds.size, 2);
+        await notification.getByRole("button", { name: "Dismiss notification", exact: true }).click();
+        await notification.waitFor({ state: "hidden" });
+      });
+    }
+
     it("offers all six urgency levels in a keyboard accessible selector", async () => {
       await load();
       const urgency = page.getByRole("combobox", { name: "Urgency", exact: true });

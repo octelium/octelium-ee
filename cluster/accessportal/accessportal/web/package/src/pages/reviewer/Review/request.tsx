@@ -1,11 +1,11 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import * as MetaP from "@/apis/metav1/metav1";
 import { Button, Textarea } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Gavel, Info, X } from "lucide-react";
 import * as React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
 import { twMerge } from "@/lib/utils";
 
 import AuthorizationCard from "@/components/Access/AuthorizationCard";
@@ -166,14 +166,17 @@ const ReviewRequest = () => {
       return response;
     },
     onSuccess: () => {
-      toast.success("Review submitted");
+      notifications.show({ color: "green", message: "Review submitted" });
       setDecisionToSubmit(undefined);
       queryClient.invalidateQueries({ queryKey: ["reviewer"] });
       unsavedChanges.allowNavigation(() => navigate("/reviewer/requests"));
     },
     onError: (e) => {
       setDecisionToSubmit(undefined);
-      toast.error(e instanceof Error ? e.message : "Failed to submit review");
+      notifications.show({
+        color: "red",
+        message: e instanceof Error ? e.message : "Failed to submit review",
+      });
       void qry.refetch();
     },
   });

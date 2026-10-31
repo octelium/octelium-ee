@@ -1,11 +1,11 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import * as MetaP from "@/apis/metav1/metav1";
 import { Button, SegmentedControl, Textarea } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Gavel, History, Lock, Pencil, RotateCcw, X } from "lucide-react";
 import * as React from "react";
 import { Link, useParams } from "react-router-dom";
-import { toast } from "sonner";
 
 import JustificationCard from "@/components/Access/JustificationCard";
 import RequestFacts from "@/components/Access/RequestFacts";
@@ -98,12 +98,15 @@ const ReviewDetail = () => {
       return response;
     },
     onSuccess: () => {
-      toast.success("Review updated");
+      notifications.show({ color: "green", message: "Review updated" });
       setEditing(false);
       invalidate();
     },
     onError: (e) => {
-      toast.error(e instanceof Error ? e.message : "Failed to update review");
+      notifications.show({
+        color: "red",
+        message: e instanceof Error ? e.message : "Failed to update review",
+      });
       invalidate();
     },
   });
@@ -116,13 +119,16 @@ const ReviewDetail = () => {
       return response;
     },
     onSuccess: () => {
-      toast.success("Decision reset");
+      notifications.show({ color: "green", message: "Decision reset" });
       setResetOpen(false);
       invalidate();
     },
     onError: (e) => {
       setResetOpen(false);
-      toast.error(e instanceof Error ? e.message : "Failed to reset the decision");
+      notifications.show({
+        color: "red",
+        message: e instanceof Error ? e.message : "Failed to reset the decision",
+      });
       invalidate();
     },
   });

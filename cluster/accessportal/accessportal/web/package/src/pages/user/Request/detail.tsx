@@ -2,11 +2,11 @@ import * as AccessP from "@/apis/accessv1/accessv1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import * as MetaP from "@/apis/metav1/metav1";
 import { Button, Modal, Textarea } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Save, X } from "lucide-react";
 import * as React from "react";
 import { Link, useParams } from "react-router-dom";
-import { toast } from "sonner";
 
 import AuthorizationCard from "@/components/Access/AuthorizationCard";
 import JustificationCard from "@/components/Access/JustificationCard";
@@ -114,7 +114,7 @@ const EditRequestModal = (props: {
       return response;
     },
     onSuccess: () => {
-      toast.success("Request updated");
+      notifications.show({ color: "green", message: "Request updated" });
       props.onClose();
       queryClient.invalidateQueries({
         queryKey: ["user", "getRequest", request.metadata!.name],
@@ -122,7 +122,10 @@ const EditRequestModal = (props: {
       queryClient.invalidateQueries({ queryKey: ["user", "listRequest"] });
     },
     onError: (e) => {
-      toast.error(e instanceof Error ? e.message : "Failed to update request");
+      notifications.show({
+        color: "red",
+        message: e instanceof Error ? e.message : "Failed to update request",
+      });
     },
   });
 
@@ -256,13 +259,16 @@ const RequestDetail = () => {
       return response;
     },
     onSuccess: () => {
-      toast.success("Request cancelled");
+      notifications.show({ color: "green", message: "Request cancelled" });
       setCancelOpen(false);
       queryClient.invalidateQueries({ queryKey: ["user", "getRequest", name] });
       queryClient.invalidateQueries({ queryKey: ["user", "listRequest"] });
     },
     onError: (e) => {
-      toast.error(e instanceof Error ? e.message : "Failed to cancel request");
+      notifications.show({
+        color: "red",
+        message: e instanceof Error ? e.message : "Failed to cancel request",
+      });
     },
   });
 
