@@ -79,7 +79,7 @@ func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 	dsn := ovutils.GetDuckDBDSNWithOpts(&ovutils.DuckDBOpts{})
 	ret.dbPath = ovutils.GetDuckDBDatabasePath(dsn)
 
-	ret.db, err = sql.Open("duckdb", dsn)
+	ret.db, err = openLogStoreDB(ctx, dsn)
 	if err != nil {
 		return nil, err
 	}
