@@ -196,6 +196,10 @@ func (g *Genesis) installOcteliumResources(ctx context.Context, clusterCfg *core
 	}
 
 	if rgn.Metadata.Name == "default" {
+		if err := genesisutils.CreateOrUpdateService(ctx, g.octeliumC, getCollectorService()); err != nil {
+			return err
+		}
+
 		{
 			svc := &corev1.Service{
 				Metadata: &metav1.Metadata{

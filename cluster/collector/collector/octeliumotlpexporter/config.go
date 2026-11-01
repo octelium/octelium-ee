@@ -31,6 +31,7 @@ type Config struct {
 	WaitForReady          bool              `mapstructure:"wait_for_ready"`
 	MaxCallRecvMsgSizeMiB int               `mapstructure:"max_call_recv_msg_size_mib"`
 	MaxCallSendMsgSizeMiB int               `mapstructure:"max_call_send_msg_size_mib"`
+	Remote                bool              `mapstructure:"remote"`
 
 	_ struct{}
 }

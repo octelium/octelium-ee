@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	fakenad "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/client/clientset/versioned/fake"
+	"github.com/octelium/octelium-ee/cluster/common/collectorutils"
 	oc "github.com/octelium/octelium-ee/cluster/common/components"
 	"github.com/octelium/octelium-ee/cluster/common/regionutils"
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
@@ -458,8 +459,10 @@ func TestRunJoin(t *testing.T) {
 		_, err = k8sC.CoreV1().ConfigMaps(vutils.K8sNS).Get(ctx, installationConfigMapName, k8smetav1.GetOptions{})
 		require.NoError(t, err)
 
-		_, err = tst.C.OcteliumC.CoreC().GetService(ctx, &rmetav1.GetOptions{Name: "console.octelium"})
-		assert.Error(t, err)
+		for _, name := range []string{"console.octelium", collectorutils.ServiceName} {
+			_, err = tst.C.OcteliumC.CoreC().GetService(ctx, &rmetav1.GetOptions{Name: name})
+			assert.Error(t, err, name)
+		}
 	}
 
 	{
@@ -536,4 +539,7 @@ func TestSetupGuardsNonDefaultRegionComponents(t *testing.T) {
 	rgn, err = tst.C.OcteliumC.CoreC().GetRegion(ctx, &rmetav1.GetOptions{Name: rgn.Metadata.Name})
 	require.NoError(t, err)
 	assert.Equal(t, ldflags.GetVersion(), regionutils.GetPackageVersion(rgn, regionutils.PackageEnterprise))
+
+	_, err = tst.C.OcteliumC.CoreC().GetService(ctx, &rmetav1.GetOptions{Name: collectorutils.ServiceName})
+	assert.Error(t, err)
 }

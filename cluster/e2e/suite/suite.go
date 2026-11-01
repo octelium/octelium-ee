@@ -121,6 +121,7 @@ func Phases() []suite.Phase {
 		{Name: "License", Run: testLicenseLifecycle},
 		{Name: "ClusterInfo", Run: testClusterInfo},
 		{Name: "RegionJoin", Run: testRegionJoin},
+		{Name: "CollectorRemoteService", Run: testCollectorRemoteService},
 		{Name: "Agent", Run: testAgent},
 	}
 }

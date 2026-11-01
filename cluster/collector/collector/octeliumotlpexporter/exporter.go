@@ -10,8 +10,10 @@ package octeliumotlpexporter
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
+	"net"
 	"runtime"
 
 	"github.com/octelium/octelium/cluster/common/spiffec"
@@ -19,6 +21,7 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	_ "google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -33,10 +36,36 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
 )
 
+type Remote interface {
+	GetAccessToken(ctx context.Context) (string, error)
+	GetTLSConfig() *tls.Config
+	Refresh()
+}
+
+type remoteCredentials struct {
+	remote Remote
+}
+
+func (c *remoteCredentials) GetRequestMetadata(ctx context.Context, _ ...string) (map[string]string, error) {
+	tkn, err := c.remote.GetAccessToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]string{
+		"x-octelium-auth": tkn,
+	}, nil
+}
+
+func (c *remoteCredentials) RequireTransportSecurity() bool {
+	return true
+}
+
 type baseExporter struct {
 	config  *Config
 	set     exporter.Settings
 	telset  component.TelemetrySettings
+	remote  Remote
 
 	conn          *grpc.ClientConn
 	logExporter   plogotlp.GRPCClient
@@ -63,16 +92,42 @@ func newExporter(cfg *Config, set exporter.Settings) *baseExporter {
 	}
 }
 
+func (e *baseExporter) getCredentialDialOptions(ctx context.Context) ([]grpc.DialOption, error) {
+	if !e.config.Remote {
+		credOpt, err := spiffec.GetGRPCClientCred(ctx, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		return []grpc.DialOption{credOpt}, nil
+	}
+
+	if e.remote == nil {
+		return nil, errors.New("octelium otlp remote exporter requires a remote")
+	}
+
+	endpoint := e.config.sanitizedEndpoint()
+	host, _, err := net.SplitHostPort(endpoint)
+	if err != nil {
+		host = endpoint
+	}
+
+	tlsConfig := e.remote.GetTLSConfig()
+	tlsConfig.ServerName = host
+
+	return []grpc.DialOption{
+		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
+		grpc.WithPerRPCCredentials(&remoteCredentials{remote: e.remote}),
+	}, nil
+}
+
 func (e *baseExporter) start(ctx context.Context, _ component.Host) error {
-	credOpt, err := spiffec.GetGRPCClientCred(ctx, nil)
+	dialOpts, err := e.getCredentialDialOptions(ctx)
 	if err != nil {
 		return err
 	}
 
-	dialOpts := []grpc.DialOption{
-		credOpt,
-		grpc.WithUserAgent(e.userAgent),
-	}
+	dialOpts = append(dialOpts, grpc.WithUserAgent(e.userAgent))
 
 	if e.config.MaxCallRecvMsgSizeMiB > 0 {
 		dialOpts = append(dialOpts,
@@ -136,7 +191,7 @@ func (e *baseExporter) pushLogs(ctx context.Context, ld plog.Logs) error {
 		plogotlp.NewExportRequestFromLogs(ld),
 		e.callOptions...,
 	)
-	if err := processError(respErr); err != nil {
+	if err := e.processExportError(respErr); err != nil {
 		return err
 	}
 
@@ -165,7 +220,7 @@ func (e *baseExporter) pushMetrics(ctx context.Context, md pmetric.Metrics) erro
 		pmetricotlp.NewExportRequestFromMetrics(md),
 		e.callOptions...,
 	)
-	if err := processError(respErr); err != nil {
+	if err := e.processExportError(respErr); err != nil {
 		return err
 	}
 
@@ -178,6 +233,17 @@ func (e *baseExporter) pushMetrics(ctx context.Context, md pmetric.Metrics) erro
 	}
 
 	return nil
+}
+
+func (e *baseExporter) processExportError(err error) error {
+	if e.config.Remote && status.Code(err) == codes.Unauthenticated {
+		if e.remote != nil {
+			e.remote.Refresh()
+		}
+		return err
+	}
+
+	return processError(err)
 }
 
 func processError(err error) error {

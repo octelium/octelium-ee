@@ -12,6 +12,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/common/collectorutils"
 	"github.com/octelium/octelium-ee/cluster/common/components"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/cluster/common/vutils"
@@ -19,7 +20,10 @@ import (
 	utils_types "github.com/octelium/octelium/pkg/utils/types"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	k8scorev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -73,6 +77,52 @@ func getComponentLabels(arg string) map[string]string {
 		"octelium.com/app":            "octeliumee",
 		"octelium.com/component":      arg,
 		"octelium.com/component-type": "cluster",
+	}
+}
+
+func getStoreServicePorts() []k8scorev1.ServicePort {
+	return []k8scorev1.ServicePort{
+		{
+			Name:     "grpc",
+			Protocol: k8scorev1.ProtocolTCP,
+			Port:     8080,
+			TargetPort: intstr.IntOrString{
+				Type:   intstr.Int,
+				IntVal: 8080,
+			},
+		},
+		{
+			Name:     "ingest",
+			Protocol: k8scorev1.ProtocolTCP,
+			Port:     collectorutils.IngestPort,
+			TargetPort: intstr.IntOrString{
+				Type:   intstr.Int,
+				IntVal: collectorutils.IngestPort,
+			},
+		},
+	}
+}
+
+func getStoreIngestNetworkPolicyRule() networkingv1.NetworkPolicyIngressRule {
+	return networkingv1.NetworkPolicyIngressRule{
+		Ports: []networkingv1.NetworkPolicyPort{
+			{
+				Protocol: &tcpProtocol,
+				Port: &intstr.IntOrString{
+					IntVal: collectorutils.IngestPort,
+				},
+			},
+		},
+		From: []networkingv1.NetworkPolicyPeer{
+			{
+				PodSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"octelium.com/component": "svc",
+						"octelium.com/svc":       collectorutils.ServiceName,
+					},
+				},
+			},
+		},
 	}
 }
 

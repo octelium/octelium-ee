@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/common/collectorutils"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium/apis/main/corev1"
@@ -32,11 +33,15 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	_ "google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/status"
 )
 
-const tstAddr = "localhost:32123"
+const (
+	tstAddr       = "localhost:32123"
+	tstIngestAddr = "localhost:32124"
+)
 
 const (
 	maxDBConns            = 8
@@ -190,6 +195,12 @@ func (s *Server) initGRPC(ctx context.Context) error {
 		return err
 	}
 
+	ingestLis, err := s.listenIngest()
+	if err != nil {
+		lis.Close()
+		return err
+	}
+
 	grpcSrv := grpc.NewServer(
 		cred,
 		grpc.ReadBufferSize(32*1024),
@@ -205,6 +216,16 @@ func (s *Server) initGRPC(ctx context.Context) error {
 	}()
 
 	plogotlp.RegisterGRPCServer(grpcSrv, srvLog)
+
+	var ingestSrv *grpc.Server
+	if ingestLis != nil {
+		ingestSrv = grpc.NewServer(
+			grpc.Creds(insecure.NewCredentials()),
+			grpc.ReadBufferSize(32*1024),
+			grpc.MaxConcurrentStreams(1000),
+		)
+		plogotlp.RegisterGRPCServer(ingestSrv, srvLog)
+	}
 
 	visibilityv1.RegisterAccessLogServiceServer(grpcSrv, &srvAccessLog{
 		s: s,
@@ -229,6 +250,9 @@ func (s *Server) initGRPC(ctx context.Context) error {
 	zap.L().Debug("Starting gRPC sever", zap.Bool("mockMode", ovutils.IsMockMode()))
 
 	go grpcSrv.Serve(lis)
+	if ingestSrv != nil {
+		go ingestSrv.Serve(ingestLis)
+	}
 
 	grpcDone := make(chan struct{})
 	s.grpcDone = grpcDone
@@ -238,6 +262,9 @@ func (s *Server) initGRPC(ctx context.Context) error {
 
 		stopped := make(chan struct{})
 		go func() {
+			if ingestSrv != nil {
+				ingestSrv.GracefulStop()
+			}
 			grpcSrv.GracefulStop()
 			close(stopped)
 		}()
@@ -247,6 +274,9 @@ func (s *Server) initGRPC(ctx context.Context) error {
 		select {
 		case <-stopped:
 		case <-timer.C:
+			if ingestSrv != nil {
+				ingestSrv.Stop()
+			}
 			grpcSrv.Stop()
 		}
 
@@ -254,6 +284,18 @@ func (s *Server) initGRPC(ctx context.Context) error {
 	}()
 
 	return nil
+}
+
+func (s *Server) listenIngest() (net.Listener, error) {
+	if ovutils.IsMockMode() {
+		return nil, nil
+	}
+
+	if ldflags.IsTest() {
+		return net.Listen("tcp", tstIngestAddr)
+	}
+
+	return net.Listen("tcp", collectorutils.GetIngestAddr())
 }
 
 func (s *Server) initDB(ctx context.Context) error {

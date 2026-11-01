@@ -1817,7 +1817,7 @@ func TestSplunkExporterConfigurationLoadsWithRegisteredFactory(t *testing.T) {
 	require.NoError(t, err)
 	factories.Processors, err = otelcol.MakeFactoryMap[processor.Factory](memorylimiterprocessor.NewFactory(), batchprocessor.NewFactory())
 	require.NoError(t, err)
-	factories.Exporters, err = otelcol.MakeFactoryMap[exporter.Factory](octeliumotlpexporter.NewFactory(), splunkhecexporter.NewFactory())
+	factories.Exporters, err = otelcol.MakeFactoryMap[exporter.Factory](octeliumotlpexporter.NewFactory(nil), splunkhecexporter.NewFactory())
 	require.NoError(t, err)
 
 	for _, tc := range []struct {
@@ -1873,8 +1873,8 @@ func TestSplunkExporterConfigurationLoadsWithRegisteredFactory(t *testing.T) {
 			for id, pipeline := range configuration.Service.Pipelines {
 				pipelines[id.String()] = pipeline.Exporters
 			}
-			assert.Equal(t, []component.ID{component.NewIDWithName(octeliumotlpexporter.NewFactory().Type(), "logstore")}, pipelines["logs"])
-			assert.Equal(t, []component.ID{component.NewIDWithName(octeliumotlpexporter.NewFactory().Type(), "metricstore")}, pipelines["metrics"])
+			assert.Equal(t, []component.ID{component.NewIDWithName(octeliumotlpexporter.NewFactory(nil).Type(), "logstore")}, pipelines["logs"])
+			assert.Equal(t, []component.ID{component.NewIDWithName(octeliumotlpexporter.NewFactory(nil).Type(), "metricstore")}, pipelines["metrics"])
 			require.Len(t, pipelines, len(tc.signals)+2)
 			for _, signal := range tc.signals {
 				name := "logs/splunk-logs"

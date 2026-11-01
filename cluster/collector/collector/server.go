@@ -14,6 +14,7 @@ import (
 
 	"github.com/octelium/octelium-ee/cluster/collector/collector/octeliumotlpexporter"
 	"github.com/octelium/octelium-ee/cluster/collector/collector/octeliumotlpreceiver"
+	"github.com/octelium/octelium-ee/cluster/common/collectorutils"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/watchers"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
@@ -59,6 +60,10 @@ type Server struct {
 
 	internalLogstoreEndpoint    string
 	internalMetricstoreEndpoint string
+
+	remote         *remoteController
+	remoteEndpoint string
+	collectorDone  chan struct{}
 }
 
 func NewServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Server, error) {
@@ -103,7 +108,7 @@ func (s *Server) doRun(ctx context.Context) error {
 	}
 
 	factories.Exporters, err = otelcol.MakeFactoryMap[exporter.Factory](
-		octeliumotlpexporter.NewFactory(),
+		octeliumotlpexporter.NewFactory(s.getExporterOpts()),
 		otlpexporter.NewFactory(),
 		otlphttpexporter.NewFactory(),
 
@@ -133,6 +138,7 @@ func (s *Server) doRun(ctx context.Context) error {
 		port:                        s.receiverPort,
 		internalLogstoreEndpoint:    s.getInternalLogstoreEndpoint(),
 		internalMetricstoreEndpoint: s.getInternalMetricstoreEndpoint(),
+		remoteEndpoint:              s.remoteEndpoint,
 	}
 
 	s.ccController = &ccController{
@@ -151,7 +157,9 @@ func (s *Server) doRun(ctx context.Context) error {
 		return err
 	}
 
+	s.collectorDone = make(chan struct{})
 	go func(ctx context.Context) {
+		defer close(s.collectorDone)
 
 		for {
 			select {
@@ -191,6 +199,47 @@ func (s *Server) doRun(ctx context.Context) error {
 
 func (s *Server) Run(ctx context.Context) error {
 	return s.doRun(ctx)
+}
+
+func (s *Server) getExporterOpts() *octeliumotlpexporter.Opts {
+	if s.remote == nil {
+		return nil
+	}
+
+	return &octeliumotlpexporter.Opts{
+		Remote: s.remote,
+	}
+}
+
+func (s *Server) setRemote(ctx context.Context) error {
+	cc, err := s.octeliumC.CoreV1Utils().GetClusterConfig(ctx)
+	if err != nil {
+		return err
+	}
+
+	s.remote = newRemoteController(s.octeliumC)
+	s.remoteEndpoint = collectorutils.GetServiceEndpoint(cc.Status.Domain)
+	s.remote.Run(ctx)
+
+	zap.L().Debug("Exporting the internal logs and metrics to the default Region",
+		zap.String("endpoint", s.remoteEndpoint))
+
+	return nil
+}
+
+func (s *Server) waitRemote() {
+	if s.remote == nil {
+		return
+	}
+
+	if s.collectorDone != nil {
+		select {
+		case <-s.collectorDone:
+		case <-time.After(remoteShutdownTimeout):
+		}
+	}
+
+	s.remote.Close()
 }
 
 type ccController struct {
@@ -235,6 +284,12 @@ func Run(ctx context.Context) error {
 	srv, err := NewServer(ctx, octeliumC)
 	if err != nil {
 		return err
+	}
+
+	if !vutils.IsDefaultRegion() {
+		if err := srv.setRemote(ctx); err != nil {
+			return err
+		}
 	}
 
 	if err := srv.Run(ctx); err != nil {
@@ -287,6 +342,8 @@ func Run(ctx context.Context) error {
 	zap.L().Debug("Collector is now running...")
 
 	<-ctx.Done()
+
+	srv.waitRemote()
 
 	return nil
 }

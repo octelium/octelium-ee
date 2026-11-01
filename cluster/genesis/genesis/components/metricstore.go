@@ -34,16 +34,7 @@ func getMetricStoreService() *k8scorev1.Service {
 		Spec: k8scorev1.ServiceSpec{
 			Type:     k8scorev1.ServiceTypeClusterIP,
 			Selector: getComponentLabels(componentMetricStore),
-			Ports: []k8scorev1.ServicePort{
-				{
-					Protocol: k8scorev1.ProtocolTCP,
-					Port:     8080,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 8080,
-					},
-				},
-			},
+			Ports:    getStoreServicePorts(),
 		},
 	}
 
@@ -144,6 +135,7 @@ func getMetricStoreNetworkPolicy(c *corev1.ClusterConfig) *networkingv1.NetworkP
 						},
 					},
 				},
+				getStoreIngestNetworkPolicyRule(),
 			},
 			PolicyTypes: []networkingv1.PolicyType{
 				networkingv1.PolicyTypeIngress,

@@ -44,6 +44,7 @@ type provider struct {
 
 	internalLogstoreEndpoint    string
 	internalMetricstoreEndpoint string
+	remoteEndpoint              string
 }
 
 type mt = map[string]any
@@ -1048,7 +1049,7 @@ func (c *provider) getInternalExporterConfig(
 	endpoint string,
 	maxSendMessageMiB int,
 ) map[string]any {
-	return mt{
+	ret := mt{
 		"endpoint":                   endpoint,
 		"compression":                "gzip",
 		"wait_for_ready":             true,
@@ -1076,6 +1077,12 @@ func (c *provider) getInternalExporterConfig(
 			"max_elapsed_time": internalExporterRetryMaxElapsedTime,
 		},
 	}
+
+	if c.remoteEndpoint != "" {
+		ret["remote"] = true
+	}
+
+	return ret
 }
 
 func kafkaExporterSignalCapabilities(
@@ -1141,6 +1148,9 @@ type exporterInfo struct {
 }
 
 func (p *provider) getInternalLogstoreEndpoint() string {
+	if p.remoteEndpoint != "" {
+		return p.remoteEndpoint
+	}
 	if p.internalLogstoreEndpoint != "" {
 		return p.internalLogstoreEndpoint
 	}
@@ -1148,6 +1158,9 @@ func (p *provider) getInternalLogstoreEndpoint() string {
 }
 
 func (p *provider) getInternalMetricstoreEndpoint() string {
+	if p.remoteEndpoint != "" {
+		return p.remoteEndpoint
+	}
 	if p.internalMetricstoreEndpoint != "" {
 		return p.internalMetricstoreEndpoint
 	}

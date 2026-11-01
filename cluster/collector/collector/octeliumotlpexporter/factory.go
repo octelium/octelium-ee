@@ -27,13 +27,29 @@ import (
 
 var componentType = component.MustNewType("octelium_otlp")
 
-func NewFactory() exporter.Factory {
+type Opts struct {
+	Remote Remote
+}
+
+func NewFactory(o *Opts) exporter.Factory {
+	if o == nil {
+		o = &Opts{}
+	}
+
+	f := &factory{
+		remote: o.Remote,
+	}
+
 	return exporter.NewFactory(
 		componentType,
 		createDefaultConfig,
-		exporter.WithLogs(createLogs, component.StabilityLevelStable),
-		exporter.WithMetrics(createMetrics, component.StabilityLevelStable),
+		exporter.WithLogs(f.createLogs, component.StabilityLevelStable),
+		exporter.WithMetrics(f.createMetrics, component.StabilityLevelStable),
 	)
+}
+
+type factory struct {
+	remote Remote
 }
 
 func createDefaultConfig() component.Config {
@@ -66,13 +82,14 @@ func endpointAttributes(cfg *Config) []attribute.KeyValue {
 	return out
 }
 
-func createLogs(
+func (f *factory) createLogs(
 	ctx context.Context,
 	set exporter.Settings,
 	cfg component.Config,
 ) (exporter.Logs, error) {
 	oCfg := cfg.(*Config)
 	oce := newExporter(oCfg, set)
+	oce.remote = f.remote
 
 	return exporterhelper.NewLogs(
 		ctx,
@@ -89,13 +106,14 @@ func createLogs(
 	)
 }
 
-func createMetrics(
+func (f *factory) createMetrics(
 	ctx context.Context,
 	set exporter.Settings,
 	cfg component.Config,
 ) (exporter.Metrics, error) {
 	oCfg := cfg.(*Config)
 	oce := newExporter(oCfg, set)
+	oce.remote = f.remote
 
 	return exporterhelper.NewMetrics(
 		ctx,

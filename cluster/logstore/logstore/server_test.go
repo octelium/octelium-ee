@@ -1588,3 +1588,68 @@ func TestLogStoreGRPCLifecycle(t *testing.T) {
 	}
 	assert.Equal(t, 2, getTableCount(t, ts.srv, "component_logs"))
 }
+
+func TestLogStoreIngestListenerOnlyServesOTLP(t *testing.T) {
+	if ovutils.IsMockMode() {
+		t.Skip()
+	}
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+
+	for range 2 {
+		ctx, cancel := context.WithCancel(ts.ctx)
+		t.Cleanup(cancel)
+		require.NoError(t, ts.srv.Run(ctx))
+		conn, err := grpc.NewClient(tstIngestAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		require.NoError(t, err)
+		t.Cleanup(func() { assert.NoError(t, conn.Close()) })
+		rpcCtx, rpcCancel := context.WithTimeout(ts.ctx, 5*time.Second)
+		_, err = plogotlp.NewGRPCClient(conn).Export(rpcCtx, newExportRequest(
+			marshalLog(t, newComponentLog(time.Now().UTC(), corev1.ComponentLog_Entry_INFO, "ingest")),
+		))
+		require.NoError(t, err)
+		_, err = visibilityv1.NewComponentLogServiceClient(conn).ListComponentLog(rpcCtx,
+			&visibilityv1.ListComponentLogRequest{})
+		assert.Equal(t, codes.Unimplemented, status.Code(err))
+		rpcCancel()
+		cancel()
+
+		require.Eventually(t, func() bool {
+			for _, addr := range []string{tstAddr, tstIngestAddr} {
+				listener, err := net.Listen("tcp", addr)
+				if err != nil {
+					return false
+				}
+				assert.NoError(t, listener.Close())
+			}
+			return true
+		}, 3*time.Second, 10*time.Millisecond)
+	}
+
+	require.Eventually(t, func() bool {
+		return getTableCount(t, ts.srv, "component_logs") == 2
+	}, 5*time.Second, 50*time.Millisecond)
+}
+
+func TestLogStoreIngestListenerBindFailure(t *testing.T) {
+	if ovutils.IsMockMode() {
+		t.Skip()
+	}
+	ts := newTestServer(t)
+	require.NotNil(t, ts)
+	listener, err := net.Listen("tcp", tstIngestAddr)
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, listener.Close()) })
+	ctx, cancel := context.WithCancel(ts.ctx)
+	defer cancel()
+
+	err = ts.srv.Run(ctx)
+	require.Error(t, err)
+	var netErr *net.OpError
+	require.ErrorAs(t, err, &netErr)
+	assert.Equal(t, "listen", netErr.Op)
+
+	mainListener, err := net.Listen("tcp", tstAddr)
+	require.NoError(t, err)
+	assert.NoError(t, mainListener.Close())
+}

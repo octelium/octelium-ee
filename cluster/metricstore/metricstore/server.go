@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/common/collectorutils"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
@@ -26,10 +27,14 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	_ "google.golang.org/grpc/encoding/gzip"
 )
 
-const tstAddr = "localhost:32123"
+const (
+	tstAddr       = "localhost:32123"
+	tstIngestAddr = "localhost:32124"
+)
 
 type Server struct {
 	octeliumC octeliumc.ClientInterface
@@ -40,9 +45,11 @@ type Server struct {
 	dbConfig      *metricStoreDBConfig
 	dbRecoverCh   chan struct{}
 
-	grpcSrv   *grpc.Server
-	listener  net.Listener
-	metricSrv *srvMetric
+	grpcSrv        *grpc.Server
+	listener       net.Listener
+	ingestSrv      *grpc.Server
+	ingestListener net.Listener
+	metricSrv      *srvMetric
 
 	statfsFn    func(path string) (uint64, uint64, error)
 	retentionMu sync.Mutex
@@ -215,6 +222,23 @@ func (s *Server) initGRPC(ctx context.Context) error {
 		return err
 	}
 
+	s.ingestListener, err = s.listenIngest()
+	if err != nil {
+		_ = s.listener.Close()
+		return err
+	}
+
+	if s.ingestListener != nil {
+		s.ingestSrv = grpc.NewServer(
+			grpc.Creds(insecure.NewCredentials()),
+			grpc.ReadBufferSize(64*1024),
+			grpc.WriteBufferSize(64*1024),
+			grpc.MaxRecvMsgSize(8<<20),
+			grpc.MaxConcurrentStreams(128),
+		)
+		pmetricotlp.RegisterGRPCServer(s.ingestSrv, s.metricSrv)
+	}
+
 	zap.L().Debug("Starting MetricStore gRPC server",
 		zap.String("addr", addr),
 		zap.Bool("mockMode", ovutils.IsMockMode()),
@@ -226,7 +250,27 @@ func (s *Server) initGRPC(ctx context.Context) error {
 		}
 	}()
 
+	if s.ingestSrv != nil {
+		go func() {
+			if err := s.ingestSrv.Serve(s.ingestListener); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+				zap.L().Error("MetricStore ingest gRPC server exited", zap.Error(err))
+			}
+		}()
+	}
+
 	return nil
+}
+
+func (s *Server) listenIngest() (net.Listener, error) {
+	if ovutils.IsMockMode() {
+		return nil, nil
+	}
+
+	if ldflags.IsTest() {
+		return net.Listen("tcp", tstIngestAddr)
+	}
+
+	return net.Listen("tcp", collectorutils.GetIngestAddr())
 }
 
 func (s *Server) closeStorage() {
@@ -248,17 +292,21 @@ func (s *Server) shutdown() {
 			s.metricSrv.stopAccepting()
 		}
 
-		if s.grpcSrv != nil {
+		for _, srv := range []*grpc.Server{s.ingestSrv, s.grpcSrv} {
+			if srv == nil {
+				continue
+			}
+
 			done := make(chan struct{})
 			go func() {
-				s.grpcSrv.GracefulStop()
+				srv.GracefulStop()
 				close(done)
 			}()
 
 			select {
 			case <-done:
 			case <-time.After(10 * time.Second):
-				s.grpcSrv.Stop()
+				srv.Stop()
 				<-done
 			}
 		}
@@ -272,6 +320,9 @@ func (s *Server) shutdown() {
 
 		if s.listener != nil {
 			_ = s.listener.Close()
+		}
+		if s.ingestListener != nil {
+			_ = s.ingestListener.Close()
 		}
 		s.closeStorage()
 	})
