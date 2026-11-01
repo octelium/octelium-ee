@@ -153,6 +153,24 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, []string{"user2@example.com"}, entry.OwnerEmails)
 	}
 
+	{
+		lastContact := now.Add(-time.Hour).UTC().Truncate(time.Second)
+		entry := m.toEntry(getComputer(fmt.Sprintf(`{
+			"udid": "u",
+			"general": {"lastContact": %q, "lastCheckIn": %q, "lastContactTime": %q}
+		}`, lastContact.Format(time.RFC3339),
+			now.Add(-72*time.Hour).UTC().Format(time.RFC3339),
+			now.Add(-72*time.Hour).UTC().Format(time.RFC3339))), now)
+		assert.Equal(t, corev1.Device_Status_Posture_PASS, entry.Posture.AgentHealthy)
+		assert.Equal(t, lastContact, entry.Posture.LastSeenAt.AsTime())
+	}
+
+	{
+		entry := m.toEntry(getComputer(`{"udid": "u", "general": {"lastCheckIn": "2026-01-01T00:00:00Z"}}`), now)
+		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, entry.Posture.AgentHealthy)
+		assert.Nil(t, entry.Posture.LastSeenAt)
+	}
+
 	for _, tc := range []struct {
 		state string
 		want  corev1.Device_Status_Posture_SignalState
@@ -216,6 +234,88 @@ func TestListComputers(t *testing.T) {
 	fleet, err := m.Collect(context.Background())
 	assert.Nil(t, err)
 	assert.Equal(t, 3, fleet.Len())
+}
+
+func TestListComputersLegacyFallback(t *testing.T) {
+	var paths []string
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path+"?page="+r.URL.Query().Get("page"))
+		assert.Equal(t, "id:asc", r.URL.Query().Get("sort"))
+		assert.Equal(t, inventorySections, r.URL.Query()["section"])
+
+		if r.URL.Path != legacyInventoryPath {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, `{"httpStatus": 404, "errors": []}`)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Query().Get("page") {
+		case "0":
+			fmt.Fprint(w, `{"totalCount": 2, "results": [{"udid": "a", "general": {"lastContactTime": "2026-10-31T10:00:00Z"}}]}`)
+		default:
+			fmt.Fprint(w, `{"totalCount": 2, "results": [{"udid": "b"}]}`)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	m := &Manager{
+		jamf: &jamfClient{rc: resty.New().SetBaseURL(srv.URL)},
+	}
+
+	fleet, err := m.Collect(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, 2, fleet.Len())
+	assert.Equal(t, []string{
+		inventoryPath + "?page=0",
+		legacyInventoryPath + "?page=0",
+		legacyInventoryPath + "?page=1",
+	}, paths)
+
+	res := fleet.MatchExternalID("a")
+	assert.Equal(t, devicemgrcommon.MatchStateUnique, res.State)
+	assert.True(t, res.Entry.Posture.LastSeenAt.IsValid())
+}
+
+func TestListComputersNoFallback(t *testing.T) {
+	for _, code := range []int{http.StatusInternalServerError, http.StatusForbidden} {
+		var paths []string
+
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			paths = append(paths, r.URL.Path)
+			w.WriteHeader(code)
+		}))
+
+		m := &Manager{
+			jamf: &jamfClient{rc: resty.New().SetBaseURL(srv.URL)},
+		}
+
+		_, err := m.Collect(context.Background())
+		assert.NotNil(t, err)
+		assert.Equal(t, []string{inventoryPath}, paths, code)
+
+		srv.Close()
+	}
+
+	{
+		var paths []string
+
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			paths = append(paths, r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}))
+		t.Cleanup(srv.Close)
+
+		m := &Manager{
+			jamf: &jamfClient{rc: resty.New().SetBaseURL(srv.URL)},
+		}
+
+		_, err := m.Collect(context.Background())
+		assert.NotNil(t, err)
+		assert.Contains(t, err.Error(), "Jamf status 404")
+		assert.Equal(t, []string{inventoryPath, legacyInventoryPath}, paths)
+	}
 }
 
 func TestInvalidResponse(t *testing.T) {

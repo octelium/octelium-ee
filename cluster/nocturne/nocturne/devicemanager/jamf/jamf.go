@@ -33,19 +33,22 @@ import (
 )
 
 const (
-	inventoryPath    = "/api/v1/computers-inventory"
-	tokenPath        = "/api/oauth/token"
-	jamfPageSize     = 500
-	jamfHTTPTimeout  = 60 * time.Second
-	tokenHTTPTimeout = 30 * time.Second
-	jamfMaxRetries   = 4
-	jamfMaxRespByte  = 64 << 20
+	inventoryPath       = "/api/v4/computers-inventory"
+	legacyInventoryPath = "/api/v1/computers-inventory"
+	tokenPath           = "/api/oauth/token"
+	jamfPageSize        = 500
+	jamfHTTPTimeout     = 60 * time.Second
+	tokenHTTPTimeout    = 30 * time.Second
+	jamfMaxRetries      = 4
+	jamfMaxRespByte     = 64 << 20
 )
 
 var inventorySections = []string{
 	"GENERAL", "HARDWARE", "OPERATING_SYSTEM",
 	"USER_AND_LOCATION", "SECURITY", "DISK_ENCRYPTION", "GROUP_MEMBERSHIPS",
 }
+
+var errNotFound = errors.New("Jamf resource not found")
 
 var uuidRe = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 
@@ -169,6 +172,14 @@ type inventoryResponse struct {
 }
 
 func (c *jamfClient) listComputers(ctx context.Context, filter string) ([]*computer, error) {
+	ret, err := c.doListComputers(ctx, inventoryPath, filter)
+	if errors.Is(err, errNotFound) {
+		return c.doListComputers(ctx, legacyInventoryPath, filter)
+	}
+	return ret, err
+}
+
+func (c *jamfClient) doListComputers(ctx context.Context, pth, filter string) ([]*computer, error) {
 	var out []*computer
 	page := 0
 	for {
@@ -187,7 +198,7 @@ func (c *jamfClient) listComputers(ctx context.Context, filter string) ([]*compu
 		}
 
 		var resp inventoryResponse
-		if err := c.get(ctx, inventoryPath+"?"+q.Encode(), &resp); err != nil {
+		if err := c.get(ctx, pth+"?"+q.Encode(), &resp); err != nil {
 			return nil, err
 		}
 		if resp.Results == nil {
@@ -211,6 +222,9 @@ func (c *jamfClient) get(ctx context.Context, u string, out any) error {
 		if resp.StatusCode() == http.StatusUnauthorized || resp.StatusCode() == http.StatusForbidden {
 			return errors.Errorf("Jamf status %d (check the API Role has Read Computers): %s",
 				resp.StatusCode(), snippet(resp.Body()))
+		}
+		if resp.StatusCode() == http.StatusNotFound {
+			return errors.Wrapf(errNotFound, "Jamf status %d: %s", resp.StatusCode(), snippet(resp.Body()))
 		}
 		return errors.Errorf("Jamf status %d: %s", resp.StatusCode(), snippet(resp.Body()))
 	}
@@ -243,6 +257,7 @@ type general struct {
 	JamfBinaryVersion string            `json:"jamfBinaryVersion"`
 	Platform          string            `json:"platform"`
 	ManagementId      string            `json:"managementId"`
+	LastContact       string            `json:"lastContact"`
 	LastContactTime   string            `json:"lastContactTime"`
 	Supervised        bool              `json:"supervised"`
 	UserApprovedMdm   bool              `json:"userApprovedMdm"`
@@ -319,7 +334,11 @@ func (m *Manager) toEntry(c *computer, now time.Time) *devicemgrcommon.Entry {
 		managed = gen.RemoteManagement.Managed
 	}
 
-	lastContact, haveContact := parseTime(gen.LastContactTime)
+	lastContactAt := gen.LastContact
+	if lastContactAt == "" {
+		lastContactAt = gen.LastContactTime
+	}
+	lastContact, haveContact := parseTime(lastContactAt)
 
 	p := &corev1.Device_Status_Posture{
 		DiskEncryption: fileVaultSignal(c.DiskEncryption),
