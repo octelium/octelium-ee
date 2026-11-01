@@ -126,6 +126,16 @@ func Phases() []suite.Phase {
 	}
 }
 
+func MultiRegionPhases() []suite.Phase {
+	return []suite.Phase{
+		{Name: "MultiRegionJoin", Run: testMultiRegionJoin},
+		{Name: "MultiRegionComponents", Run: testMultiRegionComponents},
+		{Name: "MultiRegionTelemetry", Run: testMultiRegionTelemetry},
+		{Name: "MultiRegionService", Run: testMultiRegionService},
+		{Name: "MultiRegionUpgrade", Run: testMultiRegionUpgrade},
+	}
+}
+
 func TailPhases() []suite.Phase {
 	return []suite.Phase{
 		{Name: "EnterpriseRollingRestart", Run: testEnterpriseRollingRestart},
@@ -146,20 +156,24 @@ func ReclaimPhase() suite.Phase {
 
 const (
 	EnvSkipApply = "OCTELIUM_E2E_SKIP_APPLY"
-	EnvSuite     = "OCTELIUM_E2E_SUITE"
+	EnvSuite     = "OCTELIUM_EE_E2E_SUITE"
 )
 
 const (
-	SuiteEnterprise = "enterprise"
-	SuiteAll        = "all"
+	SuiteEnterprise  = "enterprise"
+	SuiteAll         = "all"
+	SuiteMultiRegion = "multi-region"
 )
 
 func All() []suite.Phase {
-	if strings.EqualFold(os.Getenv(EnvSuite), SuiteAll) {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(EnvSuite))) {
+	case SuiteAll:
 		return withCore()
+	case SuiteMultiRegion:
+		return MultiRegion()
+	default:
+		return Enterprise()
 	}
-
-	return Enterprise()
 }
 
 func Enterprise() []suite.Phase {
@@ -169,6 +183,13 @@ func Enterprise() []suite.Phase {
 	ret = append(ret, suite.Only(suite.Phases(), "ComponentHealth")...)
 
 	return append(ret, TailPhases()...)
+}
+
+func MultiRegion() []suite.Phase {
+	ret := suite.Only(suite.Phases(), "ClusterReady")
+	ret = append(ret, ReadyPhase())
+
+	return append(ret, MultiRegionPhases()...)
 }
 
 func withCore() []suite.Phase {

@@ -61,6 +61,7 @@ type opts struct {
 	spire       bool
 	fixtures    bool
 	upgrade     bool
+	multiRegion bool
 	budget      time.Duration
 }
 
@@ -70,7 +71,7 @@ func register(id string, o opts) {
 	scenario.Register(id, func() *scenario.Scenario {
 		base := "k3s-flannel"
 		spiffe, _ := strconv.ParseBool(os.Getenv(EnvSPIFFE))
-		if o.spire || spiffe {
+		if !o.multiRegion && (o.spire || spiffe) {
 			base += "-spiffe"
 		}
 		ret := scenario.MustGet(base)
@@ -86,6 +87,10 @@ func register(id string, o opts) {
 
 		if o.upgrade {
 			ret.Caps = append(ret.Caps, scenario.CapUpgrade)
+		}
+
+		if o.multiRegion {
+			withMultiRegion(ret)
 		}
 
 		ret.Hooks.PostInstall = []scenario.Step{

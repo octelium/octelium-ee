@@ -9,7 +9,7 @@ on:
         required: false
         default: "k3s-flannel-ee-full"
       spiffe:
-        description: "Install SPIRE and enable the SPIFFE CSI driver (always enabled for full and spire scenarios)"
+        description: "Install SPIRE and enable the SPIFFE CSI driver (always enabled for full and spire scenarios, ignored by multi-region)"
         required: false
         type: boolean
         default: false
@@ -18,12 +18,13 @@ on:
         required: false
         default: ""
       suite:
-        description: "Which phases to run"
+        description: "Which phases to run. multi-region runs the k3s-flannel-ee-multi-region scenario, which joins a second k3s cluster as a Region, instead of the scenario input"
         required: false
         type: choice
         options:
           - enterprise
           - all
+          - multi-region
         default: enterprise
       packageVersion:
         description: "octeliumee package version to install. Defaults to this branch"
@@ -40,7 +41,7 @@ on:
         default: false
 env:
   GO_VERSION: "1.27.3"
-  OCTELIUM_E2E_SUITE: ${{ inputs.suite || 'enterprise' }}
+  OCTELIUM_EE_E2E_SUITE: ${{ inputs.suite || 'enterprise' }}
   OCTELIUM_E2E_PACKAGE_VERSION: ${{ inputs.packageVersion }}
   OCTELIUM_E2E_CORE_VERSION: ${{ inputs.coreVersion }}
   OCTELIUM_E2E_SKIP_APPLY: ${{ inputs.skipApply }}
@@ -56,8 +57,11 @@ jobs:
           - runner: ubuntu-24.04-arm
             scenario: k3s-flannel-ee-full
     runs-on: ${{ matrix.runner }}
-    name: ${{ matrix.scenario }}-${{ matrix.runner }}
+    name: ${{ inputs.suite == 'multi-region' && 'k3s-flannel-ee-multi-region' || matrix.scenario }}-${{ matrix.runner }}
     timeout-minutes: 180
+    env:
+      E2E_SCENARIO: ${{ inputs.suite == 'multi-region' && 'k3s-flannel-ee-multi-region' || inputs.scenario || matrix.scenario }}
+      E2E_TIMEOUT: ${{ inputs.suite == 'multi-region' && '150m' || '90m' }}
     steps:
       - name: Install deps
         run: |
@@ -87,13 +91,13 @@ jobs:
           make install-cli
 
       - name: Provision
-        run: ./bin/octeliumee-e2e provision --scenario=${{ inputs.scenario || matrix.scenario }}
+        run: ./bin/octeliumee-e2e provision --scenario=${{ env.E2E_SCENARIO }}
 
       - name: Prepare
-        run: ./bin/octeliumee-e2e prepare --scenario=${{ inputs.scenario || matrix.scenario }}
+        run: ./bin/octeliumee-e2e prepare --scenario=${{ env.E2E_SCENARIO }}
 
       - name: Install
-        run: ./bin/octeliumee-e2e install --scenario=${{ inputs.scenario || matrix.scenario }}
+        run: ./bin/octeliumee-e2e install --scenario=${{ env.E2E_SCENARIO }}
 
       - name: Test
         env:
@@ -103,8 +107,9 @@ jobs:
           OUT="${{ runner.temp }}/e2e-artifacts"
           mkdir -p "$OUT"
           ./bin/octeliumee-e2e test \
-            --scenario=${{ inputs.scenario || matrix.scenario }} \
+            --scenario=${{ env.E2E_SCENARIO }} \
             --artifacts="$OUT" \
+            --timeout=${{ env.E2E_TIMEOUT }} \
             ${{ inputs.run && format('--run={0}', inputs.run) || '' }} \
             2>&1 | tee "$OUT/test.log"
 
@@ -145,6 +150,29 @@ jobs:
             done
           fi
 
+          REGION_KUBECONFIG=/tmp/octelium-e2e/region-1.kubeconfig
+          if [ -f "$REGION_KUBECONFIG" ]; then
+            kubectl --kubeconfig "$REGION_KUBECONFIG" get all -A -o wide > "$OUT/region-get-all.txt" 2>&1 || true
+            kubectl --kubeconfig "$REGION_KUBECONFIG" get events -A --sort-by=.lastTimestamp \
+              > "$OUT/region-events.txt" 2>&1 || true
+            kubectl --kubeconfig "$REGION_KUBECONFIG" describe nodes > "$OUT/region-describe-nodes.txt" 2>&1 || true
+            kubectl --kubeconfig "$REGION_KUBECONFIG" describe pods -n octelium \
+              > "$OUT/region-describe-pods.txt" 2>&1 || true
+            kubectl --kubeconfig "$REGION_KUBECONFIG" get jobs -n octelium -o wide > "$OUT/region-jobs.txt" 2>&1 || true
+
+            for pod in $(kubectl --kubeconfig "$REGION_KUBECONFIG" get pods -n octelium -o name 2>/dev/null); do
+              kubectl --kubeconfig "$REGION_KUBECONFIG" logs "$pod" -n octelium --all-containers --tail=200 \
+                > "$OUT/region-logs-$(basename "$pod").txt" 2>&1 || true
+            done
+          fi
+
+          for c in octelium-e2e-region-1 octelium-e2e-postgres octelium-e2e-redis; do
+            if sudo docker inspect "$c" >/dev/null 2>&1; then
+              sudo docker logs --tail 500 "$c" > "$OUT/docker-$c.txt" 2>&1 || true
+            fi
+          done
+          { ip route; echo; sudo iptables -t nat -S; echo; sudo iptables -S; } > "$OUT/host-network.txt" 2>&1 || true
+
           cp /tmp/octelium-e2e-k3s.log "$OUT/" 2>/dev/null || true
         env:
           KUBECONFIG: /etc/rancher/k3s/k3s.yaml
@@ -153,7 +181,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-${{ matrix.scenario }}-${{ matrix.runner }}
+          name: e2e-${{ env.E2E_SCENARIO }}-${{ matrix.runner }}
           path: ${{ runner.temp }}/e2e-artifacts
           if-no-files-found: ignore
           retention-days: 7
