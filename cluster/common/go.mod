@@ -7,9 +7,9 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20261030212353-1ff6460fa877
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261030212353-1ff6460fa877
-	github.com/octelium/octelium/pkg v0.0.0-20261030212353-1ff6460fa877
+	github.com/octelium/octelium/cluster/common v0.0.0-20261101033512-acbf34c751e1
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261101033512-acbf34c751e1
+	github.com/octelium/octelium/pkg v0.0.0-20261101033512-acbf34c751e1
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/zap v1.28.0
@@ -59,7 +59,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261030212353-1ff6460fa877 // indirect
+	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261101033512-acbf34c751e1 // indirect
 	github.com/paulmach/orb v0.11.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/redis/go-redis/v9 v9.22.0 // indirect

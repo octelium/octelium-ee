@@ -7,9 +7,10 @@ require (
 	github.com/lib/pq v1.12.3
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20261030212353-1ff6460fa877
-	github.com/octelium/octelium/cluster/genesis v0.0.0-20261030212353-1ff6460fa877
-	github.com/octelium/octelium/pkg v0.0.0-20261030212353-1ff6460fa877
+	github.com/octelium/octelium/cluster/common v0.0.0-20261101033512-acbf34c751e1
+	github.com/octelium/octelium/cluster/genesis v0.0.0-20261101033512-acbf34c751e1
+	github.com/octelium/octelium/pkg v0.0.0-20261101033512-acbf34c751e1
+	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/zap v1.28.0
@@ -106,8 +107,8 @@ require (
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000 // indirect
-	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261030212353-1ff6460fa877 // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261030212353-1ff6460fa877 // indirect
+	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261101033512-acbf34c751e1 // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261101033512-acbf34c751e1 // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/open-policy-agent/opa v1.20.1 // indirect
 	github.com/oschwald/geoip2-golang/v2 v2.3.0 // indirect
@@ -115,7 +116,6 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/petermattis/goid v0.0.0-20250813065127-a731cc31b4fe // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/projectcalico/api v0.0.0-20260629014411-77a2372ddd1c // indirect
 	github.com/prometheus/client_golang v1.24.1 // indirect
