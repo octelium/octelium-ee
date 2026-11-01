@@ -12,6 +12,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -21,12 +22,16 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/rcorev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type tstManager struct{}
@@ -61,15 +66,76 @@ func (m *tstManager) Close() error {
 
 type tstEvaluator struct{}
 
-func (e *tstEvaluator) MatchesDevice(ctx context.Context, condition *corev1.Condition, dev *corev1.Device) (bool, error) {
+func (e *tstEvaluator) MatchesDevice(ctx context.Context, condition *corev1.Condition, dev *corev1.Device, usr *corev1.User) (bool, error) {
 	switch condition.GetMatch() {
 	case "error":
 		return false, errors.New("condition error")
 	case "false":
 		return false, nil
+	case "has-user":
+		return usr != nil && usr.Metadata.Uid == dev.Status.UserRef.GetUid(), nil
 	default:
 		return true, nil
 	}
+}
+
+type countingCore struct {
+	rcorev1.ResourceServiceClient
+	getDevice  atomic.Int32
+	getUser    atomic.Int32
+	getUserErr atomic.Int32
+}
+
+func (c *countingCore) GetDevice(ctx context.Context, req *rmetav1.GetOptions, opts ...grpc.CallOption) (*corev1.Device, error) {
+	c.getDevice.Add(1)
+	return c.ResourceServiceClient.GetDevice(ctx, req, opts...)
+}
+
+func (c *countingCore) GetUser(ctx context.Context, req *rmetav1.GetOptions, opts ...grpc.CallOption) (*corev1.User, error) {
+	c.getUser.Add(1)
+	if c.getUserErr.Load() > 0 {
+		c.getUserErr.Add(-1)
+		return nil, status.Error(codes.Unavailable, "unavailable")
+	}
+	return c.ResourceServiceClient.GetUser(ctx, req, opts...)
+}
+
+type countingEnterpriseUtils struct {
+	octeliumc.EnterpriseV1Utils
+	getClusterConfig atomic.Int32
+}
+
+func (c *countingEnterpriseUtils) GetClusterConfig(ctx context.Context) (*enterprisev1.ClusterConfig, error) {
+	c.getClusterConfig.Add(1)
+	return c.EnterpriseV1Utils.GetClusterConfig(ctx)
+}
+
+type countingClient struct {
+	octeliumc.ClientInterface
+	core            *countingCore
+	enterpriseUtils *countingEnterpriseUtils
+}
+
+func (c *countingClient) CoreC() rcorev1.ResourceServiceClient {
+	return c.core
+}
+
+func (c *countingClient) EnterpriseV1Utils() octeliumc.EnterpriseV1Utils {
+	return c.enterpriseUtils
+}
+
+func (e *tstEnv) useCountingClient() *countingClient {
+	ret := &countingClient{
+		ClientInterface: e.octeliumC,
+		core: &countingCore{
+			ResourceServiceClient: e.octeliumC.CoreC(),
+		},
+		enterpriseUtils: &countingEnterpriseUtils{
+			EnterpriseV1Utils: e.octeliumC.EnterpriseV1Utils(),
+		},
+	}
+	e.ctrl.octeliumC = ret
+	return ret
 }
 
 type tstEnv struct {
@@ -145,6 +211,25 @@ func (e *tstEnv) createDevice(t *testing.T, serial, email string) *corev1.Device
 			OsType:       corev1.Device_Status_LINUX,
 			SerialNumber: serial,
 			MacAddresses: []string{"a4:bb:cc:dd:ee:ff"},
+		},
+	})
+	assert.Nil(t, err)
+
+	return dev
+}
+
+func (e *tstEnv) createUserDevice(t *testing.T, usr *corev1.User, serial string) *corev1.Device {
+	dev, err := e.octeliumC.CoreC().CreateDevice(e.ctx, &corev1.Device{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec: &corev1.Device_Spec{
+			State: corev1.Device_Spec_ACTIVE,
+		},
+		Status: &corev1.Device_Status{
+			UserRef:      umetav1.GetObjectReference(usr),
+			OsType:       corev1.Device_Status_LINUX,
+			SerialNumber: serial,
 		},
 	})
 	assert.Nil(t, err)
@@ -1041,6 +1126,150 @@ func TestReconcileDeviceOwnerMatchMissingUser(t *testing.T) {
 		assert.Equal(t, reasonOwnerMismatch, dev.Status.Binding.Reason)
 		assert.Nil(t, dev.Status.Posture)
 	}
+}
+
+func TestReconcileDevicesSharesLookups(t *testing.T) {
+	env := newTstEnv(t)
+
+	spec := &enterprisev1.DeviceManager_Spec{
+		Condition: &corev1.Condition{Type: &corev1.Condition_Match{Match: "has-user"}},
+		Linking: &enterprisev1.DeviceManager_Spec_Linking{
+			RequireOwnerMatch: true,
+		},
+	}
+
+	env.setOwner("dm-a", spec, tstEntry("a-1", "serial-1"), tstEntry("a-2", "serial-2"),
+		tstEntry("a-3", "serial-3"), tstEntry("a-4", "serial-4"))
+	env.setOwner("dm-b", &enterprisev1.DeviceManager_Spec{
+		Condition: &corev1.Condition{Type: &corev1.Condition_Match{Match: "has-user"}},
+	}, tstEntry("b-5", "serial-5"))
+
+	var devices []*corev1.Device
+	for i, email := range []string{"owner@example.com", "other@example.com"} {
+		usr, err := env.octeliumC.CoreC().CreateUser(env.ctx, &corev1.User{
+			Metadata: &metav1.Metadata{
+				Name: utilrand.GetRandomStringCanonical(8),
+			},
+			Spec: &corev1.User_Spec{
+				Type:  corev1.User_Spec_HUMAN,
+				Email: email,
+			},
+			Status: &corev1.User_Status{},
+		})
+		assert.Nil(t, err)
+
+		for j := range 2 {
+			devices = append(devices, env.createUserDevice(t, usr, fmt.Sprintf("SERIAL-%d", i*2+j+1)))
+		}
+	}
+	devices = append(devices, env.createDevice(t, "SERIAL-5", "owner@example.com"))
+
+	client := env.useCountingClient()
+
+	for _, err := range env.ctrl.ReconcileDevices(env.ctx, devices) {
+		assert.Nil(t, err, "%+v", err)
+	}
+
+	assert.Zero(t, client.core.getDevice.Load())
+	assert.Equal(t, int32(3), client.core.getUser.Load())
+	assert.Equal(t, int32(1), client.enterpriseUtils.getClusterConfig.Load())
+	for _, dev := range devices {
+		assert.Nil(t, dev.Status.Binding)
+	}
+
+	var bindingUIDs []string
+	for i, dev := range devices {
+		dev := env.getDevice(t, dev)
+		switch i {
+		case 0, 1:
+			assert.Equal(t, "uid-dm-a", dev.Status.Binding.OwnerRef.Uid)
+			assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, dev.Status.Binding.State)
+		case 2, 3:
+			assert.Nil(t, dev.Status.Binding)
+		case 4:
+			assert.Equal(t, "uid-dm-b", dev.Status.Binding.OwnerRef.Uid)
+		}
+		bindingUIDs = append(bindingUIDs, dev.Status.GetBinding().GetUid())
+	}
+
+	for _, err := range env.ctrl.ReconcileDevices(env.ctx, devices) {
+		assert.Nil(t, err, "%+v", err)
+	}
+
+	assert.Equal(t, int32(3), client.core.getDevice.Load())
+	assert.Equal(t, int32(2), client.enterpriseUtils.getClusterConfig.Load())
+
+	for i, dev := range devices {
+		assert.Equal(t, bindingUIDs[i], env.getDevice(t, dev).Status.GetBinding().GetUid())
+	}
+
+	ctx, cancel := context.WithCancel(env.ctx)
+	cancel()
+	for _, err := range env.ctrl.ReconcileDevices(ctx, devices) {
+		assert.ErrorIs(t, err, context.Canceled)
+	}
+	assert.Equal(t, int32(3), client.core.getDevice.Load())
+}
+
+func TestReconcileDevicesEdgeCases(t *testing.T) {
+	env := newTstEnv(t)
+
+	owner := env.setOwner("dm-a", nil, tstEntry("a-1", "serial-1"))
+
+	deleted := env.createDeletedDevice(t)
+	deleted.Status.Binding = &corev1.Device_Status_Binding{
+		Uid:      utilrand.GetRandomStringCanonical(32),
+		OwnerRef: owner.OwnerRef(),
+		State:    corev1.Device_Status_Binding_AMBIGUOUS,
+		Reason:   reasonAmbiguous,
+	}
+
+	errs := env.ctrl.ReconcileDevices(env.ctx, []*corev1.Device{
+		nil,
+		deleted,
+		{Metadata: &metav1.Metadata{}},
+	})
+	assert.Len(t, errs, 3)
+	assert.Nil(t, errs[0])
+	assert.Nil(t, errs[1])
+	assert.NotNil(t, errs[2])
+	assert.NotNil(t, deleted.Status.Binding)
+
+	assert.Empty(t, env.ctrl.ReconcileDevices(env.ctx, nil))
+}
+
+func TestReconcileDeviceUserLookup(t *testing.T) {
+	env := newTstEnv(t)
+
+	spec := &enterprisev1.DeviceManager_Spec{
+		Condition: &corev1.Condition{Type: &corev1.Condition_Match{Match: "has-user"}},
+		Linking: &enterprisev1.DeviceManager_Spec_Linking{
+			RequireOwnerMatch: true,
+		},
+	}
+
+	env.setOwner("dm-a", spec, tstEntry("a-1", "serial-1"))
+	env.setOwner("dm-b", spec, tstEntry("b-1", "serial-1"))
+	env.setDeviceManagers(t, "dm-a", "dm-b")
+
+	dev := env.createDevice(t, "SERIAL-1", "other@example.com")
+	client := env.useCountingClient()
+
+	client.core.getUserErr.Store(1)
+	assert.Nil(t, env.ctrl.ReconcileDevice(env.ctx, dev))
+	assert.Nil(t, env.getDevice(t, dev).Status.Binding)
+	assert.Equal(t, int32(1), client.core.getUser.Load())
+
+	assert.Nil(t, env.ctrl.ReconcileDevice(env.ctx, dev))
+	assert.Nil(t, env.getDevice(t, dev).Status.Binding)
+	assert.Equal(t, int32(2), client.core.getUser.Load())
+	assert.Equal(t, int32(2), client.enterpriseUtils.getClusterConfig.Load())
+
+	env.setOwner("dm-b", nil, tstEntry("b-1", "serial-1"))
+	assert.Nil(t, env.ctrl.ReconcileDevice(env.ctx, dev))
+	bound := env.getDevice(t, dev)
+	assert.Equal(t, "uid-dm-b", bound.Status.Binding.OwnerRef.Uid)
+	assert.Equal(t, int32(3), client.core.getUser.Load())
 }
 
 func TestResetBindingsForOwner(t *testing.T) {

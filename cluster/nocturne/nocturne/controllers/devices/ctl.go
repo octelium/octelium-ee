@@ -21,6 +21,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/devicemanager/devicemgrcommon"
 	"github.com/octelium/octelium/apis/main/corev1"
+	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rlockv1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
@@ -30,6 +31,7 @@ import (
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"k8s.io/client-go/util/retry"
 )
 
 const (
@@ -59,7 +61,7 @@ type Resolver interface {
 }
 
 type ConditionEvaluator interface {
-	MatchesDevice(ctx context.Context, condition *corev1.Condition, dev *corev1.Device) (bool, error)
+	MatchesDevice(ctx context.Context, condition *corev1.Condition, dev *corev1.Device, usr *corev1.User) (bool, error)
 }
 
 type Controller struct {
@@ -137,11 +139,85 @@ func (c *Controller) LockDevice(uid string) func() {
 	return mu.Unlock
 }
 
+type reconcileCache struct {
+	octeliumC octeliumc.ClientInterface
+	cc        *enterprisev1.ClusterConfig
+	users     map[string]*corev1.User
+}
+
+func newReconcileCache(octeliumC octeliumc.ClientInterface) *reconcileCache {
+	return &reconcileCache{
+		octeliumC: octeliumC,
+		users:     map[string]*corev1.User{},
+	}
+}
+
+func (r *reconcileCache) getClusterConfig(ctx context.Context) (*enterprisev1.ClusterConfig, error) {
+	if r.cc != nil {
+		return r.cc, nil
+	}
+
+	cc, err := r.octeliumC.EnterpriseV1Utils().GetClusterConfig(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not get enterprise ClusterConfig")
+	}
+
+	r.cc = cc
+	return cc, nil
+}
+
+func (r *reconcileCache) getUser(ctx context.Context, dev *corev1.Device) (*corev1.User, error) {
+	ref := dev.Status.UserRef
+	if ref.GetUid() == "" {
+		return nil, nil
+	}
+
+	if usr, ok := r.users[ref.Uid]; ok {
+		return usr, nil
+	}
+
+	usr, err := r.octeliumC.CoreC().GetUser(ctx, apivalidation.ObjectReferenceToRGetOptions(ref))
+	if err != nil {
+		if !grpcerr.IsNotFound(err) {
+			return nil, errors.Wrap(err, "Could not resolve Device User")
+		}
+		usr = nil
+	}
+
+	r.users[ref.Uid] = usr
+	return usr, nil
+}
+
 func (c *Controller) ReconcileDevice(ctx context.Context, dev *corev1.Device) error {
 	if dev == nil {
 		return nil
 	}
-	uid := dev.GetMetadata().GetUid()
+
+	return c.reconcileDevice(ctx, dev.GetMetadata().GetUid(), nil, newReconcileCache(c.octeliumC))
+}
+
+func (c *Controller) ReconcileDevices(ctx context.Context, devices []*corev1.Device) []error {
+	cache := newReconcileCache(c.octeliumC)
+
+	ret := make([]error, len(devices))
+	for i, dev := range devices {
+		if err := ctx.Err(); err != nil {
+			ret[i] = err
+			continue
+		}
+		if dev == nil {
+			continue
+		}
+
+		ret[i] = c.reconcileDevice(ctx, dev.GetMetadata().GetUid(),
+			pbutils.Clone(dev).(*corev1.Device), cache)
+	}
+
+	return ret
+}
+
+func (c *Controller) reconcileDevice(ctx context.Context,
+	uid string, dev *corev1.Device, cache *reconcileCache) error {
 	if uid == "" {
 		return errors.New("Invalid Device")
 	}
@@ -149,24 +225,37 @@ func (c *Controller) ReconcileDevice(ctx context.Context, dev *corev1.Device) er
 	unlock := c.LockDevice(uid)
 	defer unlock()
 
-	dev, err := c.octeliumC.CoreC().GetDevice(ctx, &rmetav1.GetOptions{Uid: uid})
-	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			return nil
+	err := retry.OnError(retry.DefaultRetry, grpcerr.IsResourceChanged, func() error {
+		if dev == nil {
+			cur, err := c.octeliumC.CoreC().GetDevice(ctx, &rmetav1.GetOptions{Uid: uid})
+			if err != nil {
+				return errors.Wrap(err, "Could not get Device")
+			}
+			dev = cur
 		}
-		return errors.Wrap(err, "Could not get Device")
+
+		err := c.doReconcileDevice(ctx, dev, cache)
+		dev = nil
+		return err
+	})
+	if err != nil && !grpcerr.IsNotFound(err) {
+		return err
 	}
 
+	return nil
+}
+
+func (c *Controller) doReconcileDevice(ctx context.Context, dev *corev1.Device, cache *reconcileCache) error {
 	now := time.Now()
 
 	if dev.Status.Binding.GetState() == corev1.Device_Status_Binding_ACCEPTED {
-		if !c.reconcileAccepted(ctx, dev, now) {
+		if !c.reconcileAccepted(ctx, cache, dev, now) {
 			return nil
 		}
 		return c.updateDevice(ctx, dev)
 	}
 
-	cand, changed, err := c.reconcileUnbound(ctx, dev, now)
+	cand, changed, err := c.reconcileUnbound(ctx, cache, dev, now)
 	if err != nil {
 		return err
 	}
@@ -205,10 +294,11 @@ type decision struct {
 
 func (c *Controller) reconcileUnbound(
 	ctx context.Context,
+	cache *reconcileCache,
 	dev *corev1.Device,
 	now time.Time,
 ) (*candidate, bool, error) {
-	owners, err := c.getOrderedOwners(ctx)
+	owners, err := c.getOrderedOwners(ctx, cache)
 	if err != nil {
 		return nil, false, err
 	}
@@ -216,7 +306,7 @@ func (c *Controller) reconcileUnbound(
 	results := getAttemptResults(dev)
 
 	for _, owner := range owners {
-		dec := c.evaluateOwner(ctx, dev, owner, results, now)
+		dec := c.evaluateOwner(ctx, cache, dev, owner, results, now)
 
 		switch dec.kind {
 		case decisionSkip:
@@ -248,6 +338,7 @@ func (c *Controller) reconcileUnbound(
 
 func (c *Controller) evaluateOwner(
 	ctx context.Context,
+	cache *reconcileCache,
 	dev *corev1.Device,
 	owner *devicemgrcommon.Owner,
 	results map[string][]*devicemgrcommon.ProbeResult,
@@ -257,7 +348,7 @@ func (c *Controller) evaluateOwner(
 		return &decision{kind: decisionSkip}
 	}
 
-	applicable, err := c.ownerApplicable(ctx, owner, dev)
+	applicable, err := c.ownerApplicable(ctx, cache, owner, dev)
 	if err != nil {
 		zap.L().Warn("Could not evaluate DeviceManager Condition",
 			zap.String("device", dev.Metadata.Name),
@@ -331,7 +422,7 @@ func (c *Controller) evaluateOwner(
 	}
 
 	if devicemgrcommon.RequireOwnerMatch(owner.DM) {
-		userEmail, err := c.deviceUserEmail(ctx, dev)
+		userEmail, err := deviceUserEmail(ctx, cache, dev)
 		if err != nil {
 			zap.L().Warn("Could not get Device User email",
 				zap.String("device", dev.Metadata.Name), zap.Error(err))
@@ -417,7 +508,7 @@ const (
 	verificationFailed
 )
 
-func (c *Controller) reconcileAccepted(ctx context.Context, dev *corev1.Device, now time.Time) bool {
+func (c *Controller) reconcileAccepted(ctx context.Context, cache *reconcileCache, dev *corev1.Device, now time.Time) bool {
 	binding := dev.Status.Binding
 
 	owner, ok := c.resolver.GetOwner(binding.OwnerRef.GetUid())
@@ -440,7 +531,7 @@ func (c *Controller) reconcileAccepted(ctx context.Context, dev *corev1.Device, 
 		return false
 	}
 
-	entry, validity, reason, message, ok := c.checkBinding(ctx, dev, owner)
+	entry, validity, reason, message, ok := c.checkBinding(ctx, cache, dev, owner)
 	if !ok {
 		return false
 	}
@@ -498,10 +589,11 @@ func (c *Controller) reconcileAccepted(ctx context.Context, dev *corev1.Device, 
 
 func (c *Controller) checkBinding(
 	ctx context.Context,
+	cache *reconcileCache,
 	dev *corev1.Device,
 	owner *devicemgrcommon.Owner,
 ) (*devicemgrcommon.Entry, corev1.Device_Status_Binding_Validity, string, string, bool) {
-	applicable, err := c.ownerApplicable(ctx, owner, dev)
+	applicable, err := c.ownerApplicable(ctx, cache, owner, dev)
 	if err != nil {
 		zap.L().Warn("Could not evaluate DeviceManager Condition",
 			zap.String("device", dev.Metadata.Name),
@@ -525,7 +617,7 @@ func (c *Controller) checkBinding(
 	}
 
 	if devicemgrcommon.RequireOwnerMatch(owner.DM) {
-		userEmail, err := c.deviceUserEmail(ctx, dev)
+		userEmail, err := deviceUserEmail(ctx, cache, dev)
 		if err != nil {
 			zap.L().Warn("Could not get Device User email",
 				zap.String("device", dev.Metadata.Name), zap.Error(err))
@@ -649,10 +741,10 @@ func isPostureRefreshDue(current, desired *corev1.Device_Status_Posture, now tim
 	return !now.Before(lastSyncAt.Add(expiresAt.Sub(lastSyncAt) / 2))
 }
 
-func (c *Controller) getOrderedOwners(ctx context.Context) ([]*devicemgrcommon.Owner, error) {
-	cc, err := c.octeliumC.EnterpriseV1Utils().GetClusterConfig(ctx)
+func (c *Controller) getOrderedOwners(ctx context.Context, cache *reconcileCache) ([]*devicemgrcommon.Owner, error) {
+	cc, err := cache.getClusterConfig(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "Could not get enterprise ClusterConfig")
+		return nil, err
 	}
 
 	owners := c.resolver.ListOwners()
@@ -682,6 +774,7 @@ func (c *Controller) getOrderedOwners(ctx context.Context) ([]*devicemgrcommon.O
 
 func (c *Controller) ownerApplicable(
 	ctx context.Context,
+	cache *reconcileCache,
 	owner *devicemgrcommon.Owner,
 	dev *corev1.Device,
 ) (bool, error) {
@@ -698,7 +791,12 @@ func (c *Controller) ownerApplicable(
 		return false, errors.New("DeviceManager Condition cannot be evaluated")
 	}
 
-	matched, err := c.evaluator.MatchesDevice(ctx, condition, dev)
+	usr, err := cache.getUser(ctx, dev)
+	if err != nil {
+		return false, err
+	}
+
+	matched, err := c.evaluator.MatchesDevice(ctx, condition, dev, usr)
 	if err != nil {
 		return false, errors.Wrap(err, "Could not evaluate DeviceManager Condition")
 	}
@@ -849,24 +947,13 @@ func (c *Controller) listDevices(ctx context.Context, filters ...*rmetav1.ListOp
 	}
 }
 
-func (c *Controller) deviceUserEmail(ctx context.Context, dev *corev1.Device) (string, error) {
-	ref := dev.Status.UserRef
-	if ref == nil || ref.GetUid() == "" {
-		return "", nil
+func deviceUserEmail(ctx context.Context, cache *reconcileCache, dev *corev1.Device) (string, error) {
+	usr, err := cache.getUser(ctx, dev)
+	if err != nil || usr == nil {
+		return "", err
 	}
 
-	user, err := c.octeliumC.CoreC().GetUser(
-		ctx,
-		apivalidation.ObjectReferenceToRGetOptions(ref),
-	)
-	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			return "", nil
-		}
-		return "", errors.Wrap(err, "Could not resolve Device User")
-	}
-
-	return devicemgrcommon.NormalizeEmail(user.Spec.Email), nil
+	return devicemgrcommon.NormalizeEmail(usr.GetSpec().GetEmail()), nil
 }
 
 func (c *Controller) updateDevice(ctx context.Context, dev *corev1.Device) error {

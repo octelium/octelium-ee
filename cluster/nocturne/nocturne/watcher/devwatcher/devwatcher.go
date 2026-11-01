@@ -32,7 +32,7 @@ const (
 )
 
 type Reconciler interface {
-	ReconcileDevice(ctx context.Context, dev *corev1.Device) error
+	ReconcileDevices(ctx context.Context, devices []*corev1.Device) []error
 	ResetDeviceBinding(ctx context.Context, deviceUID, bindingUID string) error
 }
 
@@ -149,6 +149,7 @@ func (w *Watcher) doSweep(ctx context.Context) error {
 	}
 
 	tallies := map[string]*linkTally{}
+	var pending []*corev1.Device
 
 	for _, dev := range devices {
 		select {
@@ -157,7 +158,26 @@ func (w *Watcher) doSweep(ctx context.Context) error {
 		default:
 		}
 
-		w.sweepDevice(ctx, dev, dmUIDs, tallies)
+		if w.sweepDevice(ctx, dev, dmUIDs, tallies) {
+			pending = append(pending, dev)
+		}
+	}
+
+	errs := w.reconciler.ReconcileDevices(ctx, pending)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	for i, err := range errs {
+		if err == nil {
+			continue
+		}
+
+		dev := pending[i]
+		tallyFor(tallies, dev.Status.GetBinding().GetOwnerRef().GetUid()).failedUpdates++
+		zap.L().Warn("Could not reconcile Device binding",
+			zap.String("device", dev.GetMetadata().GetName()),
+			zap.Error(err))
 	}
 
 	w.updateLinkingStatus(ctx, tallies, sweepAt)
@@ -220,9 +240,9 @@ func (w *Watcher) sweepDevice(
 	dev *corev1.Device,
 	dmUIDs map[string]struct{},
 	tallies map[string]*linkTally,
-) {
+) bool {
 	if dev == nil || dev.GetStatus() == nil {
-		return
+		return false
 	}
 
 	binding := dev.Status.GetBinding()
@@ -235,7 +255,7 @@ func (w *Watcher) sweepDevice(
 					zap.String("device", dev.GetMetadata().GetName()),
 					zap.Error(err))
 			}
-			return
+			return false
 		}
 	}
 
@@ -253,12 +273,7 @@ func (w *Watcher) sweepDevice(
 		t.conflicts++
 	}
 
-	if err := w.reconciler.ReconcileDevice(ctx, dev); err != nil {
-		t.failedUpdates++
-		zap.L().Warn("Could not reconcile Device binding",
-			zap.String("device", dev.GetMetadata().GetName()),
-			zap.Error(err))
-	}
+	return true
 }
 
 func (w *Watcher) updateLinkingStatus(

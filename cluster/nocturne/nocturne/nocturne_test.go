@@ -65,18 +65,14 @@ func (c *oidcTestResources) CreateSecret(ctx context.Context, sec *enterprisev1.
 }
 
 func TestDeviceConditionEvaluation(t *testing.T) {
-	tst, err := tests.Initialize(nil)
-	require.NoError(t, err)
-	t.Cleanup(func() { tst.Destroy() })
 	engine, err := celengine.New(t.Context(), nil)
 	require.NoError(t, err)
-	evaluator := &dmConditionEvaluator{octeliumC: tst.C.OcteliumC, celEngine: engine}
-	usr, err := tst.C.OcteliumC.CoreC().CreateUser(t.Context(), &corev1.User{
-		Metadata: &metav1.Metadata{Name: "condition-user"},
+	evaluator := &dmConditionEvaluator{celEngine: engine}
+	usr := &corev1.User{
+		Metadata: &metav1.Metadata{Name: "condition-user", Uid: vutils.UUIDv4()},
 		Spec:     &corev1.User_Spec{Type: corev1.User_Spec_HUMAN, Email: "user@example.com"},
 		Status:   &corev1.User_Status{},
-	})
-	require.NoError(t, err)
+	}
 	dev := &corev1.Device{Metadata: &metav1.Metadata{Name: "condition-device"}, Status: &corev1.Device_Status{UserRef: umetav1.GetObjectReference(usr)}}
 	for _, tc := range []struct {
 		expression string
@@ -88,37 +84,35 @@ func TestDeviceConditionEvaluation(t *testing.T) {
 		{"ctx.user.spec.email == 'other@example.com'", false},
 	} {
 		t.Run(tc.expression, func(t *testing.T) {
-			match, err := evaluator.MatchesDevice(t.Context(), &corev1.Condition{Type: &corev1.Condition_Match{Match: tc.expression}}, dev)
+			match, err := evaluator.MatchesDevice(t.Context(), &corev1.Condition{Type: &corev1.Condition_Match{Match: tc.expression}}, dev, usr)
 			require.NoError(t, err)
 			assert.Equal(t, tc.want, match)
 		})
 	}
-	match, err := evaluator.MatchesDevice(t.Context(), nil, nil)
+	match, err := evaluator.MatchesDevice(t.Context(), nil, nil, nil)
 	require.NoError(t, err)
 	assert.True(t, match)
-	_, err = evaluator.MatchesDevice(t.Context(), &corev1.Condition{Type: &corev1.Condition_Match{Match: "ctx.user."}}, dev)
+	_, err = evaluator.MatchesDevice(t.Context(), &corev1.Condition{Type: &corev1.Condition_Match{Match: "ctx.user."}}, dev, usr)
 	assert.Error(t, err)
 }
 
-func TestDeviceConditionMissingAndCanceledUserLookup(t *testing.T) {
-	tst, err := tests.Initialize(nil)
-	require.NoError(t, err)
-	t.Cleanup(func() { tst.Destroy() })
+func TestDeviceConditionWithoutUser(t *testing.T) {
 	engine, err := celengine.New(t.Context(), nil)
 	require.NoError(t, err)
-	evaluator := &dmConditionEvaluator{octeliumC: tst.C.OcteliumC, celEngine: engine}
+	evaluator := &dmConditionEvaluator{celEngine: engine}
 	dev := &corev1.Device{Metadata: &metav1.Metadata{Name: "device"}, Status: &corev1.Device_Status{}}
 	condition := &corev1.Condition{Type: &corev1.Condition_Match{Match: "!has(ctx.user)"}}
-	for _, ref := range []*metav1.ObjectReference{nil, {Name: "absent"}, {Uid: vutils.UUIDv4()}} {
-		dev.Status.UserRef = ref
-		match, err := evaluator.MatchesDevice(t.Context(), condition, dev)
-		require.NoError(t, err)
-		assert.True(t, match)
-	}
-	ctx, cancel := context.WithCancel(t.Context())
-	cancel()
-	_, err = evaluator.MatchesDevice(ctx, condition, dev)
-	assert.ErrorContains(t, err, "Could not resolve Device User")
+
+	match, err := evaluator.MatchesDevice(t.Context(), condition, dev, nil)
+	require.NoError(t, err)
+	assert.True(t, match)
+
+	match, err = evaluator.MatchesDevice(t.Context(), condition, dev, &corev1.User{
+		Metadata: &metav1.Metadata{Name: "user"},
+		Spec:     &corev1.User_Spec{},
+	})
+	require.NoError(t, err)
+	assert.False(t, match)
 }
 
 func TestOIDCSecretsBootstrapAndIdempotence(t *testing.T) {

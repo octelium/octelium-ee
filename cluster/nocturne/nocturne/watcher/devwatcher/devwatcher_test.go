@@ -39,17 +39,22 @@ type tstReconciler struct {
 	failUIDs   map[string]struct{}
 	reconciled []string
 	resets     map[string]string
+	batches    int
 }
 
-func (r *tstReconciler) ReconcileDevice(ctx context.Context, dev *corev1.Device) error {
+func (r *tstReconciler) ReconcileDevices(ctx context.Context, devices []*corev1.Device) []error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.reconciled = append(r.reconciled, dev.Metadata.Uid)
-	if _, ok := r.failUIDs[dev.Metadata.Uid]; ok {
-		return errors.New("reconcile error")
+	r.batches++
+	ret := make([]error, len(devices))
+	for i, dev := range devices {
+		r.reconciled = append(r.reconciled, dev.Metadata.Uid)
+		if _, ok := r.failUIDs[dev.Metadata.Uid]; ok {
+			ret[i] = errors.New("reconcile error")
+		}
 	}
-	return nil
+	return ret
 }
 
 func (r *tstReconciler) ResetDeviceBinding(ctx context.Context, deviceUID, bindingUID string) error {
@@ -176,6 +181,7 @@ func TestSweep(t *testing.T) {
 		sort.Strings(reconciled)
 
 		assert.Equal(t, expected, reconciled)
+		assert.Equal(t, 1, reconciler.batches)
 		assert.Equal(t, map[string]string{
 			orphan.Metadata.Uid: orphan.Status.Binding.Uid,
 		}, reconciler.resets)
@@ -326,4 +332,70 @@ func TestUpdateLinkingStatusConflict(t *testing.T) {
 	assert.True(t, pbutils.IsEqual(sweepAt, cur.Status.Linking.LastSweepAt))
 	assert.Equal(t, uint32(4), cur.Status.Linking.LinkedDevices)
 	assert.Equal(t, uint32(1), cur.Status.Linking.Suspended)
+}
+
+type cancelingReconciler struct {
+	tstReconciler
+	cancel context.CancelFunc
+}
+
+func (r *cancelingReconciler) ReconcileDevices(ctx context.Context, devices []*corev1.Device) []error {
+	r.cancel()
+	ret := make([]error, len(devices))
+	for i := range devices {
+		ret[i] = ctx.Err()
+	}
+	return ret
+}
+
+func TestSweepCanceledDuringReconciliation(t *testing.T) {
+	tst, err := tests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() { tst.Destroy() })
+
+	octeliumC := tst.C.OcteliumC
+
+	dm, err := octeliumC.EnterpriseC().CreateDeviceManager(t.Context(), &enterprisev1.DeviceManager{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec: &enterprisev1.DeviceManager_Spec{
+			Type: &enterprisev1.DeviceManager_Spec_Iru_{
+				Iru: &enterprisev1.DeviceManager_Spec_Iru{},
+			},
+		},
+		Status: &enterprisev1.DeviceManager_Status{},
+	})
+	require.NoError(t, err)
+
+	_, err = octeliumC.CoreC().CreateDevice(t.Context(), &corev1.Device{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec:   &corev1.Device_Spec{},
+		Status: &corev1.Device_Status{},
+	})
+	require.NoError(t, err)
+
+	registry := devicemgrcommon.NewRegistry()
+	registry.SetOwner(devicemgrcommon.NewPendingOwner(dm))
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	w, err := NewWatcher(&Opts{
+		OcteliumC: octeliumC,
+		Resolver:  registry,
+		Reconciler: &cancelingReconciler{
+			tstReconciler: tstReconciler{resets: map[string]string{}},
+			cancel:        cancel,
+		},
+	})
+	require.NoError(t, err)
+
+	assert.ErrorIs(t, w.doSweep(ctx), context.Canceled)
+
+	cur, err := octeliumC.EnterpriseC().GetDeviceManager(t.Context(), &rmetav1.GetOptions{Uid: dm.Metadata.Uid})
+	require.NoError(t, err)
+	assert.Nil(t, cur.Status.Linking)
 }

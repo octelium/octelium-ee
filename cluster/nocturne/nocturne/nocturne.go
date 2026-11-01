@@ -34,7 +34,6 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
-	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/celengine"
 	"github.com/octelium/octelium/cluster/common/commoninit"
 	"github.com/octelium/octelium/cluster/common/healthcheck"
@@ -103,7 +102,6 @@ func runDefaultRegionControllers(ctx context.Context, octeliumC octeliumc.Client
 	registry := devicemgrcommon.NewRegistry()
 
 	devCtl := devcontroller.NewController(octeliumC, registry, &dmConditionEvaluator{
-		octeliumC: octeliumC,
 		celEngine: celEngine,
 	})
 
@@ -212,7 +210,6 @@ func runDefaultRegionControllers(ctx context.Context, octeliumC octeliumc.Client
 }
 
 type dmConditionEvaluator struct {
-	octeliumC octeliumc.ClientInterface
 	celEngine *celengine.CELEngine
 }
 
@@ -222,6 +219,7 @@ func (e *dmConditionEvaluator) MatchesDevice(
 	ctx context.Context,
 	condition *corev1.Condition,
 	dev *corev1.Device,
+	usr *corev1.User,
 ) (bool, error) {
 	if condition == nil {
 		return true, nil
@@ -231,15 +229,8 @@ func (e *dmConditionEvaluator) MatchesDevice(
 		"device": pbutils.MustConvertToMap(dev),
 	}
 
-	if ref := dev.Status.UserRef; ref != nil && ref.GetUid() != "" {
-		usr, err := e.octeliumC.CoreC().GetUser(ctx,
-			apivalidation.ObjectReferenceToRGetOptions(ref))
-		switch {
-		case err == nil:
-			ctxMap["user"] = pbutils.MustConvertToMap(usr)
-		case !grpcerr.IsNotFound(err):
-			return false, errors.Wrap(err, "Could not resolve Device User for Condition evaluation")
-		}
+	if usr != nil {
+		ctxMap["user"] = pbutils.MustConvertToMap(usr)
 	}
 
 	return e.celEngine.EvalCondition(ctx, condition, map[string]any{
