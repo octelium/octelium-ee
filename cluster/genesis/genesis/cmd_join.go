@@ -17,6 +17,7 @@ import (
 	"time"
 
 	netv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
+	oc "github.com/octelium/octelium-ee/cluster/common/components"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/regionutils"
 	"github.com/octelium/octelium-ee/cluster/genesis/genesis/components"
@@ -141,6 +142,16 @@ func (g *Genesis) RunJoin(ctx context.Context, o *JoinOpts) error {
 	}
 
 	if err := g.setNadConfig(ctx); err != nil {
+		return err
+	}
+
+	if err := g.installJoinSecretManager(ctx, &components.CommonOpts{
+		CommonOpts: gc.CommonOpts{
+			K8sC:          g.k8sC,
+			ClusterConfig: clusterCfg,
+			Region:        rgn,
+		},
+	}); err != nil {
 		return err
 	}
 
@@ -313,6 +324,29 @@ func (g *Genesis) setRegionCoreVersion(ctx context.Context, rgn *corev1.Region, 
 	}
 
 	return g.octeliumCInit.CoreC().UpdateRegion(ctx, region)
+}
+
+func (g *Genesis) installJoinSecretManager(ctx context.Context, opts *components.CommonOpts) error {
+	zap.L().Debug("Installing the enterprise secret manager before the core components",
+		zap.String("region", opts.Region.Metadata.Name))
+
+	if err := components.CreateRscServer(ctx, opts); err != nil {
+		return err
+	}
+
+	if err := k8sutils.WaitReadinessDeployment(ctx, g.k8sC, oc.OcteliumEnterpriseComponent(oc.RscServer)); err != nil {
+		return err
+	}
+
+	if err := components.CreateSecretMan(ctx, opts); err != nil {
+		return err
+	}
+
+	if err := k8sutils.WaitReadinessDeployment(ctx, g.k8sC, oc.OcteliumEnterpriseComponent(oc.SecretMan)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (g *Genesis) installJoinCoreComponents(ctx context.Context, opts *gc.CommonOpts) error {

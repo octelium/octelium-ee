@@ -89,6 +89,9 @@ func dumpRegionOnFailure(t *testing.T, h *eeharness.H, rgn *eeharness.Region) {
 			"get jobs -n octelium -o wide",
 			"get events -n octelium --sort-by=.lastTimestamp",
 			"logs -n octelium -l octelium.com/component=genesis --all-containers --tail=200",
+			"logs -n octelium -l octelium.com/component=gwagent --all-containers --tail=100",
+			"logs -n octelium -l octelium.com/component=rscserver --all-containers --tail=100",
+			"logs -n octelium -l octelium.com/component=secretman --all-containers --tail=100",
 			"logs -n octelium -l octelium.com/component=collector --all-containers --tail=100",
 		} {
 			h.Run(ctx, rgn.Kubectl(args))
@@ -445,12 +448,22 @@ func testMultiRegionTelemetry(t *testing.T, ch *harness.H) {
 				if err != nil {
 					return err
 				}
+				exported := map[string]bool{}
 				for _, itm := range res.Items {
-					if sessions[itm.GetEntry().GetCommon().GetSessionRef().GetUid()] {
-						return nil
+					if !sessions[itm.GetEntry().GetCommon().GetSessionRef().GetUid()] {
+						continue
+					}
+					info := itm.GetEntry().GetInfo().GetGrpc()
+					if info.GetMethod() == "Export" && info.GetStatus() == 0 {
+						exported[info.GetServiceFullName()] = true
 					}
 				}
-				return errNotProvisioned("an AccessLog of an export of the Region")
+				for _, name := range []string{collectorRemoteLogsService, collectorRemoteMetricsService} {
+					if !exported[name] {
+						return errNotProvisioned(fmt.Sprintf("a successful %s export of the Region", name))
+					}
+				}
+				return nil
 			})
 	})
 }

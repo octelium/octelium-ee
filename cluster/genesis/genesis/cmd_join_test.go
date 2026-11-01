@@ -10,6 +10,8 @@ package genesis
 
 import (
 	"context"
+	"fmt"
+	"slices"
 	"testing"
 
 	fakenad "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/client/clientset/versioned/fake"
@@ -32,9 +34,12 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	k8scorev1 "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	k8stesting "k8s.io/client-go/testing"
 )
 
 func getTestJoinBootstrap() *cbootstrapv1.Config {
@@ -399,6 +404,17 @@ func TestRunJoin(t *testing.T) {
 		nadC: fakenad.NewSimpleClientset(),
 	}
 
+	var created []string
+	k8sC.PrependReactor("create", "*", func(action k8stesting.Action) (bool, runtime.Object, error) {
+		switch action.GetResource().Resource {
+		case "deployments", "daemonsets":
+			if obj, err := meta.Accessor(action.(k8stesting.CreateAction).GetObject()); err == nil {
+				created = append(created, fmt.Sprintf("%s/%s", action.GetResource().Resource, obj.GetName()))
+			}
+		}
+		return false, nil, nil
+	})
+
 	{
 		assert.Error(t, g.RunJoin(ctx, nil))
 		assert.Error(t, g.RunJoin(ctx, &JoinOpts{CoreVersion: " "}))
@@ -462,6 +478,31 @@ func TestRunJoin(t *testing.T) {
 		for _, name := range []string{"console.octelium", collectorutils.ServiceName} {
 			_, err = tst.C.OcteliumC.CoreC().GetService(ctx, &rmetav1.GetOptions{Name: name})
 			assert.Error(t, err, name)
+		}
+	}
+
+	{
+		createdAt := func(name string) int {
+			idx := slices.Index(created, name)
+			require.GreaterOrEqual(t, idx, 0, "%s was never created: %v", name, created)
+			return idx
+		}
+
+		rscServer := createdAt("deployments/octelium-rscserver")
+		eeRscServer := createdAt("deployments/" + oc.OcteliumEnterpriseComponent(oc.RscServer))
+		secretMan := createdAt("deployments/" + oc.OcteliumEnterpriseComponent(oc.SecretMan))
+
+		assert.Less(t, rscServer, eeRscServer)
+		assert.Less(t, eeRscServer, secretMan)
+
+		for _, name := range []string{
+			"daemonsets/octelium-gwagent",
+			"deployments/octelium-nocturne",
+			"deployments/octelium-octovigil",
+			"deployments/" + oc.OcteliumEnterpriseComponent(oc.Nocturne),
+			"deployments/" + oc.OcteliumEnterpriseComponent(oc.Collector),
+		} {
+			assert.Less(t, secretMan, createdAt(name), name)
 		}
 	}
 

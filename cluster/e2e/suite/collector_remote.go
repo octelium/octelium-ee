@@ -12,18 +12,16 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
 	eeharness "github.com/octelium/octelium-ee/cluster/e2e/harness"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
-	"github.com/octelium/octelium/apis/main/visibilityv1"
-	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/cluster/e2e/harness"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
+	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -40,6 +38,11 @@ import (
 )
 
 const collectorRemoteServiceName = "collector.octelium"
+
+const (
+	collectorRemoteLogsService    = "opentelemetry.proto.collector.logs.v1.LogsService"
+	collectorRemoteMetricsService = "opentelemetry.proto.collector.metrics.v1.MetricsService"
+)
 
 func withCollectorRemoteToken(ctx context.Context, token string) context.Context {
 	if token == "" {
@@ -118,6 +121,10 @@ func testCollectorRemoteService(t *testing.T, ch *harness.H) {
 		_, err := logsC.Export(ctx, newCollectorRemoteLogs(t, vutils.UUIDv4()))
 		require.Error(t, err)
 		assert.Contains(t, []codes.Code{codes.Unauthenticated, codes.PermissionDenied}, status.Code(err))
+
+		_, err = metricsC.Export(ctx, newCollectorRemoteMetrics(h.Name()))
+		require.Error(t, err)
+		assert.Contains(t, []codes.Code{codes.Unauthenticated, codes.PermissionDenied}, status.Code(err))
 	})
 
 	t.Run("OtherUsersAreDenied", func(t *testing.T) {
@@ -152,58 +159,46 @@ func testCollectorRemoteService(t *testing.T, ch *harness.H) {
 			if status.Code(err) != codes.PermissionDenied {
 				return errors.Errorf("got %v, want PermissionDenied", err)
 			}
+			_, err = metricsC.Export(withCollectorRemoteToken(ctx, token), newCollectorRemoteMetrics(h.Name()))
+			if status.Code(err) != codes.PermissionDenied {
+				return errors.Errorf("got %v, want PermissionDenied", err)
+			}
 			return nil
 		})
 	})
 
-	t.Run("OcteliumUserReachesTheStores", func(t *testing.T) {
+	t.Run("OcteliumUserCredentialsAreDenied", func(t *testing.T) {
 		ctx, cancel := h.Ctx(t)
 		defer cancel()
 
 		usr, err := h.CoreC().GetUser(ctx, &metav1.GetOptions{Name: "octelium"})
 		require.NoError(t, err)
-		token := h.AccessToken(t, usr)
 
-		componentUID := vutils.UUIDv4()
-		h.Within(t, "the logs to be exported through the Service", harness.DecisionBudget, func(ctx context.Context) error {
-			_, err := logsC.Export(withCollectorRemoteToken(ctx, token), newCollectorRemoteLogs(t, componentUID))
-			return err
-		})
-
-		h.Eventually(t, "the exported log to reach the LogStore", eeharness.IngestionBudget, func(ctx context.Context) error {
-			res, err := h.ComponentLogC().ListComponentLog(ctx, &visibilityv1.ListComponentLogRequest{
-				Component: &visibilityv1.ComponentSelector{Uid: componentUID},
+		for i, typ := range []corev1.Credential_Spec_Type{
+			corev1.Credential_Spec_AUTH_TOKEN,
+			corev1.Credential_Spec_OAUTH2,
+			corev1.Credential_Spec_ACCESS_TOKEN,
+		} {
+			cred, err := h.CoreC().CreateCredential(ctx, &corev1.Credential{
+				Metadata: &metav1.Metadata{Name: fmt.Sprintf("%s-%d", h.Name(), i)},
+				Spec: &corev1.Credential_Spec{
+					User: usr.Metadata.Name,
+					Type: typ,
+				},
 			})
-			if err != nil {
-				return err
+			if err == nil {
+				t.Cleanup(func() {
+					h.CoreC().DeleteCredential(context.Background(), &metav1.DeleteOptions{Uid: cred.Metadata.Uid})
+				})
 			}
-			if len(res.Items) == 0 {
-				return errNotProvisioned("the exported component log")
-			}
-			return nil
-		})
+			require.Error(t, err, "%s", typ)
+			assert.Equal(t, codes.PermissionDenied, status.Code(err), "%s: %+v", typ, err)
+		}
 
-		metricName := fmt.Sprintf("octelium.e2e.collector.remote.%s", strings.ReplaceAll(h.Name(), "-", "_"))
-		h.Within(t, "the metrics to be exported through the Service", harness.DecisionBudget, func(ctx context.Context) error {
-			_, err := metricsC.Export(withCollectorRemoteToken(ctx, token), newCollectorRemoteMetrics(metricName))
-			return err
+		creds, err := h.CoreC().ListCredential(ctx, &corev1.ListCredentialOptions{
+			UserRef: umetav1.GetObjectReference(usr),
 		})
-
-		h.Eventually(t, "the exported metric to reach the MetricStore", eeharness.IngestionBudget, func(ctx context.Context) error {
-			res, err := h.MetricsC().ListMetricDescriptors(ctx, &vmetricsv1.ListMetricDescriptorsRequest{
-				NamePrefix: metricName,
-			})
-			if err != nil {
-				return err
-			}
-			if len(res.Items) == 0 {
-				return errNotProvisioned(metricName)
-			}
-			return nil
-		})
-
-		_, err = visibilityv1.NewComponentLogServiceClient(conn).ListComponentLog(
-			withCollectorRemoteToken(ctx, token), &visibilityv1.ListComponentLogRequest{})
-		assert.Equal(t, codes.PermissionDenied, status.Code(err))
+		require.NoError(t, err)
+		assert.Empty(t, creds.Items)
 	})
 }
