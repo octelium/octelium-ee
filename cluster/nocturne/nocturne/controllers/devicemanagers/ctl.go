@@ -205,6 +205,9 @@ func (c *Controller) sync(ctx context.Context, uid string) error {
 
 	secretVersion, err := c.getSecretVersion(ctx, dm)
 	if err != nil {
+		if _, ok := c.registry.GetOwner(uid); !ok {
+			c.registry.SetOwner(devicemgrcommon.NewPendingOwner(dm))
+		}
 		return err
 	}
 
@@ -476,22 +479,26 @@ func (c *Controller) publishProbeConfig(ctx context.Context) error {
 		return deviceConfig.Probes[i].Id < deviceConfig.Probes[j].Id
 	})
 
-	cc, err := c.octeliumC.CoreV1Utils().GetClusterConfig(ctx)
-	if err != nil {
+	err := retry.OnError(retry.DefaultRetry, grpcerr.IsResourceChanged, func() error {
+		cc, err := c.octeliumC.CoreV1Utils().GetClusterConfig(ctx)
+		if err != nil {
+			return err
+		}
+
+		if cc.Status == nil {
+			cc.Status = &corev1.ClusterConfig_Status{}
+		}
+
+		if pbutils.IsEqual(cc.Status.Device, deviceConfig) {
+			return nil
+		}
+
+		cc.Status.Device = deviceConfig
+
+		_, err = c.octeliumC.CoreC().UpdateClusterConfig(ctx, cc)
 		return err
-	}
-
-	if cc.Status == nil {
-		cc.Status = &corev1.ClusterConfig_Status{}
-	}
-
-	if pbutils.IsEqual(cc.Status.Device, deviceConfig) {
-		return nil
-	}
-
-	cc.Status.Device = deviceConfig
-
-	if _, err := c.octeliumC.CoreC().UpdateClusterConfig(ctx, cc); err != nil {
+	})
+	if err != nil {
 		return errors.Wrap(err, "Could not publish Device probe config")
 	}
 
@@ -715,35 +722,39 @@ func (w *worker) setStatus(
 	managed uint32,
 	errMsg string,
 ) {
-	dm, err := w.octeliumC.EnterpriseC().GetDeviceManager(
-		w.ctx,
-		&rmetav1.GetOptions{Uid: w.uid},
-	)
-	if err != nil {
-		return
-	}
+	err := retry.OnError(retry.DefaultRetry, grpcerr.IsResourceChanged, func() error {
+		dm, err := w.octeliumC.EnterpriseC().GetDeviceManager(
+			w.ctx,
+			&rmetav1.GetOptions{Uid: w.uid},
+		)
+		if err != nil {
+			return err
+		}
 
-	if dm.Status == nil {
-		dm.Status = &enterprisev1.DeviceManager_Status{}
-	}
+		if dm.Status == nil {
+			dm.Status = &enterprisev1.DeviceManager_Status{}
+		}
 
-	dm.Status.Type = getStatusType(dm)
-	dm.Status.State = state
+		dm.Status.Type = getStatusType(dm)
+		dm.Status.State = state
 
-	if dm.Status.Collection == nil {
-		dm.Status.Collection = &enterprisev1.DeviceManager_Status_Collection{}
-	}
+		if dm.Status.Collection == nil {
+			dm.Status.Collection = &enterprisev1.DeviceManager_Status_Collection{}
+		}
 
-	collection := dm.Status.Collection
-	collection.LastAttemptAt = attemptAt
-	collection.LastError = errMsg
+		collection := dm.Status.Collection
+		collection.LastAttemptAt = attemptAt
+		collection.LastError = errMsg
 
-	if successAt != nil {
-		collection.LastSuccessAt = successAt
-		collection.ManagedDevices = managed
-	}
+		if successAt != nil {
+			collection.LastSuccessAt = successAt
+			collection.ManagedDevices = managed
+		}
 
-	if _, err := w.octeliumC.EnterpriseC().UpdateDeviceManager(w.ctx, dm); err != nil {
+		_, err = w.octeliumC.EnterpriseC().UpdateDeviceManager(w.ctx, dm)
+		return err
+	})
+	if err != nil && w.ctx.Err() == nil && !grpcerr.IsNotFound(err) {
 		zap.L().Warn("Could not update DeviceManager status",
 			zap.String("deviceManager", w.name),
 			zap.Error(err))

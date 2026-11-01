@@ -9,13 +9,17 @@
 package devicemgrcommon
 
 import (
+	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -340,6 +344,11 @@ func TestSignals(t *testing.T) {
 	assert.Equal(t, corev1.Device_Status_Posture_PASS, RecencySignal(now.Add(-time.Hour), true, now))
 	assert.Equal(t, corev1.Device_Status_Posture_FAIL, RecencySignal(now.Add(-AgentOfflineAfter), true, now))
 	assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, RecencySignal(time.Time{}, false, now))
+	assert.Equal(t, corev1.Device_Status_Posture_PASS, RecencySignal(now.Add(MaxClockSkew), true, now))
+	assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN,
+		RecencySignal(now.Add(MaxClockSkew+time.Second), true, now))
+	assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN,
+		RecencySignal(now.Add(365*24*time.Hour), true, now))
 
 	assert.Equal(t, "x.crowdstrike.name", SignalKey("crowdstrike", "name"))
 }
@@ -499,6 +508,147 @@ func TestMaterializePosture(t *testing.T) {
 		owner := NewOwner(nil, dm, NewFleet(nil), collectedAt, time.Hour)
 		posture := MaterializePosture(owner, &Entry{})
 		assert.Equal(t, collectedAt, posture.ExpiresAt.AsTime())
+	}
+
+	{
+		entry := &Entry{
+			Posture: &corev1.Device_Status_Posture{
+				LastSeenAt: pbutils.Timestamp(collectedAt.Add(365 * 24 * time.Hour)),
+			},
+		}
+
+		owner := NewOwner(nil, dm, NewFleet(nil), collectedAt, time.Hour)
+		posture := MaterializePosture(owner, entry)
+		assert.Equal(t, collectedAt, posture.ExpiresAt.AsTime())
+	}
+
+	{
+		entry := &Entry{
+			Posture: &corev1.Device_Status_Posture{
+				LastSeenAt: pbutils.Timestamp(collectedAt.Add(time.Minute)),
+			},
+		}
+
+		owner := NewOwner(nil, dm, NewFleet(nil), collectedAt, time.Hour)
+		posture := MaterializePosture(owner, entry)
+		assert.Equal(t, collectedAt.Add(time.Hour), posture.ExpiresAt.AsTime())
+	}
+}
+
+func TestFleetFutureObservation(t *testing.T) {
+	now := time.Now()
+
+	getEntry := func(externalID string, lastSeenAt time.Time) *Entry {
+		return &Entry{
+			ExternalID: externalID,
+			Serial:     "serial-1",
+			Posture: &corev1.Device_Status_Posture{
+				LastSeenAt: pbutils.Timestamp(lastSeenAt),
+			},
+		}
+	}
+
+	fleet := NewFleet([]*Entry{
+		getEntry("old", now.Add(-72*time.Hour)),
+		getEntry("future", now.Add(365*24*time.Hour)),
+	})
+	assert.Equal(t, MatchStateAmbiguous, fleet.MatchIdentity("serial-1", nil).State)
+
+	fleet = NewFleet([]*Entry{
+		getEntry("old", now.Add(-72*time.Hour)),
+		getEntry("skewed", now.Add(time.Minute)),
+	})
+	res := fleet.MatchIdentity("serial-1", nil)
+	assert.Equal(t, MatchStateUnique, res.State)
+	assert.Equal(t, "skewed", res.Entry.ExternalID)
+}
+
+func TestCheckRedirect(t *testing.T) {
+	getReq := func(arg string) *http.Request {
+		u, err := url.Parse(arg)
+		assert.Nil(t, err)
+		return &http.Request{URL: u}
+	}
+
+	via := []*http.Request{getReq("https://api.example.com/v1/devices")}
+
+	assert.Nil(t, CheckRedirect(getReq("https://api.example.com/v1/devices"), nil))
+	assert.Nil(t, CheckRedirect(getReq("https://api.example.com/v2/devices?page=1"), via))
+
+	for _, arg := range []string{
+		"http://api.example.com/v1/devices",
+		"https://evil.example.com/v1/devices",
+		"https://sub.api.example.com/v1/devices",
+		"https://api.example.com:8443/v1/devices",
+		"https://user:password@evil.example.com/v1/devices",
+	} {
+		err := CheckRedirect(getReq(arg), via)
+		assert.True(t, errors.Is(err, ErrRedirectNotAllowed), arg)
+		assert.NotContains(t, err.Error(), "password")
+	}
+
+	var long []*http.Request
+	for range maxRedirects {
+		long = append(long, via[0])
+	}
+	err := CheckRedirect(getReq("https://api.example.com/v1/devices"), long)
+	assert.NotNil(t, err)
+	assert.False(t, errors.Is(err, ErrRedirectNotAllowed))
+}
+
+func TestRetryCondition(t *testing.T) {
+	for _, tc := range []struct {
+		code  int
+		retry bool
+	}{
+		{200, false}, {301, false}, {400, false}, {401, false}, {403, false}, {404, false},
+		{408, true}, {429, true}, {500, true}, {502, true}, {503, true}, {504, true},
+	} {
+		response := &resty.Response{RawResponse: &http.Response{StatusCode: tc.code}}
+		assert.Equal(t, tc.retry, RetryCondition(response, nil), tc.code)
+	}
+
+	assert.True(t, RetryCondition(nil, errors.New("transport failure")))
+	assert.False(t, RetryCondition(nil, &url.Error{
+		Op:  "Get",
+		URL: "https://evil.example.com",
+		Err: errors.Wrap(ErrRedirectNotAllowed, "https://evil.example.com"),
+	}))
+}
+
+func TestParseRetryAfter(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Second)
+
+	for _, tc := range []struct {
+		value string
+		want  time.Duration
+	}{
+		{"", 0},
+		{"0", 0},
+		{" 2 ", 2 * time.Second},
+		{"300", 300 * time.Second},
+		{"301", 0},
+		{"-1", 0},
+		{"invalid", 0},
+		{now.Add(30 * time.Second).Format(http.TimeFormat), 30 * time.Second},
+		{now.Add(-30 * time.Second).Format(http.TimeFormat), 0},
+		{now.Add(time.Hour).Format(http.TimeFormat), 0},
+	} {
+		assert.Equal(t, tc.want, ParseRetryAfter(tc.value, now), tc.value)
+	}
+
+	{
+		delay, err := RetryAfter(nil, nil)
+		assert.Nil(t, err)
+		assert.Zero(t, delay)
+	}
+
+	{
+		delay, err := RetryAfter(nil, &resty.Response{RawResponse: &http.Response{
+			Header: http.Header{"Retry-After": []string{"7"}},
+		}})
+		assert.Nil(t, err)
+		assert.Equal(t, 7*time.Second, delay)
 	}
 }
 

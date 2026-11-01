@@ -55,6 +55,8 @@ func TestParseExternalID(t *testing.T) {
 }
 
 func TestToEntry(t *testing.T) {
+	now := time.Now()
+
 	getHost := func(arg string) *fleetHost {
 		ret := &fleetHost{}
 		assert.Nil(t, json.Unmarshal([]byte(arg), ret))
@@ -72,7 +74,7 @@ func TestToEntry(t *testing.T) {
 			"disk_encryption_enabled": true,
 			"issues": {"failing_policies_count": 0, "total_issues_count": 0},
 			"mdm": {"enrollment_status": "On (automatic)", "name": "Fleet"}
-		}`))
+		}`), now)
 
 		assert.Equal(t, "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d", entry.ExternalID)
 		assert.Equal(t, "C02XYZ", entry.Serial)
@@ -89,7 +91,7 @@ func TestToEntry(t *testing.T) {
 	}
 
 	{
-		entry := toEntry(getHost(`{"uuid": "u", "status": "offline", "issues": {"failing_policies_count": 3}}`))
+		entry := toEntry(getHost(`{"uuid": "u", "status": "offline", "issues": {"failing_policies_count": 3}}`), now)
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_FAIL, p.Compliant)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.DiskEncryption)
@@ -99,21 +101,42 @@ func TestToEntry(t *testing.T) {
 	}
 
 	{
-		entry := toEntry(getHost(`{"uuid": "u", "status": "new", "issues": {}}`))
+		entry := toEntry(getHost(`{"uuid": "u", "status": "new", "issues": {}}`), now)
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Compliant)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.AgentHealthy)
 	}
 
 	{
-		entry := toEntry(getHost(`{"uuid": "u"}`))
+		entry := toEntry(getHost(`{"uuid": "u"}`), now)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, entry.Posture.Compliant)
 	}
 
 	assert.Equal(t, corev1.Device_Status_Posture_FAIL, fleetMDMEnrolled("Off"))
 	assert.Equal(t, corev1.Device_Status_Posture_PASS, fleetMDMEnrolled("On (manual)"))
 	assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, fleetMDMEnrolled("Pending"))
-	assert.Equal(t, corev1.Device_Status_Posture_FAIL, fleetAgentHealthy("missing"))
+
+	for _, tc := range []struct {
+		status   string
+		seenTime time.Time
+		want     corev1.Device_Status_Posture_SignalState
+	}{
+		{"online", time.Time{}, corev1.Device_Status_Posture_PASS},
+		{"Online", now.Add(-48 * time.Hour), corev1.Device_Status_Posture_PASS},
+		{"offline", now.Add(-time.Hour), corev1.Device_Status_Posture_PASS},
+		{"offline", now.Add(-48 * time.Hour), corev1.Device_Status_Posture_FAIL},
+		{"offline", now.Add(365 * 24 * time.Hour), corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN},
+		{"offline", time.Time{}, corev1.Device_Status_Posture_FAIL},
+		{"missing", now.Add(-time.Hour), corev1.Device_Status_Posture_FAIL},
+		{"new", now.Add(-time.Hour), corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN},
+		{"", time.Time{}, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN},
+	} {
+		h := &fleetHost{Status: tc.status}
+		if !tc.seenTime.IsZero() {
+			h.SeenTime = tc.seenTime.Format(time.RFC3339)
+		}
+		assert.Equal(t, tc.want, fleetAgentHealthy(h, now), "%s %s", tc.status, h.SeenTime)
+	}
 }
 
 func TestListHosts(t *testing.T) {
@@ -261,31 +284,61 @@ func TestConstructorCredentialsAndConfiguration(t *testing.T) {
 
 }
 
-func TestProviderRetryAndRateLimitBoundaries(t *testing.T) {
-	for _, tc := range []struct {
-		code  int
-		retry bool
-	}{
-		{200, false}, {400, false}, {401, false}, {403, false}, {429, true}, {500, true}, {503, true},
-	} {
-		response := &resty.Response{RawResponse: &http.Response{StatusCode: tc.code}}
-		assert.Equal(t, tc.retry, retryCondition(response, nil), tc.code)
-	}
-	assert.True(t, retryCondition(nil, fmt.Errorf("transport failure")))
-	for _, tc := range []struct {
-		value   string
-		seconds int
-	}{
-		{"", 0}, {"0", 0}, {" 2 ", 2}, {"300", 300}, {"301", 0}, {"-1", 0}, {"invalid", 0},
-	} {
-		response := &resty.Response{RawResponse: &http.Response{Header: http.Header{"Retry-After": []string{tc.value}}}}
-		delay, err := retryAfter(nil, response)
-		require.NoError(t, err)
-		assert.Equal(t, time.Duration(tc.seconds)*time.Second, delay, tc.value)
-	}
-	delay, err := retryAfter(nil, nil)
+func TestTransientErrorsAndRedirects(t *testing.T) {
+	tst, err := tests.Initialize(nil)
 	require.NoError(t, err)
-	assert.Zero(t, delay)
+	t.Cleanup(func() { tst.Destroy() })
+	_, err = tst.C.OcteliumC.EnterpriseC().CreateSecret(t.Context(), &enterprisev1.Secret{
+		Metadata: &metav1.Metadata{Name: "provider-credential"},
+		Spec:     &enterprisev1.Secret_Spec{},
+		Data:     &enterprisev1.Secret_Data{Type: &enterprisev1.Secret_Data_Value{Value: "test-token"}},
+	})
+	require.NoError(t, err)
+	dm := &enterprisev1.DeviceManager{}
+	require.NoError(t, protojson.Unmarshal([]byte("{\"metadata\": {\"name\": \"constructor-test\"}, \"spec\": {\"fleetDM\": {\"baseURL\": \"https://api.example.com\", \"apiToken\": {\"fromSecret\": \"provider-credential\"}}}}"), dm))
+	manager, err := New(t.Context(), tst.C.OcteliumC, &devicemgrcommon.ManagerOpts{DeviceManager: dm})
+	require.NoError(t, err)
+	t.Cleanup(func() { manager.Close() })
+
+	var foreignRequests atomic.Int32
+	foreign := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		foreignRequests.Add(1)
+	}))
+	t.Cleanup(foreign.Close)
+
+	var requests atomic.Int32
+	var redirect atomic.Bool
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch n := requests.Add(1); {
+		case redirect.Load():
+			http.Redirect(w, r, foreign.URL+r.URL.RequestURI(), http.StatusFound)
+		case n == 1:
+			w.WriteHeader(http.StatusServiceUnavailable)
+		case n == 2:
+			w.Header().Set("Retry-After", "0")
+			w.WriteHeader(http.StatusTooManyRequests)
+		default:
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `{"hosts": [{"id": 1, "uuid": "uuid-1"}]}`)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	manager.api.rc.SetBaseURL(srv.URL).SetTransport(srv.Client().Transport).
+		SetRetryWaitTime(time.Millisecond).SetRetryMaxWaitTime(time.Millisecond)
+
+	fleet, err := manager.Collect(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, 1, fleet.Len())
+	assert.Equal(t, int32(3), requests.Load())
+
+	redirect.Store(true)
+	requests.Store(0)
+	_, err = manager.Collect(t.Context())
+	require.Error(t, err)
+	assert.ErrorIs(t, err, devicemgrcommon.ErrRedirectNotAllowed)
+	assert.Equal(t, int32(1), requests.Load())
+	assert.Zero(t, foreignRequests.Load())
 }
 
 func TestEmptyCollectionAndCanceledRequest(t *testing.T) {
@@ -307,4 +360,29 @@ func TestEmptyCollectionAndCanceledRequest(t *testing.T) {
 	_, err = manager.Collect(ctx)
 	require.Error(t, err)
 	assert.Equal(t, before, requests.Load())
+}
+
+func TestErrorStatus(t *testing.T) {
+	for _, tc := range []struct {
+		code int
+		want string
+	}{
+		{http.StatusUnauthorized, "check API-only user token"},
+		{http.StatusForbidden, "check API-only user token"},
+		{http.StatusNotFound, "FleetDM status 404"},
+	} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(tc.code)
+			fmt.Fprint(w, strings.Repeat("x", 400))
+		}))
+
+		m := &Manager{api: &apiClient{rc: resty.New().SetBaseURL(srv.URL)}}
+		_, err := m.Collect(context.Background())
+		assert.NotNil(t, err)
+		assert.Contains(t, err.Error(), tc.want)
+		assert.Contains(t, err.Error(), strings.Repeat("x", 300)+"...")
+		assert.NotContains(t, err.Error(), strings.Repeat("x", 301))
+
+		srv.Close()
+	}
 }

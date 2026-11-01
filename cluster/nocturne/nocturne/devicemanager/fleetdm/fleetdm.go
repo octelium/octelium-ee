@@ -75,8 +75,9 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		SetRetryCount(fleetMaxRetries).
 		SetRetryWaitTime(2 * time.Second).
 		SetRetryMaxWaitTime(30 * time.Second).
-		AddRetryCondition(retryCondition).
-		SetRetryAfter(retryAfter)
+		AddRetryCondition(devicemgrcommon.RetryCondition).
+		SetRetryAfter(devicemgrcommon.RetryAfter).
+		SetRedirectPolicy(devicemgrcommon.RedirectPolicy)
 
 	return &Manager{
 		api:    &apiClient{rc: rc},
@@ -130,12 +131,13 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 	if err != nil {
 		return nil, err
 	}
+	now := time.Now()
 	entries := make([]*devicemgrcommon.Entry, 0, len(hosts))
 	for _, h := range hosts {
 		if h == nil {
 			continue
 		}
-		entries = append(entries, toEntry(h))
+		entries = append(entries, toEntry(h, now))
 	}
 	return devicemgrcommon.NewFleet(entries), nil
 }
@@ -224,11 +226,11 @@ type fleetMDM struct {
 	Name             string `json:"name"`
 }
 
-func toEntry(h *fleetHost) *devicemgrcommon.Entry {
+func toEntry(h *fleetHost, now time.Time) *devicemgrcommon.Entry {
 	p := &corev1.Device_Status_Posture{
 		DiskEncryption: devicemgrcommon.SignalFromBool(h.DiskEncryptionEnabled),
 		Compliant:      fleetCompliant(h.Issues),
-		AgentHealthy:   fleetAgentHealthy(h.Status),
+		AgentHealthy:   fleetAgentHealthy(h, now),
 		Attrs:          fleetAttrs(h),
 	}
 	if h.MDM != nil {
@@ -264,11 +266,16 @@ func fleetCompliant(issues *fleetIssues) corev1.Device_Status_Posture_SignalStat
 	}
 }
 
-func fleetAgentHealthy(status string) corev1.Device_Status_Posture_SignalState {
-	switch strings.ToLower(strings.TrimSpace(status)) {
+func fleetAgentHealthy(h *fleetHost, now time.Time) corev1.Device_Status_Posture_SignalState {
+	switch strings.ToLower(strings.TrimSpace(h.Status)) {
 	case "online":
 		return corev1.Device_Status_Posture_PASS
-	case "offline", "missing":
+	case "offline":
+		if seenAt, ok := parseTime(h.SeenTime); ok {
+			return devicemgrcommon.RecencySignal(seenAt, true, now)
+		}
+		return corev1.Device_Status_Posture_FAIL
+	case "missing":
 		return corev1.Device_Status_Posture_FAIL
 	default:
 		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
@@ -327,24 +334,6 @@ func parseTime(s string) (time.Time, bool) {
 		}
 	}
 	return time.Time{}, false
-}
-
-func retryCondition(r *resty.Response, err error) bool {
-	if err != nil {
-		return true
-	}
-	return r.StatusCode() == http.StatusTooManyRequests || r.StatusCode() >= 500
-}
-
-func retryAfter(c *resty.Client, r *resty.Response) (time.Duration, error) {
-	if r != nil {
-		if ra := r.Header().Get("Retry-After"); ra != "" {
-			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 && secs <= 300 {
-				return time.Duration(secs) * time.Second, nil
-			}
-		}
-	}
-	return 0, nil
 }
 
 func snippet(b []byte) string {

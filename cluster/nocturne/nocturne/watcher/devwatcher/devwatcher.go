@@ -18,9 +18,11 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"k8s.io/client-go/util/retry"
 )
 
 const (
@@ -275,32 +277,33 @@ func (w *Watcher) updateLinkingStatus(
 			t = &linkTally{}
 		}
 
-		dm, err := w.octeliumC.EnterpriseC().GetDeviceManager(ctx, &rmetav1.GetOptions{
-			Uid: ownerUID,
+		err := retry.OnError(retry.DefaultRetry, grpcerr.IsResourceChanged, func() error {
+			dm, err := w.octeliumC.EnterpriseC().GetDeviceManager(ctx, &rmetav1.GetOptions{
+				Uid: ownerUID,
+			})
+			if err != nil {
+				return err
+			}
+
+			if dm.Status == nil {
+				dm.Status = &enterprisev1.DeviceManager_Status{}
+			}
+
+			dm.Status.Linking = &enterprisev1.DeviceManager_Status_Linking{
+				LastSweepAt:   sweepAt,
+				LinkedDevices: t.linked,
+				Ambiguous:     t.ambiguous,
+				Conflicts:     t.conflicts,
+				Suspended:     t.suspended,
+				FailedUpdates: t.failedUpdates,
+			}
+
+			_, err = w.octeliumC.EnterpriseC().UpdateDeviceManager(ctx, dm)
+			return err
 		})
 		if err != nil {
-			zap.L().Warn("Could not get DeviceManager while updating Linking status",
-				zap.String("deviceManager", owner.Name()),
-				zap.Error(err))
-			continue
-		}
-
-		if dm.Status == nil {
-			dm.Status = &enterprisev1.DeviceManager_Status{}
-		}
-
-		dm.Status.Linking = &enterprisev1.DeviceManager_Status_Linking{
-			LastSweepAt:   sweepAt,
-			LinkedDevices: t.linked,
-			Ambiguous:     t.ambiguous,
-			Conflicts:     t.conflicts,
-			Suspended:     t.suspended,
-			FailedUpdates: t.failedUpdates,
-		}
-
-		if _, err := w.octeliumC.EnterpriseC().UpdateDeviceManager(ctx, dm); err != nil {
 			zap.L().Warn("Could not update DeviceManager Linking status",
-				zap.String("deviceManager", dm.GetMetadata().GetName()),
+				zap.String("deviceManager", owner.Name()),
 				zap.Error(err))
 		}
 	}

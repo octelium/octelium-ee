@@ -23,8 +23,10 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rcorev1"
+	"github.com/octelium/octelium/apis/rsc/renterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
+	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -237,4 +239,91 @@ func TestDeviceWatcherCoalescesNudgesAndStops(t *testing.T) {
 		}
 	})
 	require.Eventually(t, func() bool { return core.calls.Load() >= 2 }, 2*time.Second, 5*time.Millisecond)
+}
+
+type conflictTestEnterprise struct {
+	renterprisev1.ResourceServiceClient
+	beforeUpdate func()
+	updateCalls  int
+}
+
+func (c *conflictTestEnterprise) UpdateDeviceManager(ctx context.Context,
+	dm *enterprisev1.DeviceManager, opts ...grpc.CallOption) (*enterprisev1.DeviceManager, error) {
+	c.updateCalls++
+	if c.beforeUpdate != nil {
+		c.beforeUpdate()
+	}
+	return c.ResourceServiceClient.UpdateDeviceManager(ctx, dm, opts...)
+}
+
+type conflictTestClient struct {
+	octeliumc.ClientInterface
+	enterprise *conflictTestEnterprise
+}
+
+func (c *conflictTestClient) EnterpriseC() renterprisev1.ResourceServiceClient { return c.enterprise }
+
+func TestUpdateLinkingStatusConflict(t *testing.T) {
+	ctx := context.Background()
+
+	tst, err := tests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() { tst.Destroy() })
+
+	octeliumC := tst.C.OcteliumC
+
+	dm, err := octeliumC.EnterpriseC().CreateDeviceManager(ctx, &enterprisev1.DeviceManager{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec: &enterprisev1.DeviceManager_Spec{
+			Type: &enterprisev1.DeviceManager_Spec_Iru_{
+				Iru: &enterprisev1.DeviceManager_Spec_Iru{},
+			},
+		},
+		Status: &enterprisev1.DeviceManager_Status{},
+	})
+	require.NoError(t, err)
+
+	registry := devicemgrcommon.NewRegistry()
+	registry.SetOwner(devicemgrcommon.NewPendingOwner(dm))
+
+	collection := &enterprisev1.DeviceManager_Status_Collection{
+		LastSuccessAt:  pbutils.Now(),
+		ManagedDevices: 9,
+	}
+
+	enterprise := &conflictTestEnterprise{ResourceServiceClient: octeliumC.EnterpriseC()}
+	enterprise.beforeUpdate = func() {
+		if enterprise.updateCalls != 1 {
+			return
+		}
+		cur, err := octeliumC.EnterpriseC().GetDeviceManager(ctx, &rmetav1.GetOptions{Uid: dm.Metadata.Uid})
+		assert.Nil(t, err)
+		cur.Status.State = enterprisev1.DeviceManager_Status_OK
+		cur.Status.Collection = collection
+		_, err = octeliumC.EnterpriseC().UpdateDeviceManager(ctx, cur)
+		assert.Nil(t, err)
+	}
+
+	w, err := NewWatcher(&Opts{
+		OcteliumC:  &conflictTestClient{ClientInterface: octeliumC, enterprise: enterprise},
+		Resolver:   registry,
+		Reconciler: &tstReconciler{resets: map[string]string{}},
+	})
+	require.NoError(t, err)
+
+	sweepAt := pbutils.Now()
+	w.updateLinkingStatus(ctx, map[string]*linkTally{
+		dm.Metadata.Uid: {linked: 4, suspended: 1},
+	}, sweepAt)
+
+	cur, err := octeliumC.EnterpriseC().GetDeviceManager(ctx, &rmetav1.GetOptions{Uid: dm.Metadata.Uid})
+	require.NoError(t, err)
+	assert.Equal(t, 2, enterprise.updateCalls)
+	assert.Equal(t, enterprisev1.DeviceManager_Status_OK, cur.Status.State)
+	assert.True(t, pbutils.IsEqual(collection, cur.Status.Collection))
+	assert.True(t, pbutils.IsEqual(sweepAt, cur.Status.Linking.LastSweepAt))
+	assert.Equal(t, uint32(4), cur.Status.Linking.LinkedDevices)
+	assert.Equal(t, uint32(1), cur.Status.Linking.Suspended)
 }

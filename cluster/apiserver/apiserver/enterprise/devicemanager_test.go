@@ -10,6 +10,7 @@ package enterprise
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -599,6 +600,175 @@ func TestValidateDeviceManager(t *testing.T) {
 
 		spec := tstDeviceManagerCrowdStrikeSpec(secretName)
 		spec.Condition = condition
+		err := srv.validateDeviceManager(ctx, &enterprisev1.DeviceManager{Spec: spec})
+		assert.NotNil(t, err)
+		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+	}
+}
+
+func TestValidateDeviceManagerLimits(t *testing.T) {
+	ctx := context.Background()
+
+	tst, err := tests.Initialize(nil)
+	assert.Nil(t, err)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
+	srv := NewServer(tst.C.OcteliumC)
+
+	secretName := tstCreateDeviceManagerSecret(ctx, t, srv).Metadata.Name
+
+	opaCondition := func(script string) *corev1.Condition {
+		return &corev1.Condition{
+			Type: &corev1.Condition_Opa{
+				Opa: &corev1.Condition_OPA{
+					Type: &corev1.Condition_OPA_Inline{
+						Inline: script,
+					},
+				},
+			},
+		}
+	}
+
+	{
+		spec := tstDeviceManagerCrowdStrikeSpec(secretName)
+		spec.Condition = opaCondition("package octelium.condition\nmatch := input.ctx.device.status.osType == \"MAC\"")
+		err := srv.validateDeviceManager(ctx, &enterprisev1.DeviceManager{Spec: spec})
+		assert.Nil(t, err, "%+v", err)
+	}
+
+	var many []string
+	for i := 0; i <= maxDeviceManagerListItems; i++ {
+		many = append(many, fmt.Sprintf("item-%d", i))
+	}
+
+	manyFilters := map[string]string{}
+	for _, itm := range many {
+		manyFilters[itm] = "value"
+	}
+
+	for _, fn := range []func(spec *enterprisev1.DeviceManager_Spec){
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Condition = opaCondition("")
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Condition = opaCondition("package octelium.condition\nmatch := ")
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Condition = opaCondition(strings.Repeat("a", maxDeviceManagerOPABytes+1))
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Condition = &corev1.Condition{}
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.GetCrowdStrike().HostFilter = strings.Repeat("a", maxDeviceManagerFilterBytes+1)
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.GetCrowdStrike().ClientID = strings.Repeat("a", 257)
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.GetCrowdStrike().MemberCID = "cid-é"
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Type = &enterprisev1.DeviceManager_Spec_Jamf_{
+				Jamf: &enterprisev1.DeviceManager_Spec_Jamf{
+					BaseURL:         "https://example.jamfcloud.com",
+					ClientID:        "client-id",
+					ClientSecret:    tstDeviceManagerSecretRef(secretName),
+					CompliantGroups: many,
+				},
+			}
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Type = &enterprisev1.DeviceManager_Spec_Jamf_{
+				Jamf: &enterprisev1.DeviceManager_Spec_Jamf{
+					BaseURL:         "https://example.jamfcloud.com",
+					ClientID:        "client-id",
+					ClientSecret:    tstDeviceManagerSecretRef(secretName),
+					CompliantGroups: []string{strings.Repeat("a", maxDeviceManagerStringBytes+1)},
+				},
+			}
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Type = &enterprisev1.DeviceManager_Spec_Jamf_{
+				Jamf: &enterprisev1.DeviceManager_Spec_Jamf{
+					BaseURL:         "https://example.jamfcloud.com",
+					ClientID:        "client-id",
+					ClientSecret:    tstDeviceManagerSecretRef(secretName),
+					CompliantGroups: []string{"Compliant\tMacs"},
+				},
+			}
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Type = &enterprisev1.DeviceManager_Spec_Jamf_{
+				Jamf: &enterprisev1.DeviceManager_Spec_Jamf{
+					BaseURL:      "https://example.jamfcloud.com",
+					ClientID:     "client-id",
+					ClientSecret: tstDeviceManagerSecretRef(secretName),
+					Filter:       "general.name==\"a\"\x00",
+				},
+			}
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Type = tstDeviceManagerSentinelOneSpec(secretName).Type
+			spec.GetSentinelOne().SiteIDs = many
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Type = tstDeviceManagerSentinelOneSpec(secretName).Type
+			spec.GetSentinelOne().AccountIDs = []string{""}
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Type = tstDeviceManagerSentinelOneSpec(secretName).Type
+			spec.GetSentinelOne().AgentFilters = manyFilters
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Type = tstDeviceManagerSentinelOneSpec(secretName).Type
+			spec.GetSentinelOne().AgentFilters = map[string]string{"isDecommissioned": ""}
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Type = tstDeviceManagerSentinelOneSpec(secretName).Type
+			spec.GetSentinelOne().AgentFilters = map[string]string{"": "false"}
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Type = &enterprisev1.DeviceManager_Spec_Huntress_{
+				Huntress: &enterprisev1.DeviceManager_Spec_Huntress{
+					ApiKey:          "api-key",
+					ApiSecret:       tstDeviceManagerSecretRef(secretName),
+					OrganizationIDs: make([]int64, maxDeviceManagerListItems+1),
+				},
+			}
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Type = &enterprisev1.DeviceManager_Spec_MicrosoftIntune_{
+				MicrosoftIntune: &enterprisev1.DeviceManager_Spec_MicrosoftIntune{
+					TenantID:     "tenant-id",
+					ClientID:     "client-id",
+					ClientSecret: tstDeviceManagerSecretRef(secretName),
+					Cloud:        enterprisev1.DeviceManager_Spec_MicrosoftIntune_Cloud(100),
+				},
+			}
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Type = &enterprisev1.DeviceManager_Spec_FleetDM_{
+				FleetDM: &enterprisev1.DeviceManager_Spec_FleetDM{
+					BaseURL:  "https://" + strings.Repeat("a", maxDeviceManagerURLBytes) + ".example.com",
+					ApiToken: tstDeviceManagerSecretRef(secretName),
+				},
+			}
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Linking = &enterprisev1.DeviceManager_Spec_Linking{
+				Strategy: enterprisev1.DeviceManager_Spec_Linking_Strategy(100),
+			}
+		},
+		func(spec *enterprisev1.DeviceManager_Spec) {
+			spec.Polling = &enterprisev1.DeviceManager_Spec_Polling{
+				Timeout: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 0}},
+			}
+		},
+	} {
+		spec := tstDeviceManagerCrowdStrikeSpec(secretName)
+		fn(spec)
 		err := srv.validateDeviceManager(ctx, &enterprisev1.DeviceManager{Spec: spec})
 		assert.NotNil(t, err)
 		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)

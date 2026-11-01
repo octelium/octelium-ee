@@ -92,7 +92,7 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 	}
 
 	tokenCtx := context.WithValue(context.Background(), oauth2.HTTPClient,
-		&http.Client{Timeout: tokenHTTPTimeout})
+		&http.Client{Timeout: tokenHTTPTimeout, CheckRedirect: devicemgrcommon.CheckRedirect})
 	hc := conf.Client(tokenCtx)
 	hc.Timeout = graphHTTPTimeout
 
@@ -102,8 +102,9 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		SetRetryCount(graphMaxRetries).
 		SetRetryWaitTime(2 * time.Second).
 		SetRetryMaxWaitTime(30 * time.Second).
-		AddRetryCondition(retryCondition).
-		SetRetryAfter(retryAfter)
+		AddRetryCondition(devicemgrcommon.RetryCondition).
+		SetRetryAfter(devicemgrcommon.RetryAfter).
+		SetRedirectPolicy(devicemgrcommon.RedirectPolicy)
 
 	return &Manager{
 		graph:                    &graphClient{rc: rc, base: ep.graph},
@@ -419,24 +420,6 @@ func parseTime(s string) (time.Time, bool) {
 		}
 	}
 	return time.Time{}, false
-}
-
-func retryCondition(r *resty.Response, err error) bool {
-	if err != nil {
-		return true
-	}
-	return r.StatusCode() == http.StatusTooManyRequests || r.StatusCode() >= 500
-}
-
-func retryAfter(c *resty.Client, r *resty.Response) (time.Duration, error) {
-	if r != nil {
-		if ra := r.Header().Get("Retry-After"); ra != "" {
-			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 && secs <= 300 {
-				return time.Duration(secs) * time.Second, nil
-			}
-		}
-	}
-	return 0, nil
 }
 
 func snippet(b []byte) string {

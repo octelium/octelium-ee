@@ -215,6 +215,35 @@ func TestListAgents(t *testing.T) {
 	}
 }
 
+func TestListAgentsRepeatedCursor(t *testing.T) {
+	requests := 0
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Query().Get("cursor") {
+		case "":
+			fmt.Fprint(w, `{"data": [{"uuid": "a"}], "pagination": {"nextCursor": "page-2"}}`)
+		case "page-2":
+			fmt.Fprint(w, `{"data": [{"uuid": "b"}], "pagination": {"nextCursor": "page-3"}}`)
+		default:
+			fmt.Fprint(w, `{"data": [{"uuid": "c"}], "pagination": {"nextCursor": "page-2"}}`)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	m := &Manager{
+		api: &apiClient{
+			rc: resty.New().SetBaseURL(srv.URL),
+		},
+	}
+
+	_, err := m.Collect(context.Background())
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "repeated pagination cursor")
+	assert.Equal(t, 3, requests)
+}
+
 func TestListAgentsError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
@@ -355,31 +384,61 @@ func TestConstructorCredentialsAndConfiguration(t *testing.T) {
 
 }
 
-func TestProviderRetryAndRateLimitBoundaries(t *testing.T) {
-	for _, tc := range []struct {
-		code  int
-		retry bool
-	}{
-		{200, false}, {400, false}, {401, false}, {403, false}, {429, true}, {500, true}, {503, true},
-	} {
-		response := &resty.Response{RawResponse: &http.Response{StatusCode: tc.code}}
-		assert.Equal(t, tc.retry, retryCondition(response, nil), tc.code)
-	}
-	assert.True(t, retryCondition(nil, fmt.Errorf("transport failure")))
-	for _, tc := range []struct {
-		value   string
-		seconds int
-	}{
-		{"", 0}, {"0", 0}, {" 2 ", 2}, {"300", 300}, {"301", 0}, {"-1", 0}, {"invalid", 0},
-	} {
-		response := &resty.Response{RawResponse: &http.Response{Header: http.Header{"Retry-After": []string{tc.value}}}}
-		delay, err := retryAfter(nil, response)
-		require.NoError(t, err)
-		assert.Equal(t, time.Duration(tc.seconds)*time.Second, delay, tc.value)
-	}
-	delay, err := retryAfter(nil, nil)
+func TestTransientErrorsAndRedirects(t *testing.T) {
+	tst, err := tests.Initialize(nil)
 	require.NoError(t, err)
-	assert.Zero(t, delay)
+	t.Cleanup(func() { tst.Destroy() })
+	_, err = tst.C.OcteliumC.EnterpriseC().CreateSecret(t.Context(), &enterprisev1.Secret{
+		Metadata: &metav1.Metadata{Name: "provider-credential"},
+		Spec:     &enterprisev1.Secret_Spec{},
+		Data:     &enterprisev1.Secret_Data{Type: &enterprisev1.Secret_Data_Value{Value: "test-token"}},
+	})
+	require.NoError(t, err)
+	dm := &enterprisev1.DeviceManager{}
+	require.NoError(t, protojson.Unmarshal([]byte("{\"metadata\": {\"name\": \"constructor-test\"}, \"spec\": {\"sentinelOne\": {\"managementURL\": \"https://api.example.com\", \"apiToken\": {\"fromSecret\": \"provider-credential\"}}}}"), dm))
+	manager, err := New(t.Context(), tst.C.OcteliumC, &devicemgrcommon.ManagerOpts{DeviceManager: dm})
+	require.NoError(t, err)
+	t.Cleanup(func() { manager.Close() })
+
+	var foreignRequests atomic.Int32
+	foreign := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		foreignRequests.Add(1)
+	}))
+	t.Cleanup(foreign.Close)
+
+	var requests atomic.Int32
+	var redirect atomic.Bool
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch n := requests.Add(1); {
+		case redirect.Load():
+			http.Redirect(w, r, foreign.URL+r.URL.RequestURI(), http.StatusFound)
+		case n == 1:
+			w.WriteHeader(http.StatusServiceUnavailable)
+		case n == 2:
+			w.Header().Set("Retry-After", "0")
+			w.WriteHeader(http.StatusTooManyRequests)
+		default:
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `{"data": [{"uuid": "agent-1"}], "pagination": {}}`)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	manager.api.rc.SetBaseURL(srv.URL).SetTransport(srv.Client().Transport).
+		SetRetryWaitTime(time.Millisecond).SetRetryMaxWaitTime(time.Millisecond)
+
+	fleet, err := manager.Collect(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, 1, fleet.Len())
+	assert.Equal(t, int32(3), requests.Load())
+
+	redirect.Store(true)
+	requests.Store(0)
+	_, err = manager.Collect(t.Context())
+	require.Error(t, err)
+	assert.ErrorIs(t, err, devicemgrcommon.ErrRedirectNotAllowed)
+	assert.Equal(t, int32(1), requests.Load())
+	assert.Zero(t, foreignRequests.Load())
 }
 
 func TestEmptyCollectionAndCanceledRequest(t *testing.T) {

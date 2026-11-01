@@ -257,10 +257,6 @@ func (c *Controller) evaluateOwner(
 		return &decision{kind: decisionSkip}
 	}
 
-	if owner.Manager == nil || !owner.Fresh(now) {
-		return &decision{kind: decisionWait}
-	}
-
 	applicable, err := c.ownerApplicable(ctx, owner, dev)
 	if err != nil {
 		zap.L().Warn("Could not evaluate DeviceManager Condition",
@@ -271,6 +267,10 @@ func (c *Controller) evaluateOwner(
 	}
 	if !applicable {
 		return &decision{kind: decisionSkip}
+	}
+
+	if owner.Manager == nil || !owner.Fresh(now) {
+		return &decision{kind: decisionWait}
 	}
 
 	var probeMatch devicemgrcommon.MatchResult

@@ -47,9 +47,11 @@ type FleetHost struct {
 type Fleet struct {
 	URL string
 
-	mu     sync.Mutex
-	bearer string
-	hosts  []FleetHost
+	mu       sync.Mutex
+	bearer   string
+	hosts    []FleetHost
+	failures []int
+	redirect bool
 }
 
 func (f *Fleet) SetBearer(bearer string) {
@@ -64,12 +66,48 @@ func (f *Fleet) SetHosts(hosts []FleetHost) {
 	f.hosts = slices.Clone(hosts)
 }
 
+func (f *Fleet) SetFailures(codes ...int) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.failures = slices.Clone(codes)
+}
+
+func (f *Fleet) PendingFailures() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return len(f.failures)
+}
+
+func (f *Fleet) SetRedirect(redirect bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.redirect = redirect
+}
+
 func (f *Fleet) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
 	if r.Method != http.MethodGet || r.URL.Path != "/api/v1/fleet/hosts" {
 		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if f.redirect {
+		u := *r.URL
+		u.Scheme = "http"
+		u.Host = r.Host
+		http.Redirect(w, r, u.String(), http.StatusFound)
+		return
+	}
+
+	if len(f.failures) > 0 {
+		code := f.failures[0]
+		f.failures = f.failures[1:]
+		if code == http.StatusTooManyRequests {
+			w.Header().Set("Retry-After", "1")
+		}
+		w.WriteHeader(code)
 		return
 	}
 	if r.Header.Get("Authorization") != "Bearer "+f.bearer {

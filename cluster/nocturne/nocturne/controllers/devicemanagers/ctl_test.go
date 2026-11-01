@@ -21,6 +21,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/rcorev1"
 	"github.com/octelium/octelium/apis/rsc/renterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
@@ -29,6 +30,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type tstNudger struct {
@@ -95,16 +98,48 @@ type tstEnv struct {
 type tstStatusClient struct {
 	octeliumc.ClientInterface
 	enterpriseC *tstStatusEnterpriseClient
+	coreC       *tstStatusCoreClient
 }
 
 func (c *tstStatusClient) EnterpriseC() renterprisev1.ResourceServiceClient {
 	return c.enterpriseC
 }
 
+func (c *tstStatusClient) CoreC() rcorev1.ResourceServiceClient {
+	if c.coreC != nil {
+		return c.coreC
+	}
+	return c.ClientInterface.CoreC()
+}
+
+type tstStatusCoreClient struct {
+	rcorev1.ResourceServiceClient
+	beforeUpdate func()
+	updateCalls  int
+}
+
+func (c *tstStatusCoreClient) UpdateClusterConfig(ctx context.Context,
+	cc *corev1.ClusterConfig, opts ...grpc.CallOption) (*corev1.ClusterConfig, error) {
+	c.updateCalls++
+	if c.beforeUpdate != nil {
+		c.beforeUpdate()
+	}
+	return c.ResourceServiceClient.UpdateClusterConfig(ctx, cc, opts...)
+}
+
 type tstStatusEnterpriseClient struct {
 	renterprisev1.ResourceServiceClient
 	beforeUpdate func()
 	updateCalls  int
+	getSecretErr error
+}
+
+func (c *tstStatusEnterpriseClient) GetSecret(ctx context.Context,
+	req *rmetav1.GetOptions, opts ...grpc.CallOption) (*enterprisev1.Secret, error) {
+	if c.getSecretErr != nil {
+		return nil, c.getSecretErr
+	}
+	return c.ResourceServiceClient.GetSecret(ctx, req, opts...)
 }
 
 func (c *tstStatusEnterpriseClient) UpdateDeviceManager(ctx context.Context,
@@ -565,6 +600,133 @@ func TestWorkerPoll(t *testing.T) {
 		w.poll()
 		assert.Equal(t, int32(2), env.nudger.count.Load())
 	}
+}
+
+func TestWorkerSetStatusConflict(t *testing.T) {
+	env := newTstEnv(t)
+
+	dm := env.createDeviceManager(t, utilrand.GetRandomStringCanonical(8))
+	linking := &enterprisev1.DeviceManager_Status_Linking{
+		LastSweepAt:   pbutils.Now(),
+		LinkedDevices: 5,
+	}
+
+	client := &tstStatusEnterpriseClient{
+		ResourceServiceClient: env.octeliumC.EnterpriseC(),
+	}
+	client.beforeUpdate = func() {
+		if client.updateCalls != 1 {
+			return
+		}
+		cur := env.getDeviceManager(t, dm)
+		cur.Status.Linking = linking
+		_, err := env.octeliumC.EnterpriseC().UpdateDeviceManager(env.ctx, cur)
+		assert.Nil(t, err)
+	}
+
+	fleet := devicemgrcommon.NewFleet([]*devicemgrcommon.Entry{{ExternalID: "id-1"}})
+	w := newWorker(env.ctx, &tstStatusClient{
+		ClientInterface: env.octeliumC,
+		enterpriseC:     client,
+	}, env.registry, env.nudger, dm, &tstManager{fleet: fleet}, "")
+
+	w.poll()
+
+	cur := env.getDeviceManager(t, dm)
+	assert.Equal(t, enterprisev1.DeviceManager_Status_OK, cur.Status.State)
+	assert.Equal(t, uint32(1), cur.Status.Collection.ManagedDevices)
+	assert.True(t, cur.Status.Collection.LastSuccessAt.IsValid())
+	assert.True(t, pbutils.IsEqual(linking, cur.Status.Linking))
+	assert.Equal(t, 2, client.updateCalls)
+
+	_, err := env.octeliumC.EnterpriseC().DeleteDeviceManager(env.ctx, &rmetav1.DeleteOptions{Uid: dm.Metadata.Uid})
+	assert.Nil(t, err)
+	w.poll()
+	assert.Equal(t, 2, client.updateCalls)
+}
+
+func TestPublishProbeConfigConflict(t *testing.T) {
+	env := newTstEnv(t)
+
+	secretName := utilrand.GetRandomStringCanonical(8)
+	env.createSecret(t, secretName)
+	dm := env.createDeviceManager(t, secretName)
+
+	client := &tstStatusCoreClient{
+		ResourceServiceClient: env.octeliumC.CoreC(),
+	}
+	client.beforeUpdate = func() {
+		if client.updateCalls != 1 {
+			return
+		}
+		cc, err := env.octeliumC.CoreV1Utils().GetClusterConfig(env.ctx)
+		assert.Nil(t, err)
+		if cc.Metadata.Labels == nil {
+			cc.Metadata.Labels = map[string]string{}
+		}
+		cc.Metadata.Labels["concurrent"] = "true"
+		_, err = env.octeliumC.CoreC().UpdateClusterConfig(env.ctx, cc)
+		assert.Nil(t, err)
+	}
+	env.ctrl.octeliumC = &tstStatusClient{
+		ClientInterface: env.octeliumC,
+		enterpriseC: &tstStatusEnterpriseClient{
+			ResourceServiceClient: env.octeliumC.EnterpriseC(),
+		},
+		coreC: client,
+	}
+
+	assert.Nil(t, env.ctrl.OnAdd(env.ctx, dm))
+	assert.Equal(t, []string{
+		dm.Metadata.Name + ".hardware-uuid",
+		dm.Metadata.Name + ".hardware-uuid-linux",
+	}, env.getProbeIDs(t))
+	assert.Equal(t, 2, client.updateCalls)
+
+	cc, err := env.octeliumC.CoreV1Utils().GetClusterConfig(env.ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, "true", cc.Metadata.Labels["concurrent"])
+
+	assert.Nil(t, env.ctrl.publishProbeConfig(env.ctx))
+	assert.Equal(t, 2, client.updateCalls)
+}
+
+func TestSyncSecretReadFailure(t *testing.T) {
+	env := newTstEnv(t)
+
+	secretName := utilrand.GetRandomStringCanonical(8)
+	env.createSecret(t, secretName)
+	dm := env.createDeviceManager(t, secretName)
+	uid := dm.Metadata.Uid
+
+	client := &tstStatusEnterpriseClient{
+		ResourceServiceClient: env.octeliumC.EnterpriseC(),
+		getSecretErr:          status.Error(codes.Unavailable, "unavailable"),
+	}
+	env.ctrl.octeliumC = &tstStatusClient{
+		ClientInterface: env.octeliumC,
+		enterpriseC:     client,
+	}
+
+	assert.NotNil(t, env.ctrl.OnAdd(env.ctx, dm))
+	assert.Nil(t, env.ctrl.getWorker(uid))
+
+	owner, ok := env.registry.GetOwner(uid)
+	assert.True(t, ok)
+	assert.Nil(t, owner.Manager)
+	assert.False(t, owner.Fresh(time.Now()))
+
+	fresh := devicemgrcommon.NewOwner(&tstManager{}, dm, devicemgrcommon.NewFleet(nil), time.Now(), time.Hour)
+	env.registry.SetOwner(fresh)
+	assert.NotNil(t, env.ctrl.OnAdd(env.ctx, dm))
+
+	owner, ok = env.registry.GetOwner(uid)
+	assert.True(t, ok)
+	assert.True(t, owner == fresh)
+
+	client.getSecretErr = nil
+	assert.Nil(t, env.ctrl.OnAdd(env.ctx, dm))
+	assert.NotNil(t, env.ctrl.getWorker(uid))
 }
 
 func TestToCoreProbe(t *testing.T) {

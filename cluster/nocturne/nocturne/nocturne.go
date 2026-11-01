@@ -122,7 +122,7 @@ func runDefaultRegionControllers(ctx context.Context, octeliumC octeliumc.Client
 	}
 
 	if err := dmCtl.Resync(ctx); err != nil {
-		return err
+		zap.L().Warn("Could not run the initial DeviceManager resync", zap.Error(err))
 	}
 
 	if err := watcher.DeviceManager(ctx, nil, dmCtl.OnAdd, dmCtl.OnUpdate, dmCtl.OnDelete); err != nil {

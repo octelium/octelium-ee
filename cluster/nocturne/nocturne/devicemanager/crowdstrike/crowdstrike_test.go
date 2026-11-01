@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -74,6 +76,12 @@ func TestIdentityProbes(t *testing.T) {
 	}
 
 	assert.Len(t, seen, 3)
+
+	for _, probe := range m.IdentityProbes() {
+		if probe.OSTypes[0] == corev1.Device_Status_MAC {
+			assert.Equal(t, []string{"stats", "agent_info"}, probe.RunCommand.Args)
+		}
+	}
 }
 
 func TestToEntry(t *testing.T) {
@@ -342,6 +350,96 @@ func TestCollect(t *testing.T) {
 		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN,
 			fleet.MatchExternalID(aid1).Entry.Posture.RiskLevel)
 	}
+}
+
+func TestGetZTAPartial(t *testing.T) {
+	var ids []string
+	for i := range csZTABatch + 1 {
+		ids = append(ids, fmt.Sprintf("%032x", i))
+	}
+
+	var requests atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if requests.Add(1) > 1 {
+			w.WriteHeader(http.StatusForbidden)
+			fmt.Fprint(w, `{"meta": {}, "errors": [{"code": 403, "message": "access denied"}]}`)
+			return
+		}
+
+		batch := r.URL.Query()["ids"]
+		assert.Len(t, batch, csZTABatch)
+
+		var resources []string
+		for _, id := range batch {
+			resources = append(resources, fmt.Sprintf(`{"aid": %q, "assessment": {"overall": 50}}`, strings.ToUpper(id)))
+		}
+		fmt.Fprintf(w, `{"meta": {}, "resources": [%s], "errors": []}`, strings.Join(resources, ","))
+	}))
+	t.Cleanup(srv.Close)
+
+	c, err := falcon.NewClient(&falcon.ApiConfig{
+		Context:      context.Background(),
+		AccessToken:  "token",
+		HostOverride: strings.TrimPrefix(srv.URL, "http://"),
+		TransportDecorator: func(http.RoundTripper) http.RoundTripper {
+			return tstTransport{}
+		},
+	})
+	require.Nil(t, err)
+
+	m := &Manager{c: c, ztaEnabled: true}
+
+	zta, err := m.getZTA(context.Background(), ids)
+	assert.NotNil(t, err)
+	assert.Len(t, zta, csZTABatch)
+	assert.NotNil(t, zta[ids[0]])
+	assert.Nil(t, zta[ids[csZTABatch]])
+	assert.Equal(t, int32(2), requests.Load())
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	zta, err = m.getZTA(ctx, ids)
+	assert.NotNil(t, err)
+	assert.Empty(t, zta)
+}
+
+func TestTokenContext(t *testing.T) {
+	ctx := tokenContext(context.Background())
+	hc, ok := ctx.Value(oauth2.HTTPClient).(*http.Client)
+	require.True(t, ok)
+	assert.Equal(t, tokenHTTPTimeout, hc.Timeout)
+	assert.NotNil(t, hc.CheckRedirect)
+
+	var foreignRequests atomic.Int32
+	foreign := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		foreignRequests.Add(1)
+	}))
+	t.Cleanup(foreign.Close)
+
+	var requests atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		http.Redirect(w, r, foreign.URL+r.URL.RequestURI(), http.StatusTemporaryRedirect)
+	}))
+	t.Cleanup(srv.Close)
+
+	c, err := falcon.NewClient(&falcon.ApiConfig{
+		Context:      ctx,
+		AccessToken:  "token",
+		HostOverride: strings.TrimPrefix(srv.URL, "http://"),
+		TransportDecorator: func(next http.RoundTripper) http.RoundTripper {
+			return tstTransport{}
+		},
+	})
+	require.Nil(t, err)
+
+	m := &Manager{c: c}
+	_, err = m.Collect(context.Background())
+	require.NotNil(t, err)
+	assert.ErrorIs(t, err, devicemgrcommon.ErrRedirectNotAllowed)
+	assert.Equal(t, int32(1), requests.Load())
+	assert.Zero(t, foreignRequests.Load())
 }
 
 func TestConstructorCredentialsAndConfiguration(t *testing.T) {

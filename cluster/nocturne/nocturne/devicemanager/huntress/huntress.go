@@ -77,8 +77,9 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		SetRetryCount(huntMaxRetries).
 		SetRetryWaitTime(2 * time.Second).
 		SetRetryMaxWaitTime(30 * time.Second).
-		AddRetryCondition(retryCondition).
-		SetRetryAfter(retryAfter)
+		AddRetryCondition(devicemgrcommon.RetryCondition).
+		SetRetryAfter(devicemgrcommon.RetryAfter).
+		SetRedirectPolicy(devicemgrcommon.RedirectPolicy)
 
 	return &Manager{
 		api:             &apiClient{rc: rc},
@@ -147,6 +148,7 @@ type agentsResponse struct {
 func (c *apiClient) listAgents(ctx context.Context, organizationID int64) ([]*huntressAgent, error) {
 	var out []*huntressAgent
 	pageToken := ""
+	seen := map[string]struct{}{}
 	for {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -168,11 +170,13 @@ func (c *apiClient) listAgents(ctx context.Context, organizationID int64) ([]*hu
 			return nil, errors.New("Invalid Huntress response: missing agents")
 		}
 		out = append(out, resp.Agents...)
-		if resp.Pagination.NextPageToken == "" ||
-			resp.Pagination.NextPageToken == pageToken ||
-			len(resp.Agents) == 0 {
+		if resp.Pagination.NextPageToken == "" || len(resp.Agents) == 0 {
 			break
 		}
+		if _, ok := seen[resp.Pagination.NextPageToken]; ok {
+			return nil, errors.New("Invalid Huntress response: repeated pagination token")
+		}
+		seen[resp.Pagination.NextPageToken] = struct{}{}
 		pageToken = resp.Pagination.NextPageToken
 	}
 	return out, nil
@@ -307,24 +311,6 @@ func parseTime(s string) (time.Time, bool) {
 		}
 	}
 	return time.Time{}, false
-}
-
-func retryCondition(r *resty.Response, err error) bool {
-	if err != nil {
-		return true
-	}
-	return r.StatusCode() == http.StatusTooManyRequests || r.StatusCode() >= 500
-}
-
-func retryAfter(c *resty.Client, r *resty.Response) (time.Duration, error) {
-	if r != nil {
-		if ra := r.Header().Get("Retry-After"); ra != "" {
-			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 && secs <= 300 {
-				return time.Duration(secs) * time.Second, nil
-			}
-		}
-	}
-	return 0, nil
 }
 
 func snippet(b []byte) string {

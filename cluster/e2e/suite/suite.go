@@ -40,6 +40,7 @@ func Phases() []suite.Phase {
 		{Name: "DeviceManagerSecretRotation", Run: testDeviceManagerSecretRotation},
 		{Name: "DeviceManagerPostureLifecycle", Run: testDeviceManagerPostureLifecycle},
 		{Name: "DeviceManagerReplacementUIDIsolation", Run: testDeviceManagerReplacementUIDIsolation},
+		{Name: "DeviceManagerResilience", Run: testDeviceManagerResilience},
 
 		{Name: "AccessAutoApprove", Run: testAccessAutoApprove},
 		{Name: "AccessSingleStepReview", Run: testAccessSingleStepReview},

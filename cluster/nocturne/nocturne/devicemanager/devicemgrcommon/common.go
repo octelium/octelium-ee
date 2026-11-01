@@ -12,13 +12,16 @@ import (
 	"context"
 	"encoding/hex"
 	"mime"
+	"net/http"
 	"net/url"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
@@ -31,7 +34,14 @@ import (
 const (
 	DefaultStaleAfter = time.Hour
 	AgentOfflineAfter = 24 * time.Hour
+	MaxClockSkew      = 5 * time.Minute
+	maxRetryAfter     = 5 * time.Minute
+	maxRedirects      = 10
 )
+
+var ErrRedirectNotAllowed = errors.New("Redirects to another origin are not allowed")
+
+var RedirectPolicy = resty.RedirectPolicyFunc(CheckRedirect)
 
 type ManagerOpts struct {
 	DeviceManager *enterprisev1.DeviceManager
@@ -185,9 +195,11 @@ func getLatestEntry(entries []*Entry) *Entry {
 		return entries[0]
 	}
 
+	now := time.Now()
+
 	var latest *Entry
 	for _, entry := range entries {
-		if !entry.Posture.GetLastSeenAt().IsValid() {
+		if !entry.Posture.GetLastSeenAt().IsValid() || IsFutureTime(entry.Posture.LastSeenAt.AsTime(), now) {
 			return nil
 		}
 		if latest == nil || entry.Posture.LastSeenAt.AsTime().After(latest.Posture.LastSeenAt.AsTime()) {
@@ -532,7 +544,7 @@ func MaterializePosture(owner *Owner, entry *Entry) *corev1.Device_Status_Postur
 	expiresAt := owner.ExpiresAt
 	if maxAge := MaxObservationAge(owner.DM); maxAge > 0 {
 		observedAt := owner.CollectedAt.Add(-maxAge)
-		if posture.LastSeenAt.IsValid() {
+		if posture.LastSeenAt.IsValid() && !IsFutureTime(posture.LastSeenAt.AsTime(), owner.CollectedAt) {
 			observedAt = posture.LastSeenAt.AsTime()
 		}
 		if observationExpiresAt := observedAt.Add(maxAge); observationExpiresAt.Before(expiresAt) {
@@ -712,9 +724,13 @@ func SignalFromBool(value *bool) corev1.Device_Status_Posture_SignalState {
 	}
 }
 
+func IsFutureTime(t, now time.Time) bool {
+	return t.After(now.Add(MaxClockSkew))
+}
+
 func RecencySignal(lastSeenAt time.Time, ok bool, now time.Time) corev1.Device_Status_Posture_SignalState {
 	switch {
-	case !ok:
+	case !ok, IsFutureTime(lastSeenAt, now):
 		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	case now.Sub(lastSeenAt) < AgentOfflineAfter:
 		return corev1.Device_Status_Posture_PASS
@@ -757,6 +773,61 @@ func IsSameOrigin(base, target string) bool {
 	}
 
 	return targetURL.Scheme == baseURL.Scheme && targetURL.Host == baseURL.Host && targetURL.User == nil
+}
+
+func CheckRedirect(req *http.Request, via []*http.Request) error {
+	if len(via) >= maxRedirects {
+		return errors.Errorf("Too many redirects: %d", len(via))
+	}
+
+	if len(via) > 0 && (req.URL.Scheme != via[0].URL.Scheme || req.URL.Host != via[0].URL.Host) {
+		return errors.Wrapf(ErrRedirectNotAllowed, "%s", req.URL.Redacted())
+	}
+
+	return nil
+}
+
+func RetryCondition(r *resty.Response, err error) bool {
+	if err != nil {
+		return !errors.Is(err, ErrRedirectNotAllowed)
+	}
+
+	switch code := r.StatusCode(); {
+	case code == http.StatusRequestTimeout, code == http.StatusTooManyRequests:
+		return true
+	default:
+		return code >= 500
+	}
+}
+
+func RetryAfter(c *resty.Client, r *resty.Response) (time.Duration, error) {
+	if r == nil {
+		return 0, nil
+	}
+
+	return ParseRetryAfter(r.Header().Get("Retry-After"), time.Now()), nil
+}
+
+func ParseRetryAfter(value string, now time.Time) time.Duration {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0
+	}
+
+	if secs, err := strconv.Atoi(value); err == nil {
+		if secs < 0 || time.Duration(secs)*time.Second > maxRetryAfter {
+			return 0
+		}
+		return time.Duration(secs) * time.Second
+	}
+
+	if t, err := http.ParseTime(value); err == nil {
+		if d := t.Sub(now); d > 0 && d <= maxRetryAfter {
+			return d
+		}
+	}
+
+	return 0
 }
 
 func NormalizeSerial(value string) string {

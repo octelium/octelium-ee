@@ -79,8 +79,9 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		SetRetryCount(opMaxRetries).
 		SetRetryWaitTime(2 * time.Second).
 		SetRetryMaxWaitTime(30 * time.Second).
-		AddRetryCondition(retryCondition).
-		SetRetryAfter(retryAfter)
+		AddRetryCondition(devicemgrcommon.RetryCondition).
+		SetRetryAfter(devicemgrcommon.RetryAfter).
+		SetRedirectPolicy(devicemgrcommon.RedirectPolicy)
 
 	return &Manager{
 		api: &apiClient{rc: rc},
@@ -178,6 +179,7 @@ type peopleResponse struct {
 func (c *apiClient) listDevices(ctx context.Context) ([]*kolideDevice, error) {
 	var out []*kolideDevice
 	cursor := ""
+	seen := map[string]struct{}{}
 	for {
 		var page devicesResponse
 		if err := c.getPage(ctx, devicesPath, cursor, &page); err != nil {
@@ -187,9 +189,13 @@ func (c *apiClient) listDevices(ctx context.Context) ([]*kolideDevice, error) {
 			return nil, errors.New("Invalid OnePassword devices response: missing data")
 		}
 		out = append(out, page.Data...)
-		if page.Pagination.NextCursor == "" || page.Pagination.NextCursor == cursor || len(page.Data) == 0 {
+		if page.Pagination.NextCursor == "" || len(page.Data) == 0 {
 			break
 		}
+		if _, ok := seen[page.Pagination.NextCursor]; ok {
+			return nil, errors.New("Invalid OnePassword devices response: repeated pagination cursor")
+		}
+		seen[page.Pagination.NextCursor] = struct{}{}
 		cursor = page.Pagination.NextCursor
 	}
 	return out, nil
@@ -198,6 +204,7 @@ func (c *apiClient) listDevices(ctx context.Context) ([]*kolideDevice, error) {
 func (c *apiClient) listPeople(ctx context.Context) ([]*kolidePerson, error) {
 	var out []*kolidePerson
 	cursor := ""
+	seen := map[string]struct{}{}
 	for {
 		var page peopleResponse
 		if err := c.getPage(ctx, peoplePath, cursor, &page); err != nil {
@@ -207,9 +214,13 @@ func (c *apiClient) listPeople(ctx context.Context) ([]*kolidePerson, error) {
 			return nil, errors.New("Invalid OnePassword people response: missing data")
 		}
 		out = append(out, page.Data...)
-		if page.Pagination.NextCursor == "" || page.Pagination.NextCursor == cursor || len(page.Data) == 0 {
+		if page.Pagination.NextCursor == "" || len(page.Data) == 0 {
 			break
 		}
+		if _, ok := seen[page.Pagination.NextCursor]; ok {
+			return nil, errors.New("Invalid OnePassword people response: repeated pagination cursor")
+		}
+		seen[page.Pagination.NextCursor] = struct{}{}
 		cursor = page.Pagination.NextCursor
 	}
 	return out, nil
@@ -365,24 +376,6 @@ func parseTime(s string) (time.Time, bool) {
 		}
 	}
 	return time.Time{}, false
-}
-
-func retryCondition(r *resty.Response, err error) bool {
-	if err != nil {
-		return true
-	}
-	return r.StatusCode() == http.StatusTooManyRequests || r.StatusCode() >= 500
-}
-
-func retryAfter(c *resty.Client, r *resty.Response) (time.Duration, error) {
-	if r != nil {
-		if ra := r.Header().Get("Retry-After"); ra != "" {
-			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 && secs <= 300 {
-				return time.Duration(secs) * time.Second, nil
-			}
-		}
-	}
-	return 0, nil
 }
 
 func snippet(b []byte) string {

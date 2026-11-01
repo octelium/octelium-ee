@@ -390,6 +390,26 @@ func TestReconcileDeviceOrder(t *testing.T) {
 	}
 
 	{
+		inapplicable := &enterprisev1.DeviceManager_Spec{
+			Condition: &corev1.Condition{Type: &corev1.Condition_Match{Match: "false"}},
+		}
+
+		env.registry.SetOwner(devicemgrcommon.NewPendingOwner(tstDeviceManager("dm-0", inapplicable)))
+		dev := env.reconcile(t, env.createDevice(t, "SERIAL-1", "user@example.com"))
+		assert.Equal(t, ownerA.UID(), dev.Status.Binding.OwnerRef.Uid)
+
+		env.setOwnerAt("dm-0", inapplicable, time.Now().Add(-2*time.Hour), tstEntry("zero-2", "serial-2"))
+		dev = env.reconcile(t, env.createDevice(t, "SERIAL-2", "user@example.com"))
+		assert.Equal(t, ownerA.UID(), dev.Status.Binding.OwnerRef.Uid)
+
+		env.registry.SetOwner(devicemgrcommon.NewPendingOwner(tstDeviceManager("dm-0", &enterprisev1.DeviceManager_Spec{
+			Condition: &corev1.Condition{Type: &corev1.Condition_Match{Match: "error"}},
+		})))
+		dev = env.reconcile(t, env.createDevice(t, "SERIAL-3", "user@example.com"))
+		assert.Nil(t, dev.Status.Binding)
+	}
+
+	{
 		env.setOwner("dm-0", nil, tstEntry("zero-5a", "serial-5"), tstEntry("zero-5b", "serial-5"))
 
 		dev := env.reconcile(t, env.createDevice(t, "SERIAL-5", "user@example.com"))
@@ -938,6 +958,89 @@ func TestIsReconcileRequired(t *testing.T) {
 		dev.Status.ProbeAttempt.State = corev1.Device_Status_ProbeAttempt_SUBMITTED
 		dev.Status.Posture = &corev1.Device_Status_Posture{}
 	}), submitted))
+}
+
+func TestControllerEvents(t *testing.T) {
+	env := newTstEnv(t)
+
+	env.setOwner("dm-a", nil, tstEntry("a-1", "serial-1"))
+
+	dev := env.createDevice(t, "SERIAL-1", "user@example.com")
+	assert.Nil(t, env.ctrl.OnAdd(env.ctx, dev))
+	bound := env.getDevice(t, dev)
+	assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, bound.Status.Binding.State)
+	assert.Equal(t, corev1.Device_Status_Binding_VALID, bound.Status.Binding.Validity)
+
+	env.setOwner("dm-a", nil)
+
+	updated := env.updateDevice(t, bound, func(dev *corev1.Device) {
+		dev.Status.Hostname = "host-2"
+	})
+	assert.Nil(t, env.ctrl.OnUpdate(env.ctx, updated, bound))
+	assert.Equal(t, corev1.Device_Status_Binding_VALID, env.getDevice(t, dev).Status.Binding.Validity)
+
+	changed := env.updateDevice(t, updated, func(dev *corev1.Device) {
+		dev.Status.SerialNumber = "SERIAL-9"
+	})
+	assert.Nil(t, env.ctrl.OnUpdate(env.ctx, changed, updated))
+	lost := env.getDevice(t, dev)
+	assert.Equal(t, corev1.Device_Status_Binding_LOST, lost.Status.Binding.Validity)
+	assert.Equal(t, reasonEntryNotFound, lost.Status.Binding.Reason)
+
+	env.ctrl.LockDevice(dev.Metadata.Uid)()
+	_, ok := env.ctrl.deviceLocks.Load(dev.Metadata.Uid)
+	assert.True(t, ok)
+	assert.Nil(t, env.ctrl.OnDelete(env.ctx, dev))
+	_, ok = env.ctrl.deviceLocks.Load(dev.Metadata.Uid)
+	assert.False(t, ok)
+
+	assert.Nil(t, env.ctrl.OnDelete(env.ctx, &corev1.Device{}))
+	env.ctrl.LockDevice("")()
+}
+
+func TestReconcileDeviceOwnerMatchMissingUser(t *testing.T) {
+	env := newTstEnv(t)
+
+	spec := &enterprisev1.DeviceManager_Spec{
+		Linking: &enterprisev1.DeviceManager_Spec_Linking{
+			RequireOwnerMatch: true,
+		},
+	}
+
+	env.setOwner("dm-a", spec, tstEntry("a-1", "serial-1"), tstEntry("a-2", "serial-2"), tstEntry("a-3", "serial-3"))
+	ownerB := env.setOwner("dm-b", nil, tstEntry("b-1", "serial-1"), tstEntry("b-2", "serial-2"))
+
+	{
+		dev := env.createDevice(t, "SERIAL-1", "owner@example.com")
+		env.updateDevice(t, dev, func(dev *corev1.Device) {
+			dev.Status.UserRef = nil
+		})
+		dev = env.reconcile(t, dev)
+		assert.Equal(t, ownerB.UID(), dev.Status.Binding.OwnerRef.Uid)
+		assert.Equal(t, "b-1", dev.Status.Binding.ExternalID)
+	}
+
+	{
+		dev := env.createDevice(t, "SERIAL-2", "owner@example.com")
+		_, err := env.octeliumC.CoreC().DeleteUser(env.ctx, &rmetav1.DeleteOptions{Uid: dev.Status.UserRef.Uid})
+		assert.Nil(t, err)
+		dev = env.reconcile(t, dev)
+		assert.Equal(t, ownerB.UID(), dev.Status.Binding.OwnerRef.Uid)
+		assert.Equal(t, "b-2", dev.Status.Binding.ExternalID)
+	}
+
+	{
+		dev := env.reconcile(t, env.createDevice(t, "SERIAL-3", "owner@example.com"))
+		assert.Equal(t, "uid-dm-a", dev.Status.Binding.OwnerRef.Uid)
+		assert.Equal(t, corev1.Device_Status_Binding_VALID, dev.Status.Binding.Validity)
+
+		_, err := env.octeliumC.CoreC().DeleteUser(env.ctx, &rmetav1.DeleteOptions{Uid: dev.Status.UserRef.Uid})
+		assert.Nil(t, err)
+		dev = env.reconcile(t, dev)
+		assert.Equal(t, corev1.Device_Status_Binding_LOST, dev.Status.Binding.Validity)
+		assert.Equal(t, reasonOwnerMismatch, dev.Status.Binding.Reason)
+		assert.Nil(t, dev.Status.Posture)
+	}
 }
 
 func TestResetBindingsForOwner(t *testing.T) {

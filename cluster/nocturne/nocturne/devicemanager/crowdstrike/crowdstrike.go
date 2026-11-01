@@ -11,6 +11,7 @@ package crowdstrike
 import (
 	"context"
 	"encoding/hex"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -29,6 +30,7 @@ import (
 	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"golang.org/x/oauth2"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -40,6 +42,8 @@ const (
 
 	probeTimeoutSeconds = 15
 	probeMaxOutputBytes = 8192
+
+	tokenHTTPTimeout = 30 * time.Second
 )
 
 var (
@@ -75,7 +79,7 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 	}
 
 	apiClient, err := falcon.NewClient(&falcon.ApiConfig{
-		Context:      ctx,
+		Context:      tokenContext(ctx),
 		ClientId:     spec.ClientID,
 		ClientSecret: uenterprisev1.ToSecret(sec).GetValueStr(),
 		MemberCID:    spec.MemberCID,
@@ -96,6 +100,13 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		hostFilter: spec.HostFilter,
 		ztaEnabled: !spec.DisableZeroTrustAssessment,
 	}, nil
+}
+
+func tokenContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, oauth2.HTTPClient, &http.Client{
+		Timeout:       tokenHTTPTimeout,
+		CheckRedirect: devicemgrcommon.CheckRedirect,
+	})
 }
 
 func (m *Manager) Type() devicemgrcommon.ProviderType {
@@ -132,7 +143,7 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 			RequireElevation: true,
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        "/Applications/Falcon.app/Contents/Resources/falconctl",
-				Args:           []string{"stats", "agent_id"},
+				Args:           []string{"stats", "agent_info"},
 				TimeoutSeconds: probeTimeoutSeconds,
 				MaxOutputBytes: probeMaxOutputBytes,
 			},
@@ -188,11 +199,11 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 
 	var zta map[string]*models.DomainSignalProperties
 	if m.ztaEnabled {
-		if z, zErr := m.getZTA(ctx, ids); zErr == nil {
-			zta = z
-		} else {
+		var zErr error
+		zta, zErr = m.getZTA(ctx, ids)
+		if zErr != nil {
 			zap.L().Warn("Could not get CrowdStrike ZTA (Zero Trust Assessment Read scope required)",
-				zap.Error(zErr))
+				zap.Int("assessments", len(zta)), zap.Error(zErr))
 			degraded = append(degraded, zErr.Error())
 		}
 	}
@@ -313,11 +324,11 @@ func (m *Manager) getZTA(ctx context.Context, ids []string) (map[string]*models.
 	out := make(map[string]*models.DomainSignalProperties, len(ids))
 	for _, batch := range chunk(ids, csZTABatch) {
 		if err := ctx.Err(); err != nil {
-			return nil, err
+			return out, err
 		}
 		resp, err := m.c.ZeroTrustAssessment.GetAssessmentV1(&zero_trust_assessment.GetAssessmentV1Params{Context: ctx, Ids: batch})
 		if err != nil {
-			return nil, errors.Wrap(err, "CrowdStrike get zero trust assessment")
+			return out, errors.Wrap(err, "CrowdStrike get zero trust assessment")
 		}
 		if resp.Payload == nil {
 			continue
