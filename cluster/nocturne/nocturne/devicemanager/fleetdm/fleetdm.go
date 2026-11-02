@@ -97,18 +97,22 @@ func (m *Manager) Close() error {
 func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
-			ID: "hardware-uuid",
-			OSTypes: []corev1.Device_Status_OSType{
-				corev1.Device_Status_MAC,
-				corev1.Device_Status_WINDOWS,
+			ID:     "hardware-uuid-macos",
+			OSType: corev1.Device_Status_MAC,
+			PlatformIdentifier: &devicemgrcommon.PlatformIdentifier{
+				Kind: corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier_HARDWARE_UUID,
 			},
+		},
+		{
+			ID:     "hardware-uuid-windows",
+			OSType: corev1.Device_Status_WINDOWS,
 			PlatformIdentifier: &devicemgrcommon.PlatformIdentifier{
 				Kind: corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier_HARDWARE_UUID,
 			},
 		},
 		{
 			ID:               "hardware-uuid-linux",
-			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_LINUX},
+			OSType:           corev1.Device_Status_LINUX,
 			RequireElevation: true,
 			PlatformIdentifier: &devicemgrcommon.PlatformIdentifier{
 				Kind: corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier_HARDWARE_UUID,

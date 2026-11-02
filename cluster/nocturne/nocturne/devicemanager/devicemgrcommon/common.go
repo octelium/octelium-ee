@@ -32,11 +32,12 @@ import (
 )
 
 const (
-	DefaultStaleAfter = time.Hour
-	AgentOfflineAfter = 24 * time.Hour
-	MaxClockSkew      = 5 * time.Minute
-	maxRetryAfter     = 5 * time.Minute
-	maxRedirects      = 10
+	DefaultStaleAfter        = time.Hour
+	DefaultMaxObservationAge = 7 * 24 * time.Hour
+	AgentOfflineAfter        = 24 * time.Hour
+	MaxClockSkew             = 5 * time.Minute
+	maxRetryAfter            = 5 * time.Minute
+	maxRedirects             = 10
 )
 
 var ErrRedirectNotAllowed = errors.New("Redirects to another origin are not allowed")
@@ -79,7 +80,7 @@ type PlatformIdentifier struct {
 
 type Probe struct {
 	ID                 string
-	OSTypes            []corev1.Device_Status_OSType
+	OSType             corev1.Device_Status_OSType
 	RequireElevation   bool
 	RunCommand         *RunCommand
 	ReadFile           *ReadFile
@@ -542,14 +543,13 @@ func MaterializePosture(owner *Owner, entry *Entry) *corev1.Device_Status_Postur
 	}
 
 	expiresAt := owner.ExpiresAt
-	if maxAge := MaxObservationAge(owner.DM); maxAge > 0 {
-		observedAt := owner.CollectedAt.Add(-maxAge)
-		if posture.LastSeenAt.IsValid() && !IsFutureTime(posture.LastSeenAt.AsTime(), owner.CollectedAt) {
-			observedAt = posture.LastSeenAt.AsTime()
-		}
-		if observationExpiresAt := observedAt.Add(maxAge); observationExpiresAt.Before(expiresAt) {
-			expiresAt = observationExpiresAt
-		}
+	maxAge := MaxObservationAge(owner.DM)
+	observedAt := owner.CollectedAt.Add(-maxAge)
+	if posture.LastSeenAt.IsValid() && !IsFutureTime(posture.LastSeenAt.AsTime(), owner.CollectedAt) {
+		observedAt = posture.LastSeenAt.AsTime()
+	}
+	if observationExpiresAt := observedAt.Add(maxAge); observationExpiresAt.Before(expiresAt) {
+		expiresAt = observationExpiresAt
 	}
 
 	posture.LastSyncAt = pbutils.Timestamp(owner.CollectedAt)
@@ -588,11 +588,15 @@ func VerificationInterval(dm *enterprisev1.DeviceManager) time.Duration {
 }
 
 func MaxObservationAge(dm *enterprisev1.DeviceManager) time.Duration {
-	if dm == nil || dm.Spec.GetPolling().GetMaxObservationAge() == nil {
-		return 0
+	if dm != nil {
+		if polling := dm.Spec.GetPolling(); polling != nil && polling.GetMaxObservationAge() != nil {
+			if value := umetav1.ToDuration(polling.GetMaxObservationAge()).ToGo(); value > 0 {
+				return value
+			}
+		}
 	}
 
-	return umetav1.ToDuration(dm.Spec.GetPolling().GetMaxObservationAge()).ToGo()
+	return DefaultMaxObservationAge
 }
 
 func UsesProbe(dm *enterprisev1.DeviceManager) bool {

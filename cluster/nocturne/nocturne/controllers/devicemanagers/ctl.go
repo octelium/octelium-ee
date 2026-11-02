@@ -525,14 +525,14 @@ func toCoreProbe(
 	dm *enterprisev1.DeviceManager,
 	probe *devicemgrcommon.Probe,
 ) *corev1.ClusterConfig_Status_Device_Probe {
-	if probe == nil || probe.ID == "" {
+	if probe == nil || probe.ID == "" || probe.OSType == corev1.Device_Status_OS_TYPE_UNKNOWN {
 		return nil
 	}
 
 	out := &corev1.ClusterConfig_Status_Device_Probe{
 		Id:               fmt.Sprintf("%s.%s", dm.GetMetadata().GetName(), probe.ID),
 		OwnerRef:         umetav1.GetObjectReference(dm),
-		OsTypes:          append([]corev1.Device_Status_OSType(nil), probe.OSTypes...),
+		OsType:           probe.OSType,
 		RequireElevation: probe.RequireElevation,
 		Condition:        dm.Spec.GetCondition(),
 	}

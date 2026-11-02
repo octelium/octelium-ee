@@ -74,7 +74,8 @@ func testDeviceManagerPostureLifecycle(t *testing.T, ch *harness.H) {
 	h.UpdateEnterpriseClusterConfig(t, cc)
 
 	linuxProbeID := dm.Metadata.Name + ".hardware-uuid-linux"
-	waitDeviceManagerProbes(t, h, dm, dm.Metadata.Name+".hardware-uuid", linuxProbeID)
+	waitDeviceManagerProbes(t, h, dm, linuxProbeID,
+		dm.Metadata.Name+".hardware-uuid-macos", dm.Metadata.Name+".hardware-uuid-windows")
 	waitDeviceManagerState(t, h, dm, enterprisev1.DeviceManager_Status_OK,
 		func(cur *enterprisev1.DeviceManager) error {
 			if cur.GetStatus().GetCollection().GetManagedDevices() != uint32(len(hosts)) {

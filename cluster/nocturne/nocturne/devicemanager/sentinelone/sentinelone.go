@@ -108,7 +108,7 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
 			ID:               "agent-id-linux",
-			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_LINUX},
+			OSType:           corev1.Device_Status_LINUX,
 			RequireElevation: true,
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        "/opt/sentinelone/bin/sentinelctl",
@@ -119,7 +119,7 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 		},
 		{
 			ID:               "agent-id-macos",
-			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_MAC},
+			OSType:           corev1.Device_Status_MAC,
 			RequireElevation: true,
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        "/usr/local/bin/sentinelctl",
@@ -130,7 +130,7 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 		},
 		{
 			ID:               "agent-id-macos-bundle",
-			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_MAC},
+			OSType:           corev1.Device_Status_MAC,
 			RequireElevation: true,
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        "/Library/Sentinel/sentinel-agent.bundle/Contents/MacOS/sentinelctl",
@@ -141,7 +141,7 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 		},
 		{
 			ID:               "agent-id-windows",
-			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_WINDOWS},
+			OSType:           corev1.Device_Status_WINDOWS,
 			RequireElevation: true,
 			ReadRegistry: &devicemgrcommon.ReadRegistry{
 				Key:  `HKLM\SOFTWARE\SentinelOne\Monitor`,

@@ -75,6 +75,25 @@ func TestParseExternalID(t *testing.T) {
 	}
 }
 
+func TestIdentityProbes(t *testing.T) {
+	m := &Manager{}
+
+	osTypes := map[string]corev1.Device_Status_OSType{}
+	for _, probe := range m.IdentityProbes() {
+		assert.True(t, probe.RequireElevation)
+		_, ok := osTypes[probe.ID]
+		assert.False(t, ok)
+		osTypes[probe.ID] = probe.OSType
+	}
+
+	assert.Equal(t, map[string]corev1.Device_Status_OSType{
+		"agent-id-linux":        corev1.Device_Status_LINUX,
+		"agent-id-macos":        corev1.Device_Status_MAC,
+		"agent-id-macos-bundle": corev1.Device_Status_MAC,
+		"agent-id-windows":      corev1.Device_Status_WINDOWS,
+	}, osTypes)
+}
+
 func TestToEntry(t *testing.T) {
 	now := time.Now()
 

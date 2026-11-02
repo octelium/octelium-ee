@@ -119,7 +119,7 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
 			ID:               "aid-windows",
-			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_WINDOWS},
+			OSType:           corev1.Device_Status_WINDOWS,
 			RequireElevation: true,
 			ReadRegistry: &devicemgrcommon.ReadRegistry{
 				Key:  `HKLM\SYSTEM\CurrentControlSet\Services\CSAgent\Sim`,
@@ -128,7 +128,7 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 		},
 		{
 			ID:               "aid-linux",
-			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_LINUX},
+			OSType:           corev1.Device_Status_LINUX,
 			RequireElevation: true,
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        "/opt/CrowdStrike/falconctl",
@@ -139,7 +139,7 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 		},
 		{
 			ID:               "aid-macos",
-			OSTypes:          []corev1.Device_Status_OSType{corev1.Device_Status_MAC},
+			OSType:           corev1.Device_Status_MAC,
 			RequireElevation: true,
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        "/Applications/Falcon.app/Contents/Resources/falconctl",

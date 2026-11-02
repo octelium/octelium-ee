@@ -432,7 +432,7 @@ func TestIdentityProbes(t *testing.T) {
 
 	probes := m.IdentityProbes()
 	assert.Len(t, probes, 1)
-	assert.Equal(t, []corev1.Device_Status_OSType{corev1.Device_Status_WINDOWS}, probes[0].OSTypes)
+	assert.Equal(t, corev1.Device_Status_WINDOWS, probes[0].OSType)
 	assert.False(t, probes[0].RequireElevation)
 	assert.Equal(t, `C:\Windows\System32\dsregcmd.exe`, probes[0].RunCommand.Command)
 	assert.Equal(t, []string{"/status"}, probes[0].RunCommand.Args)

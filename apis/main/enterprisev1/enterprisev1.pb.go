@@ -19375,7 +19375,9 @@ type DeviceManager_Spec_Polling struct {
 	// MaxObservationAge is the maximum age of the provider's own last
 	// observation of a device (e.g. its agent's last check-in) after which
 	// the device's posture is no longer valid regardless of how recently
-	// the inventory was collected.
+	// the inventory was collected. The posture of a device whose last
+	// observation time is not reported by the provider is not valid. If
+	// unset, it defaults to 7 days.
 	MaxObservationAge *metav1.Duration `protobuf:"bytes,5,opt,name=maxObservationAge,proto3" json:"maxObservationAge,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
@@ -19457,8 +19459,19 @@ type DeviceManager_Spec_Linking struct {
 	// RequireAgreement only accepts a candidate when both the probe and
 	// the identity sources agree on the same inventory entry.
 	RequireAgreement bool `protobuf:"varint,2,opt,name=requireAgreement,proto3" json:"requireAgreement,omitempty"`
-	// RequireOwnerMatch only accepts a candidate when the owner of the
-	// inventory entry matches the User of the Device.
+	// RequireOwnerMatch only accepts a candidate when one of the owner
+	// emails that the provider reports for the inventory entry is equal,
+	// case-insensitively, to the email of the Device's User (i.e.
+	// `spec.email`). A candidate without an owner email, or a Device whose
+	// User has no email, never matches. A Device whose candidate does not
+	// match is not bound to this DeviceManager and the next DeviceManager
+	// in the Cluster's order is evaluated instead. An ACCEPTED Binding
+	// whose inventory entry no longer matches becomes LOST. The owner
+	// emails are the email and the user principal name of the device's user
+	// in Microsoft Intune, the email (or else the email-formatted username)
+	// of the assigned user in Jamf Pro, the email of the device's user in
+	// Iru, and the email of the registered owner in 1Password Device Trust.
+	// It is not supported by the other types.
 	RequireOwnerMatch bool `protobuf:"varint,3,opt,name=requireOwnerMatch,proto3" json:"requireOwnerMatch,omitempty"`
 	// VerificationInterval is the interval at which the bound Devices are
 	// probed again to verify their Binding. A failed verification suspends

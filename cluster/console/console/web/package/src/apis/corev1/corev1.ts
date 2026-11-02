@@ -16755,12 +16755,14 @@ export interface ClusterConfig_Status_Device_Probe {
      */
     ownerRef?: ObjectReference;
     /**
-     * OSTypes restricts the Probe to the Devices running one of the given
-     * operating systems. An empty list matches every operating system.
+     * OSType is the operating system of the Devices that the Probe is run
+     * on. It is required. A Probe whose OSType is unset is never run. A
+     * collection that is needed on more than one operating system uses a
+     * separate Probe for each operating system.
      *
-     * @generated from protobuf field: repeated octelium.api.main.core.v1.Device.Status.OSType osTypes = 3
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.OSType osType = 3
      */
-    osTypes: Device_Status_OSType[];
+    osType: Device_Status_OSType;
     /**
      * RequireElevation requires the Probe to be run with elevated
      * privileges
@@ -44570,7 +44572,7 @@ class ClusterConfig_Status_Device_Probe$Type extends MessageType<ClusterConfig_S
         super("octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe", [
             { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "ownerRef", kind: "message", T: () => ObjectReference },
-            { no: 3, name: "osTypes", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.Device.Status.OSType", Device_Status_OSType] },
+            { no: 3, name: "osType", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.OSType", Device_Status_OSType] },
             { no: 4, name: "requireElevation", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 5, name: "condition", kind: "message", T: () => Condition },
             { no: 6, name: "runCommand", kind: "message", oneof: "type", T: () => ClusterConfig_Status_Device_Probe_RunCommand },
@@ -44582,7 +44584,7 @@ class ClusterConfig_Status_Device_Probe$Type extends MessageType<ClusterConfig_S
     create(value?: PartialMessage<ClusterConfig_Status_Device_Probe>): ClusterConfig_Status_Device_Probe {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.id = "";
-        message.osTypes = [];
+        message.osType = 0;
         message.requireElevation = false;
         message.type = { oneofKind: undefined };
         if (value !== undefined)
@@ -44600,12 +44602,8 @@ class ClusterConfig_Status_Device_Probe$Type extends MessageType<ClusterConfig_S
                 case /* octelium.api.main.meta.v1.ObjectReference ownerRef */ 2:
                     message.ownerRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.ownerRef);
                     break;
-                case /* repeated octelium.api.main.core.v1.Device.Status.OSType osTypes */ 3:
-                    if (wireType === WireType.LengthDelimited)
-                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
-                            message.osTypes.push(reader.int32());
-                    else
-                        message.osTypes.push(reader.int32());
+                case /* octelium.api.main.core.v1.Device.Status.OSType osType */ 3:
+                    message.osType = reader.int32();
                     break;
                 case /* bool requireElevation */ 4:
                     message.requireElevation = reader.bool();
@@ -44655,13 +44653,9 @@ class ClusterConfig_Status_Device_Probe$Type extends MessageType<ClusterConfig_S
         /* octelium.api.main.meta.v1.ObjectReference ownerRef = 2; */
         if (message.ownerRef)
             ObjectReference.internalBinaryWrite(message.ownerRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* repeated octelium.api.main.core.v1.Device.Status.OSType osTypes = 3; */
-        if (message.osTypes.length) {
-            writer.tag(3, WireType.LengthDelimited).fork();
-            for (let i = 0; i < message.osTypes.length; i++)
-                writer.int32(message.osTypes[i]);
-            writer.join();
-        }
+        /* octelium.api.main.core.v1.Device.Status.OSType osType = 3; */
+        if (message.osType !== 0)
+            writer.tag(3, WireType.Varint).int32(message.osType);
         /* bool requireElevation = 4; */
         if (message.requireElevation !== false)
             writer.tag(4, WireType.Varint).bool(message.requireElevation);

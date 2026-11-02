@@ -995,19 +995,17 @@
                     "additionalProperties": false,
                     "description": "OwnerRef is the reference of the DeviceManager that owns the Probe"
                 },
-                "osTypes": {
-                    "items": {
-                        "enum": [
-                            "OS_TYPE_UNKNOWN",
-                            "LINUX",
-                            "WINDOWS",
-                            "MAC",
-                            "ANDROID",
-                            "IOS",
-                            "CHROMEOS"
-                        ]
-                    },
-                    "type": "array",
+                "osType": {
+                    "enum": [
+                        "OS_TYPE_UNKNOWN",
+                        "LINUX",
+                        "WINDOWS",
+                        "MAC",
+                        "ANDROID",
+                        "IOS",
+                        "CHROMEOS"
+                    ],
+                    "type": "string",
                     "title": "OS Type",
                     "description": "OSType is the operating system of the Device"
                 },

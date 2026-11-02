@@ -392,12 +392,18 @@ func TestLinkingOptions(t *testing.T) {
 	assert.False(t, RequireAgreement(nil))
 	assert.False(t, RequireOwnerMatch(nil))
 	assert.Zero(t, VerificationInterval(nil))
-	assert.Zero(t, MaxObservationAge(nil))
+	assert.Equal(t, DefaultMaxObservationAge, MaxObservationAge(nil))
 	assert.Equal(t, DefaultStaleAfter, StaleAfter(nil))
 
 	dm := &enterprisev1.DeviceManager{
 		Spec: &enterprisev1.DeviceManager_Spec{},
 	}
+	assert.Equal(t, DefaultMaxObservationAge, MaxObservationAge(dm))
+
+	dm.Spec.Polling = &enterprisev1.DeviceManager_Spec_Polling{
+		MaxObservationAge: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 0}},
+	}
+	assert.Equal(t, DefaultMaxObservationAge, MaxObservationAge(dm))
 	assert.Equal(t, enterprisev1.DeviceManager_Spec_Linking_IDENTITY_AND_PROBE, LinkingStrategy(dm))
 	assert.True(t, UsesProbe(dm))
 	assert.True(t, UsesIdentity(dm))
@@ -444,7 +450,33 @@ func TestMaterializePosture(t *testing.T) {
 		owner := NewOwner(nil, dm, NewFleet(nil), collectedAt, 0)
 		posture := MaterializePosture(owner, &Entry{})
 		assert.Equal(t, collectedAt, posture.LastSyncAt.AsTime())
+		assert.Equal(t, collectedAt, posture.ExpiresAt.AsTime(),
+			"a posture without an observation time must not be valid by default")
+	}
+
+	{
+		entry := &Entry{
+			Posture: &corev1.Device_Status_Posture{
+				LastSeenAt: pbutils.Timestamp(collectedAt.Add(-time.Minute)),
+			},
+		}
+
+		owner := NewOwner(nil, dm, NewFleet(nil), collectedAt, 0)
+		posture := MaterializePosture(owner, entry)
 		assert.Equal(t, collectedAt.Add(DefaultStaleAfter), posture.ExpiresAt.AsTime())
+	}
+
+	{
+		entry := &Entry{
+			Posture: &corev1.Device_Status_Posture{
+				LastSeenAt: pbutils.Timestamp(collectedAt.Add(-8 * 24 * time.Hour)),
+			},
+		}
+
+		owner := NewOwner(nil, dm, NewFleet(nil), collectedAt, time.Hour)
+		posture := MaterializePosture(owner, entry)
+		assert.Equal(t, collectedAt.Add(-24*time.Hour), posture.ExpiresAt.AsTime(),
+			"an observation older than the default maximum age must not be renewed by a collection")
 	}
 
 	{

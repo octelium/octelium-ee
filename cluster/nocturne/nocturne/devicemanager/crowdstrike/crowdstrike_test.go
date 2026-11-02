@@ -67,7 +67,7 @@ func TestIdentityProbes(t *testing.T) {
 
 	for _, probe := range m.IdentityProbes() {
 		assert.NotEmpty(t, probe.ID)
-		assert.Len(t, probe.OSTypes, 1)
+		assert.NotEqual(t, corev1.Device_Status_OS_TYPE_UNKNOWN, probe.OSType)
 		assert.True(t, probe.RequireElevation)
 
 		_, ok := seen[probe.ID]
@@ -78,7 +78,7 @@ func TestIdentityProbes(t *testing.T) {
 	assert.Len(t, seen, 3)
 
 	for _, probe := range m.IdentityProbes() {
-		if probe.OSTypes[0] == corev1.Device_Status_MAC {
+		if probe.OSType == corev1.Device_Status_MAC {
 			assert.Equal(t, []string{"stats", "agent_info"}, probe.RunCommand.Args)
 		}
 	}

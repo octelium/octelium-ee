@@ -50,6 +50,7 @@ func TestParseExternalID(t *testing.T) {
 
 	probes := m.IdentityProbes()
 	assert.Len(t, probes, 1)
+	assert.Equal(t, corev1.Device_Status_MAC, probes[0].OSType)
 	assert.Equal(t, corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier_HARDWARE_UUID,
 		probes[0].PlatformIdentifier.Kind)
 }

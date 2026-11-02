@@ -319,7 +319,8 @@ func testDeviceManagerProbePlan(t *testing.T, ch *harness.H) {
 	linuxProbeID := dm.Metadata.Name + ".hardware-uuid-linux"
 
 	t.Run("ThePlanIsPublished", func(t *testing.T) {
-		waitDeviceManagerProbes(t, h, dm, dm.Metadata.Name+".hardware-uuid", linuxProbeID)
+		waitDeviceManagerProbes(t, h, dm, linuxProbeID,
+			dm.Metadata.Name+".hardware-uuid-macos", dm.Metadata.Name+".hardware-uuid-windows")
 	})
 
 	t.Run("AFailingCollectionIsReported", func(t *testing.T) {
@@ -379,8 +380,10 @@ func testDeviceManagerProbePlan(t *testing.T, ch *harness.H) {
 
 		var results []*authv1.DeviceProbeResult
 		for _, p := range begin.Probes {
-			assert.NotEqual(t, dm.Metadata.Name+".hardware-uuid", p.ProbeID,
-				"a probe for another OS type was issued")
+			assert.NotContains(t, []string{
+				dm.Metadata.Name + ".hardware-uuid-macos",
+				dm.Metadata.Name + ".hardware-uuid-windows",
+			}, p.ProbeID, "a probe for another OS type was issued")
 
 			if p.ProbeID != linuxProbeID {
 				results = append(results, &authv1.DeviceProbeResult{
@@ -463,7 +466,8 @@ func testDeviceManagerProbePlan(t *testing.T, ch *harness.H) {
 		cur.Spec.Polling.IsDisabled = false
 		h.UpdateDeviceManager(t, cur)
 
-		waitDeviceManagerProbes(t, h, dm, dm.Metadata.Name+".hardware-uuid", linuxProbeID)
+		waitDeviceManagerProbes(t, h, dm, linuxProbeID,
+			dm.Metadata.Name+".hardware-uuid-macos", dm.Metadata.Name+".hardware-uuid-windows")
 		waitDeviceManagerState(t, h, dm, enterprisev1.DeviceManager_Status_ERROR, hasCollectionError(true))
 	})
 
@@ -485,7 +489,8 @@ func testDeviceManagerProbePlan(t *testing.T, ch *harness.H) {
 
 		cur.Spec.Linking = nil
 		h.UpdateDeviceManager(t, cur)
-		waitDeviceManagerProbes(t, h, dm, dm.Metadata.Name+".hardware-uuid", linuxProbeID)
+		waitDeviceManagerProbes(t, h, dm, linuxProbeID,
+			dm.Metadata.Name+".hardware-uuid-macos", dm.Metadata.Name+".hardware-uuid-windows")
 
 		_, err = h.EnterpriseC().DeleteDeviceManager(t.Context(), &metav1.DeleteOptions{Uid: dm.Metadata.Uid})
 		require.Nil(t, err)
@@ -541,7 +546,11 @@ func testDeviceManagerReplacementUIDIsolation(t *testing.T, ch *harness.H) {
 	request.Spec.GetFleetDM().BaseURL = fleet.URL
 	dm := h.CreateDeviceManager(t, request)
 	waitDeviceManagerState(t, h, dm, enterprisev1.DeviceManager_Status_OK, nil)
-	expected := []string{dm.Metadata.Name + ".hardware-uuid", dm.Metadata.Name + ".hardware-uuid-linux"}
+	expected := []string{
+		dm.Metadata.Name + ".hardware-uuid-linux",
+		dm.Metadata.Name + ".hardware-uuid-macos",
+		dm.Metadata.Name + ".hardware-uuid-windows",
+	}
 	waitDeviceManagerProbes(t, h, dm, expected...)
 	_, err := h.EnterpriseC().DeleteDeviceManager(t.Context(), &metav1.DeleteOptions{Uid: dm.Metadata.Uid})
 	require.NoError(t, err)

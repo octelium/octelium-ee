@@ -268,8 +268,9 @@ func TestDeviceManagerLifecycle(t *testing.T) {
 		assert.Equal(t, dm.Metadata.Name, owner.Name())
 
 		assert.Equal(t, []string{
-			dm.Metadata.Name + ".hardware-uuid",
 			dm.Metadata.Name + ".hardware-uuid-linux",
+			dm.Metadata.Name + ".hardware-uuid-macos",
+			dm.Metadata.Name + ".hardware-uuid-windows",
 		}, env.getProbeIDs(t))
 
 		assert.Nil(t, env.ctrl.OnAdd(env.ctx, dm))
@@ -335,7 +336,7 @@ func TestDeviceManagerLifecycle(t *testing.T) {
 		})
 		assert.Nil(t, env.ctrl.OnUpdate(env.ctx, updated, old))
 		assert.NotNil(t, env.ctrl.getWorker(uid))
-		assert.Len(t, env.getProbeIDs(t), 2)
+		assert.Len(t, env.getProbeIDs(t), 3)
 
 		owner, ok := env.registry.GetOwner(uid)
 		assert.True(t, ok)
@@ -385,7 +386,7 @@ func TestDeviceManagerBuildFailure(t *testing.T) {
 	{
 		assert.Nil(t, env.ctrl.Resync(env.ctx))
 		assert.NotNil(t, env.ctrl.getWorker(uid))
-		assert.Len(t, env.getProbeIDs(t), 2)
+		assert.Len(t, env.getProbeIDs(t), 3)
 	}
 
 	{
@@ -678,8 +679,9 @@ func TestPublishProbeConfigConflict(t *testing.T) {
 
 	assert.Nil(t, env.ctrl.OnAdd(env.ctx, dm))
 	assert.Equal(t, []string{
-		dm.Metadata.Name + ".hardware-uuid",
 		dm.Metadata.Name + ".hardware-uuid-linux",
+		dm.Metadata.Name + ".hardware-uuid-macos",
+		dm.Metadata.Name + ".hardware-uuid-windows",
 	}, env.getProbeIDs(t))
 	assert.Equal(t, 2, client.updateCalls)
 
@@ -745,17 +747,20 @@ func TestToCoreProbe(t *testing.T) {
 	}
 
 	assert.Nil(t, toCoreProbe(dm, nil))
-	assert.Nil(t, toCoreProbe(dm, &devicemgrcommon.Probe{ID: "probe"}))
+	assert.Nil(t, toCoreProbe(dm, &devicemgrcommon.Probe{ID: "probe", OSType: corev1.Device_Status_LINUX}))
 	assert.Nil(t, toCoreProbe(dm, &devicemgrcommon.Probe{
+		OSType:   corev1.Device_Status_LINUX,
 		ReadFile: &devicemgrcommon.ReadFile{Path: "/etc/machine-id"},
 	}))
-
-	osTypes := []corev1.Device_Status_OSType{corev1.Device_Status_LINUX}
+	assert.Nil(t, toCoreProbe(dm, &devicemgrcommon.Probe{
+		ID:       "no-os",
+		ReadFile: &devicemgrcommon.ReadFile{Path: "/etc/machine-id"},
+	}), "a Probe without an OSType must not be published")
 
 	{
 		ret := toCoreProbe(dm, &devicemgrcommon.Probe{
 			ID:               "command",
-			OSTypes:          osTypes,
+			OSType:           corev1.Device_Status_LINUX,
 			RequireElevation: true,
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        "/usr/bin/tool",
@@ -766,23 +771,22 @@ func TestToCoreProbe(t *testing.T) {
 		})
 		assert.Equal(t, "dm.command", ret.Id)
 		assert.Equal(t, "dm-uid", ret.OwnerRef.Uid)
-		assert.Equal(t, osTypes, ret.OsTypes)
+		assert.Equal(t, corev1.Device_Status_LINUX, ret.OsType)
 		assert.True(t, ret.RequireElevation)
 		assert.True(t, ret.Condition.GetMatchAny())
 		assert.Equal(t, "/usr/bin/tool", ret.GetRunCommand().Command)
 		assert.Equal(t, []string{"--id"}, ret.GetRunCommand().Args)
 		assert.Equal(t, uint32(5), ret.GetRunCommand().TimeoutSeconds)
 		assert.Equal(t, uint32(1024), ret.GetRunCommand().MaxOutputBytes)
-
-		ret.OsTypes[0] = corev1.Device_Status_MAC
-		assert.Equal(t, corev1.Device_Status_LINUX, osTypes[0])
 	}
 
 	{
 		ret := toCoreProbe(dm, &devicemgrcommon.Probe{
 			ID:       "file",
+			OSType:   corev1.Device_Status_LINUX,
 			ReadFile: &devicemgrcommon.ReadFile{Path: "/etc/machine-id", MaxBytes: 64},
 		})
+		assert.Equal(t, corev1.Device_Status_LINUX, ret.OsType)
 		assert.Equal(t, "/etc/machine-id", ret.GetReadFile().Path)
 		assert.Equal(t, uint32(64), ret.GetReadFile().MaxBytes)
 	}
@@ -790,6 +794,7 @@ func TestToCoreProbe(t *testing.T) {
 	{
 		ret := toCoreProbe(dm, &devicemgrcommon.Probe{
 			ID:           "registry",
+			OSType:       corev1.Device_Status_WINDOWS,
 			ReadRegistry: &devicemgrcommon.ReadRegistry{Key: `HKLM\SOFTWARE\Vendor`, Name: "ID"},
 		})
 		assert.Equal(t, `HKLM\SOFTWARE\Vendor`, ret.GetReadRegistry().Key)
@@ -798,7 +803,8 @@ func TestToCoreProbe(t *testing.T) {
 
 	{
 		ret := toCoreProbe(dm, &devicemgrcommon.Probe{
-			ID: "platform",
+			ID:     "platform",
+			OSType: corev1.Device_Status_MAC,
 			PlatformIdentifier: &devicemgrcommon.PlatformIdentifier{
 				Kind: corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier_HARDWARE_UUID,
 			},

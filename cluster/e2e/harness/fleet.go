@@ -129,6 +129,11 @@ func (f *Fleet) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	from := min(page*perPage, len(f.hosts))
 	to := min(from+perPage, len(f.hosts))
 	hosts := append([]FleetHost{}, f.hosts[from:to]...)
+	for i := range hosts {
+		if hosts[i].SeenTime == "" {
+			hosts[i].SeenTime = time.Now().UTC().Format(time.RFC3339)
+		}
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(struct {

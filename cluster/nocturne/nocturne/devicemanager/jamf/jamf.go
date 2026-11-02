@@ -125,8 +125,8 @@ func (m *Manager) Close() error {
 func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
-			ID:      "hardware-uuid-macos",
-			OSTypes: []corev1.Device_Status_OSType{corev1.Device_Status_MAC},
+			ID:     "hardware-uuid-macos",
+			OSType: corev1.Device_Status_MAC,
 			PlatformIdentifier: &devicemgrcommon.PlatformIdentifier{
 				Kind: corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier_HARDWARE_UUID,
 			},

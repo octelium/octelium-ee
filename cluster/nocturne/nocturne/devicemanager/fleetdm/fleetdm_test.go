@@ -47,11 +47,18 @@ func TestParseExternalID(t *testing.T) {
 		assert.Equal(t, tc.want, ret)
 	}
 
+	osTypes := map[string]corev1.Device_Status_OSType{}
 	for _, probe := range m.IdentityProbes() {
 		assert.Nil(t, probe.RunCommand)
 		assert.NotNil(t, probe.PlatformIdentifier)
 		assert.Equal(t, probe.ID == "hardware-uuid-linux", probe.RequireElevation)
+		osTypes[probe.ID] = probe.OSType
 	}
+	assert.Equal(t, map[string]corev1.Device_Status_OSType{
+		"hardware-uuid-linux":   corev1.Device_Status_LINUX,
+		"hardware-uuid-macos":   corev1.Device_Status_MAC,
+		"hardware-uuid-windows": corev1.Device_Status_WINDOWS,
+	}, osTypes)
 }
 
 func TestToEntry(t *testing.T) {

@@ -126,8 +126,8 @@ func (m *Manager) Close() error {
 func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
-			ID:      "entra-device-id-windows",
-			OSTypes: []corev1.Device_Status_OSType{corev1.Device_Status_WINDOWS},
+			ID:     "entra-device-id-windows",
+			OSType: corev1.Device_Status_WINDOWS,
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        `C:\Windows\System32\dsregcmd.exe`,
 				Args:           []string{"/status"},
