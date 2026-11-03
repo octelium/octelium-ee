@@ -160,7 +160,7 @@ func testDeviceManagerAPI(t *testing.T, ch *harness.H) {
 			{"UnknownSecret", func(spec *enterprisev1.DeviceManager_Spec) {
 				spec.GetFleetDM().ApiToken = deviceManagerSecretRef(utilrand.GetRandomStringCanonical(10))
 			}},
-			{"ProbeOnlyWithoutProbes", func(spec *enterprisev1.DeviceManager_Spec) {
+			{"VerificationWithoutProbes", func(spec *enterprisev1.DeviceManager_Spec) {
 				spec.Type = &enterprisev1.DeviceManager_Spec_Huntress_{
 					Huntress: &enterprisev1.DeviceManager_Spec_Huntress{
 						ApiKey:    "key",
@@ -168,24 +168,12 @@ func testDeviceManagerAPI(t *testing.T, ch *harness.H) {
 					},
 				}
 				spec.Linking = &enterprisev1.DeviceManager_Spec_Linking{
-					Strategy: enterprisev1.DeviceManager_Spec_Linking_PROBE_ONLY,
+					VerificationInterval: eeharness.Minutes(60),
 				}
 			}},
 			{"OwnerMatchWithoutOwners", func(spec *enterprisev1.DeviceManager_Spec) {
 				spec.Linking = &enterprisev1.DeviceManager_Spec_Linking{
 					RequireOwnerMatch: true,
-				}
-			}},
-			{"AgreementWithoutProbes", func(spec *enterprisev1.DeviceManager_Spec) {
-				spec.Linking = &enterprisev1.DeviceManager_Spec_Linking{
-					Strategy:         enterprisev1.DeviceManager_Spec_Linking_IDENTITY_ONLY,
-					RequireAgreement: true,
-				}
-			}},
-			{"VerificationWithoutProbes", func(spec *enterprisev1.DeviceManager_Spec) {
-				spec.Linking = &enterprisev1.DeviceManager_Spec_Linking{
-					Strategy:             enterprisev1.DeviceManager_Spec_Linking_IDENTITY_ONLY,
-					VerificationInterval: eeharness.Minutes(60),
 				}
 			}},
 			{"StaleAfterShorterThanTheInterval", func(spec *enterprisev1.DeviceManager_Spec) {
@@ -471,28 +459,11 @@ func testDeviceManagerProbePlan(t *testing.T, ch *harness.H) {
 		waitDeviceManagerState(t, h, dm, enterprisev1.DeviceManager_Status_ERROR, hasCollectionError(true))
 	})
 
-	t.Run("AnIdentityOnlyDeviceManagerHasNoProbes", func(t *testing.T) {
-		cur, err := h.EnterpriseC().GetDeviceManager(t.Context(), &metav1.GetOptions{Uid: dm.Metadata.Uid})
-		require.Nil(t, err)
-
-		cur.Spec.Linking = &enterprisev1.DeviceManager_Spec_Linking{
-			Strategy: enterprisev1.DeviceManager_Spec_Linking_IDENTITY_ONLY,
-		}
-		h.UpdateDeviceManager(t, cur)
-
-		waitDeviceManagerProbes(t, h, dm)
-	})
-
 	t.Run("ADeletedDeviceManagerIsRemovedFromThePlan", func(t *testing.T) {
-		cur, err := h.EnterpriseC().GetDeviceManager(t.Context(), &metav1.GetOptions{Uid: dm.Metadata.Uid})
-		require.Nil(t, err)
-
-		cur.Spec.Linking = nil
-		h.UpdateDeviceManager(t, cur)
 		waitDeviceManagerProbes(t, h, dm, linuxProbeID,
 			dm.Metadata.Name+".hardware-uuid-macos", dm.Metadata.Name+".hardware-uuid-windows")
 
-		_, err = h.EnterpriseC().DeleteDeviceManager(t.Context(), &metav1.DeleteOptions{Uid: dm.Metadata.Uid})
+		_, err := h.EnterpriseC().DeleteDeviceManager(t.Context(), &metav1.DeleteOptions{Uid: dm.Metadata.Uid})
 		require.Nil(t, err)
 
 		waitDeviceManagerProbes(t, h, dm)

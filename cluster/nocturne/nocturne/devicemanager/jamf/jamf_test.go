@@ -73,6 +73,7 @@ func TestToEntry(t *testing.T) {
 			"id": "1",
 			"udid": "0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D",
 			"general": {
+				"name": "Alice MacBook Pro",
 				"lastContactTime": %q,
 				"remoteManagement": {"managed": true}
 			},
@@ -98,9 +99,12 @@ func TestToEntry(t *testing.T) {
 		}`, now.Add(-time.Hour).UTC().Format(time.RFC3339))), now)
 
 		assert.Equal(t, "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d", entry.ExternalID)
+		assert.Equal(t, "0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D", entry.MachineID)
 		assert.Equal(t, "C02XYZ", entry.Serial)
 		assert.Equal(t, []string{"a4:bb:cc:dd:ee:01"}, entry.MACs)
 		assert.Equal(t, []string{"user@example.com"}, entry.OwnerEmails)
+		assert.Equal(t, "Alice MacBook Pro", entry.Hostname)
+		assert.Equal(t, corev1.Device_Status_MAC, entry.OSType)
 
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Compliant)

@@ -298,11 +298,11 @@ func TestDeviceManagerLifecycle(t *testing.T) {
 	{
 		updated, old := env.updateSpec(t, dm, func(spec *enterprisev1.DeviceManager_Spec) {
 			spec.Linking = &enterprisev1.DeviceManager_Spec_Linking{
-				Strategy: enterprisev1.DeviceManager_Spec_Linking_IDENTITY_ONLY,
+				VerificationInterval: &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 1}},
 			}
 		})
 		assert.Nil(t, env.ctrl.OnUpdate(env.ctx, updated, old))
-		assert.Empty(t, env.getProbeIDs(t))
+		assert.Len(t, env.getProbeIDs(t), 3)
 	}
 
 	{

@@ -77,6 +77,7 @@ func TestToEntry(t *testing.T) {
 	{
 		entry := m.toEntry(getDevice(`{
 			"id": "INTUNE-ID-1",
+			"deviceName": "DESKTOP-1",
 			"serialNumber": "SERIAL-1",
 			"wiFiMacAddress": "a4bbccddee01",
 			"ethernetMacAddress": "",
@@ -96,6 +97,8 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, []string{"0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"}, entry.Aliases)
 		assert.Equal(t, []string{"user@example.com", "upn@corp.example.com"}, entry.OwnerEmails)
 		assert.Equal(t, []string{"a4bbccddee01"}, entry.MACs)
+		assert.Equal(t, "DESKTOP-1", entry.Hostname)
+		assert.Equal(t, corev1.Device_Status_WINDOWS, entry.OSType)
 
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Compliant)
@@ -118,6 +121,7 @@ func TestToEntry(t *testing.T) {
 
 		assert.Empty(t, entry.Aliases)
 		assert.Empty(t, entry.OwnerEmails)
+		assert.Equal(t, corev1.Device_Status_IOS, entry.OSType)
 
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Compliant)

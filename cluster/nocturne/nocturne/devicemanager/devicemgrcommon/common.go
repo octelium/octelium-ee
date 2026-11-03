@@ -10,6 +10,7 @@ package devicemgrcommon
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/hex"
 	"mime"
 	"net/http"
@@ -99,8 +100,11 @@ type Manager interface {
 type Entry struct {
 	ExternalID string
 	Aliases    []string
+	MachineID  string
 	Serial     string
 	MACs       []string
+	Hostname   string
+	OSType     corev1.Device_Status_OSType
 
 	OwnerEmails []string
 
@@ -115,31 +119,21 @@ const (
 	MatchStateAmbiguous
 )
 
-type MatchMethod int
-
-const (
-	MatchMethodNone MatchMethod = iota
-	MatchMethodExternalID
-	MatchMethodProbeID
-	MatchMethodSerial
-	MatchMethodMAC
-)
-
 type MatchResult struct {
-	State  MatchState
-	Method MatchMethod
-	Entry  *Entry
+	State      MatchState
+	Entry      *Entry
+	Candidates []*Entry
 }
 
 type uniqueIndex struct {
 	values    map[string]*Entry
-	ambiguous map[string]struct{}
+	ambiguous map[string][]*Entry
 }
 
 func newUniqueIndex() uniqueIndex {
 	return uniqueIndex{
 		values:    map[string]*Entry{},
-		ambiguous: map[string]struct{}{},
+		ambiguous: map[string][]*Entry{},
 	}
 }
 
@@ -147,13 +141,16 @@ func (i *uniqueIndex) add(key string, entry *Entry) {
 	if key == "" || entry == nil {
 		return
 	}
-	if _, ok := i.ambiguous[key]; ok {
+	if candidates, ok := i.ambiguous[key]; ok {
+		if !slices.Contains(candidates, entry) {
+			i.ambiguous[key] = append(candidates, entry)
+		}
 		return
 	}
 	if previous, ok := i.values[key]; ok {
 		if previous != entry {
 			delete(i.values, key)
-			i.ambiguous[key] = struct{}{}
+			i.ambiguous[key] = []*Entry{previous, entry}
 		}
 		return
 	}
@@ -164,8 +161,11 @@ func (i *uniqueIndex) get(key string) MatchResult {
 	if key == "" {
 		return MatchResult{State: MatchStateNone}
 	}
-	if _, ok := i.ambiguous[key]; ok {
-		return MatchResult{State: MatchStateAmbiguous}
+	if candidates, ok := i.ambiguous[key]; ok {
+		return MatchResult{
+			State:      MatchStateAmbiguous,
+			Candidates: candidates,
+		}
 	}
 	entry, ok := i.values[key]
 	if !ok {
@@ -184,7 +184,7 @@ func newIdentityIndex(candidates map[string][]*Entry) uniqueIndex {
 		if entry := getLatestEntry(entries); entry != nil {
 			ret.values[key] = entry
 		} else {
-			ret.ambiguous[key] = struct{}{}
+			ret.ambiguous[key] = entries
 		}
 	}
 
@@ -235,8 +235,10 @@ type Fleet struct {
 
 	byExternalID uniqueIndex
 	byProbeID    uniqueIndex
+	byMachineID  uniqueIndex
 	bySerial     uniqueIndex
 	byMAC        uniqueIndex
+	byOwner      map[string][]*Entry
 
 	degradedReason string
 }
@@ -246,6 +248,8 @@ func NewFleet(entries []*Entry) *Fleet {
 		entries:      make([]*Entry, 0, len(entries)),
 		byExternalID: newUniqueIndex(),
 		byProbeID:    newUniqueIndex(),
+		byMachineID:  newUniqueIndex(),
+		byOwner:      map[string][]*Entry{},
 	}
 
 	serials := map[string][]*Entry{}
@@ -267,6 +271,12 @@ func NewFleet(entries []*Entry) *Fleet {
 			if normalized := NormalizeID(id); normalized != "" {
 				f.byProbeID.add(normalized, entry)
 			}
+		}
+
+		f.byMachineID.add(HashMachineID(entry.MachineID), entry)
+
+		for _, email := range entry.OwnerEmails {
+			addCandidate(f.byOwner, NormalizeEmail(email), entry)
 		}
 
 		addCandidate(serials, NormalizeSerial(entry.Serial), entry)
@@ -318,18 +328,21 @@ func (f *Fleet) MatchExternalID(externalID string) MatchResult {
 	if f == nil {
 		return MatchResult{State: MatchStateNone}
 	}
-	result := f.byExternalID.get(externalID)
-	result.Method = MatchMethodExternalID
-	return result
+	return f.byExternalID.get(externalID)
 }
 
 func (f *Fleet) MatchProbeID(id string) MatchResult {
 	if f == nil {
 		return MatchResult{State: MatchStateNone}
 	}
-	result := f.byProbeID.get(NormalizeID(id))
-	result.Method = MatchMethodProbeID
-	return result
+	return f.byProbeID.get(NormalizeID(id))
+}
+
+func (f *Fleet) MatchMachineID(deviceID string) MatchResult {
+	if f == nil {
+		return MatchResult{State: MatchStateNone}
+	}
+	return f.byMachineID.get(strings.ToLower(strings.TrimSpace(deviceID)))
 }
 
 func (f *Fleet) MatchIdentity(serial string, macs []string) MatchResult {
@@ -339,14 +352,14 @@ func (f *Fleet) MatchIdentity(serial string, macs []string) MatchResult {
 
 	if normalized := NormalizeSerial(serial); normalized != "" {
 		result := f.bySerial.get(normalized)
-		result.Method = MatchMethodSerial
 		switch result.State {
 		case MatchStateUnique, MatchStateAmbiguous:
 			return result
 		}
 	}
 
-	entries := map[*Entry]struct{}{}
+	var entries []*Entry
+	isAmbiguous := false
 	for _, raw := range macs {
 		normalized := NormalizeMAC(raw)
 		if normalized == "" {
@@ -354,36 +367,277 @@ func (f *Fleet) MatchIdentity(serial string, macs []string) MatchResult {
 		}
 
 		result := f.byMAC.get(normalized)
-		if result.State == MatchStateAmbiguous {
-			return MatchResult{
-				State:  MatchStateAmbiguous,
-				Method: MatchMethodMAC,
+		switch result.State {
+		case MatchStateAmbiguous:
+			isAmbiguous = true
+			for _, entry := range result.Candidates {
+				if !slices.Contains(entries, entry) {
+					entries = append(entries, entry)
+				}
 			}
-		}
-		if result.State == MatchStateUnique {
-			entries[result.Entry] = struct{}{}
+		case MatchStateUnique:
+			if !slices.Contains(entries, result.Entry) {
+				entries = append(entries, result.Entry)
+			}
 		}
 	}
 
-	switch len(entries) {
-	case 0:
+	switch {
+	case len(entries) == 0:
+		return MatchResult{State: MatchStateNone}
+	case len(entries) == 1 && !isAmbiguous:
 		return MatchResult{
-			State:  MatchStateNone,
-			Method: MatchMethodMAC,
+			State: MatchStateUnique,
+			Entry: entries[0],
 		}
-	case 1:
-		for entry := range entries {
-			return MatchResult{
-				State:  MatchStateUnique,
-				Method: MatchMethodMAC,
-				Entry:  entry,
+	default:
+		return MatchResult{
+			State:      MatchStateAmbiguous,
+			Candidates: entries,
+		}
+	}
+}
+
+func (f *Fleet) OwnedEntries(email string) []*Entry {
+	if f == nil {
+		return nil
+	}
+	return f.byOwner[NormalizeEmail(email)]
+}
+
+type LinkState int
+
+const (
+	LinkStateNone LinkState = iota
+	LinkStateMatched
+	LinkStateAmbiguous
+	LinkStateSourcesDisagree
+	LinkStateOwnerAmbiguous
+	LinkStateOwnerMismatch
+)
+
+type LinkRequest struct {
+	DeviceID          string
+	OSType            corev1.Device_Status_OSType
+	SerialNumber      string
+	MACs              []string
+	Hostname          string
+	ProbeID           string
+	UserEmail         string
+	Now               time.Time
+	MaxObservationAge time.Duration
+}
+
+type LinkResult struct {
+	State      LinkState
+	Entry      *Entry
+	Confidence corev1.Device_Status_Binding_Confidence
+	Evidence   []corev1.Device_Status_Binding_Evidence
+}
+
+func (f *Fleet) Link(req *LinkRequest) *LinkResult {
+	if f == nil || req == nil {
+		return &LinkResult{State: LinkStateNone}
+	}
+
+	userEmail := NormalizeEmail(req.UserEmail)
+
+	var entry *Entry
+	for _, result := range []MatchResult{
+		f.MatchProbeID(req.ProbeID),
+		f.MatchMachineID(req.DeviceID),
+		f.MatchIdentity(req.SerialNumber, req.MACs),
+	} {
+		result = narrowToOwner(result, userEmail)
+
+		switch result.State {
+		case MatchStateAmbiguous:
+			return &LinkResult{State: LinkStateAmbiguous}
+		case MatchStateUnique:
+			if entry != nil && entry != result.Entry {
+				return &LinkResult{State: LinkStateSourcesDisagree}
+			}
+			entry = result.Entry
+		}
+	}
+
+	switch {
+	case entry != nil:
+	case NormalizeID(req.ProbeID) != "" || userEmail == "":
+		return &LinkResult{State: LinkStateNone}
+	default:
+		var state LinkState
+		entry, state = f.linkByOwner(req, userEmail)
+		if entry == nil {
+			return &LinkResult{State: state}
+		}
+	}
+
+	if len(entry.OwnerEmails) > 0 && !OwnerEmailMatches(userEmail, entry.OwnerEmails) {
+		return &LinkResult{
+			State: LinkStateOwnerMismatch,
+			Entry: entry,
+		}
+	}
+
+	evidence := entry.Evidence(req)
+
+	return &LinkResult{
+		State:      LinkStateMatched,
+		Entry:      entry,
+		Confidence: GetConfidence(evidence),
+		Evidence:   evidence,
+	}
+}
+
+func (f *Fleet) linkByOwner(req *LinkRequest, userEmail string) (*Entry, LinkState) {
+	if req.OSType == corev1.Device_Status_OS_TYPE_UNKNOWN {
+		return nil, LinkStateNone
+	}
+
+	var candidates []*Entry
+	for _, entry := range f.byOwner[userEmail] {
+		if entry.OSType == req.OSType && entry.isObservedWithin(req.Now, req.MaxObservationAge) &&
+			!entry.IsContradicted(req) {
+			candidates = append(candidates, entry)
+		}
+	}
+
+	if hostname := NormalizeHostname(req.Hostname); len(candidates) > 1 && hostname != "" {
+		var matched []*Entry
+		for _, entry := range candidates {
+			if NormalizeHostname(entry.Hostname) == hostname {
+				matched = append(matched, entry)
 			}
 		}
+		if len(matched) == 1 {
+			candidates = matched
+		}
+	}
+
+	switch len(candidates) {
+	case 0:
+		return nil, LinkStateNone
+	case 1:
+		return candidates[0], LinkStateMatched
+	default:
+		return nil, LinkStateOwnerAmbiguous
+	}
+}
+
+func narrowToOwner(result MatchResult, userEmail string) MatchResult {
+	if result.State != MatchStateAmbiguous || userEmail == "" {
+		return result
+	}
+
+	var owned *Entry
+	for _, entry := range result.Candidates {
+		if !OwnerEmailMatches(userEmail, entry.OwnerEmails) {
+			continue
+		}
+		if owned != nil {
+			return result
+		}
+		owned = entry
+	}
+
+	if owned == nil {
+		return result
 	}
 
 	return MatchResult{
-		State:  MatchStateAmbiguous,
-		Method: MatchMethodMAC,
+		State: MatchStateUnique,
+		Entry: owned,
+	}
+}
+
+func (e *Entry) Evidence(req *LinkRequest) []corev1.Device_Status_Binding_Evidence {
+	if e == nil || req == nil {
+		return nil
+	}
+
+	var ret []corev1.Device_Status_Binding_Evidence
+
+	if OwnerEmailMatches(req.UserEmail, e.OwnerEmails) {
+		ret = append(ret, corev1.Device_Status_Binding_OWNER_EMAIL)
+	}
+
+	if id := NormalizeID(req.ProbeID); id != "" && slices.ContainsFunc(append([]string{e.ExternalID}, e.Aliases...),
+		func(itm string) bool {
+			return NormalizeID(itm) == id
+		}) {
+		ret = append(ret, corev1.Device_Status_Binding_PROBE)
+	}
+
+	if machineID := HashMachineID(e.MachineID); machineID != "" &&
+		machineID == strings.ToLower(strings.TrimSpace(req.DeviceID)) {
+		ret = append(ret, corev1.Device_Status_Binding_MACHINE_ID)
+	}
+
+	if serial := NormalizeSerial(req.SerialNumber); serial != "" && serial == NormalizeSerial(e.Serial) {
+		ret = append(ret, corev1.Device_Status_Binding_SERIAL_NUMBER)
+	}
+
+	if slices.ContainsFunc(req.MACs, func(mac string) bool {
+		normalized := NormalizeMAC(mac)
+		return normalized != "" && slices.ContainsFunc(e.MACs, func(itm string) bool {
+			return NormalizeMAC(itm) == normalized
+		})
+	}) {
+		ret = append(ret, corev1.Device_Status_Binding_MAC_ADDRESS)
+	}
+
+	if hostname := NormalizeHostname(req.Hostname); hostname != "" && hostname == NormalizeHostname(e.Hostname) {
+		ret = append(ret, corev1.Device_Status_Binding_HOSTNAME)
+	}
+
+	return ret
+}
+
+func (e *Entry) IsContradicted(req *LinkRequest) bool {
+	if e == nil || req == nil {
+		return false
+	}
+
+	serial := NormalizeSerial(req.SerialNumber)
+	entrySerial := NormalizeSerial(e.Serial)
+
+	return serial != "" && entrySerial != "" && serial != entrySerial
+}
+
+func (e *Entry) isObservedWithin(now time.Time, maxAge time.Duration) bool {
+	lastSeenAt := e.Posture.GetLastSeenAt()
+	if !lastSeenAt.IsValid() || IsFutureTime(lastSeenAt.AsTime(), now) {
+		return false
+	}
+
+	return now.Sub(lastSeenAt.AsTime()) < maxAge
+}
+
+func HasDeviceEvidence(evidence []corev1.Device_Status_Binding_Evidence) bool {
+	return slices.ContainsFunc(evidence, func(itm corev1.Device_Status_Binding_Evidence) bool {
+		switch itm {
+		case corev1.Device_Status_Binding_PROBE,
+			corev1.Device_Status_Binding_MACHINE_ID,
+			corev1.Device_Status_Binding_SERIAL_NUMBER,
+			corev1.Device_Status_Binding_MAC_ADDRESS:
+			return true
+		default:
+			return false
+		}
+	})
+}
+
+func GetConfidence(evidence []corev1.Device_Status_Binding_Evidence) corev1.Device_Status_Binding_Confidence {
+	isOwned := slices.Contains(evidence, corev1.Device_Status_Binding_OWNER_EMAIL)
+
+	switch {
+	case isOwned && HasDeviceEvidence(evidence):
+		return corev1.Device_Status_Binding_HIGH
+	case isOwned:
+		return corev1.Device_Status_Binding_MEDIUM
+	default:
+		return corev1.Device_Status_Binding_LOW
 	}
 }
 
@@ -395,8 +649,11 @@ func cloneEntry(entry *Entry) *Entry {
 	out := &Entry{
 		ExternalID:  entry.ExternalID,
 		Aliases:     append([]string(nil), entry.Aliases...),
+		MachineID:   entry.MachineID,
 		Serial:      entry.Serial,
 		MACs:        append([]string(nil), entry.MACs...),
+		Hostname:    entry.Hostname,
+		OSType:      entry.OSType,
 		OwnerEmails: append([]string(nil), entry.OwnerEmails...),
 	}
 
@@ -558,23 +815,6 @@ func MaterializePosture(owner *Owner, entry *Entry) *corev1.Device_Status_Postur
 	return posture
 }
 
-func LinkingStrategy(dm *enterprisev1.DeviceManager) enterprisev1.DeviceManager_Spec_Linking_Strategy {
-	if dm == nil {
-		return enterprisev1.DeviceManager_Spec_Linking_IDENTITY_AND_PROBE
-	}
-
-	linking := dm.Spec.GetLinking()
-	if linking == nil || linking.GetStrategy() == enterprisev1.DeviceManager_Spec_Linking_STRATEGY_UNSET {
-		return enterprisev1.DeviceManager_Spec_Linking_IDENTITY_AND_PROBE
-	}
-
-	return linking.GetStrategy()
-}
-
-func RequireAgreement(dm *enterprisev1.DeviceManager) bool {
-	return dm != nil && dm.Spec.GetLinking().GetRequireAgreement()
-}
-
 func RequireOwnerMatch(dm *enterprisev1.DeviceManager) bool {
 	return dm != nil && dm.Spec.GetLinking().GetRequireOwnerMatch()
 }
@@ -597,14 +837,6 @@ func MaxObservationAge(dm *enterprisev1.DeviceManager) time.Duration {
 	}
 
 	return DefaultMaxObservationAge
-}
-
-func UsesProbe(dm *enterprisev1.DeviceManager) bool {
-	return LinkingStrategy(dm) != enterprisev1.DeviceManager_Spec_Linking_IDENTITY_ONLY
-}
-
-func UsesIdentity(dm *enterprisev1.DeviceManager) bool {
-	return LinkingStrategy(dm) != enterprisev1.DeviceManager_Spec_Linking_PROBE_ONLY
 }
 
 func IsDisabled(dm *enterprisev1.DeviceManager) bool {
@@ -669,6 +901,58 @@ func OwnerEmailMatches(userEmail string, ownerEmails []string) bool {
 	}
 
 	return false
+}
+
+func NormalizeHostname(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if i := strings.IndexByte(value, '.'); i >= 0 {
+		value = value[:i]
+	}
+
+	switch value {
+	case "localhost":
+		return ""
+	default:
+		return value
+	}
+}
+
+func HashMachineID(value string) string {
+	value = strings.ToUpper(strings.TrimSpace(value))
+	if NormalizeID(value) == "" {
+		return ""
+	}
+
+	sum := sha256.Sum256([]byte(value))
+	return hex.EncodeToString(sum[:])
+}
+
+func ParseOSType(value string) corev1.Device_Status_OSType {
+	value = strings.ToLower(strings.TrimSpace(value))
+
+	switch {
+	case value == "":
+		return corev1.Device_Status_OS_TYPE_UNKNOWN
+	case strings.HasPrefix(value, "windows"):
+		return corev1.Device_Status_WINDOWS
+	case value == "mac", value == "darwin", value == "macmdm",
+		strings.HasPrefix(value, "macos"), strings.HasPrefix(value, "mac os"), strings.HasPrefix(value, "os x"):
+		return corev1.Device_Status_MAC
+	case value == "ios", value == "ipados", value == "iphone", value == "ipad",
+		strings.HasPrefix(value, "ios "), strings.HasPrefix(value, "ipados "):
+		return corev1.Device_Status_IOS
+	case strings.HasPrefix(value, "android"):
+		return corev1.Device_Status_ANDROID
+	case value == "chrome", strings.HasPrefix(value, "chromeos"), strings.HasPrefix(value, "chrome os"):
+		return corev1.Device_Status_CHROMEOS
+	case strings.Contains(value, "linux"), slices.Contains([]string{
+		"ubuntu", "debian", "rhel", "centos", "fedora", "amzn", "arch",
+		"opensuse", "sles", "rocky", "almalinux", "ol", "kali", "manjaro", "gentoo",
+	}, strings.Fields(value)[0]):
+		return corev1.Device_Status_LINUX
+	default:
+		return corev1.Device_Status_OS_TYPE_UNKNOWN
+	}
 }
 
 func NormalizeID(value string) string {

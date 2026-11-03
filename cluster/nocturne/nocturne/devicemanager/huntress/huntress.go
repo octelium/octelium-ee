@@ -239,10 +239,17 @@ func toEntry(a *huntressAgent, now time.Time) *devicemgrcommon.Entry {
 		p.LastSeenAt = timestamppb.New(lastCallback)
 	}
 
+	osType := devicemgrcommon.ParseOSType(a.Platform)
+	if osType == corev1.Device_Status_OS_TYPE_UNKNOWN {
+		osType = devicemgrcommon.ParseOSType(a.OS)
+	}
+
 	return &devicemgrcommon.Entry{
 		ExternalID: strconv.FormatInt(a.ID, 10),
 		Serial:     a.SerialNumber,
 		MACs:       a.MACAddresses,
+		Hostname:   a.Hostname,
+		OSType:     osType,
 		Posture:    p,
 	}
 }

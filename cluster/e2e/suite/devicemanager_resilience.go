@@ -54,9 +54,6 @@ func testDeviceManagerResilience(t *testing.T, ch *harness.H) {
 	dmReq.Spec.GetFleetDM().BaseURL = fleet.URL
 	dmReq.Spec.Polling.Interval = eeharness.Seconds(uint32(fleetPollInterval / time.Second))
 	dmReq.Spec.Polling.Timeout = eeharness.Seconds(25)
-	dmReq.Spec.Linking = &enterprisev1.DeviceManager_Spec_Linking{
-		Strategy: enterprisev1.DeviceManager_Spec_Linking_IDENTITY_ONLY,
-	}
 	dm := h.CreateDeviceManager(t, dmReq)
 
 	unavailableReq := fleetDeviceManager(sec.Metadata.Name)
@@ -129,6 +126,9 @@ func testDeviceManagerResilience(t *testing.T, ch *harness.H) {
 		bound := waitFleetDevice(t, h, deviceRef, dm,
 			corev1.Device_Status_Binding_VALID, corev1.Device_Status_Posture_PASS)
 		assert.Equal(t, strings.ToLower(hosts[0].UUID), bound.Status.Binding.ExternalID)
+		assert.Equal(t, corev1.Device_Status_Binding_LOW, bound.Status.Binding.Confidence)
+		assert.Equal(t, []corev1.Device_Status_Binding_Evidence{corev1.Device_Status_Binding_SERIAL_NUMBER},
+			bound.Status.Binding.Evidence)
 		bindingUID = bound.Status.Binding.Uid
 	})
 

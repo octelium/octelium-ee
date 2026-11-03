@@ -10257,6 +10257,22 @@ export interface Device_Status_Binding {
      * @generated from protobuf field: google.protobuf.Timestamp nextVerificationAt = 10
      */
     nextVerificationAt?: Timestamp;
+    /**
+     * Confidence is the confidence of an ACCEPTED Binding. It is evaluated
+     * again whenever the inventory entry or the Device changes, so Policies
+     * can require a minimum Confidence (e.g.
+     * `ctx.device.status.binding.confidence == "HIGH"`).
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Binding.Confidence confidence = 11
+     */
+    confidence: Device_Status_Binding_Confidence;
+    /**
+     * Evidence is the list of the kinds of evidence that currently tie an
+     * ACCEPTED Binding's inventory entry to the Device or to its User
+     *
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.Device.Status.Binding.Evidence evidence = 12
+     */
+    evidence: Device_Status_Binding_Evidence[];
 }
 /**
  * State is the state of the Binding
@@ -10285,11 +10301,117 @@ export enum Device_Status_Binding_State {
     AMBIGUOUS = 2,
     /**
      * CONFLICT means that the inventory entry is already bound to another
-     * Device. It is retried once the other Binding is released.
+     * Device. It is retried once the other Binding is released or once
+     * the Device's Confidence is higher than the other Binding's.
      *
      * @generated from protobuf enum value: CONFLICT = 3;
      */
-    CONFLICT = 3
+    CONFLICT = 3,
+    /**
+     * OWNER_MISMATCH means that the Device resolves to an inventory entry
+     * whose reported owner is not the Device's User
+     *
+     * @generated from protobuf enum value: OWNER_MISMATCH = 4;
+     */
+    OWNER_MISMATCH = 4
+}
+/**
+ * Confidence is how strongly the evidence ties an ACCEPTED Binding's
+ * inventory entry to both the Device and the Device's User. The owner
+ * email reported by the provider is the only evidence that the Device
+ * cannot assert by itself, so it is required for MEDIUM and HIGH.
+ *
+ * @generated from protobuf enum octelium.api.main.core.v1.Device.Status.Binding.Confidence
+ */
+export enum Device_Status_Binding_Confidence {
+    /**
+     * CONFIDENCE_UNKNOWN is not used
+     *
+     * @generated from protobuf enum value: CONFIDENCE_UNKNOWN = 0;
+     */
+    CONFIDENCE_UNKNOWN = 0,
+    /**
+     * LOW means that the Device's identifiers select the inventory entry
+     * but the provider reports no owner for it
+     *
+     * @generated from protobuf enum value: LOW = 1;
+     */
+    LOW = 1,
+    /**
+     * MEDIUM means that the provider reports the Device's User as the
+     * owner of the inventory entry but none of the Device's identifiers
+     * select it. The entry is the only one of the User's entries that
+     * can be the Device.
+     *
+     * @generated from protobuf enum value: MEDIUM = 2;
+     */
+    MEDIUM = 2,
+    /**
+     * HIGH means that the provider reports the Device's User as the owner
+     * of the inventory entry and the Device's identifiers select it
+     *
+     * @generated from protobuf enum value: HIGH = 3;
+     */
+    HIGH = 3
+}
+/**
+ * Evidence is a kind of evidence that ties an ACCEPTED Binding's
+ * inventory entry to the Device or to the Device's User
+ *
+ * @generated from protobuf enum octelium.api.main.core.v1.Device.Status.Binding.Evidence
+ */
+export enum Device_Status_Binding_Evidence {
+    /**
+     * EVIDENCE_UNKNOWN is not used
+     *
+     * @generated from protobuf enum value: EVIDENCE_UNKNOWN = 0;
+     */
+    EVIDENCE_UNKNOWN = 0,
+    /**
+     * OWNER_EMAIL means that one of the owner emails that the provider
+     * reports for the inventory entry is the email of the Device's User
+     *
+     * @generated from protobuf enum value: OWNER_EMAIL = 1;
+     */
+    OWNER_EMAIL = 1,
+    /**
+     * PROBE means that the identifier that the DeviceManager's Probes
+     * collected on the Device (e.g. its agent ID) identifies the
+     * inventory entry
+     *
+     * @generated from protobuf enum value: PROBE = 2;
+     */
+    PROBE = 2,
+    /**
+     * MACHINE_ID means that the Device's ID is derived from the machine
+     * ID that the provider reports for the inventory entry (i.e. the
+     * hardware UUID of a macOS Device)
+     *
+     * @generated from protobuf enum value: MACHINE_ID = 3;
+     */
+    MACHINE_ID = 3,
+    /**
+     * SERIAL_NUMBER means that the Device's serial number is the hardware
+     * serial number of the inventory entry
+     *
+     * @generated from protobuf enum value: SERIAL_NUMBER = 4;
+     */
+    SERIAL_NUMBER = 4,
+    /**
+     * MAC_ADDRESS means that one of the Device's MAC addresses is one of
+     * the MAC addresses of the inventory entry
+     *
+     * @generated from protobuf enum value: MAC_ADDRESS = 5;
+     */
+    MAC_ADDRESS = 5,
+    /**
+     * HOSTNAME means that the Device's hostname is the hostname of the
+     * inventory entry. It only narrows down the entries of the Device's
+     * User and does not raise the Confidence.
+     *
+     * @generated from protobuf enum value: HOSTNAME = 6;
+     */
+    HOSTNAME = 6
 }
 /**
  * Validity is whether an ACCEPTED Binding is currently usable
@@ -34021,7 +34143,9 @@ class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
             { no: 7, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 8, name: "acceptedAt", kind: "message", T: () => Timestamp },
             { no: 9, name: "lastVerifiedAt", kind: "message", T: () => Timestamp },
-            { no: 10, name: "nextVerificationAt", kind: "message", T: () => Timestamp }
+            { no: 10, name: "nextVerificationAt", kind: "message", T: () => Timestamp },
+            { no: 11, name: "confidence", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Binding.Confidence", Device_Status_Binding_Confidence] },
+            { no: 12, name: "evidence", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.Device.Status.Binding.Evidence", Device_Status_Binding_Evidence] }
         ]);
     }
     create(value?: PartialMessage<Device_Status_Binding>): Device_Status_Binding {
@@ -34032,6 +34156,8 @@ class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
         message.validity = 0;
         message.reason = "";
         message.message = "";
+        message.confidence = 0;
+        message.evidence = [];
         if (value !== undefined)
             reflectionMergePartial<Device_Status_Binding>(this, message, value);
         return message;
@@ -34070,6 +34196,16 @@ class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
                     break;
                 case /* google.protobuf.Timestamp nextVerificationAt */ 10:
                     message.nextVerificationAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.nextVerificationAt);
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Binding.Confidence confidence */ 11:
+                    message.confidence = reader.int32();
+                    break;
+                case /* repeated octelium.api.main.core.v1.Device.Status.Binding.Evidence evidence */ 12:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.evidence.push(reader.int32());
+                    else
+                        message.evidence.push(reader.int32());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -34113,6 +34249,16 @@ class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
         /* google.protobuf.Timestamp nextVerificationAt = 10; */
         if (message.nextVerificationAt)
             Timestamp.internalBinaryWrite(message.nextVerificationAt, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Device.Status.Binding.Confidence confidence = 11; */
+        if (message.confidence !== 0)
+            writer.tag(11, WireType.Varint).int32(message.confidence);
+        /* repeated octelium.api.main.core.v1.Device.Status.Binding.Evidence evidence = 12; */
+        if (message.evidence.length) {
+            writer.tag(12, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.evidence.length; i++)
+                writer.int32(message.evidence[i]);
+            writer.join();
+        }
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

@@ -334,6 +334,8 @@ func toEntry(a *s1Agent, now time.Time) *devicemgrcommon.Entry {
 		ExternalID: strings.ToLower(a.UUID),
 		Serial:     a.SerialNumber,
 		MACs:       s1MACs(a),
+		Hostname:   a.ComputerName,
+		OSType:     devicemgrcommon.ParseOSType(a.OSType),
 		Posture:    p,
 	}
 }

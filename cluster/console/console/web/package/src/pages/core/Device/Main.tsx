@@ -196,6 +196,26 @@ const Signal = CoreP.Device_Status_Posture_SignalState;
 const Risk = CoreP.Device_Status_Posture_RiskLevel;
 const Binding_State = CoreP.Device_Status_Binding_State;
 const Binding_Validity = CoreP.Device_Status_Binding_Validity;
+const Binding_Confidence = CoreP.Device_Status_Binding_Confidence;
+const Binding_Evidence = CoreP.Device_Status_Binding_Evidence;
+
+const EVIDENCE_LABELS: Partial<Record<CoreP.Device_Status_Binding_Evidence, string>> = {
+  [Binding_Evidence.OWNER_EMAIL]: "Owner email",
+  [Binding_Evidence.PROBE]: "Probe",
+  [Binding_Evidence.MACHINE_ID]: "Machine ID",
+  [Binding_Evidence.SERIAL_NUMBER]: "Serial number",
+  [Binding_Evidence.MAC_ADDRESS]: "MAC address",
+  [Binding_Evidence.HOSTNAME]: "Hostname",
+};
+
+const confidenceTone = (
+  confidence: CoreP.Device_Status_Binding_Confidence,
+): OverviewTone =>
+  confidence === Binding_Confidence.HIGH
+    ? "success"
+    : confidence === Binding_Confidence.MEDIUM
+      ? "neutral"
+      : "warning";
 
 const riskTone = (risk?: CoreP.Device_Status_Posture_RiskLevel): OverviewTone =>
   risk === Risk.CRITICAL || risk === Risk.HIGH
@@ -263,6 +283,8 @@ const bindingProblem = (binding?: CoreP.Device_Status_Binding) => {
     return "The Device matches more than one managed device.";
   if (binding.state === Binding_State.CONFLICT)
     return "The managed device is already bound to another Device.";
+  if (binding.state === Binding_State.OWNER_MISMATCH)
+    return "The managed device belongs to another user.";
   if (binding.validity === Binding_Validity.SUSPENDED)
     return "The device manager suspended the binding.";
   if (binding.validity === Binding_Validity.LOST)
@@ -576,6 +598,27 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
                 </div>
               ),
             },
+            ...(binding.state === Binding_State.ACCEPTED &&
+            binding.confidence !== Binding_Confidence.CONFIDENCE_UNKNOWN
+              ? [
+                  {
+                    label: "Confidence",
+                    group: "Device manager",
+                    value: (
+                      <div className="flex flex-wrap gap-1">
+                        <TonePill tone={confidenceTone(binding.confidence)}>
+                          {enumLabel(Binding_Confidence, binding.confidence)}
+                        </TonePill>
+                        {binding.evidence.map((evidence) => (
+                          <TonePill key={evidence} tone="neutral">
+                            {EVIDENCE_LABELS[evidence] ?? "Unknown"}
+                          </TonePill>
+                        ))}
+                      </div>
+                    ),
+                  },
+                ]
+              : []),
             ...(binding.acceptedAt
               ? [
                   {

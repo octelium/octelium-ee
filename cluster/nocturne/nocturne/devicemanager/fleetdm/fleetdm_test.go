@@ -74,6 +74,8 @@ func TestToEntry(t *testing.T) {
 		entry := toEntry(getHost(`{
 			"id": 10,
 			"uuid": "0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D",
+			"hostname": "alice-mbp.local",
+			"platform": "darwin",
 			"hardware_serial": "C02XYZ",
 			"primary_mac": "a4:bb:cc:dd:ee:01",
 			"status": "online",
@@ -86,6 +88,9 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d", entry.ExternalID)
 		assert.Equal(t, "C02XYZ", entry.Serial)
 		assert.Equal(t, []string{"a4:bb:cc:dd:ee:01"}, entry.MACs)
+		assert.Equal(t, "alice-mbp.local", entry.Hostname)
+		assert.Equal(t, corev1.Device_Status_MAC, entry.OSType)
+		assert.Equal(t, "0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D", entry.MachineID)
 
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Compliant)
@@ -98,13 +103,16 @@ func TestToEntry(t *testing.T) {
 	}
 
 	{
-		entry := toEntry(getHost(`{"uuid": "u", "status": "offline", "issues": {"failing_policies_count": 3}}`), now)
+		entry := toEntry(getHost(`{"uuid": "u", "platform": "ubuntu", "status": "offline",
+			"issues": {"failing_policies_count": 3}}`), now)
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_FAIL, p.Compliant)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.DiskEncryption)
 		assert.Equal(t, corev1.Device_Status_Posture_FAIL, p.AgentHealthy)
 		assert.Empty(t, p.Signals)
 		assert.Empty(t, entry.MACs)
+		assert.Equal(t, corev1.Device_Status_LINUX, entry.OSType)
+		assert.Empty(t, entry.MachineID)
 	}
 
 	{

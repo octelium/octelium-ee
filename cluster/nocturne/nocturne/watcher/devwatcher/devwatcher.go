@@ -115,11 +115,12 @@ func (w *Watcher) run(ctx context.Context) {
 }
 
 type linkTally struct {
-	linked        uint32
-	ambiguous     uint32
-	conflicts     uint32
-	suspended     uint32
-	failedUpdates uint32
+	linked          uint32
+	ambiguous       uint32
+	conflicts       uint32
+	suspended       uint32
+	failedUpdates   uint32
+	ownerMismatches uint32
 }
 
 func tallyFor(tallies map[string]*linkTally, ownerUID string) *linkTally {
@@ -271,6 +272,8 @@ func (w *Watcher) sweepDevice(
 		t.ambiguous++
 	case corev1.Device_Status_Binding_CONFLICT:
 		t.conflicts++
+	case corev1.Device_Status_Binding_OWNER_MISMATCH:
+		t.ownerMismatches++
 	}
 
 	return true
@@ -305,12 +308,13 @@ func (w *Watcher) updateLinkingStatus(
 			}
 
 			dm.Status.Linking = &enterprisev1.DeviceManager_Status_Linking{
-				LastSweepAt:   sweepAt,
-				LinkedDevices: t.linked,
-				Ambiguous:     t.ambiguous,
-				Conflicts:     t.conflicts,
-				Suspended:     t.suspended,
-				FailedUpdates: t.failedUpdates,
+				LastSweepAt:     sweepAt,
+				LinkedDevices:   t.linked,
+				Ambiguous:       t.ambiguous,
+				Conflicts:       t.conflicts,
+				Suspended:       t.suspended,
+				FailedUpdates:   t.failedUpdates,
+				OwnerMismatches: t.ownerMismatches,
 			}
 
 			_, err = w.octeliumC.EnterpriseC().UpdateDeviceManager(ctx, dm)

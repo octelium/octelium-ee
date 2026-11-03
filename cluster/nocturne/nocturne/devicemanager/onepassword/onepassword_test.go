@@ -79,6 +79,7 @@ func TestToEntry(t *testing.T) {
 	{
 		entry := toEntry(getDevice(fmt.Sprintf(`{
 			"id": "DEVICE-1",
+			"name": "alice-mbp",
 			"serial": "C02XYZ",
 			"hardware_uuid": "0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D",
 			"auth_state": "Good",
@@ -91,6 +92,9 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, []string{"0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"}, entry.Aliases)
 		assert.Equal(t, "C02XYZ", entry.Serial)
 		assert.Equal(t, []string{"user@example.com"}, entry.OwnerEmails)
+		assert.Equal(t, "alice-mbp", entry.Hostname)
+		assert.Equal(t, corev1.Device_Status_MAC, entry.OSType)
+		assert.Equal(t, "0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D", entry.MachineID)
 
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Compliant)
@@ -106,11 +110,15 @@ func TestToEntry(t *testing.T) {
 		entry := toEntry(getDevice(`{
 			"id": "device-2",
 			"auth_state": "Blocked",
+			"operating_system": "Ubuntu 22.04.3 LTS",
+			"hardware_uuid": "0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D",
 			"registered_owner_info": {"identifier": "person-2"}
 		}`), emails, now)
 
-		assert.Empty(t, entry.Aliases)
+		assert.Equal(t, []string{"0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d"}, entry.Aliases)
 		assert.Empty(t, entry.OwnerEmails)
+		assert.Equal(t, corev1.Device_Status_LINUX, entry.OSType)
+		assert.Empty(t, entry.MachineID)
 		assert.Equal(t, corev1.Device_Status_Posture_FAIL, entry.Posture.Compliant)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, entry.Posture.AgentHealthy)
 		assert.Equal(t, corev1.Device_Status_Posture_FAIL, entry.Posture.Signals["x.onepassword.noIssues"])

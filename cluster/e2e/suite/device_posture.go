@@ -55,9 +55,6 @@ func testDeviceManagerPostureLifecycle(t *testing.T, ch *harness.H) {
 	dmReq := fleetDeviceManager(sec.Metadata.Name)
 	dmReq.Spec.GetFleetDM().BaseURL = fleet.URL
 	dmReq.Spec.Polling.StaleAfter = eeharness.Seconds(uint32(fleetStaleAfter / time.Second))
-	dmReq.Spec.Linking = &enterprisev1.DeviceManager_Spec_Linking{
-		Strategy: enterprisev1.DeviceManager_Spec_Linking_PROBE_ONLY,
-	}
 	dm := h.CreateDeviceManager(t, dmReq)
 	cc := h.EnterpriseClusterConfig(t)
 	before := slices.Clone(cc.Spec.DeviceManagers)
@@ -116,10 +113,9 @@ func testDeviceManagerPostureLifecycle(t *testing.T, ch *harness.H) {
 	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
 	_, err := sess.C().RegisterDevice(sess.Ctx(ctx), &authv1.RegisterDeviceRequest{
 		Info: &authv1.RegisterDeviceRequest_Info{
-			OsType:       authv1.RegisterDeviceRequest_Info_LINUX,
-			Hostname:     h.Name(),
-			Id:           utilrand.GetRandomStringHex(64),
-			SerialNumber: hosts[100].HardwareSerial,
+			OsType:   authv1.RegisterDeviceRequest_Info_LINUX,
+			Hostname: h.Name(),
+			Id:       utilrand.GetRandomStringHex(64),
 		},
 	})
 	cancel()
@@ -142,6 +138,9 @@ func testDeviceManagerPostureLifecycle(t *testing.T, ch *harness.H) {
 		corev1.Device_Status_Binding_VALID, corev1.Device_Status_Posture_PASS)
 	bindingUID := bound.Status.Binding.Uid
 	require.Equal(t, fleetHardwareUUID, bound.Status.Binding.ExternalID)
+	assert.Equal(t, corev1.Device_Status_Binding_LOW, bound.Status.Binding.Confidence)
+	assert.Equal(t, []corev1.Device_Status_Binding_Evidence{corev1.Device_Status_Binding_PROBE},
+		bound.Status.Binding.Evidence)
 	h.WaitAllowed(t, client)
 
 	t.Run("AClientlessSessionCannotUseTheDevicePosture", func(t *testing.T) {

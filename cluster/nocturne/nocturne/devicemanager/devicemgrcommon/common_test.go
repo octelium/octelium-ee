@@ -9,8 +9,12 @@
 package devicemgrcommon
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -59,7 +63,6 @@ func TestFleet(t *testing.T) {
 	{
 		res := fleet.MatchExternalID("id-1")
 		assert.Equal(t, MatchStateUnique, res.State)
-		assert.Equal(t, MatchMethodExternalID, res.Method)
 		assert.Equal(t, "id-1", res.Entry.ExternalID)
 
 		assert.Equal(t, MatchStateNone, fleet.MatchExternalID("alias-1").State)
@@ -69,7 +72,6 @@ func TestFleet(t *testing.T) {
 	{
 		res := fleet.MatchProbeID(" alias-1 ")
 		assert.Equal(t, MatchStateUnique, res.State)
-		assert.Equal(t, MatchMethodProbeID, res.Method)
 		assert.Equal(t, "id-1", res.Entry.ExternalID)
 
 		res = fleet.MatchProbeID("ID-2")
@@ -77,33 +79,44 @@ func TestFleet(t *testing.T) {
 		assert.Equal(t, "id-2", res.Entry.ExternalID)
 
 		assert.Equal(t, MatchStateNone, fleet.MatchProbeID("00000000-0000-0000-0000-000000000000").State)
-		assert.Equal(t, MatchStateAmbiguous, fleet.MatchProbeID("shared-alias").State)
 		assert.Equal(t, MatchStateNone, fleet.MatchProbeID("unknown").State)
+
+		res = fleet.MatchProbeID("shared-alias")
+		assert.Equal(t, MatchStateAmbiguous, res.State)
+		assert.Equal(t, []string{"id-4", "id-5"}, getExternalIDs(res.Candidates))
 	}
 
 	{
 		res := fleet.MatchIdentity("serial-1", nil)
 		assert.Equal(t, MatchStateUnique, res.State)
-		assert.Equal(t, MatchMethodSerial, res.Method)
 		assert.Equal(t, "id-1", res.Entry.ExternalID)
 
-		assert.Equal(t, MatchStateAmbiguous, fleet.MatchIdentity("serial-dup", nil).State)
+		res = fleet.MatchIdentity("serial-dup", nil)
+		assert.Equal(t, MatchStateAmbiguous, res.State)
+		assert.Equal(t, []string{"id-2", "id-3"}, getExternalIDs(res.Candidates))
 		assert.Equal(t, MatchStateAmbiguous, fleet.MatchIdentity("serial-dup", []string{"a4:bb:cc:dd:ee:01"}).State)
 	}
 
 	{
 		res := fleet.MatchIdentity("", []string{"A4-BB-CC-DD-EE-02"})
 		assert.Equal(t, MatchStateUnique, res.State)
-		assert.Equal(t, MatchMethodMAC, res.Method)
 		assert.Equal(t, "id-2", res.Entry.ExternalID)
 
 		res = fleet.MatchIdentity("unknown", []string{"a4:bb:cc:dd:ee:03", "invalid"})
 		assert.Equal(t, MatchStateUnique, res.State)
 		assert.Equal(t, "id-3", res.Entry.ExternalID)
 
-		assert.Equal(t, MatchStateAmbiguous, fleet.MatchIdentity("", []string{"a4:bb:cc:dd:ee:ff"}).State)
-		assert.Equal(t, MatchStateAmbiguous,
-			fleet.MatchIdentity("", []string{"a4:bb:cc:dd:ee:01", "a4:bb:cc:dd:ee:02"}).State)
+		res = fleet.MatchIdentity("", []string{"a4:bb:cc:dd:ee:ff"})
+		assert.Equal(t, MatchStateAmbiguous, res.State)
+		assert.Equal(t, []string{"id-2", "id-3"}, getExternalIDs(res.Candidates))
+
+		res = fleet.MatchIdentity("", []string{"a4:bb:cc:dd:ee:01", "a4:bb:cc:dd:ee:02"})
+		assert.Equal(t, MatchStateAmbiguous, res.State)
+		assert.Equal(t, []string{"id-1", "id-2"}, getExternalIDs(res.Candidates))
+
+		res = fleet.MatchIdentity("", []string{"a4:bb:cc:dd:ee:01", "a4:bb:cc:dd:ee:ff"})
+		assert.Equal(t, MatchStateAmbiguous, res.State)
+		assert.Equal(t, []string{"id-1", "id-2", "id-3"}, getExternalIDs(res.Candidates))
 		assert.Equal(t, MatchStateNone, fleet.MatchIdentity("", []string{"00:00:00:00:00:00"}).State)
 		assert.Equal(t, MatchStateNone, fleet.MatchIdentity("", nil).State)
 	}
@@ -115,6 +128,9 @@ func TestFleet(t *testing.T) {
 		assert.Equal(t, MatchStateNone, nilFleet.MatchExternalID("id-1").State)
 		assert.Equal(t, MatchStateNone, nilFleet.MatchProbeID("id-1").State)
 		assert.Equal(t, MatchStateNone, nilFleet.MatchIdentity("serial-1", nil).State)
+		assert.Equal(t, MatchStateNone, nilFleet.MatchMachineID("id").State)
+		assert.Nil(t, nilFleet.OwnedEntries("user@example.com"))
+		assert.Equal(t, LinkStateNone, nilFleet.Link(&LinkRequest{SerialNumber: "serial-1"}).State)
 	}
 
 	{
@@ -122,6 +138,15 @@ func TestFleet(t *testing.T) {
 		entries[0].Aliases[0] = "changed"
 		assert.Equal(t, MatchStateUnique, fleet.MatchProbeID("alias-1").State)
 	}
+}
+
+func getExternalIDs(entries []*Entry) []string {
+	var ret []string
+	for _, entry := range entries {
+		ret = append(ret, entry.ExternalID)
+	}
+	slices.Sort(ret)
+	return ret
 }
 
 func TestFleetRecency(t *testing.T) {
@@ -185,6 +210,373 @@ func TestFleetRecency(t *testing.T) {
 		res := NewFleet([]*Entry{entry}).MatchIdentity("", []string{"a4:bb:cc:dd:ee:01"})
 		assert.Equal(t, MatchStateUnique, res.State)
 		assert.Equal(t, "single", res.Entry.ExternalID)
+	}
+}
+
+func TestFleetLink(t *testing.T) {
+	now := time.Now()
+	machineID := "AAAAAAAA-1111-2222-3333-444444444444"
+
+	getEntry := func(externalID string, osType corev1.Device_Status_OSType,
+		lastSeenAt time.Time, ownerEmails ...string) *Entry {
+		return &Entry{
+			ExternalID:  externalID,
+			OSType:      osType,
+			OwnerEmails: ownerEmails,
+			Posture: &corev1.Device_Status_Posture{
+				LastSeenAt: pbutils.Timestamp(lastSeenAt),
+			},
+		}
+	}
+
+	aliceMac := getEntry("alice-mac", corev1.Device_Status_MAC, now.Add(-time.Hour), "alice@example.com")
+	aliceMac.Serial = "C02ALICE"
+	aliceMac.MACs = []string{"a4:bb:cc:dd:ee:01"}
+	aliceMac.MachineID = machineID
+	aliceMac.Hostname = "Alice-MBP"
+
+	aliceWin := getEntry("alice-win", corev1.Device_Status_WINDOWS, now.Add(-time.Hour),
+		"Alice@Example.com", "alice.upn@example.com")
+	aliceWin.Hostname = "ALICE-DESKTOP"
+	aliceWin2 := getEntry("alice-win2", corev1.Device_Status_WINDOWS, now.Add(-2*time.Hour), "alice@example.com")
+	aliceWin2.Hostname = "alice-laptop"
+
+	aliceLinux := getEntry("alice-linux", corev1.Device_Status_LINUX, now.Add(-time.Hour), "alice@example.com")
+	aliceLinux.Serial = "LNX-ALICE"
+	aliceLinux.Aliases = []string{"agent-alice-linux"}
+
+	bobMac := getEntry("bob-mac", corev1.Device_Status_MAC, now, "bob@example.com")
+	bobMac.Serial = "C02BOB"
+	bobMac.Aliases = []string{"agent-bob"}
+
+	sharedA := getEntry("shared-a", corev1.Device_Status_MAC, now, "alice@example.com")
+	sharedA.MACs = []string{"a4:bb:cc:dd:ee:09"}
+	sharedB := getEntry("shared-b", corev1.Device_Status_MAC, now, "bob@example.com")
+	sharedB.MACs = []string{"a4:bb:cc:dd:ee:09"}
+
+	unowned := getEntry("unowned", corev1.Device_Status_LINUX, now)
+	unowned.Serial = "LNX-UNOWNED"
+	unowned.Aliases = []string{"agent-unowned"}
+
+	fleet := NewFleet([]*Entry{
+		aliceMac, aliceWin, aliceWin2, aliceLinux, bobMac, sharedA, sharedB, unowned,
+		getEntry("alice-linux-stale", corev1.Device_Status_LINUX, now.Add(-30*24*time.Hour), "alice@example.com"),
+		getEntry("alice-linux-future", corev1.Device_Status_LINUX, now.Add(time.Hour), "alice@example.com"),
+		getEntry("alice-ios", corev1.Device_Status_IOS, now, "alice@example.com"),
+	})
+
+	assert.Equal(t, []string{"alice-ios", "alice-linux", "alice-linux-future", "alice-linux-stale",
+		"alice-mac", "alice-win", "alice-win2", "shared-a"},
+		getExternalIDs(fleet.OwnedEntries(" ALICE@example.com ")))
+	assert.Equal(t, []string{"alice-win"}, getExternalIDs(fleet.OwnedEntries("alice.upn@example.com")))
+	assert.Empty(t, fleet.OwnedEntries(""))
+
+	{
+		res := fleet.MatchMachineID(strings.ToUpper(HashMachineID(machineID)))
+		assert.Equal(t, MatchStateUnique, res.State)
+		assert.Equal(t, "alice-mac", res.Entry.ExternalID)
+		assert.Equal(t, MatchStateNone, fleet.MatchMachineID("").State)
+		assert.Equal(t, MatchStateNone, fleet.MatchMachineID(HashMachineID("other")).State)
+	}
+
+	for _, tc := range []struct {
+		name       string
+		req        *LinkRequest
+		state      LinkState
+		externalID string
+		confidence corev1.Device_Status_Binding_Confidence
+		evidence   []corev1.Device_Status_Binding_Evidence
+	}{
+		{
+			name: "every identifier of an owned entry",
+			req: &LinkRequest{
+				DeviceID:     HashMachineID(strings.ToLower(machineID)),
+				OSType:       corev1.Device_Status_MAC,
+				SerialNumber: "c02alice",
+				MACs:         []string{"A4-BB-CC-DD-EE-01"},
+				Hostname:     "alice-mbp.local",
+				UserEmail:    "alice@example.com",
+			},
+			state:      LinkStateMatched,
+			externalID: "alice-mac",
+			confidence: corev1.Device_Status_Binding_HIGH,
+			evidence: []corev1.Device_Status_Binding_Evidence{
+				corev1.Device_Status_Binding_OWNER_EMAIL,
+				corev1.Device_Status_Binding_MACHINE_ID,
+				corev1.Device_Status_Binding_SERIAL_NUMBER,
+				corev1.Device_Status_Binding_MAC_ADDRESS,
+				corev1.Device_Status_Binding_HOSTNAME,
+			},
+		},
+		{
+			name: "the machine ID of an owned entry",
+			req: &LinkRequest{
+				DeviceID:  HashMachineID(machineID),
+				OSType:    corev1.Device_Status_MAC,
+				UserEmail: "alice@example.com",
+			},
+			state:      LinkStateMatched,
+			externalID: "alice-mac",
+			confidence: corev1.Device_Status_Binding_HIGH,
+			evidence: []corev1.Device_Status_Binding_Evidence{
+				corev1.Device_Status_Binding_OWNER_EMAIL,
+				corev1.Device_Status_Binding_MACHINE_ID,
+			},
+		},
+		{
+			name: "the serial number of another User's entry",
+			req: &LinkRequest{
+				OSType:       corev1.Device_Status_MAC,
+				SerialNumber: "C02BOB",
+				UserEmail:    "alice@example.com",
+			},
+			state:      LinkStateOwnerMismatch,
+			externalID: "bob-mac",
+		},
+		{
+			name: "the probe ID of another User's entry",
+			req: &LinkRequest{
+				OSType:    corev1.Device_Status_MAC,
+				ProbeID:   "AGENT-BOB",
+				UserEmail: "alice@example.com",
+			},
+			state:      LinkStateOwnerMismatch,
+			externalID: "bob-mac",
+		},
+		{
+			name: "an owned entry for a User without an email",
+			req: &LinkRequest{
+				OSType:       corev1.Device_Status_MAC,
+				SerialNumber: "C02BOB",
+			},
+			state:      LinkStateOwnerMismatch,
+			externalID: "bob-mac",
+		},
+		{
+			name: "an entry without an owner",
+			req: &LinkRequest{
+				OSType:       corev1.Device_Status_LINUX,
+				SerialNumber: "lnx-unowned",
+				ProbeID:      "agent-unowned",
+				UserEmail:    "alice@example.com",
+			},
+			state:      LinkStateMatched,
+			externalID: "unowned",
+			confidence: corev1.Device_Status_Binding_LOW,
+			evidence: []corev1.Device_Status_Binding_Evidence{
+				corev1.Device_Status_Binding_PROBE,
+				corev1.Device_Status_Binding_SERIAL_NUMBER,
+			},
+		},
+		{
+			name: "identifiers of different entries",
+			req: &LinkRequest{
+				OSType:       corev1.Device_Status_LINUX,
+				SerialNumber: "LNX-UNOWNED",
+				ProbeID:      "agent-alice-linux",
+				UserEmail:    "alice@example.com",
+			},
+			state: LinkStateSourcesDisagree,
+		},
+		{
+			name: "a shared MAC address narrowed down to the User's entry",
+			req: &LinkRequest{
+				OSType:    corev1.Device_Status_MAC,
+				MACs:      []string{"a4:bb:cc:dd:ee:09"},
+				UserEmail: "alice@example.com",
+			},
+			state:      LinkStateMatched,
+			externalID: "shared-a",
+			confidence: corev1.Device_Status_Binding_HIGH,
+			evidence: []corev1.Device_Status_Binding_Evidence{
+				corev1.Device_Status_Binding_OWNER_EMAIL,
+				corev1.Device_Status_Binding_MAC_ADDRESS,
+			},
+		},
+		{
+			name: "a shared MAC address of other Users",
+			req: &LinkRequest{
+				OSType:    corev1.Device_Status_MAC,
+				MACs:      []string{"a4:bb:cc:dd:ee:09"},
+				UserEmail: "carol@example.com",
+			},
+			state: LinkStateAmbiguous,
+		},
+		{
+			name: "a shared MAC address without an email",
+			req: &LinkRequest{
+				OSType: corev1.Device_Status_MAC,
+				MACs:   []string{"a4:bb:cc:dd:ee:09"},
+			},
+			state: LinkStateAmbiguous,
+		},
+		{
+			name: "the only fresh entry of the User with the same OS",
+			req: &LinkRequest{
+				OSType:    corev1.Device_Status_LINUX,
+				Hostname:  "workstation",
+				UserEmail: "alice@example.com",
+			},
+			state:      LinkStateMatched,
+			externalID: "alice-linux",
+			confidence: corev1.Device_Status_Binding_MEDIUM,
+			evidence: []corev1.Device_Status_Binding_Evidence{
+				corev1.Device_Status_Binding_OWNER_EMAIL,
+			},
+		},
+		{
+			name: "an entry of the User with another serial number",
+			req: &LinkRequest{
+				OSType:       corev1.Device_Status_LINUX,
+				SerialNumber: "LNX-OTHER",
+				UserEmail:    "alice@example.com",
+			},
+			state: LinkStateNone,
+		},
+		{
+			name: "an unknown probe ID",
+			req: &LinkRequest{
+				OSType:    corev1.Device_Status_LINUX,
+				ProbeID:   "agent-unknown",
+				UserEmail: "alice@example.com",
+			},
+			state: LinkStateNone,
+		},
+		{
+			name: "entries of the User narrowed down by the hostname",
+			req: &LinkRequest{
+				OSType:    corev1.Device_Status_WINDOWS,
+				Hostname:  "alice-desktop.corp.example.com",
+				UserEmail: "alice@example.com",
+			},
+			state:      LinkStateMatched,
+			externalID: "alice-win",
+			confidence: corev1.Device_Status_Binding_MEDIUM,
+			evidence: []corev1.Device_Status_Binding_Evidence{
+				corev1.Device_Status_Binding_OWNER_EMAIL,
+				corev1.Device_Status_Binding_HOSTNAME,
+			},
+		},
+		{
+			name: "entries of the User that the hostname does not narrow down",
+			req: &LinkRequest{
+				OSType:    corev1.Device_Status_WINDOWS,
+				Hostname:  "other",
+				UserEmail: "alice@example.com",
+			},
+			state: LinkStateOwnerAmbiguous,
+		},
+		{
+			name: "the only entry of another email of the User",
+			req: &LinkRequest{
+				OSType:    corev1.Device_Status_WINDOWS,
+				UserEmail: "alice.upn@example.com",
+			},
+			state:      LinkStateMatched,
+			externalID: "alice-win",
+			confidence: corev1.Device_Status_Binding_MEDIUM,
+			evidence: []corev1.Device_Status_Binding_Evidence{
+				corev1.Device_Status_Binding_OWNER_EMAIL,
+			},
+		},
+		{
+			name: "no entry of the User with the same OS",
+			req: &LinkRequest{
+				OSType:    corev1.Device_Status_ANDROID,
+				UserEmail: "alice@example.com",
+			},
+			state: LinkStateNone,
+		},
+		{
+			name: "an unknown OS",
+			req: &LinkRequest{
+				UserEmail: "alice@example.com",
+			},
+			state: LinkStateNone,
+		},
+		{
+			name: "no identifier and no email",
+			req: &LinkRequest{
+				OSType: corev1.Device_Status_LINUX,
+			},
+			state: LinkStateNone,
+		},
+	} {
+		tc.req.Now = now
+		tc.req.MaxObservationAge = DefaultMaxObservationAge
+
+		res := fleet.Link(tc.req)
+		assert.Equal(t, tc.state, res.State, tc.name)
+		if tc.externalID == "" {
+			assert.Nil(t, res.Entry, tc.name)
+			continue
+		}
+		if assert.NotNil(t, res.Entry, tc.name) {
+			assert.Equal(t, tc.externalID, res.Entry.ExternalID, tc.name)
+		}
+		assert.Equal(t, tc.confidence, res.Confidence, tc.name)
+		assert.Equal(t, tc.evidence, res.Evidence, tc.name)
+	}
+
+	assert.Equal(t, LinkStateNone, fleet.Link(nil).State)
+}
+
+func TestEvidence(t *testing.T) {
+	var nilEntry *Entry
+	assert.Nil(t, nilEntry.Evidence(&LinkRequest{}))
+	assert.False(t, nilEntry.IsContradicted(&LinkRequest{SerialNumber: "serial"}))
+
+	entry := &Entry{
+		ExternalID: "id-1",
+		Aliases:    []string{"Alias-1"},
+		Serial:     "SERIAL-1",
+	}
+	assert.Nil(t, entry.Evidence(nil))
+	assert.Empty(t, entry.Evidence(&LinkRequest{}))
+	assert.Equal(t, []corev1.Device_Status_Binding_Evidence{corev1.Device_Status_Binding_PROBE},
+		entry.Evidence(&LinkRequest{ProbeID: " ALIAS-1 "}))
+
+	assert.False(t, entry.IsContradicted(nil))
+	assert.False(t, entry.IsContradicted(&LinkRequest{}))
+	assert.False(t, entry.IsContradicted(&LinkRequest{SerialNumber: "serial-1"}))
+	assert.False(t, entry.IsContradicted(&LinkRequest{SerialNumber: "To Be Filled By O.E.M."}))
+	assert.True(t, entry.IsContradicted(&LinkRequest{SerialNumber: "serial-2"}))
+	assert.False(t, (&Entry{Serial: "none"}).IsContradicted(&LinkRequest{SerialNumber: "serial-2"}))
+
+	for _, tc := range []struct {
+		evidence   []corev1.Device_Status_Binding_Evidence
+		isDevice   bool
+		confidence corev1.Device_Status_Binding_Confidence
+	}{
+		{nil, false, corev1.Device_Status_Binding_LOW},
+		{[]corev1.Device_Status_Binding_Evidence{
+			corev1.Device_Status_Binding_HOSTNAME,
+		}, false, corev1.Device_Status_Binding_LOW},
+		{[]corev1.Device_Status_Binding_Evidence{
+			corev1.Device_Status_Binding_PROBE,
+		}, true, corev1.Device_Status_Binding_LOW},
+		{[]corev1.Device_Status_Binding_Evidence{
+			corev1.Device_Status_Binding_OWNER_EMAIL,
+		}, false, corev1.Device_Status_Binding_MEDIUM},
+		{[]corev1.Device_Status_Binding_Evidence{
+			corev1.Device_Status_Binding_OWNER_EMAIL,
+			corev1.Device_Status_Binding_HOSTNAME,
+		}, false, corev1.Device_Status_Binding_MEDIUM},
+		{[]corev1.Device_Status_Binding_Evidence{
+			corev1.Device_Status_Binding_OWNER_EMAIL,
+			corev1.Device_Status_Binding_MAC_ADDRESS,
+		}, true, corev1.Device_Status_Binding_HIGH},
+		{[]corev1.Device_Status_Binding_Evidence{
+			corev1.Device_Status_Binding_OWNER_EMAIL,
+			corev1.Device_Status_Binding_MACHINE_ID,
+		}, true, corev1.Device_Status_Binding_HIGH},
+		{[]corev1.Device_Status_Binding_Evidence{
+			corev1.Device_Status_Binding_SERIAL_NUMBER,
+			corev1.Device_Status_Binding_OWNER_EMAIL,
+		}, true, corev1.Device_Status_Binding_HIGH},
+	} {
+		assert.Equal(t, tc.isDevice, HasDeviceEvidence(tc.evidence), "%v", tc.evidence)
+		assert.Equal(t, tc.confidence, GetConfidence(tc.evidence), "%v", tc.evidence)
 	}
 }
 
@@ -325,6 +717,51 @@ func TestNormalize(t *testing.T) {
 		assert.Equal(t, "", NormalizeMAC(arg), arg)
 	}
 
+	assert.Equal(t, "alice-mbp", NormalizeHostname(" Alice-MBP.local "))
+	assert.Equal(t, "desktop-1", NormalizeHostname("DESKTOP-1"))
+	assert.Equal(t, "", NormalizeHostname("localhost.localdomain"))
+	assert.Equal(t, "", NormalizeHostname(" "))
+
+	{
+		sum := sha256.Sum256([]byte("AAAAAAAA-1111-2222-3333-444444444444"))
+		hash := fmt.Sprintf("%x", sum)
+		assert.Equal(t, hash, HashMachineID("AAAAAAAA-1111-2222-3333-444444444444"))
+		assert.Equal(t, hash, HashMachineID(" aaaaaaaa-1111-2222-3333-444444444444 "))
+		assert.Equal(t, "", HashMachineID(""))
+		assert.Equal(t, "", HashMachineID("00000000-0000-0000-0000-000000000000"))
+	}
+
+	for _, tc := range []struct {
+		value  string
+		osType corev1.Device_Status_OSType
+	}{
+		{"", corev1.Device_Status_OS_TYPE_UNKNOWN},
+		{"Windows", corev1.Device_Status_WINDOWS},
+		{"Windows 11 Pro", corev1.Device_Status_WINDOWS},
+		{"Mac", corev1.Device_Status_MAC},
+		{"darwin", corev1.Device_Status_MAC},
+		{"macOS", corev1.Device_Status_MAC},
+		{"macOS 14.2", corev1.Device_Status_MAC},
+		{"Mac OS X", corev1.Device_Status_MAC},
+		{"iOS", corev1.Device_Status_IOS},
+		{"iPadOS", corev1.Device_Status_IOS},
+		{"iPhone", corev1.Device_Status_IOS},
+		{"iOS 17.1", corev1.Device_Status_IOS},
+		{"Android", corev1.Device_Status_ANDROID},
+		{"AndroidEnterprise", corev1.Device_Status_ANDROID},
+		{"chrome", corev1.Device_Status_CHROMEOS},
+		{"ChromeOS", corev1.Device_Status_CHROMEOS},
+		{"linux", corev1.Device_Status_LINUX},
+		{"ubuntu", corev1.Device_Status_LINUX},
+		{"Ubuntu 22.04.3 LTS", corev1.Device_Status_LINUX},
+		{"rhel", corev1.Device_Status_LINUX},
+		{"Red Hat Enterprise Linux", corev1.Device_Status_LINUX},
+		{"AppleTV", corev1.Device_Status_OS_TYPE_UNKNOWN},
+		{"unknown", corev1.Device_Status_OS_TYPE_UNKNOWN},
+	} {
+		assert.Equal(t, tc.osType, ParseOSType(tc.value), tc.value)
+	}
+
 	assert.Equal(t, "user@example.com", NormalizeEmail(" User@Example.com "))
 	assert.True(t, OwnerEmailMatches("USER@example.com", []string{"other@example.com", "user@EXAMPLE.com"}))
 	assert.False(t, OwnerEmailMatches("", []string{""}))
@@ -388,8 +825,6 @@ func TestParseHTTPSURL(t *testing.T) {
 }
 
 func TestLinkingOptions(t *testing.T) {
-	assert.Equal(t, enterprisev1.DeviceManager_Spec_Linking_IDENTITY_AND_PROBE, LinkingStrategy(nil))
-	assert.False(t, RequireAgreement(nil))
 	assert.False(t, RequireOwnerMatch(nil))
 	assert.Zero(t, VerificationInterval(nil))
 	assert.Equal(t, DefaultMaxObservationAge, MaxObservationAge(nil))
@@ -404,13 +839,9 @@ func TestLinkingOptions(t *testing.T) {
 		MaxObservationAge: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 0}},
 	}
 	assert.Equal(t, DefaultMaxObservationAge, MaxObservationAge(dm))
-	assert.Equal(t, enterprisev1.DeviceManager_Spec_Linking_IDENTITY_AND_PROBE, LinkingStrategy(dm))
-	assert.True(t, UsesProbe(dm))
-	assert.True(t, UsesIdentity(dm))
+	assert.False(t, RequireOwnerMatch(dm))
 
 	dm.Spec.Linking = &enterprisev1.DeviceManager_Spec_Linking{
-		Strategy:             enterprisev1.DeviceManager_Spec_Linking_PROBE_ONLY,
-		RequireAgreement:     true,
 		RequireOwnerMatch:    true,
 		VerificationInterval: &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 2}},
 	}
@@ -419,17 +850,10 @@ func TestLinkingOptions(t *testing.T) {
 		MaxObservationAge: &metav1.Duration{Type: &metav1.Duration_Days{Days: 2}},
 	}
 
-	assert.True(t, UsesProbe(dm))
-	assert.False(t, UsesIdentity(dm))
-	assert.True(t, RequireAgreement(dm))
 	assert.True(t, RequireOwnerMatch(dm))
 	assert.Equal(t, 2*time.Hour, VerificationInterval(dm))
 	assert.Equal(t, 48*time.Hour, MaxObservationAge(dm))
 	assert.Equal(t, 30*time.Minute, StaleAfter(dm))
-
-	dm.Spec.Linking.Strategy = enterprisev1.DeviceManager_Spec_Linking_IDENTITY_ONLY
-	assert.False(t, UsesProbe(dm))
-	assert.True(t, UsesIdentity(dm))
 }
 
 func TestMaterializePosture(t *testing.T) {

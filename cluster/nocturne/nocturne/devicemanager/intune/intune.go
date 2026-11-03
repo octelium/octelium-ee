@@ -285,6 +285,8 @@ func (m *Manager) toEntry(d *managedDevice) *devicemgrcommon.Entry {
 		Aliases:     aliases,
 		Serial:      d.SerialNumber,
 		MACs:        intuneMACs(d),
+		Hostname:    d.DeviceName,
+		OSType:      devicemgrcommon.ParseOSType(d.OperatingSystem),
 		OwnerEmails: intuneOwnerEmails(d),
 		Posture:     p,
 	}

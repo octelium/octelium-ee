@@ -219,8 +219,6 @@ func TestValidateDeviceManager(t *testing.T) {
 				},
 			},
 			Linking: &enterprisev1.DeviceManager_Spec_Linking{
-				Strategy:             enterprisev1.DeviceManager_Spec_Linking_IDENTITY_AND_PROBE,
-				RequireAgreement:     true,
 				VerificationInterval: &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 12}},
 			},
 		},
@@ -232,9 +230,7 @@ func TestValidateDeviceManager(t *testing.T) {
 					OrganizationIDs: []int64{1, 2},
 				},
 			},
-			Linking: &enterprisev1.DeviceManager_Spec_Linking{
-				Strategy: enterprisev1.DeviceManager_Spec_Linking_IDENTITY_ONLY,
-			},
+			Linking: &enterprisev1.DeviceManager_Spec_Linking{},
 		},
 		{
 			Type: &enterprisev1.DeviceManager_Spec_Iru_{
@@ -461,21 +457,7 @@ func TestValidateDeviceManager(t *testing.T) {
 		{
 			Type: tstDeviceManagerCrowdStrikeSpec(secretName).Type,
 			Linking: &enterprisev1.DeviceManager_Spec_Linking{
-				Strategy: enterprisev1.DeviceManager_Spec_Linking_Strategy(100),
-			},
-		},
-		{
-			Type: tstDeviceManagerCrowdStrikeSpec(secretName).Type,
-			Linking: &enterprisev1.DeviceManager_Spec_Linking{
-				Strategy:         enterprisev1.DeviceManager_Spec_Linking_PROBE_ONLY,
-				RequireAgreement: true,
-			},
-		},
-		{
-			Type: tstDeviceManagerCrowdStrikeSpec(secretName).Type,
-			Linking: &enterprisev1.DeviceManager_Spec_Linking{
-				Strategy:             enterprisev1.DeviceManager_Spec_Linking_IDENTITY_ONLY,
-				VerificationInterval: &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 1}},
+				VerificationInterval: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 0}},
 			},
 		},
 		{
@@ -492,7 +474,7 @@ func TestValidateDeviceManager(t *testing.T) {
 				},
 			},
 			Linking: &enterprisev1.DeviceManager_Spec_Linking{
-				Strategy: enterprisev1.DeviceManager_Spec_Linking_PROBE_ONLY,
+				VerificationInterval: &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 1}},
 			},
 		},
 		{
@@ -503,7 +485,7 @@ func TestValidateDeviceManager(t *testing.T) {
 				},
 			},
 			Linking: &enterprisev1.DeviceManager_Spec_Linking{
-				RequireAgreement: true,
+				RequireOwnerMatch: true,
 			},
 		},
 		{
@@ -758,7 +740,7 @@ func TestValidateDeviceManagerLimits(t *testing.T) {
 		},
 		func(spec *enterprisev1.DeviceManager_Spec) {
 			spec.Linking = &enterprisev1.DeviceManager_Spec_Linking{
-				Strategy: enterprisev1.DeviceManager_Spec_Linking_Strategy(100),
+				VerificationInterval: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 0}},
 			}
 		},
 		func(spec *enterprisev1.DeviceManager_Spec) {

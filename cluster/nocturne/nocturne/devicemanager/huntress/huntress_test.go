@@ -42,6 +42,7 @@ func TestToEntry(t *testing.T) {
 	{
 		entry := toEntry(getAgent(fmt.Sprintf(`{
 			"id": 42,
+			"hostname": "DESKTOP-1",
 			"platform": "windows",
 			"serial_number": "SERIAL-1",
 			"mac_addresses": ["a4:bb:cc:dd:ee:01"],
@@ -55,6 +56,8 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, "42", entry.ExternalID)
 		assert.Equal(t, "SERIAL-1", entry.Serial)
 		assert.Equal(t, []string{"a4:bb:cc:dd:ee:01"}, entry.MACs)
+		assert.Equal(t, "DESKTOP-1", entry.Hostname)
+		assert.Equal(t, corev1.Device_Status_WINDOWS, entry.OSType)
 
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.AgentHealthy)
@@ -90,6 +93,12 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.NotContained)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Signals["x.huntress.defender"])
 		assert.Nil(t, p.LastSeenAt)
+	}
+
+	{
+		entry := toEntry(getAgent(`{"id": 45, "os": "Ubuntu 22.04.4 LTS"}`), now)
+		assert.Equal(t, corev1.Device_Status_LINUX, entry.OSType)
+		assert.Empty(t, entry.Hostname)
 	}
 
 	for _, tc := range []struct {

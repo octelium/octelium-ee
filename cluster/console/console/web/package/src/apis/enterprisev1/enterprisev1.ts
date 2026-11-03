@@ -3346,10 +3346,12 @@ export interface ClusterConfig_Spec {
      * a Device's single Binding. Names must be unique and reference existing
      * DeviceManagers. Only listed managers participate. If unset, all managers
      * are considered in ascending name order.
-     * The first applicable manager with a unique candidate satisfying its
-     * linking requirements wins. A manager with no match is skipped; an
-     * unavailable inventory, ambiguous match or ownership conflict blocks
-     * selection instead of falling through to a lower-priority manager.
+     * The first applicable manager that selects an inventory entry for the
+     * Device wins. A manager that selects no entry, or whose
+     * `linking.requireOwnerMatch` rejects the selected entry, is skipped. An
+     * unavailable inventory, an AMBIGUOUS selection, a CONFLICT with another
+     * Device or an OWNER_MISMATCH blocks the selection instead of falling
+     * through to a lower-priority manager.
      * This order applies to new Bindings. Existing ACCEPTED Bindings remain
      * assigned until reset or manager deletion, including during outages.
      *
@@ -7082,91 +7084,67 @@ export interface DeviceManager_Spec_Polling {
     maxObservationAge?: Duration;
 }
 /**
- * Linking sets the options of how the Cluster's Devices are discovered in
- * and bound to the provider's device inventory. Linking is automatic once
- * a unique candidate satisfies the options.
+ * Linking sets the options of how the Cluster's Devices are bound to the
+ * provider's inventory entries. A Device is bound automatically to the
+ * single inventory entry that its evidence selects, and the Binding's
+ * Confidence records how strongly that evidence ties the entry to both
+ * the Device and the Device's User.
+ * The owner email that the provider reports for an entry is the primary
+ * evidence, since it is the only one that the Device cannot assert by
+ * itself. An entry is owned by the Device's User when one of its owner
+ * emails is equal, case-insensitively, to the User's email (i.e.
+ * `spec.email`). The owner emails are the email and the user principal
+ * name of the device's user in Microsoft Intune, the email (or else the
+ * email-formatted username) of the assigned user in Jamf Pro, the email of
+ * the device's user in Iru, and the email of the registered owner in
+ * 1Password Device Trust. The other types report no owner.
+ * The Device's identifiers, which are the identifier collected by the
+ * DeviceManager's Probes (e.g. the agent ID), the machine ID from which
+ * the Device's ID is derived, its serial number and its MAC addresses,
+ * select an entry as follows:
+ *   - An entry owned by the Device's User is bound with a HIGH
+ *     Confidence. The owner email also picks the User's entry among
+ *     several entries that share an identifier.
+ *   - An entry with no reported owner is bound with a LOW Confidence.
+ *   - An entry owned by another User, or with a reported owner while the
+ *     Device's User has no email, is never bound and the Binding becomes
+ *     OWNER_MISMATCH, which also prevents lower-priority DeviceManagers
+ *     from binding the Device.
+ * When no identifier selects an entry and no Probe of the DeviceManager
+ * collected an unknown identifier, the Device is bound with a MEDIUM
+ * Confidence to the only entry of its User that runs the same OS, whose
+ * provider observation is not older than `polling.maxObservationAge` and
+ * whose serial number does not differ from the Device's. The Device's
+ * hostname narrows several such entries down to one; otherwise the
+ * Binding becomes AMBIGUOUS.
+ * A Device whose Confidence is higher than the Confidence of the Device
+ * that holds the entry takes the entry over, and the other Device's
+ * Binding becomes CONFLICT.
  *
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking
  */
 export interface DeviceManager_Spec_Linking {
     /**
-     * Strategy sets how the Devices are discovered in the provider's
-     * inventory. If unset, IDENTITY_AND_PROBE is used.
+     * RequireOwnerMatch only binds the inventory entries owned by the
+     * Device's User, i.e. it prevents LOW Confidence Bindings. An entry
+     * with no reported owner, or a Device whose User has no email, is then
+     * not bound to this DeviceManager and the next DeviceManager in the
+     * Cluster's order is evaluated instead. An ACCEPTED Binding whose entry
+     * is no longer owned by the Device's User becomes LOST. It is only
+     * supported by the types that report owners.
      *
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy strategy = 1
-     */
-    strategy: DeviceManager_Spec_Linking_Strategy;
-    /**
-     * RequireAgreement only accepts a candidate when both the probe and
-     * the identity sources agree on the same inventory entry.
-     *
-     * @generated from protobuf field: bool requireAgreement = 2
-     */
-    requireAgreement: boolean;
-    /**
-     * RequireOwnerMatch only accepts a candidate when one of the owner
-     * emails that the provider reports for the inventory entry is equal,
-     * case-insensitively, to the email of the Device's User (i.e.
-     * `spec.email`). A candidate without an owner email, or a Device whose
-     * User has no email, never matches. A Device whose candidate does not
-     * match is not bound to this DeviceManager and the next DeviceManager
-     * in the Cluster's order is evaluated instead. An ACCEPTED Binding
-     * whose inventory entry no longer matches becomes LOST. The owner
-     * emails are the email and the user principal name of the device's user
-     * in Microsoft Intune, the email (or else the email-formatted username)
-     * of the assigned user in Jamf Pro, the email of the device's user in
-     * Iru, and the email of the registered owner in 1Password Device Trust.
-     * It is not supported by the other types.
-     *
-     * @generated from protobuf field: bool requireOwnerMatch = 3
+     * @generated from protobuf field: bool requireOwnerMatch = 1
      */
     requireOwnerMatch: boolean;
     /**
      * VerificationInterval is the interval at which the bound Devices are
      * probed again to verify their Binding. A failed verification suspends
-     * the Binding and makes its posture unavailable.
+     * the Binding and makes its posture unavailable. It is only supported
+     * by the types that publish Probes.
      *
-     * @generated from protobuf field: octelium.api.main.meta.v1.Duration verificationInterval = 4
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration verificationInterval = 2
      */
     verificationInterval?: Duration;
-}
-/**
- * Strategy is how the candidate inventory entries of a Device are
- * discovered.
- *
- * @generated from protobuf enum octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy
- */
-export enum DeviceManager_Spec_Linking_Strategy {
-    /**
-     * STRATEGY_UNSET is the default unset value which is equivalent to
-     * IDENTITY_AND_PROBE.
-     *
-     * @generated from protobuf enum value: STRATEGY_UNSET = 0;
-     */
-    STRATEGY_UNSET = 0,
-    /**
-     * IDENTITY_ONLY discovers the candidates only through the Device's
-     * registration information (i.e. its serial number and MAC
-     * addresses).
-     *
-     * @generated from protobuf enum value: IDENTITY_ONLY = 1;
-     */
-    IDENTITY_ONLY = 1,
-    /**
-     * PROBE_ONLY discovers the candidates only through the results of the
-     * Probes run on the Device.
-     *
-     * @generated from protobuf enum value: PROBE_ONLY = 2;
-     */
-    PROBE_ONLY = 2,
-    /**
-     * IDENTITY_AND_PROBE discovers the candidates through both sources.
-     * Sources that resolve to different inventory entries make the
-     * Binding AMBIGUOUS.
-     *
-     * @generated from protobuf enum value: IDENTITY_AND_PROBE = 3;
-     */
-    IDENTITY_AND_PROBE = 3
 }
 /**
  * Status is the current status of the DeviceManager
@@ -7280,6 +7258,13 @@ export interface DeviceManager_Status_Linking {
      * @generated from protobuf field: uint32 failedUpdates = 6
      */
     failedUpdates: number;
+    /**
+     * OwnerMismatches is the number of the Devices that resolve to an
+     * inventory entry whose reported owner is not the Device's User.
+     *
+     * @generated from protobuf field: uint32 ownerMismatches = 7
+     */
+    ownerMismatches: number;
 }
 /**
  * Type is the currently set type of the DeviceManager. It is derived by
@@ -24345,16 +24330,12 @@ export const DeviceManager_Spec_Polling = new DeviceManager_Spec_Polling$Type();
 class DeviceManager_Spec_Linking$Type extends MessageType<DeviceManager_Spec_Linking> {
     constructor() {
         super("octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking", [
-            { no: 1, name: "strategy", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy", DeviceManager_Spec_Linking_Strategy] },
-            { no: 2, name: "requireAgreement", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 3, name: "requireOwnerMatch", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 4, name: "verificationInterval", kind: "message", T: () => Duration }
+            { no: 1, name: "requireOwnerMatch", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "verificationInterval", kind: "message", T: () => Duration }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Spec_Linking>): DeviceManager_Spec_Linking {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.strategy = 0;
-        message.requireAgreement = false;
         message.requireOwnerMatch = false;
         if (value !== undefined)
             reflectionMergePartial<DeviceManager_Spec_Linking>(this, message, value);
@@ -24365,16 +24346,10 @@ class DeviceManager_Spec_Linking$Type extends MessageType<DeviceManager_Spec_Lin
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy strategy */ 1:
-                    message.strategy = reader.int32();
-                    break;
-                case /* bool requireAgreement */ 2:
-                    message.requireAgreement = reader.bool();
-                    break;
-                case /* bool requireOwnerMatch */ 3:
+                case /* bool requireOwnerMatch */ 1:
                     message.requireOwnerMatch = reader.bool();
                     break;
-                case /* octelium.api.main.meta.v1.Duration verificationInterval */ 4:
+                case /* octelium.api.main.meta.v1.Duration verificationInterval */ 2:
                     message.verificationInterval = Duration.internalBinaryRead(reader, reader.uint32(), options, message.verificationInterval);
                     break;
                 default:
@@ -24389,18 +24364,12 @@ class DeviceManager_Spec_Linking$Type extends MessageType<DeviceManager_Spec_Lin
         return message;
     }
     internalBinaryWrite(message: DeviceManager_Spec_Linking, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy strategy = 1; */
-        if (message.strategy !== 0)
-            writer.tag(1, WireType.Varint).int32(message.strategy);
-        /* bool requireAgreement = 2; */
-        if (message.requireAgreement !== false)
-            writer.tag(2, WireType.Varint).bool(message.requireAgreement);
-        /* bool requireOwnerMatch = 3; */
+        /* bool requireOwnerMatch = 1; */
         if (message.requireOwnerMatch !== false)
-            writer.tag(3, WireType.Varint).bool(message.requireOwnerMatch);
-        /* octelium.api.main.meta.v1.Duration verificationInterval = 4; */
+            writer.tag(1, WireType.Varint).bool(message.requireOwnerMatch);
+        /* octelium.api.main.meta.v1.Duration verificationInterval = 2; */
         if (message.verificationInterval)
-            Duration.internalBinaryWrite(message.verificationInterval, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+            Duration.internalBinaryWrite(message.verificationInterval, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -24558,7 +24527,8 @@ class DeviceManager_Status_Linking$Type extends MessageType<DeviceManager_Status
             { no: 3, name: "ambiguous", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 4, name: "conflicts", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 5, name: "suspended", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 6, name: "failedUpdates", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 6, name: "failedUpdates", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 7, name: "ownerMismatches", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Status_Linking>): DeviceManager_Status_Linking {
@@ -24568,6 +24538,7 @@ class DeviceManager_Status_Linking$Type extends MessageType<DeviceManager_Status
         message.conflicts = 0;
         message.suspended = 0;
         message.failedUpdates = 0;
+        message.ownerMismatches = 0;
         if (value !== undefined)
             reflectionMergePartial<DeviceManager_Status_Linking>(this, message, value);
         return message;
@@ -24594,6 +24565,9 @@ class DeviceManager_Status_Linking$Type extends MessageType<DeviceManager_Status
                     break;
                 case /* uint32 failedUpdates */ 6:
                     message.failedUpdates = reader.uint32();
+                    break;
+                case /* uint32 ownerMismatches */ 7:
+                    message.ownerMismatches = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -24625,6 +24599,9 @@ class DeviceManager_Status_Linking$Type extends MessageType<DeviceManager_Status
         /* uint32 failedUpdates = 6; */
         if (message.failedUpdates !== 0)
             writer.tag(6, WireType.Varint).uint32(message.failedUpdates);
+        /* uint32 ownerMismatches = 7; */
+        if (message.ownerMismatches !== 0)
+            writer.tag(7, WireType.Varint).uint32(message.ownerMismatches);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

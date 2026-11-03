@@ -141,6 +141,8 @@ func TestSweep(t *testing.T) {
 	lost := createDevice(newBinding(ownerRef, corev1.Device_Status_Binding_ACCEPTED, corev1.Device_Status_Binding_LOST))
 	ambiguous := createDevice(newBinding(ownerRef, corev1.Device_Status_Binding_AMBIGUOUS, corev1.Device_Status_Binding_VALIDITY_UNKNOWN))
 	conflict := createDevice(newBinding(ownerRef, corev1.Device_Status_Binding_CONFLICT, corev1.Device_Status_Binding_VALIDITY_UNKNOWN))
+	ownerMismatch := createDevice(newBinding(ownerRef, corev1.Device_Status_Binding_OWNER_MISMATCH,
+		corev1.Device_Status_Binding_VALIDITY_UNKNOWN))
 	orphan := createDevice(newBinding(orphanRef, corev1.Device_Status_Binding_ACCEPTED, corev1.Device_Status_Binding_VALID))
 	unbound := createDevice(nil)
 
@@ -173,6 +175,7 @@ func TestSweep(t *testing.T) {
 			lost.Metadata.Uid,
 			ambiguous.Metadata.Uid,
 			conflict.Metadata.Uid,
+			ownerMismatch.Metadata.Uid,
 			unbound.Metadata.Uid,
 		}
 		sort.Strings(expected)
@@ -197,6 +200,7 @@ func TestSweep(t *testing.T) {
 		assert.Equal(t, uint32(2), linking.Suspended)
 		assert.Equal(t, uint32(1), linking.Ambiguous)
 		assert.Equal(t, uint32(1), linking.Conflicts)
+		assert.Equal(t, uint32(1), linking.OwnerMismatches)
 		assert.Equal(t, uint32(1), linking.FailedUpdates)
 	}
 }

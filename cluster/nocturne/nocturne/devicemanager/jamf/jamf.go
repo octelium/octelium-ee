@@ -359,8 +359,11 @@ func (m *Manager) toEntry(c *computer, now time.Time) *devicemgrcommon.Entry {
 
 	return &devicemgrcommon.Entry{
 		ExternalID:  strings.ToLower(strings.TrimSpace(c.UDID)),
+		MachineID:   c.UDID,
 		Serial:      hw.SerialNumber,
 		MACs:        jamfMACs(hw),
+		Hostname:    gen.Name,
+		OSType:      corev1.Device_Status_MAC,
 		OwnerEmails: jamfOwnerEmails(c.UserAndLocation),
 		Posture:     p,
 	}

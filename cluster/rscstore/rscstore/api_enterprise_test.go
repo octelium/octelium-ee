@@ -475,7 +475,6 @@ func TestEnterpriseListFilters(t *testing.T) {
 		Spec: &enterprisev1.DeviceManager_Spec{
 			Polling: &enterprisev1.DeviceManager_Spec_Polling{IsDisabled: true},
 			Linking: &enterprisev1.DeviceManager_Spec_Linking{
-				Strategy:          enterprisev1.DeviceManager_Spec_Linking_PROBE_ONLY,
 				RequireOwnerMatch: true,
 			},
 			Type: &enterprisev1.DeviceManager_Spec_CrowdStrike_{
@@ -506,15 +505,6 @@ func TestEnterpriseListFilters(t *testing.T) {
 		resp, err := srv.ListDeviceManager(env.ctx, &venterprisev1.ListDeviceManagerOptions{
 			Type:  enterprisev1.DeviceManager_Status_CROWDSTRIKE,
 			State: enterprisev1.DeviceManager_Status_OK,
-		})
-		assert.Nil(t, err, "%+v", err)
-		assert.Len(t, resp.Items, 1)
-		assert.Equal(t, "crowdstrike-dm", resp.Items[0].Metadata.Name)
-	}
-
-	{
-		resp, err := srv.ListDeviceManager(env.ctx, &venterprisev1.ListDeviceManagerOptions{
-			Strategy: enterprisev1.DeviceManager_Spec_Linking_PROBE_ONLY,
 		})
 		assert.Nil(t, err, "%+v", err)
 		assert.Len(t, resp.Items, 1)

@@ -301,6 +301,15 @@ describe("Resource overview details", () => {
     ]);
   });
 
+  it("shows the confidence and evidence of a Device binding", async () => {
+    await load("/core/devices/alice-macbook");
+    await page.getByText("Confidence", { exact: true }).waitFor();
+    for (const label of ["High", "Owner email", "Serial number", "MAC address"]) {
+      await page.getByText(label, { exact: true }).first().waitFor();
+    }
+    assert.equal(await page.getByText("Machine ID", { exact: true }).count(), 0);
+  });
+
   it("lists the Policy rules by priority", async () => {
     await load("/core/policies/allow-engineering");
     const rules = await page

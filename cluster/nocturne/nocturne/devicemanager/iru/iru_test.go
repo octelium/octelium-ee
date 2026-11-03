@@ -42,6 +42,8 @@ func TestToEntry(t *testing.T) {
 	{
 		entry := toEntry(getDevice(fmt.Sprintf(`{
 			"device_id": "0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D",
+			"device_name": "alice-mbp",
+			"platform": "Mac",
 			"serial_number": "C02XYZ",
 			"mac_address": "a4:bb:cc:dd:ee:01",
 			"last_check_in": %q,
@@ -55,6 +57,8 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, "C02XYZ", entry.Serial)
 		assert.Equal(t, []string{"a4:bb:cc:dd:ee:01"}, entry.MACs)
 		assert.Equal(t, []string{"user@example.com"}, entry.OwnerEmails)
+		assert.Equal(t, "alice-mbp", entry.Hostname)
+		assert.Equal(t, corev1.Device_Status_MAC, entry.OSType)
 
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Enrolled)

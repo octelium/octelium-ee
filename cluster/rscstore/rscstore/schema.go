@@ -39,7 +39,6 @@ const (
 	colSpecGroups            = "spec_groups"
 	colSpecServices          = "spec_services"
 	colSpecNamespaces        = "spec_namespaces"
-	colSpecLinkingStrategy   = "spec_linking_strategy"
 	colSpecPollingIsDisabled = "spec_polling_is_disabled"
 	colSpecSubjectUserUID    = "spec_subject_user_uid"
 	colSpecSubjectUserName   = "spec_subject_user_name"
@@ -207,7 +206,6 @@ func getResourceColumns() []*resourceColumn {
 		{name: colSpecIsDisabled, kind: kindBoolean, path: "$.spec.isDisabled"},
 		{name: colSpecIsPublic, kind: kindBoolean, path: "$.spec.isPublic"},
 		{name: colSpecIsAnonymous, kind: kindBoolean, path: "$.spec.isAnonymous"},
-		{name: colSpecLinkingStrategy, kind: kindVarchar, path: "$.spec.linking.strategy"},
 		{name: colSpecPollingIsDisabled, kind: kindBoolean, path: "$.spec.polling.isDisabled"},
 		{name: colSpecSubjectUserUID, kind: kindVarchar, path: "$.spec.subject.userRef.uid"},
 		{name: colSpecSubjectUserName, kind: kindVarchar, path: "$.spec.subject.userRef.name"},

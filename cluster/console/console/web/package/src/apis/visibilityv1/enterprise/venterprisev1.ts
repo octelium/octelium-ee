@@ -30,7 +30,6 @@ import { UnknownFieldHandler } from "@protobuf-ts/runtime";
 import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
-import { DeviceManager_Spec_Linking_Strategy } from "../../enterprisev1/enterprisev1";
 import { DeviceManager_Status_State } from "../../enterprisev1/enterprisev1";
 import { DeviceManager_Status_Type } from "../../enterprisev1/enterprisev1";
 import { DirectoryProvider_Status_Synchronization_State } from "../../enterprisev1/enterprisev1";
@@ -950,11 +949,7 @@ export interface ListDeviceManagerOptions {
      */
     state: DeviceManager_Status_State;
     /**
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy strategy = 4
-     */
-    strategy: DeviceManager_Spec_Linking_Strategy;
-    /**
-     * @generated from protobuf field: bool isPollingDisabled = 5
+     * @generated from protobuf field: bool isPollingDisabled = 4
      */
     isPollingDisabled: boolean;
 }
@@ -3224,15 +3219,13 @@ class ListDeviceManagerOptions$Type extends MessageType<ListDeviceManagerOptions
             { no: 1, name: "common", kind: "message", T: () => CommonListOptions },
             { no: 2, name: "type", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Status.Type", DeviceManager_Status_Type] },
             { no: 3, name: "state", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Status.State", DeviceManager_Status_State] },
-            { no: 4, name: "strategy", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy", DeviceManager_Spec_Linking_Strategy] },
-            { no: 5, name: "isPollingDisabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 4, name: "isPollingDisabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<ListDeviceManagerOptions>): ListDeviceManagerOptions {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.type = 0;
         message.state = 0;
-        message.strategy = 0;
         message.isPollingDisabled = false;
         if (value !== undefined)
             reflectionMergePartial<ListDeviceManagerOptions>(this, message, value);
@@ -3252,10 +3245,7 @@ class ListDeviceManagerOptions$Type extends MessageType<ListDeviceManagerOptions
                 case /* octelium.api.main.enterprise.v1.DeviceManager.Status.State state */ 3:
                     message.state = reader.int32();
                     break;
-                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy strategy */ 4:
-                    message.strategy = reader.int32();
-                    break;
-                case /* bool isPollingDisabled */ 5:
+                case /* bool isPollingDisabled */ 4:
                     message.isPollingDisabled = reader.bool();
                     break;
                 default:
@@ -3279,12 +3269,9 @@ class ListDeviceManagerOptions$Type extends MessageType<ListDeviceManagerOptions
         /* octelium.api.main.enterprise.v1.DeviceManager.Status.State state = 3; */
         if (message.state !== 0)
             writer.tag(3, WireType.Varint).int32(message.state);
-        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy strategy = 4; */
-        if (message.strategy !== 0)
-            writer.tag(4, WireType.Varint).int32(message.strategy);
-        /* bool isPollingDisabled = 5; */
+        /* bool isPollingDisabled = 4; */
         if (message.isPollingDisabled !== false)
-            writer.tag(5, WireType.Varint).bool(message.isPollingDisabled);
+            writer.tag(4, WireType.Varint).bool(message.isPollingDisabled);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

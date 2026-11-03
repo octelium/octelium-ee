@@ -45,11 +45,14 @@ const (
 const (
 	reasonAmbiguous           = "Ambiguous"
 	reasonSourcesDisagree     = "SourcesDisagree"
+	reasonOwnerAmbiguous      = "OwnerAmbiguous"
 	reasonConflict            = "Conflict"
+	reasonSuperseded          = "Superseded"
 	reasonNotApplicable       = "NotApplicable"
 	reasonEntryNotFound       = "EntryNotFound"
 	reasonEntryAmbiguous      = "EntryAmbiguous"
 	reasonOwnerMismatch       = "OwnerMismatch"
+	reasonIdentityMismatch    = "IdentityMismatch"
 	reasonVerificationFailed  = "VerificationFailed"
 	reasonVerificationOverdue = "VerificationOverdue"
 	reasonDisabled            = "Disabled"
@@ -116,6 +119,7 @@ func isReconcileRequired(new, old *corev1.Device) bool {
 
 	return newStatus.OsType != oldStatus.OsType ||
 		newStatus.SerialNumber != oldStatus.SerialNumber ||
+		newStatus.Hostname != oldStatus.Hostname ||
 		!slices.Equal(newStatus.MacAddresses, oldStatus.MacAddresses) ||
 		newStatus.UserRef.GetUid() != oldStatus.UserRef.GetUid()
 }
@@ -273,7 +277,7 @@ func (c *Controller) doReconcileDevice(ctx context.Context, dev *corev1.Device, 
 
 type candidate struct {
 	owner *devicemgrcommon.Owner
-	entry *devicemgrcommon.Entry
+	link  *devicemgrcommon.LinkResult
 }
 
 type decisionKind int
@@ -281,15 +285,17 @@ type decisionKind int
 const (
 	decisionSkip decisionKind = iota
 	decisionWait
-	decisionAmbiguous
+	decisionBlock
 	decisionCandidate
 )
 
 type decision struct {
-	kind    decisionKind
-	entry   *devicemgrcommon.Entry
-	reason  string
-	message string
+	kind       decisionKind
+	link       *devicemgrcommon.LinkResult
+	state      corev1.Device_Status_Binding_State
+	externalID string
+	reason     string
+	message    string
 }
 
 func (c *Controller) reconcileUnbound(
@@ -313,15 +319,14 @@ func (c *Controller) reconcileUnbound(
 			continue
 		case decisionWait:
 			return nil, false, nil
-		case decisionAmbiguous:
-			changed := setUnboundBinding(dev, owner, "",
-				corev1.Device_Status_Binding_AMBIGUOUS, dec.reason, dec.message)
+		case decisionBlock:
+			changed := setUnboundBinding(dev, owner, dec.externalID, dec.state, dec.reason, dec.message)
 			changed = markAttemptProcessed(dev) || changed
 			return nil, changed, nil
 		case decisionCandidate:
 			return &candidate{
 				owner: owner,
-				entry: dec.entry,
+				link:  dec.link,
 			}, false, nil
 		}
 	}
@@ -364,79 +369,99 @@ func (c *Controller) evaluateOwner(
 		return &decision{kind: decisionWait}
 	}
 
-	var probeMatch devicemgrcommon.MatchResult
-	if devicemgrcommon.UsesProbe(owner.DM) {
-		if ownerResults := results[owner.UID()]; len(ownerResults) > 0 {
-			externalID, err := owner.Manager.ParseExternalID(dev.Status.OsType, ownerResults)
-			if err != nil {
-				return &decision{
-					kind:   decisionAmbiguous,
-					reason: reasonSourcesDisagree,
-					message: fmt.Sprintf("The probe results of the DeviceManager %s are inconsistent: %s",
-						owner.Name(), err.Error()),
-				}
-			}
-			if externalID != "" {
-				probeMatch = owner.Fleet.MatchProbeID(externalID)
+	var probeID string
+	if ownerResults := results[owner.UID()]; len(ownerResults) > 0 {
+		externalID, err := owner.Manager.ParseExternalID(dev.Status.OsType, ownerResults)
+		if err != nil {
+			return &decision{
+				kind:   decisionBlock,
+				state:  corev1.Device_Status_Binding_AMBIGUOUS,
+				reason: reasonSourcesDisagree,
+				message: fmt.Sprintf("The probe results of the DeviceManager %s are inconsistent: %s",
+					owner.Name(), err.Error()),
 			}
 		}
+		probeID = externalID
 	}
 
-	var identityMatch devicemgrcommon.MatchResult
-	if devicemgrcommon.UsesIdentity(owner.DM) {
-		identityMatch = owner.Fleet.MatchIdentity(dev.Status.SerialNumber, dev.Status.MacAddresses)
+	userEmail, err := deviceUserEmail(ctx, cache, dev)
+	if err != nil {
+		zap.L().Warn("Could not get Device User email",
+			zap.String("device", dev.Metadata.Name), zap.Error(err))
+		return &decision{kind: decisionWait}
 	}
 
-	if probeMatch.State == devicemgrcommon.MatchStateAmbiguous ||
-		identityMatch.State == devicemgrcommon.MatchStateAmbiguous {
+	link := owner.Fleet.Link(newLinkRequest(dev, owner, probeID, userEmail, now))
+
+	switch link.State {
+	case devicemgrcommon.LinkStateAmbiguous:
 		return &decision{
-			kind:    decisionAmbiguous,
+			kind:    decisionBlock,
+			state:   corev1.Device_Status_Binding_AMBIGUOUS,
 			reason:  reasonAmbiguous,
 			message: fmt.Sprintf("The Device matches more than one inventory entry of the DeviceManager %s", owner.Name()),
 		}
-	}
-
-	if probeMatch.State == devicemgrcommon.MatchStateUnique &&
-		identityMatch.State == devicemgrcommon.MatchStateUnique &&
-		probeMatch.Entry.ExternalID != identityMatch.Entry.ExternalID {
+	case devicemgrcommon.LinkStateSourcesDisagree:
 		return &decision{
-			kind:    decisionAmbiguous,
+			kind:    decisionBlock,
+			state:   corev1.Device_Status_Binding_AMBIGUOUS,
 			reason:  reasonSourcesDisagree,
-			message: fmt.Sprintf("The probe and identity sources resolve to different inventory entries of the DeviceManager %s", owner.Name()),
+			message: fmt.Sprintf("The identifiers of the Device resolve to different inventory entries of the DeviceManager %s", owner.Name()),
 		}
-	}
-
-	entry := probeMatch.Entry
-	if entry == nil {
-		entry = identityMatch.Entry
-	}
-
-	if entry == nil || entry.ExternalID == "" ||
-		(devicemgrcommon.RequireAgreement(owner.DM) &&
-			(probeMatch.State != devicemgrcommon.MatchStateUnique ||
-				identityMatch.State != devicemgrcommon.MatchStateUnique)) {
+	case devicemgrcommon.LinkStateOwnerMismatch:
+		return &decision{
+			kind:       decisionBlock,
+			state:      corev1.Device_Status_Binding_OWNER_MISMATCH,
+			externalID: link.Entry.ExternalID,
+			reason:     reasonOwnerMismatch,
+			message:    fmt.Sprintf("The Device resolves to an inventory entry of the DeviceManager %s that is not owned by the User of the Device", owner.Name()),
+		}
+	case devicemgrcommon.LinkStateOwnerAmbiguous:
 		if isAttemptPending(dev, owner.UID(), now) {
 			return &decision{kind: decisionWait}
 		}
-		return &decision{kind: decisionSkip}
-	}
-
-	if devicemgrcommon.RequireOwnerMatch(owner.DM) {
-		userEmail, err := deviceUserEmail(ctx, cache, dev)
-		if err != nil {
-			zap.L().Warn("Could not get Device User email",
-				zap.String("device", dev.Metadata.Name), zap.Error(err))
+		return &decision{
+			kind:    decisionBlock,
+			state:   corev1.Device_Status_Binding_AMBIGUOUS,
+			reason:  reasonOwnerAmbiguous,
+			message: fmt.Sprintf("The User of the Device owns more than one inventory entry of the DeviceManager %s that can be the Device", owner.Name()),
+		}
+	case devicemgrcommon.LinkStateMatched:
+		switch {
+		case link.Confidence == corev1.Device_Status_Binding_LOW && devicemgrcommon.RequireOwnerMatch(owner.DM):
+		case link.Confidence == corev1.Device_Status_Binding_MEDIUM && isAttemptPending(dev, owner.UID(), now):
 			return &decision{kind: decisionWait}
-		}
-
-		if !devicemgrcommon.OwnerEmailMatches(userEmail, entry.OwnerEmails) {
-			return &decision{kind: decisionSkip}
+		default:
+			return &decision{
+				kind: decisionCandidate,
+				link: link,
+			}
 		}
 	}
 
-	return &decision{
-		kind:  decisionCandidate,
-		entry: entry,
+	if isAttemptPending(dev, owner.UID(), now) {
+		return &decision{kind: decisionWait}
+	}
+
+	return &decision{kind: decisionSkip}
+}
+
+func newLinkRequest(
+	dev *corev1.Device,
+	owner *devicemgrcommon.Owner,
+	probeID, userEmail string,
+	now time.Time,
+) *devicemgrcommon.LinkRequest {
+	return &devicemgrcommon.LinkRequest{
+		DeviceID:          dev.Status.Id,
+		OSType:            dev.Status.OsType,
+		SerialNumber:      dev.Status.SerialNumber,
+		MACs:              dev.Status.MacAddresses,
+		Hostname:          dev.Status.Hostname,
+		ProbeID:           probeID,
+		UserEmail:         userEmail,
+		Now:               now,
+		MaxObservationAge: devicemgrcommon.MaxObservationAge(owner.DM),
 	}
 }
 
@@ -447,7 +472,7 @@ func (c *Controller) accept(
 	now time.Time,
 ) error {
 	ownerUID := cand.owner.UID()
-	externalID := cand.entry.ExternalID
+	externalID := cand.link.Entry.ExternalID
 
 	release, err := c.lockClaim(ctx, ownerUID, externalID)
 	if err != nil {
@@ -461,14 +486,20 @@ func (c *Controller) accept(
 	}
 
 	if holder != nil {
-		changed := setUnboundBinding(dev, cand.owner, externalID,
-			corev1.Device_Status_Binding_CONFLICT, reasonConflict,
-			fmt.Sprintf("The inventory entry is already bound to the Device %s", holder.Metadata.Name))
-		changed = markAttemptProcessed(dev) || changed
-		if !changed {
-			return nil
+		if !canTakeOver(holder.Status.Binding, cand.link.Confidence) {
+			changed := setUnboundBinding(dev, cand.owner, externalID,
+				corev1.Device_Status_Binding_CONFLICT, reasonConflict,
+				fmt.Sprintf("The inventory entry is already bound to the Device %s", holder.Metadata.Name))
+			changed = markAttemptProcessed(dev) || changed
+			if !changed {
+				return nil
+			}
+			return c.updateDevice(ctx, dev)
 		}
-		return c.updateDevice(ctx, dev)
+
+		if err := c.supersede(ctx, holder, dev); err != nil {
+			return err
+		}
 	}
 
 	binding := &corev1.Device_Status_Binding{
@@ -479,13 +510,15 @@ func (c *Controller) accept(
 		Validity:       corev1.Device_Status_Binding_VALID,
 		AcceptedAt:     pbutils.Timestamp(now),
 		LastVerifiedAt: pbutils.Timestamp(now),
+		Confidence:     cand.link.Confidence,
+		Evidence:       cand.link.Evidence,
 	}
 	if interval := devicemgrcommon.VerificationInterval(cand.owner.DM); interval > 0 {
 		binding.NextVerificationAt = pbutils.Timestamp(now.Add(interval))
 	}
 
 	dev.Status.Binding = binding
-	dev.Status.Posture = devicemgrcommon.MaterializePosture(cand.owner, cand.entry)
+	dev.Status.Posture = devicemgrcommon.MaterializePosture(cand.owner, cand.link.Entry)
 	markAttemptProcessed(dev)
 
 	if err := c.updateDevice(ctx, dev); err != nil {
@@ -495,7 +528,62 @@ func (c *Controller) accept(
 	zap.L().Info("Accepted Device binding",
 		zap.String("device", dev.Metadata.Name),
 		zap.String("deviceManager", cand.owner.Name()),
-		zap.String("externalID", externalID))
+		zap.String("externalID", externalID),
+		zap.String("confidence", binding.Confidence.String()))
+
+	return nil
+}
+
+func canTakeOver(holder *corev1.Device_Status_Binding, confidence corev1.Device_Status_Binding_Confidence) bool {
+	return holder.GetValidity() == corev1.Device_Status_Binding_LOST || holder.GetConfidence() < confidence
+}
+
+func (c *Controller) supersede(ctx context.Context, holder *corev1.Device, dev *corev1.Device) error {
+	bindingUID := holder.Status.Binding.GetUid()
+	isSuperseded := false
+
+	err := retry.OnError(retry.DefaultRetry, grpcerr.IsResourceChanged, func() error {
+		isSuperseded = false
+
+		cur, err := c.octeliumC.CoreC().GetDevice(ctx, &rmetav1.GetOptions{Uid: holder.Metadata.Uid})
+		if err != nil {
+			return err
+		}
+
+		binding := cur.Status.Binding
+		if binding.GetUid() != bindingUID || binding.GetState() != corev1.Device_Status_Binding_ACCEPTED {
+			return nil
+		}
+
+		cur.Status.Binding = &corev1.Device_Status_Binding{
+			Uid:        newBindingUID(),
+			OwnerRef:   binding.OwnerRef,
+			ExternalID: binding.ExternalID,
+			State:      corev1.Device_Status_Binding_CONFLICT,
+			Reason:     reasonSuperseded,
+			Message:    fmt.Sprintf("The inventory entry is now bound to the Device %s", dev.Metadata.Name),
+		}
+		cur.Status.Posture = nil
+
+		if err := c.updateDevice(ctx, cur); err != nil {
+			return err
+		}
+
+		isSuperseded = true
+		return nil
+	})
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return nil
+		}
+		return errors.Wrap(err, "Could not release the inventory entry of the Device that holds it")
+	}
+
+	if isSuperseded {
+		zap.L().Info("Superseded Device binding",
+			zap.String("device", holder.Metadata.Name),
+			zap.String("supersededBy", dev.Metadata.Name))
+	}
 
 	return nil
 }
@@ -531,10 +619,15 @@ func (c *Controller) reconcileAccepted(ctx context.Context, cache *reconcileCach
 		return false
 	}
 
-	entry, validity, reason, message, ok := c.checkBinding(ctx, cache, dev, owner)
+	check, ok := c.checkBinding(ctx, cache, dev, owner, now)
 	if !ok {
 		return false
 	}
+
+	entry := check.entry
+	validity := check.validity
+	reason := check.reason
+	message := check.message
 
 	interval := devicemgrcommon.VerificationInterval(owner.DM)
 
@@ -545,10 +638,12 @@ func (c *Controller) reconcileAccepted(ctx context.Context, cache *reconcileCach
 			if interval > 0 {
 				binding.NextVerificationAt = pbutils.Timestamp(now.Add(interval))
 			}
+			check.evidence = setProbeEvidence(check.evidence, true)
 		case verificationFailed:
 			validity = corev1.Device_Status_Binding_SUSPENDED
 			reason = reasonVerificationFailed
 			message = "The probe results do not resolve to the bound inventory entry"
+			check.evidence = setProbeEvidence(check.evidence, false)
 		default:
 			switch {
 			case binding.Validity == corev1.Device_Status_Binding_SUSPENDED &&
@@ -577,6 +672,11 @@ func (c *Controller) reconcileAccepted(ctx context.Context, cache *reconcileCach
 	binding.Reason = reason
 	binding.Message = message
 
+	if entry != nil {
+		binding.Evidence = check.evidence
+		binding.Confidence = devicemgrcommon.GetConfidence(check.evidence)
+	}
+
 	switch {
 	case validity == corev1.Device_Status_Binding_LOST:
 		dev.Status.Posture = nil
@@ -587,50 +687,102 @@ func (c *Controller) reconcileAccepted(ctx context.Context, cache *reconcileCach
 	return !pbutils.IsEqual(orig, dev.Status)
 }
 
+type bindingCheck struct {
+	entry    *devicemgrcommon.Entry
+	evidence []corev1.Device_Status_Binding_Evidence
+	validity corev1.Device_Status_Binding_Validity
+	reason   string
+	message  string
+}
+
 func (c *Controller) checkBinding(
 	ctx context.Context,
 	cache *reconcileCache,
 	dev *corev1.Device,
 	owner *devicemgrcommon.Owner,
-) (*devicemgrcommon.Entry, corev1.Device_Status_Binding_Validity, string, string, bool) {
+	now time.Time,
+) (*bindingCheck, bool) {
 	applicable, err := c.ownerApplicable(ctx, cache, owner, dev)
 	if err != nil {
 		zap.L().Warn("Could not evaluate DeviceManager Condition",
 			zap.String("device", dev.Metadata.Name),
 			zap.String("deviceManager", owner.Name()),
 			zap.Error(err))
-		return nil, corev1.Device_Status_Binding_VALIDITY_UNKNOWN, "", "", false
+		return nil, false
 	}
 	if !applicable {
-		return nil, corev1.Device_Status_Binding_LOST, reasonNotApplicable,
-			"The DeviceManager no longer applies to the Device", true
+		return &bindingCheck{
+			validity: corev1.Device_Status_Binding_LOST,
+			reason:   reasonNotApplicable,
+			message:  "The DeviceManager no longer applies to the Device",
+		}, true
 	}
 
 	match := owner.Fleet.MatchExternalID(dev.Status.Binding.ExternalID)
 	switch match.State {
 	case devicemgrcommon.MatchStateNone:
-		return nil, corev1.Device_Status_Binding_LOST, reasonEntryNotFound,
-			"The inventory entry no longer exists", true
+		return &bindingCheck{
+			validity: corev1.Device_Status_Binding_LOST,
+			reason:   reasonEntryNotFound,
+			message:  "The inventory entry no longer exists",
+		}, true
 	case devicemgrcommon.MatchStateAmbiguous:
-		return nil, corev1.Device_Status_Binding_SUSPENDED, reasonEntryAmbiguous,
-			"The inventory entry is no longer unique", true
+		return &bindingCheck{
+			validity: corev1.Device_Status_Binding_SUSPENDED,
+			reason:   reasonEntryAmbiguous,
+			message:  "The inventory entry is no longer unique",
+		}, true
 	}
 
-	if devicemgrcommon.RequireOwnerMatch(owner.DM) {
-		userEmail, err := deviceUserEmail(ctx, cache, dev)
-		if err != nil {
-			zap.L().Warn("Could not get Device User email",
-				zap.String("device", dev.Metadata.Name), zap.Error(err))
-			return nil, corev1.Device_Status_Binding_VALIDITY_UNKNOWN, "", "", false
-		}
-
-		if !devicemgrcommon.OwnerEmailMatches(userEmail, match.Entry.OwnerEmails) {
-			return nil, corev1.Device_Status_Binding_LOST, reasonOwnerMismatch,
-				"The owner of the inventory entry no longer matches the User of the Device", true
-		}
+	userEmail, err := deviceUserEmail(ctx, cache, dev)
+	if err != nil {
+		zap.L().Warn("Could not get Device User email",
+			zap.String("device", dev.Metadata.Name), zap.Error(err))
+		return nil, false
 	}
 
-	return match.Entry, corev1.Device_Status_Binding_VALID, "", "", true
+	entry := match.Entry
+	if !devicemgrcommon.OwnerEmailMatches(userEmail, entry.OwnerEmails) &&
+		(len(entry.OwnerEmails) > 0 || devicemgrcommon.RequireOwnerMatch(owner.DM)) {
+		return &bindingCheck{
+			validity: corev1.Device_Status_Binding_LOST,
+			reason:   reasonOwnerMismatch,
+			message:  "The inventory entry is no longer owned by the User of the Device",
+		}, true
+	}
+
+	req := newLinkRequest(dev, owner, "", userEmail, now)
+	evidence := setProbeEvidence(entry.Evidence(req),
+		slices.Contains(dev.Status.Binding.Evidence, corev1.Device_Status_Binding_PROBE))
+
+	if !devicemgrcommon.HasDeviceEvidence(evidence) && entry.IsContradicted(req) {
+		return &bindingCheck{
+			validity: corev1.Device_Status_Binding_LOST,
+			reason:   reasonIdentityMismatch,
+			message:  "The serial number of the Device differs from the serial number of the inventory entry",
+		}, true
+	}
+
+	return &bindingCheck{
+		entry:    entry,
+		evidence: evidence,
+		validity: corev1.Device_Status_Binding_VALID,
+	}, true
+}
+
+func setProbeEvidence(
+	evidence []corev1.Device_Status_Binding_Evidence,
+	isSet bool,
+) []corev1.Device_Status_Binding_Evidence {
+	ret := slices.DeleteFunc(slices.Clone(evidence), func(itm corev1.Device_Status_Binding_Evidence) bool {
+		return itm == corev1.Device_Status_Binding_PROBE
+	})
+	if isSet {
+		ret = append(ret, corev1.Device_Status_Binding_PROBE)
+		slices.Sort(ret)
+	}
+
+	return ret
 }
 
 func verifyBinding(dev *corev1.Device, owner *devicemgrcommon.Owner) verificationResult {

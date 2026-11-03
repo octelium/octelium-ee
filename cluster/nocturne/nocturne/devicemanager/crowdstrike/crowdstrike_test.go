@@ -98,6 +98,7 @@ func TestToEntry(t *testing.T) {
 			"reduced_functionality_mode": %q,
 			"last_seen": %q,
 			"platform_name": "Windows",
+			"hostname": "DESKTOP-1",
 			"agent_version": "7.10.0"
 		}`, status, rfm, lastSeen.UTC().Format(time.RFC3339))), ret)
 		assert.Nil(t, err)
@@ -109,6 +110,9 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, "0123456789abcdef0123456789abcdef", entry.ExternalID)
 		assert.Equal(t, "C02XYZ", entry.Serial)
 		assert.Equal(t, []string{"a4-bb-cc-dd-ee-01"}, entry.MACs)
+		assert.Equal(t, "DESKTOP-1", entry.Hostname)
+		assert.Equal(t, corev1.Device_Status_WINDOWS, entry.OSType)
+		assert.Empty(t, entry.MachineID)
 
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.NotContained)

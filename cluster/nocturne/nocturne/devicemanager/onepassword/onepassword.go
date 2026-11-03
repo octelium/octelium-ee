@@ -304,6 +304,16 @@ func toEntry(d *kolideDevice, emails map[string]string, now time.Time) *devicemg
 		aliases = []string{id}
 	}
 
+	osType := devicemgrcommon.ParseOSType(d.DeviceType)
+	if osType == corev1.Device_Status_OS_TYPE_UNKNOWN {
+		osType = devicemgrcommon.ParseOSType(d.OperatingSystem)
+	}
+
+	var machineID string
+	if osType == corev1.Device_Status_MAC {
+		machineID = d.HardwareUUID
+	}
+
 	var ownerEmails []string
 	if d.RegisteredOwnerInfo != nil {
 		if email := strings.TrimSpace(emails[d.RegisteredOwnerInfo.Identifier]); strings.Contains(email, "@") {
@@ -314,7 +324,10 @@ func toEntry(d *kolideDevice, emails map[string]string, now time.Time) *devicemg
 	return &devicemgrcommon.Entry{
 		ExternalID:  strings.ToLower(strings.TrimSpace(d.ID)),
 		Aliases:     aliases,
+		MachineID:   machineID,
 		Serial:      d.Serial,
+		Hostname:    d.Name,
+		OSType:      osType,
 		OwnerEmails: ownerEmails,
 		Posture:     p,
 	}

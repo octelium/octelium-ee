@@ -251,10 +251,20 @@ func toEntry(h *fleetHost, now time.Time) *devicemgrcommon.Entry {
 		macs = []string{h.PrimaryMAC}
 	}
 
+	osType := devicemgrcommon.ParseOSType(h.Platform)
+
+	var machineID string
+	if osType == corev1.Device_Status_MAC {
+		machineID = h.UUID
+	}
+
 	return &devicemgrcommon.Entry{
 		ExternalID: strings.ToLower(strings.TrimSpace(h.UUID)),
+		MachineID:  machineID,
 		Serial:     h.HardwareSerial,
 		MACs:       macs,
+		Hostname:   h.Hostname,
+		OSType:     osType,
 		Posture:    p,
 	}
 }

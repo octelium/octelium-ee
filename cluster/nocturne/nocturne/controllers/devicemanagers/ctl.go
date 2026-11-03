@@ -464,10 +464,6 @@ func (c *Controller) publishProbeConfig(ctx context.Context) error {
 	deviceConfig := &corev1.ClusterConfig_Status_Device{}
 
 	for _, w := range c.snapshotWorkers() {
-		if !devicemgrcommon.UsesProbe(w.dm) {
-			continue
-		}
-
 		for _, probe := range w.mgr.IdentityProbes() {
 			if coreProbe := toCoreProbe(w.dm, probe); coreProbe != nil {
 				deviceConfig.Probes = append(deviceConfig.Probes, coreProbe)

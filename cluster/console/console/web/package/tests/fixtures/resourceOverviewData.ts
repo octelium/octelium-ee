@@ -363,6 +363,8 @@ const sources: Record<string, () => Resource> = {
           acceptedAt: at(-9 * DAY),
           lastVerifiedAt: at(-20 * 60),
           nextVerificationAt: at(40 * 60),
+          confidence: "HIGH",
+          evidence: ["OWNER_EMAIL", "SERIAL_NUMBER", "MAC_ADDRESS"],
         },
       },
     }),

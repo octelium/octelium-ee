@@ -107,6 +107,8 @@ func TestToEntry(t *testing.T) {
 		entry := toEntry(getAgent(fmt.Sprintf(`{
 			"id": "1000",
 			"uuid": "0A1B2C3D4E5F",
+			"computerName": "DESKTOP-1",
+			"osType": "windows",
 			"serialNumber": "SERIAL-1",
 			"isActive": true,
 			"isUpToDate": false,
@@ -126,6 +128,8 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, "0a1b2c3d4e5f", entry.ExternalID)
 		assert.Equal(t, "SERIAL-1", entry.Serial)
 		assert.Equal(t, []string{"a4:bb:cc:dd:ee:01"}, entry.MACs)
+		assert.Equal(t, "DESKTOP-1", entry.Hostname)
+		assert.Equal(t, corev1.Device_Status_WINDOWS, entry.OSType)
 
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.ThreatFree)

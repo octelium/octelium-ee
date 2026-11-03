@@ -436,39 +436,12 @@ func validateDeviceManagerLinking(spec *enterprisev1.DeviceManager_Spec) error {
 		return nil
 	}
 
-	strategy := linking.Strategy
-	switch strategy {
-	case enterprisev1.DeviceManager_Spec_Linking_STRATEGY_UNSET:
-		strategy = enterprisev1.DeviceManager_Spec_Linking_IDENTITY_AND_PROBE
-	case enterprisev1.DeviceManager_Spec_Linking_IDENTITY_ONLY,
-		enterprisev1.DeviceManager_Spec_Linking_PROBE_ONLY,
-		enterprisev1.DeviceManager_Spec_Linking_IDENTITY_AND_PROBE:
-	default:
-		return grpcutils.InvalidArg("Invalid linking strategy")
-	}
-
 	if err := apivalidation.ValidateDuration(linking.VerificationInterval); err != nil {
 		return err
 	}
 
-	hasProbes := deviceManagerSupportsProbes(spec)
-
-	if linking.RequireAgreement {
-		if strategy != enterprisev1.DeviceManager_Spec_Linking_IDENTITY_AND_PROBE {
-			return grpcutils.InvalidArg("requireAgreement requires the IDENTITY_AND_PROBE strategy")
-		}
-		if !hasProbes {
-			return grpcutils.InvalidArg("requireAgreement is not supported by this DeviceManager type")
-		}
-	}
-
-	if strategy == enterprisev1.DeviceManager_Spec_Linking_PROBE_ONLY && !hasProbes {
-		return grpcutils.InvalidArg("The PROBE_ONLY strategy is not supported by this DeviceManager type")
-	}
-
-	if linking.VerificationInterval != nil &&
-		(strategy == enterprisev1.DeviceManager_Spec_Linking_IDENTITY_ONLY || !hasProbes) {
-		return grpcutils.InvalidArg("verificationInterval requires a strategy that uses probes")
+	if linking.VerificationInterval != nil && !deviceManagerSupportsProbes(spec) {
+		return grpcutils.InvalidArg("verificationInterval is not supported by this DeviceManager type")
 	}
 
 	if linking.RequireOwnerMatch && !deviceManagerSupportsOwner(spec) {

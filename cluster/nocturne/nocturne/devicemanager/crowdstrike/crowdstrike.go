@@ -375,6 +375,8 @@ func toEntry(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties,
 		ExternalID: aid,
 		Serial:     d.SerialNumber,
 		MACs:       csMACs(d),
+		Hostname:   d.Hostname,
+		OSType:     devicemgrcommon.ParseOSType(d.PlatformName),
 		Posture:    p,
 	}
 }

@@ -226,6 +226,8 @@ func toEntry(d *iruDevice, now time.Time) *devicemgrcommon.Entry {
 		ExternalID:  strings.ToLower(strings.TrimSpace(d.DeviceID)),
 		Serial:      d.SerialNumber,
 		MACs:        macs,
+		Hostname:    d.DeviceName,
+		OSType:      devicemgrcommon.ParseOSType(d.Platform),
 		OwnerEmails: emails,
 		Posture:     p,
 	}
