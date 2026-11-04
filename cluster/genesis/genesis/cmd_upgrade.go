@@ -62,11 +62,11 @@ func (g *Genesis) RunUpgrade(ctx context.Context, o *UpgradeOpts) error {
 	}
 
 	if err := g.installOcteliumResources(ctx, cc, region); err != nil {
-		zap.L().Warn("Could not installOcteliumResources", zap.Error(err))
+		return err
 	}
 
 	if err := g.setRegionVersionMap(ctx, region); err != nil {
-		zap.L().Warn("Could not setRegionVersionMap", zap.Error(err))
+		return err
 	}
 
 	zap.L().Debug("Upgrade is successful")

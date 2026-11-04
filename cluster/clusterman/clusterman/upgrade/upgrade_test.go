@@ -355,3 +355,56 @@ func TestUpgradeTargets(t *testing.T) {
 	assert.ErrorContains(t, err, "west")
 	assert.Empty(t, defaultK8sC.Actions())
 }
+
+func TestUpgradeStopsAfterPackageFailure(t *testing.T) {
+	for _, failedPackage := range []string{regionutils.PackageEnterprise, regionutils.PackageCordium} {
+		t.Run(failedPackage, func(t *testing.T) {
+			var order []string
+			var reports [][]*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region
+			k8sC := fake.NewSimpleClientset()
+			k8sC.PrependReactor("create", "jobs", func(action ktesting.Action) (bool, runtime.Object, error) {
+				job := action.(ktesting.CreateAction).GetObject().(*batchv1.Job).DeepCopy()
+				job.UID = types.UID("job-" + job.Name)
+				name := job.Spec.Template.Spec.Containers[0].Name
+				order = append(order, name)
+				if name == failedPackage+"-genesis" {
+					job.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobFailed, Status: k8scorev1.ConditionTrue, Reason: "BackoffLimitExceeded", Message: "required resource or Region version publication failed"}}
+				} else {
+					job.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: k8scorev1.ConditionTrue}}
+				}
+				err := k8sC.Tracker().Create(batchv1.SchemeGroupVersion.WithResource("jobs"), job, job.Namespace)
+				return true, job, err
+			})
+			var laterOrder []string
+			ctl := &controller{
+				domain: "example.com",
+				req: &enterprisev1.ClusterConfig_Status_UpgradeRequest{Request: &enterprisev1.UpgradeClusterRequest_Request{
+					Core:              &enterprisev1.UpgradeClusterRequest_Request_Core{Version: "v2.0.0"},
+					PackageEnterprise: &enterprisev1.UpgradeClusterRequest_Request_PackageEnterprise{Version: "v2.0.0"},
+					PackageCordium:    &enterprisev1.UpgradeClusterRequest_Request_PackageCordium{Version: "v2.0.0"},
+				}},
+				onRegions: func(_ context.Context, regions []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region) {
+					reports = append(reports, regions)
+				},
+			}
+			err := ctl.runTargets(t.Context(), []*regionTarget{
+				{region: getTestRegion("default", 0), k8sC: k8sC},
+				{region: getTestJoinedRegion(t, "west", 1, regionutils.PackageEnterprise, regionutils.PackageCordium), k8sC: newCompletingK8sC(&laterOrder, "west", false)},
+			})
+			require.ErrorContains(t, err, failedPackage)
+			assert.ErrorContains(t, err, "required resource or Region version publication failed")
+			expected := []string{"octelium-genesis", "octeliumee-genesis"}
+			if failedPackage == regionutils.PackageCordium {
+				expected = append(expected, "cordium-genesis")
+			}
+			assert.Equal(t, expected, order)
+			assert.Empty(t, laterOrder)
+			require.NotEmpty(t, reports)
+			last := reports[len(reports)-1]
+			assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED, last[0].State)
+			assert.NotNil(t, last[0].DoneAt)
+			assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED, last[1].State)
+			assert.Nil(t, last[1].DoneAt)
+		})
+	}
+}

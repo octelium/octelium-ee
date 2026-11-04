@@ -34,6 +34,7 @@ import (
 	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 	k8scorev1 "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -326,24 +327,35 @@ func (g *Genesis) createOrUpdateJoinRegion(ctx context.Context, req *corev1.Regi
 }
 
 func (g *Genesis) setRegionCoreVersion(ctx context.Context, rgn *corev1.Region, version string) (*corev1.Region, error) {
-	region, err := g.octeliumCInit.CoreC().GetRegion(ctx, &rmetav1.GetOptions{Uid: rgn.Metadata.Uid})
-	if err != nil {
-		return nil, err
-	}
-
-	region.Status.Version = version
-	if region.Status.VersionInfoMap == nil {
-		region.Status.VersionInfoMap = make(map[string]*corev1.Region_Status_VersionInfo)
-	}
-
-	region.Status.VersionInfoMap[regionutils.PackageCore] = &corev1.Region_Status_VersionInfo{
+	info := &corev1.Region_Status_VersionInfo{
 		Package: regionutils.PackageCore,
 		SetAt:   pbutils.Now(),
 		Version: version,
 		Id:      os.Getenv("OCTELIUM_INSTALL_ID"),
 	}
-
-	return g.octeliumCInit.CoreC().UpdateRegion(ctx, region)
+	var result *corev1.Region
+	err := retryRegionVersion(ctx, func(ctx context.Context) error {
+		region, err := g.octeliumCInit.CoreC().GetRegion(ctx, &rmetav1.GetOptions{Uid: rgn.Metadata.Uid})
+		if err != nil {
+			return err
+		}
+		updated := proto.Clone(region).(*corev1.Region)
+		if updated.Status == nil {
+			updated.Status = &corev1.Region_Status{}
+		}
+		updated.Status.Version = version
+		if updated.Status.VersionInfoMap == nil {
+			updated.Status.VersionInfoMap = make(map[string]*corev1.Region_Status_VersionInfo)
+		}
+		updated.Status.VersionInfoMap[regionutils.PackageCore] = info
+		if proto.Equal(region, updated) {
+			result = region
+			return nil
+		}
+		result, err = g.octeliumCInit.CoreC().UpdateRegion(ctx, updated)
+		return err
+	})
+	return result, errors.Wrap(err, "Could not publish joined Region core version")
 }
 
 func (g *Genesis) installJoinSecretManager(ctx context.Context, opts *components.CommonOpts) error {
