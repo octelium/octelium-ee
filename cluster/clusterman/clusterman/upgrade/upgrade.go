@@ -26,6 +26,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	batchv1 "k8s.io/api/batch/v1"
+	k8scorev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -55,6 +56,7 @@ type controller struct {
 	octeliumC     octeliumc.ClientInterface
 	k8sC          kubernetes.Interface
 	req           *enterprisev1.ClusterConfig_Status_UpgradeRequest
+	clusterUID    string
 	domain        string
 	spiffe        *install.SPIFFEOpts
 	newRegionK8sC regionk8s.NewClientFn
@@ -84,6 +86,7 @@ func newController(ctx context.Context, o *UpgradeClusterOpts) (*controller, err
 	}
 
 	ret.domain = cc.Status.Domain
+	ret.clusterUID = cc.GetMetadata().GetUid()
 
 	spiffe := cc.GetStatus().GetInstallation().GetSpiffe()
 	if spiffe.GetEnable() {
@@ -276,6 +279,12 @@ func (c *controller) runUpgradeJob(ctx context.Context, t *regionTarget, pkg str
 	}
 
 	job := getGenesisJob(c.domain, t.region.Metadata.Name, pkg, version, c.spiffe)
+	if c.clusterUID != "" {
+		job.Spec.Template.Spec.Containers[0].Env = append(job.Spec.Template.Spec.Containers[0].Env, k8scorev1.EnvVar{Name: "OCTELIUM_GENESIS_CLUSTER_UID", Value: c.clusterUID})
+	}
+	if t.region.GetMetadata().GetUid() != "" {
+		job.Spec.Template.Spec.Containers[0].Env = append(job.Spec.Template.Spec.Containers[0].Env, k8scorev1.EnvVar{Name: "OCTELIUM_GENESIS_REGION_UID", Value: t.region.Metadata.Uid})
+	}
 
 	zap.L().Info("Running upgrade job",
 		zap.String("job", job.Name),

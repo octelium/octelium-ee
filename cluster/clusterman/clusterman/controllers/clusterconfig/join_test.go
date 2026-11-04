@@ -30,6 +30,7 @@ import (
 	k8scorev1 "k8s.io/api/core/v1"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	ktesting "k8s.io/client-go/testing"
@@ -120,6 +121,7 @@ func TestJoinSuccessIsRecorded(t *testing.T) {
 	targetC := fake.NewSimpleClientset(&k8scorev1.Namespace{ObjectMeta: k8smetav1.ObjectMeta{Name: "kube-system", UID: "west-cluster"}})
 	targetC.PrependReactor("create", "jobs", func(action ktesting.Action) (bool, runtime.Object, error) {
 		job := action.(ktesting.CreateAction).GetObject().(*batchv1.Job).DeepCopy()
+		job.UID = types.UID("job-" + job.Name)
 		job.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: k8scorev1.ConditionTrue}}
 		err := targetC.Tracker().Create(batchv1.SchemeGroupVersion.WithResource("jobs"), job, job.Namespace)
 		return true, job, err

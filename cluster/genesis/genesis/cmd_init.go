@@ -11,7 +11,6 @@ package genesis
 import (
 	"context"
 	"fmt"
-	"os"
 
 	oc "github.com/octelium/octelium-ee/cluster/common/components"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -37,6 +36,9 @@ import (
 type InitOpts struct{}
 
 func (g *Genesis) RunInit(ctx context.Context, o *InitOpts) error {
+	if err := g.waitForConcurrentGenesis(ctx); err != nil {
+		return err
+	}
 	zap.L().Info("Starting initializing the Cluster")
 
 	octeliumCInit, err := iocteliumc.NewClient(ctx)
@@ -57,16 +59,7 @@ func (g *Genesis) RunInit(ctx context.Context, o *InitOpts) error {
 		return err
 	}
 
-	regionName := func() string {
-		if os.Getenv("OCTELIUM_REGION_NAME") != "" {
-			return os.Getenv("OCTELIUM_REGION_NAME")
-		}
-		return "default"
-	}()
-
-	rgn, err := octeliumCInit.CoreC().GetRegion(ctx, &rmetav1.GetOptions{
-		Name: regionName,
-	})
+	rgn, err := g.prepareRegion(ctx, clusterCfg)
 	if err != nil {
 		return err
 	}

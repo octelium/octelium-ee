@@ -28,6 +28,7 @@ import (
 	k8scorev1 "k8s.io/api/core/v1"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/fake"
 	ktesting "k8s.io/client-go/testing"
 )
@@ -164,17 +165,32 @@ func TestUpgradeWatcherEventRecordsFailureAsynchronously(t *testing.T) {
 func TestSuccessfulEnterpriseUpgradeReconcilesClusterManager(t *testing.T) {
 	ctl, cc := newUpgradeControllerTest(t)
 	cc.Status.UpgradeRequest = &enterprisev1.ClusterConfig_Status_UpgradeRequest{
-		State:   enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED,
-		Request: &enterprisev1.UpgradeClusterRequest_Request{PackageEnterprise: &enterprisev1.UpgradeClusterRequest_Request_PackageEnterprise{Version: "v1.2.3"}},
+		State: enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED,
+		Request: &enterprisev1.UpgradeClusterRequest_Request{
+			Core:              &enterprisev1.UpgradeClusterRequest_Request_Core{Version: "v1.2.3"},
+			PackageEnterprise: &enterprisev1.UpgradeClusterRequest_Request_PackageEnterprise{Version: "v1.2.3"},
+			PackageCordium:    &enterprisev1.UpgradeClusterRequest_Request_PackageCordium{Version: "v1.2.3"},
+		},
 	}
 	cc, err := ctl.octeliumC.EnterpriseC().UpdateClusterConfig(t.Context(), cc)
 	require.NoError(t, err)
 	k8sC := ctl.k8sC.(*fake.Clientset)
+	var completed []string
 	k8sC.PrependReactor("create", "jobs", func(action ktesting.Action) (bool, runtime.Object, error) {
 		job := action.(ktesting.CreateAction).GetObject().(*batchv1.Job).DeepCopy()
+		job.UID = types.UID("job-" + job.Name)
+		completed = append(completed, job.Spec.Template.Spec.Containers[0].Name)
 		job.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: k8scorev1.ConditionTrue}}
 		err := k8sC.Tracker().Create(batchv1.SchemeGroupVersion.WithResource("jobs"), job, job.Namespace)
 		return true, job, err
+	})
+	k8sC.PrependReactor("create", "deployments", func(action ktesting.Action) (bool, runtime.Object, error) {
+		current, err := ctl.octeliumC.EnterpriseV1Utils().GetClusterConfig(t.Context())
+		require.NoError(t, err)
+		assert.Nil(t, current.Status.UpgradeRequest)
+		assert.EqualValues(t, 1, current.Status.TotalSuccessfulUpgrades)
+		assert.Equal(t, []string{"octelium-genesis", "octeliumee-genesis", "cordium-genesis"}, completed)
+		return false, nil, nil
 	})
 	require.NoError(t, ctl.doUpgrade(t.Context(), cc))
 	deployments, err := k8sC.AppsV1().Deployments(vutils.K8sNS).List(t.Context(), k8smetav1.ListOptions{})

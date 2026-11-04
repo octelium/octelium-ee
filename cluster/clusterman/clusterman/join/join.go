@@ -23,6 +23,7 @@ import (
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/client/octops/commands/install"
+	"github.com/octelium/octelium/cluster/common/k8sretry"
 	"github.com/octelium/octelium/cluster/common/k8sutils"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
@@ -151,7 +152,9 @@ func (c *controller) run(ctx context.Context) (*corev1.Region, error) {
 		return nil, err
 	}
 
-	kek, err := c.k8sC.CoreV1().Secrets(vutils.K8sNS).Get(ctx, kekSecretName, k8smetav1.GetOptions{})
+	kek, err := k8sretry.Read(ctx, func(ctx context.Context) (*k8scorev1.Secret, error) {
+		return c.k8sC.CoreV1().Secrets(vutils.K8sNS).Get(ctx, kekSecretName, k8smetav1.GetOptions{})
+	})
 	if err != nil {
 		return nil, errors.Errorf("Could not get the KEK Secret: %+v", err)
 	}
@@ -180,6 +183,45 @@ func (c *controller) run(ctx context.Context) (*corev1.Region, error) {
 		zap.String("enterpriseVersion", versions.enterprise),
 		zap.String("cordiumVersion", versions.cordium))
 
+	spiffe := getSPIFFE(cc)
+	job := genesisjob.GetJob(&genesisjob.Opts{
+		Domain:     cc.Status.Domain,
+		Region:     regionName,
+		Package:    regionutils.PackageEnterprise,
+		Cmd:        "join",
+		Version:    versions.enterprise,
+		SvcAccount: genesisSvcAccount,
+		SPIFFE:     spiffe,
+		Args:       []string{"--core-version", versions.core},
+	})
+	if uid := cc.GetMetadata().GetUid(); uid != "" {
+		job.Spec.Template.Spec.Containers[0].Env = append(job.Spec.Template.Spec.Containers[0].Env, k8scorev1.EnvVar{Name: "OCTELIUM_GENESIS_CLUSTER_UID", Value: uid})
+	}
+	for _, existing := range rgnList.Items {
+		if existing.GetMetadata().GetName() == regionName && existing.GetMetadata().GetUid() != "" {
+			job.Spec.Template.Spec.Containers[0].Env = append(job.Spec.Template.Spec.Containers[0].Env, k8scorev1.EnvVar{Name: "OCTELIUM_GENESIS_REGION_UID", Value: existing.Metadata.Uid})
+		}
+	}
+	job, err = install.BindGenesisJobTarget(ctx, targetK8sC, job)
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not validate the join target")
+	}
+
+	for _, env := range job.Spec.Template.Spec.Containers[0].Env {
+		if env.Name != "OCTELIUM_GENESIS_NAMESPACE_UID" || env.Value == "" {
+			continue
+		}
+		namespace, err := k8sretry.Read(ctx, func(ctx context.Context) (*k8scorev1.Namespace, error) {
+			return targetK8sC.CoreV1().Namespaces().Get(ctx, vutils.K8sNS, k8smetav1.GetOptions{})
+		})
+		if err != nil {
+			return nil, err
+		}
+		if string(namespace.UID) != env.Value || namespace.DeletionTimestamp != nil {
+			return nil, errors.New("The join target Kubernetes namespace was replaced or is terminating")
+		}
+	}
+
 	if err := prepareTarget(ctx, targetK8sC, &targetResources{
 		bootstrap: bs,
 		region:    rgn,
@@ -189,30 +231,23 @@ func (c *controller) run(ctx context.Context) (*corev1.Region, error) {
 		return nil, errors.Errorf("Could not prepare the Kubernetes cluster of the Region: %+v", err)
 	}
 
-	spiffe := getSPIFFE(cc)
-
-	if err := genesisjob.Run(ctx, targetK8sC, genesisjob.GetJob(&genesisjob.Opts{
-		Domain:     cc.Status.Domain,
-		Region:     regionName,
-		Package:    regionutils.PackageEnterprise,
-		Cmd:        "join",
-		Version:    versions.enterprise,
-		SvcAccount: genesisSvcAccount,
-		SPIFFE:     spiffe,
-		Args:       []string{"--core-version", versions.core},
-	}), joinJobTimeout); err != nil {
+	if err := genesisjob.Run(ctx, targetK8sC, job, joinJobTimeout); err != nil {
 		return nil, err
 	}
 
 	if versions.cordium != "" {
-		if err := genesisjob.Run(ctx, targetK8sC, genesisjob.GetJob(&genesisjob.Opts{
+		cordiumJob := genesisjob.GetJob(&genesisjob.Opts{
 			Domain:  cc.Status.Domain,
 			Region:  regionName,
 			Package: regionutils.PackageCordium,
 			Cmd:     "init",
 			Version: versions.cordium,
 			SPIFFE:  spiffe,
-		}), cordiumJobTimeout); err != nil {
+		})
+		if uid := cc.GetMetadata().GetUid(); uid != "" {
+			cordiumJob.Spec.Template.Spec.Containers[0].Env = append(cordiumJob.Spec.Template.Spec.Containers[0].Env, k8scorev1.EnvVar{Name: "OCTELIUM_GENESIS_CLUSTER_UID", Value: uid})
+		}
+		if err := genesisjob.Run(ctx, targetK8sC, cordiumJob, cordiumJobTimeout); err != nil {
 			return nil, errors.Errorf("Could not install the Cordium package: %+v", err)
 		}
 	}
@@ -323,7 +358,9 @@ func (c *controller) getBootstrap(ctx context.Context) (*cbootstrapv1.Config, er
 		return nil, errors.Errorf("The bootstrap config has no Redis info")
 	}
 
-	pgSecret, err := c.k8sC.CoreV1().Secrets(vutils.K8sNS).Get(ctx, "octelium-postgres", k8smetav1.GetOptions{})
+	pgSecret, err := k8sretry.Read(ctx, func(ctx context.Context) (*k8scorev1.Secret, error) {
+		return c.k8sC.CoreV1().Secrets(vutils.K8sNS).Get(ctx, "octelium-postgres", k8smetav1.GetOptions{})
+	})
 	if err != nil {
 		return nil, errors.Errorf("Could not get the Postgres Secret: %+v", err)
 	}
@@ -332,7 +369,9 @@ func (c *controller) getBootstrap(ctx context.Context) (*cbootstrapv1.Config, er
 		Password: string(pgSecret.Data["postgres-password"]),
 	}
 
-	redisSecret, err := c.k8sC.CoreV1().Secrets(vutils.K8sNS).Get(ctx, "octelium-redis", k8smetav1.GetOptions{})
+	redisSecret, err := k8sretry.Read(ctx, func(ctx context.Context) (*k8scorev1.Secret, error) {
+		return c.k8sC.CoreV1().Secrets(vutils.K8sNS).Get(ctx, "octelium-redis", k8smetav1.GetOptions{})
+	})
 	if err != nil {
 		return nil, errors.Errorf("Could not get the Redis Secret: %+v", err)
 	}
@@ -345,12 +384,16 @@ func (c *controller) getBootstrap(ctx context.Context) (*cbootstrapv1.Config, er
 }
 
 func (c *controller) checkTarget(ctx context.Context, targetK8sC kubernetes.Interface) error {
-	localNS, err := c.k8sC.CoreV1().Namespaces().Get(ctx, "kube-system", k8smetav1.GetOptions{})
+	localNS, err := k8sretry.Read(ctx, func(ctx context.Context) (*k8scorev1.Namespace, error) {
+		return c.k8sC.CoreV1().Namespaces().Get(ctx, "kube-system", k8smetav1.GetOptions{})
+	})
 	if err != nil {
 		return errors.Errorf("Could not get the kube-system namespace of the default Region: %+v", err)
 	}
 
-	targetNS, err := targetK8sC.CoreV1().Namespaces().Get(ctx, "kube-system", k8smetav1.GetOptions{})
+	targetNS, err := k8sretry.Read(ctx, func(ctx context.Context) (*k8scorev1.Namespace, error) {
+		return targetK8sC.CoreV1().Namespaces().Get(ctx, "kube-system", k8smetav1.GetOptions{})
+	})
 	if err != nil {
 		return errors.Errorf("Could not connect to the Kubernetes cluster of the Region: %+v", err)
 	}
@@ -359,7 +402,9 @@ func (c *controller) checkTarget(ctx context.Context, targetK8sC kubernetes.Inte
 		return errors.Errorf("The Kubernetes cluster is the one of the default Region")
 	}
 
-	sec, err := targetK8sC.CoreV1().Secrets(vutils.K8sNS).Get(ctx, initSecretName, k8smetav1.GetOptions{})
+	sec, err := k8sretry.Read(ctx, func(ctx context.Context) (*k8scorev1.Secret, error) {
+		return targetK8sC.CoreV1().Secrets(vutils.K8sNS).Get(ctx, initSecretName, k8smetav1.GetOptions{})
+	})
 	if err != nil {
 		if k8serr.IsNotFound(err) {
 			return nil

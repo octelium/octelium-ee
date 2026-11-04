@@ -14,7 +14,6 @@ import (
 	"os"
 	"slices"
 	"strings"
-	"time"
 
 	netv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 	oc "github.com/octelium/octelium-ee/cluster/common/components"
@@ -25,6 +24,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/k8sretry"
 	"github.com/octelium/octelium/cluster/common/k8sutils"
 	iocteliumc "github.com/octelium/octelium/cluster/common/octeliumc"
 	"github.com/octelium/octelium/cluster/common/vutils"
@@ -37,8 +37,6 @@ import (
 	k8scorev1 "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/util/retry"
 )
 
 const joinInitSecretName = "octelium-init"
@@ -56,6 +54,9 @@ type joinResources struct {
 }
 
 func (g *Genesis) RunJoin(ctx context.Context, o *JoinOpts) error {
+	if err := g.waitForConcurrentGenesis(ctx); err != nil {
+		return err
+	}
 	zap.L().Info("Starting joining the Region to the Cluster")
 
 	if o == nil {
@@ -71,15 +72,14 @@ func (g *Genesis) RunJoin(ctx context.Context, o *JoinOpts) error {
 		return err
 	}
 
-	if err := g.setDataPlaneNodeTaints(ctx); err != nil {
-		return err
-	}
-
 	res, err := g.loadJoinResources(ctx)
 	if err != nil {
 		return err
 	}
 
+	if err := checkTargetDomain(os.Getenv("OCTELIUM_DOMAIN"), res.Domain); err != nil {
+		return err
+	}
 	regionName := res.Region.Metadata.Name
 	os.Setenv("OCTELIUM_REGION_NAME", regionName)
 
@@ -127,9 +127,26 @@ func (g *Genesis) RunJoin(ctx context.Context, o *JoinOpts) error {
 		return err
 	}
 
-	if clusterCfg.Status.Domain != res.Domain {
-		return errors.Errorf("The Cluster domain %s does not match the join domain %s",
-			clusterCfg.Status.Domain, res.Domain)
+	if err := checkTargetDomain(res.Domain, clusterCfg.GetStatus().GetDomain()); err != nil {
+		return err
+	}
+	existing, err := g.octeliumCInit.CoreC().GetRegion(ctx, &rmetav1.GetOptions{Name: res.Region.Metadata.Name})
+	if grpcerr.IsNotFound(err) {
+		if res.Region.GetMetadata().GetUid() != "" {
+			return errors.New("The bootstrap Region no longer exists")
+		}
+		existing = res.Region
+	} else if err != nil {
+		return err
+	}
+	if uid := res.Region.GetMetadata().GetUid(); uid != "" && uid != existing.GetMetadata().GetUid() {
+		return errors.New("The bootstrap Region identity does not match the live Region")
+	}
+	if err := g.validateRegionTarget(ctx, clusterCfg, existing); err != nil {
+		return err
+	}
+	if err := g.setDataPlaneNodeTaints(ctx); err != nil {
+		return err
 	}
 
 	rgn, err := g.createOrUpdateJoinRegion(ctx, res.Region)
@@ -138,6 +155,9 @@ func (g *Genesis) RunJoin(ctx context.Context, o *JoinOpts) error {
 	}
 
 	if err := g.setInstallationConfigMap(ctx, clusterCfg); err != nil {
+		return err
+	}
+	if err := g.recordRegionTarget(ctx, clusterCfg, rgn); err != nil {
 		return err
 	}
 
@@ -199,7 +219,7 @@ func (g *Genesis) RunJoin(ctx context.Context, o *JoinOpts) error {
 }
 
 func (g *Genesis) loadJoinResources(ctx context.Context) (*joinResources, error) {
-	sec, err := g.k8sC.CoreV1().Secrets(vutils.K8sNS).Get(ctx, joinInitSecretName, k8smetav1.GetOptions{})
+	sec, err := g.getK8sSecret(ctx, vutils.K8sNS, joinInitSecretName)
 	if err != nil {
 		return nil, err
 	}
@@ -359,7 +379,7 @@ func (g *Genesis) installJoinCoreComponents(ctx context.Context, opts *gc.Common
 			return err
 		}
 
-		if err := k8sutils.WaitReadinessDaemonsetWithNS(ctx, g.k8sC, "octelium-gwagent", vutils.K8sNS); err != nil {
+		if err := waitGatewayAgentReady(ctx, g.k8sC); err != nil {
 			return err
 		}
 
@@ -421,7 +441,7 @@ func (g *Genesis) initJoinStorage(ctx context.Context, bs *cbootstrapv1.Config) 
 			password = val
 		}
 
-		if _, err := k8sutils.CreateOrUpdateSecret(ctx, g.k8sC, &k8scorev1.Secret{
+		if err := g.createStorageSecret(ctx, &k8scorev1.Secret{
 			ObjectMeta: k8smetav1.ObjectMeta{
 				Name:      "octelium-postgres",
 				Namespace: vutils.K8sNS,
@@ -455,7 +475,7 @@ func (g *Genesis) initJoinStorage(ctx context.Context, bs *cbootstrapv1.Config) 
 			password = val
 		}
 
-		if _, err := k8sutils.CreateOrUpdateSecret(ctx, g.k8sC, &k8scorev1.Secret{
+		if err := g.createStorageSecret(ctx, &k8scorev1.Secret{
 			ObjectMeta: k8smetav1.ObjectMeta{
 				Name:      "octelium-redis",
 				Namespace: vutils.K8sNS,
@@ -484,7 +504,7 @@ func (g *Genesis) getJoinStoragePassword(ctx context.Context, name, namespace, k
 		return "", errors.Errorf("name of passwordFromSecret is empty")
 	}
 
-	sec, err := g.k8sC.CoreV1().Secrets(namespace).Get(ctx, name, k8smetav1.GetOptions{})
+	sec, err := g.getK8sSecret(ctx, namespace, name)
 	if err != nil {
 		return "", err
 	}
@@ -594,8 +614,8 @@ func (g *Genesis) setDataPlaneNodeTaints(ctx context.Context) error {
 		return nil
 	}
 
-	dataPlaneNodes, err := g.k8sC.CoreV1().Nodes().List(ctx, k8smetav1.ListOptions{
-		LabelSelector: vutils.NodeLabelDataPlane,
+	dataPlaneNodes, err := k8sretry.Read(ctx, func(ctx context.Context) (*k8scorev1.NodeList, error) {
+		return g.k8sC.CoreV1().Nodes().List(ctx, k8smetav1.ListOptions{LabelSelector: vutils.NodeLabelDataPlane})
 	})
 	if err != nil {
 		return err
@@ -607,9 +627,10 @@ func (g *Genesis) setDataPlaneNodeTaints(ctx context.Context) error {
 			vutils.NodeLabelDataPlane)
 	}
 
-	nodeList, err := g.k8sC.CoreV1().Nodes().List(ctx, k8smetav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s,!%s",
-			vutils.NodeLabelDataPlane, vutils.NodeLabelControlPlane),
+	nodeList, err := k8sretry.Read(ctx, func(ctx context.Context) (*k8scorev1.NodeList, error) {
+		return g.k8sC.CoreV1().Nodes().List(ctx, k8smetav1.ListOptions{
+			LabelSelector: fmt.Sprintf("%s,!%s", vutils.NodeLabelDataPlane, vutils.NodeLabelControlPlane),
+		})
 	})
 	if err != nil {
 		return err
@@ -618,7 +639,7 @@ func (g *Genesis) setDataPlaneNodeTaints(ctx context.Context) error {
 	for _, item := range nodeList.Items {
 		nodeName := item.Name
 
-		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		if err := k8sretry.Do(ctx, func(ctx context.Context) error {
 			node, err := g.k8sC.CoreV1().Nodes().Get(ctx, nodeName, k8smetav1.GetOptions{})
 			if err != nil {
 				return err
@@ -631,7 +652,10 @@ func (g *Genesis) setDataPlaneNodeTaints(ctx context.Context) error {
 			if node.Labels == nil {
 				node.Labels = make(map[string]string)
 			}
-			_, isRegistered := node.Labels[vutils.NodeLabelGatewayRegistered]
+			isRegistered := node.Labels[vutils.NodeLabelGatewayRegistered] == "true"
+			if isRegistered {
+				return nil
+			}
 
 			if hasTaint && !isRegistered {
 				return nil
@@ -647,10 +671,13 @@ func (g *Genesis) setDataPlaneNodeTaints(ctx context.Context) error {
 
 			delete(node.Labels, vutils.NodeLabelGatewayRegistered)
 
+			if err := ctx.Err(); err != nil {
+				return err
+			}
 			_, err = g.k8sC.CoreV1().Nodes().Update(ctx, node, k8smetav1.UpdateOptions{})
 			return err
 		}); err != nil {
-			return errors.Errorf("Could not set the gateway-init taint on the node %s: %+v", nodeName, err)
+			return errors.Wrapf(err, "Could not set the gateway-init taint on the node %s", nodeName)
 		}
 
 		zap.L().Debug("Set the gateway-init taint on the data-plane node",
@@ -662,58 +689,4 @@ func (g *Genesis) setDataPlaneNodeTaints(ctx context.Context) error {
 		zap.Int("dataPlaneNodes", len(dataPlaneNodes.Items)))
 
 	return nil
-}
-
-func waitGatewayAgentsRegistered(ctx context.Context, k8sC kubernetes.Interface) error {
-	if ldflags.IsTest() {
-		return nil
-	}
-
-	zap.L().Debug("Checking that all Gateway Agents are registered")
-
-	doCheck := func() (bool, error) {
-		nodeList, err := k8sC.CoreV1().Nodes().List(ctx, k8smetav1.ListOptions{
-			LabelSelector: vutils.NodeLabelDataPlane,
-		})
-		if err != nil {
-			return false, err
-		}
-
-		if len(nodeList.Items) == 0 {
-			return false, errors.Errorf(
-				"No Kubernetes node is labeled as an Octelium data-plane node. At least one node must be labeled via: kubectl label nodes <NODE_NAME> %s=",
-				vutils.NodeLabelDataPlane)
-		}
-
-		for _, node := range nodeList.Items {
-			if node.Labels[vutils.NodeLabelGatewayRegistered] != "true" {
-				zap.L().Debug("Gateway Agent is not registered yet on the data-plane node",
-					zap.String("node", node.Name))
-				return false, nil
-			}
-		}
-
-		zap.L().Debug("All Gateway Agents are now registered",
-			zap.Int("nodes", len(nodeList.Items)))
-
-		return true, nil
-	}
-
-	for i := range 900 {
-		isDone, err := doCheck()
-		if err != nil && !k8sutils.ShouldRetry(err) {
-			return err
-		}
-
-		if isDone {
-			return nil
-		}
-
-		zap.L().Debug("Gateway Agents are still not registered on all data-plane nodes. Trying again...",
-			zap.Int("attempt", i+1))
-
-		time.Sleep(2 * time.Second)
-	}
-
-	return errors.Errorf("Timed out waiting for the Gateway Agents to be registered on all data-plane nodes")
 }

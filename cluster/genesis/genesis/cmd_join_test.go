@@ -388,6 +388,7 @@ func assertNoDeployment(t *testing.T, k8sC kubernetes.Interface, name string) {
 func TestRunJoin(t *testing.T) {
 	ctx := context.Background()
 	t.Setenv("OCTELIUM_REGION_NAME", "")
+	t.Setenv("OCTELIUM_DOMAIN", "example.com")
 
 	tst, err := otests.Initialize(nil)
 	require.NoError(t, err, "%+v", err)
@@ -398,7 +399,10 @@ func TestRunJoin(t *testing.T) {
 	cc, err := tst.C.OcteliumC.CoreV1Utils().GetClusterConfig(ctx)
 	require.NoError(t, err)
 
-	k8sC := fake.NewClientset(getTestJoinSecret(getTestJoinBootstrap(), getTestJoinRegion(t, "west", 3), cc.Status.Domain))
+	k8sC := fake.NewClientset(
+		&k8scorev1.Namespace{ObjectMeta: k8smetav1.ObjectMeta{Name: vutils.K8sNS, UID: "namespace-uid"}},
+		getTestJoinSecret(getTestJoinBootstrap(), getTestJoinRegion(t, "west", 3), cc.Status.Domain),
+	)
 	g := &Genesis{
 		k8sC: k8sC,
 		nadC: fakenad.NewSimpleClientset(),
@@ -534,11 +538,25 @@ func TestRunJoin(t *testing.T) {
 		}
 		assert.Error(t, g.RunJoin(ctx, &JoinOpts{CoreVersion: "9.9.9"}))
 	}
+	for _, name := range []string{"west", "deleted-region"} {
+		requested := getTestJoinRegion(t, name, 3)
+		requested.Metadata.Uid = "stale-region-uid"
+		client := fake.NewClientset(getTestJoinSecret(getTestJoinBootstrap(), requested, cc.Status.Domain))
+		worker := &Genesis{k8sC: client, nadC: fakenad.NewSimpleClientset()}
+		require.ErrorContains(t, worker.RunJoin(ctx, &JoinOpts{CoreVersion: "9.9.9"}), "bootstrap Region")
+		for _, action := range client.Actions() {
+			if action.GetResource().Resource == "nodes" {
+				assert.NotEqual(t, "update", action.GetVerb())
+			}
+		}
+	}
+
 }
 
 func TestSetupGuardsNonDefaultRegionComponents(t *testing.T) {
 	ctx := context.Background()
 	t.Setenv("OCTELIUM_REGION_NAME", "")
+	t.Setenv("OCTELIUM_DOMAIN", "example.com")
 
 	tst, err := otests.Initialize(nil)
 	require.NoError(t, err, "%+v", err)

@@ -30,6 +30,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	k8scorev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	ktesting "k8s.io/client-go/testing"
@@ -86,6 +87,7 @@ func newCompletingK8sC(order *[]string, region string, fail bool) *fake.Clientse
 	k8sC := fake.NewSimpleClientset()
 	k8sC.PrependReactor("create", "jobs", func(action ktesting.Action) (bool, runtime.Object, error) {
 		job := action.(ktesting.CreateAction).GetObject().(*batchv1.Job).DeepCopy()
+		job.UID = types.UID("job-" + job.Name)
 		*order = append(*order, region+"/"+job.Spec.Template.Spec.Containers[0].Name)
 		if fail {
 			job.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobFailed, Status: k8scorev1.ConditionTrue, Reason: "BackoffLimitExceeded"}}
@@ -107,10 +109,12 @@ func TestNewUpgradeControllerConfiguration(t *testing.T) {
 		}})
 		require.NoError(t, err)
 		require.NoError(t, protojson.Unmarshal(body, cfg))
+		cfg.Metadata = &metav1.Metadata{Name: "default", Uid: "source-cluster"}
 		client := &upgradeTestClient{utils: &upgradeTestCoreUtils{config: cfg}}
 		ctl, err := newController(t.Context(), &UpgradeClusterOpts{OcteliumC: client, K8sC: fake.NewSimpleClientset()})
 		require.NoError(t, err)
 		assert.Equal(t, "example.com", ctl.domain)
+		assert.Equal(t, cfg.Metadata.Uid, ctl.clusterUID)
 		if enabled {
 			require.NotNil(t, ctl.spiffe)
 			assert.Equal(t, "test.csi", ctl.spiffe.CSIDriver)

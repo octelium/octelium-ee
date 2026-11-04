@@ -335,6 +335,7 @@ func newTestJoinEnv(t *testing.T, withCordium bool) *testJoinEnv {
 func (e *testJoinEnv) simulateGenesis(t *testing.T, failCmd string) {
 	e.targetC.PrependReactor("create", "jobs", func(action ktesting.Action) (bool, runtime.Object, error) {
 		job := action.(ktesting.CreateAction).GetObject().(*batchv1.Job).DeepCopy()
+		job.UID = types.UID("job-" + job.Name)
 		e.jobs = append(e.jobs, job)
 		cmd := job.Spec.Template.Spec.Containers[0].Args[0]
 
@@ -433,6 +434,12 @@ func TestJoinCluster(t *testing.T) {
 				require.Len(t, env.jobs, 1)
 			}
 
+			for _, job := range env.jobs {
+				assert.True(t, slices.ContainsFunc(job.Spec.Template.Spec.Containers[0].Env, func(e k8scorev1.EnvVar) bool {
+					return e.Name == "OCTELIUM_GENESIS_CLUSTER_UID" && e.Value == cc.Metadata.Uid
+				}))
+			}
+
 			joinJob := env.jobs[0].Spec.Template.Spec
 			assert.Equal(t, genesisSvcAccount, joinJob.ServiceAccountName)
 			assert.Equal(t, "octeliumee-genesis", joinJob.Containers[0].Name)
@@ -489,7 +496,9 @@ func TestJoinClusterFailures(t *testing.T) {
 		env := newTestJoinEnv(t, false)
 		env.targetC.PrependReactor("create", "jobs", func(action ktesting.Action) (bool, runtime.Object, error) {
 			job := action.(ktesting.CreateAction).GetObject().(*batchv1.Job).DeepCopy()
+			job.UID = types.UID("job-" + job.Name)
 			job.Status.Succeeded = 1
+			job.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: k8scorev1.ConditionTrue}}
 			err := env.targetC.Tracker().Create(batchv1.SchemeGroupVersion.WithResource("jobs"), job, job.Namespace)
 			return true, job, err
 		})

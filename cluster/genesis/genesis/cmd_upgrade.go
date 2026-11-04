@@ -10,11 +10,9 @@ package genesis
 
 import (
 	"context"
-	"os"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/genesis/genesis/components"
-	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	gc "github.com/octelium/octelium/cluster/genesis/genesis/components"
 	"go.uber.org/zap"
 )
@@ -22,6 +20,9 @@ import (
 type UpgradeOpts struct{}
 
 func (g *Genesis) RunUpgrade(ctx context.Context, o *UpgradeOpts) error {
+	if err := g.waitForConcurrentGenesis(ctx); err != nil {
+		return err
+	}
 
 	zap.L().Debug("Starting upgrade...")
 	octeliumC, err := octeliumc.NewClient(ctx, nil)
@@ -32,12 +33,11 @@ func (g *Genesis) RunUpgrade(ctx context.Context, o *UpgradeOpts) error {
 	g.octeliumC = octeliumC
 	g.octeliumCInit = octeliumC
 
-	region, err := g.octeliumC.CoreC().GetRegion(ctx, &rmetav1.GetOptions{Name: os.Getenv("OCTELIUM_REGION_NAME")})
+	cc, err := g.octeliumC.CoreV1Utils().GetClusterConfig(ctx)
 	if err != nil {
 		return err
 	}
-
-	cc, err := g.octeliumC.CoreV1Utils().GetClusterConfig(ctx)
+	region, err := g.prepareRegion(ctx, cc)
 	if err != nil {
 		return err
 	}

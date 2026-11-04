@@ -15,11 +15,14 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	iocteliumc "github.com/octelium/octelium/cluster/common/octeliumc"
+	k8scorev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 type Genesis struct {
+	pod           *k8scorev1.Pod
+	podNamespace  string
 	k8sC          kubernetes.Interface
 	nadC          nadclientset.Interface
 	octeliumC     octeliumc.ClientInterface
@@ -48,5 +51,8 @@ func NewGenesis() (*Genesis, error) {
 	ret.k8sC = k8sClientSet
 	ret.nadC = nadC
 
+	if err := ret.setPodNamespace(); err != nil {
+		return nil, err
+	}
 	return ret, nil
 }

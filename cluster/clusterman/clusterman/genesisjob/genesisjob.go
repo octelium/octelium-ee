@@ -14,12 +14,14 @@ import (
 	"time"
 
 	"github.com/octelium/octelium/client/octops/commands/install"
+	"github.com/octelium/octelium/cluster/common/k8sretry"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	batchv1 "k8s.io/api/batch/v1"
 	k8scorev1 "k8s.io/api/core/v1"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -82,73 +84,71 @@ func GetJob(o *Opts) *batchv1.Job {
 
 func Run(ctx context.Context, k8sC kubernetes.Interface, job *batchv1.Job, timeout time.Duration) error {
 	if job == nil {
-		return errors.Errorf("nil job")
+		return errors.New("nil job")
 	}
-
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 	cmd := ""
 	if len(job.Spec.Template.Spec.Containers) > 0 && len(job.Spec.Template.Spec.Containers[0].Args) > 0 {
 		cmd = job.Spec.Template.Spec.Containers[0].Args[0]
 	}
-
-	if _, err := k8sC.BatchV1().Jobs(job.Namespace).Create(ctx, job, k8smetav1.CreateOptions{}); err != nil {
-		return errors.Errorf("could not create %s job %s: %+v", cmd, job.Name, err)
+	bound, err := install.BindGenesisJobTarget(ctx, k8sC, job)
+	if err != nil {
+		return errors.Wrap(err, "Could not validate the genesis target")
 	}
-
-	zap.L().Info("Created genesis job",
-		zap.String("job", job.Name),
-		zap.String("cmd", cmd))
-
-	if err := Wait(ctx, k8sC, job, timeout); err != nil {
-		return errors.Errorf("%s job %s did not complete successfully: %+v", cmd, job.Name, err)
+	accepted, err := install.SubmitGenesisJobWithResult(ctx, k8sC, bound, nil)
+	if err != nil {
+		return errors.Wrapf(err, "could not create %s job %s", cmd, job.Name)
 	}
-
-	zap.L().Info("Genesis job completed successfully",
-		zap.String("job", job.Name),
-		zap.String("cmd", cmd))
-
+	zap.L().Info("Created genesis job", zap.String("job", accepted.Name), zap.String("cmd", cmd))
+	if err := Wait(ctx, k8sC, accepted, timeout); err != nil {
+		return errors.Wrapf(err, "%s job %s did not complete successfully", cmd, accepted.Name)
+	}
+	zap.L().Info("Genesis job completed successfully", zap.String("job", accepted.Name), zap.String("cmd", cmd))
 	return nil
 }
 
 func Wait(ctx context.Context, k8sC kubernetes.Interface, job *batchv1.Job, timeout time.Duration) error {
 	if job == nil {
-		return errors.Errorf("nil job")
+		return errors.New("nil job")
 	}
 	if job.Name == "" {
-		return errors.Errorf("empty job name")
+		return errors.New("empty job name")
 	}
-
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-time.After(3 * time.Second):
+	job = job.DeepCopy()
+	if job.Namespace == "" {
+		job.Namespace = vutils.K8sNS
 	}
-
-	ticker := time.NewTicker(3 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		if err := Check(ctx, k8sC, job.Name); err != nil {
-			if IsTerminalErr(err) {
-				return err
-			}
-
-			zap.L().Debug("Genesis job has not completed yet",
-				zap.String("job", job.Name),
-				zap.Error(err),
-			)
-		} else {
-			return nil
-		}
-
+	if job.UID == "" {
+		timer := time.NewTimer(3 * time.Second)
+		defer timer.Stop()
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-ticker.C:
+		case <-timer.C:
+		}
+		name, namespace := job.Name, job.Namespace
+		err := k8sretry.Wait(ctx, 3*time.Second, timeout, func(ctx context.Context) (bool, error) {
+			current, err := k8sC.BatchV1().Jobs(namespace).Get(ctx, name, k8smetav1.GetOptions{})
+			if k8serr.IsNotFound(err) {
+				return false, nil
+			}
+			if err != nil {
+				return false, err
+			}
+			if current.UID == "" {
+				return false, errors.New("The genesis Job has no server-assigned identity")
+			}
+			job = current
+			return true, nil
+		})
+		if err != nil {
+			return err
 		}
 	}
+	return install.WaitGenesisJob(ctx, k8sC, job, 3*time.Second, timeout)
 }
 
 type terminalJobErr struct {
@@ -190,26 +190,26 @@ func Check(ctx context.Context, k8sC kubernetes.Interface, jobName string) error
 	}
 
 	for _, cond := range job.Status.Conditions {
-		switch cond.Type {
-		case batchv1.JobComplete:
-			if cond.Status == k8scorev1.ConditionTrue {
-				return nil
-			}
-
-		case batchv1.JobFailed:
-			if cond.Status == k8scorev1.ConditionTrue {
-				return terminalErr(
-					"genesis job %s failed: reason=%s message=%s",
-					jobName,
-					cond.Reason,
-					cond.Message,
-				)
-			}
+		if cond.Type == batchv1.JobFailed && cond.Status == k8scorev1.ConditionTrue {
+			return terminalErr("genesis job %s failed: reason=%s message=%s", jobName, cond.Reason, cond.Message)
 		}
 	}
-
-	if job.Status.Succeeded > 0 {
-		return nil
+	if job.DeletionTimestamp != nil {
+		return terminalErr("genesis job %s is being deleted", jobName)
+	}
+	if job.Status.Active == 0 && (job.Status.Terminating == nil || *job.Status.Terminating == 0) {
+		for _, cond := range job.Status.Conditions {
+			if cond.Type == batchv1.JobComplete && cond.Status == k8scorev1.ConditionTrue {
+				return nil
+			}
+		}
+		completions := int32(1)
+		if job.Spec.Completions != nil {
+			completions = *job.Spec.Completions
+		}
+		if job.Status.Succeeded > 0 && job.Status.Succeeded >= completions {
+			return nil
+		}
 	}
 
 	return errors.Errorf(

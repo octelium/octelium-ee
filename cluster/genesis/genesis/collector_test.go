@@ -27,6 +27,7 @@ import (
 )
 
 func TestCollectorService(t *testing.T) {
+	t.Setenv("OCTELIUM_DOMAIN", "example.com")
 	ctx := context.Background()
 	t.Setenv("OCTELIUM_REGION_NAME", "")
 

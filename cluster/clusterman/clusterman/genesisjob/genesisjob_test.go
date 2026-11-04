@@ -22,8 +22,10 @@ import (
 	"github.com/stretchr/testify/require"
 	batchv1 "k8s.io/api/batch/v1"
 	k8scorev1 "k8s.io/api/core/v1"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/fake"
 	ktesting "k8s.io/client-go/testing"
 )
@@ -136,7 +138,7 @@ func TestWaitValidationAndCancellation(t *testing.T) {
 }
 
 func TestWaitRetriesTransientKubernetesReadFailure(t *testing.T) {
-	job := &batchv1.Job{ObjectMeta: k8smetav1.ObjectMeta{Name: "upgrade", Namespace: vutils.K8sNS}, Status: batchv1.JobStatus{
+	job := &batchv1.Job{ObjectMeta: k8smetav1.ObjectMeta{Name: "upgrade", Namespace: vutils.K8sNS, UID: "upgrade-uid"}, Status: batchv1.JobStatus{
 		Conditions: []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: k8scorev1.ConditionTrue}},
 	}}
 	k8sC := fake.NewSimpleClientset(job)
@@ -144,7 +146,7 @@ func TestWaitRetriesTransientKubernetesReadFailure(t *testing.T) {
 	k8sC.PrependReactor("get", "jobs", func(ktesting.Action) (bool, runtime.Object, error) {
 		calls++
 		if calls == 1 {
-			return true, nil, errors.New("temporary API failure")
+			return true, nil, k8serr.NewServiceUnavailable("temporary API failure")
 		}
 		return false, nil, nil
 	})
@@ -180,6 +182,7 @@ func TestRun(t *testing.T) {
 		k8sC := fake.NewSimpleClientset()
 		k8sC.PrependReactor("create", "jobs", func(action ktesting.Action) (bool, runtime.Object, error) {
 			job := action.(ktesting.CreateAction).GetObject().(*batchv1.Job).DeepCopy()
+			job.UID = types.UID("job-" + job.Name)
 			job.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobFailed, Status: k8scorev1.ConditionTrue, Reason: "BackoffLimitExceeded"}}
 			err := k8sC.Tracker().Create(batchv1.SchemeGroupVersion.WithResource("jobs"), job, job.Namespace)
 			return true, job, err
@@ -194,7 +197,9 @@ func TestRun(t *testing.T) {
 		k8sC := fake.NewSimpleClientset()
 		k8sC.PrependReactor("create", "jobs", func(action ktesting.Action) (bool, runtime.Object, error) {
 			job := action.(ktesting.CreateAction).GetObject().(*batchv1.Job).DeepCopy()
+			job.UID = types.UID("job-" + job.Name)
 			job.Status.Succeeded = 1
+			job.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: k8scorev1.ConditionTrue}}
 			err := k8sC.Tracker().Create(batchv1.SchemeGroupVersion.WithResource("jobs"), job, job.Namespace)
 			return true, job, err
 		})
