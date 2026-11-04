@@ -30,10 +30,10 @@ func init() {
 
 func main() {
 	components.RunComponent(func(ctx context.Context) error {
-		if err := commands.Cmd.Execute(); err != nil {
+		if err := commands.Cmd.ExecuteContext(ctx); err != nil {
 			zap.L().Fatal("main err", zap.Error(err))
 		}
 
 		return nil
-	}, nil)
+	}, &components.RunComponentOpts{CancelOnSIGTERM: true})
 }

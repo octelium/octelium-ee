@@ -17,11 +17,20 @@ import (
 	"github.com/octelium/octelium-ee/cluster/genesis/genesis/components"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/k8sutils"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/utils/ldflags"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/retry"
 )
 
 func (g *Genesis) installComponents(ctx context.Context, opts *components.CommonOpts, isInit bool) error {
@@ -161,6 +170,9 @@ func (g *Genesis) setClusterConfigSecretManager(ctx context.Context) error {
 }
 
 func (g *Genesis) rolloutRestartRscServers(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	depList, err := g.k8sC.AppsV1().Deployments(vutils.K8sNS).List(ctx, v1.ListOptions{
 		LabelSelector: "octelium.com/component=rscserver",
 	})
@@ -179,6 +191,9 @@ func (g *Genesis) rolloutRestartRscServers(ctx context.Context) error {
 		zap.Int("count", len(depList.Items)))
 
 	for i := range depList.Items {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		dep := depList.Items[i].DeepCopy()
 		if dep.Spec.Template.Annotations == nil {
 			dep.Spec.Template.Annotations = make(map[string]string)
@@ -191,10 +206,134 @@ func (g *Genesis) rolloutRestartRscServers(ctx context.Context) error {
 		}
 	}
 
-	time.Sleep(5 * time.Second)
+	timer := time.NewTimer(5 * time.Second)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+	}
 	if err := k8sutils.WaitReadinessDeployment(ctx, g.k8sC, oc.OcteliumEnterpriseComponent(oc.RscServer)); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func waitGatewayAgentReady(ctx context.Context, k8sC kubernetes.Interface) error {
+	if ldflags.IsTest() {
+		return nil
+	}
+	return k8sutils.WaitReadiness(ctx, 2*time.Second, 20000*time.Second, func(ctx context.Context) (bool, error) {
+		return gatewayAgentReadiness(ctx, k8sC)
+	})
+}
+
+func gatewayAgentReadiness(ctx context.Context, k8sC kubernetes.Interface) (bool, error) {
+	ds, err := k8sC.AppsV1().DaemonSets(vutils.K8sNS).Get(ctx, "octelium-gwagent", v1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+	return ds.Status.DesiredNumberScheduled > 0 && k8sutils.IsDaemonSetReady(ds), nil
+}
+
+func waitGatewayAgentsRegistered(ctx context.Context, k8sC kubernetes.Interface) error {
+	if ldflags.IsTest() {
+		return nil
+	}
+
+	zap.L().Debug("Checking that all Gateway Agents are registered")
+
+	doCheck := func(ctx context.Context) (bool, error) {
+		ready, err := gatewayAgentReadiness(ctx, k8sC)
+		if err != nil || !ready {
+			return false, err
+		}
+		nodeList, err := k8sC.CoreV1().Nodes().List(ctx, v1.ListOptions{
+			LabelSelector: vutils.NodeLabelDataPlane + "=",
+		})
+		if err != nil {
+			return false, err
+		}
+
+		if len(nodeList.Items) == 0 {
+			return false, errors.Errorf(
+				"No Kubernetes node is labeled as an Octelium data-plane node. At least one node must be labeled via: kubectl label nodes <NODE_NAME> %s=",
+				vutils.NodeLabelDataPlane)
+		}
+
+		for _, node := range nodeList.Items {
+			if node.Labels[vutils.NodeLabelGatewayRegistered] != "true" {
+				zap.L().Debug("Gateway Agent is not registered yet on the data-plane node",
+					zap.String("node", node.Name))
+				return false, nil
+			}
+		}
+
+		zap.L().Debug("All Gateway Agents are now registered",
+			zap.Int("nodes", len(nodeList.Items)))
+
+		return true, nil
+	}
+
+	return k8sutils.WaitReadiness(ctx, 2*time.Second, 1800*time.Second, doCheck)
+}
+
+func (g *Genesis) setRegionVersionMap(ctx context.Context, rgn *corev1.Region) error {
+	info := &corev1.Region_Status_VersionInfo{
+		Package: "octeliumee",
+		SetAt:   pbutils.Now(),
+		Version: ldflags.GetVersion(),
+		Id:      os.Getenv("OCTELIUM_INSTALL_ID"),
+	}
+	err := retryRegionVersion(ctx, func(ctx context.Context) error {
+		region, err := g.octeliumC.CoreC().GetRegion(ctx, apivalidation.ObjectToRGetOptions(rgn))
+		if err != nil {
+			return err
+		}
+		updated := proto.Clone(region).(*corev1.Region)
+		if updated.Status == nil {
+			updated.Status = &corev1.Region_Status{}
+		}
+		if updated.Status.VersionInfoMap == nil {
+			updated.Status.VersionInfoMap = make(map[string]*corev1.Region_Status_VersionInfo)
+		}
+		updated.Status.VersionInfoMap["octeliumee"] = info
+		if proto.Equal(region, updated) {
+			return nil
+		}
+		_, err = g.octeliumC.CoreC().UpdateRegion(ctx, updated)
+		return err
+	})
+	return errors.Wrap(err, "Could not publish octeliumee Region version")
+}
+
+func retryRegionVersion(ctx context.Context, fn func(context.Context) error) error {
+	var lastErr error
+	err := wait.ExponentialBackoffWithContext(ctx, retry.DefaultRetry, func(ctx context.Context) (bool, error) {
+		if err := ctx.Err(); err != nil {
+			return false, err
+		}
+		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+		lastErr = fn(ctx)
+		if lastErr == nil {
+			return true, nil
+		}
+		switch status.Code(lastErr) {
+		case codes.OutOfRange, codes.Unavailable, codes.ResourceExhausted, codes.Aborted, codes.DeadlineExceeded:
+			return false, nil
+		}
+		if errors.Is(lastErr, context.DeadlineExceeded) {
+			return false, nil
+		}
+		return false, lastErr
+	})
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	if err != nil && lastErr != nil {
+		return lastErr
+	}
+	return err
 }

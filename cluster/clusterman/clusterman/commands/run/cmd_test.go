@@ -9,9 +9,11 @@
 package run
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,4 +22,12 @@ func TestRunRejectsUnavailableKubernetesConfiguration(t *testing.T) {
 	t.Setenv("KUBERNETES_SERVICE_HOST", "")
 	t.Setenv("KUBERNETES_SERVICE_PORT", "")
 	assert.Error(t, doCmd(Cmd, nil))
+}
+
+func TestRunUsesCommandContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	cmd := &cobra.Command{}
+	cmd.SetContext(ctx)
+	assert.ErrorIs(t, doCmd(cmd, nil), context.Canceled)
 }

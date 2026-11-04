@@ -125,6 +125,6 @@ func main() {
 			return err
 		}
 		return nil
-	}, nil)
+	}, &components.RunComponentOpts{CancelOnSIGTERM: true})
 
 }

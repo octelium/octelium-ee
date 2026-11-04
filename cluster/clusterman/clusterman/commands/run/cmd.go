@@ -10,8 +10,6 @@ package run
 
 import (
 	"context"
-	"os"
-	"os/signal"
 
 	"github.com/octelium/octelium-ee/cluster/clusterman/clusterman/controllers/clusterconfig"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -35,8 +33,13 @@ var Cmd = &cobra.Command{
 
 func doCmd(cmd *cobra.Command, args []string) error {
 
-	ctx, cancelFn := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancelFn()
+	ctx := cmd.Context()
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 
 	octeliumC, err := octeliumc.NewClient(ctx, nil)
 	if err != nil {
