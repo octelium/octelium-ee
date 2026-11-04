@@ -7,13 +7,14 @@ require (
 	github.com/lib/pq v1.12.3
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20261104121127-6287c825566d
-	github.com/octelium/octelium/cluster/genesis v0.0.0-20261104121127-6287c825566d
-	github.com/octelium/octelium/pkg v0.0.0-20261104121127-6287c825566d
+	github.com/octelium/octelium/cluster/common v0.0.0-20261104190343-05fe79e5e71f
+	github.com/octelium/octelium/cluster/genesis v0.0.0-20261104190343-05fe79e5e71f
+	github.com/octelium/octelium/pkg v0.0.0-20261104190343-05fe79e5e71f
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/zap v1.28.0
+	google.golang.org/grpc v1.84.0
 	k8s.io/api v0.37.0
 	k8s.io/apimachinery v0.37.0
 	k8s.io/client-go v0.37.0
@@ -107,8 +108,8 @@ require (
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000 // indirect
-	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261104121127-6287c825566d // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261104121127-6287c825566d // indirect
+	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261104190343-05fe79e5e71f // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261104190343-05fe79e5e71f // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/open-policy-agent/opa v1.20.1 // indirect
 	github.com/oschwald/geoip2-golang/v2 v2.3.0 // indirect
@@ -173,7 +174,6 @@ require (
 	golang.org/x/tools v0.51.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260928230214-8a89bd6388cc // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260928230214-8a89bd6388cc // indirect
-	google.golang.org/grpc v1.84.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
