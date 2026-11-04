@@ -416,11 +416,9 @@ func (g *Genesis) installJoinCoreComponents(ctx context.Context, opts *gc.Common
 }
 
 func (g *Genesis) initJoinStorage(ctx context.Context, bs *cbootstrapv1.Config) error {
-	if bs.Spec.PrimaryStorage == nil || bs.Spec.PrimaryStorage.GetPostgresql() == nil {
-		return errors.Errorf("No Postgres info")
-	}
-	if bs.Spec.SecondaryStorage == nil || bs.Spec.SecondaryStorage.GetRedis() == nil {
-		return errors.Errorf("No Redis info")
+	passwords, err := g.resolveStoragePasswords(ctx, bs)
+	if err != nil {
+		return err
 	}
 
 	zap.L().Debug("Initializing storage secrets")
@@ -428,18 +426,7 @@ func (g *Genesis) initJoinStorage(ctx context.Context, bs *cbootstrapv1.Config) 
 	{
 		info := bs.Spec.PrimaryStorage.GetPostgresql()
 
-		var password string
-		switch info.PasswordType.(type) {
-		case *cbootstrapv1.Config_Spec_PrimaryStorage_Postgresql_Password:
-			password = info.GetPassword()
-		case *cbootstrapv1.Config_Spec_PrimaryStorage_Postgresql_PasswordFromSecret_:
-			secSpec := info.GetPasswordFromSecret()
-			val, err := g.getJoinStoragePassword(ctx, secSpec.Name, secSpec.Namespace, secSpec.Key)
-			if err != nil {
-				return err
-			}
-			password = val
-		}
+		password := passwords.postgres
 
 		if err := g.createStorageSecret(ctx, &k8scorev1.Secret{
 			ObjectMeta: k8smetav1.ObjectMeta{
@@ -462,18 +449,7 @@ func (g *Genesis) initJoinStorage(ctx context.Context, bs *cbootstrapv1.Config) 
 	{
 		info := bs.Spec.SecondaryStorage.GetRedis()
 
-		var password string
-		switch info.PasswordType.(type) {
-		case *cbootstrapv1.Config_Spec_SecondaryStorage_Redis_Password:
-			password = info.GetPassword()
-		case *cbootstrapv1.Config_Spec_SecondaryStorage_Redis_PasswordFromSecret_:
-			secSpec := info.GetPasswordFromSecret()
-			val, err := g.getJoinStoragePassword(ctx, secSpec.Name, secSpec.Namespace, secSpec.Key)
-			if err != nil {
-				return err
-			}
-			password = val
-		}
+		password := passwords.redis
 
 		if err := g.createStorageSecret(ctx, &k8scorev1.Secret{
 			ObjectMeta: k8smetav1.ObjectMeta{
@@ -494,33 +470,6 @@ func (g *Genesis) initJoinStorage(ctx context.Context, bs *cbootstrapv1.Config) 
 	}
 
 	return nil
-}
-
-func (g *Genesis) getJoinStoragePassword(ctx context.Context, name, namespace, key string) (string, error) {
-	if namespace == "" {
-		namespace = "default"
-	}
-	if name == "" {
-		return "", errors.Errorf("name of passwordFromSecret is empty")
-	}
-
-	sec, err := g.getK8sSecret(ctx, namespace, name)
-	if err != nil {
-		return "", err
-	}
-
-	var password string
-	if key != "" {
-		password = string(sec.Data[key])
-	}
-	if password == "" {
-		password = string(sec.Data["password"])
-	}
-	if password == "" {
-		password = string(sec.Data["data"])
-	}
-
-	return password, nil
 }
 
 func getInstallationFromBootstrap(bs *cbootstrapv1.Config) (*corev1.ClusterConfig_Status_Installation, error) {
