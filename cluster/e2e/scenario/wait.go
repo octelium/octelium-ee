@@ -37,17 +37,22 @@ const (
 )
 
 func stepWaitDeployments(ctx context.Context, r *scenario.Runner) error {
+	return waitPackage(ctx, r, Package, Deployments)
+}
+
+func waitPackage(ctx context.Context, r *scenario.Runner, pkg string, deployments []string) error {
 	k8sC, err := r.K8sC()
 	if err != nil {
 		return err
 	}
 
-	if err := waitGenesis(ctx, k8sC); err != nil {
+	if err := waitGenesis(ctx, k8sC, pkg); err != nil {
 		return err
 	}
 
-	for _, name := range Deployments {
-		zap.L().Debug("Waiting for the enterprise Deployment readiness",
+	for _, name := range deployments {
+		zap.L().Debug("Waiting for the package Deployment readiness",
+			zap.String("package", pkg),
 			zap.String("deployment", name))
 
 		err := pollUntil(ctx, fmt.Sprintf("the deployment %s", name), deploymentBudget,
@@ -62,10 +67,10 @@ func stepWaitDeployments(ctx context.Context, r *scenario.Runner) error {
 	return nil
 }
 
-func waitGenesis(ctx context.Context, k8sC kubernetes.Interface) error {
-	prefix := fmt.Sprintf("octelium-genesis-init-%s-", Package)
+func waitGenesis(ctx context.Context, k8sC kubernetes.Interface, pkg string) error {
+	prefix := fmt.Sprintf("octelium-genesis-init-%s-", pkg)
 
-	return pollUntil(ctx, fmt.Sprintf("the %s genesis Job", Package), genesisBudget,
+	return pollUntil(ctx, fmt.Sprintf("the %s genesis Job", pkg), genesisBudget,
 		func(ctx context.Context) error {
 			job, err := latestJob(ctx, k8sC, prefix)
 			if err != nil {

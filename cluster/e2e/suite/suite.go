@@ -145,6 +145,24 @@ func ClusterManagerPhases() []suite.Phase {
 	}
 }
 
+func ReleaseUpgradePhases() []suite.Phase {
+	return []suite.Phase{
+		{Name: "ReleaseUpgradeSource", Run: testReleaseUpgradeSource},
+		{Name: "MultiRegionJoin", Run: testMultiRegionJoin},
+		{Name: "ReleaseUpgradeClusterConfigApply", Run: testReleaseUpgradeClusterConfigApply},
+		{Name: "ReleaseUpgrade", Run: testReleaseUpgrade},
+		{Name: "MultiRegionComponents", Run: testMultiRegionComponents},
+		{Name: "MultiRegionService", Run: testMultiRegionService},
+	}
+}
+
+func InstallRecoveryPhases() []suite.Phase {
+	return []suite.Phase{
+		{Name: "InstallRecoveryRetries", Run: testInstallRecoveryRetries},
+		{Name: "ClusterUpgrade", Run: testClusterUpgrade},
+	}
+}
+
 func TailPhases() []suite.Phase {
 	return []suite.Phase{
 		{Name: "EnterpriseRollingRestart", Run: testEnterpriseRollingRestart},
@@ -174,6 +192,9 @@ const (
 	SuiteMultiRegion = "multi-region"
 
 	SuiteClusterManager = "cluster-manager"
+
+	SuiteReleaseUpgrade  = "release-upgrade"
+	SuiteInstallRecovery = "install-recovery"
 )
 
 func All() []suite.Phase {
@@ -184,6 +205,10 @@ func All() []suite.Phase {
 		return MultiRegion()
 	case SuiteClusterManager:
 		return ClusterManager()
+	case SuiteReleaseUpgrade:
+		return ReleaseUpgrade()
+	case SuiteInstallRecovery:
+		return InstallRecovery()
 	default:
 		return Enterprise()
 	}
@@ -210,6 +235,20 @@ func ClusterManager() []suite.Phase {
 	ret = append(ret, ReadyPhase())
 
 	return append(ret, ClusterManagerPhases()...)
+}
+
+func ReleaseUpgrade() []suite.Phase {
+	ret := suite.Only(suite.Phases(), "ClusterReady")
+	ret = append(ret, ReadyPhase())
+
+	return append(ret, ReleaseUpgradePhases()...)
+}
+
+func InstallRecovery() []suite.Phase {
+	ret := suite.Only(suite.Phases(), "ClusterReady")
+	ret = append(ret, ReadyPhase())
+
+	return append(ret, InstallRecoveryPhases()...)
 }
 
 func withCore() []suite.Phase {

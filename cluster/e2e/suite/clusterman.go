@@ -100,6 +100,19 @@ func waitGenesisJobComplete(t *testing.T, h *eeharness.H, k8sC kubernetes.Interf
 	return ret
 }
 
+func interruptGenesisJob(t *testing.T, k8sC kubernetes.Interface, job *batchv1.Job) {
+	t.Helper()
+
+	pods := k8sC.CoreV1().Pods(job.Namespace)
+	selector := batchv1.JobNameLabel + "=" + job.Name
+	list, err := pods.List(t.Context(), k8smetav1.ListOptions{LabelSelector: selector})
+	require.Nil(t, err)
+	require.NotEmpty(t, list.Items)
+	for _, pod := range list.Items {
+		require.Nil(t, pods.Delete(t.Context(), pod.Name, k8smetav1.DeleteOptions{}))
+	}
+}
+
 func killClusterManager(t *testing.T, h *eeharness.H) {
 	t.Helper()
 
@@ -250,14 +263,7 @@ func testClusterManagerJobRetry(t *testing.T, ch *harness.H) {
 
 	job := waitGenesisJobStarted(t, h, h.K8sC(), existing)
 
-	pods := h.K8sC().CoreV1().Pods(job.Namespace)
-	selector := batchv1.JobNameLabel + "=" + job.Name
-	list, err := pods.List(t.Context(), k8smetav1.ListOptions{LabelSelector: selector})
-	require.Nil(t, err)
-	require.NotEmpty(t, list.Items)
-	for _, pod := range list.Items {
-		require.Nil(t, pods.Delete(t.Context(), pod.Name, k8smetav1.DeleteOptions{}))
-	}
+	interruptGenesisJob(t, h.K8sC(), job)
 
 	history := waitClusterManagerUpgrade(t, h, before, multiRegionUpgradeBudget)
 	require.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS, history.State, "%+v", history)

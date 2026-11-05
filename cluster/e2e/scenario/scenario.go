@@ -56,17 +56,22 @@ func init() {
 }
 
 type opts struct {
-	description string
-	coreVersion string
-	spire       bool
-	fixtures    bool
-	upgrade     bool
-	multiRegion bool
-	budget      time.Duration
+	description     string
+	coreVersion     string
+	spire           bool
+	fixtures        bool
+	upgrade         bool
+	multiRegion     bool
+	releaseUpgrade  bool
+	installRecovery bool
+	budget          time.Duration
 }
 
 func register(id string, o opts) {
 	packageVersions[id] = packageVersion()
+	if o.releaseUpgrade {
+		packageVersions[id] = normalizeVersion(os.Getenv(EnvFromPackageVersion))
+	}
 
 	scenario.Register(id, func() *scenario.Scenario {
 		base := "k3s-flannel"
@@ -79,6 +84,9 @@ func register(id string, o opts) {
 		ret.Description = o.description
 		ret.Components = Components
 		ret.Install.Version = coreVersion(o.coreVersion)
+		if o.releaseUpgrade {
+			ret.Install.Version = normalizeVersion(os.Getenv(EnvFromCoreVersion))
+		}
 		ret.Install.OTelCollector = false
 
 		if o.fixtures {
@@ -98,6 +106,14 @@ func register(id string, o opts) {
 			{Name: "octeliumee/readiness", Run: stepWaitDeployments},
 			{Name: "octeliumee/e2e-tuning", Run: stepE2ETuning},
 			{Name: "octeliumee/rollout", Run: stepWaitDeployments},
+		}
+
+		if o.releaseUpgrade {
+			withReleaseUpgrade(ret)
+		}
+
+		if o.installRecovery {
+			withInstallRecovery(ret)
 		}
 
 		ret.Budget = cmpOr(o.budget, 75*time.Minute)

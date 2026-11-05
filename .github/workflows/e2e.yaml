@@ -9,7 +9,7 @@ on:
         required: false
         default: "k3s-flannel-ee-full"
       spiffe:
-        description: "Install SPIRE and enable the SPIFFE CSI driver (always enabled for full and spire scenarios, ignored by multi-region and cluster-manager)"
+        description: "Install SPIRE and enable the SPIFFE CSI driver (always enabled for full and spire scenarios, ignored by multi-region, cluster-manager and release-upgrade)"
         required: false
         type: boolean
         default: false
@@ -18,7 +18,7 @@ on:
         required: false
         default: ""
       suite:
-        description: "Which phases to run. multi-region runs the k3s-flannel-ee-multi-region scenario, which joins a second k3s cluster as a Region, instead of the scenario input. cluster-manager uses the same scenario to test Cluster Manager upgrades and joins when a genesis Pod or Cluster Manager itself restarts"
+        description: "Which phases to run. multi-region runs the k3s-flannel-ee-multi-region scenario, which joins a second k3s cluster as a Region, instead of the scenario input. cluster-manager uses the same scenario to test Cluster Manager upgrades and joins when a genesis Pod or Cluster Manager itself restarts. release-upgrade runs the k3s-flannel-ee-release-upgrade scenario, which installs the last releases of core, octeliumee and Cordium, joins a Region and lets Cluster Manager upgrade everything to the candidate versions while a genesis Pod is interrupted. install-recovery runs the k3s-flannel-ee-install-recovery scenario, which interrupts the core and octeliumee genesis Pods during the installation"
         required: false
         type: choice
         options:
@@ -26,15 +26,33 @@ on:
           - all
           - multi-region
           - cluster-manager
+          - release-upgrade
+          - install-recovery
         default: enterprise
       packageVersion:
-        description: "octeliumee package version to install. Defaults to this branch"
+        description: "octeliumee package version to install, or to upgrade to with suite=release-upgrade. Defaults to this branch"
         required: false
         default: ""
       coreVersion:
-        description: "Octelium core version to install. Empty means latest"
+        description: "Octelium core version to install, or to upgrade to with suite=release-upgrade. Empty means latest, or main with suite=release-upgrade"
         required: false
         default: "main"
+      fromCoreVersion:
+        description: "With suite=release-upgrade, the Octelium core image version to upgrade from, for example 0.49.0. Empty means latest"
+        required: false
+        default: ""
+      fromPackageVersion:
+        description: "With suite=release-upgrade, the octeliumee image version to upgrade from, for example 0.37.0. Empty means latest"
+        required: false
+        default: ""
+      fromCordiumVersion:
+        description: "With suite=release-upgrade, the Cordium image version to upgrade from, for example 0.18.0. Empty means latest"
+        required: false
+        default: ""
+      cordiumVersion:
+        description: "With suite=release-upgrade, the Cordium version to upgrade to. Empty means main"
+        required: false
+        default: ""
       skipApply:
         description: "With suite=all, skip the core Apply phase and its database upstreams"
         required: false
@@ -47,6 +65,10 @@ env:
   OCTELIUM_E2E_CORE_VERSION: ${{ inputs.coreVersion }}
   OCTELIUM_E2E_SKIP_APPLY: ${{ inputs.skipApply }}
   OCTELIUM_E2E_SPIFFE: ${{ inputs.spiffe }}
+  OCTELIUM_E2E_FROM_CORE_VERSION: ${{ inputs.fromCoreVersion }}
+  OCTELIUM_E2E_FROM_PACKAGE_VERSION: ${{ inputs.fromPackageVersion }}
+  OCTELIUM_E2E_FROM_CORDIUM_VERSION: ${{ inputs.fromCordiumVersion }}
+  OCTELIUM_E2E_CORDIUM_VERSION: ${{ inputs.cordiumVersion }}
 jobs:
   test:
     strategy:
@@ -58,11 +80,11 @@ jobs:
           - runner: ubuntu-24.04-arm
             scenario: k3s-flannel-ee-full
     runs-on: ${{ matrix.runner }}
-    name: ${{ (inputs.suite == 'multi-region' || inputs.suite == 'cluster-manager') && 'k3s-flannel-ee-multi-region' || matrix.scenario }}-${{ matrix.runner }}
+    name: ${{ (inputs.suite == 'multi-region' || inputs.suite == 'cluster-manager') && 'k3s-flannel-ee-multi-region' || inputs.suite == 'release-upgrade' && 'k3s-flannel-ee-release-upgrade' || inputs.suite == 'install-recovery' && 'k3s-flannel-ee-install-recovery' || matrix.scenario }}-${{ matrix.runner }}
     timeout-minutes: 180
     env:
-      E2E_SCENARIO: ${{ (inputs.suite == 'multi-region' || inputs.suite == 'cluster-manager') && 'k3s-flannel-ee-multi-region' || inputs.scenario || matrix.scenario }}
-      E2E_TIMEOUT: ${{ (inputs.suite == 'multi-region' || inputs.suite == 'cluster-manager') && '150m' || '90m' }}
+      E2E_SCENARIO: ${{ (inputs.suite == 'multi-region' || inputs.suite == 'cluster-manager') && 'k3s-flannel-ee-multi-region' || inputs.suite == 'release-upgrade' && 'k3s-flannel-ee-release-upgrade' || inputs.suite == 'install-recovery' && 'k3s-flannel-ee-install-recovery' || inputs.scenario || matrix.scenario }}
+      E2E_TIMEOUT: ${{ (inputs.suite == 'multi-region' || inputs.suite == 'cluster-manager' || inputs.suite == 'release-upgrade') && '150m' || '90m' }}
     steps:
       - name: Install deps
         run: |
@@ -175,6 +197,7 @@ jobs:
           { ip route; echo; sudo iptables -t nat -S; echo; sudo iptables -S; } > "$OUT/host-network.txt" 2>&1 || true
 
           cp /tmp/octelium-e2e-k3s.log "$OUT/" 2>/dev/null || true
+          cp /tmp/octelium-e2e-interrupt-workers.log "$OUT/" 2>/dev/null || true
         env:
           KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
