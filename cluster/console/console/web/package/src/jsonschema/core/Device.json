@@ -661,7 +661,8 @@
                         "SIGNAL_STATE_UNKNOWN",
                         "PASS",
                         "FAIL",
-                        "NOT_APPLICABLE"
+                        "NOT_APPLICABLE",
+                        "GRACE_PERIOD"
                     ],
                     "type": "string",
                     "title": "Signal State",
@@ -672,7 +673,8 @@
                         "SIGNAL_STATE_UNKNOWN",
                         "PASS",
                         "FAIL",
-                        "NOT_APPLICABLE"
+                        "NOT_APPLICABLE",
+                        "GRACE_PERIOD"
                     ],
                     "type": "string",
                     "title": "Signal State",
@@ -683,26 +685,12 @@
                         "SIGNAL_STATE_UNKNOWN",
                         "PASS",
                         "FAIL",
-                        "NOT_APPLICABLE"
+                        "NOT_APPLICABLE",
+                        "GRACE_PERIOD"
                     ],
                     "type": "string",
                     "title": "Signal State",
                     "description": "SignalState is the state of a posture signal"
-                },
-                "signals": {
-                    "additionalProperties": {
-                        "enum": [
-                            "SIGNAL_STATE_UNKNOWN",
-                            "PASS",
-                            "FAIL",
-                            "NOT_APPLICABLE"
-                        ],
-                        "type": "string",
-                        "title": "Signal State",
-                        "description": "SignalState is the state of a posture signal"
-                    },
-                    "type": "object",
-                    "description": "Signals contains additional provider-specific signals keyed by `x.\u003cprovider\u003e.\u003cname\u003e`. Signals that have a dedicated field are never duplicated in this map."
                 },
                 "lastSyncAt": {
                     "type": "string",
@@ -722,14 +710,15 @@
                 "attrs": {
                     "additionalProperties": true,
                     "type": "object",
-                    "description": "Attrs is a map of the additional provider-specific attributes of the Device"
+                    "description": "Attrs contains the raw provider-specific values that have no typed field. Its keys depend on the provider, so a Policy that uses them works only with that provider. Values that have a typed field are never duplicated here."
                 },
                 "firewall": {
                     "enum": [
                         "SIGNAL_STATE_UNKNOWN",
                         "PASS",
                         "FAIL",
-                        "NOT_APPLICABLE"
+                        "NOT_APPLICABLE",
+                        "GRACE_PERIOD"
                     ],
                     "type": "string",
                     "title": "Signal State",
@@ -740,7 +729,8 @@
                         "SIGNAL_STATE_UNKNOWN",
                         "PASS",
                         "FAIL",
-                        "NOT_APPLICABLE"
+                        "NOT_APPLICABLE",
+                        "GRACE_PERIOD"
                     ],
                     "type": "string",
                     "title": "Signal State",
@@ -751,7 +741,8 @@
                         "SIGNAL_STATE_UNKNOWN",
                         "PASS",
                         "FAIL",
-                        "NOT_APPLICABLE"
+                        "NOT_APPLICABLE",
+                        "GRACE_PERIOD"
                     ],
                     "type": "string",
                     "title": "Signal State",
@@ -762,7 +753,8 @@
                         "SIGNAL_STATE_UNKNOWN",
                         "PASS",
                         "FAIL",
-                        "NOT_APPLICABLE"
+                        "NOT_APPLICABLE",
+                        "GRACE_PERIOD"
                     ],
                     "type": "string",
                     "title": "Signal State",
@@ -773,7 +765,8 @@
                         "SIGNAL_STATE_UNKNOWN",
                         "PASS",
                         "FAIL",
-                        "NOT_APPLICABLE"
+                        "NOT_APPLICABLE",
+                        "GRACE_PERIOD"
                     ],
                     "type": "string",
                     "title": "Signal State",
@@ -784,7 +777,8 @@
                         "SIGNAL_STATE_UNKNOWN",
                         "PASS",
                         "FAIL",
-                        "NOT_APPLICABLE"
+                        "NOT_APPLICABLE",
+                        "GRACE_PERIOD"
                     ],
                     "type": "string",
                     "title": "Signal State",
@@ -795,28 +789,165 @@
                         "SIGNAL_STATE_UNKNOWN",
                         "PASS",
                         "FAIL",
-                        "NOT_APPLICABLE"
+                        "NOT_APPLICABLE",
+                        "GRACE_PERIOD"
                     ],
                     "type": "string",
                     "title": "Signal State",
                     "description": "SignalState is the state of a posture signal"
                 },
-                "mobileIntegrity": {
+                "osIntegrity": {
                     "enum": [
                         "SIGNAL_STATE_UNKNOWN",
                         "PASS",
                         "FAIL",
-                        "NOT_APPLICABLE"
+                        "NOT_APPLICABLE",
+                        "GRACE_PERIOD"
                     ],
                     "type": "string",
                     "title": "Signal State",
                     "description": "SignalState is the state of a posture signal"
+                },
+                "appControl": {
+                    "enum": [
+                        "SIGNAL_STATE_UNKNOWN",
+                        "PASS",
+                        "FAIL",
+                        "NOT_APPLICABLE",
+                        "GRACE_PERIOD"
+                    ],
+                    "type": "string",
+                    "title": "Signal State",
+                    "description": "SignalState is the state of a posture signal"
+                },
+                "antivirus": {
+                    "enum": [
+                        "SIGNAL_STATE_UNKNOWN",
+                        "PASS",
+                        "FAIL",
+                        "NOT_APPLICABLE",
+                        "GRACE_PERIOD"
+                    ],
+                    "type": "string",
+                    "title": "Signal State",
+                    "description": "SignalState is the state of a posture signal"
+                },
+                "tamperProtection": {
+                    "enum": [
+                        "SIGNAL_STATE_UNKNOWN",
+                        "PASS",
+                        "FAIL",
+                        "NOT_APPLICABLE",
+                        "GRACE_PERIOD"
+                    ],
+                    "type": "string",
+                    "title": "Signal State",
+                    "description": "SignalState is the state of a posture signal"
+                },
+                "agentUpToDate": {
+                    "enum": [
+                        "SIGNAL_STATE_UNKNOWN",
+                        "PASS",
+                        "FAIL",
+                        "NOT_APPLICABLE",
+                        "GRACE_PERIOD"
+                    ],
+                    "type": "string",
+                    "title": "Signal State",
+                    "description": "SignalState is the state of a posture signal"
+                },
+                "score": {
+                    "type": "integer",
+                    "description": "Score is the provider's own overall assessment of the Device from 0 to 100, where a higher number is better (e.g. CrowdStrike's Zero Trust Assessment). A provider that uses another range or direction is normalized to this one."
+                },
+                "failingChecks": {
+                    "type": "integer",
+                    "description": "FailingChecks is the number of the provider's checks that the Device currently fails (e.g. Fleet policies or Zero Trust Assessment signals)"
+                },
+                "activeThreats": {
+                    "type": "integer",
+                    "description": "ActiveThreats is the number of active threats reported by the provider"
+                },
+                "assessedAt": {
+                    "type": "string",
+                    "description": "AssessedAt is the timestamp at which the provider last changed Score and FailingChecks, when it reports them separately from LastSeenAt",
+                    "format": "date-time"
+                },
+                "os": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Device.Status.Posture.OS",
+                    "additionalProperties": false,
+                    "description": "OS is the operating system of the Device"
+                },
+                "ownership": {
+                    "enum": [
+                        "OWNERSHIP_UNKNOWN",
+                        "COMPANY",
+                        "PERSONAL"
+                    ],
+                    "type": "string",
+                    "title": "Ownership",
+                    "description": "Ownership is who owns the Device"
+                },
+                "deviceClass": {
+                    "enum": [
+                        "DEVICE_CLASS_UNKNOWN",
+                        "WORKSTATION",
+                        "SERVER",
+                        "PHONE",
+                        "TABLET",
+                        "VIRTUAL_MACHINE"
+                    ],
+                    "type": "string",
+                    "title": "Device Class",
+                    "description": "DeviceClass is the kind of the Device"
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Posture",
-            "description": "Posture is the security posture reported by the Device's bound DeviceManager. Common signals have dedicated fields for use in CEL. A signal is satisfied only when its state is PASS; unknown and inapplicable signals do not satisfy a posture requirement."
+            "description": "Posture is the security posture reported by the Device's bound DeviceManager. Every provider maps what it reports to the same typed fields, so that a single Policy works with any provider. A signal is satisfied only when its state is PASS. A field that the provider does not report is omitted, so a condition on it evaluates to false, which means that the numeric fields can be compared directly (e.g. `ctx.device.status.posture.score \u003e= 70`)."
+        },
+        "octelium.api.main.core.v1.Device.Status.Posture.OS": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "OS_TYPE_UNKNOWN",
+                        "LINUX",
+                        "WINDOWS",
+                        "MAC",
+                        "ANDROID",
+                        "IOS",
+                        "CHROMEOS"
+                    ],
+                    "type": "string",
+                    "title": "OS Type",
+                    "description": "OSType is the operating system of the Device"
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Version is the version as reported by the provider (e.g. `14.5.1`, `10.0.22631.3880`, `Ubuntu 22.04.4 LTS`)"
+                },
+                "major": {
+                    "type": "integer",
+                    "description": "Major is the first numeric part of the dotted version. All the numeric parts are omitted when the provider reports no dotted version (e.g. `Windows 11`, or a Windows build number alone)."
+                },
+                "minor": {
+                    "type": "integer",
+                    "description": "Minor is the second numeric part of the version"
+                },
+                "patch": {
+                    "type": "integer",
+                    "description": "Patch is the third numeric part of the version, which is the build number on Windows (e.g. 22631)"
+                },
+                "revision": {
+                    "type": "integer",
+                    "description": "Revision is the fourth numeric part of the version, which is the update build revision on Windows (e.g. 3880)"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "OS",
+            "description": "OS is the operating system of the Device as reported by the provider, as opposed to Device.status.osType which is reported by the Device"
         },
         "octelium.api.main.core.v1.Device.Status.ProbeAttempt": {
             "properties": {

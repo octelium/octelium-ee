@@ -290,9 +290,14 @@ type s1Agent struct {
 	MachineType           string       `json:"machineType"`
 	OSName                string       `json:"osName"`
 	OSType                string       `json:"osType"`
+	OSRevision            string       `json:"osRevision"`
 	AgentVersion          string       `json:"agentVersion"`
 	IsActive              *bool        `json:"isActive"`
 	IsUpToDate            *bool        `json:"isUpToDate"`
+	IsDecommissioned      *bool        `json:"isDecommissioned"`
+	IsUninstalled         *bool        `json:"isUninstalled"`
+	OperationalState      string       `json:"operationalState"`
+	AppsVulnerability     string       `json:"appsVulnerabilityStatus"`
 	Infected              *bool        `json:"infected"`
 	ActiveThreats         *int         `json:"activeThreats"`
 	NetworkStatus         string       `json:"networkStatus"`
@@ -314,17 +319,20 @@ type s1NetIface struct {
 
 func toEntry(a *s1Agent, now time.Time) *devicemgrcommon.Entry {
 	lastActive, haveActive := parseTime(a.LastActiveDate)
+	osType := devicemgrcommon.ParseOSType(a.OSType)
 
 	p := &corev1.Device_Status_Posture{
 		DiskEncryption: devicemgrcommon.SignalFromBool(a.EncryptedApplications),
 		Firewall:       devicemgrcommon.SignalFromBool(a.FirewallEnabled),
 		ThreatFree:     s1ThreatFree(a),
+		ActiveThreats:  devicemgrcommon.Count(a.ActiveThreats),
+		Antivirus:      s1Antivirus(a),
 		AgentHealthy:   s1AgentHealthy(a, lastActive, haveActive, now),
+		AgentUpToDate:  devicemgrcommon.SignalFromBool(a.IsUpToDate),
 		NotContained:   s1NotContained(a.NetworkStatus),
-		Signals: map[string]corev1.Device_Status_Posture_SignalState{
-			devicemgrcommon.SignalKey("sentinelone", "agentUpToDate"): devicemgrcommon.SignalFromBool(a.IsUpToDate),
-		},
-		Attrs: s1Attrs(a),
+		Os:             s1OS(a, osType),
+		DeviceClass:    devicemgrcommon.ParseDeviceClass(a.MachineType),
+		Attrs:          s1Attrs(a),
 	}
 	if haveActive {
 		p.LastSeenAt = timestamppb.New(lastActive)
@@ -335,7 +343,7 @@ func toEntry(a *s1Agent, now time.Time) *devicemgrcommon.Entry {
 		Serial:     a.SerialNumber,
 		MACs:       s1MACs(a),
 		Hostname:   a.ComputerName,
-		OSType:     devicemgrcommon.ParseOSType(a.OSType),
+		OSType:     osType,
 		Posture:    p,
 	}
 }
@@ -352,8 +360,43 @@ func s1ThreatFree(a *s1Agent) corev1.Device_Status_Posture_SignalState {
 	}
 }
 
+func s1OS(a *s1Agent, osType corev1.Device_Status_OSType) *corev1.Device_Status_Posture_OS {
+	if osType == corev1.Device_Status_MAC {
+		return devicemgrcommon.ParseOS(osType, a.OSRevision)
+	}
+
+	return &corev1.Device_Status_Posture_OS{
+		Type:    osType,
+		Version: strings.TrimSpace(a.OSRevision),
+	}
+}
+
+func s1IsDisabled(a *s1Agent) bool {
+	state := strings.TrimSpace(a.OperationalState)
+	return state != "" && !strings.EqualFold(state, "na")
+}
+
+func s1Antivirus(a *s1Agent) corev1.Device_Status_Posture_SignalState {
+	if s1IsDisabled(a) {
+		return corev1.Device_Status_Posture_FAIL
+	}
+
+	switch strings.ToLower(strings.TrimSpace(a.MitigationMode)) {
+	case "protect":
+		return corev1.Device_Status_Posture_PASS
+	case "detect":
+		return corev1.Device_Status_Posture_FAIL
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	}
+}
+
 func s1AgentHealthy(a *s1Agent, lastActive time.Time, haveActive bool, now time.Time) corev1.Device_Status_Posture_SignalState {
 	switch {
+	case a.IsDecommissioned != nil && *a.IsDecommissioned,
+		a.IsUninstalled != nil && *a.IsUninstalled,
+		s1IsDisabled(a):
+		return corev1.Device_Status_Posture_FAIL
 	case a.IsActive == nil:
 		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	case !*a.IsActive:
@@ -408,11 +451,10 @@ func s1Attrs(a *s1Agent) *structpb.Struct {
 	put("siteName", a.SiteName)
 	put("groupName", a.GroupName)
 	put("osName", a.OSName)
+	put("operationalState", a.OperationalState)
+	put("appsVulnerabilityStatus", a.AppsVulnerability)
 	if a.Infected != nil {
 		fields["infected"] = *a.Infected
-	}
-	if a.ActiveThreats != nil {
-		fields["activeThreats"] = float64(*a.ActiveThreats)
 	}
 	if len(fields) == 0 {
 		return nil

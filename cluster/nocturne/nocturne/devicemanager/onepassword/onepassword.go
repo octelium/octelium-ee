@@ -270,6 +270,7 @@ type kolideDevice struct {
 	HardwareUUID        string      `json:"hardware_uuid"`
 	Note                string      `json:"note"`
 	AuthState           string      `json:"auth_state"`
+	WillBlockAt         string      `json:"will_block_at"`
 	DeviceType          string      `json:"device_type"`
 	FormFactor          string      `json:"form_factor"`
 	RegisteredOwnerInfo *linkObject `json:"registered_owner_info"`
@@ -287,13 +288,17 @@ type kolidePerson struct {
 func toEntry(d *kolideDevice, emails map[string]string, now time.Time) *devicemgrcommon.Entry {
 	lastSeen, haveSeen := parseTime(d.LastSeenAt)
 
+	osType := devicemgrcommon.ParseOSType(d.DeviceType)
+	if osType == corev1.Device_Status_OS_TYPE_UNKNOWN {
+		osType = devicemgrcommon.ParseOSType(d.OperatingSystem)
+	}
+
 	p := &corev1.Device_Status_Posture{
 		Compliant:    authStateCompliant(d.AuthState),
 		AgentHealthy: devicemgrcommon.RecencySignal(lastSeen, haveSeen, now),
-		Signals: map[string]corev1.Device_Status_Posture_SignalState{
-			devicemgrcommon.SignalKey("onepassword", "noIssues"): authStateNoIssues(d.AuthState),
-		},
-		Attrs: kolideAttrs(d),
+		Os:           devicemgrcommon.ParseOS(osType, d.OperatingSystem),
+		DeviceClass:  devicemgrcommon.ParseDeviceClass(d.FormFactor),
+		Attrs:        kolideAttrs(d),
 	}
 	if haveSeen {
 		p.LastSeenAt = timestamppb.New(lastSeen)
@@ -302,11 +307,6 @@ func toEntry(d *kolideDevice, emails map[string]string, now time.Time) *devicemg
 	var aliases []string
 	if id := devicemgrcommon.NormalizeID(d.HardwareUUID); id != "" {
 		aliases = []string{id}
-	}
-
-	osType := devicemgrcommon.ParseOSType(d.DeviceType)
-	if osType == corev1.Device_Status_OS_TYPE_UNKNOWN {
-		osType = devicemgrcommon.ParseOSType(d.OperatingSystem)
 	}
 
 	var machineID string
@@ -335,20 +335,11 @@ func toEntry(d *kolideDevice, emails map[string]string, now time.Time) *devicemg
 
 func authStateCompliant(state string) corev1.Device_Status_Posture_SignalState {
 	switch strings.ToLower(strings.TrimSpace(state)) {
-	case "good", "notified", "will block":
-		return corev1.Device_Status_Posture_PASS
-	case "blocked":
-		return corev1.Device_Status_Posture_FAIL
-	default:
-		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
-	}
-}
-
-func authStateNoIssues(state string) corev1.Device_Status_Posture_SignalState {
-	switch strings.ToLower(strings.TrimSpace(state)) {
 	case "good":
 		return corev1.Device_Status_Posture_PASS
-	case "notified", "will block", "blocked":
+	case "notified", "will block":
+		return corev1.Device_Status_Posture_GRACE_PERIOD
+	case "blocked":
 		return corev1.Device_Status_Posture_FAIL
 	default:
 		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
@@ -366,9 +357,9 @@ func kolideAttrs(d *kolideDevice) *structpb.Struct {
 	put("name", d.Name)
 	put("deviceType", d.DeviceType)
 	put("formFactor", d.FormFactor)
-	put("operatingSystem", d.OperatingSystem)
 	put("hardwareModel", d.HardwareModel)
 	put("authState", d.AuthState)
+	put("willBlockAt", d.WillBlockAt)
 	put("note", d.Note)
 	if d.RegisteredOwnerInfo != nil {
 		put("registeredOwnerId", d.RegisteredOwnerInfo.Identifier)

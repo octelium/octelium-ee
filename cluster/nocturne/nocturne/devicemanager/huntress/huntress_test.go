@@ -47,7 +47,9 @@ func TestToEntry(t *testing.T) {
 			"serial_number": "SERIAL-1",
 			"mac_addresses": ["a4:bb:cc:dd:ee:01"],
 			"last_callback_at": %q,
+			"os": "Windows Server 2022 10.0.20348",
 			"defender_status": "Protected",
+			"defender_policy_status": "Compliant",
 			"firewall_status": "Enabled",
 			"tamper_protection_actual": true,
 			"organization_id": 7
@@ -62,8 +64,13 @@ func TestToEntry(t *testing.T) {
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.AgentHealthy)
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.NotContained)
-		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Signals["x.huntress.defender"])
-		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Signals["x.huntress.tamperProtection"])
+		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Firewall)
+		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Antivirus)
+		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.TamperProtection)
+		assert.Equal(t, corev1.Device_Status_Posture_SERVER, p.DeviceClass)
+		assert.EqualValues(t, 20348, p.Os.GetPatch())
+		assert.Equal(t, "Compliant", p.Attrs.Fields["defenderPolicyStatus"].GetStringValue())
+		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Compliant)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.ThreatFree)
 		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN, p.RiskLevel)
 		assert.True(t, p.LastSeenAt.IsValid())
@@ -82,16 +89,17 @@ func TestToEntry(t *testing.T) {
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_FAIL, p.AgentHealthy)
 		assert.Equal(t, corev1.Device_Status_Posture_FAIL, p.NotContained)
-		assert.Equal(t, corev1.Device_Status_Posture_NOT_APPLICABLE, p.Signals["x.huntress.defender"])
-		_, ok := p.Signals["x.huntress.tamperProtection"]
-		assert.False(t, ok)
+		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Antivirus,
+			"a Mac can have an antivirus that Huntress does not manage")
+		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.TamperProtection)
+		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Firewall)
 	}
 
 	{
 		p := toEntry(getAgent(`{"id": 44, "platform": "windows", "last_seen": "2026-09-28T10:00:00Z"}`), now).Posture
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.AgentHealthy)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.NotContained)
-		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Signals["x.huntress.defender"])
+		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Antivirus)
 		assert.Nil(t, p.LastSeenAt)
 	}
 
@@ -115,7 +123,34 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, tc.want, notContainedSignal(tc.status), tc.status)
 	}
 
-	assert.Equal(t, corev1.Device_Status_Posture_FAIL, defenderSignal("windows", "Unprotected"))
+	for _, tc := range []struct {
+		status string
+		want   corev1.Device_Status_Posture_SignalState
+	}{
+		{"Enabled", corev1.Device_Status_Posture_PASS},
+		{"Disabled", corev1.Device_Status_Posture_FAIL},
+		{"Pending Isolation", corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN},
+		{"Isolated", corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN},
+		{"Pending Release", corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN},
+		{"", corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN},
+	} {
+		assert.Equal(t, tc.want, firewallSignal(tc.status), tc.status)
+	}
+
+	for _, tc := range []struct {
+		status string
+		want   corev1.Device_Status_Posture_SignalState
+	}{
+		{"Protected", corev1.Device_Status_Posture_PASS},
+		{"Healthy", corev1.Device_Status_Posture_PASS},
+		{"Unhealthy", corev1.Device_Status_Posture_FAIL},
+		{"Unmanaged", corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN},
+		{"Incompatible", corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN},
+		{"SomeNewValue", corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN},
+		{"", corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN},
+	} {
+		assert.Equal(t, tc.want, antivirusSignal(tc.status), tc.status)
+	}
 }
 
 func TestListAgents(t *testing.T) {

@@ -261,6 +261,7 @@ type general struct {
 	LastContactTime   string            `json:"lastContactTime"`
 	Supervised        bool              `json:"supervised"`
 	UserApprovedMdm   bool              `json:"userApprovedMdm"`
+	IsAutoEnrolled    bool              `json:"enrolledViaAutomatedDeviceEnrollment"`
 	RemoteManagement  *remoteManagement `json:"remoteManagement"`
 	Site              *site             `json:"site"`
 }
@@ -301,6 +302,10 @@ type security struct {
 	ActivationLockEnabled bool   `json:"activationLockEnabled"`
 	FirewallEnabled       *bool  `json:"firewallEnabled"`
 	SecureBootLevel       string `json:"secureBootLevel"`
+	ExternalBootLevel     string `json:"externalBootLevel"`
+	XprotectVersion       string `json:"xprotectVersion"`
+	AutoLoginDisabled     *bool  `json:"autoLoginDisabled"`
+	RemoteDesktopEnabled  *bool  `json:"remoteDesktopEnabled"`
 }
 
 type diskEncryption struct {
@@ -345,13 +350,14 @@ func (m *Manager) toEntry(c *computer, now time.Time) *devicemgrcommon.Entry {
 		Compliant:      m.complianceSignal(c.GroupMemberships),
 		Firewall:       devicemgrcommon.SignalFromBool(sec.FirewallEnabled),
 		SecureBoot:     secureBootSignal(sec.SecureBootLevel),
+		OsIntegrity:    sipSignal(sec.SipStatus),
+		AppControl:     gatekeeperSignal(sec.GatekeeperStatus),
 		Enrolled:       devicemgrcommon.SignalFromBool(managed),
 		AgentHealthy:   devicemgrcommon.RecencySignal(lastContact, haveContact, now),
-		Signals: map[string]corev1.Device_Status_Posture_SignalState{
-			devicemgrcommon.SignalKey("jamf", "sip"):        sipSignal(sec.SipStatus),
-			devicemgrcommon.SignalKey("jamf", "gatekeeper"): gatekeeperSignal(sec.GatekeeperStatus),
-		},
-		Attrs: jamfAttrs(c, gen, hw, os, sec),
+		Os:             devicemgrcommon.ParseOS(corev1.Device_Status_MAC, os.Version),
+		Ownership:      jamfOwnership(gen),
+		DeviceClass:    devicemgrcommon.ParseDeviceClass(hw.Model, "mac"),
+		Attrs:          jamfAttrs(c, gen, hw, os, sec),
 	}
 	if haveContact {
 		p.LastSeenAt = timestamppb.New(lastContact)
@@ -384,6 +390,14 @@ func (m *Manager) complianceSignal(groups []*groupMembership) corev1.Device_Stat
 	}
 
 	return corev1.Device_Status_Posture_FAIL
+}
+
+func jamfOwnership(gen *general) corev1.Device_Status_Posture_Ownership {
+	if gen.IsAutoEnrolled {
+		return corev1.Device_Status_Posture_COMPANY
+	}
+
+	return corev1.Device_Status_Posture_OWNERSHIP_UNKNOWN
 }
 
 func jamfOwnerEmails(u *userAndLocation) []string {
@@ -429,10 +443,18 @@ func jamfAttrs(c *computer, gen *general, hw *hardware, os *operatingSystem, sec
 	put("platform", gen.Platform)
 	put("modelIdentifier", hw.ModelIdentifier)
 	put("osName", os.Name)
-	put("osVersion", os.Version)
+	put("osBuild", os.Build)
 	put("sipStatus", sec.SipStatus)
 	put("gatekeeperStatus", sec.GatekeeperStatus)
 	put("secureBootLevel", sec.SecureBootLevel)
+	put("externalBootLevel", sec.ExternalBootLevel)
+	put("xprotectVersion", sec.XprotectVersion)
+	if sec.AutoLoginDisabled != nil {
+		fields["autoLoginDisabled"] = *sec.AutoLoginDisabled
+	}
+	if sec.RemoteDesktopEnabled != nil {
+		fields["remoteDesktopEnabled"] = *sec.RemoteDesktopEnabled
+	}
 	if gen.Site != nil {
 		put("site", gen.Site.Name)
 	}

@@ -874,6 +874,7 @@ func normalizePosture(posture *corev1.Device_Status_Posture) *corev1.Device_Stat
 	out.LastSyncAt = nil
 	out.LastSeenAt = nil
 	out.ExpiresAt = nil
+	out.AssessedAt = nil
 
 	return out
 }

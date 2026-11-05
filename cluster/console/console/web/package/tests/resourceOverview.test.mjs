@@ -289,8 +289,8 @@ describe("Resource overview details", () => {
 
   it("shows every reported posture check of a Device", async () => {
     await load("/core/devices/alice-macbook");
-    await page.getByText("5 of 7 checks passing", { exact: true }).waitFor();
-    for (const check of ["Disk encryption", "Firewall", "Secure boot"]) {
+    await page.getByText("5 of 8 checks passing", { exact: true }).waitFor();
+    for (const check of ["Disk encryption", "Firewall", "Secure boot", "OS integrity"]) {
       await page.getByText(check, { exact: true }).first().waitFor();
     }
     assert.deepEqual(await sectionTitles(), [
@@ -299,6 +299,22 @@ describe("Resource overview details", () => {
       "Hardware",
       "Authorization",
     ]);
+  });
+
+  it("counts a grace period as not passing and shows the numeric posture", async () => {
+    await load("/core/devices/alice-macbook");
+    await page.getByText("Compliant (grace period)", { exact: true }).first().waitFor();
+    for (const [label, value] of [
+      ["Score", "85 / 100"],
+      ["Failing checks", "0"],
+      ["Active threats", "0"],
+      ["Reported OS version", "14.5.1"],
+      ["Ownership", "Company"],
+      ["Device class", "Workstation"],
+    ]) {
+      await page.getByText(label, { exact: true }).first().waitFor();
+      await page.getByText(value, { exact: true }).first().waitFor();
+    }
   });
 
   it("shows the confidence and evidence of a Device binding", async () => {

@@ -25,6 +25,7 @@ import (
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestFleet(t *testing.T) {
@@ -786,8 +787,98 @@ func TestSignals(t *testing.T) {
 		RecencySignal(now.Add(MaxClockSkew+time.Second), true, now))
 	assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN,
 		RecencySignal(now.Add(365*24*time.Hour), true, now))
+}
 
-	assert.Equal(t, "x.crowdstrike.name", SignalKey("crowdstrike", "name"))
+func TestParseOS(t *testing.T) {
+	type version struct {
+		major, minor, patch, revision *uint32
+	}
+
+	num := proto.Uint32
+
+	for _, tc := range []struct {
+		osType corev1.Device_Status_OSType
+		arg    string
+		want   version
+	}{
+		{corev1.Device_Status_MAC, "14.5.1", version{num(14), num(5), num(1), nil}},
+		{corev1.Device_Status_MAC, "macOS 14.5", version{num(14), num(5), nil, nil}},
+		{corev1.Device_Status_MAC, "15.0", version{num(15), num(0), nil, nil}},
+		{corev1.Device_Status_MAC, "14.5 (23F79)", version{num(14), num(5), nil, nil}},
+		{corev1.Device_Status_WINDOWS, "10.0.22631.3880", version{num(10), num(0), num(22631), num(3880)}},
+		{corev1.Device_Status_WINDOWS, "Windows 11 Pro 23H2 10.0.22631.3880",
+			version{num(10), num(0), num(22631), num(3880)}},
+		{corev1.Device_Status_WINDOWS, "Windows 11", version{}},
+		{corev1.Device_Status_WINDOWS, "19044", version{}},
+		{corev1.Device_Status_LINUX, "Ubuntu 22.04.4 LTS", version{num(22), num(4), num(4), nil}},
+		{corev1.Device_Status_ANDROID, "14", version{num(14), nil, nil, nil}},
+		{corev1.Device_Status_IOS, "17", version{num(17), nil, nil, nil}},
+		{corev1.Device_Status_LINUX, "14", version{}},
+		{corev1.Device_Status_OS_TYPE_UNKNOWN, "1.2.3.4.5", version{num(1), num(2), num(3), num(4)}},
+		{corev1.Device_Status_MAC, "99999999999.1", version{}},
+		{corev1.Device_Status_MAC, "", version{}},
+	} {
+		t.Run(tc.arg, func(t *testing.T) {
+			ret := ParseOS(tc.osType, tc.arg)
+			assert.Equal(t, tc.osType, ret.Type)
+			assert.Equal(t, tc.arg, ret.Version)
+			assert.Equal(t, tc.want, version{ret.Major, ret.Minor, ret.Patch, ret.Revision})
+		})
+	}
+
+	assert.Nil(t, ParseOS(corev1.Device_Status_OS_TYPE_UNKNOWN, " "))
+	assert.Equal(t, "14.5", ParseOS(corev1.Device_Status_MAC, " 14.5 ").Version)
+}
+
+func TestParseDeviceClass(t *testing.T) {
+	for _, tc := range []struct {
+		args []string
+		want corev1.Device_Status_Posture_DeviceClass
+	}{
+		{nil, corev1.Device_Status_Posture_DEVICE_CLASS_UNKNOWN},
+		{[]string{"", " "}, corev1.Device_Status_Posture_DEVICE_CLASS_UNKNOWN},
+		{[]string{"kubernetes node"}, corev1.Device_Status_Posture_DEVICE_CLASS_UNKNOWN},
+		{[]string{"Laptop"}, corev1.Device_Status_Posture_WORKSTATION},
+		{[]string{"desktop"}, corev1.Device_Status_Posture_WORKSTATION},
+		{[]string{"Notebook"}, corev1.Device_Status_Posture_WORKSTATION},
+		{[]string{"Workstation"}, corev1.Device_Status_Posture_WORKSTATION},
+		{[]string{"Computer"}, corev1.Device_Status_Posture_WORKSTATION},
+		{[]string{"Mac"}, corev1.Device_Status_Posture_WORKSTATION},
+		{[]string{"MacBookPro18,3"}, corev1.Device_Status_Posture_WORKSTATION},
+		{[]string{"iMac24,1"}, corev1.Device_Status_Posture_WORKSTATION},
+		{[]string{"Mac mini"}, corev1.Device_Status_Posture_WORKSTATION},
+		{[]string{"Server"}, corev1.Device_Status_Posture_SERVER},
+		{[]string{"Domain Controller"}, corev1.Device_Status_Posture_SERVER},
+		{[]string{"Windows Server 2022"}, corev1.Device_Status_Posture_SERVER},
+		{[]string{"Phone"}, corev1.Device_Status_Posture_PHONE},
+		{[]string{"iPhone 14 Pro"}, corev1.Device_Status_Posture_PHONE},
+		{[]string{"Tablet"}, corev1.Device_Status_Posture_TABLET},
+		{[]string{"iPad Pro"}, corev1.Device_Status_Posture_TABLET},
+		{[]string{"VMware Virtual Platform"}, corev1.Device_Status_Posture_VIRTUAL_MACHINE},
+		{[]string{"Virtual Server"}, corev1.Device_Status_Posture_VIRTUAL_MACHINE},
+		{[]string{"Virtual Machine", "Windows Server 2022"}, corev1.Device_Status_Posture_VIRTUAL_MACHINE},
+		{[]string{"", "Laptop"}, corev1.Device_Status_Posture_WORKSTATION},
+		{[]string{"unrecognized", "Server"}, corev1.Device_Status_Posture_SERVER},
+	} {
+		assert.Equal(t, tc.want, ParseDeviceClass(tc.args...), "%v", tc.args)
+	}
+}
+
+func TestScoreAndCount(t *testing.T) {
+	assert.EqualValues(t, 0, *Score(0))
+	assert.EqualValues(t, 95, *Score(95))
+	assert.EqualValues(t, 100, *Score(100))
+	assert.EqualValues(t, 100, *Score(101))
+	assert.EqualValues(t, 0, *Score(-1))
+
+	count := func(value int) *int {
+		return &value
+	}
+
+	assert.Nil(t, Count(nil))
+	assert.EqualValues(t, 0, *Count(count(0)))
+	assert.EqualValues(t, 3, *Count(count(3)))
+	assert.Nil(t, Count(count(-1)))
 }
 
 func TestParseHTTPSURL(t *testing.T) {

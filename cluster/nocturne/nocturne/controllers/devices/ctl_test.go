@@ -32,6 +32,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 type tstManager struct{}
@@ -1554,6 +1555,15 @@ func TestIsPostureRefreshDue(t *testing.T) {
 	assert.False(t, posturesEqualIgnoringTimestamps(current, &corev1.Device_Status_Posture{
 		Compliant: corev1.Device_Status_Posture_PASS,
 	}))
+
+	assert.True(t, posturesEqualIgnoringTimestamps(
+		&corev1.Device_Status_Posture{AssessedAt: pbutils.Timestamp(time.Now())},
+		&corev1.Device_Status_Posture{AssessedAt: pbutils.Timestamp(time.Now().Add(time.Hour))}),
+		"a new assessment time alone must not write the Device")
+	assert.False(t, posturesEqualIgnoringTimestamps(
+		&corev1.Device_Status_Posture{Score: proto.Uint32(0)},
+		&corev1.Device_Status_Posture{}),
+		"a reported zero is different from an unreported score")
 }
 
 func TestAttemptHelpers(t *testing.T) {

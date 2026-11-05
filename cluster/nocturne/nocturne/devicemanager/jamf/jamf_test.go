@@ -87,7 +87,10 @@ func TestToEntry(t *testing.T) {
 				"sipStatus": "ENABLED",
 				"gatekeeperStatus": "APP_STORE_AND_IDENTIFIED_DEVELOPERS",
 				"firewallEnabled": true,
-				"secureBootLevel": "FULL_SECURITY"
+				"secureBootLevel": "FULL_SECURITY",
+				"externalBootLevel": "DISALLOW_BOOTING_FROM_EXTERNAL_MEDIA",
+				"autoLoginDisabled": true,
+				"remoteDesktopEnabled": false
 			},
 			"diskEncryption": {
 				"bootPartitionEncryptionDetails": {"partitionFileVault2State": "ENCRYPTED"}
@@ -114,9 +117,30 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Enrolled)
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.AgentHealthy)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.ThreatFree)
-		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Signals["x.jamf.sip"])
-		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Signals["x.jamf.gatekeeper"])
+		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.OsIntegrity)
+		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.AppControl)
 		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN, p.RiskLevel)
+		assert.Equal(t, corev1.Device_Status_MAC, p.Os.Type)
+		assert.Equal(t, corev1.Device_Status_Posture_WORKSTATION, p.DeviceClass)
+		assert.Equal(t, "DISALLOW_BOOTING_FROM_EXTERNAL_MEDIA", p.Attrs.Fields["externalBootLevel"].GetStringValue())
+		assert.True(t, p.Attrs.Fields["autoLoginDisabled"].GetBoolValue())
+		assert.False(t, p.Attrs.Fields["remoteDesktopEnabled"].GetBoolValue())
+		assert.NotNil(t, p.Attrs.Fields["remoteDesktopEnabled"])
+	}
+
+	{
+		p := m.toEntry(getComputer(`{
+			"udid": "u",
+			"general": {"enrolledViaAutomatedDeviceEnrollment": true},
+			"hardware": {"model": "Apple Virtual Machine 1"},
+			"operatingSystem": {"version": "14.5.1"}
+		}`), now).Posture
+
+		assert.Equal(t, corev1.Device_Status_Posture_COMPANY, p.Ownership)
+		assert.Equal(t, corev1.Device_Status_Posture_VIRTUAL_MACHINE, p.DeviceClass)
+		assert.EqualValues(t, 14, p.Os.GetMajor())
+		assert.EqualValues(t, 5, p.Os.GetMinor())
+		assert.EqualValues(t, 1, p.Os.GetPatch())
 	}
 
 	{
@@ -134,7 +158,9 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.SecureBoot)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Enrolled)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.AgentHealthy)
-		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Signals["x.jamf.sip"])
+		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.OsIntegrity)
+		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.AppControl)
+		assert.Equal(t, corev1.Device_Status_Posture_OWNERSHIP_UNKNOWN, p.Ownership)
 		assert.Empty(t, entry.OwnerEmails)
 	}
 

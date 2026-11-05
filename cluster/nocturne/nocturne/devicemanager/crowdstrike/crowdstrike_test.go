@@ -31,6 +31,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestParseExternalID(t *testing.T) {
@@ -121,7 +122,9 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.DiskEncryption)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Compliant)
 		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN, p.RiskLevel)
-		assert.Empty(t, p.Signals)
+		assert.Nil(t, p.Score)
+		assert.Nil(t, p.FailingChecks)
+		assert.Nil(t, p.AssessedAt)
 		assert.True(t, p.LastSeenAt.IsValid())
 		assert.Equal(t, "7.10.0", p.Attrs.Fields["agentVersion"].GetStringValue())
 	}
@@ -169,22 +172,100 @@ func TestToEntry(t *testing.T) {
 		err := json.Unmarshal([]byte(`{
 			"aid": "0123456789abcdef0123456789abcdef",
 			"cid": "cid-1",
-			"assessment": {"overall": 95, "os": 80, "sensor_config": 70}
+			"modified_time": "2026-09-28T10:00:00Z",
+			"assessment": {"overall": 95, "os": 80, "sensor_config": 70},
+			"assessment_items": {
+				"os_signals": [
+					{"signal_id": "a", "meets_criteria": "yes"},
+					{"signal_id": "b", "meets_criteria": "no"},
+					null
+				],
+				"sensor_signals": [
+					{"signal_id": "c", "meets_criteria": "unknown"},
+					{"signal_id": "d", "meets_criteria": "YES"}
+				]
+			}
 		}`), zta)
 		assert.Nil(t, err)
 
 		p := toEntry(getDevice("normal", "no", now), zta, now).Posture
-		assert.Equal(t, corev1.Device_Status_Posture_LOW, p.RiskLevel)
-		assert.EqualValues(t, 95, p.Attrs.Fields["ztaScoreOverall"].GetNumberValue())
+		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN, p.RiskLevel,
+			"the Cluster must not invent a level out of a number")
+		assert.EqualValues(t, 95, p.GetScore())
+		assert.EqualValues(t, 2, p.GetFailingChecks())
+		assert.Equal(t, time.Date(2026, time.September, 28, 10, 0, 0, 0, time.UTC), p.AssessedAt.AsTime())
+		assert.Nil(t, p.Attrs.Fields["ztaScoreOverall"])
 		assert.EqualValues(t, 80, p.Attrs.Fields["ztaScoreOs"].GetNumberValue())
 		assert.EqualValues(t, 70, p.Attrs.Fields["ztaScoreSensor"].GetNumberValue())
 		assert.Equal(t, "cid-1", p.Attrs.Fields["cid"].GetStringValue())
 	}
 
-	assert.Equal(t, corev1.Device_Status_Posture_LOW, csRisk(90))
-	assert.Equal(t, corev1.Device_Status_Posture_MEDIUM, csRisk(70))
-	assert.Equal(t, corev1.Device_Status_Posture_HIGH, csRisk(40))
-	assert.Equal(t, corev1.Device_Status_Posture_CRITICAL, csRisk(39))
+	for _, tc := range []struct {
+		name    string
+		arg     string
+		score   *uint32
+		failing *uint32
+	}{
+		{
+			name:  "Zero",
+			arg:   `{"assessment": {"overall": 0}}`,
+			score: proto.Uint32(0),
+		},
+		{
+			name:  "OutOfRange",
+			arg:   `{"assessment": {"overall": 250}}`,
+			score: proto.Uint32(100),
+		},
+		{
+			name: "NoAssessment",
+			arg:  `{}`,
+		},
+		{
+			name: "NoSignals",
+			arg:  `{"assessment_items": {"os_signals": [], "sensor_signals": []}}`,
+		},
+		{
+			name:    "AllSignalsMet",
+			arg:     `{"assessment_items": {"os_signals": [{"meets_criteria": "yes"}]}}`,
+			failing: proto.Uint32(0),
+		},
+		{
+			name:    "MissingCriteriaIsNotMet",
+			arg:     `{"assessment_items": {"sensor_signals": [{"signal_id": "a"}]}}`,
+			failing: proto.Uint32(1),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			zta := &models.DomainSignalProperties{}
+			assert.Nil(t, json.Unmarshal([]byte(tc.arg), zta))
+
+			p := toEntry(getDevice("normal", "no", now), zta, now).Posture
+			assert.Equal(t, tc.score, p.Score)
+			assert.Equal(t, tc.failing, p.FailingChecks)
+		})
+	}
+
+	{
+		d := getDevice("normal", "no", now)
+		d.PlatformName = "Windows"
+		d.OsVersion = "Windows 11"
+		d.ChassisTypeDesc = "Laptop"
+
+		p := toEntry(d, nil, now).Posture
+		assert.Equal(t, corev1.Device_Status_WINDOWS, p.Os.Type)
+		assert.Equal(t, "Windows 11", p.Os.Version)
+		assert.Nil(t, p.Os.Major, "`11` is a product name rather than a version")
+		assert.Equal(t, corev1.Device_Status_Posture_WORKSTATION, p.DeviceClass)
+	}
+
+	{
+		d := getDevice("normal", "no", now)
+		d.ProductTypeDesc = "Domain Controller"
+		assert.Equal(t, corev1.Device_Status_Posture_SERVER, toEntry(d, nil, now).Posture.DeviceClass)
+
+		d.ChassisTypeDesc = "Virtual"
+		assert.Equal(t, corev1.Device_Status_Posture_VIRTUAL_MACHINE, toEntry(d, nil, now).Posture.DeviceClass)
+	}
 }
 
 func TestChunk(t *testing.T) {
@@ -278,6 +359,11 @@ func TestCollect(t *testing.T) {
 				fmt.Fprint(w, `{"meta": {}, "errors": [{"code": 403, "message": "access denied"}]}`)
 				return
 			}
+			if mode == "ztaPartialError" {
+				fmt.Fprintf(w, `{"meta": {}, "resources": [{"aid": %q, "assessment": {"overall": 95}}],
+					"errors": [{"code": 500, "message": "partial failure"}]}`, aid1)
+				return
+			}
 			fmt.Fprintf(w, `{"meta": {}, "resources": [{"aid": %q, "assessment": {"overall": 95}}],
 				"errors": [{"code": 404, "message": "no assessment"}]}`, aid1)
 		default:
@@ -306,12 +392,20 @@ func TestCollect(t *testing.T) {
 
 		res := fleet.MatchExternalID(aid1)
 		assert.Equal(t, devicemgrcommon.MatchStateUnique, res.State)
-		assert.Equal(t, corev1.Device_Status_Posture_LOW, res.Entry.Posture.RiskLevel)
+		assert.EqualValues(t, 95, res.Entry.Posture.GetScore())
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, res.Entry.Posture.NotContained)
 
 		res = fleet.MatchExternalID(aid2)
-		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN, res.Entry.Posture.RiskLevel)
+		assert.Nil(t, res.Entry.Posture.Score)
 		assert.Equal(t, corev1.Device_Status_Posture_FAIL, res.Entry.Posture.NotContained)
+	}
+
+	{
+		mode = "ztaPartialError"
+		fleet, err := m.Collect(context.Background())
+		assert.Nil(t, err)
+		assert.Contains(t, fleet.DegradedReason(), "partial failure")
+		assert.EqualValues(t, 95, fleet.MatchExternalID(aid1).Entry.Posture.GetScore())
 	}
 
 	{
@@ -320,8 +414,7 @@ func TestCollect(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 2, fleet.Len())
 		assert.NotEmpty(t, fleet.DegradedReason())
-		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN,
-			fleet.MatchExternalID(aid1).Entry.Posture.RiskLevel)
+		assert.Nil(t, fleet.MatchExternalID(aid1).Entry.Posture.Score)
 	}
 
 	{
@@ -351,8 +444,7 @@ func TestCollect(t *testing.T) {
 		fleet, err := m.Collect(context.Background())
 		assert.Nil(t, err)
 		assert.Empty(t, fleet.DegradedReason())
-		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN,
-			fleet.MatchExternalID(aid1).Entry.Posture.RiskLevel)
+		assert.Nil(t, fleet.MatchExternalID(aid1).Entry.Posture.Score)
 	}
 }
 

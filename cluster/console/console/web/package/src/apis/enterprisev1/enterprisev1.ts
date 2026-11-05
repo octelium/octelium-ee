@@ -6846,7 +6846,8 @@ export interface DeviceManager_Spec_MicrosoftIntune {
     filter: string;
     /**
      * IsGracePeriodCompliant treats the devices that are in their
-     * compliance grace period as compliant.
+     * compliance grace period as compliant, i.e. their
+     * Device.status.posture.compliant is PASS instead of GRACE_PERIOD.
      *
      * @generated from protobuf field: bool isGracePeriodCompliant = 6
      */

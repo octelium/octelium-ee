@@ -610,7 +610,7 @@
                 },
                 "isGracePeriodCompliant": {
                     "type": "boolean",
-                    "description": "IsGracePeriodCompliant treats the devices that are in their compliance grace period as compliant."
+                    "description": "IsGracePeriodCompliant treats the devices that are in their compliance grace period as compliant, i.e. their Device.status.posture.compliant is PASS instead of GRACE_PERIOD."
                 },
                 "isConfigManagerCompliant": {
                     "type": "boolean",

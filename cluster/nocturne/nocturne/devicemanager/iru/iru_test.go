@@ -44,6 +44,7 @@ func TestToEntry(t *testing.T) {
 			"device_id": "0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D",
 			"device_name": "alice-mbp",
 			"platform": "Mac",
+			"os_version": "14.5",
 			"serial_number": "C02XYZ",
 			"mac_address": "a4:bb:cc:dd:ee:01",
 			"last_check_in": %q,
@@ -65,7 +66,10 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.AgentHealthy)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Compliant)
 		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN, p.RiskLevel)
+		assert.Equal(t, corev1.Device_Status_Posture_WORKSTATION, p.DeviceClass)
+		assert.EqualValues(t, 14, p.Os.GetMajor())
 		assert.Equal(t, "User", p.Attrs.Fields["userName"].GetStringValue())
+		assert.Nil(t, p.Attrs.Fields["mdmEnabled"])
 	}
 
 	for _, user := range []string{`""`, `null`, `[]`, `"user@example.com"`} {

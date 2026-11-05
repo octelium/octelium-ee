@@ -194,6 +194,8 @@ export default (props: { item: CoreP.Device }) => {
 
 const Signal = CoreP.Device_Status_Posture_SignalState;
 const Risk = CoreP.Device_Status_Posture_RiskLevel;
+const Ownership = CoreP.Device_Status_Posture_Ownership;
+const DeviceClass = CoreP.Device_Status_Posture_DeviceClass;
 const Binding_State = CoreP.Device_Status_Binding_State;
 const Binding_Validity = CoreP.Device_Status_Binding_Validity;
 const Binding_Confidence = CoreP.Device_Status_Binding_Confidence;
@@ -235,27 +237,28 @@ const POSTURE_CHECKS: [
   ["screenLock", "Screen lock"],
   ["secureBoot", "Secure boot"],
   ["osUpToDate", "OS up to date"],
+  ["osIntegrity", "OS integrity"],
+  ["appControl", "App control"],
+  ["antivirus", "Antivirus"],
+  ["tamperProtection", "Tamper protection"],
   ["threatFree", "No active threats"],
   ["compliant", "Compliant"],
   ["agentHealthy", "Agent healthy"],
+  ["agentUpToDate", "Agent up to date"],
   ["enrolled", "Enrolled"],
   ["notContained", "Not contained"],
-  ["mobileIntegrity", "Mobile integrity"],
 ];
 
 const getChecks = (posture?: CoreP.Device_Status_Posture) => {
   if (!posture) return [];
-  return [
-    ...POSTURE_CHECKS.map(([key, label]) => ({
-      label,
-      state: posture[key] as CoreP.Device_Status_Posture_SignalState,
-    })),
-    ...Object.entries(posture.signals).map(([label, state]) => ({
-      label,
-      state,
-    })),
-  ].filter((check) => check.state !== Signal.SIGNAL_STATE_UNKNOWN);
+  return POSTURE_CHECKS.map(([key, label]) => ({
+    label,
+    state: posture[key] as CoreP.Device_Status_Posture_SignalState,
+  })).filter((check) => check.state !== Signal.SIGNAL_STATE_UNKNOWN);
 };
+
+const isCheckFailing = (state: CoreP.Device_Status_Posture_SignalState) =>
+  state === Signal.FAIL || state === Signal.GRACE_PERIOD;
 
 const CheckPill = (props: {
   label: string;
@@ -267,13 +270,23 @@ const CheckPill = (props: {
         ? "success"
         : props.state === Signal.FAIL
           ? "danger"
-          : "neutral"
+          : props.state === Signal.GRACE_PERIOD
+            ? "warning"
+            : "neutral"
     }
     icon={
-      props.state === Signal.PASS ? Check : props.state === Signal.FAIL ? X : Minus
+      props.state === Signal.PASS
+        ? Check
+        : props.state === Signal.FAIL
+          ? X
+          : props.state === Signal.GRACE_PERIOD
+            ? Clock3
+            : Minus
     }
   >
-    {props.label}
+    {props.state === Signal.GRACE_PERIOD
+      ? `${props.label} (grace period)`
+      : props.label}
   </TonePill>
 );
 
@@ -350,7 +363,7 @@ const DeviceHero = (props: { item: CoreP.Device }) => {
   const status = item.status;
   const posture = status?.posture;
   const checks = getChecks(posture);
-  const failing = checks.filter((check) => check.state === Signal.FAIL);
+  const failing = checks.filter((check) => isCheckFailing(check.state));
   const risk = riskTone(posture?.riskLevel);
   const postureExpiresAt = toDate(posture?.expiresAt);
   const postureExpired =
@@ -400,13 +413,16 @@ const DeviceHero = (props: { item: CoreP.Device }) => {
         )
       }
       aside={
-        posture && (
+        posture &&
+        (!posture.riskLevel && posture.score !== undefined ? (
+          <HeroStat label="Score" tone="neutral" value={`${posture.score} / 100`} />
+        ) : (
           <HeroStat
             label="Risk"
             tone={risk}
             value={enumLabel(Risk, posture.riskLevel)}
           />
-        )
+        ))
       }
     >
       {status?.isLocked && (
@@ -478,12 +494,14 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
         label: "Risk",
         primary: true,
         icon: Gauge,
-        value: posture ? (
+        value: !posture ? (
+          <MutedValue>No posture reported</MutedValue>
+        ) : !posture.riskLevel && posture.score !== undefined ? (
+          <span className="font-semibold">{posture.score} / 100</span>
+        ) : (
           <TonePill tone={riskTone(posture.riskLevel)}>
             {enumLabel(Risk, posture.riskLevel)}
           </TonePill>
-        ) : (
-          <MutedValue>No posture reported</MutedValue>
         ),
       },
       {
@@ -514,6 +532,77 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
                   <MutedValue>No checks reported</MutedValue>
                 ),
             },
+            ...(posture.score !== undefined
+              ? [
+                  {
+                    label: "Score",
+                    group: "Posture",
+                    value: <span className="font-semibold">{posture.score} / 100</span>,
+                  },
+                ]
+              : []),
+            ...(posture.failingChecks !== undefined
+              ? [
+                  {
+                    label: "Failing checks",
+                    group: "Posture",
+                    value: <span className="font-semibold">{posture.failingChecks}</span>,
+                  },
+                ]
+              : []),
+            ...(posture.activeThreats !== undefined
+              ? [
+                  {
+                    label: "Active threats",
+                    group: "Posture",
+                    value: <span className="font-semibold">{posture.activeThreats}</span>,
+                  },
+                ]
+              : []),
+            ...(posture.os?.version
+              ? [
+                  {
+                    label: "Reported OS version",
+                    group: "Posture",
+                    value: <span className="font-semibold">{posture.os.version}</span>,
+                  },
+                ]
+              : []),
+            ...(posture.ownership
+              ? [
+                  {
+                    label: "Ownership",
+                    group: "Posture",
+                    value: (
+                      <span className="font-semibold">
+                        {enumLabel(Ownership, posture.ownership)}
+                      </span>
+                    ),
+                  },
+                ]
+              : []),
+            ...(posture.deviceClass
+              ? [
+                  {
+                    label: "Device class",
+                    group: "Posture",
+                    value: (
+                      <span className="font-semibold">
+                        {enumLabel(DeviceClass, posture.deviceClass)}
+                      </span>
+                    ),
+                  },
+                ]
+              : []),
+            ...(posture.assessedAt
+              ? [
+                  {
+                    label: "Last assessed",
+                    group: "Posture",
+                    value: <TimeAgo rfc3339={posture.assessedAt} />,
+                  },
+                ]
+              : []),
             ...(posture.lastSyncAt
               ? [
                   {

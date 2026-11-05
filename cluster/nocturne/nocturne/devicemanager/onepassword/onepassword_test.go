@@ -85,6 +85,8 @@ func TestToEntry(t *testing.T) {
 			"auth_state": "Good",
 			"last_seen_at": %q,
 			"device_type": "Mac",
+			"form_factor": "Computer",
+			"operating_system": "macOS 14.5",
 			"registered_owner_info": {"identifier": "person-1", "link": "https://api.kolide.com/people/person-1"}
 		}`, now.Add(-time.Hour).UTC().Format(time.RFC3339))), emails, now)
 
@@ -99,7 +101,9 @@ func TestToEntry(t *testing.T) {
 		p := entry.Posture
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Compliant)
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.AgentHealthy)
-		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Signals["x.onepassword.noIssues"])
+		assert.Equal(t, corev1.Device_Status_Posture_WORKSTATION, p.DeviceClass)
+		assert.EqualValues(t, 14, p.Os.GetMajor())
+		assert.EqualValues(t, 5, p.Os.GetMinor())
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.DiskEncryption)
 		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN, p.RiskLevel)
 		assert.Equal(t, "Mac", p.Attrs.Fields["deviceType"].GetStringValue())
@@ -110,6 +114,8 @@ func TestToEntry(t *testing.T) {
 		entry := toEntry(getDevice(`{
 			"id": "device-2",
 			"auth_state": "Blocked",
+			"form_factor": "Phone",
+			"will_block_at": "2026-09-28T10:00:00Z",
 			"operating_system": "Ubuntu 22.04.3 LTS",
 			"hardware_uuid": "0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D",
 			"registered_owner_info": {"identifier": "person-2"}
@@ -121,22 +127,23 @@ func TestToEntry(t *testing.T) {
 		assert.Empty(t, entry.MachineID)
 		assert.Equal(t, corev1.Device_Status_Posture_FAIL, entry.Posture.Compliant)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, entry.Posture.AgentHealthy)
-		assert.Equal(t, corev1.Device_Status_Posture_FAIL, entry.Posture.Signals["x.onepassword.noIssues"])
+		assert.Equal(t, corev1.Device_Status_Posture_PHONE, entry.Posture.DeviceClass)
+		assert.EqualValues(t, 22, entry.Posture.Os.GetMajor())
+		assert.EqualValues(t, 4, entry.Posture.Os.GetMinor())
+		assert.Equal(t, "2026-09-28T10:00:00Z", entry.Posture.Attrs.Fields["willBlockAt"].GetStringValue())
 	}
 
 	for _, tc := range []struct {
-		state     string
-		compliant corev1.Device_Status_Posture_SignalState
-		noIssues  corev1.Device_Status_Posture_SignalState
+		state string
+		want  corev1.Device_Status_Posture_SignalState
 	}{
-		{"Good", corev1.Device_Status_Posture_PASS, corev1.Device_Status_Posture_PASS},
-		{"Notified", corev1.Device_Status_Posture_PASS, corev1.Device_Status_Posture_FAIL},
-		{"Will Block", corev1.Device_Status_Posture_PASS, corev1.Device_Status_Posture_FAIL},
-		{"Blocked", corev1.Device_Status_Posture_FAIL, corev1.Device_Status_Posture_FAIL},
-		{"", corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN},
+		{"Good", corev1.Device_Status_Posture_PASS},
+		{"Notified", corev1.Device_Status_Posture_GRACE_PERIOD},
+		{"Will Block", corev1.Device_Status_Posture_GRACE_PERIOD},
+		{"Blocked", corev1.Device_Status_Posture_FAIL},
+		{"", corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN},
 	} {
-		assert.Equal(t, tc.compliant, authStateCompliant(tc.state), tc.state)
-		assert.Equal(t, tc.noIssues, authStateNoIssues(tc.state), tc.state)
+		assert.Equal(t, tc.want, authStateCompliant(tc.state), tc.state)
 	}
 }
 

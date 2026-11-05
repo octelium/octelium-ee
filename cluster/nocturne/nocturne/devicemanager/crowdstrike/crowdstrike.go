@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"net/http"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -339,8 +340,17 @@ func (m *Manager) getZTA(ctx context.Context, ids []string) (map[string]*models.
 			}
 			out[strings.ToLower(*z.Aid)] = z
 		}
+		if err := getPayloadError(getZTAErrors(resp.Payload.Errors)); err != nil {
+			return out, errors.Wrap(err, "CrowdStrike get zero trust assessment")
+		}
 	}
 	return out, nil
+}
+
+func getZTAErrors(errs []*models.MsaAPIError) []*models.MsaAPIError {
+	return slices.DeleteFunc(slices.Clone(errs), func(e *models.MsaAPIError) bool {
+		return e == nil || (e.Code != nil && *e.Code == http.StatusNotFound)
+	})
 }
 
 func toEntry(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties, now time.Time) *devicemgrcommon.Entry {
@@ -351,24 +361,20 @@ func toEntry(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties,
 
 	lastSeen, haveSeen := parseTime(d.LastSeen)
 
+	osType := devicemgrcommon.ParseOSType(d.PlatformName)
+
 	p := &corev1.Device_Status_Posture{
 		AgentHealthy: csAgentHealthy(d, lastSeen, haveSeen, now),
 		NotContained: csNotContained(d),
+		Os:           devicemgrcommon.ParseOS(osType, d.OsVersion),
+		DeviceClass:  devicemgrcommon.ParseDeviceClass(d.ChassisTypeDesc, d.ProductTypeDesc),
 		Attrs:        csAttrs(d, z),
 	}
 	if haveSeen {
 		p.LastSeenAt = timestamppb.New(lastSeen)
 	}
-	if z != nil && z.Assessment != nil && z.Assessment.Overall != nil {
-		overall := *z.Assessment.Overall
-		p.RiskLevel = csRisk(overall)
-		p.Attrs = withField(p.Attrs, "ztaScoreOverall", float64(overall))
-		if z.Assessment.Os != nil {
-			p.Attrs = withField(p.Attrs, "ztaScoreOs", float64(*z.Assessment.Os))
-		}
-		if z.Assessment.SensorConfig != nil {
-			p.Attrs = withField(p.Attrs, "ztaScoreSensor", float64(*z.Assessment.SensorConfig))
-		}
+	if z != nil {
+		setZTA(p, z)
 	}
 
 	return &devicemgrcommon.Entry{
@@ -376,9 +382,53 @@ func toEntry(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties,
 		Serial:     d.SerialNumber,
 		MACs:       csMACs(d),
 		Hostname:   d.Hostname,
-		OSType:     devicemgrcommon.ParseOSType(d.PlatformName),
+		OSType:     osType,
 		Posture:    p,
 	}
+}
+
+func setZTA(p *corev1.Device_Status_Posture, z *models.DomainSignalProperties) {
+	p.FailingChecks = ztaFailingChecks(z.AssessmentItems)
+
+	if z.ModifiedTime != nil && !time.Time(*z.ModifiedTime).IsZero() {
+		p.AssessedAt = timestamppb.New(time.Time(*z.ModifiedTime))
+	}
+
+	if z.Assessment == nil {
+		return
+	}
+	if z.Assessment.Overall != nil {
+		p.Score = devicemgrcommon.Score(*z.Assessment.Overall)
+	}
+	if z.Assessment.Os != nil {
+		p.Attrs = withField(p.Attrs, "ztaScoreOs", float64(*z.Assessment.Os))
+	}
+	if z.Assessment.SensorConfig != nil {
+		p.Attrs = withField(p.Attrs, "ztaScoreSensor", float64(*z.Assessment.SensorConfig))
+	}
+}
+
+func ztaFailingChecks(items *models.DomainAssessmentItems) *uint32 {
+	if items == nil {
+		return nil
+	}
+
+	signals := slices.Concat(items.OsSignals, items.SensorSignals)
+	if len(signals) == 0 {
+		return nil
+	}
+
+	var ret uint32
+	for _, signal := range signals {
+		if signal == nil {
+			continue
+		}
+		if signal.MeetsCriteria == nil || !strings.EqualFold(strings.TrimSpace(*signal.MeetsCriteria), "yes") {
+			ret++
+		}
+	}
+
+	return &ret
 }
 
 func csNotContained(d *models.DeviceapiDeviceSwagger) corev1.Device_Status_Posture_SignalState {
@@ -422,7 +472,8 @@ func csAttrs(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties)
 	put("productTypeDesc", d.ProductTypeDesc)
 	put("provisionStatus", d.ProvisionStatus)
 	put("filesystemContainmentStatus", d.FilesystemContainmentStatus)
-	put("osVersion", d.OsVersion)
+	put("kernelVersion", d.KernelVersion)
+	put("osBuild", d.OsBuild)
 	put("platformName", d.PlatformName)
 	if z != nil {
 		if z.Cid != nil {
@@ -479,19 +530,6 @@ func cloudFromRegion(r enterprisev1.DeviceManager_Spec_CrowdStrike_Region) falco
 		return falcon.CloudUsGov2
 	default:
 		return falcon.CloudAutoDiscover
-	}
-}
-
-func csRisk(score int32) corev1.Device_Status_Posture_RiskLevel {
-	switch {
-	case score >= 90:
-		return corev1.Device_Status_Posture_LOW
-	case score >= 70:
-		return corev1.Device_Status_Posture_MEDIUM
-	case score >= 40:
-		return corev1.Device_Status_Posture_HIGH
-	default:
-		return corev1.Device_Status_Posture_CRITICAL
 	}
 }
 

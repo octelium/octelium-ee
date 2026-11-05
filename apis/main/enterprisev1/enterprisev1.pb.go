@@ -18863,7 +18863,8 @@ type DeviceManager_Spec_MicrosoftIntune struct {
 	// managed devices that are collected.
 	Filter string `protobuf:"bytes,5,opt,name=filter,proto3" json:"filter,omitempty"`
 	// IsGracePeriodCompliant treats the devices that are in their
-	// compliance grace period as compliant.
+	// compliance grace period as compliant, i.e. their
+	// Device.status.posture.compliant is PASS instead of GRACE_PERIOD.
 	IsGracePeriodCompliant bool `protobuf:"varint,6,opt,name=isGracePeriodCompliant,proto3" json:"isGracePeriodCompliant,omitempty"`
 	// IsConfigManagerCompliant treats the devices whose compliance is
 	// evaluated by Configuration Manager as compliant.

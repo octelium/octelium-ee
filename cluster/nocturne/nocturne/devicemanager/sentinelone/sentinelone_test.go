@@ -109,6 +109,11 @@ func TestToEntry(t *testing.T) {
 			"uuid": "0A1B2C3D4E5F",
 			"computerName": "DESKTOP-1",
 			"osType": "windows",
+			"osName": "Windows 10 Pro",
+			"osRevision": "19044",
+			"machineType": "laptop",
+			"mitigationMode": "protect",
+			"operationalState": "na",
 			"serialNumber": "SERIAL-1",
 			"isActive": true,
 			"isUpToDate": false,
@@ -139,7 +144,14 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.NotContained)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Compliant)
 		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN, p.RiskLevel)
-		assert.Equal(t, corev1.Device_Status_Posture_FAIL, p.Signals["x.sentinelone.agentUpToDate"])
+		assert.Equal(t, corev1.Device_Status_Posture_FAIL, p.AgentUpToDate)
+		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Antivirus)
+		assert.Equal(t, uint32(0), *p.ActiveThreats, "a reported zero must not be dropped")
+		assert.Equal(t, corev1.Device_Status_Posture_WORKSTATION, p.DeviceClass)
+		assert.Equal(t, corev1.Device_Status_WINDOWS, p.Os.Type)
+		assert.Equal(t, "19044", p.Os.Version)
+		assert.Nil(t, p.Os.Major, "a Windows build number is not a major version")
+		assert.Nil(t, p.GetAttrs().GetFields()["activeThreats"])
 		assert.True(t, p.LastSeenAt.IsValid())
 	}
 
@@ -150,8 +162,72 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.DiskEncryption)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Firewall)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.NotContained)
-		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Signals["x.sentinelone.agentUpToDate"])
+		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.AgentUpToDate)
+		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Antivirus)
+		assert.Nil(t, p.ActiveThreats)
 		assert.Nil(t, p.GetAttrs().GetFields()["infected"])
+	}
+
+	{
+		p := toEntry(getAgent(`{"uuid": "u", "osType": "macos", "osRevision": "14.5 (23F79)"}`), now).Posture
+		assert.Equal(t, corev1.Device_Status_MAC, p.Os.Type)
+		assert.EqualValues(t, 14, p.Os.GetMajor())
+		assert.EqualValues(t, 5, p.Os.GetMinor())
+	}
+
+	recent := now.Add(-time.Hour).UTC().Format(time.RFC3339)
+
+	for _, tc := range []struct {
+		name string
+		arg  string
+		want corev1.Device_Status_Posture_SignalState
+	}{
+		{
+			name: "Healthy",
+			arg:  fmt.Sprintf(`{"isActive": true, "operationalState": "na", "lastActiveDate": %q}`, recent),
+			want: corev1.Device_Status_Posture_PASS,
+		},
+		{
+			name: "InactiveStaysFailing",
+			arg:  fmt.Sprintf(`{"isActive": false, "lastActiveDate": %q}`, recent),
+			want: corev1.Device_Status_Posture_FAIL,
+		},
+		{
+			name: "Decommissioned",
+			arg:  fmt.Sprintf(`{"isActive": true, "isDecommissioned": true, "lastActiveDate": %q}`, recent),
+			want: corev1.Device_Status_Posture_FAIL,
+		},
+		{
+			name: "Uninstalled",
+			arg:  fmt.Sprintf(`{"isActive": true, "isUninstalled": true, "lastActiveDate": %q}`, recent),
+			want: corev1.Device_Status_Posture_FAIL,
+		},
+		{
+			name: "Disabled",
+			arg:  fmt.Sprintf(`{"isActive": true, "operationalState": "fully_disabled", "lastActiveDate": %q}`, recent),
+			want: corev1.Device_Status_Posture_FAIL,
+		},
+		{
+			name: "NoOperationalState",
+			arg:  fmt.Sprintf(`{"isActive": true, "lastActiveDate": %q}`, recent),
+			want: corev1.Device_Status_Posture_PASS,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, toEntry(getAgent(tc.arg), now).Posture.AgentHealthy)
+		})
+	}
+
+	for _, tc := range []struct {
+		arg  string
+		want corev1.Device_Status_Posture_SignalState
+	}{
+		{`{"mitigationMode": "protect"}`, corev1.Device_Status_Posture_PASS},
+		{`{"mitigationMode": "detect"}`, corev1.Device_Status_Posture_FAIL},
+		{`{"mitigationMode": "other"}`, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN},
+		{`{"mitigationMode": "protect", "operationalState": "disabled_error"}`, corev1.Device_Status_Posture_FAIL},
+	} {
+		assert.Equal(t, tc.want, toEntry(getAgent(tc.arg), now).Posture.Antivirus, tc.arg)
 	}
 
 	{

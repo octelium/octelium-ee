@@ -9982,30 +9982,36 @@ export interface Device_Status {
 }
 /**
  * Posture is the security posture reported by the Device's bound
- * DeviceManager. Common signals have dedicated fields for use in CEL.
- * A signal is satisfied only when its state is PASS; unknown and
- * inapplicable signals do not satisfy a posture requirement.
+ * DeviceManager. Every provider maps what it reports to the same typed
+ * fields, so that a single Policy works with any provider. A signal is
+ * satisfied only when its state is PASS. A field that the provider does
+ * not report is omitted, so a condition on it evaluates to false, which
+ * means that the numeric fields can be compared directly (e.g.
+ * `ctx.device.status.posture.score >= 70`).
  *
  * @generated from protobuf message octelium.api.main.core.v1.Device.Status.Posture
  */
 export interface Device_Status_Posture {
     /**
      * RiskLevel is the overall risk level of the Device as assessed by the
-     * provider
+     * provider. It is never derived by the Cluster: a provider that only
+     * reports a number sets Score instead.
      *
      * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.RiskLevel riskLevel = 1
      */
     riskLevel: Device_Status_Posture_RiskLevel;
     /**
-     * DiskEncryption is PASS when the provider reports that the Device's
-     * disk encryption requirements are satisfied
+     * DiskEncryption is PASS when the provider reports the Device's disk as
+     * encrypted
      *
      * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState diskEncryption = 2
      */
     diskEncryption: Device_Status_Posture_SignalState;
     /**
      * Compliant is PASS when the Device meets the provider's compliance
-     * policy
+     * policy, FAIL when it does not and GRACE_PERIOD when it does not but
+     * the provider still allows it (e.g. Intune's `inGracePeriod`, or
+     * 1Password's `Notified` and `Will Block`)
      *
      * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState compliant = 3
      */
@@ -10016,16 +10022,6 @@ export interface Device_Status_Posture {
      * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState threatFree = 4
      */
     threatFree: Device_Status_Posture_SignalState;
-    /**
-     * Signals contains additional provider-specific signals keyed by
-     * `x.<provider>.<name>`. Signals that have a dedicated field are never
-     * duplicated in this map.
-     *
-     * @generated from protobuf field: map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals = 5
-     */
-    signals: {
-        [key: string]: Device_Status_Posture_SignalState;
-    };
     /**
      * LastSyncAt is the timestamp at which the Posture was last synced from
      * the provider
@@ -10051,8 +10047,10 @@ export interface Device_Status_Posture {
      */
     expiresAt?: Timestamp;
     /**
-     * Attrs is a map of the additional provider-specific attributes of the
-     * Device
+     * Attrs contains the raw provider-specific values that have no typed
+     * field. Its keys depend on the provider, so a Policy that uses them
+     * works only with that provider. Values that have a typed field are
+     * never duplicated here.
      *
      * @generated from protobuf field: google.protobuf.Struct attrs = 9
      */
@@ -10073,6 +10071,7 @@ export interface Device_Status_Posture {
     screenLock: Device_Status_Posture_SignalState;
     /**
      * SecureBoot is PASS when the provider reports secure boot as enabled
+     * at its strongest level
      *
      * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState secureBoot = 12
      */
@@ -10093,7 +10092,7 @@ export interface Device_Status_Posture {
     agentHealthy: Device_Status_Posture_SignalState;
     /**
      * Enrolled is PASS when the provider reports the Device as enrolled in
-     * its management system
+     * device management (MDM)
      *
      * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState enrolled = 15
      */
@@ -10106,12 +10105,140 @@ export interface Device_Status_Posture {
      */
     notContained: Device_Status_Posture_SignalState;
     /**
-     * MobileIntegrity is PASS when the provider reports that the mobile
-     * Device is neither jailbroken nor rooted
+     * OSIntegrity is PASS when the operating system's integrity protections
+     * are intact, FAIL when they are off or removed (e.g. a jailbroken or
+     * rooted mobile Device, or System Integrity Protection disabled on
+     * macOS)
      *
-     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState mobileIntegrity = 17
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState osIntegrity = 17
      */
-    mobileIntegrity: Device_Status_Posture_SignalState;
+    osIntegrity: Device_Status_Posture_SignalState;
+    /**
+     * AppControl is PASS when the provider reports that the operating
+     * system restricts which applications can run (e.g. Gatekeeper on
+     * macOS)
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState appControl = 18
+     */
+    appControl: Device_Status_Posture_SignalState;
+    /**
+     * Antivirus is PASS when the provider reports that malware protection
+     * is active and blocking on the Device, FAIL when it is unhealthy or
+     * only detecting
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState antivirus = 19
+     */
+    antivirus: Device_Status_Posture_SignalState;
+    /**
+     * TamperProtection is PASS when the provider reports that its protection
+     * cannot be turned off from the Device
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState tamperProtection = 20
+     */
+    tamperProtection: Device_Status_Posture_SignalState;
+    /**
+     * AgentUpToDate is PASS when the provider reports its agent on the
+     * Device as running the expected version
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState agentUpToDate = 21
+     */
+    agentUpToDate: Device_Status_Posture_SignalState;
+    /**
+     * Score is the provider's own overall assessment of the Device from 0
+     * to 100, where a higher number is better (e.g. CrowdStrike's Zero Trust
+     * Assessment). A provider that uses another range or direction is
+     * normalized to this one.
+     *
+     * @generated from protobuf field: optional uint32 score = 22
+     */
+    score?: number;
+    /**
+     * FailingChecks is the number of the provider's checks that the Device
+     * currently fails (e.g. Fleet policies or Zero Trust Assessment signals)
+     *
+     * @generated from protobuf field: optional uint32 failingChecks = 23
+     */
+    failingChecks?: number;
+    /**
+     * ActiveThreats is the number of active threats reported by the provider
+     *
+     * @generated from protobuf field: optional uint32 activeThreats = 24
+     */
+    activeThreats?: number;
+    /**
+     * AssessedAt is the timestamp at which the provider last changed Score
+     * and FailingChecks, when it reports them separately from LastSeenAt
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp assessedAt = 25
+     */
+    assessedAt?: Timestamp;
+    /**
+     * OS is the operating system of the Device
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.OS os = 26
+     */
+    os?: Device_Status_Posture_OS;
+    /**
+     * Ownership is who owns the Device
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.Ownership ownership = 27
+     */
+    ownership: Device_Status_Posture_Ownership;
+    /**
+     * DeviceClass is the kind of the Device
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.DeviceClass deviceClass = 28
+     */
+    deviceClass: Device_Status_Posture_DeviceClass;
+}
+/**
+ * OS is the operating system of the Device as reported by the provider,
+ * as opposed to Device.status.osType which is reported by the Device
+ *
+ * @generated from protobuf message octelium.api.main.core.v1.Device.Status.Posture.OS
+ */
+export interface Device_Status_Posture_OS {
+    /**
+     * Type is the type of the operating system
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.OSType type = 1
+     */
+    type: Device_Status_OSType;
+    /**
+     * Version is the version as reported by the provider (e.g. `14.5.1`,
+     * `10.0.22631.3880`, `Ubuntu 22.04.4 LTS`)
+     *
+     * @generated from protobuf field: string version = 2
+     */
+    version: string;
+    /**
+     * Major is the first numeric part of the dotted version. All the
+     * numeric parts are omitted when the provider reports no dotted
+     * version (e.g. `Windows 11`, or a Windows build number alone).
+     *
+     * @generated from protobuf field: optional uint32 major = 3
+     */
+    major?: number;
+    /**
+     * Minor is the second numeric part of the version
+     *
+     * @generated from protobuf field: optional uint32 minor = 4
+     */
+    minor?: number;
+    /**
+     * Patch is the third numeric part of the version, which is the build
+     * number on Windows (e.g. 22631)
+     *
+     * @generated from protobuf field: optional uint32 patch = 5
+     */
+    patch?: number;
+    /**
+     * Revision is the fourth numeric part of the version, which is the
+     * update build revision on Windows (e.g. 3880)
+     *
+     * @generated from protobuf field: optional uint32 revision = 6
+     */
+    revision?: number;
 }
 /**
  * RiskLevel is the overall risk level of the Device as assessed by the
@@ -10159,30 +10286,108 @@ export enum Device_Status_Posture_RiskLevel {
 export enum Device_Status_Posture_SignalState {
     /**
      * SIGNAL_STATE_UNKNOWN means that the provider did not report the
-     * signal
+     * signal or reported a value that has no known meaning. A signal that
+     * a provider does not cover is always unknown.
      *
      * @generated from protobuf enum value: SIGNAL_STATE_UNKNOWN = 0;
      */
     SIGNAL_STATE_UNKNOWN = 0,
     /**
-     * PASS means that the signal is satisfied
+     * PASS means that the provider reports the signal as satisfied
      *
      * @generated from protobuf enum value: PASS = 1;
      */
     PASS = 1,
     /**
-     * FAIL means that the signal is not satisfied
+     * FAIL means that the provider reports the signal as not satisfied
      *
      * @generated from protobuf enum value: FAIL = 2;
      */
     FAIL = 2,
     /**
-     * NOT_APPLICABLE means that the signal cannot apply to the Device's
-     * platform
+     * NOT_APPLICABLE means that the signal cannot exist on the Device
+     * (e.g. secure boot on a hardware that does not support it)
      *
      * @generated from protobuf enum value: NOT_APPLICABLE = 3;
      */
-    NOT_APPLICABLE = 3
+    NOT_APPLICABLE = 3,
+    /**
+     * GRACE_PERIOD means that the signal is not satisfied but the provider
+     * still allows the Device, which it may block later. To accept such a
+     * Device, use `compliant in ["PASS", "GRACE_PERIOD"]`.
+     *
+     * @generated from protobuf enum value: GRACE_PERIOD = 4;
+     */
+    GRACE_PERIOD = 4
+}
+/**
+ * Ownership is who owns the Device
+ *
+ * @generated from protobuf enum octelium.api.main.core.v1.Device.Status.Posture.Ownership
+ */
+export enum Device_Status_Posture_Ownership {
+    /**
+     * OWNERSHIP_UNKNOWN means that the provider did not report the owner
+     *
+     * @generated from protobuf enum value: OWNERSHIP_UNKNOWN = 0;
+     */
+    OWNERSHIP_UNKNOWN = 0,
+    /**
+     * COMPANY means that the Device is owned by the organization
+     *
+     * @generated from protobuf enum value: COMPANY = 1;
+     */
+    COMPANY = 1,
+    /**
+     * PERSONAL means that the Device is personally owned (i.e. BYOD)
+     *
+     * @generated from protobuf enum value: PERSONAL = 2;
+     */
+    PERSONAL = 2
+}
+/**
+ * DeviceClass is the kind of the Device
+ *
+ * @generated from protobuf enum octelium.api.main.core.v1.Device.Status.Posture.DeviceClass
+ */
+export enum Device_Status_Posture_DeviceClass {
+    /**
+     * DEVICE_CLASS_UNKNOWN means that the provider did not report the kind
+     * of the Device
+     *
+     * @generated from protobuf enum value: DEVICE_CLASS_UNKNOWN = 0;
+     */
+    DEVICE_CLASS_UNKNOWN = 0,
+    /**
+     * WORKSTATION is a desktop or a laptop
+     *
+     * @generated from protobuf enum value: WORKSTATION = 1;
+     */
+    WORKSTATION = 1,
+    /**
+     * SERVER is a physical server
+     *
+     * @generated from protobuf enum value: SERVER = 2;
+     */
+    SERVER = 2,
+    /**
+     * PHONE is a phone
+     *
+     * @generated from protobuf enum value: PHONE = 3;
+     */
+    PHONE = 3,
+    /**
+     * TABLET is a tablet
+     *
+     * @generated from protobuf enum value: TABLET = 4;
+     */
+    TABLET = 4,
+    /**
+     * VIRTUAL_MACHINE is a virtual machine regardless of its role
+     *
+     * @generated from protobuf enum value: VIRTUAL_MACHINE = 5;
+     */
+    VIRTUAL_MACHINE = 5
 }
 /**
  * Binding is the Device's link to one inventory entry of its single
@@ -33951,7 +34156,6 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
             { no: 2, name: "diskEncryption", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
             { no: 3, name: "compliant", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
             { no: 4, name: "threatFree", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
-            { no: 5, name: "signals", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] } },
             { no: 6, name: "lastSyncAt", kind: "message", T: () => Timestamp },
             { no: 7, name: "lastSeenAt", kind: "message", T: () => Timestamp },
             { no: 8, name: "expiresAt", kind: "message", T: () => Timestamp },
@@ -33963,7 +34167,18 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
             { no: 14, name: "agentHealthy", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
             { no: 15, name: "enrolled", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
             { no: 16, name: "notContained", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
-            { no: 17, name: "mobileIntegrity", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] }
+            { no: 17, name: "osIntegrity", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
+            { no: 18, name: "appControl", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
+            { no: 19, name: "antivirus", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
+            { no: 20, name: "tamperProtection", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
+            { no: 21, name: "agentUpToDate", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
+            { no: 22, name: "score", kind: "scalar", opt: true, T: 13 /*ScalarType.UINT32*/ },
+            { no: 23, name: "failingChecks", kind: "scalar", opt: true, T: 13 /*ScalarType.UINT32*/ },
+            { no: 24, name: "activeThreats", kind: "scalar", opt: true, T: 13 /*ScalarType.UINT32*/ },
+            { no: 25, name: "assessedAt", kind: "message", T: () => Timestamp },
+            { no: 26, name: "os", kind: "message", T: () => Device_Status_Posture_OS },
+            { no: 27, name: "ownership", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.Ownership", Device_Status_Posture_Ownership] },
+            { no: 28, name: "deviceClass", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.DeviceClass", Device_Status_Posture_DeviceClass] }
         ]);
     }
     create(value?: PartialMessage<Device_Status_Posture>): Device_Status_Posture {
@@ -33972,7 +34187,6 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
         message.diskEncryption = 0;
         message.compliant = 0;
         message.threatFree = 0;
-        message.signals = {};
         message.firewall = 0;
         message.screenLock = 0;
         message.secureBoot = 0;
@@ -33980,7 +34194,13 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
         message.agentHealthy = 0;
         message.enrolled = 0;
         message.notContained = 0;
-        message.mobileIntegrity = 0;
+        message.osIntegrity = 0;
+        message.appControl = 0;
+        message.antivirus = 0;
+        message.tamperProtection = 0;
+        message.agentUpToDate = 0;
+        message.ownership = 0;
+        message.deviceClass = 0;
         if (value !== undefined)
             reflectionMergePartial<Device_Status_Posture>(this, message, value);
         return message;
@@ -34001,9 +34221,6 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
                     break;
                 case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState threatFree */ 4:
                     message.threatFree = reader.int32();
-                    break;
-                case /* map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals */ 5:
-                    this.binaryReadMap5(message.signals, reader, options);
                     break;
                 case /* google.protobuf.Timestamp lastSyncAt */ 6:
                     message.lastSyncAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSyncAt);
@@ -34038,8 +34255,41 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
                 case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState notContained */ 16:
                     message.notContained = reader.int32();
                     break;
-                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState mobileIntegrity */ 17:
-                    message.mobileIntegrity = reader.int32();
+                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState osIntegrity */ 17:
+                    message.osIntegrity = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState appControl */ 18:
+                    message.appControl = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState antivirus */ 19:
+                    message.antivirus = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState tamperProtection */ 20:
+                    message.tamperProtection = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState agentUpToDate */ 21:
+                    message.agentUpToDate = reader.int32();
+                    break;
+                case /* optional uint32 score */ 22:
+                    message.score = reader.uint32();
+                    break;
+                case /* optional uint32 failingChecks */ 23:
+                    message.failingChecks = reader.uint32();
+                    break;
+                case /* optional uint32 activeThreats */ 24:
+                    message.activeThreats = reader.uint32();
+                    break;
+                case /* google.protobuf.Timestamp assessedAt */ 25:
+                    message.assessedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.assessedAt);
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Posture.OS os */ 26:
+                    message.os = Device_Status_Posture_OS.internalBinaryRead(reader, reader.uint32(), options, message.os);
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Posture.Ownership ownership */ 27:
+                    message.ownership = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Posture.DeviceClass deviceClass */ 28:
+                    message.deviceClass = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -34051,22 +34301,6 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
             }
         }
         return message;
-    }
-    private binaryReadMap5(map: Device_Status_Posture["signals"], reader: IBinaryReader, options: BinaryReadOptions): void {
-        let len = reader.uint32(), end = reader.pos + len, key: keyof Device_Status_Posture["signals"] | undefined, val: Device_Status_Posture["signals"][any] | undefined;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case 1:
-                    key = reader.string();
-                    break;
-                case 2:
-                    val = reader.int32();
-                    break;
-                default: throw new globalThis.Error("unknown map entry field for octelium.api.main.core.v1.Device.Status.Posture.signals");
-            }
-        }
-        map[key ?? ""] = val ?? 0;
     }
     internalBinaryWrite(message: Device_Status_Posture, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* octelium.api.main.core.v1.Device.Status.Posture.RiskLevel riskLevel = 1; */
@@ -34081,9 +34315,6 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
         /* octelium.api.main.core.v1.Device.Status.Posture.SignalState threatFree = 4; */
         if (message.threatFree !== 0)
             writer.tag(4, WireType.Varint).int32(message.threatFree);
-        /* map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals = 5; */
-        for (let k of globalThis.Object.keys(message.signals))
-            writer.tag(5, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.Varint).int32(message.signals[k]).join();
         /* google.protobuf.Timestamp lastSyncAt = 6; */
         if (message.lastSyncAt)
             Timestamp.internalBinaryWrite(message.lastSyncAt, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
@@ -34117,9 +34348,42 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
         /* octelium.api.main.core.v1.Device.Status.Posture.SignalState notContained = 16; */
         if (message.notContained !== 0)
             writer.tag(16, WireType.Varint).int32(message.notContained);
-        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState mobileIntegrity = 17; */
-        if (message.mobileIntegrity !== 0)
-            writer.tag(17, WireType.Varint).int32(message.mobileIntegrity);
+        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState osIntegrity = 17; */
+        if (message.osIntegrity !== 0)
+            writer.tag(17, WireType.Varint).int32(message.osIntegrity);
+        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState appControl = 18; */
+        if (message.appControl !== 0)
+            writer.tag(18, WireType.Varint).int32(message.appControl);
+        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState antivirus = 19; */
+        if (message.antivirus !== 0)
+            writer.tag(19, WireType.Varint).int32(message.antivirus);
+        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState tamperProtection = 20; */
+        if (message.tamperProtection !== 0)
+            writer.tag(20, WireType.Varint).int32(message.tamperProtection);
+        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState agentUpToDate = 21; */
+        if (message.agentUpToDate !== 0)
+            writer.tag(21, WireType.Varint).int32(message.agentUpToDate);
+        /* optional uint32 score = 22; */
+        if (message.score !== undefined)
+            writer.tag(22, WireType.Varint).uint32(message.score);
+        /* optional uint32 failingChecks = 23; */
+        if (message.failingChecks !== undefined)
+            writer.tag(23, WireType.Varint).uint32(message.failingChecks);
+        /* optional uint32 activeThreats = 24; */
+        if (message.activeThreats !== undefined)
+            writer.tag(24, WireType.Varint).uint32(message.activeThreats);
+        /* google.protobuf.Timestamp assessedAt = 25; */
+        if (message.assessedAt)
+            Timestamp.internalBinaryWrite(message.assessedAt, writer.tag(25, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Device.Status.Posture.OS os = 26; */
+        if (message.os)
+            Device_Status_Posture_OS.internalBinaryWrite(message.os, writer.tag(26, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Device.Status.Posture.Ownership ownership = 27; */
+        if (message.ownership !== 0)
+            writer.tag(27, WireType.Varint).int32(message.ownership);
+        /* octelium.api.main.core.v1.Device.Status.Posture.DeviceClass deviceClass = 28; */
+        if (message.deviceClass !== 0)
+            writer.tag(28, WireType.Varint).int32(message.deviceClass);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -34130,6 +34394,89 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
  * @generated MessageType for protobuf message octelium.api.main.core.v1.Device.Status.Posture
  */
 export const Device_Status_Posture = new Device_Status_Posture$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Device_Status_Posture_OS$Type extends MessageType<Device_Status_Posture_OS> {
+    constructor() {
+        super("octelium.api.main.core.v1.Device.Status.Posture.OS", [
+            { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.OSType", Device_Status_OSType] },
+            { no: 2, name: "version", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "major", kind: "scalar", opt: true, T: 13 /*ScalarType.UINT32*/ },
+            { no: 4, name: "minor", kind: "scalar", opt: true, T: 13 /*ScalarType.UINT32*/ },
+            { no: 5, name: "patch", kind: "scalar", opt: true, T: 13 /*ScalarType.UINT32*/ },
+            { no: 6, name: "revision", kind: "scalar", opt: true, T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Device_Status_Posture_OS>): Device_Status_Posture_OS {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.version = "";
+        if (value !== undefined)
+            reflectionMergePartial<Device_Status_Posture_OS>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Device_Status_Posture_OS): Device_Status_Posture_OS {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.Device.Status.OSType type */ 1:
+                    message.type = reader.int32();
+                    break;
+                case /* string version */ 2:
+                    message.version = reader.string();
+                    break;
+                case /* optional uint32 major */ 3:
+                    message.major = reader.uint32();
+                    break;
+                case /* optional uint32 minor */ 4:
+                    message.minor = reader.uint32();
+                    break;
+                case /* optional uint32 patch */ 5:
+                    message.patch = reader.uint32();
+                    break;
+                case /* optional uint32 revision */ 6:
+                    message.revision = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Device_Status_Posture_OS, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.Device.Status.OSType type = 1; */
+        if (message.type !== 0)
+            writer.tag(1, WireType.Varint).int32(message.type);
+        /* string version = 2; */
+        if (message.version !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.version);
+        /* optional uint32 major = 3; */
+        if (message.major !== undefined)
+            writer.tag(3, WireType.Varint).uint32(message.major);
+        /* optional uint32 minor = 4; */
+        if (message.minor !== undefined)
+            writer.tag(4, WireType.Varint).uint32(message.minor);
+        /* optional uint32 patch = 5; */
+        if (message.patch !== undefined)
+            writer.tag(5, WireType.Varint).uint32(message.patch);
+        /* optional uint32 revision = 6; */
+        if (message.revision !== undefined)
+            writer.tag(6, WireType.Varint).uint32(message.revision);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Device.Status.Posture.OS
+ */
+export const Device_Status_Posture_OS = new Device_Status_Posture_OS$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
     constructor() {

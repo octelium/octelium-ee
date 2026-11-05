@@ -90,6 +90,10 @@ func TestToEntry(t *testing.T) {
 			"azureADDeviceId": "0A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D",
 			"jailBroken": "Unknown",
 			"isEncrypted": true,
+			"isSupervised": true,
+			"osVersion": "10.0.22631.3880",
+			"model": "Virtual Machine",
+			"managedDeviceOwnerType": "company",
 			"partnerReportedThreatState": "secured"
 		}`))
 
@@ -105,8 +109,18 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.DiskEncryption)
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Enrolled)
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.ThreatFree)
-		assert.Equal(t, corev1.Device_Status_Posture_NOT_APPLICABLE, p.MobileIntegrity)
+		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.OsIntegrity)
 		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN, p.RiskLevel)
+		assert.Equal(t, corev1.Device_Status_Posture_COMPANY, p.Ownership)
+		assert.Equal(t, corev1.Device_Status_Posture_VIRTUAL_MACHINE, p.DeviceClass)
+		assert.Equal(t, corev1.Device_Status_WINDOWS, p.Os.Type)
+		assert.EqualValues(t, 10, p.Os.GetMajor())
+		assert.EqualValues(t, 0, p.Os.GetMinor())
+		assert.NotNil(t, p.Os.Minor, "a zero minor version must not be dropped")
+		assert.EqualValues(t, 22631, p.Os.GetPatch())
+		assert.EqualValues(t, 3880, p.Os.GetRevision())
+		assert.True(t, p.Attrs.Fields["isSupervised"].GetBoolValue())
+		assert.Nil(t, p.Attrs.Fields["osVersion"])
 		assert.True(t, p.LastSeenAt.IsValid())
 	}
 
@@ -116,6 +130,9 @@ func TestToEntry(t *testing.T) {
 			"azureADDeviceId": "00000000-0000-0000-0000-000000000000",
 			"userPrincipalName": "not-an-email",
 			"operatingSystem": "iOS",
+			"osVersion": "17.5.1",
+			"model": "iPhone 14 Pro",
+			"managedDeviceOwnerType": "personal",
 			"jailBroken": "True"
 		}`))
 
@@ -128,7 +145,10 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.DiskEncryption)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Enrolled)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.ThreatFree)
-		assert.Equal(t, corev1.Device_Status_Posture_FAIL, p.MobileIntegrity)
+		assert.Equal(t, corev1.Device_Status_Posture_FAIL, p.OsIntegrity)
+		assert.Equal(t, corev1.Device_Status_Posture_PERSONAL, p.Ownership)
+		assert.Equal(t, corev1.Device_Status_Posture_PHONE, p.DeviceClass)
+		assert.EqualValues(t, 17, p.Os.GetMajor())
 		assert.Nil(t, p.LastSeenAt)
 	}
 
@@ -138,7 +158,7 @@ func TestToEntry(t *testing.T) {
 		want  corev1.Device_Status_Posture_SignalState
 	}{
 		{m, "compliant", corev1.Device_Status_Posture_PASS},
-		{m, "inGracePeriod", corev1.Device_Status_Posture_FAIL},
+		{m, "inGracePeriod", corev1.Device_Status_Posture_GRACE_PERIOD},
 		{&Manager{isGracePeriodCompliant: true}, "inGracePeriod", corev1.Device_Status_Posture_PASS},
 		{m, "configManager", corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN},
 		{&Manager{isConfigManagerCompliant: true}, "configManager", corev1.Device_Status_Posture_PASS},
@@ -166,11 +186,32 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, tc.want, threatSignal(tc.state), tc.state)
 	}
 
+	for _, tc := range []struct {
+		state string
+		want  corev1.Device_Status_Posture_RiskLevel
+	}{
+		{"lowSeverity", corev1.Device_Status_Posture_LOW},
+		{"mediumSeverity", corev1.Device_Status_Posture_MEDIUM},
+		{"highSeverity", corev1.Device_Status_Posture_HIGH},
+		{"compromised", corev1.Device_Status_Posture_CRITICAL},
+		{"secured", corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN},
+		{"misconfigured", corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN},
+		{"", corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN},
+	} {
+		assert.Equal(t, tc.want, riskLevel(tc.state), tc.state)
+	}
+
+	assert.Equal(t, corev1.Device_Status_Posture_OWNERSHIP_UNKNOWN, ownership("unknown"))
+
 	assert.Equal(t, corev1.Device_Status_Posture_FAIL, enrolledSignal("retirePending"))
 	assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, enrolledSignal("unknown"))
-	assert.Equal(t, corev1.Device_Status_Posture_PASS, mobileIntegritySignal("Android", "False"))
-	assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, mobileIntegritySignal("iPadOS", "Unknown"))
-	assert.Equal(t, corev1.Device_Status_Posture_NOT_APPLICABLE, mobileIntegritySignal("macOS", "True"))
+	assert.Equal(t, corev1.Device_Status_Posture_PASS,
+		osIntegritySignal(corev1.Device_Status_ANDROID, "False"))
+	assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN,
+		osIntegritySignal(corev1.Device_Status_IOS, "Unknown"))
+	assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN,
+		osIntegritySignal(corev1.Device_Status_MAC, "True"),
+		"Intune's jailBroken says nothing about the integrity of a computer")
 }
 
 func TestListManagedDevices(t *testing.T) {

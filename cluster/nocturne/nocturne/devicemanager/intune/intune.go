@@ -49,7 +49,7 @@ var selectFields = strings.Join([]string{
 	"lastSyncDateTime", "manufacturer", "model", "userPrincipalName",
 	"azureADDeviceId", "deviceEnrollmentType", "jailBroken", "isEncrypted", "emailAddress",
 	"managementAgent", "deviceRegistrationState", "partnerReportedThreatState",
-	"userId", "managedDeviceOwnerType", "deviceCategoryDisplayName",
+	"userId", "managedDeviceOwnerType", "deviceCategoryDisplayName", "isSupervised",
 }, ",")
 
 var deviceIDRe = regexp.MustCompile(`(?im)^\s*DeviceId\s*:\s*([0-9a-fA-F-]{36})`)
@@ -260,16 +260,23 @@ type managedDevice struct {
 	UserID                     string `json:"userId"`
 	ManagedDeviceOwnerType     string `json:"managedDeviceOwnerType"`
 	DeviceCategoryDisplayName  string `json:"deviceCategoryDisplayName"`
+	IsSupervised               *bool  `json:"isSupervised"`
 }
 
 func (m *Manager) toEntry(d *managedDevice) *devicemgrcommon.Entry {
+	osType := devicemgrcommon.ParseOSType(d.OperatingSystem)
+
 	p := &corev1.Device_Status_Posture{
-		DiskEncryption:  devicemgrcommon.SignalFromBool(d.IsEncrypted),
-		Compliant:       m.complianceSignal(d.ComplianceState),
-		ThreatFree:      threatSignal(d.PartnerReportedThreatState),
-		Enrolled:        enrolledSignal(d.ManagementState),
-		MobileIntegrity: mobileIntegritySignal(d.OperatingSystem, d.JailBroken),
-		Attrs:           intuneAttrs(d),
+		RiskLevel:      riskLevel(d.PartnerReportedThreatState),
+		DiskEncryption: devicemgrcommon.SignalFromBool(d.IsEncrypted),
+		Compliant:      m.complianceSignal(d.ComplianceState),
+		ThreatFree:     threatSignal(d.PartnerReportedThreatState),
+		Enrolled:       enrolledSignal(d.ManagementState),
+		OsIntegrity:    osIntegritySignal(osType, d.JailBroken),
+		Os:             devicemgrcommon.ParseOS(osType, d.OSVersion),
+		Ownership:      ownership(d.ManagedDeviceOwnerType),
+		DeviceClass:    devicemgrcommon.ParseDeviceClass(d.Model),
+		Attrs:          intuneAttrs(d),
 	}
 	if t, ok := parseTime(d.LastSyncDateTime); ok {
 		p.LastSeenAt = timestamppb.New(t)
@@ -286,7 +293,7 @@ func (m *Manager) toEntry(d *managedDevice) *devicemgrcommon.Entry {
 		Serial:      d.SerialNumber,
 		MACs:        intuneMACs(d),
 		Hostname:    d.DeviceName,
-		OSType:      devicemgrcommon.ParseOSType(d.OperatingSystem),
+		OSType:      osType,
 		OwnerEmails: intuneOwnerEmails(d),
 		Posture:     p,
 	}
@@ -334,13 +341,11 @@ func intuneAttrs(d *managedDevice) *structpb.Struct {
 	put("deviceEnrollmentType", d.DeviceEnrollmentType)
 	put("deviceRegistrationState", d.DeviceRegistrationState)
 	put("partnerReportedThreatState", d.PartnerReportedThreatState)
-	put("ownerType", d.ManagedDeviceOwnerType)
 	put("userPrincipalName", d.UserPrincipalName)
 	put("operatingSystem", d.OperatingSystem)
-	put("osVersion", d.OSVersion)
 	put("azureADDeviceId", d.AzureADDeviceID)
-	if d.IsEncrypted != nil {
-		fields["isEncrypted"] = *d.IsEncrypted
+	if d.IsSupervised != nil {
+		fields["isSupervised"] = *d.IsSupervised
 	}
 	if len(fields) == 0 {
 		return nil
@@ -360,7 +365,7 @@ func (m *Manager) complianceSignal(state string) corev1.Device_Status_Posture_Si
 		if m.isGracePeriodCompliant {
 			return corev1.Device_Status_Posture_PASS
 		}
-		return corev1.Device_Status_Posture_FAIL
+		return corev1.Device_Status_Posture_GRACE_PERIOD
 	case "configmanager":
 		if m.isConfigManagerCompliant {
 			return corev1.Device_Status_Posture_PASS
@@ -384,11 +389,11 @@ func enrolledSignal(state string) corev1.Device_Status_Posture_SignalState {
 	}
 }
 
-func mobileIntegritySignal(operatingSystem, jailBroken string) corev1.Device_Status_Posture_SignalState {
-	switch strings.ToLower(strings.TrimSpace(operatingSystem)) {
-	case "ios", "ipados", "android":
+func osIntegritySignal(osType corev1.Device_Status_OSType, jailBroken string) corev1.Device_Status_Posture_SignalState {
+	switch osType {
+	case corev1.Device_Status_IOS, corev1.Device_Status_ANDROID:
 	default:
-		return corev1.Device_Status_Posture_NOT_APPLICABLE
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
 
 	switch strings.ToLower(strings.TrimSpace(jailBroken)) {
@@ -398,6 +403,32 @@ func mobileIntegritySignal(operatingSystem, jailBroken string) corev1.Device_Sta
 		return corev1.Device_Status_Posture_PASS
 	default:
 		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	}
+}
+
+func ownership(s string) corev1.Device_Status_Posture_Ownership {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "company":
+		return corev1.Device_Status_Posture_COMPANY
+	case "personal":
+		return corev1.Device_Status_Posture_PERSONAL
+	default:
+		return corev1.Device_Status_Posture_OWNERSHIP_UNKNOWN
+	}
+}
+
+func riskLevel(s string) corev1.Device_Status_Posture_RiskLevel {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "lowseverity":
+		return corev1.Device_Status_Posture_LOW
+	case "mediumseverity":
+		return corev1.Device_Status_Posture_MEDIUM
+	case "highseverity":
+		return corev1.Device_Status_Posture_HIGH
+	case "compromised":
+		return corev1.Device_Status_Posture_CRITICAL
+	default:
+		return corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN
 	}
 }
 

@@ -39,6 +39,8 @@ const (
 
 var uuidRe = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 
+var fleetNeverAt = time.Date(2000, time.January, 2, 0, 0, 0, 0, time.UTC)
+
 type Manager struct {
 	api    *apiClient
 	teamID uint32
@@ -212,6 +214,8 @@ type fleetHost struct {
 	PrimaryMAC            string       `json:"primary_mac"`
 	Platform              string       `json:"platform"`
 	OSVersion             string       `json:"os_version"`
+	HardwareModel         string       `json:"hardware_model"`
+	PolicyUpdatedAt       string       `json:"policy_updated_at"`
 	PublicIP              string       `json:"public_ip"`
 	Status                string       `json:"status"`
 	SeenTime              string       `json:"seen_time"`
@@ -221,8 +225,9 @@ type fleetHost struct {
 }
 
 type fleetIssues struct {
-	FailingPoliciesCount *int `json:"failing_policies_count"`
-	TotalIssuesCount     int  `json:"total_issues_count"`
+	FailingPoliciesCount         *int `json:"failing_policies_count"`
+	CriticalVulnerabilitiesCount *int `json:"critical_vulnerabilities_count"`
+	TotalIssuesCount             int  `json:"total_issues_count"`
 }
 
 type fleetMDM struct {
@@ -231,16 +236,22 @@ type fleetMDM struct {
 }
 
 func toEntry(h *fleetHost, now time.Time) *devicemgrcommon.Entry {
+	osType := devicemgrcommon.ParseOSType(h.Platform)
+
 	p := &corev1.Device_Status_Posture{
 		DiskEncryption: devicemgrcommon.SignalFromBool(h.DiskEncryptionEnabled),
-		Compliant:      fleetCompliant(h.Issues),
+		Compliant:      fleetCompliant(h),
 		AgentHealthy:   fleetAgentHealthy(h, now),
+		Os:             devicemgrcommon.ParseOS(osType, h.OSVersion),
+		DeviceClass:    devicemgrcommon.ParseDeviceClass(h.HardwareModel, h.OSVersion),
 		Attrs:          fleetAttrs(h),
 	}
+	if h.Issues != nil {
+		p.FailingChecks = devicemgrcommon.Count(h.Issues.FailingPoliciesCount)
+	}
 	if h.MDM != nil {
-		p.Signals = map[string]corev1.Device_Status_Posture_SignalState{
-			devicemgrcommon.SignalKey("fleetdm", "mdmEnrolled"): fleetMDMEnrolled(h.MDM.EnrollmentStatus),
-		}
+		p.Enrolled = fleetEnrolled(h.MDM.EnrollmentStatus)
+		p.Ownership = fleetOwnership(h.MDM.EnrollmentStatus)
 	}
 	if t, ok := parseTime(h.SeenTime); ok {
 		p.LastSeenAt = timestamppb.New(t)
@@ -250,8 +261,6 @@ func toEntry(h *fleetHost, now time.Time) *devicemgrcommon.Entry {
 	if h.PrimaryMAC != "" {
 		macs = []string{h.PrimaryMAC}
 	}
-
-	osType := devicemgrcommon.ParseOSType(h.Platform)
 
 	var machineID string
 	if osType == corev1.Device_Status_MAC {
@@ -269,15 +278,22 @@ func toEntry(h *fleetHost, now time.Time) *devicemgrcommon.Entry {
 	}
 }
 
-func fleetCompliant(issues *fleetIssues) corev1.Device_Status_Posture_SignalState {
+func fleetCompliant(h *fleetHost) corev1.Device_Status_Posture_SignalState {
 	switch {
-	case issues == nil || issues.FailingPoliciesCount == nil:
+	case h.Issues == nil || h.Issues.FailingPoliciesCount == nil:
 		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
-	case *issues.FailingPoliciesCount == 0:
+	case *h.Issues.FailingPoliciesCount > 0:
+		return corev1.Device_Status_Posture_FAIL
+	case fleetHasPolicyResults(h):
 		return corev1.Device_Status_Posture_PASS
 	default:
-		return corev1.Device_Status_Posture_FAIL
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
+}
+
+func fleetHasPolicyResults(h *fleetHost) bool {
+	updatedAt, ok := parseTime(h.PolicyUpdatedAt)
+	return ok && updatedAt.After(fleetNeverAt)
 }
 
 func fleetAgentHealthy(h *fleetHost, now time.Time) corev1.Device_Status_Posture_SignalState {
@@ -296,15 +312,26 @@ func fleetAgentHealthy(h *fleetHost, now time.Time) corev1.Device_Status_Posture
 	}
 }
 
-func fleetMDMEnrolled(status string) corev1.Device_Status_Posture_SignalState {
+func fleetEnrolled(status string) corev1.Device_Status_Posture_SignalState {
 	status = strings.ToLower(strings.TrimSpace(status))
 	switch {
 	case strings.HasPrefix(status, "on"):
 		return corev1.Device_Status_Posture_PASS
-	case status == "off":
+	case status == "off", status == "pending":
 		return corev1.Device_Status_Posture_FAIL
 	default:
 		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	}
+}
+
+func fleetOwnership(status string) corev1.Device_Status_Posture_Ownership {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "on (automatic)", "on (manual)":
+		return corev1.Device_Status_Posture_COMPANY
+	case "on (personal)", "on (manual - personal)":
+		return corev1.Device_Status_Posture_PERSONAL
+	default:
+		return corev1.Device_Status_Posture_OWNERSHIP_UNKNOWN
 	}
 }
 
@@ -318,15 +345,14 @@ func fleetAttrs(h *fleetHost) *structpb.Struct {
 	put("fleetHostId", strconv.FormatInt(h.ID, 10))
 	put("hostname", h.Hostname)
 	put("platform", h.Platform)
-	put("osVersion", h.OSVersion)
 	put("publicIP", h.PublicIP)
 	put("status", h.Status)
 	if h.MDM != nil {
 		put("mdmEnrollmentStatus", h.MDM.EnrollmentStatus)
 		put("mdmName", h.MDM.Name)
 	}
-	if h.Issues != nil && h.Issues.FailingPoliciesCount != nil {
-		fields["failingPoliciesCount"] = float64(*h.Issues.FailingPoliciesCount)
+	if h.Issues != nil && h.Issues.CriticalVulnerabilitiesCount != nil {
+		fields["criticalVulnerabilities"] = float64(*h.Issues.CriticalVulnerabilitiesCount)
 	}
 	if len(fields) == 0 {
 		return nil

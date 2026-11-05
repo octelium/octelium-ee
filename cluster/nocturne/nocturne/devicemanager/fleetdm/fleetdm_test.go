@@ -80,8 +80,11 @@ func TestToEntry(t *testing.T) {
 			"primary_mac": "a4:bb:cc:dd:ee:01",
 			"status": "online",
 			"seen_time": "2026-09-28T10:00:00Z",
+			"policy_updated_at": "2026-09-28T10:00:00Z",
+			"os_version": "macOS 14.5",
+			"hardware_model": "MacBookPro18,3",
 			"disk_encryption_enabled": true,
-			"issues": {"failing_policies_count": 0, "total_issues_count": 0},
+			"issues": {"failing_policies_count": 0, "critical_vulnerabilities_count": 2, "total_issues_count": 2},
 			"mdm": {"enrollment_status": "On (automatic)", "name": "Fleet"}
 		}`), now)
 
@@ -96,7 +99,14 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Compliant)
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.DiskEncryption)
 		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.AgentHealthy)
-		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Signals["x.fleetdm.mdmEnrolled"])
+		assert.Equal(t, corev1.Device_Status_Posture_PASS, p.Enrolled)
+		assert.Equal(t, corev1.Device_Status_Posture_COMPANY, p.Ownership)
+		assert.Equal(t, corev1.Device_Status_Posture_WORKSTATION, p.DeviceClass)
+		assert.EqualValues(t, 0, p.GetFailingChecks())
+		assert.NotNil(t, p.FailingChecks, "a reported zero must not be dropped")
+		assert.EqualValues(t, 14, p.Os.GetMajor())
+		assert.EqualValues(t, 2, p.Attrs.Fields["criticalVulnerabilities"].GetNumberValue())
+		assert.Nil(t, p.Attrs.Fields["failingPoliciesCount"])
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.ThreatFree)
 		assert.Equal(t, corev1.Device_Status_Posture_RISK_LEVEL_UNKNOWN, p.RiskLevel)
 		assert.True(t, p.LastSeenAt.IsValid())
@@ -109,7 +119,8 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, corev1.Device_Status_Posture_FAIL, p.Compliant)
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.DiskEncryption)
 		assert.Equal(t, corev1.Device_Status_Posture_FAIL, p.AgentHealthy)
-		assert.Empty(t, p.Signals)
+		assert.EqualValues(t, 3, p.GetFailingChecks())
+		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, p.Enrolled)
 		assert.Empty(t, entry.MACs)
 		assert.Equal(t, corev1.Device_Status_LINUX, entry.OSType)
 		assert.Empty(t, entry.MachineID)
@@ -127,9 +138,67 @@ func TestToEntry(t *testing.T) {
 		assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, entry.Posture.Compliant)
 	}
 
-	assert.Equal(t, corev1.Device_Status_Posture_FAIL, fleetMDMEnrolled("Off"))
-	assert.Equal(t, corev1.Device_Status_Posture_PASS, fleetMDMEnrolled("On (manual)"))
-	assert.Equal(t, corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, fleetMDMEnrolled("Pending"))
+	for _, tc := range []struct {
+		name string
+		arg  string
+		want corev1.Device_Status_Posture_SignalState
+	}{
+		{
+			name: "NoFailuresWithResults",
+			arg:  `{"issues": {"failing_policies_count": 0}, "policy_updated_at": "2026-09-28T10:00:00Z"}`,
+			want: corev1.Device_Status_Posture_PASS,
+		},
+		{
+			name: "NoFailuresNeverChecked",
+			arg:  `{"issues": {"failing_policies_count": 0}}`,
+			want: corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN,
+		},
+		{
+			name: "NoFailuresZeroTime",
+			arg:  `{"issues": {"failing_policies_count": 0}, "policy_updated_at": "0001-01-01T00:00:00Z"}`,
+			want: corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN,
+		},
+		{
+			name: "NoFailuresFleetDefaultTime",
+			arg:  `{"issues": {"failing_policies_count": 0}, "policy_updated_at": "2000-01-01T00:00:00Z"}`,
+			want: corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN,
+		},
+		{
+			name: "Failures",
+			arg:  `{"issues": {"failing_policies_count": 1}}`,
+			want: corev1.Device_Status_Posture_FAIL,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, toEntry(getHost(tc.arg), now).Posture.Compliant)
+		})
+	}
+
+	for _, tc := range []struct {
+		status    string
+		enrolled  corev1.Device_Status_Posture_SignalState
+		ownership corev1.Device_Status_Posture_Ownership
+	}{
+		{"On (automatic)", corev1.Device_Status_Posture_PASS, corev1.Device_Status_Posture_COMPANY},
+		{"On (manual)", corev1.Device_Status_Posture_PASS, corev1.Device_Status_Posture_COMPANY},
+		{"On (personal)", corev1.Device_Status_Posture_PASS, corev1.Device_Status_Posture_PERSONAL},
+		{"On (manual - personal)", corev1.Device_Status_Posture_PASS, corev1.Device_Status_Posture_PERSONAL},
+		{"Pending", corev1.Device_Status_Posture_FAIL, corev1.Device_Status_Posture_OWNERSHIP_UNKNOWN},
+		{"Off", corev1.Device_Status_Posture_FAIL, corev1.Device_Status_Posture_OWNERSHIP_UNKNOWN},
+		{"", corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN, corev1.Device_Status_Posture_OWNERSHIP_UNKNOWN},
+	} {
+		assert.Equal(t, tc.enrolled, fleetEnrolled(tc.status), tc.status)
+		assert.Equal(t, tc.ownership, fleetOwnership(tc.status), tc.status)
+	}
+
+	{
+		p := toEntry(getHost(`{"os_version": "Microsoft Windows Server 2022 Standard 10.0.20348.2527",
+			"platform": "windows"}`), now).Posture
+		assert.Equal(t, corev1.Device_Status_Posture_SERVER, p.DeviceClass)
+		assert.EqualValues(t, 10, p.Os.GetMajor())
+		assert.EqualValues(t, 20348, p.Os.GetPatch())
+		assert.EqualValues(t, 2527, p.Os.GetRevision())
+	}
 
 	for _, tc := range []struct {
 		status   string

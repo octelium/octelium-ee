@@ -15,6 +15,7 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"regexp"
 	"slices"
 	"sort"
 	"strconv"
@@ -30,6 +31,7 @@ import (
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/pkg/errors"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -42,6 +44,8 @@ const (
 )
 
 var ErrRedirectNotAllowed = errors.New("Redirects to another origin are not allowed")
+
+var osVersionRe = regexp.MustCompile(`(?:^|[^0-9.])(\d+)\.(\d+)(?:\.(\d+))?(?:\.(\d+))?`)
 
 var RedirectPolicy = resty.RedirectPolicyFunc(CheckRedirect)
 
@@ -1027,8 +1031,86 @@ func RecencySignal(lastSeenAt time.Time, ok bool, now time.Time) corev1.Device_S
 	}
 }
 
-func SignalKey(provider, name string) string {
-	return "x." + provider + "." + name
+func ParseOS(osType corev1.Device_Status_OSType, version string) *corev1.Device_Status_Posture_OS {
+	version = strings.TrimSpace(version)
+	if osType == corev1.Device_Status_OS_TYPE_UNKNOWN && version == "" {
+		return nil
+	}
+
+	ret := &corev1.Device_Status_Posture_OS{
+		Type:    osType,
+		Version: version,
+	}
+
+	parts := getOSVersionParts(osType, version)
+	for i, target := range []**uint32{&ret.Major, &ret.Minor, &ret.Patch, &ret.Revision} {
+		if i >= len(parts) || parts[i] == "" {
+			break
+		}
+
+		value, err := strconv.ParseUint(parts[i], 10, 32)
+		if err != nil {
+			break
+		}
+
+		*target = proto.Uint32(uint32(value))
+	}
+
+	return ret
+}
+
+func getOSVersionParts(osType corev1.Device_Status_OSType, version string) []string {
+	if match := osVersionRe.FindStringSubmatch(version); match != nil {
+		return match[1:]
+	}
+
+	switch osType {
+	case corev1.Device_Status_ANDROID, corev1.Device_Status_IOS:
+		if _, err := strconv.ParseUint(version, 10, 32); err == nil {
+			return []string{version}
+		}
+	}
+
+	return nil
+}
+
+func ParseDeviceClass(values ...string) corev1.Device_Status_Posture_DeviceClass {
+	for _, value := range values {
+		value = strings.ToLower(strings.TrimSpace(value))
+
+		switch {
+		case value == "":
+		case strings.Contains(value, "virtual"):
+			return corev1.Device_Status_Posture_VIRTUAL_MACHINE
+		case strings.Contains(value, "server"), value == "domain controller":
+			return corev1.Device_Status_Posture_SERVER
+		case strings.Contains(value, "iphone"), value == "phone":
+			return corev1.Device_Status_Posture_PHONE
+		case strings.Contains(value, "ipad"), value == "tablet":
+			return corev1.Device_Status_Posture_TABLET
+		case strings.Contains(value, "macbook"), strings.Contains(value, "imac"),
+			strings.HasPrefix(value, "mac mini"), strings.HasPrefix(value, "mac studio"),
+			strings.HasPrefix(value, "mac pro"),
+			slices.Contains([]string{
+				"mac", "computer", "desktop", "laptop", "notebook", "workstation",
+			}, value):
+			return corev1.Device_Status_Posture_WORKSTATION
+		}
+	}
+
+	return corev1.Device_Status_Posture_DEVICE_CLASS_UNKNOWN
+}
+
+func Score(value int32) *uint32 {
+	return proto.Uint32(uint32(min(max(value, 0), 100)))
+}
+
+func Count(value *int) *uint32 {
+	if value == nil || *value < 0 {
+		return nil
+	}
+
+	return proto.Uint32(uint32(*value))
 }
 
 func ParseHTTPSURL(value, defaultValue string) (string, error) {

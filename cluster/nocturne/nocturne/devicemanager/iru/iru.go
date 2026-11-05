@@ -202,10 +202,13 @@ func (d *iruDevice) getUser() *iruUser {
 
 func toEntry(d *iruDevice, now time.Time) *devicemgrcommon.Entry {
 	lastCheckIn, haveCheckIn := parseTime(d.LastCheckIn)
+	osType := devicemgrcommon.ParseOSType(d.Platform)
 
 	p := &corev1.Device_Status_Posture{
 		Enrolled:     devicemgrcommon.SignalFromBool(d.MDMEnabled),
 		AgentHealthy: agentHealthySignal(d, lastCheckIn, haveCheckIn, now),
+		Os:           devicemgrcommon.ParseOS(osType, d.OSVersion),
+		DeviceClass:  devicemgrcommon.ParseDeviceClass(d.Platform),
 		Attrs:        iruAttrs(d),
 	}
 	if haveCheckIn {
@@ -227,7 +230,7 @@ func toEntry(d *iruDevice, now time.Time) *devicemgrcommon.Entry {
 		Serial:      d.SerialNumber,
 		MACs:        macs,
 		Hostname:    d.DeviceName,
-		OSType:      devicemgrcommon.ParseOSType(d.Platform),
+		OSType:      osType,
 		OwnerEmails: emails,
 		Posture:     p,
 	}
@@ -253,7 +256,6 @@ func iruAttrs(d *iruDevice) *structpb.Struct {
 	}
 	put("deviceId", d.DeviceID)
 	put("platform", d.Platform)
-	put("osVersion", d.OSVersion)
 	put("model", d.Model)
 	put("agentVersion", d.AgentVersion)
 	put("assetTag", d.AssetTag)
@@ -264,9 +266,6 @@ func iruAttrs(d *iruDevice) *structpb.Struct {
 	}
 	if d.IsMissing != nil {
 		fields["isMissing"] = *d.IsMissing
-	}
-	if d.MDMEnabled != nil {
-		fields["mdmEnabled"] = *d.MDMEnabled
 	}
 	if d.AgentInstalled != nil {
 		fields["agentInstalled"] = *d.AgentInstalled

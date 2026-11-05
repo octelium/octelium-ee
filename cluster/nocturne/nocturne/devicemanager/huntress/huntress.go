@@ -212,6 +212,7 @@ type huntressAgent struct {
 	ExternalIP             string   `json:"external_ip"`
 	LastCallbackAt         string   `json:"last_callback_at"`
 	DefenderStatus         string   `json:"defender_status"`
+	DefenderPolicyStatus   string   `json:"defender_policy_status"`
 	FirewallStatus         string   `json:"firewall_status"`
 	TamperProtectionActual *bool    `json:"tamper_protection_actual"`
 	EDRVersion             string   `json:"edr_version"`
@@ -221,27 +222,23 @@ type huntressAgent struct {
 func toEntry(a *huntressAgent, now time.Time) *devicemgrcommon.Entry {
 	lastCallback, haveCallback := parseTime(a.LastCallbackAt)
 
-	signals := map[string]corev1.Device_Status_Posture_SignalState{
-		devicemgrcommon.SignalKey("huntress", "defender"): defenderSignal(a.Platform, a.DefenderStatus),
-	}
-	if a.TamperProtectionActual != nil {
-		signals[devicemgrcommon.SignalKey("huntress", "tamperProtection")] =
-			devicemgrcommon.SignalFromBool(a.TamperProtectionActual)
-	}
-
-	p := &corev1.Device_Status_Posture{
-		AgentHealthy: devicemgrcommon.RecencySignal(lastCallback, haveCallback, now),
-		NotContained: notContainedSignal(a.FirewallStatus),
-		Signals:      signals,
-		Attrs:        huntressAttrs(a),
-	}
-	if haveCallback {
-		p.LastSeenAt = timestamppb.New(lastCallback)
-	}
-
 	osType := devicemgrcommon.ParseOSType(a.Platform)
 	if osType == corev1.Device_Status_OS_TYPE_UNKNOWN {
 		osType = devicemgrcommon.ParseOSType(a.OS)
+	}
+
+	p := &corev1.Device_Status_Posture{
+		AgentHealthy:     devicemgrcommon.RecencySignal(lastCallback, haveCallback, now),
+		NotContained:     notContainedSignal(a.FirewallStatus),
+		Firewall:         firewallSignal(a.FirewallStatus),
+		Antivirus:        antivirusSignal(a.DefenderStatus),
+		TamperProtection: devicemgrcommon.SignalFromBool(a.TamperProtectionActual),
+		Os:               devicemgrcommon.ParseOS(osType, a.OS),
+		DeviceClass:      devicemgrcommon.ParseDeviceClass(a.OS),
+		Attrs:            huntressAttrs(a),
+	}
+	if haveCallback {
+		p.LastSeenAt = timestamppb.New(lastCallback)
 	}
 
 	return &devicemgrcommon.Entry{
@@ -265,18 +262,25 @@ func notContainedSignal(status string) corev1.Device_Status_Posture_SignalState 
 	}
 }
 
-func defenderSignal(platform, status string) corev1.Device_Status_Posture_SignalState {
-	if !strings.EqualFold(strings.TrimSpace(platform), "windows") {
-		return corev1.Device_Status_Posture_NOT_APPLICABLE
-	}
-
+func firewallSignal(status string) corev1.Device_Status_Posture_SignalState {
 	switch strings.ToLower(strings.TrimSpace(status)) {
-	case "":
-		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
-	case "active", "running", "enabled", "healthy", "protected", "managed":
+	case "enabled":
 		return corev1.Device_Status_Posture_PASS
-	default:
+	case "disabled":
 		return corev1.Device_Status_Posture_FAIL
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	}
+}
+
+func antivirusSignal(status string) corev1.Device_Status_Posture_SignalState {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "protected", "healthy":
+		return corev1.Device_Status_Posture_PASS
+	case "unhealthy":
+		return corev1.Device_Status_Posture_FAIL
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
 }
 
@@ -288,11 +292,11 @@ func huntressAttrs(a *huntressAgent) *structpb.Struct {
 		}
 	}
 	put("huntressAgentId", strconv.FormatInt(a.ID, 10))
-	put("os", a.OS)
 	put("platform", a.Platform)
 	put("agentVersion", a.Version)
 	put("edrVersion", a.EDRVersion)
 	put("defenderStatus", a.DefenderStatus)
+	put("defenderPolicyStatus", a.DefenderPolicyStatus)
 	put("firewallStatus", a.FirewallStatus)
 	put("externalIP", a.ExternalIP)
 	if a.OrganizationID != 0 {
