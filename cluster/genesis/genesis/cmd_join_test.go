@@ -703,16 +703,19 @@ func TestJoinPreservesRegisteredNodes(t *testing.T) {
 	previous := ldflags.TestMode
 	ldflags.TestMode = "false"
 	t.Cleanup(func() { ldflags.TestMode = previous })
-	for _, state := range []string{"registered", "new", "already-tainted", "registration-conflict", "lost-acknowledgement"} {
+	for _, state := range []string{"registered", "stale-registration", "new", "already-tainted", "registration-conflict", "lost-acknowledgement"} {
 		t.Run(state, func(t *testing.T) {
 			node := &k8scorev1.Node{ObjectMeta: k8smetav1.ObjectMeta{Name: "gateway", Labels: map[string]string{vutils.NodeLabelDataPlane: "", "custom": "preserved"}}, Spec: k8scorev1.NodeSpec{Taints: []k8scorev1.Taint{{Key: "custom", Effect: k8scorev1.TaintEffectNoSchedule}}}}
-			if state == "registered" {
+			if state == "registered" || state == "stale-registration" {
 				node.Labels[vutils.NodeLabelGatewayRegistered] = "true"
 			}
 			if state == "already-tainted" {
 				node.Spec.Taints = append(node.Spec.Taints, k8scorev1.Taint{Key: vutils.NodeTaintGatewayInit, Value: "true", Effect: k8scorev1.TaintEffectNoSchedule})
 			}
-			c := fake.NewSimpleClientset(node)
+			c := fake.NewSimpleClientset(node, readyGatewayDaemonSet())
+			if state == "stale-registration" {
+				require.NoError(t, c.AppsV1().DaemonSets(vutils.K8sNS).Delete(t.Context(), "octelium-gwagent", k8smetav1.DeleteOptions{}))
+			}
 			g := &Genesis{k8sC: c}
 			updates := 0
 			c.PrependReactor("update", "nodes", func(action k8stesting.Action) (bool, runtime.Object, error) {
@@ -742,6 +745,9 @@ func TestJoinPreservesRegisteredNodes(t *testing.T) {
 				assert.Equal(t, node.Spec.Taints, updated.Spec.Taints)
 			} else {
 				assert.Len(t, updated.Spec.Taints, 2)
+			}
+			if state == "stale-registration" {
+				assert.NotContains(t, updated.Labels, vutils.NodeLabelGatewayRegistered)
 			}
 			if state == "registered" || state == "already-tainted" {
 				assert.Zero(t, updates)
