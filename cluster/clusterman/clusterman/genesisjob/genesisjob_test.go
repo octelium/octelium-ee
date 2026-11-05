@@ -361,6 +361,82 @@ func TestRunReconcilesUncertainCreation(t *testing.T) {
 	}
 }
 
+func TestRunRecoversFromJobThatCannotStart(t *testing.T) {
+	for _, tc := range []struct {
+		cmd, svcAccount string
+		args            []string
+	}{
+		{cmd: "upgrade"},
+		{cmd: "join", svcAccount: "octelium-genesis", args: []string{"--core-version", "1.2.3"}},
+	} {
+		t.Run(tc.cmd, func(t *testing.T) {
+			newJob := func(version string) *batchv1.Job {
+				return GetJob(&Opts{Cmd: tc.cmd, Package: "octelium", Domain: "example.com", Region: "default", Version: version, SvcAccount: tc.svcAccount, Args: tc.args})
+			}
+			blocked := newJob("9.9.9")
+			pod := &k8scorev1.Pod{
+				ObjectMeta: k8smetav1.ObjectMeta{
+					Name: blocked.Name + "-worker", Namespace: vutils.K8sNS, Labels: blocked.Labels,
+					OwnerReferences: []k8smetav1.OwnerReference{{APIVersion: "batch/v1", Kind: "Job", Name: blocked.Name, UID: "blocked-job", Controller: new(true)}},
+				},
+				Status: k8scorev1.PodStatus{Phase: k8scorev1.PodPending, ContainerStatuses: []k8scorev1.ContainerStatus{
+					{Name: "genesis", State: k8scorev1.ContainerState{Waiting: &k8scorev1.ContainerStateWaiting{Reason: "ImagePullBackOff", Message: "manifest unknown"}}},
+				}},
+			}
+			c := fake.NewSimpleClientset()
+			c.PrependReactor("create", "jobs", func(action ktesting.Action) (bool, runtime.Object, error) {
+				job := action.(ktesting.CreateAction).GetObject().(*batchv1.Job).DeepCopy()
+				if job.Name == blocked.Name {
+					job.UID = "blocked-job"
+					job.Status.Active = 1
+					require.NoError(t, c.Tracker().Add(pod))
+				} else {
+					job.UID = "accepted-job"
+					job.Status = completedJob().Status
+				}
+				return true, job, c.Tracker().Create(action.GetResource(), job, job.Namespace)
+			})
+			c.PrependReactor("delete", "jobs", func(action ktesting.Action) (bool, runtime.Object, error) {
+				require.Equal(t, blocked.Name, action.(ktesting.DeleteAction).GetName())
+				require.NoError(t, c.Tracker().Delete(k8scorev1.SchemeGroupVersion.WithResource("pods"), pod.Namespace, pod.Name))
+				return false, nil, nil
+			})
+			require.ErrorIs(t, Run(t.Context(), c, blocked, 100*time.Millisecond), context.DeadlineExceeded)
+			_, err := c.BatchV1().Jobs(vutils.K8sNS).Get(t.Context(), blocked.Name, k8smetav1.GetOptions{})
+			require.NoError(t, err)
+			desired := newJob("2.0.0")
+			require.NoError(t, Run(t.Context(), c, desired, DefaultTimeout))
+			jobs, err := c.BatchV1().Jobs(vutils.K8sNS).List(t.Context(), k8smetav1.ListOptions{})
+			require.NoError(t, err)
+			require.Len(t, jobs.Items, 1)
+			assert.Equal(t, desired.Name, jobs.Items[0].Name)
+		})
+	}
+}
+
+func TestRunKeepsRunningJob(t *testing.T) {
+	running := GetJob(&Opts{Cmd: "upgrade", Package: "octelium", Domain: "example.com", Region: "default", Version: "2.0.0"})
+	running.UID = "running-job"
+	running.Status.Active = 1
+	pod := &k8scorev1.Pod{
+		ObjectMeta: k8smetav1.ObjectMeta{
+			Name: running.Name + "-worker", Namespace: vutils.K8sNS, Labels: running.Labels,
+			OwnerReferences: []k8smetav1.OwnerReference{{APIVersion: "batch/v1", Kind: "Job", Name: running.Name, UID: running.UID, Controller: new(true)}},
+		},
+		Status: k8scorev1.PodStatus{Phase: k8scorev1.PodRunning},
+	}
+	c := fake.NewSimpleClientset(running, pod)
+	err := Run(t.Context(), c, GetJob(&Opts{Cmd: "upgrade", Package: "octelium", Domain: "example.com", Region: "default", Version: "3.0.0"}), DefaultTimeout)
+	require.ErrorContains(t, err, "still active")
+	jobs, err := c.BatchV1().Jobs(vutils.K8sNS).List(t.Context(), k8smetav1.ListOptions{})
+	require.NoError(t, err)
+	require.Len(t, jobs.Items, 1)
+	assert.Equal(t, running.UID, jobs.Items[0].UID)
+	for _, action := range c.Actions() {
+		assert.NotEqual(t, "delete", action.GetVerb())
+	}
+}
+
 func TestRunRejectsForeignTargetBeforeCreate(t *testing.T) {
 	annotations := map[string]string{
 		"octelium.com/genesis-cluster-uid":   "target-cluster",

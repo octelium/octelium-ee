@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 	batchv1 "k8s.io/api/batch/v1"
 	k8scorev1 "k8s.io/api/core/v1"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -160,6 +161,50 @@ func testClusterUpgrade(t *testing.T, ch *harness.H) {
 	})
 }
 
+func createBlockedGenesisJob(t *testing.T, h *eeharness.H) *batchv1.Job {
+	t.Helper()
+	labels := map[string]string{"octelium.com/component": "genesis"}
+	jobs := h.K8sC().BatchV1().Jobs(vutils.K8sNS)
+	job, err := jobs.Create(t.Context(), &batchv1.Job{
+		ObjectMeta: k8smetav1.ObjectMeta{GenerateName: "genesis-blocked-e2e-", Labels: labels},
+		Spec: batchv1.JobSpec{Template: k8scorev1.PodTemplateSpec{
+			ObjectMeta: k8smetav1.ObjectMeta{Labels: labels},
+			Spec: k8scorev1.PodSpec{
+				RestartPolicy: k8scorev1.RestartPolicyNever,
+				Containers: []k8scorev1.Container{{
+					Name: "genesis", Image: "localhost:1/octelium/genesis:missing", ImagePullPolicy: k8scorev1.PullAlways,
+				}},
+			},
+		}},
+	}, k8smetav1.CreateOptions{})
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		err := jobs.Delete(ctx, job.Name, k8smetav1.DeleteOptions{
+			Preconditions: &k8smetav1.Preconditions{UID: &job.UID}, PropagationPolicy: new(k8smetav1.DeletePropagationBackground),
+		})
+		if !k8serr.IsNotFound(err) {
+			assert.NoError(t, err)
+		}
+	})
+	h.Eventually(t, "the blocked genesis Job to report its image failure", 2*time.Minute, func(ctx context.Context) error {
+		pods, err := h.K8sC().CoreV1().Pods(vutils.K8sNS).List(ctx, k8smetav1.ListOptions{LabelSelector: batchv1.JobNameLabel + "=" + job.Name})
+		if err != nil {
+			return err
+		}
+		for _, pod := range pods.Items {
+			for _, container := range pod.Status.ContainerStatuses {
+				if state := container.State.Waiting; state != nil && (state.Reason == "ErrImagePull" || state.Reason == "ImagePullBackOff") {
+					return nil
+				}
+			}
+		}
+		return errors.Errorf("The Job %s has not reported an image failure yet", job.Name)
+	})
+	return job
+}
+
 func testClusterManagerUpgradeLifecycle(t *testing.T, ch *harness.H) {
 	h := eeharness.Wrap(ch)
 	h.Require(t, scenario.CapUpgrade)
@@ -169,6 +214,7 @@ func testClusterManagerUpgradeLifecycle(t *testing.T, ch *harness.H) {
 	require.NotNil(t, info.PackageEnterprise)
 	before := h.EnterpriseClusterConfig(t)
 	require.Nil(t, before.Status.UpgradeRequest)
+	blocked := createBlockedGenesisJob(t, h)
 	jobsBefore, err := h.K8sC().BatchV1().Jobs(vutils.K8sNS).List(ctx, k8smetav1.ListOptions{LabelSelector: "octelium.com/component=genesis"})
 	require.NoError(t, err)
 	existing := map[types.UID]bool{}
@@ -196,6 +242,8 @@ func testClusterManagerUpgradeLifecycle(t *testing.T, ch *harness.H) {
 		}
 		return nil
 	})
+	_, err = h.K8sC().BatchV1().Jobs(blocked.Namespace).Get(ctx, blocked.Name, k8smetav1.GetOptions{})
+	assert.True(t, k8serr.IsNotFound(err), "The blocked genesis Job was not removed: %+v", err)
 	after := h.EnterpriseClusterConfig(t)
 	require.NotEmpty(t, after.Status.LastUpgradeRequests)
 	history := after.Status.LastUpgradeRequests[0]
