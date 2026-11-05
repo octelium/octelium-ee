@@ -6,13 +6,13 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20261104190343-05fe79e5e71f
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261104190343-05fe79e5e71f
-	github.com/octelium/octelium/pkg v0.0.0-20261104190343-05fe79e5e71f
+	github.com/octelium/octelium/cluster/common v0.0.0-20261105165540-be7392ed620e
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261105165540-be7392ed620e
+	github.com/octelium/octelium/pkg v0.0.0-20261105165540-be7392ed620e
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.1
 	go.uber.org/zap v1.28.0
-	google.golang.org/grpc v1.84.0
+	google.golang.org/grpc v1.85.0
 )
 
 require (
@@ -30,7 +30,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/lib/pq v1.12.3 // indirect
 	github.com/redis/go-redis/v9 v9.22.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.8.1 // indirect
 	github.com/stretchr/objx v0.1.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect

@@ -19,9 +19,9 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261104190343-05fe79e5e71f
-	github.com/octelium/octelium/cluster/common v0.0.0-20261104190343-05fe79e5e71f
-	github.com/octelium/octelium/pkg v0.0.0-20261104190343-05fe79e5e71f
+	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261105165540-be7392ed620e
+	github.com/octelium/octelium/cluster/common v0.0.0-20261105165540-be7392ed620e
+	github.com/octelium/octelium/pkg v0.0.0-20261105165540-be7392ed620e
 	github.com/ovh/go-ovh v1.9.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.12.1
@@ -34,7 +34,7 @@ require (
 
 require (
 	cel.dev/cel-go v0.32.0 // indirect
-	cel.dev/expr v0.25.2 // indirect
+	cel.dev/expr v0.25.3 // indirect
 	cloud.google.com/go/auth v0.20.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
@@ -121,7 +121,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261104190343-05fe79e5e71f // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261105165540-be7392ed620e // indirect
 	github.com/open-policy-agent/opa v1.20.1 // indirect
 	github.com/oschwald/geoip2-golang/v2 v2.3.0 // indirect
 	github.com/oschwald/maxminddb-golang/v2 v2.5.0 // indirect
@@ -167,7 +167,7 @@ require (
 	golang.org/x/tools v0.51.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260928230214-8a89bd6388cc // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260928230214-8a89bd6388cc // indirect
-	google.golang.org/grpc v1.84.0 // indirect
+	google.golang.org/grpc v1.85.0 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.3 // indirect

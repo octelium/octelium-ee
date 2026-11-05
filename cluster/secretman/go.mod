@@ -17,13 +17,13 @@ require (
 	github.com/lib/pq v1.12.3
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20261104190343-05fe79e5e71f
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261104190343-05fe79e5e71f
-	github.com/octelium/octelium/pkg v0.0.0-20261104190343-05fe79e5e71f
+	github.com/octelium/octelium/cluster/common v0.0.0-20261105165540-be7392ed620e
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261105165540-be7392ed620e
+	github.com/octelium/octelium/pkg v0.0.0-20261105165540-be7392ed620e
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/zap v1.28.0
-	google.golang.org/grpc v1.84.0
+	google.golang.org/grpc v1.85.0
 	google.golang.org/protobuf v1.36.12
 )
 

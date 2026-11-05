@@ -6,8 +6,8 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20261104190343-05fe79e5e71f
-	github.com/octelium/octelium/pkg v0.0.0-20261104190343-05fe79e5e71f
+	github.com/octelium/octelium/cluster/common v0.0.0-20261105165540-be7392ed620e
+	github.com/octelium/octelium/pkg v0.0.0-20261105165540-be7392ed620e
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.161.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter v0.161.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuremonitorexporter v0.161.0
@@ -53,7 +53,7 @@ require (
 	go.opentelemetry.io/otel v1.47.0
 	go.uber.org/zap v1.28.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260928230214-8a89bd6388cc
-	google.golang.org/grpc v1.84.0
+	google.golang.org/grpc v1.85.0
 	google.golang.org/protobuf v1.36.12
 )
 
@@ -322,8 +322,8 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
-	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261104190343-05fe79e5e71f // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261104190343-05fe79e5e71f // indirect
+	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261105165540-be7392ed620e // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261105165540-be7392ed620e // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/internal/basicauth v0.161.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/internal/credentialsfile v0.161.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/sumologicextension v0.161.0 // indirect
