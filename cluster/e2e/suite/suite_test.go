@@ -86,3 +86,30 @@ func TestMultiRegionPhases(t *testing.T) {
 		assert.NotNil(t, p.Run, p.Name)
 	}
 }
+
+func TestClusterManagerPhases(t *testing.T) {
+	clusterManager := phaseNames(ClusterManagerPhases())
+
+	assert.Equal(t, []string{
+		"ClusterManagerRestartDuringJoin",
+		"ClusterManagerJobRetry",
+		"ClusterManagerRestartDuringUpgrade",
+	}, clusterManager)
+
+	got := phaseNames(ClusterManager())
+	assert.Equal(t, []string{"ClusterReady", ReadyPhase().Name}, got[:2])
+	assert.Equal(t, clusterManager, got[2:])
+
+	for _, phases := range [][]suite.Phase{Enterprise(), withCore(), MultiRegion()} {
+		for _, name := range clusterManager {
+			assert.False(t, slices.Contains(phaseNames(phases), name), name)
+		}
+	}
+
+	for _, p := range ClusterManager() {
+		assert.NotNil(t, p.Run, p.Name)
+	}
+
+	t.Setenv(EnvSuite, SuiteClusterManager)
+	assert.Equal(t, phaseNames(ClusterManager()), phaseNames(All()))
+}

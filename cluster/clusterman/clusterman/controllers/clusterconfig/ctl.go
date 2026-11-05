@@ -27,6 +27,14 @@ import (
 
 const maxUpgradeDuration = 24 * time.Hour
 
+const (
+	recoverTimeout       = 5 * time.Minute
+	recoverRetryInterval = 2 * time.Second
+
+	interruptedRequestMessage = "Cluster Manager restarted before this request finished. " +
+		"Its genesis Job may still be running. Check the Cluster before requesting it again"
+)
+
 type Controller struct {
 	octeliumC     octeliumc.ClientInterface
 	k8sC          kubernetes.Interface
@@ -55,6 +63,84 @@ func (c *Controller) OnUpdate(ctx context.Context, new, old *enterprisev1.Cluste
 	}
 
 	return nil
+}
+
+func (c *Controller) RecoverInterrupted(ctx context.Context) {
+	go func() {
+		ctx, cancel := context.WithTimeout(ctx, recoverTimeout)
+		defer cancel()
+
+		for {
+			err := c.doRecoverInterrupted(ctx)
+			if err == nil {
+				return
+			}
+
+			zap.L().Warn("Could not record the interrupted requests", zap.Error(err))
+
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(recoverRetryInterval):
+			}
+		}
+	}()
+}
+
+func (c *Controller) doRecoverInterrupted(ctx context.Context) error {
+	return c.updateStatus(ctx, func(cc *enterprisev1.ClusterConfig) bool {
+		isUpgrade := failInterruptedUpgrade(cc)
+		isJoin := failInterruptedJoin(cc)
+		return isUpgrade || isJoin
+	})
+}
+
+func failInterruptedUpgrade(cc *enterprisev1.ClusterConfig) bool {
+	req := cc.Status.UpgradeRequest
+	if req == nil || req.State != enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING {
+		return false
+	}
+
+	zap.L().Warn("Recording the upgrade interrupted by a restart as failed", zap.Any("request", req))
+
+	now := pbutils.Now()
+	req.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED
+	req.DoneAt = now
+
+	for _, rgn := range req.Regions {
+		switch rgn.State {
+		case enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS,
+			enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED:
+		default:
+			rgn.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED
+			rgn.DoneAt = now
+			rgn.Message = interruptedRequestMessage
+		}
+	}
+
+	cc.Status.LastUpgradeRequests = prependUpgradeHistory(cc.Status.LastUpgradeRequests, req)
+	cc.Status.UpgradeRequest = nil
+	cc.Status.TotalFailedUpgrades += 1
+
+	return true
+}
+
+func failInterruptedJoin(cc *enterprisev1.ClusterConfig) bool {
+	req := cc.Status.JoinRequest
+	if req == nil || req.State != enterprisev1.ClusterConfig_Status_JoinRequest_JOINING {
+		return false
+	}
+
+	zap.L().Warn("Recording the join interrupted by a restart as failed", zap.Any("request", req))
+
+	req.State = enterprisev1.ClusterConfig_Status_JoinRequest_FAILED
+	req.DoneAt = pbutils.Now()
+	req.Message = interruptedRequestMessage
+
+	cc.Status.LastJoinRequests = prependJoinHistory(cc.Status.LastJoinRequests, req)
+	cc.Status.JoinRequest = nil
+
+	return true
 }
 
 func (c *Controller) update(cluster *enterprisev1.ClusterConfig) {
@@ -126,22 +212,26 @@ func (c *Controller) doUpgrade(ctx context.Context, cluster *enterprisev1.Cluste
 		return err
 	}
 
-	{
-		upgradeReq := cluster.Status.UpgradeRequest
+	started := cluster.Status.UpgradeRequest
 
+	{
 		if err := upgrade.UpgradeCluster(ctx, &upgrade.UpgradeClusterOpts{
 			OcteliumC:      c.octeliumC,
 			K8sC:           c.k8sC,
-			UpgradeRequest: upgradeReq,
+			UpgradeRequest: started,
 			NewRegionK8sC:  c.newRegionK8sC,
 			OnRegions: func(ctx context.Context, regions []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region) {
-				c.setUpgradeRegions(ctx, upgradeReq, regions)
+				c.setUpgradeRegions(ctx, started, regions)
 			},
 		}); err != nil {
 			zap.L().Warn("Could not upgradeCluster", zap.Error(err))
 			cluster, err = c.octeliumC.EnterpriseV1Utils().GetClusterConfig(ctx)
 			if err != nil {
 				return err
+			}
+			if !isSameUpgradeRequest(cluster.Status.UpgradeRequest, started) {
+				zap.L().Debug("The upgrade request was already recorded. Nothing to be done...")
+				return nil
 			}
 			cluster.Status.UpgradeRequest.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED
 			cluster.Status.UpgradeRequest.DoneAt = pbutils.Now()
@@ -163,6 +253,11 @@ func (c *Controller) doUpgrade(ctx context.Context, cluster *enterprisev1.Cluste
 	cluster, err = c.octeliumC.EnterpriseV1Utils().GetClusterConfig(ctx)
 	if err != nil {
 		return err
+	}
+
+	if !isSameUpgradeRequest(cluster.Status.UpgradeRequest, started) {
+		zap.L().Debug("The upgrade request was already recorded. Nothing to be done...")
+		return nil
 	}
 
 	cluster.Status.UpgradeRequest.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS

@@ -64,6 +64,7 @@ func doCmd(cmd *cobra.Command, args []string) error {
 		watcher := watchers.NewEnterpriseV1(octeliumC)
 
 		ccCtl := clusterconfig.NewController(octeliumC, k8sC)
+		ccCtl.RecoverInterrupted(ctx)
 		if err := watcher.ClusterConfig(ctx, nil, ccCtl.OnUpdate); err != nil {
 			return err
 		}

@@ -137,6 +137,14 @@ func MultiRegionPhases() []suite.Phase {
 	}
 }
 
+func ClusterManagerPhases() []suite.Phase {
+	return []suite.Phase{
+		{Name: "ClusterManagerRestartDuringJoin", Run: testClusterManagerRestartDuringJoin},
+		{Name: "ClusterManagerJobRetry", Run: testClusterManagerJobRetry},
+		{Name: "ClusterManagerRestartDuringUpgrade", Run: testClusterManagerRestartDuringUpgrade},
+	}
+}
+
 func TailPhases() []suite.Phase {
 	return []suite.Phase{
 		{Name: "EnterpriseRollingRestart", Run: testEnterpriseRollingRestart},
@@ -164,6 +172,8 @@ const (
 	SuiteEnterprise  = "enterprise"
 	SuiteAll         = "all"
 	SuiteMultiRegion = "multi-region"
+
+	SuiteClusterManager = "cluster-manager"
 )
 
 func All() []suite.Phase {
@@ -172,6 +182,8 @@ func All() []suite.Phase {
 		return withCore()
 	case SuiteMultiRegion:
 		return MultiRegion()
+	case SuiteClusterManager:
+		return ClusterManager()
 	default:
 		return Enterprise()
 	}
@@ -191,6 +203,13 @@ func MultiRegion() []suite.Phase {
 	ret = append(ret, ReadyPhase())
 
 	return append(ret, MultiRegionPhases()...)
+}
+
+func ClusterManager() []suite.Phase {
+	ret := suite.Only(suite.Phases(), "ClusterReady")
+	ret = append(ret, ReadyPhase())
+
+	return append(ret, ClusterManagerPhases()...)
 }
 
 func withCore() []suite.Phase {

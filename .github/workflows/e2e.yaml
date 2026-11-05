@@ -9,7 +9,7 @@ on:
         required: false
         default: "k3s-flannel-ee-full"
       spiffe:
-        description: "Install SPIRE and enable the SPIFFE CSI driver (always enabled for full and spire scenarios, ignored by multi-region)"
+        description: "Install SPIRE and enable the SPIFFE CSI driver (always enabled for full and spire scenarios, ignored by multi-region and cluster-manager)"
         required: false
         type: boolean
         default: false
@@ -18,13 +18,14 @@ on:
         required: false
         default: ""
       suite:
-        description: "Which phases to run. multi-region runs the k3s-flannel-ee-multi-region scenario, which joins a second k3s cluster as a Region, instead of the scenario input"
+        description: "Which phases to run. multi-region runs the k3s-flannel-ee-multi-region scenario, which joins a second k3s cluster as a Region, instead of the scenario input. cluster-manager uses the same scenario to test Cluster Manager upgrades and joins when a genesis Pod or Cluster Manager itself restarts"
         required: false
         type: choice
         options:
           - enterprise
           - all
           - multi-region
+          - cluster-manager
         default: enterprise
       packageVersion:
         description: "octeliumee package version to install. Defaults to this branch"
@@ -57,11 +58,11 @@ jobs:
           - runner: ubuntu-24.04-arm
             scenario: k3s-flannel-ee-full
     runs-on: ${{ matrix.runner }}
-    name: ${{ inputs.suite == 'multi-region' && 'k3s-flannel-ee-multi-region' || matrix.scenario }}-${{ matrix.runner }}
+    name: ${{ (inputs.suite == 'multi-region' || inputs.suite == 'cluster-manager') && 'k3s-flannel-ee-multi-region' || matrix.scenario }}-${{ matrix.runner }}
     timeout-minutes: 180
     env:
-      E2E_SCENARIO: ${{ inputs.suite == 'multi-region' && 'k3s-flannel-ee-multi-region' || inputs.scenario || matrix.scenario }}
-      E2E_TIMEOUT: ${{ inputs.suite == 'multi-region' && '150m' || '90m' }}
+      E2E_SCENARIO: ${{ (inputs.suite == 'multi-region' || inputs.suite == 'cluster-manager') && 'k3s-flannel-ee-multi-region' || inputs.scenario || matrix.scenario }}
+      E2E_TIMEOUT: ${{ (inputs.suite == 'multi-region' || inputs.suite == 'cluster-manager') && '150m' || '90m' }}
     steps:
       - name: Install deps
         run: |

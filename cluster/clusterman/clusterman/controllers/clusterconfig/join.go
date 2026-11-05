@@ -195,6 +195,14 @@ func isSameJoinRequest(a, b *enterprisev1.ClusterConfig_Status_JoinRequest) bool
 	return a.Request.GetName() == b.Request.GetName() && isSameTimestamp(a.CreatedAt, b.CreatedAt)
 }
 
+func isSameUpgradeRequest(a, b *enterprisev1.ClusterConfig_Status_UpgradeRequest) bool {
+	if a == nil || b == nil {
+		return false
+	}
+
+	return isSameTimestamp(a.CreatedAt, b.CreatedAt)
+}
+
 func isSameTimestamp(a, b *timestamppb.Timestamp) bool {
 	if a == nil || b == nil {
 		return a == nil && b == nil
