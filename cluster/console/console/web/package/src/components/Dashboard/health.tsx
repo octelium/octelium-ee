@@ -75,6 +75,7 @@ export const SUBSYSTEM: Record<
   [GetClusterHealthResponse_Subsystem_Type.DEVICE_MANAGERS]: {
     label: "Device managers",
     icon: LaptopMinimal,
+    to: "/enterprise/devicemanagers",
   },
   [GetClusterHealthResponse_Subsystem_Type.ENROLLMENT]: {
     label: "Enrollment",

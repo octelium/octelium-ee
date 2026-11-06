@@ -3,6 +3,7 @@ import * as EnterpriseP from "@/apis/enterprisev1/enterprisev1";
 import EditItem from "@/components/EditItem";
 import ItemMessage from "@/components/ItemMessage";
 import { ResourceEdit } from "@/components/ResourceLayout/ResourceEdit";
+import SelectDeviceManagers from "./SelectDeviceManagers";
 import SelectResourceMultiple from "@/components/ResourceLayout/SelectResourceMultiple";
 import { getClientEnterprise } from "@/utils/client";
 import { strToNum } from "@/utils/convert";
@@ -139,6 +140,14 @@ const Edit = ({
             <SegmentedControl fullWidth value={EnterpriseP.Certificate_Spec_Mode[req.spec.certificate.defaultMode] || "MANAGED"} data={[{ label: "Managed", value: "MANAGED" }, { label: "Manual", value: "MANUAL" }]} onChange={(value) => update((next) => { next.spec!.certificate!.defaultMode = EnterpriseP.Certificate_Spec_Mode[value as "MANAGED" | "MANUAL"]; })} />
           </div>
         )}
+      </EditItem>
+
+      <EditItem
+        title="Device managers"
+        description="Choose the order in which the DeviceManagers are selected for the new Bindings of the Devices."
+        obj={req.spec?.deviceManagers ?? []}
+      >
+        <SelectDeviceManagers value={req.spec?.deviceManagers ?? []} onChange={(value) => update((next) => { next.spec!.deviceManagers = value; })} />
       </EditItem>
     </div>
   );

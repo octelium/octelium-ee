@@ -12,6 +12,7 @@ import {
   Folder,
   Inbox,
   LaptopMinimal,
+  LaptopMinimalCheck,
   Layers,
   LayoutTemplate,
   LucideIcon,
@@ -181,6 +182,13 @@ const GROUPS: Group[] = [
         to: "/enterprise/secretstores",
         icon: BookKey,
         pick: (summary) => summary?.enterprise?.secretStore,
+      },
+      {
+        kind: "DeviceManager",
+        label: "Device Managers",
+        to: "/enterprise/devicemanagers",
+        icon: LaptopMinimalCheck,
+        pick: (summary) => summary?.enterprise?.deviceManager,
       },
       {
         kind: "CollectorExporter",

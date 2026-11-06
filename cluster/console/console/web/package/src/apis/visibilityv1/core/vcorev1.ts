@@ -36,6 +36,8 @@ import { MessageType } from "@protobuf-ts/runtime";
 import { Authenticator_Spec_State } from "../../corev1/corev1";
 import { Authenticator_Status_Type } from "../../corev1/corev1";
 import { IdentityProvider_Status_Type } from "../../corev1/corev1";
+import { Device_Status_Binding_Validity } from "../../corev1/corev1";
+import { Device_Status_Binding_State } from "../../corev1/corev1";
 import { Device_Status_OSType } from "../../corev1/corev1";
 import { Device_Spec_State } from "../../corev1/corev1";
 import { Credential_Spec_Type } from "../../corev1/corev1";
@@ -977,6 +979,28 @@ export interface ListDeviceOptions {
      * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.OSType osType = 4
      */
     osType: Device_Status_OSType;
+    /**
+     * DeviceManagerRef lists the Devices whose Binding belongs to the
+     * DeviceManager.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference deviceManagerRef = 5
+     */
+    deviceManagerRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Binding.State bindingState = 6
+     */
+    bindingState: Device_Status_Binding_State;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Binding.Validity bindingValidity = 7
+     */
+    bindingValidity: Device_Status_Binding_Validity;
+    /**
+     * HasInvalidBinding lists the Devices whose ACCEPTED Binding is not VALID,
+     * i.e. the Devices counted by DeviceManager.status.linking.suspended.
+     *
+     * @generated from protobuf field: bool hasInvalidBinding = 8
+     */
+    hasInvalidBinding: boolean;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.ListGatewayOptions
@@ -3813,13 +3837,20 @@ class ListDeviceOptions$Type extends MessageType<ListDeviceOptions> {
             { no: 1, name: "common", kind: "message", T: () => CommonListOptions },
             { no: 2, name: "userRef", kind: "message", T: () => ObjectReference },
             { no: 3, name: "state", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Spec.State", Device_Spec_State] },
-            { no: 4, name: "osType", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.OSType", Device_Status_OSType] }
+            { no: 4, name: "osType", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.OSType", Device_Status_OSType] },
+            { no: 5, name: "deviceManagerRef", kind: "message", T: () => ObjectReference },
+            { no: 6, name: "bindingState", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Binding.State", Device_Status_Binding_State] },
+            { no: 7, name: "bindingValidity", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Binding.Validity", Device_Status_Binding_Validity] },
+            { no: 8, name: "hasInvalidBinding", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<ListDeviceOptions>): ListDeviceOptions {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.state = 0;
         message.osType = 0;
+        message.bindingState = 0;
+        message.bindingValidity = 0;
+        message.hasInvalidBinding = false;
         if (value !== undefined)
             reflectionMergePartial<ListDeviceOptions>(this, message, value);
         return message;
@@ -3840,6 +3871,18 @@ class ListDeviceOptions$Type extends MessageType<ListDeviceOptions> {
                     break;
                 case /* octelium.api.main.core.v1.Device.Status.OSType osType */ 4:
                     message.osType = reader.int32();
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference deviceManagerRef */ 5:
+                    message.deviceManagerRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.deviceManagerRef);
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Binding.State bindingState */ 6:
+                    message.bindingState = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Binding.Validity bindingValidity */ 7:
+                    message.bindingValidity = reader.int32();
+                    break;
+                case /* bool hasInvalidBinding */ 8:
+                    message.hasInvalidBinding = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -3865,6 +3908,18 @@ class ListDeviceOptions$Type extends MessageType<ListDeviceOptions> {
         /* octelium.api.main.core.v1.Device.Status.OSType osType = 4; */
         if (message.osType !== 0)
             writer.tag(4, WireType.Varint).int32(message.osType);
+        /* octelium.api.main.meta.v1.ObjectReference deviceManagerRef = 5; */
+        if (message.deviceManagerRef)
+            ObjectReference.internalBinaryWrite(message.deviceManagerRef, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Device.Status.Binding.State bindingState = 6; */
+        if (message.bindingState !== 0)
+            writer.tag(6, WireType.Varint).int32(message.bindingState);
+        /* octelium.api.main.core.v1.Device.Status.Binding.Validity bindingValidity = 7; */
+        if (message.bindingValidity !== 0)
+            writer.tag(7, WireType.Varint).int32(message.bindingValidity);
+        /* bool hasInvalidBinding = 8; */
+        if (message.hasInvalidBinding !== false)
+            writer.tag(8, WireType.Varint).bool(message.hasInvalidBinding);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

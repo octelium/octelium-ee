@@ -2,7 +2,6 @@ import {
   Breakdown,
   DeltaStat,
   DeltaStatGrid,
-  Meter,
   MiniStat,
   MiniStatGrid,
   Panel,
@@ -14,11 +13,7 @@ import { n, periodLabel } from "@/utils/visibility";
 import { QUERY_PRIORITY } from "@/utils/visibility/queue";
 import {
   BookKey,
-  Clock3,
   KeyRound,
-  LaptopMinimal,
-  RefreshCcw,
-  ShieldQuestion,
   TriangleAlert,
 } from "lucide-react";
 import { useEnterpriseCreated, useEnterpriseTotals } from "./queries";
@@ -33,14 +28,13 @@ const Platform = (props: { periodMinutes: number }) => {
 
   const stores = totals.data?.enterprise?.secretStore;
   const secrets = totals.data?.enterprise?.secret;
-  const managers = totals.data?.enterprise?.deviceManager;
   const freshSecrets = created.data?.enterprise?.secret;
 
   return (
     <Panel
       icon={BookKey}
-      title="Key management & device posture"
-      description="Where the Cluster's secrets are wrapped and which external managers vouch for the Devices"
+      title="Key management"
+      description="Where the Cluster's secrets are wrapped and how their keys are re-wrapped"
       to="/enterprise/secretstores"
       toLabel="Secret Stores"
     >
@@ -73,17 +67,6 @@ const Platform = (props: { periodMinutes: number }) => {
             value={n(secrets?.totalNumber)}
             icon={KeyRound}
             to="/enterprise/secrets"
-          />
-          <MiniStat
-            label="Device managers"
-            value={n(managers?.totalNumber)}
-            icon={LaptopMinimal}
-          />
-          <MiniStat
-            label="Ambiguous devices"
-            value={n(managers?.totalAmbiguous)}
-            tone={n(managers?.totalAmbiguous) > 0 ? "warning" : "default"}
-            icon={Clock3}
           />
         </MiniStatGrid>
 
@@ -134,81 +117,6 @@ const Platform = (props: { periodMinutes: number }) => {
               ]}
               total={n(stores?.totalNumber)}
             />
-          </Breakdown>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Breakdown
-            title="Device managers by vendor"
-            note={`${compact(n(managers?.totalNumber))} integrated`}
-          >
-            <CompositionBar
-              segments={[
-                { label: "CrowdStrike", value: n(managers?.totalCrowdStrike) },
-                { label: "SentinelOne", value: n(managers?.totalSentinelOne) },
-                { label: "Intune", value: n(managers?.totalMicrosoftIntune) },
-                { label: "Jamf Pro", value: n(managers?.totalJamfPro) },
-                { label: "1Password", value: n(managers?.totalOnePassword) },
-                { label: "FleetDM", value: n(managers?.totalFleetDM) },
-                { label: "Huntress", value: n(managers?.totalHuntress) },
-                { label: "Iru", value: n(managers?.totalIru) },
-              ]}
-              total={n(managers?.totalNumber)}
-            />
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-micro font-normal text-slate-500">
-              <span>
-                Healthy
-                <span className="ml-1 font-semibold tabular-nums text-slate-700">
-                  {compact(n(managers?.totalOK))}
-                </span>
-              </span>
-              <span>
-                Degraded
-                <span className="ml-1 font-semibold tabular-nums text-amber-700">
-                  {compact(n(managers?.totalDegraded))}
-                </span>
-              </span>
-              <span>
-                Errored
-                <span className="ml-1 font-semibold tabular-nums text-red-700">
-                  {compact(n(managers?.totalError))}
-                </span>
-              </span>
-              <span>
-                Polling off
-                <span className="ml-1 font-semibold tabular-nums text-slate-700">
-                  {compact(n(managers?.totalPollingDisabled))}
-                </span>
-              </span>
-            </div>
-          </Breakdown>
-
-          <Breakdown
-            title="Managed devices linked to the Cluster"
-            note={`${compact(n(managers?.totalManagedDevices))} managed`}
-          >
-            <Meter
-              value={n(managers?.totalLinkedDevices)}
-              total={n(managers?.totalManagedDevices)}
-              label="linked to a Device"
-              color={STATUS_COLORS.good}
-            />
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-micro font-normal text-slate-500">
-              <span className="inline-flex items-center gap-1">
-                <ShieldQuestion size={11} strokeWidth={2.3} />
-                Ambiguous
-                <span className="font-semibold tabular-nums text-amber-700">
-                  {compact(n(managers?.totalAmbiguous))}
-                </span>
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <RefreshCcw size={11} strokeWidth={2.3} />
-                Failed updates
-                <span className="font-semibold tabular-nums text-red-700">
-                  {compact(n(managers?.totalFailedUpdates))}
-                </span>
-              </span>
-            </div>
           </Breakdown>
         </div>
 

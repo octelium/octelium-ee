@@ -75,6 +75,9 @@ export const LabelComponent = (props: { item: Device }) => {
       {item.status?.userRef && (
         <ResourceListLabel itemRef={item.status.userRef}></ResourceListLabel>
       )}
+      {item.status?.binding?.ownerRef?.name && (
+        <ResourceListLabel itemRef={item.status.binding.ownerRef} />
+      )}
       {item.status?.isLocked && (
         <ResourceListLabel>
           <span className="text-red-500">Locked</span>

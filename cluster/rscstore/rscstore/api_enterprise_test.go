@@ -498,8 +498,21 @@ func TestEnterpriseListFilters(t *testing.T) {
 		Status: &enterprisev1.DeviceManager_Status{
 			Type:  enterprisev1.DeviceManager_Status_SENTINELONE,
 			State: enterprisev1.DeviceManager_Status_DEGRADED,
+			Linking: &enterprisev1.DeviceManager_Status_Linking{
+				LinkedDevices:   4,
+				OwnerMismatches: 1,
+			},
 		},
 	})
+
+	{
+		resp, err := srv.ListDeviceManager(env.ctx, &venterprisev1.ListDeviceManagerOptions{
+			HasLinkingIssues: true,
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 1)
+		assert.Equal(t, "sentinelone-dm", resp.Items[0].Metadata.Name)
+	}
 
 	{
 		resp, err := srv.ListDeviceManager(env.ctx, &venterprisev1.ListDeviceManagerOptions{

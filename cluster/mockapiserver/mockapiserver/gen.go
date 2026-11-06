@@ -600,6 +600,10 @@ The initial SecretStore powered by the Kubernetes Cluster of the default Region
 		}
 	}
 
+	if err := genDeviceManagers(ctx, octeliumC); err != nil {
+		return err
+	}
+
 	if err := genCordiumResources(ctx, octeliumC); err != nil {
 		return err
 	}

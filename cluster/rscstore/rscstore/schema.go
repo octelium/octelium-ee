@@ -71,6 +71,9 @@ const (
 	colStatusLinkedDevices  = "status_linked_devices"
 	colStatusAmbiguous      = "status_ambiguous"
 	colStatusFailedUpdates  = "status_failed_updates"
+	colStatusConflicts      = "status_conflicts"
+	colStatusSuspended      = "status_suspended"
+	colStatusOwnerMismatch  = "status_owner_mismatches"
 
 	colStatusSource           = "status_source"
 	colStatusPurpose          = "status_purpose"
@@ -238,6 +241,9 @@ func getResourceColumns() []*resourceColumn {
 		{name: colStatusLinkedDevices, kind: kindBigint, path: "$.status.linking.linkedDevices"},
 		{name: colStatusAmbiguous, kind: kindBigint, path: "$.status.linking.ambiguous"},
 		{name: colStatusFailedUpdates, kind: kindBigint, path: "$.status.linking.failedUpdates"},
+		{name: colStatusConflicts, kind: kindBigint, path: "$.status.linking.conflicts"},
+		{name: colStatusSuspended, kind: kindBigint, path: "$.status.linking.suspended"},
+		{name: colStatusOwnerMismatch, kind: kindBigint, path: "$.status.linking.ownerMismatches"},
 		{name: colStatusSource, kind: kindVarchar, path: "$.status.source"},
 		{name: colStatusPurpose, kind: kindVarchar, path: "$.status.purpose"},
 		{name: colStatusAudience, kind: kindVarchar, path: "$.status.audience"},

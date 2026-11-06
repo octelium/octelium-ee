@@ -518,7 +518,7 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
         primary: true,
         icon: Link2,
         value: binding?.ownerRef?.name ? (
-          <span className="font-semibold">{binding.ownerRef.name}</span>
+          <RefLabel itemRef={binding.ownerRef} />
         ) : (
           <MutedValue>Not bound</MutedValue>
         ),
@@ -654,7 +654,7 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
               label: "Manager",
               group: "Device manager",
               value: binding.ownerRef?.name ? (
-                <span className="font-semibold">{binding.ownerRef.name}</span>
+                <RefLabel itemRef={binding.ownerRef} />
               ) : (
                 <MutedValue>Unknown</MutedValue>
               ),

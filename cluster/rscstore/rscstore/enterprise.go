@@ -557,6 +557,9 @@ func (s *Server) doSummaryEnterpriseDeviceManager(ctx context.Context, common *v
 			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_linked_devices`, colStatusLinkedDevices)),
 			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_ambiguous`, colStatusAmbiguous)),
 			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_failed_updates`, colStatusFailedUpdates)),
+			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_conflicts`, colStatusConflicts)),
+			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_suspended`, colStatusSuspended)),
+			goqu.L(fmt.Sprintf(`COALESCE(SUM(TRY_CAST(%s AS BIGINT)), 0) AS sum_owner_mismatches`, colStatusOwnerMismatch)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -581,7 +584,8 @@ func (s *Server) doSummaryEnterpriseDeviceManager(ctx context.Context, common *v
 			&ret.TotalOK, &ret.TotalLoading, &ret.TotalError, &ret.TotalDegraded,
 			&ret.TotalPollingDisabled,
 			&ret.TotalManagedDevices, &ret.TotalLinkedDevices,
-			&ret.TotalAmbiguous, &ret.TotalFailedUpdates)
+			&ret.TotalAmbiguous, &ret.TotalFailedUpdates,
+			&ret.TotalConflicts, &ret.TotalSuspended, &ret.TotalOwnerMismatches)
 		if err != nil {
 			return nil, err
 		}

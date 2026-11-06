@@ -297,11 +297,12 @@ func TestEnterpriseSummaries(t *testing.T) {
 				ManagedDevices: 7,
 			},
 			Linking: &enterprisev1.DeviceManager_Status_Linking{
-				LinkedDevices: 5,
-				Ambiguous:     1,
-				Conflicts:     2,
-				Suspended:     1,
-				FailedUpdates: 3,
+				LinkedDevices:   5,
+				Ambiguous:       1,
+				Conflicts:       2,
+				Suspended:       1,
+				FailedUpdates:   3,
+				OwnerMismatches: 4,
 			},
 		},
 	})
@@ -317,5 +318,8 @@ func TestEnterpriseSummaries(t *testing.T) {
 		assert.EqualValues(t, 5, resp.TotalLinkedDevices)
 		assert.EqualValues(t, 1, resp.TotalAmbiguous)
 		assert.EqualValues(t, 3, resp.TotalFailedUpdates)
+		assert.EqualValues(t, 2, resp.TotalConflicts)
+		assert.EqualValues(t, 1, resp.TotalSuspended)
+		assert.EqualValues(t, 4, resp.TotalOwnerMismatches)
 	}
 }

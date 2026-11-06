@@ -23,6 +23,7 @@ const REF_PARAM_LABELS: Record<string, string> = {
   "subjectUserRef.name": "Subject User",
   "policyTriggerRef.name": "Policy Trigger",
   "integrationRef.name": "Integration",
+  "deviceManagerRef.name": "Device Manager",
 };
 
 const TYPE_LABEL_MAP: Record<string, string> = {
@@ -68,6 +69,24 @@ const TYPE_LABEL_MAP: Record<string, string> = {
   SUBJECT: "Subject",
   DEEP_LINK_ONLY: "Deep link only",
   INTERACTIVE: "Interactive",
+  CROWDSTRIKE: "CrowdStrike Falcon",
+  SENTINELONE: "SentinelOne",
+  MICROSOFT_INTUNE: "Microsoft Intune",
+  JAMF_PRO: "Jamf Pro",
+  ONEPASSWORD: "1Password Device Trust",
+  FLEETDM: "Fleet",
+  HUNTRESS: "Huntress",
+  IRU: "Iru",
+  OK: "Healthy",
+  LOADING: "Loading",
+  DISABLED: "Polling disabled",
+  ACCEPTED: "Accepted",
+  AMBIGUOUS: "Ambiguous",
+  CONFLICT: "Conflict",
+  OWNER_MISMATCH: "Owner mismatch",
+  VALID: "Valid",
+  SUSPENDED: "Suspended",
+  LOST: "Lost",
 };
 
 const BOOLEAN_PARAM_LABELS: Record<string, string> = {
@@ -83,6 +102,9 @@ const BOOLEAN_PARAM_LABELS: Record<string, string> = {
   isFailing: "Failing",
   hasDeadline: "With deadline",
   isDeadlinePassed: "Past deadline",
+  isPollingDisabled: "Polling disabled",
+  hasLinkingIssues: "Linking issues",
+  hasInvalidBinding: "Invalid binding",
 };
 
 export interface FilterChip {

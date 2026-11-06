@@ -629,6 +629,193 @@ const sources: Record<string, () => Resource> = {
         ],
       },
     }),
+  "enterprise/clusterconfig/default": () =>
+    EnterpriseP.ClusterConfig.fromJson({
+      apiVersion: "enterprise/v1",
+      kind: "ClusterConfig",
+      metadata: md("default"),
+      spec: { deviceManagers: ["crowdstrike", "intune"] },
+      status: {},
+    }),
+  "enterprise/devicemanagers/crowdstrike": () =>
+    EnterpriseP.DeviceManager.fromJson({
+      apiVersion: "enterprise/v1",
+      kind: "DeviceManager",
+      metadata: md("crowdstrike", { description: "Corporate endpoints" }),
+      spec: {
+        crowdStrike: {
+          region: "EU_1",
+          clientID: "0123456789abcdef0123456789abcdef",
+          clientSecret: { fromSecret: "falcon-client-secret" },
+          hostFilter: "platform_name:'Windows'",
+        },
+        polling: { interval: { minutes: 10 } },
+        linking: { verificationInterval: { hours: 12 } },
+        condition: { match: 'ctx.user.spec.type == "HUMAN"' },
+      },
+      status: {
+        type: "CROWDSTRIKE",
+        state: "OK",
+        collection: {
+          lastAttemptAt: at(-120),
+          lastSuccessAt: at(-120),
+          managedDevices: 1240,
+        },
+        linking: {
+          lastSweepAt: at(-60),
+          linkedDevices: 1180,
+          ambiguous: 3,
+          conflicts: 2,
+          suspended: 1,
+          ownerMismatches: 1,
+        },
+      },
+    }),
+  "enterprise/devicemanagers/intune": () =>
+    EnterpriseP.DeviceManager.fromJson({
+      apiVersion: "enterprise/v1",
+      kind: "DeviceManager",
+      metadata: md("intune"),
+      spec: {
+        microsoftIntune: {
+          tenantID: "0b3f1e7a-24c4-4a42-8e0e-7c1c2f9e5d21",
+          clientID: "6f1d2b9c-7a51-4c4e-9a0f-2d8f2f4f8b11",
+          clientSecret: { fromSecret: "intune-client-secret" },
+          cloud: "US_GOV",
+          filter: "operatingSystem eq 'Windows'",
+          isGracePeriodCompliant: true,
+        },
+        linking: { requireOwnerMatch: true },
+      },
+      status: {
+        type: "MICROSOFT_INTUNE",
+        state: "DEGRADED",
+        collection: {
+          lastAttemptAt: at(-60),
+          lastSuccessAt: at(-60),
+          managedDevices: 320,
+          lastError: "compliance states could not be read",
+        },
+        linking: { lastSweepAt: at(-30), linkedDevices: 280 },
+      },
+    }),
+  "enterprise/devicemanagers/jamf": () =>
+    EnterpriseP.DeviceManager.fromJson({
+      apiVersion: "enterprise/v1",
+      kind: "DeviceManager",
+      metadata: md("jamf"),
+      spec: {
+        jamf: {
+          baseURL: "https://example.jamfcloud.com",
+          clientID: "0f6a1c34-9d7e-4b1a-8a65-3a6d2f0c9e77",
+          clientSecret: { fromSecret: "jamf-client-secret" },
+          compliantGroups: ["Compliant Macs", "Corporate Macs"],
+        },
+      },
+      status: {
+        type: "JAMF_PRO",
+        state: "ERROR",
+        collection: {
+          lastAttemptAt: at(-90),
+          lastSuccessAt: at(-3 * HOUR),
+          managedDevices: 90,
+          lastError: "401 Unauthorized: the API client secret was rejected",
+        },
+        linking: { lastSweepAt: at(-3 * HOUR), linkedDevices: 84 },
+      },
+    }),
+  "enterprise/devicemanagers/sentinelone": () =>
+    EnterpriseP.DeviceManager.fromJson({
+      apiVersion: "enterprise/v1",
+      kind: "DeviceManager",
+      metadata: md("sentinelone"),
+      spec: {
+        sentinelOne: {
+          managementURL: "https://example.sentinelone.net",
+          apiToken: { fromSecret: "sentinelone-token" },
+          siteIDs: ["225494730938493804"],
+          agentFilters: { isDecommissioned: "false" },
+        },
+      },
+      status: { type: "SENTINELONE", state: "LOADING" },
+    }),
+  "enterprise/devicemanagers/fleet": () =>
+    EnterpriseP.DeviceManager.fromJson({
+      apiVersion: "enterprise/v1",
+      kind: "DeviceManager",
+      metadata: md("fleet"),
+      spec: {
+        fleetDM: {
+          baseURL: "https://fleet.example.com",
+          apiToken: { fromSecret: "fleet-token" },
+          teamID: 0,
+        },
+        polling: { isDisabled: true },
+      },
+      status: { type: "FLEETDM", state: "DISABLED" },
+    }),
+  "enterprise/devicemanagers/onepassword": () =>
+    EnterpriseP.DeviceManager.fromJson({
+      apiVersion: "enterprise/v1",
+      kind: "DeviceManager",
+      metadata: md("onepassword"),
+      spec: { onePassword: { apiToken: { fromSecret: "kolide-token" } } },
+      status: {
+        type: "ONEPASSWORD",
+        state: "OK",
+        collection: {
+          lastAttemptAt: at(-60),
+          lastSuccessAt: at(-60),
+          managedDevices: 64,
+        },
+        linking: { lastSweepAt: at(-30), linkedDevices: 64 },
+      },
+    }),
+  "enterprise/devicemanagers/huntress": () =>
+    EnterpriseP.DeviceManager.fromJson({
+      apiVersion: "enterprise/v1",
+      kind: "DeviceManager",
+      metadata: md("huntress"),
+      spec: {
+        huntress: {
+          apiKey: "hk_0123456789abcdef",
+          apiSecret: { fromSecret: "huntress-secret" },
+          organizationIDs: ["1042", "2048"],
+        },
+      },
+      status: {
+        type: "HUNTRESS",
+        state: "OK",
+        collection: {
+          lastAttemptAt: at(-60),
+          lastSuccessAt: at(-60),
+          managedDevices: 12,
+        },
+        linking: { lastSweepAt: at(-30), linkedDevices: 9 },
+      },
+    }),
+  "enterprise/devicemanagers/iru": () =>
+    EnterpriseP.DeviceManager.fromJson({
+      apiVersion: "enterprise/v1",
+      kind: "DeviceManager",
+      metadata: md("iru"),
+      spec: {
+        iru: {
+          baseURL: "https://example.api.iru.com",
+          apiToken: { fromSecret: "iru-token" },
+        },
+      },
+      status: {
+        type: "IRU",
+        state: "OK",
+        collection: {
+          lastAttemptAt: at(-60),
+          lastSuccessAt: at(-60),
+          managedDevices: 45,
+        },
+        linking: { lastSweepAt: at(-30), linkedDevices: 45 },
+      },
+    }),
   "enterprise/directoryproviders/google": () =>
     EnterpriseP.DirectoryProvider.fromJson({
       apiVersion: "enterprise/v1",

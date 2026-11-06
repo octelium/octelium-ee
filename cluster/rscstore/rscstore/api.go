@@ -524,6 +524,28 @@ func (s *srvCore) ListDevice(ctx context.Context, req *vcorev1.ListDeviceOptions
 			goqu.L(colStatusOsType).Eq(req.OsType.String()))
 	}
 
+	var err error
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.DeviceManagerRef, nil, "status.binding.ownerRef")
+	if err != nil {
+		return nil, err
+	}
+
+	if req.BindingState != corev1.Device_Status_Binding_STATE_UNKNOWN {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.status.binding.state'`).Eq(req.BindingState.String()))
+	}
+
+	if req.BindingValidity != corev1.Device_Status_Binding_VALIDITY_UNKNOWN {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.status.binding.validity'`).Eq(req.BindingValidity.String()))
+	}
+
+	if req.HasInvalidBinding {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.status.binding.state'`).Eq(corev1.Device_Status_Binding_ACCEPTED.String()),
+			goqu.L(`COALESCE(rsc->>'$.status.binding.validity', '')`).Neq(corev1.Device_Status_Binding_VALID.String()))
+	}
+
 	ret, err := s.s.doList(ctx, doListReq)
 	if err != nil {
 		return nil, err
@@ -1035,6 +1057,13 @@ func (s *srvEnterprise) ListDeviceManager(ctx context.Context, req *venterprisev
 	if req.IsPollingDisabled {
 		doListReq.filters = append(doListReq.filters,
 			goqu.L(fmt.Sprintf(`%s = true`, colSpecPollingIsDisabled)))
+	}
+
+	if req.HasLinkingIssues {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`(%s > 0 OR %s > 0 OR %s > 0 OR %s > 0 OR %s > 0)`,
+				colStatusAmbiguous, colStatusConflicts, colStatusSuspended,
+				colStatusOwnerMismatch, colStatusFailedUpdates)))
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)

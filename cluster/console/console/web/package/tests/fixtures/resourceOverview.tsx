@@ -80,7 +80,8 @@ const respond = async (method: Method, request: Request) => {
     const item = byKind(get[1], api).find(
       (entry) =>
         entry.metadata?.name === request?.name ||
-        (!!request?.uid && entry.metadata?.uid === request.uid),
+        (!!request?.uid && entry.metadata?.uid === request.uid) ||
+        (!request?.name && !request?.uid),
     );
     if (item) return item;
     if (byKind(get[1], api).length > 0 || method.O.typeName.endsWith(get[1]))

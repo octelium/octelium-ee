@@ -33,7 +33,8 @@ export type ResourceEnterpriseName =
   | "CollectorExporter"
   | "DNSProvider"
   | "SecretStore"
-  | "DirectoryProvider";
+  | "DirectoryProvider"
+  | "DeviceManager";
 
 export type ResourceAccessName =
   | "ClusterConfig"
@@ -81,6 +82,7 @@ const enterpriseResourcePathMap = new Map<string, ResourceEnterpriseName>([
   ["certificateissuers", "CertificateIssuer"],
   ["directoryproviders", "DirectoryProvider"],
   ["secretstores", "SecretStore"],
+  ["devicemanagers", "DeviceManager"],
 ]);
 
 const accessResourcePathMap = new Map<string, ResourceAccessName>([

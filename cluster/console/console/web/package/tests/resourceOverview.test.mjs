@@ -28,6 +28,14 @@ const paths = [
   "/enterprise/certificates/partner-api",
   "/enterprise/certificateissuers/letsencrypt",
   "/enterprise/secretstores/vault",
+  "/enterprise/devicemanagers/crowdstrike",
+  "/enterprise/devicemanagers/intune",
+  "/enterprise/devicemanagers/jamf",
+  "/enterprise/devicemanagers/sentinelone",
+  "/enterprise/devicemanagers/fleet",
+  "/enterprise/devicemanagers/onepassword",
+  "/enterprise/devicemanagers/huntress",
+  "/enterprise/devicemanagers/iru",
   "/enterprise/directoryproviders/google",
   "/enterprise/directoryproviders/okta",
   "/enterprise/dnsproviders/cloudflare",
@@ -255,6 +263,55 @@ describe("Resource overview details", () => {
       0,
     );
     await page.getByText("Expiring soon.", { exact: true }).waitFor();
+  });
+
+  it("shows the health and the linking of a DeviceManager", async () => {
+    await load("/enterprise/devicemanagers/crowdstrike");
+    await page.getByText("1,180 of 1,240 managed devices are linked to a Device").waitFor();
+    await page.getByText("7 issues").waitFor();
+    assert.deepEqual(await sectionTitles(), [
+      "Connection",
+      "Inventory scope",
+      "Collection",
+      "Device linking",
+    ]);
+    await page.getByText("1 of 2").waitFor();
+    assert.equal(
+      await page.getByRole("link", { name: /Conflicts/ }).getAttribute("href"),
+      "/core/devices?bindingState=CONFLICT&deviceManagerRef.name=crowdstrike",
+    );
+    assert.equal(
+      await page.getByRole("link", { name: /^Linked/ }).getAttribute("href"),
+      "/core/devices?bindingState=ACCEPTED&deviceManagerRef.name=crowdstrike",
+    );
+    assert.equal(await page.getByRole("link", { name: /Ambiguous/ }).count(), 1);
+    await toolbar("crowdstrike").getByRole("button", { name: "View Devices" }).click();
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="location"]')?.textContent === "/core/devices",
+    );
+  });
+
+  it("explains why a DeviceManager needs attention", async () => {
+    await load("/enterprise/devicemanagers/jamf");
+    await page.getByText("The last collection failed.").waitFor();
+    await page.getByText("401 Unauthorized: the API client secret was rejected").waitFor();
+    await page.getByText("The inventory is stale.").waitFor();
+    await page.getByText("This manager is not selected for any Device.").waitFor();
+    await page.getByText("Not listed", { exact: true }).waitFor();
+
+    await load("/enterprise/devicemanagers/intune");
+    await page.getByText("The last collection is incomplete.").waitFor();
+    await page.getByText("compliance states could not be read").waitFor();
+
+    await load("/enterprise/devicemanagers/fleet");
+    await page.getByText("Polling is disabled.").waitFor();
+    await page.getByText("Hosts without a team").waitFor();
+  });
+
+  it("links a Device to its DeviceManager", async () => {
+    await load("/core/devices/alice-macbook");
+    const link = page.getByRole("link", { name: /kandji/ }).first();
+    assert.equal(await link.getAttribute("href"), "/enterprise/devicemanagers/kandji");
   });
 
   it("requests a SecretStore synchronization", async () => {

@@ -74,7 +74,8 @@ export type ResourceEnterprise =
   | EnterpriseP.CollectorExporter
   | EnterpriseP.DNSProvider
   | EnterpriseP.SecretStore
-  | EnterpriseP.DirectoryProvider;
+  | EnterpriseP.DirectoryProvider
+  | EnterpriseP.DeviceManager;
 
 export type ResourceAccess =
   | AccessP.ClusterConfig
@@ -117,7 +118,8 @@ export type ResourceEnterpriseList =
   | EnterpriseP.CollectorExporterList
   | EnterpriseP.DNSProviderList
   | EnterpriseP.SecretStoreList
-  | EnterpriseP.DirectoryProviderList;
+  | EnterpriseP.DirectoryProviderList
+  | EnterpriseP.DeviceManagerList;
 
 export type ResourceAccessList =
   | AccessP.CatalogList

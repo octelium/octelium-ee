@@ -13,7 +13,7 @@ import {
   Folder,
   Globe2,
   KeyRound,
-  LaptopMinimal,
+  LaptopMinimalCheck,
   Layers,
   LucideIcon,
   ShieldCheck,
@@ -128,7 +128,8 @@ const ROWS: Row[] = [
   {
     kind: "DeviceManager",
     label: "Device managers",
-    icon: LaptopMinimal,
+    to: "/enterprise/devicemanagers",
+    icon: LaptopMinimalCheck,
     pick: (enterprise) => enterprise?.deviceManager,
     attention: (enterprise) => [
       {

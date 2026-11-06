@@ -30,6 +30,11 @@ const Signals = (props: { periodMinutes: number }) => {
 
   const managerIssues = n(managers?.totalError) + n(managers?.totalDegraded);
   const failedUpdates = n(managers?.totalFailedUpdates);
+  const blockedDevices =
+    n(managers?.totalAmbiguous) +
+    n(managers?.totalConflicts) +
+    n(managers?.totalOwnerMismatches) +
+    n(managers?.totalSuspended);
 
   return (
     <section
@@ -125,8 +130,8 @@ const Signals = (props: { periodMinutes: number }) => {
         badge={
           failedUpdates > 0
             ? `${compact(failedUpdates)} failed updates`
-            : n(managers?.totalAmbiguous) > 0
-              ? `${compact(n(managers?.totalAmbiguous))} ambiguous`
+            : blockedDevices > 0
+              ? `${compact(blockedDevices)} not bound`
               : undefined
         }
         footer={`${compact(n(managers?.totalLinkedDevices))} of ${compact(n(managers?.totalManagedDevices))} devices linked`}
@@ -140,6 +145,7 @@ const Signals = (props: { periodMinutes: number }) => {
             ? STATUS_COLORS.serious
             : STATUS_COLORS.good
         }
+        to="/enterprise/devicemanagers"
         {...summaryTileState(
           totals,
           GetClusterSummaryRequest_Kind.ENTERPRISE_DEVICE_MANAGER,

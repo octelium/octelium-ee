@@ -159,6 +159,7 @@ const Attention = (props: { periodMinutes: number }) => {
   const issuers = cluster.data?.enterprise?.certificateIssuer;
   const directories = cluster.data?.enterprise?.directoryProvider;
   const secretStores = cluster.data?.enterprise?.secretStore;
+  const deviceManagers = cluster.data?.enterprise?.deviceManager;
 
   const candidates: Item[] = [
     {
@@ -268,6 +269,15 @@ const Attention = (props: { periodMinutes: number }) => {
       severity: "critical",
       to: "/enterprise/secretstores?synchronizationState=FAILED",
       icon: BookKey,
+    },
+    {
+      id: "deviceManagerErrors",
+      count: n(deviceManagers?.totalError),
+      label: "Device managers failing to collect",
+      scope: "Enterprise",
+      severity: "critical",
+      to: "/enterprise/devicemanagers?state=ERROR",
+      icon: LaptopMinimal,
     },
     {
       id: "componentErrors",

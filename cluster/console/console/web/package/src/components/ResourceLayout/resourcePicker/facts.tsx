@@ -13,6 +13,8 @@ import {
 import {
   Certificate_Spec_Mode,
   Certificate_Status_Issuance_State,
+  DeviceManager_Status_State,
+  DeviceManager_Status_Type,
   DirectoryProvider_Status_Synchronization_State,
   SecretStore_Status_Type,
 } from "@/apis/enterprisev1/enterprisev1";
@@ -36,6 +38,7 @@ import {
   Inbox,
   KeyRound,
   LaptopMinimal,
+  LaptopMinimalCheck,
   Layers,
   LockKeyhole,
   LockOpen,
@@ -77,6 +80,7 @@ const ICONS: Record<string, LucideIcon> = {
   "enterprise/Secret": KeyRound,
   "enterprise/CollectorExporter": Telescope,
   "enterprise/DNSProvider": Globe2,
+  "enterprise/DeviceManager": LaptopMinimalCheck,
 };
 
 export const resourceIcon = (api: string, kind: string): LucideIcon =>
@@ -215,6 +219,13 @@ const EXTRACTORS: Record<string, (item: any) => ResourceFacts> = {
   "enterprise/CollectorExporter": (item) => ({
     chips: [],
     isDisabled: item.spec?.isDisabled,
+  }),
+  "enterprise/DeviceManager": (item) => ({
+    chips: [
+      label(DeviceManager_Status_Type, item.status?.type),
+      label(DeviceManager_Status_State, item.status?.state),
+    ].filter(Boolean) as string[],
+    isDisabled: item.spec?.polling?.isDisabled,
   }),
 };
 

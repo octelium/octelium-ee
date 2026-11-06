@@ -14,12 +14,14 @@ import {
   Folder,
   Gauge,
   HeartPulse,
+  LaptopMinimalCheck,
   Layers,
   ShieldCheck,
   Telescope,
 } from "lucide-react";
 import * as React from "react";
 import Certificates from "./Certificates";
+import DeviceManagers from "./DeviceManagers";
 import Directories from "./Directories";
 import Health from "./Health";
 import Inventory from "./Inventory";
@@ -68,11 +70,19 @@ const Dashboard = () => {
       render: () => <Directories periodMinutes={periodMinutes} />,
     },
     {
+      id: "devicemanagers",
+      title: "Device posture",
+      description: "Device managers, their inventories and linked Devices",
+      icon: LaptopMinimalCheck,
+      height: 560,
+      render: () => <DeviceManagers periodMinutes={periodMinutes} />,
+    },
+    {
       id: "platform",
-      title: "Key management & device posture",
-      description: "Secret stores, key re-wrapping and device managers",
+      title: "Key management",
+      description: "Secret stores and key re-wrapping",
       icon: BookKey,
-      height: 720,
+      height: 480,
       render: () => <Platform periodMinutes={periodMinutes} />,
     },
     {

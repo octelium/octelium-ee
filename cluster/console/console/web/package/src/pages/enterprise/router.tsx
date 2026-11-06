@@ -10,6 +10,7 @@ import certificateRouter from "./Certificate/router";
 import certificateIssuerRouter from "./CertificateIssuer/router";
 import clusterConfigRouter from "./ClusterConfig/router";
 import collectorExporterRouter from "./CollectorExporter/router";
+import deviceManagerRouter from "./DeviceManager/router";
 import directoryProviderRouter from "./DirectoryProvider/router";
 import dnsProviderRouter from "./DNSProvider/router";
 import secretRouter from "./Secret/router";
@@ -46,6 +47,7 @@ export const resourceList = [
   certificateIssuerRouter,
   directoryProviderRouter,
   secretStoreRouter,
+  deviceManagerRouter,
 ];
 
 export default (): RouteObject => {

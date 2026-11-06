@@ -67,7 +67,11 @@ export const functionGroups: FunctionGroup[] = [
     id: "devices",
     label: "Devices & sessions",
     icon: LaptopMinimal,
-    items: [item("/core/devices"), item("/core/sessions")],
+    items: [
+      item("/core/devices"),
+      item("/enterprise/devicemanagers"),
+      item("/core/sessions"),
+    ],
   },
   {
     id: "network",

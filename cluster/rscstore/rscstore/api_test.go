@@ -353,6 +353,69 @@ func TestCoreListResourceSpecificFilters(t *testing.T) {
 		Spec:       &corev1.Device_Spec{State: corev1.Device_Spec_PENDING},
 		Status:     &corev1.Device_Status{UserRef: userRef2, OsType: corev1.Device_Status_ANDROID},
 	})
+	insertRscStoreObject(t, env, &corev1.Device{
+		ApiVersion: ucorev1.APIVersion,
+		Kind:       ucorev1.KindDevice,
+		Metadata:   newRscStoreMetadata("bound-device", now.Add(2*time.Second)),
+		Spec:       &corev1.Device_Spec{State: corev1.Device_Spec_ACTIVE},
+		Status: &corev1.Device_Status{
+			UserRef: userRef1,
+			OsType:  corev1.Device_Status_MAC,
+			Binding: &corev1.Device_Status_Binding{
+				Uid:      "binding-one",
+				OwnerRef: &metav1.ObjectReference{Name: "crowdstrike", Uid: vutils.UUIDv4()},
+				State:    corev1.Device_Status_Binding_ACCEPTED,
+				Validity: corev1.Device_Status_Binding_SUSPENDED,
+			},
+		},
+	})
+	insertRscStoreObject(t, env, &corev1.Device{
+		ApiVersion: ucorev1.APIVersion,
+		Kind:       ucorev1.KindDevice,
+		Metadata:   newRscStoreMetadata("conflict-device", now.Add(3*time.Second)),
+		Spec:       &corev1.Device_Spec{State: corev1.Device_Spec_ACTIVE},
+		Status: &corev1.Device_Status{
+			UserRef: userRef1,
+			OsType:  corev1.Device_Status_MAC,
+			Binding: &corev1.Device_Status_Binding{
+				Uid:      "binding-two",
+				OwnerRef: &metav1.ObjectReference{Name: "crowdstrike", Uid: vutils.UUIDv4()},
+				State:    corev1.Device_Status_Binding_CONFLICT,
+			},
+		},
+	})
+	insertRscStoreObject(t, env, &corev1.Device{
+		ApiVersion: ucorev1.APIVersion,
+		Kind:       ucorev1.KindDevice,
+		Metadata:   newRscStoreMetadata("other-manager-device", now.Add(4*time.Second)),
+		Spec:       &corev1.Device_Spec{State: corev1.Device_Spec_ACTIVE},
+		Status: &corev1.Device_Status{
+			UserRef: userRef1,
+			OsType:  corev1.Device_Status_MAC,
+			Binding: &corev1.Device_Status_Binding{
+				Uid:      "binding-three",
+				OwnerRef: &metav1.ObjectReference{Name: "intune", Uid: vutils.UUIDv4()},
+				State:    corev1.Device_Status_Binding_ACCEPTED,
+				Validity: corev1.Device_Status_Binding_LOST,
+			},
+		},
+	})
+	insertRscStoreObject(t, env, &corev1.Device{
+		ApiVersion: ucorev1.APIVersion,
+		Kind:       ucorev1.KindDevice,
+		Metadata:   newRscStoreMetadata("valid-device", now.Add(5*time.Second)),
+		Spec:       &corev1.Device_Spec{State: corev1.Device_Spec_ACTIVE},
+		Status: &corev1.Device_Status{
+			UserRef: userRef1,
+			OsType:  corev1.Device_Status_MAC,
+			Binding: &corev1.Device_Status_Binding{
+				Uid:      "binding-four",
+				OwnerRef: &metav1.ObjectReference{Name: "intune", Uid: vutils.UUIDv4()},
+				State:    corev1.Device_Status_Binding_ACCEPTED,
+				Validity: corev1.Device_Status_Binding_VALID,
+			},
+		},
+	})
 
 	insertRscStoreObject(t, env, &corev1.Credential{
 		ApiVersion: ucorev1.APIVersion,
@@ -452,6 +515,44 @@ func TestCoreListResourceSpecificFilters(t *testing.T) {
 		assert.Nil(t, err, "%+v", err)
 		assert.Len(t, resp.Items, 1)
 		assert.Equal(t, "android-device", resp.Items[0].Metadata.Name)
+	}
+
+	{
+		resp, err := srvCore.ListDevice(env.ctx, &vcorev1.ListDeviceOptions{
+			DeviceManagerRef: &metav1.ObjectReference{Name: "crowdstrike"},
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 2)
+	}
+
+	{
+		resp, err := srvCore.ListDevice(env.ctx, &vcorev1.ListDeviceOptions{
+			DeviceManagerRef: &metav1.ObjectReference{Name: "crowdstrike"},
+			BindingState:     corev1.Device_Status_Binding_CONFLICT,
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 1)
+		assert.Equal(t, "conflict-device", resp.Items[0].Metadata.Name)
+	}
+
+	{
+		resp, err := srvCore.ListDevice(env.ctx, &vcorev1.ListDeviceOptions{
+			BindingValidity: corev1.Device_Status_Binding_SUSPENDED,
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 1)
+		assert.Equal(t, "bound-device", resp.Items[0].Metadata.Name)
+	}
+
+	{
+		resp, err := srvCore.ListDevice(env.ctx, &vcorev1.ListDeviceOptions{
+			HasInvalidBinding: true,
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 2)
+		assert.ElementsMatch(t,
+			[]string{"bound-device", "other-manager-device"},
+			[]string{resp.Items[0].Metadata.Name, resp.Items[1].Metadata.Name})
 	}
 
 	{
