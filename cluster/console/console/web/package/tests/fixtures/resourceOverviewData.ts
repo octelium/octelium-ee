@@ -329,6 +329,48 @@ const sources: Record<string, () => Resource> = {
         totalAuthentications: 18,
       },
     }),
+  "core/sessions/carol-client-z4n1": () =>
+    CoreP.Session.fromJson({
+      apiVersion: "core/v1",
+      kind: "Session",
+      metadata: md("carol-client-z4n1"),
+      spec: { state: "ACTIVE", expiresAt: at(40 * 60) },
+      status: {
+        type: "CLIENT",
+        userRef: ref("core/v1", "User", "carol"),
+        deviceRef: ref("core/v1", "Device", "carol-windows"),
+        deviceProof: {
+          type: "VENDOR_SIGNED",
+          bindingUID: "bnd-5d1f7b",
+          provedAt: at(-HOUR),
+        },
+      },
+    }),
+  "core/devices/carol-windows": () =>
+    CoreP.Device.fromJson({
+      apiVersion: "core/v1",
+      kind: "Device",
+      metadata: md("carol-windows"),
+      spec: { state: "ACTIVE" },
+      status: {
+        userRef: ref("core/v1", "User", "carol"),
+        osType: "WINDOWS",
+        hostname: "carol-win",
+        id: "5CD1234XYZ-2f1c",
+        serialNumber: "5CD1234XYZ",
+        binding: {
+          uid: "bnd-5d1f7b",
+          ownerRef: ref("enterprise/v1", "DeviceManager", "crowdstrike"),
+          externalID: "beefbeefbeefbeefbeefbeefbeef1111",
+          state: "ACCEPTED",
+          validity: "VALID",
+          acceptedAt: at(-2 * DAY),
+          lastVerifiedAt: at(-HOUR),
+          assurance: "SIGNED",
+          evidence: ["PROBE", "SERIAL_NUMBER", "VENDOR_SIGNED"],
+        },
+      },
+    }),
   "core/devices/alice-macbook": () =>
     CoreP.Device.fromJson({
       apiVersion: "core/v1",

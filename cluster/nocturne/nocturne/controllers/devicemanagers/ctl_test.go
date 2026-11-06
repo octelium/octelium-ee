@@ -32,6 +32,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 type tstNudger struct {
@@ -284,14 +285,14 @@ func TestDeviceManagerLifecycle(t *testing.T) {
 		w := env.ctrl.getWorker(uid)
 
 		updated, old := env.updateSpec(t, dm, func(spec *enterprisev1.DeviceManager_Spec) {
-			spec.GetFleetDM().TeamID = 3
+			spec.GetFleetDM().TeamID = proto.Uint32(3)
 		})
 		assert.Nil(t, env.ctrl.OnUpdate(env.ctx, updated, old))
 
 		replacement := env.ctrl.getWorker(uid)
 		assert.NotNil(t, replacement)
 		assert.False(t, w == replacement)
-		assert.Equal(t, uint32(3), replacement.dm.Spec.GetFleetDM().TeamID)
+		assert.Equal(t, uint32(3), replacement.dm.Spec.GetFleetDM().GetTeamID())
 		assert.NotNil(t, w.ctx.Err())
 	}
 
@@ -428,7 +429,7 @@ func TestDeviceManagerSetStatus(t *testing.T) {
 
 			updateLinking := func() {
 				cur := env.getDeviceManager(t, dm)
-				cur.Spec.GetFleetDM().TeamID = 42
+				cur.Spec.GetFleetDM().TeamID = proto.Uint32(42)
 				cur.Status.Linking = linking
 				_, err := env.octeliumC.EnterpriseC().UpdateDeviceManager(env.ctx, cur)
 				assert.Nil(t, err)
@@ -460,7 +461,7 @@ func TestDeviceManagerSetStatus(t *testing.T) {
 			assert.True(t, pbutils.IsEqual(successAt, cur.Status.Collection.LastSuccessAt))
 			assert.Equal(t, uint32(7), cur.Status.Collection.ManagedDevices)
 			assert.True(t, pbutils.IsEqual(linking, cur.Status.Linking))
-			assert.Equal(t, uint32(42), cur.Spec.GetFleetDM().TeamID)
+			assert.Equal(t, uint32(42), cur.Spec.GetFleetDM().GetTeamID())
 			calls := 1
 			if concurrent {
 				calls++

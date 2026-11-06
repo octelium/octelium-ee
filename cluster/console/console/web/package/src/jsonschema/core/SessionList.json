@@ -1529,7 +1529,8 @@
                     "enum": [
                         "TYPE_UNKNOWN",
                         "PROBE",
-                        "HARDWARE_KEY"
+                        "HARDWARE_KEY",
+                        "VENDOR_SIGNED"
                     ],
                     "type": "string",
                     "title": "Type",
@@ -1537,7 +1538,7 @@
                 },
                 "bindingUID": {
                     "type": "string",
-                    "description": "BindingUID is the UID of the Binding that a PROBE DeviceProof applies to. The DeviceProof does not apply to any other Binding of the Device."
+                    "description": "BindingUID is the UID of the Binding that a PROBE or a VENDOR_SIGNED DeviceProof applies to. The DeviceProof does not apply to any other Binding of the Device."
                 },
                 "provedAt": {
                     "type": "string",

@@ -27,6 +27,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -223,9 +224,9 @@ func testDeviceManagerAPI(t *testing.T, ch *harness.H) {
 		cur, err := h.EnterpriseC().GetDeviceManager(t.Context(), &metav1.GetOptions{Uid: dm.Metadata.Uid})
 		require.Nil(t, err)
 
-		cur.Spec.GetFleetDM().TeamID = 7
+		cur.Spec.GetFleetDM().TeamID = proto.Uint32(7)
 		updated := h.UpdateDeviceManager(t, cur)
-		assert.Equal(t, uint32(7), updated.Spec.GetFleetDM().TeamID)
+		assert.Equal(t, uint32(7), updated.Spec.GetFleetDM().GetTeamID())
 		assert.Equal(t, enterprisev1.DeviceManager_Status_FLEETDM, updated.Status.Type)
 
 		cur.Spec.GetFleetDM().BaseURL = "http://fleet.example.com"

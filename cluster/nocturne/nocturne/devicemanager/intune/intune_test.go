@@ -80,7 +80,6 @@ func TestToEntry(t *testing.T) {
 			"deviceName": "DESKTOP-1",
 			"serialNumber": "SERIAL-1",
 			"wiFiMacAddress": "a4bbccddee01",
-			"ethernetMacAddress": "",
 			"operatingSystem": "Windows",
 			"complianceState": "compliant",
 			"managementState": "managed",
@@ -481,4 +480,10 @@ func TestIdentityProbes(t *testing.T) {
 	assert.False(t, probes[0].RequireElevation)
 	assert.Equal(t, `C:\Windows\System32\dsregcmd.exe`, probes[0].RunCommand.Command)
 	assert.Equal(t, []string{"/status"}, probes[0].RunCommand.Args)
+}
+
+func TestIntuneMACs(t *testing.T) {
+	assert.Nil(t, intuneMACs(&managedDevice{}))
+	assert.Nil(t, intuneMACs(&managedDevice{WiFiMacAddress: "  "}))
+	assert.Equal(t, []string{"a4bbccddee01"}, intuneMACs(&managedDevice{WiFiMacAddress: "a4bbccddee01"}))
 }

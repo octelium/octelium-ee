@@ -190,9 +190,9 @@ func (c *apiClient) get(ctx context.Context, u string, out any) error {
 	if resp.IsError() {
 		if resp.StatusCode() == http.StatusUnauthorized || resp.StatusCode() == http.StatusForbidden {
 			return errors.Errorf("Huntress status %d (check API key/secret): %s",
-				resp.StatusCode(), snippet(resp.Body()))
+				resp.StatusCode(), devicemgrcommon.Snippet(resp.Body()))
 		}
-		return errors.Errorf("Huntress status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+		return errors.Errorf("Huntress status %d: %s", resp.StatusCode(), devicemgrcommon.Snippet(resp.Body()))
 	}
 	if err := devicemgrcommon.CheckJSONContentType(resp.Header().Get("Content-Type")); err != nil {
 		return errors.Wrap(err, "Huntress response")
@@ -220,7 +220,7 @@ type huntressAgent struct {
 }
 
 func toEntry(a *huntressAgent, now time.Time) *devicemgrcommon.Entry {
-	lastCallback, haveCallback := parseTime(a.LastCallbackAt)
+	lastCallback, haveCallback := devicemgrcommon.ParseTime(a.LastCallbackAt)
 
 	osType := devicemgrcommon.ParseOSType(a.Platform)
 	if osType == corev1.Device_Status_OS_TYPE_UNKNOWN {
@@ -308,27 +308,6 @@ func huntressAttrs(a *huntressAgent) *structpb.Struct {
 	s, err := structpb.NewStruct(fields)
 	if err != nil {
 		return nil
-	}
-	return s
-}
-
-func parseTime(s string) (time.Time, bool) {
-	if strings.TrimSpace(s) == "" {
-		return time.Time{}, false
-	}
-	for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
-		if t, err := time.Parse(layout, s); err == nil {
-			return t, true
-		}
-	}
-	return time.Time{}, false
-}
-
-func snippet(b []byte) string {
-	const max = 300
-	s := strings.TrimSpace(string(b))
-	if len(s) > max {
-		return s[:max] + "..."
 	}
 	return s
 }

@@ -11,10 +11,13 @@ package crowdstrike
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
+	"io"
 	"net/http"
 	"regexp"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/crowdstrike/gofalcon/falcon"
@@ -22,6 +25,8 @@ import (
 	"github.com/crowdstrike/gofalcon/falcon/client/hosts"
 	"github.com/crowdstrike/gofalcon/falcon/client/zero_trust_assessment"
 	"github.com/crowdstrike/gofalcon/falcon/models"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/devicemanager/devicemgrcommon"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
@@ -45,6 +50,10 @@ const (
 	probeMaxOutputBytes = 8192
 
 	tokenHTTPTimeout = 30 * time.Second
+
+	ztaKeysURL      = "https://assets-public.falcon.crowdstrike.com/zta/jwk.json"
+	ztaMaxKeysBytes = 1 << 20
+	ztaMaxBytes     = 32 * 1024
 )
 
 var (
@@ -56,9 +65,12 @@ type Manager struct {
 	c          *client.CrowdStrikeAPISpecification
 	hostFilter string
 	ztaEnabled bool
+	ztaKeysURL string
+	ztaKeys    atomic.Pointer[jose.JSONWebKeySet]
 }
 
 var _ devicemgrcommon.Manager = (*Manager)(nil)
+var _ devicemgrcommon.SignedIdentifier = (*Manager)(nil)
 
 func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicemgrcommon.ManagerOpts) (*Manager, error) {
 	spec := opts.DeviceManager.Spec.GetCrowdStrike()
@@ -100,6 +112,7 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		c:          apiClient,
 		hostFilter: spec.HostFilter,
 		ztaEnabled: !spec.DisableZeroTrustAssessment,
+		ztaKeysURL: ztaKeysURL,
 	}, nil
 }
 
@@ -117,7 +130,7 @@ func (m *Manager) Type() devicemgrcommon.ProviderType {
 func (m *Manager) Close() error { return nil }
 
 func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
-	return []*devicemgrcommon.Probe{
+	ret := []*devicemgrcommon.Probe{
 		{
 			ID:               "aid-windows",
 			OSType:           corev1.Device_Status_WINDOWS,
@@ -150,6 +163,29 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 			},
 		},
 	}
+
+	if !m.ztaEnabled {
+		return ret
+	}
+
+	return append(ret,
+		&devicemgrcommon.Probe{
+			ID:     "zta-windows",
+			OSType: corev1.Device_Status_WINDOWS,
+			ReadFile: &devicemgrcommon.ReadFile{
+				Path:     `C:\ProgramData\CrowdStrike\ZeroTrustAssessment\data.zta`,
+				MaxBytes: ztaMaxBytes,
+			},
+		},
+		&devicemgrcommon.Probe{
+			ID:     "zta-macos",
+			OSType: corev1.Device_Status_MAC,
+			ReadFile: &devicemgrcommon.ReadFile{
+				Path:     "/Library/Application Support/CrowdStrike/ZeroTrustAssessment/data.zta",
+				MaxBytes: ztaMaxBytes,
+			},
+		},
+	)
 }
 
 func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []*devicemgrcommon.ProbeResult) (string, error) {
@@ -162,6 +198,80 @@ func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []
 		}
 		return extractAID(r.Text)
 	})
+}
+
+func (m *Manager) ParseSignedExternalID(results []*devicemgrcommon.ProbeResult, now time.Time) string {
+	keys := m.ztaKeys.Load()
+	if keys == nil {
+		return ""
+	}
+
+	for _, r := range results {
+		if r == nil {
+			continue
+		}
+		if aid := verifyZTA(keys, strings.TrimSpace(r.Text), now); aid != "" {
+			return aid
+		}
+	}
+
+	return ""
+}
+
+func verifyZTA(keys *jose.JSONWebKeySet, token string, now time.Time) string {
+	parsed, err := jwt.ParseSigned(token, []jose.SignatureAlgorithm{jose.RS256})
+	if err != nil {
+		return ""
+	}
+
+	for _, key := range keys.Keys {
+		claims := &jwt.Claims{}
+		if err := parsed.Claims(key, claims); err != nil {
+			continue
+		}
+
+		if claims.Expiry == nil || claims.Validate(jwt.Expected{Time: now}) != nil {
+			return ""
+		}
+
+		return extractAID(claims.Subject)
+	}
+
+	return ""
+}
+
+func (m *Manager) refreshZTAKeys(ctx context.Context) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.ztaKeysURL, nil)
+	if err != nil {
+		return errors.Wrap(err, "Could not create the CrowdStrike ZTA keys request")
+	}
+
+	httpClient := &http.Client{
+		Timeout:       tokenHTTPTimeout,
+		CheckRedirect: devicemgrcommon.CheckRedirect,
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "Could not get the CrowdStrike ZTA keys")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.Errorf("Could not get the CrowdStrike ZTA keys: status %d", resp.StatusCode)
+	}
+
+	keys := &jose.JSONWebKeySet{}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, ztaMaxKeysBytes)).Decode(keys); err != nil {
+		return errors.Wrap(err, "Could not parse the CrowdStrike ZTA keys")
+	}
+
+	if len(keys.Keys) == 0 {
+		return errors.New("The CrowdStrike ZTA keys are empty")
+	}
+
+	m.ztaKeys.Store(keys)
+	return nil
 }
 
 func extractAID(s string) string {
@@ -180,6 +290,12 @@ func extractAID(s string) string {
 }
 
 func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
+	if m.ztaEnabled {
+		if err := m.refreshZTAKeys(ctx); err != nil {
+			zap.L().Warn("Could not refresh the CrowdStrike ZTA keys", zap.Error(err))
+		}
+	}
+
 	ids, err := m.listHostIDs(ctx)
 	if err != nil {
 		return nil, err
@@ -359,7 +475,7 @@ func toEntry(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties,
 		aid = strings.ToLower(*d.DeviceID)
 	}
 
-	lastSeen, haveSeen := parseTime(d.LastSeen)
+	lastSeen, haveSeen := devicemgrcommon.ParseTime(d.LastSeen)
 
 	osType := devicemgrcommon.ParseOSType(d.PlatformName)
 
@@ -531,18 +647,6 @@ func cloudFromRegion(r enterprisev1.DeviceManager_Spec_CrowdStrike_Region) falco
 	default:
 		return falcon.CloudAutoDiscover
 	}
-}
-
-func parseTime(s string) (time.Time, bool) {
-	if strings.TrimSpace(s) == "" {
-		return time.Time{}, false
-	}
-	for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
-		if t, err := time.Parse(layout, s); err == nil {
-			return t, true
-		}
-	}
-	return time.Time{}, false
 }
 
 func withField(s *structpb.Struct, key string, val interface{}) *structpb.Struct {

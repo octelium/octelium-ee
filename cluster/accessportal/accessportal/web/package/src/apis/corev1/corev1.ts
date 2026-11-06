@@ -9152,8 +9152,9 @@ export interface Session_Status_DeviceProof {
      */
     type: Session_Status_DeviceProof_Type;
     /**
-     * BindingUID is the UID of the Binding that a PROBE DeviceProof applies
-     * to. The DeviceProof does not apply to any other Binding of the Device.
+     * BindingUID is the UID of the Binding that a PROBE or a VENDOR_SIGNED
+     * DeviceProof applies to. The DeviceProof does not apply to any other
+     * Binding of the Device.
      *
      * @generated from protobuf field: string bindingUID = 2
      */
@@ -9191,7 +9192,15 @@ export enum Session_Status_DeviceProof_Type {
      *
      * @generated from protobuf enum value: HARDWARE_KEY = 2;
      */
-    HARDWARE_KEY = 2
+    HARDWARE_KEY = 2,
+    /**
+     * VENDOR_SIGNED means that the Session ran the Probes of its Device's
+     * Binding and presented a valid artifact that the provider signed for
+     * the bound inventory entry
+     *
+     * @generated from protobuf enum value: VENDOR_SIGNED = 3;
+     */
+    VENDOR_SIGNED = 3
 }
 /**
  * Type is the type of the Session
@@ -10035,7 +10044,8 @@ export interface Device_Status {
      */
     binding?: Device_Status_Binding;
     /**
-     * ProbeAttempt is the most recent device probing attempt
+     * ProbeAttempt is the most recent device probing attempt. It is removed
+     * once it is processed for a Device that has an ACCEPTED Binding.
      *
      * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.ProbeAttempt probeAttempt = 11
      */
@@ -10452,10 +10462,14 @@ export enum Device_Status_Posture_DeviceClass {
 }
 /**
  * Binding is the Device's link to one inventory entry of its single
- * authoritative DeviceManager. An ACCEPTED Binding is kept through
- * provider outages until it is explicitly reset or its DeviceManager is
- * deleted. A Binding that is not VALID makes the Posture unavailable; it
- * never causes a fallback to another DeviceManager.
+ * authoritative DeviceManager. An ACCEPTED Binding is decided once and the
+ * later Sessions of the Device inherit it. Probe results can verify or
+ * suspend it, but they never move it to another inventory entry or
+ * DeviceManager. It is kept through provider outages until it is
+ * explicitly reset, its DeviceManager is deleted, or it is LOST and
+ * another Device claims its inventory entry. A Binding that is not VALID
+ * makes the Posture unavailable; it never causes a fallback to another
+ * DeviceManager.
  *
  * @generated from protobuf message octelium.api.main.core.v1.Device.Status.Binding
  */
@@ -10533,8 +10547,10 @@ export interface Device_Status_Binding {
     /**
      * Assurance is how the Device is tied to an ACCEPTED Binding's inventory
      * entry. It is evaluated again whenever the inventory entry or the
-     * Device changes. In a Policy, it does not exceed IDENTIFIER for a
-     * Session without a DeviceProof, so a Policy that requires more (e.g.
+     * Device changes. In a Policy, it does not exceed what the current
+     * Session proved: IDENTIFIER without a DeviceProof, PROVIDER_ID with a
+     * PROBE DeviceProof and SIGNED with a VENDOR_SIGNED DeviceProof. So a
+     * Policy that requires more (e.g.
      * `ctx.device.status.binding.assurance in ["PROVIDER_ID", "SIGNED", "HARDWARE"]`)
      * applies to the current Session and not only to the Device.
      *
@@ -10577,8 +10593,7 @@ export enum Device_Status_Binding_State {
     AMBIGUOUS = 2,
     /**
      * CONFLICT means that the inventory entry is already bound to another
-     * Device. It is retried once the other Binding is released or once
-     * the Device's Evidence is stronger than the other Binding's.
+     * Device. It is retried once the other Binding is reset or LOST.
      *
      * @generated from protobuf enum value: CONFLICT = 3;
      */
@@ -10633,9 +10648,9 @@ export enum Device_Status_Binding_Assurance {
      */
     PROVIDER_ID = 3,
     /**
-     * SIGNED means that the Device presented an artifact that the
-     * provider signed for the inventory entry. It cannot be forged but
-     * it can be copied while it is valid.
+     * SIGNED means that the Device presented a short-lived artifact that
+     * the provider signed for the inventory entry. It cannot be forged
+     * but it can be copied while it is valid.
      *
      * @generated from protobuf enum value: SIGNED = 4;
      */
@@ -10705,7 +10720,14 @@ export enum Device_Status_Binding_Evidence {
      *
      * @generated from protobuf enum value: HOSTNAME = 6;
      */
-    HOSTNAME = 6
+    HOSTNAME = 6,
+    /**
+     * VENDOR_SIGNED means that the identifier of the PROBE Evidence comes
+     * from an artifact that the provider signed for the inventory entry
+     *
+     * @generated from protobuf enum value: VENDOR_SIGNED = 7;
+     */
+    VENDOR_SIGNED = 7
 }
 /**
  * Validity is whether an ACCEPTED Binding is currently usable
@@ -10958,7 +10980,9 @@ export enum Device_Status_ProbeAttempt_State {
      */
     SUBMITTED = 2,
     /**
-     * PROCESSED means that the Results were processed
+     * PROCESSED means that the Results were processed. They are kept
+     * until the Device is bound, since an inventory entry that appears
+     * later can still match them.
      *
      * @generated from protobuf enum value: PROCESSED = 3;
      */

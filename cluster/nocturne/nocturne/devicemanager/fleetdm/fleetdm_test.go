@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -245,14 +246,36 @@ func TestListHosts(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
+	teamID := uint32(7)
 	m := &Manager{
 		api:    &apiClient{rc: resty.New().SetBaseURL(srv.URL)},
-		teamID: 7,
+		teamID: &teamID,
 	}
 
 	fleet, err := m.Collect(context.Background())
 	assert.Nil(t, err)
 	assert.Equal(t, fleetPageSize+1, fleet.Len())
+}
+
+func TestListHostsTeam(t *testing.T) {
+	var query url.Values
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		query = r.URL.Query()
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"hosts": [{"id": 1, "uuid": "uuid-1"}]}`)
+	}))
+	t.Cleanup(srv.Close)
+
+	c := &apiClient{rc: resty.New().SetBaseURL(srv.URL)}
+
+	_, err := c.listHosts(context.Background(), nil)
+	assert.Nil(t, err)
+	assert.False(t, query.Has("team_id"), "every team must be collected")
+
+	noTeam := uint32(0)
+	_, err = c.listHosts(context.Background(), &noTeam)
+	assert.Nil(t, err)
+	assert.Equal(t, "0", query.Get("team_id"), "only the hosts of no team must be collected")
 }
 
 func TestInvalidResponse(t *testing.T) {

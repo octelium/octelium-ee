@@ -24,6 +24,7 @@ import (
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestDeviceManager(t *testing.T) {
@@ -215,7 +216,7 @@ func TestValidateDeviceManager(t *testing.T) {
 				FleetDM: &enterprisev1.DeviceManager_Spec_FleetDM{
 					BaseURL:  "https://fleet.example.com/",
 					ApiToken: tstDeviceManagerSecretRef(secretName),
-					TeamID:   3,
+					TeamID:   proto.Uint32(3),
 				},
 			},
 			Linking: &enterprisev1.DeviceManager_Spec_Linking{

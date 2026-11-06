@@ -271,9 +271,9 @@ func (c *apiClient) get(ctx context.Context, u string, out any) error {
 	if resp.IsError() {
 		if resp.StatusCode() == http.StatusUnauthorized || resp.StatusCode() == http.StatusForbidden {
 			return errors.Errorf("SentinelOne status %d (check API token and its scope): %s",
-				resp.StatusCode(), snippet(resp.Body()))
+				resp.StatusCode(), devicemgrcommon.Snippet(resp.Body()))
 		}
-		return errors.Errorf("SentinelOne status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+		return errors.Errorf("SentinelOne status %d: %s", resp.StatusCode(), devicemgrcommon.Snippet(resp.Body()))
 	}
 	if err := devicemgrcommon.CheckJSONContentType(resp.Header().Get("Content-Type")); err != nil {
 		return errors.Wrap(err, "SentinelOne response")
@@ -318,7 +318,7 @@ type s1NetIface struct {
 }
 
 func toEntry(a *s1Agent, now time.Time) *devicemgrcommon.Entry {
-	lastActive, haveActive := parseTime(a.LastActiveDate)
+	lastActive, haveActive := devicemgrcommon.ParseTime(a.LastActiveDate)
 	osType := devicemgrcommon.ParseOSType(a.OSType)
 
 	p := &corev1.Device_Status_Posture{
@@ -462,27 +462,6 @@ func s1Attrs(a *s1Agent) *structpb.Struct {
 	s, err := structpb.NewStruct(fields)
 	if err != nil {
 		return nil
-	}
-	return s
-}
-
-func parseTime(s string) (time.Time, bool) {
-	if strings.TrimSpace(s) == "" {
-		return time.Time{}, false
-	}
-	for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
-		if t, err := time.Parse(layout, s); err == nil {
-			return t, true
-		}
-	}
-	return time.Time{}, false
-}
-
-func snippet(b []byte) string {
-	const max = 300
-	s := strings.TrimSpace(string(b))
-	if len(s) > max {
-		return s[:max] + "..."
 	}
 	return s
 }

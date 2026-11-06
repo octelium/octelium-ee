@@ -221,12 +221,12 @@ func (c *jamfClient) get(ctx context.Context, u string, out any) error {
 	if resp.IsError() {
 		if resp.StatusCode() == http.StatusUnauthorized || resp.StatusCode() == http.StatusForbidden {
 			return errors.Errorf("Jamf status %d (check the API Role has Read Computers): %s",
-				resp.StatusCode(), snippet(resp.Body()))
+				resp.StatusCode(), devicemgrcommon.Snippet(resp.Body()))
 		}
 		if resp.StatusCode() == http.StatusNotFound {
-			return errors.Wrapf(errNotFound, "Jamf status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+			return errors.Wrapf(errNotFound, "Jamf status %d: %s", resp.StatusCode(), devicemgrcommon.Snippet(resp.Body()))
 		}
-		return errors.Errorf("Jamf status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+		return errors.Errorf("Jamf status %d: %s", resp.StatusCode(), devicemgrcommon.Snippet(resp.Body()))
 	}
 	if err := devicemgrcommon.CheckJSONContentType(resp.Header().Get("Content-Type")); err != nil {
 		return errors.Wrap(err, "Jamf response")
@@ -343,7 +343,7 @@ func (m *Manager) toEntry(c *computer, now time.Time) *devicemgrcommon.Entry {
 	if lastContactAt == "" {
 		lastContactAt = gen.LastContactTime
 	}
-	lastContact, haveContact := parseTime(lastContactAt)
+	lastContact, haveContact := devicemgrcommon.ParseTime(lastContactAt)
 
 	p := &corev1.Device_Status_Posture{
 		DiskEncryption: fileVaultSignal(c.DiskEncryption),
@@ -519,25 +519,4 @@ func gatekeeperSignal(status string) corev1.Device_Status_Posture_SignalState {
 	default:
 		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
-}
-
-func parseTime(s string) (time.Time, bool) {
-	if strings.TrimSpace(s) == "" {
-		return time.Time{}, false
-	}
-	for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
-		if t, err := time.Parse(layout, s); err == nil {
-			return t, true
-		}
-	}
-	return time.Time{}, false
-}
-
-func snippet(b []byte) string {
-	const max = 300
-	s := strings.TrimSpace(string(b))
-	if len(s) > max {
-		return s[:max] + "..."
-	}
-	return s
 }

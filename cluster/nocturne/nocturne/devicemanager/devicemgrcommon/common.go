@@ -101,6 +101,26 @@ type Manager interface {
 	Close() error
 }
 
+type SignedIdentifier interface {
+	ParseSignedExternalID(results []*ProbeResult, now time.Time) string
+}
+
+func ParseProbeID(
+	mgr Manager,
+	osType corev1.Device_Status_OSType,
+	results []*ProbeResult,
+	now time.Time,
+) (string, bool, error) {
+	if verifier, ok := mgr.(SignedIdentifier); ok {
+		if id := verifier.ParseSignedExternalID(results, now); id != "" {
+			return id, true, nil
+		}
+	}
+
+	id, err := mgr.ParseExternalID(osType, results)
+	return id, false, err
+}
+
 type Entry struct {
 	ExternalID string
 	Aliases    []string
@@ -427,6 +447,7 @@ type LinkRequest struct {
 	MACs              []string
 	Hostname          string
 	ProbeID           string
+	IsProbeSigned     bool
 	UserEmail         string
 	Now               time.Time
 	MaxObservationAge time.Duration
@@ -562,10 +583,12 @@ func (e *Entry) Evidence(req *LinkRequest) []corev1.Device_Status_Binding_Eviden
 		ret = append(ret, corev1.Device_Status_Binding_OWNER_EMAIL)
 	}
 
-	if id := NormalizeID(req.ProbeID); id != "" && slices.ContainsFunc(append([]string{e.ExternalID}, e.Aliases...),
+	id := NormalizeID(req.ProbeID)
+	isProbe := id != "" && slices.ContainsFunc(append([]string{e.ExternalID}, e.Aliases...),
 		func(itm string) bool {
 			return NormalizeID(itm) == id
-		}) {
+		})
+	if isProbe {
 		ret = append(ret, corev1.Device_Status_Binding_PROBE)
 	}
 
@@ -589,6 +612,10 @@ func (e *Entry) Evidence(req *LinkRequest) []corev1.Device_Status_Binding_Eviden
 
 	if hostname := NormalizeHostname(req.Hostname); hostname != "" && hostname == NormalizeHostname(e.Hostname) {
 		ret = append(ret, corev1.Device_Status_Binding_HOSTNAME)
+	}
+
+	if isProbe && req.IsProbeSigned {
+		ret = append(ret, corev1.Device_Status_Binding_VENDOR_SIGNED)
 	}
 
 	return ret
@@ -638,6 +665,8 @@ func GetAssurance(
 	osType corev1.Device_Status_OSType,
 ) corev1.Device_Status_Binding_Assurance {
 	switch {
+	case slices.Contains(evidence, corev1.Device_Status_Binding_VENDOR_SIGNED):
+		return corev1.Device_Status_Binding_SIGNED
 	case slices.Contains(evidence, corev1.Device_Status_Binding_PROBE) && HasProviderProbe(mgr, osType):
 		return corev1.Device_Status_Binding_PROVIDER_ID
 	case HasDeviceEvidence(evidence):
@@ -646,17 +675,6 @@ func GetAssurance(
 		return corev1.Device_Status_Binding_OWNER_ONLY
 	default:
 		return corev1.Device_Status_Binding_ASSURANCE_UNKNOWN
-	}
-}
-
-func GetEvidenceRank(evidence []corev1.Device_Status_Binding_Evidence) int {
-	switch {
-	case !IsOwnerMatched(evidence):
-		return 0
-	case HasDeviceEvidence(evidence):
-		return 2
-	default:
-		return 1
 	}
 }
 
@@ -1024,6 +1042,27 @@ func ParseAgreedID(results []*ProbeResult, parse func(result *ProbeResult) strin
 	}
 
 	return ret, nil
+}
+
+func ParseTime(s string) (time.Time, bool) {
+	if strings.TrimSpace(s) == "" {
+		return time.Time{}, false
+	}
+	for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t, true
+		}
+	}
+	return time.Time{}, false
+}
+
+func Snippet(b []byte) string {
+	const max = 300
+	s := strings.TrimSpace(string(b))
+	if len(s) > max {
+		return s[:max] + "..."
+	}
+	return s
 }
 
 func CheckJSONContentType(contentType string) error {

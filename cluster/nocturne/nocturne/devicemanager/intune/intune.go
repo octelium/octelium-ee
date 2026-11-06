@@ -44,7 +44,7 @@ const (
 )
 
 var selectFields = strings.Join([]string{
-	"id", "deviceName", "serialNumber", "wiFiMacAddress", "ethernetMacAddress",
+	"id", "deviceName", "serialNumber", "wiFiMacAddress",
 	"operatingSystem", "osVersion", "complianceState", "managementState",
 	"lastSyncDateTime", "manufacturer", "model", "userPrincipalName",
 	"azureADDeviceId", "deviceEnrollmentType", "jailBroken", "isEncrypted", "emailAddress",
@@ -225,9 +225,9 @@ func (g *graphClient) get(ctx context.Context, u string, out any) error {
 	if resp.IsError() {
 		if resp.StatusCode() == http.StatusUnauthorized || resp.StatusCode() == http.StatusForbidden {
 			return errors.Errorf("Intune status %d (check DeviceManagementManagedDevices.Read.All application consent): %s",
-				resp.StatusCode(), snippet(resp.Body()))
+				resp.StatusCode(), devicemgrcommon.Snippet(resp.Body()))
 		}
-		return errors.Errorf("Intune status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+		return errors.Errorf("Intune status %d: %s", resp.StatusCode(), devicemgrcommon.Snippet(resp.Body()))
 	}
 	if err := devicemgrcommon.CheckJSONContentType(resp.Header().Get("Content-Type")); err != nil {
 		return errors.Wrap(err, "Intune response")
@@ -240,7 +240,6 @@ type managedDevice struct {
 	DeviceName                 string `json:"deviceName"`
 	SerialNumber               string `json:"serialNumber"`
 	WiFiMacAddress             string `json:"wiFiMacAddress"`
-	EthernetMacAddress         string `json:"ethernetMacAddress"`
 	OperatingSystem            string `json:"operatingSystem"`
 	OSVersion                  string `json:"osVersion"`
 	ComplianceState            string `json:"complianceState"`
@@ -278,7 +277,7 @@ func (m *Manager) toEntry(d *managedDevice) *devicemgrcommon.Entry {
 		DeviceClass:    devicemgrcommon.ParseDeviceClass(d.Model),
 		Attrs:          intuneAttrs(d),
 	}
-	if t, ok := parseTime(d.LastSyncDateTime); ok {
+	if t, ok := devicemgrcommon.ParseTime(d.LastSyncDateTime); ok {
 		p.LastSeenAt = timestamppb.New(t)
 	}
 
@@ -311,20 +310,10 @@ func intuneOwnerEmails(d *managedDevice) []string {
 }
 
 func intuneMACs(d *managedDevice) []string {
-	seen := map[string]struct{}{}
-	var out []string
-	for _, raw := range []string{d.WiFiMacAddress, d.EthernetMacAddress} {
-		nm := devicemgrcommon.NormalizeMAC(raw)
-		if nm == "" {
-			continue
-		}
-		if _, ok := seen[nm]; ok {
-			continue
-		}
-		seen[nm] = struct{}{}
-		out = append(out, raw)
+	if devicemgrcommon.NormalizeMAC(d.WiFiMacAddress) == "" {
+		return nil
 	}
-	return out
+	return []string{d.WiFiMacAddress}
 }
 
 func intuneAttrs(d *managedDevice) *structpb.Struct {
@@ -441,25 +430,4 @@ func threatSignal(s string) corev1.Device_Status_Posture_SignalState {
 	default:
 		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 	}
-}
-
-func parseTime(s string) (time.Time, bool) {
-	if strings.TrimSpace(s) == "" {
-		return time.Time{}, false
-	}
-	for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
-		if t, err := time.Parse(layout, s); err == nil {
-			return t, true
-		}
-	}
-	return time.Time{}, false
-}
-
-func snippet(b []byte) string {
-	const max = 300
-	s := strings.TrimSpace(string(b))
-	if len(s) > max {
-		return s[:max] + "..."
-	}
-	return s
 }

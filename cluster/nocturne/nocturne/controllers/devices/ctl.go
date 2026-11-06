@@ -370,8 +370,9 @@ func (c *Controller) evaluateOwner(
 	}
 
 	var probeID string
+	var isProbeSigned bool
 	if ownerResults := results[owner.UID()]; len(ownerResults) > 0 {
-		externalID, err := owner.Manager.ParseExternalID(dev.Status.OsType, ownerResults)
+		externalID, isSigned, err := devicemgrcommon.ParseProbeID(owner.Manager, dev.Status.OsType, ownerResults, now)
 		if err != nil {
 			return &decision{
 				kind:   decisionBlock,
@@ -382,6 +383,7 @@ func (c *Controller) evaluateOwner(
 			}
 		}
 		probeID = externalID
+		isProbeSigned = isSigned
 	}
 
 	userEmail, err := deviceUserEmail(ctx, cache, dev)
@@ -391,7 +393,10 @@ func (c *Controller) evaluateOwner(
 		return &decision{kind: decisionWait}
 	}
 
-	link := owner.Fleet.Link(newLinkRequest(dev, owner, probeID, userEmail, now))
+	req := newLinkRequest(dev, owner, probeID, userEmail, now)
+	req.IsProbeSigned = isProbeSigned
+
+	link := owner.Fleet.Link(req)
 
 	switch link.State {
 	case devicemgrcommon.LinkStateAmbiguous:
@@ -486,7 +491,7 @@ func (c *Controller) accept(
 	}
 
 	if holder != nil {
-		if !canTakeOver(holder.Status.Binding, cand.link.Evidence) {
+		if holder.Status.Binding.GetValidity() != corev1.Device_Status_Binding_LOST {
 			changed := setUnboundBinding(dev, cand.owner, externalID,
 				corev1.Device_Status_Binding_CONFLICT, reasonConflict,
 				fmt.Sprintf("The inventory entry is already bound to the Device %s", holder.Metadata.Name))
@@ -522,12 +527,13 @@ func (c *Controller) accept(
 	dev.Status.Posture = devicemgrcommon.MaterializePosture(cand.owner, cand.link.Entry)
 
 	if slices.Contains(binding.Evidence, corev1.Device_Status_Binding_PROBE) {
-		if err := c.setSessionProof(ctx, dev, cand.owner, now); err != nil {
+		proofType := getDeviceProofType(slices.Contains(binding.Evidence, corev1.Device_Status_Binding_VENDOR_SIGNED))
+		if err := c.setSessionProof(ctx, dev, cand.owner, proofType, now); err != nil {
 			return err
 		}
 	}
 
-	markAttemptProcessed(dev)
+	clearAttempt(dev, now)
 
 	if err := c.updateDevice(ctx, dev); err != nil {
 		return err
@@ -543,15 +549,19 @@ func (c *Controller) accept(
 	return nil
 }
 
-func canTakeOver(holder *corev1.Device_Status_Binding, evidence []corev1.Device_Status_Binding_Evidence) bool {
-	return holder.GetValidity() == corev1.Device_Status_Binding_LOST ||
-		devicemgrcommon.GetEvidenceRank(holder.GetEvidence()) < devicemgrcommon.GetEvidenceRank(evidence)
+func getDeviceProofType(isSigned bool) corev1.Session_Status_DeviceProof_Type {
+	if isSigned {
+		return corev1.Session_Status_DeviceProof_VENDOR_SIGNED
+	}
+
+	return corev1.Session_Status_DeviceProof_PROBE
 }
 
 func (c *Controller) setSessionProof(
 	ctx context.Context,
 	dev *corev1.Device,
 	owner *devicemgrcommon.Owner,
+	proofType corev1.Session_Status_DeviceProof_Type,
 	now time.Time,
 ) error {
 	sessionUID := dev.Status.ProbeAttempt.GetSessionRef().GetUid()
@@ -571,7 +581,7 @@ func (c *Controller) setSessionProof(
 		}
 
 		sess.Status.DeviceProof = &corev1.Session_Status_DeviceProof{
-			Type:       corev1.Session_Status_DeviceProof_PROBE,
+			Type:       proofType,
 			BindingUID: dev.Status.Binding.Uid,
 			ProvedAt:   pbutils.Timestamp(now),
 		}
@@ -668,7 +678,7 @@ func (c *Controller) reconcileAccepted(ctx context.Context, cache *reconcileCach
 		binding.Reason = reasonDisabled
 		binding.Message = "The DeviceManager is disabled"
 		dev.Status.Posture = nil
-		markAttemptProcessed(dev)
+		clearAttempt(dev, now)
 		return !pbutils.IsEqual(orig, dev.Status)
 	}
 
@@ -689,9 +699,11 @@ func (c *Controller) reconcileAccepted(ctx context.Context, cache *reconcileCach
 	interval := getVerificationInterval(owner, dev)
 
 	if validity == corev1.Device_Status_Binding_VALID {
-		switch verifyBinding(dev, owner) {
+		result, isSigned := verifyBinding(dev, owner, now)
+
+		switch result {
 		case verificationSucceeded:
-			if err := c.setSessionProof(ctx, dev, owner, now); err != nil {
+			if err := c.setSessionProof(ctx, dev, owner, getDeviceProofType(isSigned), now); err != nil {
 				zap.L().Warn("Could not prove the Session of the probe attempt",
 					zap.String("device", dev.Metadata.Name), zap.Error(err))
 				return false
@@ -701,12 +713,13 @@ func (c *Controller) reconcileAccepted(ctx context.Context, cache *reconcileCach
 			if interval > 0 {
 				binding.NextVerificationAt = pbutils.Timestamp(now.Add(interval))
 			}
-			check.evidence = setProbeEvidence(check.evidence, true)
+			check.evidence = setProbeEvidence(check.evidence, true,
+				isSigned || slices.Contains(check.evidence, corev1.Device_Status_Binding_VENDOR_SIGNED))
 		case verificationFailed:
 			validity = corev1.Device_Status_Binding_SUSPENDED
 			reason = reasonVerificationContradicted
 			message = "The probe results do not resolve to the bound inventory entry"
-			check.evidence = setProbeEvidence(check.evidence, false)
+			check.evidence = setProbeEvidence(check.evidence, false, false)
 		default:
 			switch {
 			case binding.Validity == corev1.Device_Status_Binding_SUSPENDED &&
@@ -717,12 +730,12 @@ func (c *Controller) reconcileAccepted(ctx context.Context, cache *reconcileCach
 			case interval > 0 && isVerificationOverdue(binding, now):
 				reason = reasonVerificationOverdue
 				message = "The Binding has not been verified within its verification interval"
-				check.evidence = setProbeEvidence(check.evidence, false)
+				check.evidence = setProbeEvidence(check.evidence, false, false)
 			}
 		}
 	}
 
-	markAttemptProcessed(dev)
+	clearAttempt(dev, now)
 
 	switch {
 	case interval <= 0:
@@ -817,7 +830,8 @@ func (c *Controller) checkBinding(
 
 	req := newLinkRequest(dev, owner, "", userEmail, now)
 	evidence := setProbeEvidence(entry.Evidence(req),
-		slices.Contains(dev.Status.Binding.Evidence, corev1.Device_Status_Binding_PROBE))
+		slices.Contains(dev.Status.Binding.Evidence, corev1.Device_Status_Binding_PROBE),
+		slices.Contains(dev.Status.Binding.Evidence, corev1.Device_Status_Binding_VENDOR_SIGNED))
 
 	if !devicemgrcommon.HasDeviceEvidence(evidence) && entry.IsContradicted(req) {
 		return &bindingCheck{
@@ -836,29 +850,32 @@ func (c *Controller) checkBinding(
 
 func setProbeEvidence(
 	evidence []corev1.Device_Status_Binding_Evidence,
-	isSet bool,
+	isProbe, isSigned bool,
 ) []corev1.Device_Status_Binding_Evidence {
 	ret := slices.DeleteFunc(slices.Clone(evidence), func(itm corev1.Device_Status_Binding_Evidence) bool {
-		return itm == corev1.Device_Status_Binding_PROBE
+		return itm == corev1.Device_Status_Binding_PROBE || itm == corev1.Device_Status_Binding_VENDOR_SIGNED
 	})
-	if isSet {
+	if isProbe {
 		ret = append(ret, corev1.Device_Status_Binding_PROBE)
-		slices.Sort(ret)
 	}
+	if isSigned {
+		ret = append(ret, corev1.Device_Status_Binding_VENDOR_SIGNED)
+	}
+	slices.Sort(ret)
 
 	return ret
 }
 
-func verifyBinding(dev *corev1.Device, owner *devicemgrcommon.Owner) verificationResult {
+func verifyBinding(dev *corev1.Device, owner *devicemgrcommon.Owner, now time.Time) (verificationResult, bool) {
 	attempt := dev.Status.ProbeAttempt
 	if attempt == nil || attempt.State != corev1.Device_Status_ProbeAttempt_SUBMITTED {
-		return verificationNone
+		return verificationNone, false
 	}
 
 	if !slices.ContainsFunc(attempt.Probes, func(p *corev1.ClusterConfig_Status_Device_Probe) bool {
 		return p.GetOwnerRef().GetUid() == owner.UID()
 	}) {
-		return verificationNone
+		return verificationNone, false
 	}
 
 	binding := dev.Status.Binding
@@ -867,25 +884,27 @@ func verifyBinding(dev *corev1.Device, owner *devicemgrcommon.Owner) verificatio
 		!attempt.StartedAt.AsTime().Before(binding.AcceptedAt.AsTime())
 
 	var externalID string
+	var isSigned bool
 	if results := getAttemptResults(dev)[owner.UID()]; len(results) > 0 {
-		if id, err := owner.Manager.ParseExternalID(dev.Status.OsType, results); err == nil {
+		if id, signed, err := devicemgrcommon.ParseProbeID(owner.Manager, dev.Status.OsType, results, now); err == nil {
 			externalID = id
+			isSigned = signed
 		}
 	}
 
 	if externalID == "" {
-		return verificationNone
+		return verificationNone, false
 	}
 
 	match := owner.Fleet.MatchProbeID(externalID)
 
 	switch {
 	case match.State == devicemgrcommon.MatchStateUnique && match.Entry.ExternalID == binding.ExternalID:
-		return verificationSucceeded
+		return verificationSucceeded, isSigned
 	case match.State != devicemgrcommon.MatchStateNone, isVerificationAttempt:
-		return verificationFailed
+		return verificationFailed, false
 	default:
-		return verificationNone
+		return verificationNone, false
 	}
 }
 
@@ -1264,19 +1283,26 @@ func getAttemptResults(dev *corev1.Device) map[string][]*devicemgrcommon.ProbeRe
 	return ret
 }
 
+func isAttemptLive(attempt *corev1.Device_Status_ProbeAttempt, now time.Time) bool {
+	return attempt.GetState() == corev1.Device_Status_ProbeAttempt_ISSUED &&
+		attempt.ExpiresAt.IsValid() && now.Before(attempt.ExpiresAt.AsTime())
+}
+
 func isAttemptPending(dev *corev1.Device, ownerUID string, now time.Time) bool {
 	attempt := dev.Status.ProbeAttempt
-	if attempt == nil || attempt.State != corev1.Device_Status_ProbeAttempt_ISSUED {
-		return false
-	}
-
-	if !attempt.ExpiresAt.IsValid() || !now.Before(attempt.ExpiresAt.AsTime()) {
+	if !isAttemptLive(attempt, now) {
 		return false
 	}
 
 	return slices.ContainsFunc(attempt.Probes, func(p *corev1.ClusterConfig_Status_Device_Probe) bool {
 		return p.GetOwnerRef().GetUid() == ownerUID
 	})
+}
+
+func clearAttempt(dev *corev1.Device, now time.Time) {
+	if !isAttemptLive(dev.Status.ProbeAttempt, now) {
+		dev.Status.ProbeAttempt = nil
+	}
 }
 
 func markAttemptProcessed(dev *corev1.Device) bool {

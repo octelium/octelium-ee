@@ -328,6 +328,16 @@ describe("Resource overview details", () => {
     assert.equal(await page.getByText("Confidence", { exact: true }).count(), 0);
   });
 
+  it("shows a vendor-signed Device binding and the proof of its Session", async () => {
+    await load("/core/devices/carol-windows");
+    for (const label of ["Signed", "Not reported", "Probe", "Serial number", "Vendor signed"]) {
+      await page.getByText(label, { exact: true }).first().waitFor();
+    }
+
+    await load("/core/sessions/carol-client-z4n1");
+    await page.getByText("Proved by vendor-signed token", { exact: true }).waitFor();
+  });
+
   it("lists the Policy rules by priority", async () => {
     await load("/core/policies/allow-engineering");
     const rules = await page

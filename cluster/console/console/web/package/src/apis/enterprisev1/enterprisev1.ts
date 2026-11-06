@@ -6711,7 +6711,14 @@ export interface DeviceManager_Spec_CrowdStrike {
     hostFilter: string;
     /**
      * DisableZeroTrustAssessment disables collecting the CrowdStrike Zero
-     * Trust Assessment scores of the hosts.
+     * Trust Assessment scores of the hosts, and reading the `data.zta` file
+     * on Windows and macOS Devices. That file holds a short-lived token
+     * that CrowdStrike signs for the host, which raises the Binding's
+     * Assurance to SIGNED without an elevated client. The sensor only
+     * writes it once CrowdStrike enables the Zero Trust Assessment
+     * third-party sharing for the tenant. The signing keys are fetched from
+     * `assets-public.falcon.crowdstrike.com` and do not cover the US-GOV
+     * clouds. Without a valid token, the Binding stays at PROVIDER_ID.
      *
      * @generated from protobuf field: bool disableZeroTrustAssessment = 6
      */
@@ -6920,7 +6927,9 @@ export interface DeviceManager_Spec_Jamf {
     clientSecret?: DeviceManager_Spec_SecretRef;
     /**
      * Filter is a Jamf Pro RSQL filter expression that restricts the
-     * computers that are collected.
+     * computers that are collected. Its field names are those of the
+     * computer inventory API of the server: for example, from Jamf Pro
+     * 11.30 onwards `general.lastContactTime` is `general.lastContact`.
      *
      * @generated from protobuf field: string filter = 4
      */
@@ -6975,12 +6984,13 @@ export interface DeviceManager_Spec_FleetDM {
      */
     apiToken?: DeviceManager_Spec_SecretRef;
     /**
-     * TeamID is the ID of the Fleet team whose hosts are collected. If
-     * unset, the hosts of every team are collected.
+     * TeamID is the ID of the Fleet team whose hosts are collected. A value
+     * of 0 collects the hosts that belong to no team. If unset, the hosts
+     * of every team are collected.
      *
-     * @generated from protobuf field: uint32 teamID = 3
+     * @generated from protobuf field: optional uint32 teamID = 3
      */
-    teamID: number;
+    teamID?: number;
 }
 /**
  * Huntress sets the Huntress specific options
@@ -7119,10 +7129,10 @@ export interface DeviceManager_Spec_Polling {
  * whose serial number does not differ from the Device's. The Device's
  * hostname narrows several such entries down to one; otherwise the
  * Binding becomes AMBIGUOUS.
- * A Device takes an entry over from the Device that holds it, whose
- * Binding then becomes CONFLICT, when its Evidence is stronger: an owner
- * match with an identifier is stronger than an owner match alone, which
- * is stronger than an identifier alone.
+ * An entry has one holder. Another Device that resolves to it becomes
+ * CONFLICT until the Binding of the holder is reset with
+ * ResetDeviceBinding or becomes LOST. Probe results, whatever their
+ * Evidence, never take an entry from a holder or move a Binding.
  *
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking
  */
@@ -7143,10 +7153,10 @@ export interface DeviceManager_Spec_Linking {
      * VerificationInterval is the interval at which the bound Devices are
      * probed again to verify their Binding. Probe results that contradict
      * the Binding suspend it and make its posture unavailable. A Device
-     * that is not verified in time loses its PROBE Evidence, which lowers
-     * its Assurance, until it is verified again. It has no effect on an OS
-     * for which the DeviceManager has no Probes, and it is only supported
-     * by the types that publish Probes.
+     * that is not verified in time loses its PROBE and VENDOR_SIGNED
+     * Evidence, which lowers its Assurance, until it is verified again. It
+     * has no effect on an OS for which the DeviceManager has no Probes, and
+     * it is only supported by the types that publish Probes.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration verificationInterval = 2
      */
@@ -24069,13 +24079,12 @@ class DeviceManager_Spec_FleetDM$Type extends MessageType<DeviceManager_Spec_Fle
         super("octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM", [
             { no: 1, name: "baseURL", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "apiToken", kind: "message", T: () => DeviceManager_Spec_SecretRef },
-            { no: 3, name: "teamID", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 3, name: "teamID", kind: "scalar", opt: true, T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Spec_FleetDM>): DeviceManager_Spec_FleetDM {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.baseURL = "";
-        message.teamID = 0;
         if (value !== undefined)
             reflectionMergePartial<DeviceManager_Spec_FleetDM>(this, message, value);
         return message;
@@ -24091,7 +24100,7 @@ class DeviceManager_Spec_FleetDM$Type extends MessageType<DeviceManager_Spec_Fle
                 case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiToken */ 2:
                     message.apiToken = DeviceManager_Spec_SecretRef.internalBinaryRead(reader, reader.uint32(), options, message.apiToken);
                     break;
-                case /* uint32 teamID */ 3:
+                case /* optional uint32 teamID */ 3:
                     message.teamID = reader.uint32();
                     break;
                 default:
@@ -24112,8 +24121,8 @@ class DeviceManager_Spec_FleetDM$Type extends MessageType<DeviceManager_Spec_Fle
         /* octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef apiToken = 2; */
         if (message.apiToken)
             DeviceManager_Spec_SecretRef.internalBinaryWrite(message.apiToken, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* uint32 teamID = 3; */
-        if (message.teamID !== 0)
+        /* optional uint32 teamID = 3; */
+        if (message.teamID !== undefined)
             writer.tag(3, WireType.Varint).uint32(message.teamID);
         let u = options.writeUnknownFields;
         if (u !== false)

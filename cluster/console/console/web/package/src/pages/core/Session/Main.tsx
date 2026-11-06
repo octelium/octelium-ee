@@ -266,9 +266,11 @@ const SessionHero = (props: { item: CoreC.Session }) => {
 const getDeviceProofLabel = (type?: CoreP.Session_Status_DeviceProof_Type) =>
   type === CoreP.Session_Status_DeviceProof_Type.HARDWARE_KEY
     ? "Proved by hardware key"
-    : type === CoreP.Session_Status_DeviceProof_Type.PROBE
-      ? "Proved by probe"
-      : undefined;
+    : type === CoreP.Session_Status_DeviceProof_Type.VENDOR_SIGNED
+      ? "Proved by vendor-signed token"
+      : type === CoreP.Session_Status_DeviceProof_Type.PROBE
+        ? "Proved by probe"
+        : undefined;
 
 export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
   const { item } = props;

@@ -346,7 +346,10 @@ export interface IMainServiceClient {
     deleteDeviceManager(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult>;
     /**
      * ResetDeviceBinding clears the Device's Binding and posture so that the
-     * Cluster can select a DeviceManager again using the configured order.
+     * Cluster can select a DeviceManager again using the configured order. It
+     * is the way to release an ACCEPTED Binding that is not LOST, for example
+     * after a sensor is reinstalled with a new agent ID, or to free an entry
+     * that another Device resolves to.
      *
      * @generated from protobuf rpc: ResetDeviceBinding
      */
@@ -751,7 +754,10 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
     }
     /**
      * ResetDeviceBinding clears the Device's Binding and posture so that the
-     * Cluster can select a DeviceManager again using the configured order.
+     * Cluster can select a DeviceManager again using the configured order. It
+     * is the way to release an ACCEPTED Binding that is not LOST, for example
+     * after a sensor is reinstalled with a new agent ID, or to free an entry
+     * that another Device resolves to.
      *
      * @generated from protobuf rpc: ResetDeviceBinding
      */

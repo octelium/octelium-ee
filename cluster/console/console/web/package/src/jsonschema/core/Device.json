@@ -540,7 +540,7 @@
                 "probeAttempt": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Device.Status.ProbeAttempt",
                     "additionalProperties": false,
-                    "description": "ProbeAttempt is the most recent device probing attempt"
+                    "description": "ProbeAttempt is the most recent device probing attempt. It is removed once it is processed for a Device that has an ACCEPTED Binding."
                 }
             },
             "additionalProperties": false,
@@ -618,7 +618,8 @@
                             "MACHINE_ID",
                             "SERIAL_NUMBER",
                             "MAC_ADDRESS",
-                            "HOSTNAME"
+                            "HOSTNAME",
+                            "VENDOR_SIGNED"
                         ]
                     },
                     "type": "array",
@@ -646,7 +647,7 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Binding",
-            "description": "Binding is the Device's link to one inventory entry of its single authoritative DeviceManager. An ACCEPTED Binding is kept through provider outages until it is explicitly reset or its DeviceManager is deleted. A Binding that is not VALID makes the Posture unavailable; it never causes a fallback to another DeviceManager."
+            "description": "Binding is the Device's link to one inventory entry of its single authoritative DeviceManager. An ACCEPTED Binding is decided once and the later Sessions of the Device inherit it. Probe results can verify or suspend it, but they never move it to another inventory entry or DeviceManager. It is kept through provider outages until it is explicitly reset, its DeviceManager is deleted, or it is LOST and another Device claims its inventory entry. A Binding that is not VALID makes the Posture unavailable; it never causes a fallback to another DeviceManager."
         },
         "octelium.api.main.core.v1.Device.Status.Posture": {
             "properties": {

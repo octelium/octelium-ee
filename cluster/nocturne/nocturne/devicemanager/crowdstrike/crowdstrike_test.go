@@ -10,6 +10,10 @@ package crowdstrike
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -22,6 +26,8 @@ import (
 
 	"github.com/crowdstrike/gofalcon/falcon"
 	"github.com/crowdstrike/gofalcon/falcon/models"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/devicemanager/devicemgrcommon"
 	"github.com/octelium/octelium/apis/main/corev1"
@@ -83,6 +89,219 @@ func TestIdentityProbes(t *testing.T) {
 			assert.Equal(t, []string{"stats", "agent_info"}, probe.RunCommand.Args)
 		}
 	}
+}
+
+func TestIdentityProbesZTA(t *testing.T) {
+	m := &Manager{ztaEnabled: true}
+
+	files := map[corev1.Device_Status_OSType]string{}
+	for _, probe := range m.IdentityProbes() {
+		if probe.ReadFile == nil {
+			assert.True(t, probe.RequireElevation)
+			continue
+		}
+
+		assert.False(t, probe.RequireElevation, "the file must be read without an elevated client")
+		assert.Equal(t, uint32(ztaMaxBytes), probe.ReadFile.MaxBytes)
+		files[probe.OSType] = probe.ReadFile.Path
+	}
+
+	assert.Equal(t, map[corev1.Device_Status_OSType]string{
+		corev1.Device_Status_WINDOWS: `C:\ProgramData\CrowdStrike\ZeroTrustAssessment\data.zta`,
+		corev1.Device_Status_MAC:     "/Library/Application Support/CrowdStrike/ZeroTrustAssessment/data.zta",
+	}, files)
+}
+
+type tstZTAClaims struct {
+	jwt.Claims
+	CID          string         `json:"cid"`
+	Typ          string         `json:"typ"`
+	Platform     string         `json:"platform"`
+	SerialNumber string         `json:"serial_number"`
+	Assessment   map[string]any `json:"assessment"`
+}
+
+func tstZTAKey(t *testing.T) *rsa.PrivateKey {
+	t.Helper()
+
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.Nil(t, err)
+	return key
+}
+
+func tstZTAKeySet(kid string, key *rsa.PrivateKey) *jose.JSONWebKeySet {
+	return &jose.JSONWebKeySet{
+		Keys: []jose.JSONWebKey{
+			{Key: key.Public(), KeyID: kid, Algorithm: string(jose.RS256), Use: "sig"},
+		},
+	}
+}
+
+func tstZTAToken(t *testing.T, alg jose.SignatureAlgorithm, key any, sub string, expiresAt *time.Time, now time.Time) string {
+	t.Helper()
+
+	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: alg, Key: key},
+		(&jose.SignerOptions{}).WithType("JWT").WithHeader("kid", "US-1/v1"))
+	require.Nil(t, err)
+
+	claims := &tstZTAClaims{
+		Claims: jwt.Claims{
+			Subject:  sub,
+			IssuedAt: jwt.NewNumericDate(now.Add(-time.Minute)),
+		},
+		CID:          "abcdef123456789",
+		Typ:          "crowdstrike-zta+jwt",
+		Platform:     "Windows 10",
+		SerialNumber: "serialNumber123",
+		Assessment: map[string]any{
+			"overall":       55,
+			"os":            50,
+			"sensor_config": 60,
+			"version":       "",
+		},
+	}
+	if expiresAt != nil {
+		claims.Expiry = jwt.NewNumericDate(*expiresAt)
+	}
+
+	ret, err := jwt.Signed(signer).Claims(claims).Serialize()
+	require.Nil(t, err)
+	return ret
+}
+
+func TestParseSignedExternalID(t *testing.T) {
+	const aid = "beefbeefbeefbeefbeefbeefbeef1111"
+
+	now := time.Now()
+	valid := now.Add(time.Hour)
+	expired := now.Add(-time.Hour)
+
+	key := tstZTAKey(t)
+	otherKey := tstZTAKey(t)
+	publicKeyBytes := x509.MarshalPKCS1PublicKey(&key.PublicKey)
+
+	m := &Manager{}
+
+	getResults := func(text string) []*devicemgrcommon.ProbeResult {
+		return []*devicemgrcommon.ProbeResult{{Text: text}}
+	}
+
+	token := tstZTAToken(t, jose.RS256, key, aid, &valid, now)
+
+	assert.Empty(t, m.ParseSignedExternalID(getResults(token), now), "there must be no result without the keys")
+
+	m.ztaKeys.Store(tstZTAKeySet("US-1/v1", key))
+
+	assert.Equal(t, aid, m.ParseSignedExternalID(getResults(token), now))
+	assert.Equal(t, aid, m.ParseSignedExternalID(getResults(" "+token+"\r\n"), now))
+	assert.Equal(t, aid, m.ParseSignedExternalID([]*devicemgrcommon.ProbeResult{
+		nil, {Text: "aid=" + aid}, {Text: token},
+	}, now))
+
+	assert.Equal(t, aid, m.ParseSignedExternalID(getResults(
+		tstZTAToken(t, jose.RS256, key, strings.ToUpper(aid), &valid, now)), now))
+
+	{
+		m := &Manager{}
+		m.ztaKeys.Store(tstZTAKeySet("v1", key))
+		assert.Equal(t, aid, m.ParseSignedExternalID(getResults(token), now), "the key ID must not matter")
+	}
+
+	for name, text := range map[string]string{
+		"Empty":      "",
+		"AID":        aid,
+		"NotAToken":  "a.b.c",
+		"OtherKey":   tstZTAToken(t, jose.RS256, otherKey, aid, &valid, now),
+		"Expired":    tstZTAToken(t, jose.RS256, key, aid, &expired, now),
+		"NoExpiry":   tstZTAToken(t, jose.RS256, key, aid, nil, now),
+		"NoSubject":  tstZTAToken(t, jose.RS256, key, "", &valid, now),
+		"BadSubject": tstZTAToken(t, jose.RS256, key, "not-an-agent-id", &valid, now),
+		"HS256":      tstZTAToken(t, jose.HS256, publicKeyBytes, aid, &valid, now),
+		"RS512":      tstZTAToken(t, jose.RS512, key, aid, &valid, now),
+		"PS256":      tstZTAToken(t, jose.PS256, key, aid, &valid, now),
+		"NoneAlg": strings.Join([]string{
+			base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"none","typ":"JWT"}`)),
+			strings.Split(token, ".")[1],
+			"",
+		}, "."),
+		"Tampered": func() string {
+			parts := strings.Split(token, ".")
+			parts[1] = base64.RawURLEncoding.EncodeToString(
+				[]byte(fmt.Sprintf(`{"sub":"%s","exp":%d}`, strings.Repeat("a", 32), valid.Unix())))
+			return strings.Join(parts, ".")
+		}(),
+	} {
+		assert.Empty(t, m.ParseSignedExternalID(getResults(text), now), name)
+	}
+
+	assert.Empty(t, m.ParseSignedExternalID(getResults(token), valid.Add(time.Hour)),
+		"a token must stop being accepted once it expires")
+}
+
+func TestParseExternalIDIgnoresZTAToken(t *testing.T) {
+	const aid = "beefbeefbeefbeefbeefbeefbeef1111"
+
+	now := time.Now()
+	valid := now.Add(time.Hour)
+	token := tstZTAToken(t, jose.RS256, tstZTAKey(t), strings.Repeat("a", 32), &valid, now)
+
+	m := &Manager{}
+	ret, err := m.ParseExternalID(corev1.Device_Status_WINDOWS, []*devicemgrcommon.ProbeResult{
+		{Text: token}, {Text: aid},
+	})
+	assert.Nil(t, err)
+	assert.Equal(t, aid, ret)
+}
+
+func TestRefreshZTAKeys(t *testing.T) {
+	key := tstZTAKey(t)
+
+	body, err := json.Marshal(tstZTAKeySet("US-1/v1", key))
+	require.Nil(t, err)
+
+	var status atomic.Int32
+	status.Store(http.StatusOK)
+
+	var respBody atomic.Pointer[string]
+	valid := string(body)
+	respBody.Store(&valid)
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(int(status.Load()))
+		fmt.Fprint(w, *respBody.Load())
+	}))
+	t.Cleanup(srv.Close)
+
+	m := &Manager{ztaKeysURL: srv.URL}
+
+	require.Nil(t, m.refreshZTAKeys(t.Context()))
+	keys := m.ztaKeys.Load()
+	require.NotNil(t, keys)
+	assert.Len(t, keys.Keys, 1)
+
+	status.Store(http.StatusInternalServerError)
+	assert.NotNil(t, m.refreshZTAKeys(t.Context()))
+	assert.True(t, keys == m.ztaKeys.Load(), "the last keys must be kept")
+
+	status.Store(http.StatusOK)
+	for _, invalid := range []string{"not json", `{"keys": []}`} {
+		respBody.Store(&invalid)
+		assert.NotNil(t, m.refreshZTAKeys(t.Context()), invalid)
+		assert.True(t, keys == m.ztaKeys.Load(), "the last keys must be kept")
+	}
+
+	redirect := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, srv.URL, http.StatusFound)
+	}))
+	t.Cleanup(redirect.Close)
+
+	respBody.Store(&valid)
+	require.Nil(t, m.refreshZTAKeys(t.Context()))
+	keys = m.ztaKeys.Load()
+
+	m.ztaKeysURL = redirect.URL
+	assert.NotNil(t, m.refreshZTAKeys(t.Context()), "a redirect to another origin must be rejected")
+	assert.True(t, keys == m.ztaKeys.Load(), "the last keys must be kept")
 }
 
 func TestToEntry(t *testing.T) {
@@ -382,13 +601,22 @@ func TestCollect(t *testing.T) {
 	})
 	assert.Nil(t, err)
 
-	m := &Manager{c: c, ztaEnabled: true}
+	keysBody, err := json.Marshal(tstZTAKeySet("US-1/v1", tstZTAKey(t)))
+	require.Nil(t, err)
+
+	keysSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(keysBody)
+	}))
+	t.Cleanup(keysSrv.Close)
+
+	m := &Manager{c: c, ztaEnabled: true, ztaKeysURL: keysSrv.URL}
 
 	{
 		fleet, err := m.Collect(context.Background())
 		assert.Nil(t, err)
 		assert.Equal(t, 2, fleet.Len())
 		assert.Empty(t, fleet.DegradedReason())
+		assert.NotNil(t, m.ztaKeys.Load(), "the ZTA keys must be refreshed with the inventory")
 
 		res := fleet.MatchExternalID(aid1)
 		assert.Equal(t, devicemgrcommon.MatchStateUnique, res.State)
@@ -560,6 +788,8 @@ func TestConstructorCredentialsAndConfiguration(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, manager)
 	assert.Equal(t, enterprisev1.DeviceManager_Status_CROWDSTRIKE, manager.Type())
+	assert.True(t, manager.ztaEnabled)
+	assert.Equal(t, ztaKeysURL, manager.ztaKeysURL)
 	require.NoError(t, manager.Close())
 	wrong := &enterprisev1.DeviceManager{Metadata: &metav1.Metadata{Name: "wrong"}, Spec: &enterprisev1.DeviceManager_Spec{}}
 	_, err = New(t.Context(), tst.C.OcteliumC, &devicemgrcommon.ManagerOpts{DeviceManager: wrong})

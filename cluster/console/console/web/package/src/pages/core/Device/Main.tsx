@@ -208,6 +208,7 @@ const EVIDENCE_LABELS: Partial<Record<CoreP.Device_Status_Binding_Evidence, stri
   [Binding_Evidence.SERIAL_NUMBER]: "Serial number",
   [Binding_Evidence.MAC_ADDRESS]: "MAC address",
   [Binding_Evidence.HOSTNAME]: "Hostname",
+  [Binding_Evidence.VENDOR_SIGNED]: "Vendor signed",
 };
 
 const ASSURANCE_LABELS: Partial<Record<CoreP.Device_Status_Binding_Assurance, string>> = {

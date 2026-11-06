@@ -171,7 +171,10 @@ type MainServiceClient interface {
 	// DeleteDeviceManager deletes a DeviceManager
 	DeleteDeviceManager(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
 	// ResetDeviceBinding clears the Device's Binding and posture so that the
-	// Cluster can select a DeviceManager again using the configured order.
+	// Cluster can select a DeviceManager again using the configured order. It
+	// is the way to release an ACCEPTED Binding that is not LOST, for example
+	// after a sensor is reinstalled with a new agent ID, or to free an entry
+	// that another Device resolves to.
 	ResetDeviceBinding(ctx context.Context, in *ResetDeviceBindingRequest, opts ...grpc.CallOption) (*metav1.OperationResult, error)
 	// GetCoreCondition compiles a structured enterprise Condition into its
 	// equivalent core Condition (i.e. a CEL expression) without applying it to
@@ -715,7 +718,10 @@ type MainServiceServer interface {
 	// DeleteDeviceManager deletes a DeviceManager
 	DeleteDeviceManager(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
 	// ResetDeviceBinding clears the Device's Binding and posture so that the
-	// Cluster can select a DeviceManager again using the configured order.
+	// Cluster can select a DeviceManager again using the configured order. It
+	// is the way to release an ACCEPTED Binding that is not LOST, for example
+	// after a sensor is reinstalled with a new agent ID, or to free an entry
+	// that another Device resolves to.
 	ResetDeviceBinding(context.Context, *ResetDeviceBindingRequest) (*metav1.OperationResult, error)
 	// GetCoreCondition compiles a structured enterprise Condition into its
 	// equivalent core Condition (i.e. a CEL expression) without applying it to

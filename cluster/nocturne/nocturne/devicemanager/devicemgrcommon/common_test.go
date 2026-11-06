@@ -580,46 +580,48 @@ func TestEvidence(t *testing.T) {
 		evidence  []corev1.Device_Status_Binding_Evidence
 		isDevice  bool
 		isOwned   bool
-		rank      int
 		assurance corev1.Device_Status_Binding_Assurance
 	}{
-		{nil, false, false, 0, corev1.Device_Status_Binding_ASSURANCE_UNKNOWN},
+		{nil, false, false, corev1.Device_Status_Binding_ASSURANCE_UNKNOWN},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_HOSTNAME,
-		}, false, false, 0, corev1.Device_Status_Binding_ASSURANCE_UNKNOWN},
+		}, false, false, corev1.Device_Status_Binding_ASSURANCE_UNKNOWN},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_PROBE,
-		}, true, false, 0, corev1.Device_Status_Binding_PROVIDER_ID},
+		}, true, false, corev1.Device_Status_Binding_PROVIDER_ID},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_SERIAL_NUMBER,
-		}, true, false, 0, corev1.Device_Status_Binding_IDENTIFIER},
+		}, true, false, corev1.Device_Status_Binding_IDENTIFIER},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_OWNER_EMAIL,
-		}, false, true, 1, corev1.Device_Status_Binding_OWNER_ONLY},
+		}, false, true, corev1.Device_Status_Binding_OWNER_ONLY},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_OWNER_EMAIL,
 			corev1.Device_Status_Binding_HOSTNAME,
-		}, false, true, 1, corev1.Device_Status_Binding_OWNER_ONLY},
+		}, false, true, corev1.Device_Status_Binding_OWNER_ONLY},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_OWNER_EMAIL,
 			corev1.Device_Status_Binding_MAC_ADDRESS,
-		}, true, true, 2, corev1.Device_Status_Binding_IDENTIFIER},
+		}, true, true, corev1.Device_Status_Binding_IDENTIFIER},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_OWNER_EMAIL,
 			corev1.Device_Status_Binding_MACHINE_ID,
-		}, true, true, 2, corev1.Device_Status_Binding_IDENTIFIER},
+		}, true, true, corev1.Device_Status_Binding_IDENTIFIER},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_SERIAL_NUMBER,
 			corev1.Device_Status_Binding_OWNER_EMAIL,
-		}, true, true, 2, corev1.Device_Status_Binding_IDENTIFIER},
+		}, true, true, corev1.Device_Status_Binding_IDENTIFIER},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_OWNER_EMAIL,
 			corev1.Device_Status_Binding_PROBE,
-		}, true, true, 2, corev1.Device_Status_Binding_PROVIDER_ID},
+		}, true, true, corev1.Device_Status_Binding_PROVIDER_ID},
+		{[]corev1.Device_Status_Binding_Evidence{
+			corev1.Device_Status_Binding_PROBE,
+			corev1.Device_Status_Binding_VENDOR_SIGNED,
+		}, true, false, corev1.Device_Status_Binding_SIGNED},
 	} {
 		assert.Equal(t, tc.isDevice, HasDeviceEvidence(tc.evidence), "%v", tc.evidence)
 		assert.Equal(t, tc.isOwned, IsOwnerMatched(tc.evidence), "%v", tc.evidence)
-		assert.Equal(t, tc.rank, GetEvidenceRank(tc.evidence), "%v", tc.evidence)
 		assert.Equal(t, tc.assurance,
 			GetAssurance(tc.evidence, provider, corev1.Device_Status_LINUX), "%v", tc.evidence)
 	}
@@ -1322,4 +1324,81 @@ func TestRegistry(t *testing.T) {
 	assert.True(t, RefUIDEqual(&metav1.ObjectReference{Uid: "a"}, &metav1.ObjectReference{Uid: "a"}))
 	assert.False(t, RefUIDEqual(&metav1.ObjectReference{}, &metav1.ObjectReference{}))
 	assert.False(t, RefUIDEqual(nil, &metav1.ObjectReference{Uid: "a"}))
+}
+
+type tstSignedManager struct {
+	tstProbeManager
+	signedID string
+}
+
+func (m *tstSignedManager) ParseExternalID(osType corev1.Device_Status_OSType, results []*ProbeResult) (string, error) {
+	return results[0].Text, nil
+}
+
+func (m *tstSignedManager) ParseSignedExternalID(results []*ProbeResult, now time.Time) string {
+	return m.signedID
+}
+
+func TestParseProbeID(t *testing.T) {
+	results := []*ProbeResult{{Text: "unsigned"}}
+	now := time.Now()
+
+	{
+		id, isSigned, err := ParseProbeID(&tstSignedManager{signedID: "signed"}, corev1.Device_Status_LINUX, results, now)
+		assert.Nil(t, err)
+		assert.Equal(t, "signed", id)
+		assert.True(t, isSigned)
+	}
+
+	{
+		id, isSigned, err := ParseProbeID(&tstSignedManager{}, corev1.Device_Status_LINUX, results, now)
+		assert.Nil(t, err)
+		assert.Equal(t, "unsigned", id)
+		assert.False(t, isSigned)
+	}
+
+	{
+		id, isSigned, err := ParseProbeID(&tstProbeManager{}, corev1.Device_Status_LINUX, results, now)
+		assert.Nil(t, err)
+		assert.Empty(t, id)
+		assert.False(t, isSigned)
+	}
+}
+
+func TestEvidenceSignedProbe(t *testing.T) {
+	entry := &Entry{ExternalID: "id-1", Serial: "serial-1"}
+
+	assert.Equal(t, []corev1.Device_Status_Binding_Evidence{
+		corev1.Device_Status_Binding_PROBE,
+		corev1.Device_Status_Binding_VENDOR_SIGNED,
+	}, entry.Evidence(&LinkRequest{ProbeID: "id-1", IsProbeSigned: true}))
+
+	assert.Equal(t, []corev1.Device_Status_Binding_Evidence{
+		corev1.Device_Status_Binding_PROBE,
+	}, entry.Evidence(&LinkRequest{ProbeID: "id-1"}))
+
+	assert.Equal(t, []corev1.Device_Status_Binding_Evidence{
+		corev1.Device_Status_Binding_SERIAL_NUMBER,
+	}, entry.Evidence(&LinkRequest{ProbeID: "id-2", IsProbeSigned: true, SerialNumber: "SERIAL-1"}),
+		"a signed identifier of another entry must not count")
+}
+
+func TestParseTime(t *testing.T) {
+	for _, val := range []string{"", "  ", "yesterday", "2026-09-28"} {
+		_, ok := ParseTime(val)
+		assert.False(t, ok, "%q", val)
+	}
+
+	for _, val := range []string{"2026-09-28T10:00:00Z", "2026-09-28T10:00:00.123456789+02:00"} {
+		ret, ok := ParseTime(val)
+		assert.True(t, ok, "%q", val)
+		assert.False(t, ret.IsZero())
+	}
+}
+
+func TestSnippet(t *testing.T) {
+	assert.Equal(t, "", Snippet(nil))
+	assert.Equal(t, "body", Snippet([]byte("  body\n")))
+	assert.Equal(t, strings.Repeat("x", 300), Snippet([]byte(strings.Repeat("x", 300))))
+	assert.Equal(t, strings.Repeat("x", 300)+"...", Snippet([]byte(strings.Repeat("x", 301))))
 }
