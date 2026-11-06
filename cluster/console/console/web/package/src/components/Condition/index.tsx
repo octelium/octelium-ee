@@ -183,7 +183,13 @@ const Cond = (props: {
     }
   };
 
+  const received = React.useRef(item);
+
   React.useEffect(() => {
+    if (received.current && item && Condition.equals(received.current, item)) {
+      return;
+    }
+    received.current = item;
     setReq(item ? Condition.clone(item) : makeCondition("match"));
   }, [item]);
 

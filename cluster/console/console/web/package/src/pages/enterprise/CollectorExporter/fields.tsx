@@ -149,6 +149,7 @@ export const ToggleRow = (props: {
   label: string;
   description?: string;
   checked: boolean;
+  disabled?: boolean;
   onChange: (checked: boolean) => void;
   children?: React.ReactNode;
 }) => (
@@ -158,6 +159,7 @@ export const ToggleRow = (props: {
       label={props.label}
       description={props.description}
       checked={props.checked}
+      disabled={props.disabled}
       onChange={(event) => props.onChange(event.currentTarget.checked)}
       className="px-3.5 py-3"
       styles={{
@@ -177,24 +179,35 @@ export type Choice<T extends string> = {
   value: T;
   label: string;
   hint?: string;
+  disabled?: boolean;
 };
 
 export const ChoiceGroup = <T extends string>(props: {
   label: string;
-  value: T;
+  hideLabel?: boolean;
+  value?: T;
   options: Choice<T>[];
+  cols?: 3;
   onChange: (value: T) => void;
 }) => (
   <div className="flex min-w-0 flex-col gap-1.5">
-    <span className="text-xs font-semibold text-slate-700">{props.label}</span>
+    {!props.hideLabel && (
+      <span className="text-xs font-semibold text-slate-700">
+        {props.label}
+      </span>
+    )}
     <div
       role="radiogroup"
       aria-label={props.label}
       className={twMerge(
         "grid grid-cols-1 gap-2",
-        props.options.length === 2 && "@md:grid-cols-2",
-        props.options.length === 3 && "@xl:grid-cols-3",
-        props.options.length >= 4 && "@md:grid-cols-2 @3xl:grid-cols-4",
+        props.cols === 3
+          ? "@md:grid-cols-2 @2xl:grid-cols-3"
+          : [
+              props.options.length === 2 && "@md:grid-cols-2",
+              props.options.length === 3 && "@xl:grid-cols-3",
+              props.options.length >= 4 && "@md:grid-cols-2 @3xl:grid-cols-4",
+            ],
       )}
     >
       {props.options.map((option) => {
@@ -205,9 +218,10 @@ export const ChoiceGroup = <T extends string>(props: {
             type="button"
             role="radio"
             aria-checked={active}
+            disabled={option.disabled}
             onClick={() => !active && props.onChange(option.value)}
             className={twMerge(
-              "flex min-w-0 cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left outline-none transition-[border-color,box-shadow,background-color] duration-150 focus-visible:ring-2 focus-visible:ring-slate-400",
+              "flex min-w-0 cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left outline-none transition-[border-color,box-shadow,background-color] duration-150 focus-visible:ring-2 focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-55",
               active
                 ? "border-slate-800 bg-white shadow-sm ring-1 ring-slate-800"
                 : "border-slate-200 bg-white hover:border-slate-300",

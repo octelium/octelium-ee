@@ -261,7 +261,7 @@ const ResourceForm = (props: ResourceFormProps) => {
           )}
 
           {props.specComponent && (
-            <ContainerGen title="Spec">
+            <ContainerGen title="Spec" className="overflow-clip">
               <fieldset
                 disabled={props.readOnly}
                 className={props.readOnly ? "opacity-60" : undefined}

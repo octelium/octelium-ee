@@ -25,13 +25,8 @@ import {
 } from "@/utils/octelium";
 import { getResourceRef, printServiceMode } from "@/utils/pb";
 import {
-  AppWindow,
   ArrowLeftRight,
   Ban,
-  Boxes,
-  Braces,
-  BrainCircuit,
-  Cable,
   Container,
   Earth,
   ExternalLink,
@@ -39,43 +34,17 @@ import {
   Layers,
   Lock,
   MapPinned,
-  Monitor,
-  Radio,
-  Search,
-  Shield,
   ShieldCheck,
-  SquareTerminal,
   Tags,
   UserRoundX,
-  Waypoints,
 } from "lucide-react";
 import * as React from "react";
-import { GrMysql } from "react-icons/gr";
-import { SiPostgresql } from "react-icons/si";
-import { VscMcp } from "react-icons/vsc";
+import { getModeIcon as modeIcon } from "./edit/modes";
 
 const Mode = CoreC.Service_Spec_Mode;
 
-const MODE_ICONS: Partial<Record<CoreC.Service_Spec_Mode, ResourceInfoIcon>> = {
-  [Mode.HTTP]: Globe2,
-  [Mode.WEB]: AppWindow,
-  [Mode.TCP]: Cable,
-  [Mode.UDP]: Radio,
-  [Mode.SSH]: SquareTerminal,
-  [Mode.KUBERNETES]: Boxes,
-  [Mode.POSTGRES]: SiPostgresql as ResourceInfoIcon,
-  [Mode.MYSQL]: GrMysql as ResourceInfoIcon,
-  [Mode.GRPC]: Braces,
-  [Mode.DNS]: Search,
-  [Mode.SOCKS5]: Shield,
-  [Mode.RDP]: Monitor,
-  [Mode.RDP_WEB]: Monitor,
-  [Mode.MCP]: VscMcp as ResourceInfoIcon,
-  [Mode.LLM]: BrainCircuit,
-};
-
-export const getModeIcon = (mode?: CoreC.Service_Spec_Mode): ResourceInfoIcon =>
-  (mode !== undefined && MODE_ICONS[mode]) || Waypoints;
+export const getModeIcon = (mode?: CoreC.Service_Spec_Mode) =>
+  modeIcon(mode) as ResourceInfoIcon;
 
 const enumLabel = (values: Record<number, string>, value: number | undefined) =>
   value === undefined

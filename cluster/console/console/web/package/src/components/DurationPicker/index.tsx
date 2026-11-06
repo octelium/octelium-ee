@@ -106,6 +106,7 @@ const formatDuration = (duration: ParsedDuration) => {
 interface DurationPickerProps {
   value?: Duration;
   title?: string;
+  required?: boolean;
   description?: string;
   placeholder?: string;
   onChange: (arg?: Duration) => void;
@@ -114,6 +115,7 @@ interface DurationPickerProps {
 const DurationPicker = ({
   value,
   title,
+  required,
   description,
   placeholder = "Select duration",
   onChange,
@@ -161,6 +163,7 @@ const DurationPicker = ({
   return (
     <Input.Wrapper
       label={title}
+      required={required}
       className="w-full"
     >
       {description && (
