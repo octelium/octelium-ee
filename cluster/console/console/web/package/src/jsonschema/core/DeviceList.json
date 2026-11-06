@@ -638,17 +638,6 @@
                     "description": "NextVerificationAt is the timestamp after which the Device is probed again to verify the Binding",
                     "format": "date-time"
                 },
-                "confidence": {
-                    "enum": [
-                        "CONFIDENCE_UNKNOWN",
-                        "LOW",
-                        "MEDIUM",
-                        "HIGH"
-                    ],
-                    "type": "string",
-                    "title": "Confidence",
-                    "description": "Confidence is how strongly the evidence ties an ACCEPTED Binding's inventory entry to both the Device and the Device's User. The owner email reported by the provider is the only evidence that the Device cannot assert by itself, so it is required for MEDIUM and HIGH."
-                },
                 "evidence": {
                     "items": {
                         "enum": [
@@ -664,6 +653,23 @@
                     "type": "array",
                     "title": "Evidence",
                     "description": "Evidence is a kind of evidence that ties an ACCEPTED Binding's inventory entry to the Device or to the Device's User"
+                },
+                "assurance": {
+                    "enum": [
+                        "ASSURANCE_UNKNOWN",
+                        "OWNER_ONLY",
+                        "IDENTIFIER",
+                        "PROVIDER_ID",
+                        "SIGNED",
+                        "HARDWARE"
+                    ],
+                    "type": "string",
+                    "title": "Assurance",
+                    "description": "Assurance is how the Device is tied to an ACCEPTED Binding's inventory entry. The values are ordered from the easiest to the hardest to forge. It says nothing about the owner of the entry (see IsOwnerMatched)."
+                },
+                "isOwnerMatched": {
+                    "type": "boolean",
+                    "description": "IsOwnerMatched means that the provider reports the Device's User as the owner of an ACCEPTED Binding's inventory entry. It is the only part of the Binding that the Device cannot assert by itself."
                 }
             },
             "additionalProperties": false,

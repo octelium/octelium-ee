@@ -169,6 +169,7 @@ describe("Resource overview details", () => {
   it("shows the connection and the served Services of a client Session", async () => {
     await load("/core/sessions/bob-client-q7m2");
     await page.getByText("Connected via WireGuard", { exact: true }).waitFor();
+    await page.getByText("Proved by hardware key", { exact: true }).waitFor();
     assert.deepEqual(await sectionTitles(), [
       "Authentication",
       "Client & location",
@@ -317,13 +318,14 @@ describe("Resource overview details", () => {
     }
   });
 
-  it("shows the confidence and evidence of a Device binding", async () => {
+  it("shows the assurance, owner and evidence of a Device binding", async () => {
     await load("/core/devices/alice-macbook");
-    await page.getByText("Confidence", { exact: true }).waitFor();
-    for (const label of ["High", "Owner email", "Serial number", "MAC address"]) {
+    await page.getByText("Assurance", { exact: true }).waitFor();
+    for (const label of ["Provider ID", "Confirmed by provider", "Owner email", "Probe", "Serial number"]) {
       await page.getByText(label, { exact: true }).first().waitFor();
     }
     assert.equal(await page.getByText("Machine ID", { exact: true }).count(), 0);
+    assert.equal(await page.getByText("Confidence", { exact: true }).count(), 0);
   });
 
   it("lists the Policy rules by priority", async () => {

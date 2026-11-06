@@ -9,6 +9,7 @@
 package devicemgrcommon
 
 import (
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"net/http"
@@ -27,6 +28,43 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
 )
+
+type tstProbeManager struct {
+	isPlatformProbe bool
+}
+
+func (m *tstProbeManager) Type() ProviderType {
+	return enterprisev1.DeviceManager_Status_CROWDSTRIKE
+}
+
+func (m *tstProbeManager) IdentityProbes() []*Probe {
+	ret := &Probe{
+		ID:         "probe",
+		OSType:     corev1.Device_Status_LINUX,
+		RunCommand: &RunCommand{Command: "/opt/agent"},
+	}
+
+	if m.isPlatformProbe {
+		ret.RunCommand = nil
+		ret.PlatformIdentifier = &PlatformIdentifier{
+			Kind: corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier_HARDWARE_UUID,
+		}
+	}
+
+	return []*Probe{ret}
+}
+
+func (m *tstProbeManager) ParseExternalID(osType corev1.Device_Status_OSType, results []*ProbeResult) (string, error) {
+	return "", nil
+}
+
+func (m *tstProbeManager) Collect(ctx context.Context) (*Fleet, error) {
+	return nil, nil
+}
+
+func (m *tstProbeManager) Close() error {
+	return nil
+}
 
 func TestFleet(t *testing.T) {
 	fleet := NewFleet([]*Entry{
@@ -285,7 +323,6 @@ func TestFleetLink(t *testing.T) {
 		req        *LinkRequest
 		state      LinkState
 		externalID string
-		confidence corev1.Device_Status_Binding_Confidence
 		evidence   []corev1.Device_Status_Binding_Evidence
 	}{
 		{
@@ -300,7 +337,6 @@ func TestFleetLink(t *testing.T) {
 			},
 			state:      LinkStateMatched,
 			externalID: "alice-mac",
-			confidence: corev1.Device_Status_Binding_HIGH,
 			evidence: []corev1.Device_Status_Binding_Evidence{
 				corev1.Device_Status_Binding_OWNER_EMAIL,
 				corev1.Device_Status_Binding_MACHINE_ID,
@@ -318,7 +354,6 @@ func TestFleetLink(t *testing.T) {
 			},
 			state:      LinkStateMatched,
 			externalID: "alice-mac",
-			confidence: corev1.Device_Status_Binding_HIGH,
 			evidence: []corev1.Device_Status_Binding_Evidence{
 				corev1.Device_Status_Binding_OWNER_EMAIL,
 				corev1.Device_Status_Binding_MACHINE_ID,
@@ -363,7 +398,6 @@ func TestFleetLink(t *testing.T) {
 			},
 			state:      LinkStateMatched,
 			externalID: "unowned",
-			confidence: corev1.Device_Status_Binding_LOW,
 			evidence: []corev1.Device_Status_Binding_Evidence{
 				corev1.Device_Status_Binding_PROBE,
 				corev1.Device_Status_Binding_SERIAL_NUMBER,
@@ -388,7 +422,6 @@ func TestFleetLink(t *testing.T) {
 			},
 			state:      LinkStateMatched,
 			externalID: "shared-a",
-			confidence: corev1.Device_Status_Binding_HIGH,
 			evidence: []corev1.Device_Status_Binding_Evidence{
 				corev1.Device_Status_Binding_OWNER_EMAIL,
 				corev1.Device_Status_Binding_MAC_ADDRESS,
@@ -420,7 +453,6 @@ func TestFleetLink(t *testing.T) {
 			},
 			state:      LinkStateMatched,
 			externalID: "alice-linux",
-			confidence: corev1.Device_Status_Binding_MEDIUM,
 			evidence: []corev1.Device_Status_Binding_Evidence{
 				corev1.Device_Status_Binding_OWNER_EMAIL,
 			},
@@ -452,7 +484,6 @@ func TestFleetLink(t *testing.T) {
 			},
 			state:      LinkStateMatched,
 			externalID: "alice-win",
-			confidence: corev1.Device_Status_Binding_MEDIUM,
 			evidence: []corev1.Device_Status_Binding_Evidence{
 				corev1.Device_Status_Binding_OWNER_EMAIL,
 				corev1.Device_Status_Binding_HOSTNAME,
@@ -475,7 +506,6 @@ func TestFleetLink(t *testing.T) {
 			},
 			state:      LinkStateMatched,
 			externalID: "alice-win",
-			confidence: corev1.Device_Status_Binding_MEDIUM,
 			evidence: []corev1.Device_Status_Binding_Evidence{
 				corev1.Device_Status_Binding_OWNER_EMAIL,
 			},
@@ -515,7 +545,6 @@ func TestFleetLink(t *testing.T) {
 		if assert.NotNil(t, res.Entry, tc.name) {
 			assert.Equal(t, tc.externalID, res.Entry.ExternalID, tc.name)
 		}
-		assert.Equal(t, tc.confidence, res.Confidence, tc.name)
 		assert.Equal(t, tc.evidence, res.Evidence, tc.name)
 	}
 
@@ -544,41 +573,85 @@ func TestEvidence(t *testing.T) {
 	assert.True(t, entry.IsContradicted(&LinkRequest{SerialNumber: "serial-2"}))
 	assert.False(t, (&Entry{Serial: "none"}).IsContradicted(&LinkRequest{SerialNumber: "serial-2"}))
 
+	provider := &tstProbeManager{}
+	platform := &tstProbeManager{isPlatformProbe: true}
+
 	for _, tc := range []struct {
-		evidence   []corev1.Device_Status_Binding_Evidence
-		isDevice   bool
-		confidence corev1.Device_Status_Binding_Confidence
+		evidence  []corev1.Device_Status_Binding_Evidence
+		isDevice  bool
+		isOwned   bool
+		rank      int
+		assurance corev1.Device_Status_Binding_Assurance
 	}{
-		{nil, false, corev1.Device_Status_Binding_LOW},
+		{nil, false, false, 0, corev1.Device_Status_Binding_ASSURANCE_UNKNOWN},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_HOSTNAME,
-		}, false, corev1.Device_Status_Binding_LOW},
+		}, false, false, 0, corev1.Device_Status_Binding_ASSURANCE_UNKNOWN},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_PROBE,
-		}, true, corev1.Device_Status_Binding_LOW},
+		}, true, false, 0, corev1.Device_Status_Binding_PROVIDER_ID},
+		{[]corev1.Device_Status_Binding_Evidence{
+			corev1.Device_Status_Binding_SERIAL_NUMBER,
+		}, true, false, 0, corev1.Device_Status_Binding_IDENTIFIER},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_OWNER_EMAIL,
-		}, false, corev1.Device_Status_Binding_MEDIUM},
+		}, false, true, 1, corev1.Device_Status_Binding_OWNER_ONLY},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_OWNER_EMAIL,
 			corev1.Device_Status_Binding_HOSTNAME,
-		}, false, corev1.Device_Status_Binding_MEDIUM},
+		}, false, true, 1, corev1.Device_Status_Binding_OWNER_ONLY},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_OWNER_EMAIL,
 			corev1.Device_Status_Binding_MAC_ADDRESS,
-		}, true, corev1.Device_Status_Binding_HIGH},
+		}, true, true, 2, corev1.Device_Status_Binding_IDENTIFIER},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_OWNER_EMAIL,
 			corev1.Device_Status_Binding_MACHINE_ID,
-		}, true, corev1.Device_Status_Binding_HIGH},
+		}, true, true, 2, corev1.Device_Status_Binding_IDENTIFIER},
 		{[]corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_SERIAL_NUMBER,
 			corev1.Device_Status_Binding_OWNER_EMAIL,
-		}, true, corev1.Device_Status_Binding_HIGH},
+		}, true, true, 2, corev1.Device_Status_Binding_IDENTIFIER},
+		{[]corev1.Device_Status_Binding_Evidence{
+			corev1.Device_Status_Binding_OWNER_EMAIL,
+			corev1.Device_Status_Binding_PROBE,
+		}, true, true, 2, corev1.Device_Status_Binding_PROVIDER_ID},
 	} {
 		assert.Equal(t, tc.isDevice, HasDeviceEvidence(tc.evidence), "%v", tc.evidence)
-		assert.Equal(t, tc.confidence, GetConfidence(tc.evidence), "%v", tc.evidence)
+		assert.Equal(t, tc.isOwned, IsOwnerMatched(tc.evidence), "%v", tc.evidence)
+		assert.Equal(t, tc.rank, GetEvidenceRank(tc.evidence), "%v", tc.evidence)
+		assert.Equal(t, tc.assurance,
+			GetAssurance(tc.evidence, provider, corev1.Device_Status_LINUX), "%v", tc.evidence)
 	}
+
+	{
+		evidence := []corev1.Device_Status_Binding_Evidence{corev1.Device_Status_Binding_PROBE}
+
+		assert.Equal(t, corev1.Device_Status_Binding_IDENTIFIER,
+			GetAssurance(evidence, platform, corev1.Device_Status_LINUX),
+			"a Probe of a hardware identifier is an identifier")
+		assert.Equal(t, corev1.Device_Status_Binding_IDENTIFIER,
+			GetAssurance(evidence, provider, corev1.Device_Status_WINDOWS),
+			"a Probe of another OS does not apply")
+		assert.Equal(t, corev1.Device_Status_Binding_IDENTIFIER,
+			GetAssurance(evidence, nil, corev1.Device_Status_LINUX))
+	}
+}
+
+func TestHasProbe(t *testing.T) {
+	provider := &tstProbeManager{}
+	platform := &tstProbeManager{isPlatformProbe: true}
+
+	assert.False(t, HasProbe(nil, corev1.Device_Status_LINUX))
+	assert.False(t, HasProviderProbe(nil, corev1.Device_Status_LINUX))
+
+	assert.True(t, HasProbe(provider, corev1.Device_Status_LINUX))
+	assert.True(t, HasProviderProbe(provider, corev1.Device_Status_LINUX))
+	assert.False(t, HasProbe(provider, corev1.Device_Status_MAC))
+	assert.False(t, HasProviderProbe(provider, corev1.Device_Status_MAC))
+
+	assert.True(t, HasProbe(platform, corev1.Device_Status_LINUX))
+	assert.False(t, HasProviderProbe(platform, corev1.Device_Status_LINUX))
 }
 
 func TestFleetDegraded(t *testing.T) {

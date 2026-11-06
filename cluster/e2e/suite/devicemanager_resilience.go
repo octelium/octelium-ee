@@ -126,7 +126,8 @@ func testDeviceManagerResilience(t *testing.T, ch *harness.H) {
 		bound := waitFleetDevice(t, h, deviceRef, dm,
 			corev1.Device_Status_Binding_VALID, corev1.Device_Status_Posture_PASS)
 		assert.Equal(t, strings.ToLower(hosts[0].UUID), bound.Status.Binding.ExternalID)
-		assert.Equal(t, corev1.Device_Status_Binding_LOW, bound.Status.Binding.Confidence)
+		assert.False(t, bound.Status.Binding.IsOwnerMatched)
+		assert.Equal(t, corev1.Device_Status_Binding_IDENTIFIER, bound.Status.Binding.Assurance)
 		assert.Equal(t, []corev1.Device_Status_Binding_Evidence{corev1.Device_Status_Binding_SERIAL_NUMBER},
 			bound.Status.Binding.Evidence)
 		bindingUID = bound.Status.Binding.Uid

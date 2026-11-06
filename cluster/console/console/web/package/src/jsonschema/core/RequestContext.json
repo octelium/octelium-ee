@@ -655,17 +655,6 @@
                     "description": "NextVerificationAt is the timestamp after which the Device is probed again to verify the Binding",
                     "format": "date-time"
                 },
-                "confidence": {
-                    "enum": [
-                        "CONFIDENCE_UNKNOWN",
-                        "LOW",
-                        "MEDIUM",
-                        "HIGH"
-                    ],
-                    "type": "string",
-                    "title": "Confidence",
-                    "description": "Confidence is how strongly the evidence ties an ACCEPTED Binding's inventory entry to both the Device and the Device's User. The owner email reported by the provider is the only evidence that the Device cannot assert by itself, so it is required for MEDIUM and HIGH."
-                },
                 "evidence": {
                     "items": {
                         "enum": [
@@ -681,6 +670,23 @@
                     "type": "array",
                     "title": "Evidence",
                     "description": "Evidence is a kind of evidence that ties an ACCEPTED Binding's inventory entry to the Device or to the Device's User"
+                },
+                "assurance": {
+                    "enum": [
+                        "ASSURANCE_UNKNOWN",
+                        "OWNER_ONLY",
+                        "IDENTIFIER",
+                        "PROVIDER_ID",
+                        "SIGNED",
+                        "HARDWARE"
+                    ],
+                    "type": "string",
+                    "title": "Assurance",
+                    "description": "Assurance is how the Device is tied to an ACCEPTED Binding's inventory entry. The values are ordered from the easiest to the hardest to forge. It says nothing about the owner of the entry (see IsOwnerMatched)."
+                },
+                "isOwnerMatched": {
+                    "type": "boolean",
+                    "description": "IsOwnerMatched means that the provider reports the Device's User as the owner of an ACCEPTED Binding's inventory entry. It is the only part of the Binding that the Device cannot assert by itself."
                 }
             },
             "additionalProperties": false,
@@ -8751,6 +8757,11 @@
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
                     "description": "RequiredAuthenticatorRef is the reference of the Authenticator that the Session is required to authenticate with, if any"
+                },
+                "deviceProof": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.DeviceProof",
+                    "additionalProperties": false,
+                    "description": "DeviceProof is how the Session proved that it runs on its Device, if it did. A Session that only presented the Device's identifiers has none."
                 }
             },
             "additionalProperties": false,
@@ -9342,6 +9353,33 @@
             "type": "object",
             "title": "Backend",
             "description": "Backend is the actual upstream that is reachable from the connected Session's host"
+        },
+        "octelium.api.main.core.v1.Session.Status.DeviceProof": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "PROBE",
+                        "HARDWARE_KEY"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the type of the DeviceProof"
+                },
+                "bindingUID": {
+                    "type": "string",
+                    "description": "BindingUID is the UID of the Binding that a PROBE DeviceProof applies to. The DeviceProof does not apply to any other Binding of the Device."
+                },
+                "provedAt": {
+                    "type": "string",
+                    "description": "ProvedAt is the timestamp at which the Session produced the DeviceProof",
+                    "format": "date-time"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Device Proof",
+            "description": "DeviceProof is how the Session proved that it runs on its Device"
         },
         "octelium.api.main.core.v1.Session.Status.LastConnection": {
             "properties": {

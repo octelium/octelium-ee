@@ -35,14 +35,29 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type tstManager struct{}
+type tstManager struct {
+	isPlatformProbe bool
+}
 
 func (m *tstManager) Type() devicemgrcommon.ProviderType {
 	return enterprisev1.DeviceManager_Status_CROWDSTRIKE
 }
 
 func (m *tstManager) IdentityProbes() []*devicemgrcommon.Probe {
-	return nil
+	ret := &devicemgrcommon.Probe{
+		ID:         "probe",
+		OSType:     corev1.Device_Status_LINUX,
+		RunCommand: &devicemgrcommon.RunCommand{Command: "/opt/agent"},
+	}
+
+	if m.isPlatformProbe {
+		ret.RunCommand = nil
+		ret.PlatformIdentifier = &devicemgrcommon.PlatformIdentifier{
+			Kind: corev1.ClusterConfig_Status_Device_Probe_PlatformIdentifier_HARDWARE_UUID,
+		}
+	}
+
+	return []*devicemgrcommon.Probe{ret}
 }
 
 func (m *tstManager) ParseExternalID(osType corev1.Device_Status_OSType, results []*devicemgrcommon.ProbeResult) (string, error) {
@@ -82,9 +97,18 @@ func (e *tstEvaluator) MatchesDevice(ctx context.Context, condition *corev1.Cond
 
 type countingCore struct {
 	rcorev1.ResourceServiceClient
-	getDevice  atomic.Int32
-	getUser    atomic.Int32
-	getUserErr atomic.Int32
+	getDevice        atomic.Int32
+	getUser          atomic.Int32
+	getUserErr       atomic.Int32
+	updateSessionErr atomic.Int32
+}
+
+func (c *countingCore) UpdateSession(ctx context.Context, req *corev1.Session, opts ...grpc.CallOption) (*corev1.Session, error) {
+	if c.updateSessionErr.Load() > 0 {
+		c.updateSessionErr.Add(-1)
+		return nil, status.Error(codes.Unavailable, "unavailable")
+	}
+	return c.ResourceServiceClient.UpdateSession(ctx, req, opts...)
 }
 
 func (c *countingCore) GetDevice(ctx context.Context, req *rmetav1.GetOptions, opts ...grpc.CallOption) (*corev1.Device, error) {
@@ -263,6 +287,39 @@ func (e *tstEnv) reconcile(t *testing.T, dev *corev1.Device) *corev1.Device {
 	err := e.ctrl.ReconcileDevice(e.ctx, dev)
 	assert.Nil(t, err, "%+v", err)
 	return e.getDevice(t, dev)
+}
+
+func (e *tstEnv) createSession(t *testing.T, dev *corev1.Device) *corev1.Session {
+	sess, err := e.octeliumC.CoreC().CreateSession(e.ctx, &corev1.Session{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec: &corev1.Session_Spec{
+			State: corev1.Session_Spec_ACTIVE,
+		},
+		Status: &corev1.Session_Status{
+			Type:      corev1.Session_Status_CLIENT,
+			UserRef:   dev.Status.UserRef,
+			DeviceRef: umetav1.GetObjectReference(dev),
+		},
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	return sess
+}
+
+func (e *tstEnv) getDeviceProof(t *testing.T, sess *corev1.Session) *corev1.Session_Status_DeviceProof {
+	ret, err := e.octeliumC.CoreC().GetSession(e.ctx, &rmetav1.GetOptions{Uid: sess.Metadata.Uid})
+	assert.Nil(t, err)
+	return ret.Status.DeviceProof
+}
+
+func tstAssertBinding(t *testing.T, binding *corev1.Device_Status_Binding,
+	isOwnerMatched bool, assurance corev1.Device_Status_Binding_Assurance) {
+	t.Helper()
+
+	assert.Equal(t, isOwnerMatched, binding.IsOwnerMatched)
+	assert.Equal(t, assurance, binding.Assurance)
 }
 
 func tstDeviceManager(name string, spec *enterprisev1.DeviceManager_Spec) *enterprisev1.DeviceManager {
@@ -536,14 +593,14 @@ func TestReconcileDeviceOwnerMatch(t *testing.T) {
 	{
 		dev := env.reconcile(t, env.createDevice(t, "SERIAL-1", "user@example.com"))
 		assert.Equal(t, ownerB.UID(), dev.Status.Binding.OwnerRef.Uid)
-		assert.Equal(t, corev1.Device_Status_Binding_LOW, dev.Status.Binding.Confidence)
+		tstAssertBinding(t, dev.Status.Binding, false, corev1.Device_Status_Binding_IDENTIFIER)
 	}
 
 	{
 		dev := env.reconcile(t, env.createDevice(t, "SERIAL-2", "Owner@Example.com"))
 		assert.Equal(t, "uid-dm-a", dev.Status.Binding.OwnerRef.Uid)
 		assert.Equal(t, "a-2", dev.Status.Binding.ExternalID)
-		assert.Equal(t, corev1.Device_Status_Binding_HIGH, dev.Status.Binding.Confidence)
+		tstAssertBinding(t, dev.Status.Binding, true, corev1.Device_Status_Binding_IDENTIFIER)
 		assert.Equal(t, []corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_OWNER_EMAIL,
 			corev1.Device_Status_Binding_SERIAL_NUMBER,
@@ -614,7 +671,7 @@ func TestReconcileDeviceOwnerLinking(t *testing.T) {
 		binding := medium.Status.Binding
 		assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, binding.State)
 		assert.Equal(t, "alice-1", binding.ExternalID)
-		assert.Equal(t, corev1.Device_Status_Binding_MEDIUM, binding.Confidence)
+		tstAssertBinding(t, binding, true, corev1.Device_Status_Binding_OWNER_ONLY)
 		assert.Equal(t, []corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_OWNER_EMAIL,
 		}, binding.Evidence)
@@ -626,7 +683,7 @@ func TestReconcileDeviceOwnerLinking(t *testing.T) {
 		binding := high.Status.Binding
 		assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, binding.State)
 		assert.Equal(t, "alice-1", binding.ExternalID)
-		assert.Equal(t, corev1.Device_Status_Binding_HIGH, binding.Confidence)
+		tstAssertBinding(t, binding, true, corev1.Device_Status_Binding_IDENTIFIER)
 
 		dev := env.getDevice(t, medium)
 		assert.Equal(t, corev1.Device_Status_Binding_CONFLICT, dev.Status.Binding.State)
@@ -645,14 +702,14 @@ func TestReconcileDeviceOwnerLinking(t *testing.T) {
 		owner = newOwner(entries(aliceEntry(""))...)
 		dev := env.reconcile(t, high)
 		assert.Equal(t, corev1.Device_Status_Binding_VALID, dev.Status.Binding.Validity)
-		assert.Equal(t, corev1.Device_Status_Binding_LOW, dev.Status.Binding.Confidence)
+		tstAssertBinding(t, dev.Status.Binding, false, corev1.Device_Status_Binding_IDENTIFIER)
 		assert.Equal(t, []corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_SERIAL_NUMBER,
 		}, dev.Status.Binding.Evidence)
 
 		owner = newOwner(entries(aliceEntry("alice@example.com"))...)
 		dev = env.reconcile(t, dev)
-		assert.Equal(t, corev1.Device_Status_Binding_HIGH, dev.Status.Binding.Confidence)
+		tstAssertBinding(t, dev.Status.Binding, true, corev1.Device_Status_Binding_IDENTIFIER)
 
 		owner = newOwner(entries(aliceEntry("eve@example.com"))...)
 		dev = env.reconcile(t, dev)
@@ -667,14 +724,14 @@ func TestReconcileDeviceOwnerLinking(t *testing.T) {
 		owner = newOwner(entries(aliceEntry("alice@example.com"))...)
 		other = env.reconcile(t, other)
 		assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, other.Status.Binding.State)
-		assert.Equal(t, corev1.Device_Status_Binding_HIGH, other.Status.Binding.Confidence)
+		tstAssertBinding(t, other.Status.Binding, true, corev1.Device_Status_Binding_IDENTIFIER)
 		assert.Equal(t, corev1.Device_Status_Binding_CONFLICT, env.getDevice(t, high).Status.Binding.State)
 	}
 
 	{
 		dev := env.reconcile(t, env.createDevice(t, "", "bob@example.com"))
 		assert.Equal(t, "bob-1", dev.Status.Binding.ExternalID)
-		assert.Equal(t, corev1.Device_Status_Binding_MEDIUM, dev.Status.Binding.Confidence)
+		tstAssertBinding(t, dev.Status.Binding, true, corev1.Device_Status_Binding_OWNER_ONLY)
 
 		dev = env.updateDevice(t, dev, func(dev *corev1.Device) {
 			dev.Status.SerialNumber = "SERIAL-OTHER"
@@ -700,7 +757,7 @@ func TestReconcileDeviceOwnerLinking(t *testing.T) {
 		})
 		dev = env.reconcile(t, dev)
 		assert.Equal(t, "carol-1", dev.Status.Binding.ExternalID)
-		assert.Equal(t, corev1.Device_Status_Binding_HIGH, dev.Status.Binding.Confidence)
+		tstAssertBinding(t, dev.Status.Binding, true, corev1.Device_Status_Binding_PROVIDER_ID)
 		assert.Equal(t, []corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_OWNER_EMAIL,
 			corev1.Device_Status_Binding_PROBE,
@@ -709,7 +766,7 @@ func TestReconcileDeviceOwnerLinking(t *testing.T) {
 		dev = env.reconcile(t, env.updateDevice(t, dev, func(dev *corev1.Device) {
 			dev.Status.ProbeAttempt = nil
 		}))
-		assert.Equal(t, corev1.Device_Status_Binding_HIGH, dev.Status.Binding.Confidence)
+		tstAssertBinding(t, dev.Status.Binding, true, corev1.Device_Status_Binding_PROVIDER_ID)
 		assert.Contains(t, dev.Status.Binding.Evidence, corev1.Device_Status_Binding_PROBE)
 	}
 
@@ -733,7 +790,7 @@ func TestReconcileDeviceOwnerLinking(t *testing.T) {
 		}))
 		assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, dev.Status.Binding.State)
 		assert.Equal(t, "frank-2", dev.Status.Binding.ExternalID)
-		assert.Equal(t, corev1.Device_Status_Binding_MEDIUM, dev.Status.Binding.Confidence)
+		tstAssertBinding(t, dev.Status.Binding, true, corev1.Device_Status_Binding_OWNER_ONLY)
 		assert.Equal(t, []corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_OWNER_EMAIL,
 			corev1.Device_Status_Binding_HOSTNAME,
@@ -748,7 +805,7 @@ func TestReconcileDeviceTakeOverLost(t *testing.T) {
 
 	holder := env.reconcile(t, env.createDevice(t, "SERIAL-1", "user1@example.com"))
 	assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, holder.Status.Binding.State)
-	assert.Equal(t, corev1.Device_Status_Binding_LOW, holder.Status.Binding.Confidence)
+	tstAssertBinding(t, holder.Status.Binding, false, corev1.Device_Status_Binding_IDENTIFIER)
 
 	dev := env.reconcile(t, env.createDevice(t, "SERIAL-1", "user2@example.com"))
 	assert.Equal(t, corev1.Device_Status_Binding_CONFLICT, dev.Status.Binding.State)
@@ -798,7 +855,7 @@ func TestReconcileDeviceProbe(t *testing.T) {
 		dev = env.reconcile(t, dev)
 		assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, dev.Status.Binding.State)
 		assert.Equal(t, "p-2", dev.Status.Binding.ExternalID)
-		assert.Equal(t, corev1.Device_Status_Binding_LOW, dev.Status.Binding.Confidence)
+		tstAssertBinding(t, dev.Status.Binding, false, corev1.Device_Status_Binding_PROVIDER_ID)
 		assert.Equal(t, []corev1.Device_Status_Binding_Evidence{
 			corev1.Device_Status_Binding_PROBE,
 		}, dev.Status.Binding.Evidence)
@@ -929,7 +986,7 @@ func TestReconcileDeviceAccepted(t *testing.T) {
 	dev := env.reconcile(t, env.createDevice(t, "SERIAL-1", "owner@example.com"))
 	bindingUID := dev.Status.Binding.Uid
 	assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, dev.Status.Binding.State)
-	assert.Equal(t, corev1.Device_Status_Binding_HIGH, dev.Status.Binding.Confidence)
+	tstAssertBinding(t, dev.Status.Binding, true, corev1.Device_Status_Binding_IDENTIFIER)
 
 	{
 		env.registry.DeleteOwner("uid-dm-a")
@@ -1056,7 +1113,7 @@ func TestReconcileDeviceVerification(t *testing.T) {
 
 		dev := env.reconcile(t, dev)
 		assert.Equal(t, corev1.Device_Status_Binding_SUSPENDED, dev.Status.Binding.Validity)
-		assert.Equal(t, reasonVerificationFailed, dev.Status.Binding.Reason)
+		assert.Equal(t, reasonVerificationContradicted, dev.Status.Binding.Reason)
 		assert.Equal(t, binding.Uid, dev.Status.Binding.Uid)
 		assert.NotNil(t, dev.Status.Posture)
 		assert.Equal(t, []corev1.Device_Status_Binding_Evidence{
@@ -1091,8 +1148,33 @@ func TestReconcileDeviceVerification(t *testing.T) {
 		})
 
 		dev := env.reconcile(t, dev)
-		assert.Equal(t, corev1.Device_Status_Binding_SUSPENDED, dev.Status.Binding.Validity)
-		assert.Equal(t, reasonVerificationFailed, dev.Status.Binding.Reason)
+		assert.Equal(t, corev1.Device_Status_Binding_VALID, dev.Status.Binding.Validity,
+			"a Device that produces no evidence must not be suspended")
+		assert.Empty(t, dev.Status.Binding.Reason)
+		assert.Equal(t, corev1.Device_Status_ProbeAttempt_PROCESSED, dev.Status.ProbeAttempt.State)
+		tstAssertBinding(t, dev.Status.Binding, false, corev1.Device_Status_Binding_PROVIDER_ID)
+
+		env.updateDevice(t, dev, func(dev *corev1.Device) {
+			dev.Status.ProbeAttempt = tstAttempt(owner, corev1.Device_Status_ProbeAttempt_SUBMITTED, time.Now(),
+				tstResult(owner, corev1.Device_Status_ProbeAttempt_Result_OK, "invalid"))
+		})
+
+		dev = env.reconcile(t, dev)
+		assert.Equal(t, corev1.Device_Status_Binding_VALID, dev.Status.Binding.Validity)
+		tstAssertBinding(t, dev.Status.Binding, false, corev1.Device_Status_Binding_PROVIDER_ID)
+	}
+
+	{
+		env.updateDevice(t, dev, func(dev *corev1.Device) {
+			dev.Status.ProbeAttempt = tstAttempt(owner, corev1.Device_Status_ProbeAttempt_SUBMITTED, time.Now(),
+				tstResult(owner, corev1.Device_Status_ProbeAttempt_Result_OK, "unknown-id"))
+		})
+
+		dev := env.reconcile(t, dev)
+		assert.Equal(t, corev1.Device_Status_Binding_SUSPENDED, dev.Status.Binding.Validity,
+			"an identifier that is not the bound entry's contradicts the Binding")
+		assert.Equal(t, reasonVerificationContradicted, dev.Status.Binding.Reason)
+		tstAssertBinding(t, dev.Status.Binding, false, corev1.Device_Status_Binding_IDENTIFIER)
 	}
 
 	{
@@ -1112,8 +1194,25 @@ func TestReconcileDeviceVerification(t *testing.T) {
 		})
 
 		dev := env.reconcile(t, dev)
-		assert.Equal(t, corev1.Device_Status_Binding_SUSPENDED, dev.Status.Binding.Validity)
+		assert.Equal(t, corev1.Device_Status_Binding_VALID, dev.Status.Binding.Validity,
+			"an overdue verification lowers the Assurance and does not suspend the Binding")
 		assert.Equal(t, reasonVerificationOverdue, dev.Status.Binding.Reason)
+		assert.NotNil(t, dev.Status.Posture)
+		tstAssertBinding(t, dev.Status.Binding, false, corev1.Device_Status_Binding_IDENTIFIER)
+		assert.Equal(t, []corev1.Device_Status_Binding_Evidence{
+			corev1.Device_Status_Binding_SERIAL_NUMBER,
+		}, dev.Status.Binding.Evidence)
+
+		env.updateDevice(t, dev, func(dev *corev1.Device) {
+			dev.Status.ProbeAttempt = tstAttempt(owner, corev1.Device_Status_ProbeAttempt_SUBMITTED, time.Now(),
+				tstResult(owner, corev1.Device_Status_ProbeAttempt_Result_OK, "hw-uuid-1"))
+		})
+
+		dev = env.reconcile(t, dev)
+		assert.Equal(t, corev1.Device_Status_Binding_VALID, dev.Status.Binding.Validity)
+		assert.Empty(t, dev.Status.Binding.Reason)
+		tstAssertBinding(t, dev.Status.Binding, false, corev1.Device_Status_Binding_PROVIDER_ID)
+		assert.True(t, dev.Status.Binding.NextVerificationAt.AsTime().After(time.Now()))
 
 		env.setOwner("dm-v", nil, tstEntry("v-1", "serial-1", "hw-uuid-1"))
 		dev = env.reconcile(t, dev)
@@ -1132,6 +1231,223 @@ func TestReconcileDeviceVerification(t *testing.T) {
 		})
 		assert.Equal(t, corev1.Device_Status_Binding_VALID, env.reconcile(t, dev).Status.Binding.Validity)
 	}
+}
+
+func TestReconcileDevicePendingProbe(t *testing.T) {
+	env := newTstEnv(t)
+
+	owner := env.setOwner("dm-q", nil, tstEntry("q-1", "serial-1"),
+		tstOwnedEntry("q-2", "", "owner@example.com"))
+
+	{
+		dev := env.createDevice(t, "SERIAL-1", "user@example.com")
+		env.updateDevice(t, dev, func(dev *corev1.Device) {
+			dev.Status.ProbeAttempt = tstAttempt(owner, corev1.Device_Status_ProbeAttempt_ISSUED, time.Now())
+		})
+
+		res := env.reconcile(t, dev)
+		assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, res.Status.Binding.GetState(),
+			"an identifier must not wait for a pending probe")
+		tstAssertBinding(t, res.Status.Binding, false, corev1.Device_Status_Binding_IDENTIFIER)
+	}
+
+	{
+		dev := env.createDevice(t, "", "owner@example.com")
+		env.updateDevice(t, dev, func(dev *corev1.Device) {
+			dev.Status.ProbeAttempt = tstAttempt(owner, corev1.Device_Status_ProbeAttempt_ISSUED, time.Now())
+		})
+
+		res := env.reconcile(t, dev)
+		assert.Nil(t, res.Status.Binding, "the owner alone must wait for a pending probe")
+	}
+}
+
+func TestReconcileDeviceVerificationWithoutProbes(t *testing.T) {
+	env := newTstEnv(t)
+
+	env.setOwner("dm-v", &enterprisev1.DeviceManager_Spec{
+		Linking: &enterprisev1.DeviceManager_Spec_Linking{
+			VerificationInterval: &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 1}},
+		},
+	}, tstEntry("v-1", "serial-1"))
+
+	dev := env.createDevice(t, "SERIAL-1", "user@example.com")
+	dev = env.updateDevice(t, dev, func(dev *corev1.Device) {
+		dev.Status.OsType = corev1.Device_Status_MAC
+	})
+
+	dev = env.reconcile(t, dev)
+	assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, dev.Status.Binding.State)
+	assert.Nil(t, dev.Status.Binding.NextVerificationAt,
+		"a Device of an OS without Probes has nothing to verify")
+
+	env.updateDevice(t, dev, func(dev *corev1.Device) {
+		dev.Status.Binding.NextVerificationAt = pbutils.Timestamp(time.Now().Add(-time.Hour))
+	})
+
+	dev = env.reconcile(t, dev)
+	assert.Equal(t, corev1.Device_Status_Binding_VALID, dev.Status.Binding.Validity)
+	assert.Empty(t, dev.Status.Binding.Reason)
+	assert.Nil(t, dev.Status.Binding.NextVerificationAt)
+}
+
+func TestReconcileDeviceSessionProof(t *testing.T) {
+	env := newTstEnv(t)
+
+	owner := env.setOwner("dm-p", nil, tstEntry("p-1", "serial-1", "agent-1"),
+		tstEntry("p-2", "serial-2", "agent-2"))
+
+	dev := env.reconcile(t, env.createDevice(t, "SERIAL-1", "user@example.com"))
+	tstAssertBinding(t, dev.Status.Binding, false, corev1.Device_Status_Binding_IDENTIFIER)
+
+	submit := func(t *testing.T, sess *corev1.Session, status corev1.Device_Status_ProbeAttempt_Result_Status, text string) {
+		t.Helper()
+
+		env.updateDevice(t, dev, func(dev *corev1.Device) {
+			dev.Status.ProbeAttempt = tstAttempt(owner, corev1.Device_Status_ProbeAttempt_SUBMITTED, time.Now(),
+				tstResult(owner, status, text))
+			dev.Status.ProbeAttempt.SessionRef = umetav1.GetObjectReference(sess)
+		})
+	}
+
+	t.Run("ProbeResolvesToTheEntry", func(t *testing.T) {
+		sess := env.createSession(t, dev)
+		submit(t, sess, corev1.Device_Status_ProbeAttempt_Result_OK, "agent-1")
+
+		res := env.reconcile(t, dev)
+		assert.Equal(t, corev1.Device_Status_Binding_VALID, res.Status.Binding.Validity)
+		assert.Equal(t, corev1.Device_Status_ProbeAttempt_PROCESSED, res.Status.ProbeAttempt.State)
+		tstAssertBinding(t, res.Status.Binding, false, corev1.Device_Status_Binding_PROVIDER_ID)
+
+		proof := env.getDeviceProof(t, sess)
+		assert.Equal(t, corev1.Session_Status_DeviceProof_PROBE, proof.GetType())
+		assert.Equal(t, res.Status.Binding.Uid, proof.GetBindingUID())
+		assert.True(t, proof.GetProvedAt().IsValid())
+	})
+
+	t.Run("NoUsableResult", func(t *testing.T) {
+		sess := env.createSession(t, dev)
+		submit(t, sess, corev1.Device_Status_ProbeAttempt_Result_PERMISSION_REQUIRED, "")
+
+		res := env.reconcile(t, dev)
+		assert.Equal(t, corev1.Device_Status_Binding_VALID, res.Status.Binding.Validity,
+			"a Session that cannot probe must not suspend the Binding")
+		tstAssertBinding(t, res.Status.Binding, false, corev1.Device_Status_Binding_PROVIDER_ID)
+		assert.Nil(t, env.getDeviceProof(t, sess))
+	})
+
+	t.Run("HardwareKeyIsKept", func(t *testing.T) {
+		sess := env.createSession(t, dev)
+		sess.Status.DeviceProof = &corev1.Session_Status_DeviceProof{
+			Type: corev1.Session_Status_DeviceProof_HARDWARE_KEY,
+		}
+		_, err := env.octeliumC.CoreC().UpdateSession(env.ctx, sess)
+		assert.Nil(t, err)
+
+		submit(t, sess, corev1.Device_Status_ProbeAttempt_Result_OK, "agent-1")
+		env.reconcile(t, dev)
+
+		assert.Equal(t, corev1.Session_Status_DeviceProof_HARDWARE_KEY, env.getDeviceProof(t, sess).GetType())
+	})
+
+	t.Run("SessionOfAnotherDevice", func(t *testing.T) {
+		other := env.createDevice(t, "SERIAL-2", "other@example.com")
+		sess := env.createSession(t, other)
+
+		submit(t, sess, corev1.Device_Status_ProbeAttempt_Result_OK, "agent-1")
+		env.reconcile(t, dev)
+
+		assert.Nil(t, env.getDeviceProof(t, sess))
+	})
+
+	t.Run("DeletedSession", func(t *testing.T) {
+		sess := env.createSession(t, dev)
+		_, err := env.octeliumC.CoreC().DeleteSession(env.ctx, &rmetav1.DeleteOptions{Uid: sess.Metadata.Uid})
+		assert.Nil(t, err)
+
+		submit(t, sess, corev1.Device_Status_ProbeAttempt_Result_OK, "agent-1")
+
+		res := env.reconcile(t, dev)
+		assert.Equal(t, corev1.Device_Status_ProbeAttempt_PROCESSED, res.Status.ProbeAttempt.State)
+	})
+
+	t.Run("FailedUpdateIsRetried", func(t *testing.T) {
+		sess := env.createSession(t, dev)
+		submit(t, sess, corev1.Device_Status_ProbeAttempt_Result_OK, "agent-1")
+
+		client := env.useCountingClient()
+		t.Cleanup(func() {
+			env.ctrl.octeliumC = env.octeliumC
+		})
+
+		client.core.updateSessionErr.Store(1)
+
+		res := env.reconcile(t, dev)
+		assert.Equal(t, corev1.Device_Status_ProbeAttempt_SUBMITTED, res.Status.ProbeAttempt.State,
+			"the attempt must stay pending so that the Session can still get its proof")
+		assert.Nil(t, env.getDeviceProof(t, sess))
+
+		res = env.reconcile(t, dev)
+		assert.Equal(t, corev1.Device_Status_ProbeAttempt_PROCESSED, res.Status.ProbeAttempt.State)
+		assert.Equal(t, corev1.Session_Status_DeviceProof_PROBE, env.getDeviceProof(t, sess).GetType())
+	})
+
+	t.Run("Contradiction", func(t *testing.T) {
+		sess := env.createSession(t, dev)
+		submit(t, sess, corev1.Device_Status_ProbeAttempt_Result_OK, "agent-2")
+
+		res := env.reconcile(t, dev)
+		assert.Equal(t, corev1.Device_Status_Binding_SUSPENDED, res.Status.Binding.Validity)
+		assert.Equal(t, reasonVerificationContradicted, res.Status.Binding.Reason)
+		assert.Nil(t, env.getDeviceProof(t, sess))
+	})
+
+	t.Run("NewBinding", func(t *testing.T) {
+		owner := env.setOwner("dm-n", nil, tstEntry("n-1", "serial-n", "agent-n"))
+
+		dev := env.createDevice(t, "", "new@example.com")
+		sess := env.createSession(t, dev)
+
+		env.updateDevice(t, dev, func(dev *corev1.Device) {
+			dev.Status.ProbeAttempt = tstAttempt(owner, corev1.Device_Status_ProbeAttempt_SUBMITTED, time.Now(),
+				tstResult(owner, corev1.Device_Status_ProbeAttempt_Result_OK, "agent-n"))
+			dev.Status.ProbeAttempt.SessionRef = umetav1.GetObjectReference(sess)
+		})
+
+		res := env.reconcile(t, dev)
+		assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, res.Status.Binding.State)
+		tstAssertBinding(t, res.Status.Binding, false, corev1.Device_Status_Binding_PROVIDER_ID)
+
+		proof := env.getDeviceProof(t, sess)
+		assert.Equal(t, corev1.Session_Status_DeviceProof_PROBE, proof.GetType())
+		assert.Equal(t, res.Status.Binding.Uid, proof.GetBindingUID())
+	})
+
+	t.Run("HardwareProbeIsNoProof", func(t *testing.T) {
+		platform := devicemgrcommon.NewOwner(&tstManager{isPlatformProbe: true},
+			tstDeviceManager("dm-h", &enterprisev1.DeviceManager_Spec{}),
+			devicemgrcommon.NewFleet([]*devicemgrcommon.Entry{tstEntry("h-1", "serial-h", "uuid-h")}),
+			time.Now(), time.Hour)
+		env.registry.SetOwner(platform)
+
+		dev := env.createDevice(t, "", "hardware@example.com")
+		sess := env.createSession(t, dev)
+
+		env.updateDevice(t, dev, func(dev *corev1.Device) {
+			dev.Status.ProbeAttempt = tstAttempt(platform, corev1.Device_Status_ProbeAttempt_SUBMITTED, time.Now(),
+				tstResult(platform, corev1.Device_Status_ProbeAttempt_Result_OK, "uuid-h"))
+			dev.Status.ProbeAttempt.SessionRef = umetav1.GetObjectReference(sess)
+		})
+
+		res := env.reconcile(t, dev)
+		assert.Equal(t, corev1.Device_Status_Binding_ACCEPTED, res.Status.Binding.State)
+		assert.Equal(t, []corev1.Device_Status_Binding_Evidence{
+			corev1.Device_Status_Binding_PROBE,
+		}, res.Status.Binding.Evidence)
+		tstAssertBinding(t, res.Status.Binding, false, corev1.Device_Status_Binding_IDENTIFIER)
+		assert.Nil(t, env.getDeviceProof(t, sess),
+			"a hardware UUID is not an identifier that the provider issued")
+	})
 }
 
 func TestReconcileDeviceLastSeen(t *testing.T) {

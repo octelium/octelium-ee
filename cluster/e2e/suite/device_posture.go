@@ -138,7 +138,8 @@ func testDeviceManagerPostureLifecycle(t *testing.T, ch *harness.H) {
 		corev1.Device_Status_Binding_VALID, corev1.Device_Status_Posture_PASS)
 	bindingUID := bound.Status.Binding.Uid
 	require.Equal(t, fleetHardwareUUID, bound.Status.Binding.ExternalID)
-	assert.Equal(t, corev1.Device_Status_Binding_LOW, bound.Status.Binding.Confidence)
+	assert.False(t, bound.Status.Binding.IsOwnerMatched)
+	assert.Equal(t, corev1.Device_Status_Binding_IDENTIFIER, bound.Status.Binding.Assurance)
 	assert.Equal(t, []corev1.Device_Status_Binding_Evidence{corev1.Device_Status_Binding_PROBE},
 		bound.Status.Binding.Evidence)
 	h.WaitAllowed(t, client)

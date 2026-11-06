@@ -198,7 +198,7 @@ const Ownership = CoreP.Device_Status_Posture_Ownership;
 const DeviceClass = CoreP.Device_Status_Posture_DeviceClass;
 const Binding_State = CoreP.Device_Status_Binding_State;
 const Binding_Validity = CoreP.Device_Status_Binding_Validity;
-const Binding_Confidence = CoreP.Device_Status_Binding_Confidence;
+const Binding_Assurance = CoreP.Device_Status_Binding_Assurance;
 const Binding_Evidence = CoreP.Device_Status_Binding_Evidence;
 
 const EVIDENCE_LABELS: Partial<Record<CoreP.Device_Status_Binding_Evidence, string>> = {
@@ -210,12 +210,20 @@ const EVIDENCE_LABELS: Partial<Record<CoreP.Device_Status_Binding_Evidence, stri
   [Binding_Evidence.HOSTNAME]: "Hostname",
 };
 
-const confidenceTone = (
-  confidence: CoreP.Device_Status_Binding_Confidence,
+const ASSURANCE_LABELS: Partial<Record<CoreP.Device_Status_Binding_Assurance, string>> = {
+  [Binding_Assurance.OWNER_ONLY]: "Owner only",
+  [Binding_Assurance.IDENTIFIER]: "Identifier",
+  [Binding_Assurance.PROVIDER_ID]: "Provider ID",
+  [Binding_Assurance.SIGNED]: "Signed",
+  [Binding_Assurance.HARDWARE]: "Hardware",
+};
+
+const assuranceTone = (
+  assurance: CoreP.Device_Status_Binding_Assurance,
 ): OverviewTone =>
-  confidence === Binding_Confidence.HIGH
+  assurance >= Binding_Assurance.PROVIDER_ID
     ? "success"
-    : confidence === Binding_Confidence.MEDIUM
+    : assurance === Binding_Assurance.IDENTIFIER
       ? "neutral"
       : "warning";
 
@@ -688,15 +696,15 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
               ),
             },
             ...(binding.state === Binding_State.ACCEPTED &&
-            binding.confidence !== Binding_Confidence.CONFIDENCE_UNKNOWN
+            binding.assurance !== Binding_Assurance.ASSURANCE_UNKNOWN
               ? [
                   {
-                    label: "Confidence",
+                    label: "Assurance",
                     group: "Device manager",
                     value: (
                       <div className="flex flex-wrap gap-1">
-                        <TonePill tone={confidenceTone(binding.confidence)}>
-                          {enumLabel(Binding_Confidence, binding.confidence)}
+                        <TonePill tone={assuranceTone(binding.assurance)}>
+                          {ASSURANCE_LABELS[binding.assurance] ?? "Unknown"}
                         </TonePill>
                         {binding.evidence.map((evidence) => (
                           <TonePill key={evidence} tone="neutral">
@@ -704,6 +712,15 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
                           </TonePill>
                         ))}
                       </div>
+                    ),
+                  },
+                  {
+                    label: "Owner",
+                    group: "Device manager",
+                    value: (
+                      <TonePill tone={binding.isOwnerMatched ? "success" : "neutral"}>
+                        {binding.isOwnerMatched ? "Confirmed by provider" : "Not reported"}
+                      </TonePill>
                     ),
                   },
                 ]

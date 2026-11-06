@@ -263,11 +263,19 @@ const SessionHero = (props: { item: CoreC.Session }) => {
   );
 };
 
+const getDeviceProofLabel = (type?: CoreP.Session_Status_DeviceProof_Type) =>
+  type === CoreP.Session_Status_DeviceProof_Type.HARDWARE_KEY
+    ? "Proved by hardware key"
+    : type === CoreP.Session_Status_DeviceProof_Type.PROBE
+      ? "Proved by probe"
+      : undefined;
+
 export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
   const { item } = props;
   const status = item.status;
   const info = status?.authentication?.info;
   const aal = getAALMeta(info?.aal);
+  const deviceProof = getDeviceProofLabel(status?.deviceProof?.type);
   const cordiumInfo = getCordiumSessionInfo(item);
   const workspaceRef = workspaceRefOf(cordiumInfo?.workspaceRef);
   const spaceRef = spaceRefOf(cordiumInfo?.spaceRef);
@@ -299,7 +307,10 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
         primary: true,
         icon: Laptop,
         value: status?.deviceRef?.name || status?.deviceRef?.uid ? (
-          <ResourceListLabel itemRef={status.deviceRef} />
+          <span className="flex flex-wrap items-center gap-1.5">
+            <ResourceListLabel itemRef={status.deviceRef} />
+            {deviceProof && <TonePill tone="success">{deviceProof}</TonePill>}
+          </span>
         ) : (
           <MutedValue>No Device</MutedValue>
         ),

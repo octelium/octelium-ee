@@ -43,19 +43,19 @@ const (
 )
 
 const (
-	reasonAmbiguous           = "Ambiguous"
-	reasonSourcesDisagree     = "SourcesDisagree"
-	reasonOwnerAmbiguous      = "OwnerAmbiguous"
-	reasonConflict            = "Conflict"
-	reasonSuperseded          = "Superseded"
-	reasonNotApplicable       = "NotApplicable"
-	reasonEntryNotFound       = "EntryNotFound"
-	reasonEntryAmbiguous      = "EntryAmbiguous"
-	reasonOwnerMismatch       = "OwnerMismatch"
-	reasonIdentityMismatch    = "IdentityMismatch"
-	reasonVerificationFailed  = "VerificationFailed"
-	reasonVerificationOverdue = "VerificationOverdue"
-	reasonDisabled            = "Disabled"
+	reasonAmbiguous                = "Ambiguous"
+	reasonSourcesDisagree          = "SourcesDisagree"
+	reasonOwnerAmbiguous           = "OwnerAmbiguous"
+	reasonConflict                 = "Conflict"
+	reasonSuperseded               = "Superseded"
+	reasonNotApplicable            = "NotApplicable"
+	reasonEntryNotFound            = "EntryNotFound"
+	reasonEntryAmbiguous           = "EntryAmbiguous"
+	reasonOwnerMismatch            = "OwnerMismatch"
+	reasonIdentityMismatch         = "IdentityMismatch"
+	reasonVerificationContradicted = "VerificationContradicted"
+	reasonVerificationOverdue      = "VerificationOverdue"
+	reasonDisabled                 = "Disabled"
 )
 
 type Resolver interface {
@@ -428,8 +428,8 @@ func (c *Controller) evaluateOwner(
 		}
 	case devicemgrcommon.LinkStateMatched:
 		switch {
-		case link.Confidence == corev1.Device_Status_Binding_LOW && devicemgrcommon.RequireOwnerMatch(owner.DM):
-		case link.Confidence == corev1.Device_Status_Binding_MEDIUM && isAttemptPending(dev, owner.UID(), now):
+		case !devicemgrcommon.IsOwnerMatched(link.Evidence) && devicemgrcommon.RequireOwnerMatch(owner.DM):
+		case !devicemgrcommon.HasDeviceEvidence(link.Evidence) && isAttemptPending(dev, owner.UID(), now):
 			return &decision{kind: decisionWait}
 		default:
 			return &decision{
@@ -486,7 +486,7 @@ func (c *Controller) accept(
 	}
 
 	if holder != nil {
-		if !canTakeOver(holder.Status.Binding, cand.link.Confidence) {
+		if !canTakeOver(holder.Status.Binding, cand.link.Evidence) {
 			changed := setUnboundBinding(dev, cand.owner, externalID,
 				corev1.Device_Status_Binding_CONFLICT, reasonConflict,
 				fmt.Sprintf("The inventory entry is already bound to the Device %s", holder.Metadata.Name))
@@ -510,15 +510,23 @@ func (c *Controller) accept(
 		Validity:       corev1.Device_Status_Binding_VALID,
 		AcceptedAt:     pbutils.Timestamp(now),
 		LastVerifiedAt: pbutils.Timestamp(now),
-		Confidence:     cand.link.Confidence,
 		Evidence:       cand.link.Evidence,
+		Assurance:      devicemgrcommon.GetAssurance(cand.link.Evidence, cand.owner.Manager, dev.Status.OsType),
+		IsOwnerMatched: devicemgrcommon.IsOwnerMatched(cand.link.Evidence),
 	}
-	if interval := devicemgrcommon.VerificationInterval(cand.owner.DM); interval > 0 {
+	if interval := getVerificationInterval(cand.owner, dev); interval > 0 {
 		binding.NextVerificationAt = pbutils.Timestamp(now.Add(interval))
 	}
 
 	dev.Status.Binding = binding
 	dev.Status.Posture = devicemgrcommon.MaterializePosture(cand.owner, cand.link.Entry)
+
+	if slices.Contains(binding.Evidence, corev1.Device_Status_Binding_PROBE) {
+		if err := c.setSessionProof(ctx, dev, cand.owner, now); err != nil {
+			return err
+		}
+	}
+
 	markAttemptProcessed(dev)
 
 	if err := c.updateDevice(ctx, dev); err != nil {
@@ -529,13 +537,62 @@ func (c *Controller) accept(
 		zap.String("device", dev.Metadata.Name),
 		zap.String("deviceManager", cand.owner.Name()),
 		zap.String("externalID", externalID),
-		zap.String("confidence", binding.Confidence.String()))
+		zap.String("assurance", binding.Assurance.String()),
+		zap.Bool("isOwnerMatched", binding.IsOwnerMatched))
 
 	return nil
 }
 
-func canTakeOver(holder *corev1.Device_Status_Binding, confidence corev1.Device_Status_Binding_Confidence) bool {
-	return holder.GetValidity() == corev1.Device_Status_Binding_LOST || holder.GetConfidence() < confidence
+func canTakeOver(holder *corev1.Device_Status_Binding, evidence []corev1.Device_Status_Binding_Evidence) bool {
+	return holder.GetValidity() == corev1.Device_Status_Binding_LOST ||
+		devicemgrcommon.GetEvidenceRank(holder.GetEvidence()) < devicemgrcommon.GetEvidenceRank(evidence)
+}
+
+func (c *Controller) setSessionProof(
+	ctx context.Context,
+	dev *corev1.Device,
+	owner *devicemgrcommon.Owner,
+	now time.Time,
+) error {
+	sessionUID := dev.Status.ProbeAttempt.GetSessionRef().GetUid()
+	if sessionUID == "" || !devicemgrcommon.HasProviderProbe(owner.Manager, dev.Status.OsType) {
+		return nil
+	}
+
+	err := retry.OnError(retry.DefaultRetry, grpcerr.IsResourceChanged, func() error {
+		sess, err := c.octeliumC.CoreC().GetSession(ctx, &rmetav1.GetOptions{Uid: sessionUID})
+		if err != nil {
+			return err
+		}
+
+		if sess.Status.DeviceRef.GetUid() != dev.Metadata.Uid ||
+			sess.Status.DeviceProof.GetType() == corev1.Session_Status_DeviceProof_HARDWARE_KEY {
+			return nil
+		}
+
+		sess.Status.DeviceProof = &corev1.Session_Status_DeviceProof{
+			Type:       corev1.Session_Status_DeviceProof_PROBE,
+			BindingUID: dev.Status.Binding.Uid,
+			ProvedAt:   pbutils.Timestamp(now),
+		}
+
+		_, err = c.octeliumC.CoreC().UpdateSession(ctx, sess)
+		return err
+	})
+	if err != nil && !grpcerr.IsNotFound(err) {
+		return errors.Wrap(err, "Could not set the DeviceProof of the Session")
+	}
+
+	return nil
+}
+
+func getVerificationInterval(owner *devicemgrcommon.Owner, dev *corev1.Device) time.Duration {
+	interval := devicemgrcommon.VerificationInterval(owner.DM)
+	if interval > 0 && !devicemgrcommon.HasProbe(owner.Manager, dev.Status.OsType) {
+		return 0
+	}
+
+	return interval
 }
 
 func (c *Controller) supersede(ctx context.Context, holder *corev1.Device, dev *corev1.Device) error {
@@ -629,11 +686,17 @@ func (c *Controller) reconcileAccepted(ctx context.Context, cache *reconcileCach
 	reason := check.reason
 	message := check.message
 
-	interval := devicemgrcommon.VerificationInterval(owner.DM)
+	interval := getVerificationInterval(owner, dev)
 
 	if validity == corev1.Device_Status_Binding_VALID {
 		switch verifyBinding(dev, owner) {
 		case verificationSucceeded:
+			if err := c.setSessionProof(ctx, dev, owner, now); err != nil {
+				zap.L().Warn("Could not prove the Session of the probe attempt",
+					zap.String("device", dev.Metadata.Name), zap.Error(err))
+				return false
+			}
+
 			binding.LastVerifiedAt = pbutils.Timestamp(now)
 			if interval > 0 {
 				binding.NextVerificationAt = pbutils.Timestamp(now.Add(interval))
@@ -641,20 +704,20 @@ func (c *Controller) reconcileAccepted(ctx context.Context, cache *reconcileCach
 			check.evidence = setProbeEvidence(check.evidence, true)
 		case verificationFailed:
 			validity = corev1.Device_Status_Binding_SUSPENDED
-			reason = reasonVerificationFailed
+			reason = reasonVerificationContradicted
 			message = "The probe results do not resolve to the bound inventory entry"
 			check.evidence = setProbeEvidence(check.evidence, false)
 		default:
 			switch {
 			case binding.Validity == corev1.Device_Status_Binding_SUSPENDED &&
-				binding.Reason == reasonVerificationFailed:
+				binding.Reason == reasonVerificationContradicted:
 				validity = binding.Validity
 				reason = binding.Reason
 				message = binding.Message
 			case interval > 0 && isVerificationOverdue(binding, now):
-				validity = corev1.Device_Status_Binding_SUSPENDED
 				reason = reasonVerificationOverdue
 				message = "The Binding has not been verified within its verification interval"
+				check.evidence = setProbeEvidence(check.evidence, false)
 			}
 		}
 	}
@@ -674,7 +737,8 @@ func (c *Controller) reconcileAccepted(ctx context.Context, cache *reconcileCach
 
 	if entry != nil {
 		binding.Evidence = check.evidence
-		binding.Confidence = devicemgrcommon.GetConfidence(check.evidence)
+		binding.Assurance = devicemgrcommon.GetAssurance(check.evidence, owner.Manager, dev.Status.OsType)
+		binding.IsOwnerMatched = devicemgrcommon.IsOwnerMatched(check.evidence)
 	}
 
 	switch {
@@ -802,12 +866,18 @@ func verifyBinding(dev *corev1.Device, owner *devicemgrcommon.Owner) verificatio
 	isVerificationAttempt := attempt.StartedAt.IsValid() && binding.AcceptedAt.IsValid() &&
 		!attempt.StartedAt.AsTime().Before(binding.AcceptedAt.AsTime())
 
-	var match devicemgrcommon.MatchResult
+	var externalID string
 	if results := getAttemptResults(dev)[owner.UID()]; len(results) > 0 {
-		if externalID, err := owner.Manager.ParseExternalID(dev.Status.OsType, results); err == nil && externalID != "" {
-			match = owner.Fleet.MatchProbeID(externalID)
+		if id, err := owner.Manager.ParseExternalID(dev.Status.OsType, results); err == nil {
+			externalID = id
 		}
 	}
+
+	if externalID == "" {
+		return verificationNone
+	}
+
+	match := owner.Fleet.MatchProbeID(externalID)
 
 	switch {
 	case match.State == devicemgrcommon.MatchStateUnique && match.Entry.ExternalID == binding.ExternalID:

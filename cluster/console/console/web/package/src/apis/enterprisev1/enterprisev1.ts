@@ -7087,9 +7087,10 @@ export interface DeviceManager_Spec_Polling {
 /**
  * Linking sets the options of how the Cluster's Devices are bound to the
  * provider's inventory entries. A Device is bound automatically to the
- * single inventory entry that its evidence selects, and the Binding's
- * Confidence records how strongly that evidence ties the entry to both
- * the Device and the Device's User.
+ * single inventory entry that its evidence selects. The Binding's
+ * IsOwnerMatched records whether the provider reports the Device's User
+ * as the owner of the entry, and its Assurance records how the Device is
+ * tied to the entry.
  * The owner email that the provider reports for an entry is the primary
  * evidence, since it is the only one that the Device cannot assert by
  * itself. An entry is owned by the Device's User when one of its owner
@@ -7103,44 +7104,48 @@ export interface DeviceManager_Spec_Polling {
  * DeviceManager's Probes (e.g. the agent ID), the machine ID from which
  * the Device's ID is derived, its serial number and its MAC addresses,
  * select an entry as follows:
- *   - An entry owned by the Device's User is bound with a HIGH
- *     Confidence. The owner email also picks the User's entry among
- *     several entries that share an identifier.
- *   - An entry with no reported owner is bound with a LOW Confidence.
+ *   - An entry owned by the Device's User is bound with IsOwnerMatched
+ *     set. The owner email also picks the User's entry among several
+ *     entries that share an identifier.
+ *   - An entry with no reported owner is bound without IsOwnerMatched.
  *   - An entry owned by another User, or with a reported owner while the
  *     Device's User has no email, is never bound and the Binding becomes
  *     OWNER_MISMATCH, which also prevents lower-priority DeviceManagers
  *     from binding the Device.
  * When no identifier selects an entry and no Probe of the DeviceManager
- * collected an unknown identifier, the Device is bound with a MEDIUM
- * Confidence to the only entry of its User that runs the same OS, whose
+ * collected an unknown identifier, the Device is bound with an OWNER_ONLY
+ * Assurance to the only entry of its User that runs the same OS, whose
  * provider observation is not older than `polling.maxObservationAge` and
  * whose serial number does not differ from the Device's. The Device's
  * hostname narrows several such entries down to one; otherwise the
  * Binding becomes AMBIGUOUS.
- * A Device whose Confidence is higher than the Confidence of the Device
- * that holds the entry takes the entry over, and the other Device's
- * Binding becomes CONFLICT.
+ * A Device takes an entry over from the Device that holds it, whose
+ * Binding then becomes CONFLICT, when its Evidence is stronger: an owner
+ * match with an identifier is stronger than an owner match alone, which
+ * is stronger than an identifier alone.
  *
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking
  */
 export interface DeviceManager_Spec_Linking {
     /**
      * RequireOwnerMatch only binds the inventory entries owned by the
-     * Device's User, i.e. it prevents LOW Confidence Bindings. An entry
-     * with no reported owner, or a Device whose User has no email, is then
-     * not bound to this DeviceManager and the next DeviceManager in the
-     * Cluster's order is evaluated instead. An ACCEPTED Binding whose entry
-     * is no longer owned by the Device's User becomes LOST. It is only
-     * supported by the types that report owners.
+     * Device's User, i.e. it prevents Bindings without IsOwnerMatched. An
+     * entry with no reported owner, or a Device whose User has no email, is
+     * then not bound to this DeviceManager and the next DeviceManager in
+     * the Cluster's order is evaluated instead. An ACCEPTED Binding whose
+     * entry is no longer owned by the Device's User becomes LOST. It is
+     * only supported by the types that report owners.
      *
      * @generated from protobuf field: bool requireOwnerMatch = 1
      */
     requireOwnerMatch: boolean;
     /**
      * VerificationInterval is the interval at which the bound Devices are
-     * probed again to verify their Binding. A failed verification suspends
-     * the Binding and makes its posture unavailable. It is only supported
+     * probed again to verify their Binding. Probe results that contradict
+     * the Binding suspend it and make its posture unavailable. A Device
+     * that is not verified in time loses its PROBE Evidence, which lowers
+     * its Assurance, until it is verified again. It has no effect on an OS
+     * for which the DeviceManager has no Probes, and it is only supported
      * by the types that publish Probes.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration verificationInterval = 2

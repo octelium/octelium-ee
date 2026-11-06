@@ -8298,6 +8298,13 @@ export interface Session_Status {
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requiredAuthenticatorRef = 18
      */
     requiredAuthenticatorRef?: ObjectReference;
+    /**
+     * DeviceProof is how the Session proved that it runs on its Device, if it
+     * did. A Session that only presented the Device's identifiers has none.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Session.Status.DeviceProof deviceProof = 19
+     */
+    deviceProof?: Session_Status_DeviceProof;
 }
 /**
  * Connection is the information of the currently connected client of a
@@ -9131,6 +9138,60 @@ export interface Session_Status_LastConnection {
      * @generated from protobuf field: google.protobuf.Timestamp endedAt = 2
      */
     endedAt?: Timestamp;
+}
+/**
+ * DeviceProof is how the Session proved that it runs on its Device
+ *
+ * @generated from protobuf message octelium.api.main.core.v1.Session.Status.DeviceProof
+ */
+export interface Session_Status_DeviceProof {
+    /**
+     * Type is the type of the DeviceProof
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Session.Status.DeviceProof.Type type = 1
+     */
+    type: Session_Status_DeviceProof_Type;
+    /**
+     * BindingUID is the UID of the Binding that a PROBE DeviceProof applies
+     * to. The DeviceProof does not apply to any other Binding of the Device.
+     *
+     * @generated from protobuf field: string bindingUID = 2
+     */
+    bindingUID: string;
+    /**
+     * ProvedAt is the timestamp at which the Session produced the DeviceProof
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp provedAt = 3
+     */
+    provedAt?: Timestamp;
+}
+/**
+ * Type is the type of the DeviceProof
+ *
+ * @generated from protobuf enum octelium.api.main.core.v1.Session.Status.DeviceProof.Type
+ */
+export enum Session_Status_DeviceProof_Type {
+    /**
+     * TYPE_UNKNOWN is not used
+     *
+     * @generated from protobuf enum value: TYPE_UNKNOWN = 0;
+     */
+    TYPE_UNKNOWN = 0,
+    /**
+     * PROBE means that the Session ran the Probes of its Device's Binding
+     * and that an identifier issued by the provider resolved to the bound
+     * inventory entry
+     *
+     * @generated from protobuf enum value: PROBE = 1;
+     */
+    PROBE = 1,
+    /**
+     * HARDWARE_KEY means that the Session authenticated with the
+     * hardware-backed Authenticator bound to its Device
+     *
+     * @generated from protobuf enum value: HARDWARE_KEY = 2;
+     */
+    HARDWARE_KEY = 2
 }
 /**
  * Type is the type of the Session
@@ -10463,21 +10524,31 @@ export interface Device_Status_Binding {
      */
     nextVerificationAt?: Timestamp;
     /**
-     * Confidence is the confidence of an ACCEPTED Binding. It is evaluated
-     * again whenever the inventory entry or the Device changes, so Policies
-     * can require a minimum Confidence (e.g.
-     * `ctx.device.status.binding.confidence == "HIGH"`).
-     *
-     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Binding.Confidence confidence = 11
-     */
-    confidence: Device_Status_Binding_Confidence;
-    /**
      * Evidence is the list of the kinds of evidence that currently tie an
      * ACCEPTED Binding's inventory entry to the Device or to its User
      *
      * @generated from protobuf field: repeated octelium.api.main.core.v1.Device.Status.Binding.Evidence evidence = 12
      */
     evidence: Device_Status_Binding_Evidence[];
+    /**
+     * Assurance is how the Device is tied to an ACCEPTED Binding's inventory
+     * entry. It is evaluated again whenever the inventory entry or the
+     * Device changes. In a Policy, it does not exceed IDENTIFIER for a
+     * Session without a DeviceProof, so a Policy that requires more (e.g.
+     * `ctx.device.status.binding.assurance in ["PROVIDER_ID", "SIGNED", "HARDWARE"]`)
+     * applies to the current Session and not only to the Device.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Binding.Assurance assurance = 13
+     */
+    assurance: Device_Status_Binding_Assurance;
+    /**
+     * IsOwnerMatched means that the provider reports the Device's User as
+     * the owner of an ACCEPTED Binding's inventory entry. It is the only
+     * part of the Binding that the Device cannot assert by itself.
+     *
+     * @generated from protobuf field: bool isOwnerMatched = 14
+     */
+    isOwnerMatched: boolean;
 }
 /**
  * State is the state of the Binding
@@ -10507,7 +10578,7 @@ export enum Device_Status_Binding_State {
     /**
      * CONFLICT means that the inventory entry is already bound to another
      * Device. It is retried once the other Binding is released or once
-     * the Device's Confidence is higher than the other Binding's.
+     * the Device's Evidence is stronger than the other Binding's.
      *
      * @generated from protobuf enum value: CONFLICT = 3;
      */
@@ -10521,43 +10592,61 @@ export enum Device_Status_Binding_State {
     OWNER_MISMATCH = 4
 }
 /**
- * Confidence is how strongly the evidence ties an ACCEPTED Binding's
- * inventory entry to both the Device and the Device's User. The owner
- * email reported by the provider is the only evidence that the Device
- * cannot assert by itself, so it is required for MEDIUM and HIGH.
+ * Assurance is how the Device is tied to an ACCEPTED Binding's inventory
+ * entry. The values are ordered from the easiest to the hardest to
+ * forge. It says nothing about the owner of the entry (see
+ * IsOwnerMatched).
  *
- * @generated from protobuf enum octelium.api.main.core.v1.Device.Status.Binding.Confidence
+ * @generated from protobuf enum octelium.api.main.core.v1.Device.Status.Binding.Assurance
  */
-export enum Device_Status_Binding_Confidence {
+export enum Device_Status_Binding_Assurance {
     /**
-     * CONFIDENCE_UNKNOWN is not used
+     * ASSURANCE_UNKNOWN means that nothing ties the Device to the entry
      *
-     * @generated from protobuf enum value: CONFIDENCE_UNKNOWN = 0;
+     * @generated from protobuf enum value: ASSURANCE_UNKNOWN = 0;
      */
-    CONFIDENCE_UNKNOWN = 0,
+    ASSURANCE_UNKNOWN = 0,
     /**
-     * LOW means that the Device's identifiers select the inventory entry
-     * but the provider reports no owner for it
-     *
-     * @generated from protobuf enum value: LOW = 1;
-     */
-    LOW = 1,
-    /**
-     * MEDIUM means that the provider reports the Device's User as the
+     * OWNER_ONLY means that the provider reports the Device's User as the
      * owner of the inventory entry but none of the Device's identifiers
      * select it. The entry is the only one of the User's entries that
      * can be the Device.
      *
-     * @generated from protobuf enum value: MEDIUM = 2;
+     * @generated from protobuf enum value: OWNER_ONLY = 1;
      */
-    MEDIUM = 2,
+    OWNER_ONLY = 1,
     /**
-     * HIGH means that the provider reports the Device's User as the owner
-     * of the inventory entry and the Device's identifiers select it
+     * IDENTIFIER means that a hardware identifier of the Device selects
+     * the inventory entry (i.e. its machine ID, hardware UUID, serial
+     * number or MAC address). Anyone who can read it can repeat it.
      *
-     * @generated from protobuf enum value: HIGH = 3;
+     * @generated from protobuf enum value: IDENTIFIER = 2;
      */
-    HIGH = 3
+    IDENTIFIER = 2,
+    /**
+     * PROVIDER_ID means that an identifier that the provider issued for
+     * the machine (e.g. its agent ID), collected by the DeviceManager's
+     * Probes, selects the inventory entry. It has to be read on the
+     * machine, and a modified client can still repeat it.
+     *
+     * @generated from protobuf enum value: PROVIDER_ID = 3;
+     */
+    PROVIDER_ID = 3,
+    /**
+     * SIGNED means that the Device presented an artifact that the
+     * provider signed for the inventory entry. It cannot be forged but
+     * it can be copied while it is valid.
+     *
+     * @generated from protobuf enum value: SIGNED = 4;
+     */
+    SIGNED = 4,
+    /**
+     * HARDWARE means that the Device signed a challenge of the Cluster
+     * with a non-exportable key that is certified for the inventory entry
+     *
+     * @generated from protobuf enum value: HARDWARE = 5;
+     */
+    HARDWARE = 5
 }
 /**
  * Evidence is a kind of evidence that ties an ACCEPTED Binding's
@@ -10612,7 +10701,7 @@ export enum Device_Status_Binding_Evidence {
     /**
      * HOSTNAME means that the Device's hostname is the hostname of the
      * inventory entry. It only narrows down the entries of the Device's
-     * User and does not raise the Confidence.
+     * User and does not raise the Assurance.
      *
      * @generated from protobuf enum value: HOSTNAME = 6;
      */
@@ -10637,7 +10726,8 @@ export enum Device_Status_Binding_Validity {
      */
     VALID = 1,
     /**
-     * SUSPENDED means that the Binding could not be verified and the
+     * SUSPENDED means that the Binding is contradicted (e.g. the Probe
+     * results do not resolve to the bound inventory entry) and the
      * Posture must not be used until it is verified again
      *
      * @generated from protobuf enum value: SUSPENDED = 2;
@@ -31238,7 +31328,8 @@ class Session_Status$Type extends MessageType<Session_Status> {
             { no: 15, name: "lastConnections", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Session_Status_LastConnection },
             { no: 16, name: "isLocked", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 17, name: "authenticatorAction", kind: "enum", T: () => ["octelium.api.main.core.v1.Session.Status.AuthenticatorAction", Session_Status_AuthenticatorAction] },
-            { no: 18, name: "requiredAuthenticatorRef", kind: "message", T: () => ObjectReference }
+            { no: 18, name: "requiredAuthenticatorRef", kind: "message", T: () => ObjectReference },
+            { no: 19, name: "deviceProof", kind: "message", T: () => Session_Status_DeviceProof }
         ]);
     }
     create(value?: PartialMessage<Session_Status>): Session_Status {
@@ -31316,6 +31407,9 @@ class Session_Status$Type extends MessageType<Session_Status> {
                     break;
                 case /* octelium.api.main.meta.v1.ObjectReference requiredAuthenticatorRef */ 18:
                     message.requiredAuthenticatorRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requiredAuthenticatorRef);
+                    break;
+                case /* octelium.api.main.core.v1.Session.Status.DeviceProof deviceProof */ 19:
+                    message.deviceProof = Session_Status_DeviceProof.internalBinaryRead(reader, reader.uint32(), options, message.deviceProof);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -31403,6 +31497,9 @@ class Session_Status$Type extends MessageType<Session_Status> {
         /* octelium.api.main.meta.v1.ObjectReference requiredAuthenticatorRef = 18; */
         if (message.requiredAuthenticatorRef)
             ObjectReference.internalBinaryWrite(message.requiredAuthenticatorRef, writer.tag(18, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Session.Status.DeviceProof deviceProof = 19; */
+        if (message.deviceProof)
+            Session_Status_DeviceProof.internalBinaryWrite(message.deviceProof, writer.tag(19, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -32594,6 +32691,68 @@ class Session_Status_LastConnection$Type extends MessageType<Session_Status_Last
  * @generated MessageType for protobuf message octelium.api.main.core.v1.Session.Status.LastConnection
  */
 export const Session_Status_LastConnection = new Session_Status_LastConnection$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Session_Status_DeviceProof$Type extends MessageType<Session_Status_DeviceProof> {
+    constructor() {
+        super("octelium.api.main.core.v1.Session.Status.DeviceProof", [
+            { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.core.v1.Session.Status.DeviceProof.Type", Session_Status_DeviceProof_Type] },
+            { no: 2, name: "bindingUID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "provedAt", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<Session_Status_DeviceProof>): Session_Status_DeviceProof {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.bindingUID = "";
+        if (value !== undefined)
+            reflectionMergePartial<Session_Status_DeviceProof>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Session_Status_DeviceProof): Session_Status_DeviceProof {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.Session.Status.DeviceProof.Type type */ 1:
+                    message.type = reader.int32();
+                    break;
+                case /* string bindingUID */ 2:
+                    message.bindingUID = reader.string();
+                    break;
+                case /* google.protobuf.Timestamp provedAt */ 3:
+                    message.provedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.provedAt);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Session_Status_DeviceProof, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.Session.Status.DeviceProof.Type type = 1; */
+        if (message.type !== 0)
+            writer.tag(1, WireType.Varint).int32(message.type);
+        /* string bindingUID = 2; */
+        if (message.bindingUID !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.bindingUID);
+        /* google.protobuf.Timestamp provedAt = 3; */
+        if (message.provedAt)
+            Timestamp.internalBinaryWrite(message.provedAt, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Session.Status.DeviceProof
+ */
+export const Session_Status_DeviceProof = new Session_Status_DeviceProof$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class SessionList$Type extends MessageType<SessionList> {
     constructor() {
@@ -34491,8 +34650,9 @@ class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
             { no: 8, name: "acceptedAt", kind: "message", T: () => Timestamp },
             { no: 9, name: "lastVerifiedAt", kind: "message", T: () => Timestamp },
             { no: 10, name: "nextVerificationAt", kind: "message", T: () => Timestamp },
-            { no: 11, name: "confidence", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Binding.Confidence", Device_Status_Binding_Confidence] },
-            { no: 12, name: "evidence", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.Device.Status.Binding.Evidence", Device_Status_Binding_Evidence] }
+            { no: 12, name: "evidence", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.Device.Status.Binding.Evidence", Device_Status_Binding_Evidence] },
+            { no: 13, name: "assurance", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Binding.Assurance", Device_Status_Binding_Assurance] },
+            { no: 14, name: "isOwnerMatched", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<Device_Status_Binding>): Device_Status_Binding {
@@ -34503,8 +34663,9 @@ class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
         message.validity = 0;
         message.reason = "";
         message.message = "";
-        message.confidence = 0;
         message.evidence = [];
+        message.assurance = 0;
+        message.isOwnerMatched = false;
         if (value !== undefined)
             reflectionMergePartial<Device_Status_Binding>(this, message, value);
         return message;
@@ -34544,15 +34705,18 @@ class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
                 case /* google.protobuf.Timestamp nextVerificationAt */ 10:
                     message.nextVerificationAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.nextVerificationAt);
                     break;
-                case /* octelium.api.main.core.v1.Device.Status.Binding.Confidence confidence */ 11:
-                    message.confidence = reader.int32();
-                    break;
                 case /* repeated octelium.api.main.core.v1.Device.Status.Binding.Evidence evidence */ 12:
                     if (wireType === WireType.LengthDelimited)
                         for (let e = reader.int32() + reader.pos; reader.pos < e;)
                             message.evidence.push(reader.int32());
                     else
                         message.evidence.push(reader.int32());
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Binding.Assurance assurance */ 13:
+                    message.assurance = reader.int32();
+                    break;
+                case /* bool isOwnerMatched */ 14:
+                    message.isOwnerMatched = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -34596,9 +34760,6 @@ class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
         /* google.protobuf.Timestamp nextVerificationAt = 10; */
         if (message.nextVerificationAt)
             Timestamp.internalBinaryWrite(message.nextVerificationAt, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.core.v1.Device.Status.Binding.Confidence confidence = 11; */
-        if (message.confidence !== 0)
-            writer.tag(11, WireType.Varint).int32(message.confidence);
         /* repeated octelium.api.main.core.v1.Device.Status.Binding.Evidence evidence = 12; */
         if (message.evidence.length) {
             writer.tag(12, WireType.LengthDelimited).fork();
@@ -34606,6 +34767,12 @@ class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
                 writer.int32(message.evidence[i]);
             writer.join();
         }
+        /* octelium.api.main.core.v1.Device.Status.Binding.Assurance assurance = 13; */
+        if (message.assurance !== 0)
+            writer.tag(13, WireType.Varint).int32(message.assurance);
+        /* bool isOwnerMatched = 14; */
+        if (message.isOwnerMatched !== false)
+            writer.tag(14, WireType.Varint).bool(message.isOwnerMatched);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

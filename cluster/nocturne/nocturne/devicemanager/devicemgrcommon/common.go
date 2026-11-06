@@ -433,10 +433,9 @@ type LinkRequest struct {
 }
 
 type LinkResult struct {
-	State      LinkState
-	Entry      *Entry
-	Confidence corev1.Device_Status_Binding_Confidence
-	Evidence   []corev1.Device_Status_Binding_Evidence
+	State    LinkState
+	Entry    *Entry
+	Evidence []corev1.Device_Status_Binding_Evidence
 }
 
 func (f *Fleet) Link(req *LinkRequest) *LinkResult {
@@ -484,13 +483,10 @@ func (f *Fleet) Link(req *LinkRequest) *LinkResult {
 		}
 	}
 
-	evidence := entry.Evidence(req)
-
 	return &LinkResult{
-		State:      LinkStateMatched,
-		Entry:      entry,
-		Confidence: GetConfidence(evidence),
-		Evidence:   evidence,
+		State:    LinkStateMatched,
+		Entry:    entry,
+		Evidence: entry.Evidence(req),
 	}
 }
 
@@ -632,17 +628,56 @@ func HasDeviceEvidence(evidence []corev1.Device_Status_Binding_Evidence) bool {
 	})
 }
 
-func GetConfidence(evidence []corev1.Device_Status_Binding_Evidence) corev1.Device_Status_Binding_Confidence {
-	isOwned := slices.Contains(evidence, corev1.Device_Status_Binding_OWNER_EMAIL)
+func IsOwnerMatched(evidence []corev1.Device_Status_Binding_Evidence) bool {
+	return slices.Contains(evidence, corev1.Device_Status_Binding_OWNER_EMAIL)
+}
 
+func GetAssurance(
+	evidence []corev1.Device_Status_Binding_Evidence,
+	mgr Manager,
+	osType corev1.Device_Status_OSType,
+) corev1.Device_Status_Binding_Assurance {
 	switch {
-	case isOwned && HasDeviceEvidence(evidence):
-		return corev1.Device_Status_Binding_HIGH
-	case isOwned:
-		return corev1.Device_Status_Binding_MEDIUM
+	case slices.Contains(evidence, corev1.Device_Status_Binding_PROBE) && HasProviderProbe(mgr, osType):
+		return corev1.Device_Status_Binding_PROVIDER_ID
+	case HasDeviceEvidence(evidence):
+		return corev1.Device_Status_Binding_IDENTIFIER
+	case IsOwnerMatched(evidence):
+		return corev1.Device_Status_Binding_OWNER_ONLY
 	default:
-		return corev1.Device_Status_Binding_LOW
+		return corev1.Device_Status_Binding_ASSURANCE_UNKNOWN
 	}
+}
+
+func GetEvidenceRank(evidence []corev1.Device_Status_Binding_Evidence) int {
+	switch {
+	case !IsOwnerMatched(evidence):
+		return 0
+	case HasDeviceEvidence(evidence):
+		return 2
+	default:
+		return 1
+	}
+}
+
+func HasProbe(mgr Manager, osType corev1.Device_Status_OSType) bool {
+	if mgr == nil {
+		return false
+	}
+
+	return slices.ContainsFunc(mgr.IdentityProbes(), func(p *Probe) bool {
+		return p.OSType == osType
+	})
+}
+
+func HasProviderProbe(mgr Manager, osType corev1.Device_Status_OSType) bool {
+	if mgr == nil {
+		return false
+	}
+
+	return slices.ContainsFunc(mgr.IdentityProbes(), func(p *Probe) bool {
+		return p.OSType == osType && p.PlatformIdentifier == nil
+	})
 }
 
 func cloneEntry(entry *Entry) *Entry {

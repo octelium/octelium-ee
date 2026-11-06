@@ -897,6 +897,11 @@
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
                     "description": "RequiredAuthenticatorRef is the reference of the Authenticator that the Session is required to authenticate with, if any"
+                },
+                "deviceProof": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.DeviceProof",
+                    "additionalProperties": false,
+                    "description": "DeviceProof is how the Session proved that it runs on its Device, if it did. A Session that only presented the Device's identifiers has none."
                 }
             },
             "additionalProperties": false,
@@ -1488,6 +1493,33 @@
             "type": "object",
             "title": "Backend",
             "description": "Backend is the actual upstream that is reachable from the connected Session's host"
+        },
+        "octelium.api.main.core.v1.Session.Status.DeviceProof": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "PROBE",
+                        "HARDWARE_KEY"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the type of the DeviceProof"
+                },
+                "bindingUID": {
+                    "type": "string",
+                    "description": "BindingUID is the UID of the Binding that a PROBE DeviceProof applies to. The DeviceProof does not apply to any other Binding of the Device."
+                },
+                "provedAt": {
+                    "type": "string",
+                    "description": "ProvedAt is the timestamp at which the Session produced the DeviceProof",
+                    "format": "date-time"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Device Proof",
+            "description": "DeviceProof is how the Session proved that it runs on its Device"
         },
         "octelium.api.main.core.v1.Session.Status.LastConnection": {
             "properties": {
