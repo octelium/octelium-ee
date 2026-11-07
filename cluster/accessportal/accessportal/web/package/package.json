@@ -29,7 +29,8 @@
     "protoc": "npm run protoc-gen && npm run protoc-cp && npm run protoc-fix && npm run cleanup-pf"
   },
   "dependencies": {
-    "@fontsource/ubuntu": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/plus-jakarta-sans": "^5.3.0",
     "@mantine/core": "^9.7.3",
     "@mantine/dates": "^9.7.3",
     "@mantine/hooks": "^9.7.3",
