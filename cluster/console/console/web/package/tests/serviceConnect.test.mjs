@@ -110,6 +110,41 @@ describe("Service connect", () => {
     assert.equal(await tab("Connect").count(), 0);
   });
 
+  it("measures the terminal again when JetBrains Mono loads late", async () => {
+    const rowHeight = () =>
+      page.evaluate(
+        () =>
+          document.querySelector(".xterm-rows > div")?.getBoundingClientRect()
+            .height,
+      );
+    const loaded = () =>
+      page.waitForFunction(
+        () =>
+          document.fonts.check('400 1em "JetBrains Mono"') &&
+          document.fonts.check('700 1em "JetBrains Mono"'),
+      );
+    await load("/core/services/ssh-h01/connect");
+    await waitText("Welcome to Ubuntu 24.04.3 LTS");
+    await loaded();
+    await page.waitForTimeout(200);
+    const expected = await rowHeight();
+    assert.ok(expected > 0);
+
+    await page.route(/jetbrains-mono-.*\.woff2/, async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      await route.continue();
+    });
+    await load("/core/services/ssh-h01/connect");
+    await waitText("Welcome to Ubuntu 24.04.3 LTS");
+    await loaded();
+    await page.waitForFunction(
+      (expected) =>
+        document.querySelector(".xterm-rows > div")?.getBoundingClientRect()
+          .height === expected,
+      expected,
+    );
+  });
+
   it("connects to an SSH Service from the agent Workspace automatically", async () => {
     await load("/core/services/ssh-h01/connect");
     await waitText("Welcome to Ubuntu 24.04.3 LTS");
@@ -566,7 +601,7 @@ describe("Service connect", () => {
         );
         assert.ok(layout.cardBottom <= 860, `${theme} ${width}`);
         assert.ok(layout.terminalHeight > 200, `${theme} ${width}`);
-        assert.equal(layout.background, "rgb(15, 23, 42)");
+        assert.equal(layout.background, "rgb(11, 11, 12)");
       }
     }
   });

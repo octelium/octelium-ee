@@ -57,23 +57,23 @@ const DARK = {
     critical: "#f87171",
   },
   ink: {
-    primary: "#eaeff5",
-    secondary: "#9facbe",
-    muted: "#8593a8",
-    grid: "#29313c",
-    axis: "#3a4350",
-    onDark: "#141920",
-    onDarkMuted: "#3a4350",
-    surface: "#141920",
-    track: "#212730",
+    primary: "#eeeef0",
+    secondary: "#a4a4a6",
+    muted: "#8e8e91",
+    grid: "#262627",
+    axis: "#38383a",
+    onDark: "#0f0f10",
+    onDarkMuted: "#38383a",
+    surface: "#0f0f10",
+    track: "#1c1c1d",
     marker: "#7aa2ff",
-    onAccent: "#0a0f15",
+    onAccent: "#0f0f10",
     shadow: "rgba(0, 0, 0, 0.55)",
   },
   slices: ["#bfd4ff", "#7aa2ff", "#4a6fd0", "#2b3f70"],
   tooltip: {
-    backgroundColor: "#eaeff5",
-    borderColor: "#d4dbe6",
+    backgroundColor: "#eeeef0",
+    borderColor: "#dadadc",
     shadow: "0 10px 24px rgba(0,0,0,.55)",
   },
 } as const;
@@ -159,7 +159,7 @@ export const withAlpha = (hex: string, alpha: number) => {
   return `rgba(${r},${g},${b},${alpha})`;
 };
 
-export const CHART_FONT = "Ubuntu, sans-serif";
+export const CHART_FONT = '"Plus Jakarta Sans", sans-serif';
 
 export const CHART_TOOLTIP = {
   get backgroundColor() {

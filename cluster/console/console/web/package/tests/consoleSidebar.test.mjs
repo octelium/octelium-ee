@@ -77,6 +77,60 @@ describe("Console sidebar", () => {
     assert.deepEqual(errors, []);
   });
 
+  it("uses Plus Jakarta Sans and JetBrains Mono with tabular digits and no trace of Ubuntu", async () => {
+    await load();
+    const fonts = await page.evaluate(async () => {
+      await document.fonts.ready;
+      const probe = document.createElement("span");
+      probe.className = "font-mono font-bold";
+      document.body.append(probe);
+      const body = getComputedStyle(document.body);
+      const mono = getComputedStyle(probe);
+      const input = getComputedStyle(document.querySelector("input"));
+      const result = {
+        body: body.fontFamily,
+        bodyWeight: body.fontWeight,
+        bodyDigits: body.fontVariantNumeric,
+        bodySpacing: parseFloat(body.wordSpacing),
+        inputDigits: input.fontVariantNumeric,
+        faces: [...document.fonts].map((face) => face.family),
+        mono: mono.fontFamily,
+        monoWeight: mono.fontWeight,
+        monoLigatures: mono.fontVariantLigatures,
+        monoSpacing: mono.wordSpacing,
+      };
+      probe.remove();
+      return result;
+    });
+    assert.match(fonts.body, /^"?Plus Jakarta Sans"?,/);
+    assert.equal(fonts.bodyWeight, "500");
+    assert.equal(fonts.bodyDigits, "tabular-nums");
+    assert.equal(fonts.inputDigits, "tabular-nums");
+    assert.ok(fonts.bodySpacing > 0);
+    assert.ok(fonts.faces.length > 0);
+    assert.ok(fonts.faces.every((family) => !/ubuntu/i.test(family)));
+    assert.match(fonts.mono, /^"?JetBrains Mono"?,/);
+    assert.equal(fonts.monoWeight, "400");
+    assert.equal(fonts.monoLigatures, "none");
+    assert.equal(fonts.monoSpacing, "0px");
+  });
+
+  it("uses the neutral dark palette of the Octelium portal", async () => {
+    await load("/core/services", "dark");
+    const token = (name) =>
+      page.evaluate(
+        (name) =>
+          getComputedStyle(document.documentElement).getPropertyValue(name),
+        name,
+      );
+    assert.match(await token("--color-canvas"), /^oklch\(13\.5% 0?\.002 270\)$/);
+    assert.match(await token("--color-white"), /^oklch\(17% 0?\.002 270\)$/);
+    assert.match(await token("--color-slate-200"), /^oklch\(26(\.0)?% 0?\.002 270\)$/);
+    assert.match(await token("--color-slate-900"), /^oklch\(96(\.0)?% 0?\.002 270\)$/);
+    assert.equal((await token("--color-code")).trim(), "#141415");
+    assert.equal((await token("--color-terminal")).trim(), "#0b0b0c");
+  });
+
   it("defaults to API navigation and selects only the resource for deep routes", async () => {
     await load("/core/services/nginx.default/edit");
     assert.equal(

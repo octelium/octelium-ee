@@ -7,6 +7,11 @@ import { Terminal } from "@xterm/xterm";
 import { Gauge, Play, RotateCcw, Square } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { twMerge } from "@/lib/utils";
+import {
+  loadTerminalFont,
+  refreshTerminalFont,
+  terminalFontFamily,
+} from "@/utils/theme/terminal";
 
 const MAX_FRAME_DELAY_MS = 2000;
 const UI_UPDATE_INTERVAL_MS = 50;
@@ -95,19 +100,18 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
 
     terminal.current = new Terminal({
       convertEol: false,
-      fontFamily:
-        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
-      fontWeight: 450,
+      fontFamily: terminalFontFamily,
+      fontWeight: 400,
       fontWeightBold: 700,
       cursorBlink: false,
       scrollback: 5000,
       fontSize: 14,
       lineHeight: 1.4,
       theme: {
-        background: "#0f172a",
+        background: "#0b0b0c",
         foreground: "#e2e8f0",
         cursor: "#f8fafc",
-        selectionBackground: "#334155",
+        selectionBackground: "#333335",
         black: "#475569",
         red: "#fb7185",
         green: "#34d399",
@@ -131,6 +135,12 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
     terminal.current.loadAddon(fitAddon.current);
     terminal.current.open(terminalRef.current);
     fitAddon.current.fit();
+
+    void loadTerminalFont().then(() => {
+      if (!mountedRef.current || !terminal.current) return;
+      refreshTerminalFont(terminal.current);
+      fitAddon.current?.fit();
+    });
 
     const handleResize = () => fitAddon.current?.fit();
     window.addEventListener("resize", handleResize);

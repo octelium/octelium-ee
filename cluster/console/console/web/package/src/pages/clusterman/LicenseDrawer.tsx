@@ -189,7 +189,7 @@ const LicenseDrawer = (props: {
           maxRows={12}
           value={jwt}
           onChange={(event) => handleChange(event.currentTarget.value)}
-          styles={{ input: { fontFamily: "monospace", fontSize: "0.72rem" } }}
+          styles={{ input: { fontFamily: "var(--font-mono)", fontSize: "0.72rem" } }}
         />
 
         {verified ? (

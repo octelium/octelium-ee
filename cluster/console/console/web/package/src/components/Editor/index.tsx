@@ -28,15 +28,22 @@ const fontTheme = EditorView.theme(
     },
     ".cm-content": {
       fontSize: "14px",
-      fontWeight: `700`,
+      fontWeight: `400`,
       lineHeight: "1.6",
     },
     ".cm-gutters": {
+      backgroundColor: "var(--color-code)",
+      color: "#737376",
       fontSize: "13px",
     },
     ".cm-scroller": {
       overflow: "auto",
       backgroundColor: "var(--color-code)",
+      fontFamily: "var(--font-mono)",
+      fontVariantLigatures: "none",
+    },
+    ".cm-activeLine, .cm-activeLineGutter": {
+      backgroundColor: "rgba(255,255,255,0.04)",
     },
   },
   { dark: true },

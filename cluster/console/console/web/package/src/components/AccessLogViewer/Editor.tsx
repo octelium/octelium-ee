@@ -1,6 +1,7 @@
 import { AccessLog, ComponentLog } from "@/apis/corev1/corev1";
 import { AuditLog, AuthenticationLog } from "@/apis/enterprisev1/enterprisev1";
 import { json } from "@codemirror/lang-json";
+import { Prec } from "@codemirror/state";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { EditorView } from "@codemirror/view";
 import CodeMirror from "@uiw/react-codemirror";
@@ -13,39 +14,43 @@ import { match } from "ts-pattern";
 
 export type LogItem = AccessLog | AuditLog | AuthenticationLog | ComponentLog;
 
-const editorTheme = EditorView.theme(
-  {
-    "&": {
-      height: "100%",
-      backgroundColor: "var(--color-code)",
-      color: "#abb2bf",
+const editorTheme = Prec.highest(
+  EditorView.theme(
+    {
+      "&": {
+        height: "100%",
+        backgroundColor: "var(--color-code)",
+        color: "#abb2bf",
+      },
+      ".cm-content": {
+        padding: "14px 0",
+        fontSize: "13px",
+        fontWeight: "400",
+        lineHeight: "1.65",
+      },
+      ".cm-gutters": {
+        borderRight: "1px solid rgba(255,255,255,0.1)",
+        backgroundColor: "var(--color-code)",
+        color: "#737376",
+        fontSize: "12px",
+      },
+      ".cm-scroller": {
+        minHeight: "100%",
+        overflow: "auto",
+        backgroundColor: "var(--color-code)",
+        fontFamily: "var(--font-mono)",
+        fontVariantLigatures: "none",
+      },
+      ".cm-activeLine": {
+        backgroundColor: "rgba(255,255,255,0.04)",
+      },
+      ".cm-activeLineGutter": {
+        backgroundColor: "rgba(255,255,255,0.04)",
+        color: "#d4d4d6",
+      },
     },
-    ".cm-content": {
-      padding: "14px 0",
-      fontSize: "13px",
-      fontWeight: "600",
-      lineHeight: "1.65",
-    },
-    ".cm-gutters": {
-      borderRight: "1px solid rgba(148,163,184,0.12)",
-      backgroundColor: "var(--color-code)",
-      color: "#64748b",
-      fontSize: "12px",
-    },
-    ".cm-scroller": {
-      minHeight: "100%",
-      overflow: "auto",
-      backgroundColor: "var(--color-code)",
-    },
-    ".cm-activeLine": {
-      backgroundColor: "rgba(148,163,184,0.06)",
-    },
-    ".cm-activeLineGutter": {
-      backgroundColor: "rgba(148,163,184,0.06)",
-      color: "#cbd5e1",
-    },
-  },
-  { dark: true },
+    { dark: true },
+  ),
 );
 
 const editorExtensions = [json(), editorTheme, EditorView.lineWrapping];

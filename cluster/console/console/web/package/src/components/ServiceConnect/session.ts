@@ -15,6 +15,11 @@ import {
   type SetupEvent,
 } from "./setup";
 import { terminalTheme } from "./theme";
+import {
+  loadTerminalFont,
+  refreshTerminalFont,
+  terminalFontFamily,
+} from "@/utils/theme/terminal";
 
 export type StepStatus = "pending" | "running" | "done" | "failed" | "skipped";
 
@@ -248,10 +253,9 @@ export class ConnectSession {
         convertEol: false,
         cursorBlink: true,
         disableStdin: true,
-        fontFamily:
-          "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
+        fontFamily: terminalFontFamily,
         fontSize: 13,
-        fontWeight: 450,
+        fontWeight: 400,
         fontWeightBold: 700,
         lineHeight: 1.25,
         scrollback: 5000,
@@ -261,6 +265,11 @@ export class ConnectSession {
       this.fit = new FitAddon();
       this.term.loadAddon(this.fit);
       this.term.open(this.element);
+      void loadTerminalFont().then(() => {
+        if (this.disposed || !this.term) return;
+        refreshTerminalFont(this.term);
+        this.fitNow();
+      });
       this.term.onData((data) => this.send(data));
       this.term.onSelectionChange(() => {
         const selection = !!this.term?.hasSelection();

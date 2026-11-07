@@ -1,9 +1,9 @@
 export const terminalTheme = {
-  background: "#0f172a",
+  background: "#0b0b0c",
   foreground: "#e2e8f0",
   cursor: "#f8fafc",
-  cursorAccent: "#0f172a",
-  selectionBackground: "#334155",
+  cursorAccent: "#0b0b0c",
+  selectionBackground: "#333335",
   black: "#475569",
   red: "#fb7185",
   green: "#34d399",

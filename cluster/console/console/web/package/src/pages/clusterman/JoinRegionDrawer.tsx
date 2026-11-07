@@ -335,7 +335,7 @@ const JoinRegionDrawer = (props: { opened: boolean; onClose: () => void }) => {
                   update({ trustedCAs: event.currentTarget.value })
                 }
                 styles={{
-                  input: { fontFamily: "monospace", fontSize: "0.72rem" },
+                  input: { fontFamily: "var(--font-mono)", fontSize: "0.72rem" },
                 }}
               />
             </>
