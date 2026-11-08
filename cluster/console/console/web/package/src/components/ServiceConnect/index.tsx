@@ -723,7 +723,7 @@ const ServiceConnect = (props: { service: Service }) => {
                 leftSection={<Sparkles size={13} />}
                 onClick={() => askAgent()}
               >
-                Ask agent
+                Ask AI
               </Button>
             )}
             <Tooltip label="Start a new session" withArrow openDelay={300}>
@@ -791,7 +791,7 @@ const ServiceConnect = (props: { service: Service }) => {
                     )
                   }
                 >
-                  Ask agent
+                  Ask AI
                 </Button>
               )
             }

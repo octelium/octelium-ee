@@ -390,10 +390,10 @@ export const pageOverview: NavItem = {
 };
 
 export const pageAgent: NavItem = {
-  title: "Agent",
+  title: "AI Assistant",
   url: "/agent",
   icon: Sparkles,
-  keywords: ["ai", "assistant", "chat", "conversations"],
+  keywords: ["agent", "ai", "assistant", "chat", "conversations"],
 };
 
 export const pageSettings: NavItem = {

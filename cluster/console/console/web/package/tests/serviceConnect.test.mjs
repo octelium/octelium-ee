@@ -331,7 +331,7 @@ describe("Service connect", () => {
     await strip.getByText("Permission denied (publickey).").waitFor();
     await page.getByText("Needs attention", { exact: true }).waitFor();
 
-    await strip.getByRole("button", { name: "Ask agent" }).click();
+    await strip.getByRole("button", { name: "Ask AI" }).click();
     let [request] = await asks();
     assert.equal(
       request.text,
@@ -353,7 +353,7 @@ describe("Service connect", () => {
     assert.match(item.data.issue, /Permission denied \(publickey\)/);
     assert.match(item.data.output, /% ssh ssh-denied\n.*Permission denied/);
 
-    await page.getByRole("button", { name: "Ask agent" }).first().click();
+    await page.getByRole("button", { name: "Ask AI" }).first().click();
     request = (await asks())[1];
     assert.equal(request.text, undefined);
     assert.match(request.pinned.items[0].data.output, /Permission denied/);

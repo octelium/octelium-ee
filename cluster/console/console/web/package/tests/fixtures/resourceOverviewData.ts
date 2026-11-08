@@ -346,6 +346,48 @@ const sources: Record<string, () => Resource> = {
         },
       },
     }),
+  "core/sessions/dave-client-g8v4": () =>
+    CoreP.Session.fromJson({
+      apiVersion: "core/v1",
+      kind: "Session",
+      metadata: md("dave-client-g8v4"),
+      spec: { state: "ACTIVE", expiresAt: at(40 * 60) },
+      status: {
+        type: "CLIENT",
+        userRef: ref("core/v1", "User", "dave"),
+        authentication: {
+          setAt: at(-HOUR),
+          info: {
+            type: "CREDENTIAL",
+            downstream: {
+              ipAddress: "198.51.100.43",
+              userAgent: "octelium-cli/ grpc-go/1.84.0",
+            },
+          },
+        },
+      },
+    }),
+  "core/sessions/erin-client-h2c6": () =>
+    CoreP.Session.fromJson({
+      apiVersion: "core/v1",
+      kind: "Session",
+      metadata: md("erin-client-h2c6"),
+      spec: { state: "ACTIVE", expiresAt: at(40 * 60) },
+      status: {
+        type: "CLIENT",
+        userRef: ref("core/v1", "User", "erin"),
+        authentication: {
+          setAt: at(-HOUR),
+          info: {
+            type: "CREDENTIAL",
+            downstream: {
+              ipAddress: "198.51.100.44",
+              userAgent: "octelium-cli/0.22.1 grpc-go/1.84.0",
+            },
+          },
+        },
+      },
+    }),
   "core/devices/carol-windows": () =>
     CoreP.Device.fromJson({
       apiVersion: "core/v1",

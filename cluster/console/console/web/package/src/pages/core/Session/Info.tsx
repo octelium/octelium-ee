@@ -90,7 +90,7 @@ export const parseUserAgent = (
     return {
       client: {
         name: "Octelium client",
-        version: clientVersion || /\/([\w.-]+)/.exec(value)?.[1],
+        version: clientVersion || /^octelium-cli\/(\S+)/i.exec(value)?.[1],
         icon: SquareTerminal,
       },
       platform: platform && { name: platform[1], icon: platform[2] },

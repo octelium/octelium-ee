@@ -67,7 +67,7 @@ export const logTitle = (item: LogItem): string => {
 
 const AskLog = (props: { item: LogItem }) => (
   <AskAgentButton
-    label="Ask agent"
+    label="Ask AI"
     pinned={() => {
       const title = logTitle(props.item) || props.item.kind;
       return {

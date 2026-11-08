@@ -201,6 +201,20 @@ describe("Console sidebar", () => {
     }
   });
 
+  it("links the AI Assistant page from the sidebar", async () => {
+    await load();
+    assert.equal(
+      await sidebar()
+        .getByRole("link", { name: "AI Assistant", exact: true })
+        .getAttribute("href"),
+      "/agent",
+    );
+    assert.equal(
+      await sidebar().getByRole("link", { name: "Agent", exact: true }).count(),
+      0,
+    );
+  });
+
   it("supports workspace menu keyboard navigation and restores focus on Escape", async () => {
     await load();
     const trigger = sidebar().getByRole("button", {

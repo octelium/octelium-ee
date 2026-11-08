@@ -142,7 +142,7 @@ describe("Console navigation and agent panel", () => {
       "SSH Sessions",
       "abc",
     ]);
-    assert.deepEqual(trails.agent, ["Overview", "Agent"]);
+    assert.deepEqual(trails.agent, ["Overview", "AI Assistant"]);
     assert.deepEqual(trails.unknown, ["Overview", "Other", "Thing one"]);
     assert.deepEqual(trails.resource, {
       api: "core",

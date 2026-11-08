@@ -276,10 +276,10 @@ describe("Console shared presentation and controls", () => {
       }
     });
 
-    it(`keeps the log Ask agent and JSON buttons readable in ${theme} mode`, async () => {
+    it(`keeps the log Ask AI and JSON buttons readable in ${theme} mode`, async () => {
       await load("json", { theme });
       const colors = await palette();
-      for (const name of ["Ask agent", "JSON"]) {
+      for (const name of ["Ask AI", "JSON"]) {
         const button = page.getByRole("button", { name, exact: true });
         await button.waitFor();
         const style = await surface(button);

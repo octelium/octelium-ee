@@ -86,7 +86,7 @@ export const AgentHeaderButton = () => {
           {!agent.opened && <ActivityDot activity={agent.activity} />}
         </span>
         <span className="hidden whitespace-nowrap text-xs font-semibold sm:inline">
-          {ready ? "Ask agent" : "Agent"}
+          {ready ? "Ask AI" : "Agent"}
         </span>
         {statusLabel && (
           <span className="hidden whitespace-nowrap text-micro font-semibold text-slate-400 md:inline">
@@ -127,7 +127,7 @@ export const AskAgentButton = (props: {
   const { available, ask } = useAgentAsk();
   if (!available) return null;
   const onClick = () => ask({ pinned: props.pinned?.(), fresh: true });
-  const label = props.label ?? "Ask agent";
+  const label = props.label ?? "Ask AI";
 
   if (props.variant === "icon") {
     return (

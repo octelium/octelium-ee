@@ -164,7 +164,7 @@ const SelectionBar = (props: {
     {props.onAsk && (
       <AskAgentButton
         variant="white"
-        label="Ask agent"
+        label="Ask AI"
         pinned={props.onAsk}
       />
     )}

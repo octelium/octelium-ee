@@ -397,6 +397,17 @@ describe("Resource overview details", () => {
     await page.getByText("Proved by vendor-signed token", { exact: true }).waitFor();
   });
 
+  for (const [name, client] of [
+    ["dave-client-g8v4", "Octelium client"],
+    ["erin-client-h2c6", "Octelium client 0.22.1"],
+  ]) {
+    it(`reads the client version of ${name} from the octelium-cli user agent only`, async () => {
+      await load(`/core/sessions/${name}`);
+      await page.getByText(client, { exact: true }).first().waitFor();
+      assert.equal(await page.getByText(/Octelium client 1\.84/).count(), 0);
+    });
+  }
+
   it("lists the Policy rules by priority", async () => {
     await load("/core/policies/allow-engineering");
     const rules = await page
