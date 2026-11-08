@@ -22,7 +22,7 @@ import {
   ShieldX,
   Users,
 } from "lucide-react";
-import { EFFECT_META, EffectBadge, EffectKey, getEffectKey } from "../common";
+import { EFFECT_META, EffectKey, getEffectKey } from "../common";
 
 const integrationNames = (item: Policy): string[] => {
   const names = new Set<string>();
@@ -65,10 +65,13 @@ export const LabelComponent = (props: { item: Policy }) => {
         {rules === 0 ? "No rule" : `${rules} ${rules === 1 ? "rule" : "rules"}`}
       </ResourceListLabel>
       {effectCounts(item).map(({ key, count }) => (
-        <ResourceListLabel key={key}>
-          <EffectBadge effect={EFFECT_META[key].value} />
-          {count > 1 && <span className="ml-1 text-micro text-slate-500">×{count}</span>}
-        </ResourceListLabel>
+        <StatusBadge
+          key={key}
+          label={`${EFFECT_META[key].label}${count > 1 ? ` ×${count}` : ""}`}
+          tone={EFFECT_META[key].tone}
+          icon={EFFECT_META[key].icon}
+          compact
+        />
       ))}
       {integrations.map((name) => (
         <ResourceListLabel

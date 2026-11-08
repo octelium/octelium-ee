@@ -148,7 +148,7 @@ const ServiceHero = (props: { item: CoreC.Service }) => {
     <OverviewHero
       tone={spec?.isDisabled ? "danger" : access.tone === "warning" ? "warning" : "success"}
       icon={<ModeGlyph mode={spec?.mode} />}
-      title={`${access.label} ${modeLabel} Service`}
+      title={`${spec?.isPublic ? `${access.label} ` : ""}${modeLabel} Service`}
       detail={
         upstream ? (
           <>

@@ -1,6 +1,9 @@
 import "@/index.css";
 import "@mantine/core/styles.layer.css";
-import { Policy as AccessPolicy } from "@/apis/accessv1/accessv1";
+import {
+  Policy as AccessPolicy,
+  Policy_Spec_Rule_Effect,
+} from "@/apis/accessv1/accessv1";
 import {
   AccessLog,
   ComponentLog,
@@ -14,7 +17,9 @@ import {
 } from "@/apis/corev1/corev1";
 import { AuditLog, AuthenticationLog } from "@/apis/enterprisev1/enterprisev1";
 import { Stats } from "@/apis/visibilityv1/llm/vllmv1";
+import { AgentAskContext } from "@/components/AgentDock/context";
 import { AccessLogList } from "@/components/AccessLogViewer";
+import AskLog from "@/components/AccessLogViewer/AskLog";
 import LogEditor from "@/components/AccessLogViewer/Editor";
 import { NoLogFound } from "@/components/AccessLogViewer/utils";
 import AuditLogList from "@/components/AuditLogViewer";
@@ -177,7 +182,17 @@ const Labels = () => {
       </div>
       <div data-kind="access-policy">
         <AccessPolicyLabel
-          item={AccessPolicy.create({ spec: { isDisabled: disabled } })}
+          item={AccessPolicy.create({
+            spec: {
+              isDisabled: disabled,
+              rules: [
+                Policy_Spec_Rule_Effect.AUTO_APPROVE,
+                Policy_Spec_Rule_Effect.REVIEW,
+                Policy_Spec_Rule_Effect.REVIEW,
+                Policy_Spec_Rule_Effect.DENY,
+              ].map((effect) => ({ effect, notifications: [] })),
+            },
+          })}
         />
       </div>
       <div data-kind="detail">
@@ -238,6 +253,15 @@ const Logs = () =>
     <AccessLogList />
   );
 
+const logItem = {
+  access: AccessLog.create({ kind: "AccessLog" }),
+  authentication: AuthenticationLog.create({
+    kind: "AuthenticationLog",
+  }),
+  audit: AuditLog.create({ kind: "AuditLog" }),
+  component: ComponentLog.create({ kind: "ComponentLog" }),
+}[kind]!;
+
 const Fixture = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -255,18 +279,12 @@ const Fixture = () => {
           <Route path="/visibility/ssh/:name" element={<SSHReplay />} />
         </Routes>
       ) : scenario === "json" ? (
-        <LogEditor
-          item={
-            {
-              access: AccessLog.create({ kind: "AccessLog" }),
-              authentication: AuthenticationLog.create({
-                kind: "AuthenticationLog",
-              }),
-              audit: AuditLog.create({ kind: "AuditLog" }),
-              component: ComponentLog.create({ kind: "ComponentLog" }),
-            }[kind]!
-          }
-        />
+        <AgentAskContext.Provider value={{ available: true, ask: () => {} }}>
+          <div className="flex gap-2 bg-white p-4" data-log-actions>
+            <AskLog item={logItem} />
+            <LogEditor item={logItem} />
+          </div>
+        </AgentAskContext.Provider>
       ) : scenario === "resource" ? (
         <Resource />
       ) : scenario === "refresh" ? (

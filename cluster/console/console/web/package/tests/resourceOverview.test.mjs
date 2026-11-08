@@ -199,7 +199,8 @@ describe("Resource overview details", () => {
 
   it("shows how a Service is reached and where it proxies to", async () => {
     await load("/core/services/ssh-k8s-2.default");
-    await page.getByText("Private SSH Service", { exact: true }).waitFor();
+    await page.getByText("SSH Service", { exact: true }).waitFor();
+    assert.equal(await page.getByText(/Private SSH Service/).count(), 0);
     await page.getByText("ssh://10.0.12.4:22", { exact: true }).first().waitFor();
     await page
       .getByText("SSH access to the second Kubernetes control-plane node.", {
@@ -216,6 +217,7 @@ describe("Resource overview details", () => {
 
   it("links public Web Services from the header", async () => {
     await load("/core/services/grafana.monitoring");
+    await page.getByText("Public Web Service", { exact: true }).waitFor();
     const open = toolbar("grafana.monitoring").getByRole("link", {
       name: "Open",
     });

@@ -229,6 +229,16 @@ describe("Console shared presentation and controls", () => {
             connected,
           );
         }
+        for (const effect of ["Auto-approve", "Require review ×2", "Deny"]) {
+          assert.deepEqual(
+            await labelShape(
+              page
+                .locator('[data-kind="access-policy"]')
+                .getByText(effect, { exact: true }),
+            ),
+            connected,
+          );
+        }
       }
     });
 
@@ -263,6 +273,18 @@ describe("Console shared presentation and controls", () => {
           ),
           true,
         );
+      }
+    });
+
+    it(`keeps the log Ask agent and JSON buttons readable in ${theme} mode`, async () => {
+      await load("json", { theme });
+      const colors = await palette();
+      for (const name of ["Ask agent", "JSON"]) {
+        const button = page.getByRole("button", { name, exact: true });
+        await button.waitFor();
+        const style = await surface(button);
+        assert.ok(await contrast(style.color, colors.white) >= 4.5);
+        assert.ok(await contrast(style.border, colors.white) >= 3);
       }
     });
 

@@ -2,8 +2,20 @@ import * as CoreP from "@/apis/corev1/corev1";
 import * as EnterpriseP from "@/apis/enterprisev1/enterprisev1";
 import Cond from "@/components/Condition";
 import { durationSeconds } from "@/components/ResourceLayout/overview";
-import { NumberInput, TagsInput, Textarea, TextInput } from "@mantine/core";
-import { Filter, KeyRound, Link2, RefreshCcw } from "lucide-react";
+import {
+  Alert,
+  NumberInput,
+  TagsInput,
+  Textarea,
+  TextInput,
+} from "@mantine/core";
+import {
+  Filter,
+  FlaskConical,
+  KeyRound,
+  Link2,
+  RefreshCcw,
+} from "lucide-react";
 import * as React from "react";
 import {
   Advanced,
@@ -1035,6 +1047,15 @@ const Edit = (props: {
 
   return (
     <div className="@container flex min-w-0 flex-col gap-4">
+      <Alert
+        color="blue"
+        icon={<FlaskConical size={16} />}
+        title="DeviceManagers are an alpha feature"
+      >
+        You can configure and use them, but their configuration and behavior
+        might change in future releases.
+      </Alert>
+
       <ProviderPicker
         title="Provider"
         description="The EDR, MDM or device trust platform whose inventory supplies the Devices' posture."

@@ -93,6 +93,21 @@ describe("DeviceManager pages", () => {
     });
   }
 
+  for (const [path, field] of [
+    ["/enterprise/devicemanagers/create", "Client ID"],
+    ["/enterprise/devicemanagers/fleet/edit", "Server URL"],
+  ]) {
+    it(`marks DeviceManagers as alpha and keeps them configurable in ${path}`, async () => {
+      await load(path);
+      await page
+        .getByRole("alert")
+        .getByText("DeviceManagers are an alpha feature", { exact: true })
+        .waitFor();
+      assert.equal(await page.locator("fieldset[disabled]").count(), 0);
+      assert.equal(await page.getByLabel(field).isEditable(), true);
+    });
+  }
+
   it("creates a CrowdStrike manager by default", async () => {
     await load("/enterprise/devicemanagers/create");
     assert.ok(
