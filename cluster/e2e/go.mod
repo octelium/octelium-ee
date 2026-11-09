@@ -4,20 +4,20 @@ go 1.27.3
 
 require (
 	github.com/go-resty/resty/v2 v2.17.2
-	github.com/octelium/octelium/apis v0.42.0
-	github.com/octelium/octelium/cluster/common v0.0.0-20261107180524-2930116218df
-	github.com/octelium/octelium/cluster/e2e v0.0.0-20261107180524-2930116218df
-	github.com/octelium/octelium/octelium-go v0.42.1-0.20261107180524-2930116218df
-	github.com/octelium/octelium/pkg v0.0.0-20261107180524-2930116218df
+	github.com/octelium/octelium/apis v0.50.0
+	github.com/octelium/octelium/cluster/common v0.0.0-20261109163228-18faf9d8e0f6
+	github.com/octelium/octelium/cluster/e2e v0.0.0-20261109163228-18faf9d8e0f6
+	github.com/octelium/octelium/octelium-go v0.50.1-0.20261109163228-18faf9d8e0f6
+	github.com/octelium/octelium/pkg v0.0.0-20261109163228-18faf9d8e0f6
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.12.1
-	go.opentelemetry.io/collector/pdata v1.67.0
+	go.opentelemetry.io/collector/pdata v1.71.0
 	go.uber.org/zap v1.28.0
 	google.golang.org/grpc v1.85.0
 	google.golang.org/protobuf v1.36.12
-	k8s.io/api v0.37.0
-	k8s.io/apimachinery v0.37.0
-	k8s.io/client-go v0.37.0
+	k8s.io/api v0.37.2
+	k8s.io/apimachinery v0.37.2
+	k8s.io/client-go v0.37.2
 )
 
 require (
@@ -78,7 +78,7 @@ require (
 	github.com/manifoldco/promptui v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/miekg/dns v1.1.72 // indirect
+	github.com/miekg/dns v1.1.73 // indirect
 	github.com/minio/crc64nvme v1.0.2 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/minio-go/v7 v7.0.95 // indirect
@@ -89,14 +89,14 @@ require (
 	github.com/nats-io/nats.go v1.46.1 // indirect
 	github.com/nats-io/nkeys v0.4.11 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/octelium/octelium/client/common v0.0.0-20261107180524-2930116218df // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261107180524-2930116218df // indirect
+	github.com/octelium/octelium/client/common v0.0.0-20261109163228-18faf9d8e0f6 // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261109163228-18faf9d8e0f6 // indirect
 	github.com/openai/openai-go/v3 v3.2.0 // indirect
 	github.com/paulmach/orb v0.11.1 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pquerna/otp v1.5.0 // indirect
-	github.com/quic-go/quic-go v0.63.0 // indirect
+	github.com/quic-go/quic-go v0.65.0 // indirect
 	github.com/redis/go-redis/v9 v9.22.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
@@ -118,7 +118,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	github.com/zcalusic/sysinfo v1.1.3 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.6.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.67.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.71.0 // indirect
 	go.opentelemetry.io/otel v1.47.0 // indirect
 	go.opentelemetry.io/otel/trace v1.47.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
@@ -127,15 +127,13 @@ require (
 	go.yaml.in/yaml/v3 v3.0.6 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc // indirect
-	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/net v0.62.0 // indirect
-	golang.org/x/oauth2 v0.36.0 // indirect
+	golang.org/x/oauth2 v0.38.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/term v0.47.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
-	golang.org/x/time v0.15.0 // indirect
-	golang.org/x/tools v0.51.0 // indirect
+	golang.org/x/time v0.16.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard v0.0.0-20261024220952-b3bc704ef0ee // indirect
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20241231184526-a9ab2273dd10 // indirect
@@ -145,7 +143,7 @@ require (
 	gvisor.dev/gvisor v0.0.0-20261103030936-1899f71d79be // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad // indirect
-	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3 // indirect
+	k8s.io/utils v0.0.0-20261023123148-ca04ba58ecab // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.2 // indirect

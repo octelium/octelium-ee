@@ -6,9 +6,9 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20261107180524-2930116218df
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261107180524-2930116218df
-	github.com/octelium/octelium/pkg v0.0.0-20261107180524-2930116218df
+	github.com/octelium/octelium/cluster/common v0.0.0-20261109163228-18faf9d8e0f6
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261109163228-18faf9d8e0f6
+	github.com/octelium/octelium/pkg v0.0.0-20261109163228-18faf9d8e0f6
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.1
 	go.uber.org/zap v1.28.0
@@ -31,7 +31,7 @@ require (
 	github.com/lib/pq v1.12.3 // indirect
 	github.com/redis/go-redis/v9 v9.22.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/spiffe/go-spiffe/v2 v2.8.1 // indirect
+	github.com/spiffe/go-spiffe/v2 v2.9.0 // indirect
 	github.com/stretchr/objx v0.1.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel v1.47.0 // indirect
@@ -53,7 +53,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260928230214-8a89bd6388cc // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260928230214-8a89bd6388cc // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
-	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3 // indirect
+	k8s.io/utils v0.0.0-20261023123148-ca04ba58ecab // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 

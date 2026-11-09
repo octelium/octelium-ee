@@ -6,8 +6,8 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20261107180524-2930116218df
-	github.com/octelium/octelium/pkg v0.0.0-20261107180524-2930116218df
+	github.com/octelium/octelium/cluster/common v0.0.0-20261109163228-18faf9d8e0f6
+	github.com/octelium/octelium/pkg v0.0.0-20261109163228-18faf9d8e0f6
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.161.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter v0.161.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuremonitorexporter v0.161.0
@@ -42,7 +42,7 @@ require (
 	go.opentelemetry.io/collector/exporter/otlpexporter v0.161.0
 	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.161.0
 	go.opentelemetry.io/collector/otelcol v0.161.0
-	go.opentelemetry.io/collector/pdata v1.67.0
+	go.opentelemetry.io/collector/pdata v1.71.0
 	go.opentelemetry.io/collector/processor v1.67.0
 	go.opentelemetry.io/collector/processor/batchprocessor v0.161.0
 	go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.161.0
@@ -261,7 +261,7 @@ require (
 	github.com/go-openapi/swag/yamlutils v0.29.1 // indirect
 	github.com/go-resty/resty/v2 v2.17.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
-	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/gobwas/glob v1.0.0 // indirect
 	github.com/goccy/go-json v0.10.6 // indirect
 	github.com/gofrs/flock v0.13.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
@@ -322,8 +322,8 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
-	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261107180524-2930116218df // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261107180524-2930116218df // indirect
+	github.com/octelium/octelium/cluster/apiserver v0.0.0-20261109163228-18faf9d8e0f6 // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261109163228-18faf9d8e0f6 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/internal/basicauth v0.161.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/internal/credentialsfile v0.161.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/sumologicextension v0.161.0 // indirect
@@ -357,8 +357,8 @@ require (
 	github.com/openshift/api v0.0.0-20251015095338-264e80a2b6e7 // indirect
 	github.com/openshift/client-go v0.0.0-20251015124057-db0dee36e235 // indirect
 	github.com/openzipkin/zipkin-go v0.4.3 // indirect
-	github.com/oschwald/geoip2-golang/v2 v2.3.0 // indirect
-	github.com/oschwald/maxminddb-golang/v2 v2.5.0 // indirect
+	github.com/oschwald/geoip2-golang/v2 v2.5.0 // indirect
+	github.com/oschwald/maxminddb-golang/v2 v2.8.0 // indirect
 	github.com/outcaste-io/ristretto v0.2.3 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/paulmach/orb v0.13.0 // indirect
@@ -389,7 +389,7 @@ require (
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/spiffe/go-spiffe/v2 v2.8.1 // indirect
+	github.com/spiffe/go-spiffe/v2 v2.9.0 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/tg123/go-htpasswd v1.2.5 // indirect
 	github.com/tidwall/gjson v1.19.0 // indirect
@@ -438,7 +438,7 @@ require (
 	go.opentelemetry.io/collector/extension/extensionmiddleware v0.161.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.161.0 // indirect
 	go.opentelemetry.io/collector/extension/xextension v0.161.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.67.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.71.0 // indirect
 	go.opentelemetry.io/collector/internal/componentalias v0.161.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.161.0 // indirect
 	go.opentelemetry.io/collector/internal/memorylimiter v0.161.0 // indirect
@@ -503,19 +503,19 @@ require (
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/term v0.47.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
-	golang.org/x/time v0.15.0 // indirect
+	golang.org/x/time v0.16.0 // indirect
 	gonum.org/v1/gonum v0.17.0 // indirect
 	google.golang.org/api v0.290.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260928230214-8a89bd6388cc // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.37.0 // indirect
-	k8s.io/apimachinery v0.37.0 // indirect
-	k8s.io/client-go v0.37.0 // indirect
+	k8s.io/api v0.37.2 // indirect
+	k8s.io/apimachinery v0.37.2 // indirect
+	k8s.io/client-go v0.37.2 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260821135717-be32def86098 // indirect
-	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3 // indirect
+	k8s.io/utils v0.0.0-20261023123148-ca04ba58ecab // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.2 // indirect
