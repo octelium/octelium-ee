@@ -123,58 +123,7 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-
-          API_VERSION="2026-03-10"
-          GENERATE_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/dependency-graph/sbom/generate-report"
-
-          response="$(
-            curl --fail --show-error --silent \
-              --retry 3 \
-              -H 'Accept: application/vnd.github+json' \
-              -H "Authorization: Bearer ${GH_TOKEN}" \
-              -H "X-GitHub-Api-Version: ${API_VERSION}" \
-              "$GENERATE_URL"
-          )"
-
-          sbom_url="$(jq -er '.sbom_url' <<< "$response")"
-          tmp_file="$(mktemp)"
-          trap 'rm -f "$tmp_file"' EXIT
-
-          for attempt in $(seq 1 60); do
-            status="$(
-              curl --show-error --silent --location \
-                --retry 3 \
-                --output "$tmp_file" \
-                --write-out '%{http_code}' \
-                -H 'Accept: application/vnd.github+json' \
-                -H "Authorization: Bearer ${GH_TOKEN}" \
-                -H "X-GitHub-Api-Version: ${API_VERSION}" \
-                "$sbom_url"
-            )"
-
-            case "$status" in
-              200)
-                mv "$tmp_file" release-files/sbom.spdx.json
-                trap - EXIT
-                jq -e '.spdxVersion and .SPDXID' release-files/sbom.spdx.json > /dev/null
-                exit 0
-                ;;
-              202)
-                echo "SBOM is still being generated (attempt ${attempt}/60)"
-                sleep 5
-                ;;
-              *)
-                echo "::error::Unexpected HTTP status while fetching SBOM: ${status}"
-                cat "$tmp_file" || true
-                exit 1
-                ;;
-            esac
-          done
-
-          echo "::error::Timed out waiting for GitHub to generate the SBOM"
-          exit 1
+        run: python3 .github/scripts/sbom/generate_sbom.py release-files/sbom.spdx.json
 
       - name: Generate release checksums
         shell: bash
