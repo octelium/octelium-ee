@@ -12,7 +12,7 @@ const CA = `-----BEGIN CERTIFICATE-----
 MIIBszCCAVmgAwIBAgIUQ2xhdWRlRmFrZUNBMDAwMDAwMDAwMDAwCgYIKoZIzj0E
 -----END CERTIFICATE-----`;
 
-describe("Cluster management Regions", () => {
+describe("Cluster management", () => {
   let cacheDir, server, browser, context, page, origin, errors;
 
   before(async () => {
@@ -76,6 +76,127 @@ describe("Cluster management Regions", () => {
   };
   const submit = () =>
     drawer().getByRole("button", { name: "Join Region" }).click();
+  const licenseDrawer = () =>
+    page.getByRole("dialog").filter({
+      has: page.getByRole("textbox", { name: "License", exact: true }),
+    });
+  const licenseRequests = () =>
+    page.evaluate(() =>
+      window.clusterman.calls
+        .filter((call) => call.method === "setLicense")
+        .map((call) => call.request),
+    );
+
+  it("loads, verifies and applies a license file", async () => {
+    await load();
+    await page.getByRole("button", { name: "Set license", exact: true }).click();
+    const input = licenseDrawer().getByRole("textbox", { name: "License" });
+    const apply = licenseDrawer().getByRole("button", { name: "Apply license" });
+    const contents = "  eyJhbGciOi.first-license.signature\n";
+    const [chooser] = await Promise.all([
+      page.waitForEvent("filechooser"),
+      licenseDrawer().getByRole("button", { name: "Load from file" }).click(),
+    ]);
+    await chooser.setFiles({
+      name: "license.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from(contents),
+    });
+    await page.waitForFunction(
+      (value) => document.querySelector("textarea")?.value === value,
+      contents,
+    );
+    assert.deepEqual(await licenseRequests(), []);
+    assert.equal(await apply.isDisabled(), true);
+
+    await licenseDrawer()
+      .getByRole("button", { name: "Verify", exact: true })
+      .click();
+    await licenseDrawer()
+      .getByText("Verified license", { exact: true })
+      .waitFor();
+    await licenseDrawer()
+      .getByRole("button", { name: "Apply license", disabled: false })
+      .waitFor();
+    assert.deepEqual(await licenseRequests(), [
+      { jwt: contents.trim(), dryRun: true },
+    ]);
+
+    const replacement = "\neyJhbGciOi.replacement-license.signature  ";
+    await licenseDrawer().locator('input[type="file"]').setInputFiles({
+      name: "license.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from(replacement),
+    });
+    await page.waitForFunction(
+      (value) => document.querySelector("textarea")?.value === value,
+      replacement,
+    );
+    assert.equal(await apply.isDisabled(), true);
+    assert.equal(
+      await licenseDrawer()
+        .getByText("Verified license", { exact: true })
+        .count(),
+      0,
+    );
+
+    await licenseDrawer()
+      .getByRole("button", { name: "Verify", exact: true })
+      .click();
+    await licenseDrawer()
+      .getByText("Verified license", { exact: true })
+      .waitFor();
+    await apply.click();
+    await page.getByText("License applied", { exact: true }).waitFor();
+    await licenseDrawer().waitFor({ state: "hidden" });
+    await page.getByText("Example Ltd", { exact: true }).waitFor();
+    assert.deepEqual(await licenseRequests(), [
+      { jwt: contents.trim(), dryRun: true },
+      { jwt: replacement.trim(), dryRun: true },
+      { jwt: replacement.trim(), dryRun: false },
+    ]);
+
+    await page.getByRole("button", { name: "Replace", exact: true }).click();
+    assert.equal(await input.inputValue(), "");
+    assert.equal(await apply.isDisabled(), true);
+  });
+
+  it("rejects non-UTF-8 license files without replacing the entered license", async () => {
+    await load();
+    await page.getByRole("button", { name: "Set license", exact: true }).click();
+    const input = licenseDrawer().getByRole("textbox", { name: "License" });
+    await input.fill("eyJhbGciOi.entered-license.signature");
+    await licenseDrawer().locator('input[type="file"]').setInputFiles({
+      name: "invalid.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from([0xff, 0xfe]),
+    });
+    await licenseDrawer()
+      .getByText("The selected file is not valid UTF-8 text.")
+      .waitFor();
+    assert.equal(
+      await input.inputValue(),
+      "eyJhbGciOi.entered-license.signature",
+    );
+    assert.deepEqual(await licenseRequests(), []);
+
+    await licenseDrawer().locator('input[type="file"]').setInputFiles({
+      name: "license.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("eyJhbGciOi.loaded-license.signature"),
+    });
+    await page.waitForFunction(
+      () =>
+        document.querySelector("textarea")?.value ===
+        "eyJhbGciOi.loaded-license.signature",
+    );
+    assert.equal(
+      await licenseDrawer()
+        .getByText("The selected file is not valid UTF-8 text.")
+        .count(),
+      0,
+    );
+  });
 
   it("lists the Regions with their versions and the failed join", async () => {
     await load();

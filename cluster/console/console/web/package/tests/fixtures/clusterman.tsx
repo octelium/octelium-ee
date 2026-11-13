@@ -210,6 +210,8 @@ const packageInfo = (current: string, latest: string) => ({
   setAt: ago(600),
 });
 
+let currentLicense = EnterpriseP.GetLicenseResponse.create({});
+
 const handlers: Record<string, (request: any) => unknown> = {
   getClusterConfig: () =>
     EnterpriseP.ClusterConfig.create({
@@ -225,7 +227,21 @@ const handlers: Record<string, (request: any) => unknown> = {
       packageEnterprise: packageInfo("0.28.0", "0.29.0"),
       packageCordium: packageInfo("0.14.0", "0.14.0"),
     }),
-  getLicense: () => EnterpriseP.GetLicenseResponse.create({}),
+  getLicense: () => currentLicense,
+  setLicense: (request) => {
+    const response = EnterpriseP.SetLicenseResponse.create({
+      license: {
+        organization: { displayName: "Example Ltd" },
+        type: EnterpriseP.License_Type.SUBSCRIPTION,
+        allowedClusterDomains: ["cluster.example.com"],
+      },
+      state: EnterpriseP.ClusterConfig_Status_LicenseInfo_State.ACTIVE,
+    });
+    if (!request.dryRun) {
+      currentLicense = EnterpriseP.GetLicenseResponse.create(response);
+    }
+    return response;
+  },
   listRegion: () => CoreP.RegionList.create({ items: regions }),
   listSecret: () => EnterpriseP.SecretList.create({ items: secrets }),
   getSecret: (request) =>

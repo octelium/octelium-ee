@@ -4,10 +4,11 @@ import {
   SetLicenseRequest,
 } from "@/apis/enterprisev1/enterprisev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
+import TextAreaCustom from "@/components/TextAreaCustom";
 import { onError } from "@/utils";
 import { getClientCluster } from "@/utils/client";
 import { invalidateKey } from "@/utils/pb";
-import { Button, Drawer, Textarea } from "@mantine/core";
+import { Button, Drawer } from "@mantine/core";
 import { useMutation } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import {
@@ -119,8 +120,8 @@ const LicenseDrawer = (props: {
     props.onClose();
   };
 
-  const handleChange = (value: string) => {
-    setJwt(value);
+  const handleChange = (value?: string) => {
+    setJwt(value ?? "");
     setVerified(undefined);
   };
 
@@ -175,21 +176,18 @@ const LicenseDrawer = (props: {
             className="mt-0.5 shrink-0 text-slate-500"
           />
           <p className="text-xs font-normal leading-5 text-slate-600">
-            Paste the signed license that Octelium Labs issued for this Cluster.
-            It is verified against the Cluster domain before anything is stored,
-            so you can check its claims first.
+            Paste or load the signed license that Octelium Labs issued for this
+            Cluster. It is verified against the Cluster domain before anything
+            is stored, so you can check its claims first.
           </p>
         </div>
 
-        <Textarea
+        <TextAreaCustom
           label="License"
           placeholder="eyJhbGciOi…"
-          autosize
-          minRows={6}
-          maxRows={12}
+          rows={6}
           value={jwt}
-          onChange={(event) => handleChange(event.currentTarget.value)}
-          styles={{ input: { fontFamily: "var(--font-mono)", fontSize: "0.72rem" } }}
+          onChange={handleChange}
         />
 
         {verified ? (
