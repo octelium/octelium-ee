@@ -41,6 +41,7 @@ require (
 	go.opentelemetry.io/collector/exporter/exportertest v0.165.0
 	go.opentelemetry.io/collector/exporter/otlpexporter v0.165.0
 	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.165.0
+	go.opentelemetry.io/collector/featuregate v1.71.0
 	go.opentelemetry.io/collector/otelcol v0.165.0
 	go.opentelemetry.io/collector/pdata v1.71.0
 	go.opentelemetry.io/collector/processor v1.71.0
@@ -441,7 +442,6 @@ require (
 	go.opentelemetry.io/collector/extension/extensionmiddleware v0.165.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.165.0 // indirect
 	go.opentelemetry.io/collector/extension/xextension v0.165.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.71.0 // indirect
 	go.opentelemetry.io/collector/internal/componentalias v0.165.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.165.0 // indirect
 	go.opentelemetry.io/collector/internal/memorylimiter v0.165.0 // indirect
@@ -540,7 +540,7 @@ replace github.com/octelium/octelium-ee/pkg => ../../pkg
 
 replace github.com/octelium/octelium-ee/cluster/rscserver => ../rscserver
 
-replace github.com/gobwas/glob => github.com/gobwas/glob v0.2.3
+replace github.com/gobwas/glob => ../../third_party/gobwas-glob
 
 // replace cloud.google.com/go => cloud.google.com/go v0.110.9
 

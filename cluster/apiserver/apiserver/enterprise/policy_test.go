@@ -18,6 +18,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/cluster/common/celengine"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -1498,6 +1499,38 @@ func TestPolicyGetCoreConditionValidation(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, cond)
 		assert.Equal(t, `ctx.request.http.method == "DELETE"`, cond.GetNot())
+	}
+}
+
+func TestPolicyOPAGlobMatch(t *testing.T) {
+	ctx := context.Background()
+	engine, err := celengine.New(ctx, nil)
+	assert.Nil(t, err)
+
+	condition := &corev1.Condition{
+		Type: &corev1.Condition_Opa{
+			Opa: &corev1.Condition_OPA{
+				Type: &corev1.Condition_OPA_Inline{
+					Inline: `package octelium.condition
+match := glob.match("/api/*", ["/"], input.path)`,
+				},
+			},
+		},
+	}
+
+	for _, tc := range []struct {
+		name, path string
+		match      bool
+	}{
+		{name: "Match", path: "/api/logs", match: true},
+		{name: "DifferentPrefix", path: "/admin/logs"},
+		{name: "NestedPath", path: "/api/logs/admin"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			matched, err := engine.EvalCondition(ctx, condition, map[string]any{"path": tc.path})
+			assert.Nil(t, err)
+			assert.Equal(t, tc.match, matched)
+		})
 	}
 }
 

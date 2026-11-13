@@ -22,7 +22,42 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/confmap"
+	"go.opentelemetry.io/collector/featuregate"
 )
+
+func TestCollectorConfigMergeAppend(t *testing.T) {
+	const gate = "confmap.enableMergeAppendOption"
+	registry := featuregate.GlobalRegistry()
+	var wasEnabled bool
+	registry.VisitAll(func(g *featuregate.Gate) {
+		if g.ID() == gate {
+			wasEnabled = g.IsEnabled()
+		}
+	})
+	require.NoError(t, registry.Set(gate, true))
+	t.Cleanup(func() {
+		require.NoError(t, registry.Set(gate, wasEnabled))
+	})
+
+	config := func(receiver, exporter, extension string) *confmap.Conf {
+		return confmap.NewFromStringMap(mt{
+			"service": mt{
+				"extensions": []any{extension, "shared"},
+				"pipelines": mt{
+					"logs": mt{
+						"receivers": []any{receiver, "shared"},
+						"exporters": []any{exporter, "shared"},
+					},
+				},
+			},
+		})
+	}
+	merged := config("receiver-a", "exporter-a", "extension-a")
+	require.NoError(t, merged.Merge(config("receiver-b", "exporter-b", "extension-b")))
+	assert.Equal(t, []any{"extension-a", "shared", "extension-b"}, merged.Get("service::extensions"))
+	assert.Equal(t, []any{"receiver-a", "shared", "receiver-b"}, merged.Get("service::pipelines::logs::receivers"))
+	assert.Equal(t, []any{"exporter-a", "shared", "exporter-b"}, merged.Get("service::pipelines::logs::exporters"))
+}
 
 func TestProviderSendUpdateDebouncesBursts(t *testing.T) {
 	p := &provider{

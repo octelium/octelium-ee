@@ -6,6 +6,7 @@
 !/cluster/
 !/unsorted/
 !/pkg/
+!/third_party/
 !/.github/
 
 !/go.work
