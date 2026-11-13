@@ -623,9 +623,14 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 			MaxContentLengthMetrics: spec.MaxContentLengthMetrics,
 			DisableCompression:      spec.DisableCompression,
 			Timeout:                 timeout,
-			MaxIdleConns:            spec.MaxIdleConns,
 		}
 		ret.exp = c
+
+		if spec.MaxIdleConns != 0 {
+			c.Keepalive = &splunkKeepalive{
+				MaxIdleConns: spec.MaxIdleConns,
+			}
+		}
 
 		if spec.Tls != nil && spec.Tls.InsecureSkipVerify {
 			c.TLS = &splunkTLS{

@@ -1200,8 +1200,36 @@ func TestGetExporterSplunkCompleteMapping(t *testing.T) {
 	assert.EqualValues(t, 20000, collectorConfigValue(t, info.exporterMap, "max_content_length_metrics"))
 	assert.EqualValues(t, true, collectorConfigValue(t, info.exporterMap, "disable_compression"))
 	assert.EqualValues(t, "10s", collectorConfigValue(t, info.exporterMap, "timeout"))
-	assert.EqualValues(t, 3, collectorConfigValue(t, info.exporterMap, "max_idle_conns"))
+	assert.EqualValues(t, 3, collectorConfigValue(t, info.exporterMap, "keepalive.max_idle_conns"))
 	assert.EqualValues(t, true, collectorConfigValue(t, info.exporterMap, "tls.insecure_skip_verify"))
+}
+
+func TestGetExporterSplunkKeepalive(t *testing.T) {
+	p := newCollectorProviderTest(t)
+	for _, tc := range []struct {
+		name         string
+		maxIdleConns int64
+		want         int
+	}{
+		{name: "Default", want: 100},
+		{name: "Configured", maxIdleConns: 3, want: 3},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			exp := collectorExporterFromJSON(t, fmt.Sprintf(`{"splunk":{"endpoint":"https://splunk.example/services/collector","token":{"fromSecret":"mapping-credential"},"maxIdleConns":%d}}`, tc.maxIdleConns))
+			info, err := p.getExporter(t.Context(), exp)
+			require.NoError(t, err)
+			assert.NotContains(t, info.exporterMap, "max_idle_conns")
+			if tc.maxIdleConns == 0 {
+				assert.NotContains(t, info.exporterMap, "keepalive")
+			}
+			cfg := splunkhecexporter.NewFactory().CreateDefaultConfig().(*splunkhecexporter.Config)
+			require.NoError(t, confmap.NewFromStringMap(info.exporterMap).Unmarshal(cfg))
+			keepalive := cfg.ClientConfig.Keepalive.Get()
+			assert.Equal(t, tc.want, keepalive.MaxIdleConns)
+			assert.Equal(t, 10*time.Second, keepalive.IdleConnTimeout)
+			assert.Equal(t, 100, keepalive.MaxIdleConnsPerHost)
+		})
+	}
 }
 
 func TestGetExporterAzureMonitorCompleteMapping(t *testing.T) {
