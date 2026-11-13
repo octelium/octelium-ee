@@ -6,8 +6,8 @@ require (
 	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20261109163228-18faf9d8e0f6
-	github.com/octelium/octelium/pkg v0.0.0-20261109163228-18faf9d8e0f6
+	github.com/octelium/octelium/cluster/common v0.0.0-20261113052800-65352b1a75f0
+	github.com/octelium/octelium/pkg v0.0.0-20261113052800-65352b1a75f0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.12.1
