@@ -1,6 +1,6 @@
 module github.com/octelium/octelium-ee/cluster/clusterman
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-20250516172457-ae6f09fa68bf

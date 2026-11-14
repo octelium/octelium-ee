@@ -1,6 +1,6 @@
 module github.com/octelium/octelium-ee/cluster/e2e
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/go-resty/resty/v2 v2.17.2
