@@ -126,6 +126,7 @@ func testAccessAutoApprove(t *testing.T, ch *harness.H) {
 
 	approved := h.WaitRequestState(t, req,
 		accessv1.Request_Status_State_APPROVED, eeharness.RequestBudget)
+	approved = h.WaitRequestPolicyTrigger(t, approved, eeharness.RequestBudget)
 
 	t.Run("ApprovedWithoutAReview", func(t *testing.T) {
 		assert.Nil(t, approved.Status.Review)

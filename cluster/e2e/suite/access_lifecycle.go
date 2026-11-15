@@ -87,6 +87,7 @@ func testAccessDirectService(t *testing.T, ch *harness.H) {
 	h.Review(t, c.rita, req, accessv1.Review_Spec_DECISION_APPROVE)
 	approved := h.WaitRequestState(t, req, accessv1.Request_Status_State_APPROVED,
 		eeharness.RequestBudget)
+	approved = h.WaitRequestPolicyTrigger(t, approved, eeharness.RequestBudget)
 
 	t.Run("TheRequestTargetsTheService", func(t *testing.T) {
 		assert.Equal(t, c.alpha.Metadata.Uid, approved.Spec.Resource.GetServiceRef().Uid)

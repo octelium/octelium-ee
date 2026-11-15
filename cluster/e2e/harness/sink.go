@@ -52,28 +52,39 @@ func (h *H) Sink(t *testing.T) *Sink {
 	}
 }
 
+func (s *Sink) run(t *testing.T, cmd string, budget time.Duration) {
+	t.Helper()
+
+	ctx, cancel := s.h.CtxWithin(t, budget)
+	defer cancel()
+
+	if err := s.h.Run(ctx, cmd); err != nil {
+		t.Fatalf("Command failed: %s: %+v", cmd, err)
+	}
+}
+
 func (s *Sink) SetToken(t *testing.T, token string) {
 	t.Helper()
 
-	s.h.MustRun(t, fmt.Sprintf(
+	s.run(t, fmt.Sprintf(
 		`kubectl exec -n %s %s -- sh -c 'printf %%s "$1" > %s/auth-token' sh %s`,
-		s.namespace, s.pod, s.dir, token))
+		s.namespace, s.pod, s.dir, token), time.Minute)
 }
 
 func (s *Sink) Stop(t *testing.T) func() {
 	t.Helper()
 
-	s.h.MustRun(t, fmt.Sprintf(
-		`kubectl scale -n %s deployment/%s --replicas=0`, s.namespace, sinkDeployment))
+	s.run(t, fmt.Sprintf(
+		`kubectl scale -n %s deployment/%s --replicas=0`, s.namespace, sinkDeployment), time.Minute)
 
 	var once sync.Once
 	restore := func() {
 		once.Do(func() {
-			s.h.MustRun(t, fmt.Sprintf(
-				`kubectl scale -n %s deployment/%s --replicas=1`, s.namespace, sinkDeployment))
-			s.h.MustRun(t, fmt.Sprintf(
+			s.run(t, fmt.Sprintf(
+				`kubectl scale -n %s deployment/%s --replicas=1`, s.namespace, sinkDeployment), time.Minute)
+			s.run(t, fmt.Sprintf(
 				`kubectl rollout status -n %s deployment/%s --timeout=5m`,
-				s.namespace, sinkDeployment))
+				s.namespace, sinkDeployment), 5*time.Minute)
 		})
 	}
 
@@ -119,9 +130,9 @@ func (s *Sink) mustRead(t *testing.T, file string) string {
 func (s *Sink) Truncate(t *testing.T) {
 	t.Helper()
 
-	s.h.MustRun(t, fmt.Sprintf(
+	s.run(t, fmt.Sprintf(
 		`kubectl exec -n %s %s -- sh -c ': > %s/logs.json; : > %s/metrics.json'`,
-		s.namespace, s.pod, s.dir, s.dir))
+		s.namespace, s.pod, s.dir, s.dir), time.Minute)
 }
 
 func (s *Sink) WaitContains(t *testing.T, file, needle string, budget time.Duration) {
