@@ -60,6 +60,11 @@ import { GetDeviceSummaryResponse } from "./core/vcorev1";
 import { GetSessionSummaryResponse } from "./core/vcorev1";
 import { GetUserSummaryResponse } from "./core/vcorev1";
 import { CommonSummaryOptions } from "./meta/vmetav1";
+import { GeoIP_Coordinates } from "../corev1/corev1";
+import { GeoIP_City } from "../corev1/corev1";
+import { GeoIP_Region } from "../corev1/corev1";
+import { GeoIP_Continent } from "../corev1/corev1";
+import { GeoIP_Country } from "../corev1/corev1";
 import { IdentityProvider } from "../corev1/corev1";
 import { Credential } from "../corev1/corev1";
 import { Policy } from "../corev1/corev1";
@@ -150,6 +155,15 @@ export interface ListAccessLogRequest {
      * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Mode mode = 18
      */
     mode: Service_Spec_Mode;
+    /**
+     * CountryCode only lists the entries whose Session authenticated from this
+     * ISO 3166-1 alpha-2 country code (e.g. "US"). The country is resolved from
+     * the GeoIP information of the Session's latest successful authentication at
+     * the time of the entry.
+     *
+     * @generated from protobuf field: string countryCode = 19
+     */
+    countryCode: string;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogResponse
@@ -412,6 +426,15 @@ export interface GetAccessLogSummaryRequest {
      * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Mode mode = 18
      */
     mode: Service_Spec_Mode;
+    /**
+     * CountryCode only counts the entries whose Session authenticated from this
+     * ISO 3166-1 alpha-2 country code (e.g. "US"). The country is resolved from
+     * the GeoIP information of the Session's latest successful authentication at
+     * the time of the entry.
+     *
+     * @generated from protobuf field: string countryCode = 19
+     */
+    countryCode: string;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAccessLogSummaryResponse
@@ -496,6 +519,13 @@ export interface GetAccessLogSummaryResponse {
      * @generated from protobuf field: octelium.api.main.visibility.v1.GetAccessLogSummaryResponse previous = 16
      */
     previous?: GetAccessLogSummaryResponse;
+    /**
+     * TotalCountry is the number of the distinct countries from which the
+     * entries' Sessions authenticated.
+     *
+     * @generated from protobuf field: uint64 totalCountry = 17
+     */
+    totalCountry: number;
 }
 /**
  * Latency is the distribution of the request/connection durations. It is
@@ -586,6 +616,13 @@ export interface ListAuthenticationLogRequest {
      * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13
      */
     reason: AuthenticationLog_Entry_Failure_Reason;
+    /**
+     * CountryCode only lists the entries whose GeoIP country is this ISO 3166-1
+     * alpha-2 country code (e.g. "US").
+     *
+     * @generated from protobuf field: string countryCode = 14
+     */
+    countryCode: string;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogResponse
@@ -662,6 +699,13 @@ export interface GetAuthenticationLogSummaryRequest {
      * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 15
      */
     reason: AuthenticationLog_Entry_Failure_Reason;
+    /**
+     * CountryCode only counts the entries whose GeoIP country is this ISO 3166-1
+     * alpha-2 country code (e.g. "US").
+     *
+     * @generated from protobuf field: string countryCode = 16
+     */
+    countryCode: string;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse
@@ -759,6 +803,12 @@ export interface GetAuthenticationLogSummaryResponse {
     totalByFailureReason: {
         [key: string]: number;
     };
+    /**
+     * TotalCountry is the number of the distinct GeoIP countries of the entries.
+     *
+     * @generated from protobuf field: uint64 totalCountry = 21
+     */
+    totalCountry: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListAuditLogRequest
@@ -1114,6 +1164,15 @@ export interface GetAccessLogDataPointRequest {
      * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Mode mode = 19
      */
     mode: Service_Spec_Mode;
+    /**
+     * CountryCode only counts the entries whose Session authenticated from this
+     * ISO 3166-1 alpha-2 country code (e.g. "US"). The country is resolved from
+     * the GeoIP information of the Session's latest successful authentication at
+     * the time of the entry.
+     *
+     * @generated from protobuf field: string countryCode = 20
+     */
+    countryCode: string;
 }
 /**
  * GroupBy is the dimension by which the entries are split into separate
@@ -1166,7 +1225,14 @@ export enum GetAccessLogDataPointRequest_GroupBy {
     /**
      * @generated from protobuf enum value: POLICY = 10;
      */
-    POLICY = 10
+    POLICY = 10,
+    /**
+     * COUNTRY splits the entries by the country from which their Session
+     * authenticated (i.e. its ISO 3166-1 alpha-2 country code).
+     *
+     * @generated from protobuf enum value: COUNTRY = 11;
+     */
+    COUNTRY = 11
 }
 /**
  * DataPointSeries is a single series of a grouped datapoint response.
@@ -1314,6 +1380,13 @@ export interface GetAuthenticationLogDataPointRequest {
      * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 16
      */
     reason: AuthenticationLog_Entry_Failure_Reason;
+    /**
+     * CountryCode only counts the entries whose GeoIP country is this ISO 3166-1
+     * alpha-2 country code (e.g. "US").
+     *
+     * @generated from protobuf field: string countryCode = 17
+     */
+    countryCode: string;
 }
 /**
  * GroupBy is the dimension by which the entries are split into separate
@@ -1372,7 +1445,14 @@ export enum GetAuthenticationLogDataPointRequest_GroupBy {
      *
      * @generated from protobuf enum value: FAILURE_REASON = 10;
      */
-    FAILURE_REASON = 10
+    FAILURE_REASON = 10,
+    /**
+     * COUNTRY splits the entries by their GeoIP country (i.e. its ISO 3166-1
+     * alpha-2 country code).
+     *
+     * @generated from protobuf enum value: COUNTRY = 11;
+     */
+    COUNTRY = 11
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse
@@ -1456,6 +1536,15 @@ export interface ListAccessLogTopUserRequest {
      * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Mode mode = 16
      */
     mode: Service_Spec_Mode;
+    /**
+     * CountryCode only counts the entries whose Session authenticated from this
+     * ISO 3166-1 alpha-2 country code (e.g. "US"). The country is resolved from
+     * the GeoIP information of the Session's latest successful authentication at
+     * the time of the entry.
+     *
+     * @generated from protobuf field: string countryCode = 17
+     */
+    countryCode: string;
     /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
@@ -1562,6 +1651,15 @@ export interface ListAccessLogTopSessionRequest {
      */
     mode: Service_Spec_Mode;
     /**
+     * CountryCode only counts the entries whose Session authenticated from this
+     * ISO 3166-1 alpha-2 country code (e.g. "US"). The country is resolved from
+     * the GeoIP information of the Session's latest successful authentication at
+     * the time of the entry.
+     *
+     * @generated from protobuf field: string countryCode = 17
+     */
+    countryCode: string;
+    /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
      *
@@ -1662,6 +1760,15 @@ export interface ListAccessLogTopServiceRequest {
      * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Mode mode = 16
      */
     mode: Service_Spec_Mode;
+    /**
+     * CountryCode only counts the entries whose Session authenticated from this
+     * ISO 3166-1 alpha-2 country code (e.g. "US"). The country is resolved from
+     * the GeoIP information of the Session's latest successful authentication at
+     * the time of the entry.
+     *
+     * @generated from protobuf field: string countryCode = 17
+     */
+    countryCode: string;
     /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
@@ -1768,6 +1875,15 @@ export interface ListAccessLogTopPolicyRequest {
      */
     mode: Service_Spec_Mode;
     /**
+     * CountryCode only counts the entries whose Session authenticated from this
+     * ISO 3166-1 alpha-2 country code (e.g. "US"). The country is resolved from
+     * the GeoIP information of the Session's latest successful authentication at
+     * the time of the entry.
+     *
+     * @generated from protobuf field: string countryCode = 17
+     */
+    countryCode: string;
+    /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
      *
@@ -1873,6 +1989,15 @@ export interface ListAccessLogTopDenyReasonRequest {
      */
     mode: Service_Spec_Mode;
     /**
+     * CountryCode only counts the entries whose Session authenticated from this
+     * ISO 3166-1 alpha-2 country code (e.g. "US"). The country is resolved from
+     * the GeoIP information of the Session's latest successful authentication at
+     * the time of the entry.
+     *
+     * @generated from protobuf field: string countryCode = 17
+     */
+    countryCode: string;
+    /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
      *
@@ -1967,6 +2092,13 @@ export interface ListAuthenticationLogTopUserRequest {
      */
     reason: AuthenticationLog_Entry_Failure_Reason;
     /**
+     * CountryCode only counts the entries whose GeoIP country is this ISO 3166-1
+     * alpha-2 country code (e.g. "US").
+     *
+     * @generated from protobuf field: string countryCode = 14
+     */
+    countryCode: string;
+    /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
      *
@@ -2057,6 +2189,13 @@ export interface ListAuthenticationLogTopCredentialRequest {
      * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13
      */
     reason: AuthenticationLog_Entry_Failure_Reason;
+    /**
+     * CountryCode only counts the entries whose GeoIP country is this ISO 3166-1
+     * alpha-2 country code (e.g. "US").
+     *
+     * @generated from protobuf field: string countryCode = 14
+     */
+    countryCode: string;
     /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
@@ -2153,6 +2292,13 @@ export interface ListAuthenticationLogTopIdentityProviderRequest {
      */
     reason: AuthenticationLog_Entry_Failure_Reason;
     /**
+     * CountryCode only counts the entries whose GeoIP country is this ISO 3166-1
+     * alpha-2 country code (e.g. "US").
+     *
+     * @generated from protobuf field: string countryCode = 14
+     */
+    countryCode: string;
+    /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
      *
@@ -2195,6 +2341,473 @@ export interface ListAuthenticationLogTopIdentityProviderResponse_Item {
      * @generated from protobuf field: int32 count = 2
      */
     count: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest
+ */
+export interface ListAccessLogTopCountryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference regionRef = 1
+     */
+    regionRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference sessionRef = 6
+     */
+    sessionRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 7
+     */
+    userRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference deviceRef = 8
+     */
+    deviceRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference serviceRef = 9
+     */
+    serviceRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference namespaceRef = 10
+     */
+    namespaceRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference policyRef = 11
+     */
+    policyRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp from = 4
+     */
+    from?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp to = 5
+     */
+    to?: Timestamp;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Status status = 12
+     */
+    status: AccessLog_Entry_Common_Status;
+    /**
+     * IsPublic only counts the requests served over the public
+     * clientless/BeyondCorp mode.
+     *
+     * @generated from protobuf field: bool isPublic = 13
+     */
+    isPublic: boolean;
+    /**
+     * IsAnonymous only counts the requests that were served anonymously.
+     *
+     * @generated from protobuf field: bool isAnonymous = 14
+     */
+    isAnonymous: boolean;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 15
+     */
+    reason: AccessLog_Entry_Common_Reason_Type;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Mode mode = 16
+     */
+    mode: Service_Spec_Mode;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 250.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse
+ */
+export interface ListAccessLogTopCountryResponse {
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse.Item items = 1
+     */
+    items: ListAccessLogTopCountryResponse_Item[];
+    /**
+     * TotalCount is the number of the distinct countries that matched.
+     *
+     * @generated from protobuf field: uint64 totalCount = 100
+     */
+    totalCount: number;
+    /**
+     * TotalOther is the sum of the counts of the matching countries that are not
+     * returned.
+     *
+     * @generated from protobuf field: uint64 totalOther = 101
+     */
+    totalOther: number;
+    /**
+     * TotalUnknown is the number of the matching entries whose country is
+     * unknown (e.g. the geolocation is not enabled in the ClusterConfig).
+     *
+     * @generated from protobuf field: uint64 totalUnknown = 102
+     */
+    totalUnknown: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse.Item
+ */
+export interface ListAccessLogTopCountryResponse_Item {
+    /**
+     * Country is the country from which the entries' Sessions authenticated.
+     * Only its code is set.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.GeoIP.Country country = 1
+     */
+    country?: GeoIP_Country;
+    /**
+     * Count is the number of the matching entries of the country.
+     *
+     * @generated from protobuf field: uint64 count = 2
+     */
+    count: number;
+    /**
+     * CountAllowed is the number of the allowed entries of the country.
+     *
+     * @generated from protobuf field: uint64 countAllowed = 3
+     */
+    countAllowed: number;
+    /**
+     * CountDenied is the number of the denied entries of the country.
+     *
+     * @generated from protobuf field: uint64 countDenied = 4
+     */
+    countDenied: number;
+    /**
+     * CountUser is the number of the distinct Users of the country's entries.
+     *
+     * @generated from protobuf field: uint64 countUser = 5
+     */
+    countUser: number;
+    /**
+     * CountSession is the number of the distinct Sessions of the country's
+     * entries.
+     *
+     * @generated from protobuf field: uint64 countSession = 6
+     */
+    countSession: number;
+    /**
+     * CountService is the number of the distinct Services of the country's
+     * entries.
+     *
+     * @generated from protobuf field: uint64 countService = 7
+     */
+    countService: number;
+    /**
+     * LastSeenAt is the creation timestamp of the country's latest entry.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp lastSeenAt = 8
+     */
+    lastSeenAt?: Timestamp;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest
+ */
+export interface ListAuthenticationLogTopCountryRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference sessionRef = 6
+     */
+    sessionRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 7
+     */
+    userRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference deviceRef = 8
+     */
+    deviceRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference identityProviderRef = 9
+     */
+    identityProviderRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference credentialRef = 10
+     */
+    credentialRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference authenticatorRef = 11
+     */
+    authenticatorRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp from = 4
+     */
+    from?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp to = 5
+     */
+    to?: Timestamp;
+    /**
+     * Status only counts the entries of this Status. Note that SUCCESS also
+     * matches the entries that were recorded before the Status was introduced.
+     * When it is unset, both the successful and the failed authentications are
+     * counted.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12
+     */
+    status: AuthenticationLog_Entry_Status;
+    /**
+     * Reason only counts the failed authentication attempts of this reason.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13
+     */
+    reason: AuthenticationLog_Entry_Failure_Reason;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 250.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse
+ */
+export interface ListAuthenticationLogTopCountryResponse {
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.Item items = 1
+     */
+    items: ListAuthenticationLogTopCountryResponse_Item[];
+    /**
+     * TotalCount is the number of the distinct countries that matched.
+     *
+     * @generated from protobuf field: uint64 totalCount = 100
+     */
+    totalCount: number;
+    /**
+     * TotalOther is the sum of the counts of the matching countries that are not
+     * returned.
+     *
+     * @generated from protobuf field: uint64 totalOther = 101
+     */
+    totalOther: number;
+    /**
+     * TotalUnknown is the number of the matching entries that do not have a
+     * GeoIP country (e.g. the geolocation is not enabled in the ClusterConfig).
+     *
+     * @generated from protobuf field: uint64 totalUnknown = 102
+     */
+    totalUnknown: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.Item
+ */
+export interface ListAuthenticationLogTopCountryResponse_Item {
+    /**
+     * Country is the GeoIP country of the entries.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.GeoIP.Country country = 1
+     */
+    country?: GeoIP_Country;
+    /**
+     * Continent is the GeoIP continent of the country.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.GeoIP.Continent continent = 2
+     */
+    continent?: GeoIP_Continent;
+    /**
+     * Count is the number of the matching entries of the country.
+     *
+     * @generated from protobuf field: uint64 count = 3
+     */
+    count: number;
+    /**
+     * CountSuccess is the number of the successful authentications of the
+     * country.
+     *
+     * @generated from protobuf field: uint64 countSuccess = 4
+     */
+    countSuccess: number;
+    /**
+     * CountFailure is the number of the failed authentication attempts of the
+     * country.
+     *
+     * @generated from protobuf field: uint64 countFailure = 5
+     */
+    countFailure: number;
+    /**
+     * CountUser is the number of the distinct Users of the country's entries.
+     *
+     * @generated from protobuf field: uint64 countUser = 6
+     */
+    countUser: number;
+    /**
+     * CountSession is the number of the distinct Sessions of the country's
+     * entries.
+     *
+     * @generated from protobuf field: uint64 countSession = 7
+     */
+    countSession: number;
+    /**
+     * LastSeenAt is the creation timestamp of the country's latest entry.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp lastSeenAt = 8
+     */
+    lastSeenAt?: Timestamp;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest
+ */
+export interface ListAuthenticationLogTopCityRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference sessionRef = 6
+     */
+    sessionRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 7
+     */
+    userRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference deviceRef = 8
+     */
+    deviceRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference identityProviderRef = 9
+     */
+    identityProviderRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference credentialRef = 10
+     */
+    credentialRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference authenticatorRef = 11
+     */
+    authenticatorRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp from = 4
+     */
+    from?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp to = 5
+     */
+    to?: Timestamp;
+    /**
+     * Status only counts the entries of this Status. Note that SUCCESS also
+     * matches the entries that were recorded before the Status was introduced.
+     * When it is unset, both the successful and the failed authentications are
+     * counted.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12
+     */
+    status: AuthenticationLog_Entry_Status;
+    /**
+     * Reason only counts the failed authentication attempts of this reason.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13
+     */
+    reason: AuthenticationLog_Entry_Failure_Reason;
+    /**
+     * CountryCode only counts the entries whose GeoIP country is this ISO 3166-1
+     * alpha-2 country code (e.g. "US").
+     *
+     * @generated from protobuf field: string countryCode = 14
+     */
+    countryCode: string;
+    /**
+     * Limit caps the number of the returned items. It defaults to 10 and it
+     * cannot exceed 250.
+     *
+     * @generated from protobuf field: uint32 limit = 100
+     */
+    limit: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse
+ */
+export interface ListAuthenticationLogTopCityResponse {
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item items = 1
+     */
+    items: ListAuthenticationLogTopCityResponse_Item[];
+    /**
+     * TotalCount is the number of the distinct cities that matched.
+     *
+     * @generated from protobuf field: uint64 totalCount = 100
+     */
+    totalCount: number;
+    /**
+     * TotalOther is the sum of the counts of the matching cities that are not
+     * returned.
+     *
+     * @generated from protobuf field: uint64 totalOther = 101
+     */
+    totalOther: number;
+    /**
+     * TotalUnknown is the number of the matching entries that do not have GeoIP
+     * coordinates.
+     *
+     * @generated from protobuf field: uint64 totalUnknown = 102
+     */
+    totalUnknown: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item
+ */
+export interface ListAuthenticationLogTopCityResponse_Item {
+    /**
+     * Country is the GeoIP country of the entries.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.GeoIP.Country country = 1
+     */
+    country?: GeoIP_Country;
+    /**
+     * Region is the GeoIP region of the entries.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.GeoIP.Region region = 2
+     */
+    region?: GeoIP_Region;
+    /**
+     * City is the GeoIP city of the entries. It is not set whenever the
+     * entries are only resolved to a country.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.GeoIP.City city = 3
+     */
+    city?: GeoIP_City;
+    /**
+     * Coordinates is the average location of the entries. Its accuracyRadius
+     * is the largest accuracy radius of the entries.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.GeoIP.Coordinates coordinates = 4
+     */
+    coordinates?: GeoIP_Coordinates;
+    /**
+     * Count is the number of the matching entries of the city.
+     *
+     * @generated from protobuf field: uint64 count = 5
+     */
+    count: number;
+    /**
+     * CountSuccess is the number of the successful authentications of the
+     * city.
+     *
+     * @generated from protobuf field: uint64 countSuccess = 6
+     */
+    countSuccess: number;
+    /**
+     * CountFailure is the number of the failed authentication attempts of the
+     * city.
+     *
+     * @generated from protobuf field: uint64 countFailure = 7
+     */
+    countFailure: number;
+    /**
+     * CountUser is the number of the distinct Users of the city's entries.
+     *
+     * @generated from protobuf field: uint64 countUser = 8
+     */
+    countUser: number;
+    /**
+     * CountSession is the number of the distinct Sessions of the city's
+     * entries.
+     *
+     * @generated from protobuf field: uint64 countSession = 9
+     */
+    countSession: number;
+    /**
+     * LastSeenAt is the creation timestamp of the city's latest entry.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp lastSeenAt = 10
+     */
+    lastSeenAt?: Timestamp;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ComponentSelector
@@ -3534,7 +4147,8 @@ class ListAccessLogRequest$Type extends MessageType<ListAccessLogRequest> {
             { no: 15, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 16, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 17, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
-            { no: 18, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] }
+            { no: 18, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
+            { no: 19, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<ListAccessLogRequest>): ListAccessLogRequest {
@@ -3544,6 +4158,7 @@ class ListAccessLogRequest$Type extends MessageType<ListAccessLogRequest> {
         message.isAnonymous = false;
         message.reason = 0;
         message.mode = 0;
+        message.countryCode = "";
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogRequest>(this, message, value);
         return message;
@@ -3600,6 +4215,9 @@ class ListAccessLogRequest$Type extends MessageType<ListAccessLogRequest> {
                     break;
                 case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 18:
                     message.mode = reader.int32();
+                    break;
+                case /* string countryCode */ 19:
+                    message.countryCode = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -3661,6 +4279,9 @@ class ListAccessLogRequest$Type extends MessageType<ListAccessLogRequest> {
         /* octelium.api.main.core.v1.Service.Spec.Mode mode = 18; */
         if (message.mode !== 0)
             writer.tag(18, WireType.Varint).int32(message.mode);
+        /* string countryCode = 19; */
+        if (message.countryCode !== "")
+            writer.tag(19, WireType.LengthDelimited).string(message.countryCode);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4199,7 +4820,8 @@ class GetAccessLogSummaryRequest$Type extends MessageType<GetAccessLogSummaryReq
             { no: 15, name: "compareFrom", kind: "message", T: () => Timestamp },
             { no: 16, name: "compareTo", kind: "message", T: () => Timestamp },
             { no: 17, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
-            { no: 18, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] }
+            { no: 18, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
+            { no: 19, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<GetAccessLogSummaryRequest>): GetAccessLogSummaryRequest {
@@ -4209,6 +4831,7 @@ class GetAccessLogSummaryRequest$Type extends MessageType<GetAccessLogSummaryReq
         message.isAnonymous = false;
         message.reason = 0;
         message.mode = 0;
+        message.countryCode = "";
         if (value !== undefined)
             reflectionMergePartial<GetAccessLogSummaryRequest>(this, message, value);
         return message;
@@ -4265,6 +4888,9 @@ class GetAccessLogSummaryRequest$Type extends MessageType<GetAccessLogSummaryReq
                     break;
                 case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 18:
                     message.mode = reader.int32();
+                    break;
+                case /* string countryCode */ 19:
+                    message.countryCode = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4326,6 +4952,9 @@ class GetAccessLogSummaryRequest$Type extends MessageType<GetAccessLogSummaryReq
         /* octelium.api.main.core.v1.Service.Spec.Mode mode = 18; */
         if (message.mode !== 0)
             writer.tag(18, WireType.Varint).int32(message.mode);
+        /* string countryCode = 19; */
+        if (message.countryCode !== "")
+            writer.tag(19, WireType.LengthDelimited).string(message.countryCode);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4355,7 +4984,8 @@ class GetAccessLogSummaryResponse$Type extends MessageType<GetAccessLogSummaryRe
             { no: 13, name: "totalBytesReceived", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 14, name: "latency", kind: "message", T: () => GetAccessLogSummaryResponse_Latency },
             { no: 15, name: "totalByMode", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ } },
-            { no: 16, name: "previous", kind: "message", T: () => GetAccessLogSummaryResponse }
+            { no: 16, name: "previous", kind: "message", T: () => GetAccessLogSummaryResponse },
+            { no: 17, name: "totalCountry", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<GetAccessLogSummaryResponse>): GetAccessLogSummaryResponse {
@@ -4374,6 +5004,7 @@ class GetAccessLogSummaryResponse$Type extends MessageType<GetAccessLogSummaryRe
         message.totalBytesSent = 0;
         message.totalBytesReceived = 0;
         message.totalByMode = {};
+        message.totalCountry = 0;
         if (value !== undefined)
             reflectionMergePartial<GetAccessLogSummaryResponse>(this, message, value);
         return message;
@@ -4430,6 +5061,9 @@ class GetAccessLogSummaryResponse$Type extends MessageType<GetAccessLogSummaryRe
                     break;
                 case /* octelium.api.main.visibility.v1.GetAccessLogSummaryResponse previous */ 16:
                     message.previous = GetAccessLogSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
+                    break;
+                case /* uint64 totalCountry */ 17:
+                    message.totalCountry = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4507,6 +5141,9 @@ class GetAccessLogSummaryResponse$Type extends MessageType<GetAccessLogSummaryRe
         /* octelium.api.main.visibility.v1.GetAccessLogSummaryResponse previous = 16; */
         if (message.previous)
             GetAccessLogSummaryResponse.internalBinaryWrite(message.previous, writer.tag(16, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCountry = 17; */
+        if (message.totalCountry !== 0)
+            writer.tag(17, WireType.Varint).uint64(message.totalCountry);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4618,13 +5255,15 @@ class ListAuthenticationLogRequest$Type extends MessageType<ListAuthenticationLo
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
             { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status", AuthenticationLog_Entry_Status] },
-            { no: 13, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] }
+            { no: 13, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] },
+            { no: 14, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<ListAuthenticationLogRequest>): ListAuthenticationLogRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.status = 0;
         message.reason = 0;
+        message.countryCode = "";
         if (value !== undefined)
             reflectionMergePartial<ListAuthenticationLogRequest>(this, message, value);
         return message;
@@ -4666,6 +5305,9 @@ class ListAuthenticationLogRequest$Type extends MessageType<ListAuthenticationLo
                     break;
                 case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason */ 13:
                     message.reason = reader.int32();
+                    break;
+                case /* string countryCode */ 14:
+                    message.countryCode = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4712,6 +5354,9 @@ class ListAuthenticationLogRequest$Type extends MessageType<ListAuthenticationLo
         /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13; */
         if (message.reason !== 0)
             writer.tag(13, WireType.Varint).int32(message.reason);
+        /* string countryCode = 14; */
+        if (message.countryCode !== "")
+            writer.tag(14, WireType.LengthDelimited).string(message.countryCode);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4791,13 +5436,15 @@ class GetAuthenticationLogSummaryRequest$Type extends MessageType<GetAuthenticat
             { no: 12, name: "compareFrom", kind: "message", T: () => Timestamp },
             { no: 13, name: "compareTo", kind: "message", T: () => Timestamp },
             { no: 14, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status", AuthenticationLog_Entry_Status] },
-            { no: 15, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] }
+            { no: 15, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] },
+            { no: 16, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<GetAuthenticationLogSummaryRequest>): GetAuthenticationLogSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.status = 0;
         message.reason = 0;
+        message.countryCode = "";
         if (value !== undefined)
             reflectionMergePartial<GetAuthenticationLogSummaryRequest>(this, message, value);
         return message;
@@ -4842,6 +5489,9 @@ class GetAuthenticationLogSummaryRequest$Type extends MessageType<GetAuthenticat
                     break;
                 case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason */ 15:
                     message.reason = reader.int32();
+                    break;
+                case /* string countryCode */ 16:
+                    message.countryCode = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4891,6 +5541,9 @@ class GetAuthenticationLogSummaryRequest$Type extends MessageType<GetAuthenticat
         /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 15; */
         if (message.reason !== 0)
             writer.tag(15, WireType.Varint).int32(message.reason);
+        /* string countryCode = 16; */
+        if (message.countryCode !== "")
+            writer.tag(16, WireType.LengthDelimited).string(message.countryCode);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4924,7 +5577,8 @@ class GetAuthenticationLogSummaryResponse$Type extends MessageType<GetAuthentica
             { no: 17, name: "previous", kind: "message", T: () => GetAuthenticationLogSummaryResponse },
             { no: 18, name: "totalSuccess", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 19, name: "totalFailure", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 20, name: "totalByFailureReason", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ } }
+            { no: 20, name: "totalByFailureReason", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ } },
+            { no: 21, name: "totalCountry", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<GetAuthenticationLogSummaryResponse>): GetAuthenticationLogSummaryResponse {
@@ -4948,6 +5602,7 @@ class GetAuthenticationLogSummaryResponse$Type extends MessageType<GetAuthentica
         message.totalSuccess = 0;
         message.totalFailure = 0;
         message.totalByFailureReason = {};
+        message.totalCountry = 0;
         if (value !== undefined)
             reflectionMergePartial<GetAuthenticationLogSummaryResponse>(this, message, value);
         return message;
@@ -5016,6 +5671,9 @@ class GetAuthenticationLogSummaryResponse$Type extends MessageType<GetAuthentica
                     break;
                 case /* map<string, uint64> totalByFailureReason */ 20:
                     this.binaryReadMap20(message.totalByFailureReason, reader, options);
+                    break;
+                case /* uint64 totalCountry */ 21:
+                    message.totalCountry = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5105,6 +5763,9 @@ class GetAuthenticationLogSummaryResponse$Type extends MessageType<GetAuthentica
         /* map<string, uint64> totalByFailureReason = 20; */
         for (let k of globalThis.Object.keys(message.totalByFailureReason))
             writer.tag(20, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.Varint).uint64(message.totalByFailureReason[k]).join();
+        /* uint64 totalCountry = 21; */
+        if (message.totalCountry !== 0)
+            writer.tag(21, WireType.Varint).uint64(message.totalCountry);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6149,7 +6810,8 @@ class GetAccessLogDataPointRequest$Type extends MessageType<GetAccessLogDataPoin
             { no: 16, name: "groupBy", kind: "enum", T: () => ["octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.GroupBy", GetAccessLogDataPointRequest_GroupBy] },
             { no: 17, name: "limitSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 18, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
-            { no: 19, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] }
+            { no: 19, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
+            { no: 20, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<GetAccessLogDataPointRequest>): GetAccessLogDataPointRequest {
@@ -6161,6 +6823,7 @@ class GetAccessLogDataPointRequest$Type extends MessageType<GetAccessLogDataPoin
         message.limitSeries = 0;
         message.reason = 0;
         message.mode = 0;
+        message.countryCode = "";
         if (value !== undefined)
             reflectionMergePartial<GetAccessLogDataPointRequest>(this, message, value);
         return message;
@@ -6220,6 +6883,9 @@ class GetAccessLogDataPointRequest$Type extends MessageType<GetAccessLogDataPoin
                     break;
                 case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 19:
                     message.mode = reader.int32();
+                    break;
+                case /* string countryCode */ 20:
+                    message.countryCode = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6284,6 +6950,9 @@ class GetAccessLogDataPointRequest$Type extends MessageType<GetAccessLogDataPoin
         /* octelium.api.main.core.v1.Service.Spec.Mode mode = 19; */
         if (message.mode !== 0)
             writer.tag(19, WireType.Varint).int32(message.mode);
+        /* string countryCode = 20; */
+        if (message.countryCode !== "")
+            writer.tag(20, WireType.LengthDelimited).string(message.countryCode);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6544,7 +7213,8 @@ class GetAuthenticationLogDataPointRequest$Type extends MessageType<GetAuthentic
             { no: 13, name: "groupBy", kind: "enum", T: () => ["octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.GroupBy", GetAuthenticationLogDataPointRequest_GroupBy] },
             { no: 14, name: "limitSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 15, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status", AuthenticationLog_Entry_Status] },
-            { no: 16, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] }
+            { no: 16, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] },
+            { no: 17, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<GetAuthenticationLogDataPointRequest>): GetAuthenticationLogDataPointRequest {
@@ -6553,6 +7223,7 @@ class GetAuthenticationLogDataPointRequest$Type extends MessageType<GetAuthentic
         message.limitSeries = 0;
         message.status = 0;
         message.reason = 0;
+        message.countryCode = "";
         if (value !== undefined)
             reflectionMergePartial<GetAuthenticationLogDataPointRequest>(this, message, value);
         return message;
@@ -6600,6 +7271,9 @@ class GetAuthenticationLogDataPointRequest$Type extends MessageType<GetAuthentic
                     break;
                 case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason */ 16:
                     message.reason = reader.int32();
+                    break;
+                case /* string countryCode */ 17:
+                    message.countryCode = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6652,6 +7326,9 @@ class GetAuthenticationLogDataPointRequest$Type extends MessageType<GetAuthentic
         /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 16; */
         if (message.reason !== 0)
             writer.tag(16, WireType.Varint).int32(message.reason);
+        /* string countryCode = 17; */
+        if (message.countryCode !== "")
+            writer.tag(17, WireType.LengthDelimited).string(message.countryCode);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6786,6 +7463,7 @@ class ListAccessLogTopUserRequest$Type extends MessageType<ListAccessLogTopUserR
             { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 15, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
             { no: 16, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
+            { no: 17, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -6796,6 +7474,7 @@ class ListAccessLogTopUserRequest$Type extends MessageType<ListAccessLogTopUserR
         message.isAnonymous = false;
         message.reason = 0;
         message.mode = 0;
+        message.countryCode = "";
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopUserRequest>(this, message, value);
@@ -6838,6 +7517,9 @@ class ListAccessLogTopUserRequest$Type extends MessageType<ListAccessLogTopUserR
                     break;
                 case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 16:
                     message.mode = reader.int32();
+                    break;
+                case /* string countryCode */ 17:
+                    message.countryCode = reader.string();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -6887,6 +7569,9 @@ class ListAccessLogTopUserRequest$Type extends MessageType<ListAccessLogTopUserR
         /* octelium.api.main.core.v1.Service.Spec.Mode mode = 16; */
         if (message.mode !== 0)
             writer.tag(16, WireType.Varint).int32(message.mode);
+        /* string countryCode = 17; */
+        if (message.countryCode !== "")
+            writer.tag(17, WireType.LengthDelimited).string(message.countryCode);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -7034,6 +7719,7 @@ class ListAccessLogTopSessionRequest$Type extends MessageType<ListAccessLogTopSe
             { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 15, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
             { no: 16, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
+            { no: 17, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -7044,6 +7730,7 @@ class ListAccessLogTopSessionRequest$Type extends MessageType<ListAccessLogTopSe
         message.isAnonymous = false;
         message.reason = 0;
         message.mode = 0;
+        message.countryCode = "";
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopSessionRequest>(this, message, value);
@@ -7092,6 +7779,9 @@ class ListAccessLogTopSessionRequest$Type extends MessageType<ListAccessLogTopSe
                     break;
                 case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 16:
                     message.mode = reader.int32();
+                    break;
+                case /* string countryCode */ 17:
+                    message.countryCode = reader.string();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -7147,6 +7837,9 @@ class ListAccessLogTopSessionRequest$Type extends MessageType<ListAccessLogTopSe
         /* octelium.api.main.core.v1.Service.Spec.Mode mode = 16; */
         if (message.mode !== 0)
             writer.tag(16, WireType.Varint).int32(message.mode);
+        /* string countryCode = 17; */
+        if (message.countryCode !== "")
+            writer.tag(17, WireType.LengthDelimited).string(message.countryCode);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -7293,6 +7986,7 @@ class ListAccessLogTopServiceRequest$Type extends MessageType<ListAccessLogTopSe
             { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 15, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
             { no: 16, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
+            { no: 17, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -7303,6 +7997,7 @@ class ListAccessLogTopServiceRequest$Type extends MessageType<ListAccessLogTopSe
         message.isAnonymous = false;
         message.reason = 0;
         message.mode = 0;
+        message.countryCode = "";
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopServiceRequest>(this, message, value);
@@ -7348,6 +8043,9 @@ class ListAccessLogTopServiceRequest$Type extends MessageType<ListAccessLogTopSe
                     break;
                 case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 16:
                     message.mode = reader.int32();
+                    break;
+                case /* string countryCode */ 17:
+                    message.countryCode = reader.string();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -7400,6 +8098,9 @@ class ListAccessLogTopServiceRequest$Type extends MessageType<ListAccessLogTopSe
         /* octelium.api.main.core.v1.Service.Spec.Mode mode = 16; */
         if (message.mode !== 0)
             writer.tag(16, WireType.Varint).int32(message.mode);
+        /* string countryCode = 17; */
+        if (message.countryCode !== "")
+            writer.tag(17, WireType.LengthDelimited).string(message.countryCode);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -7547,6 +8248,7 @@ class ListAccessLogTopPolicyRequest$Type extends MessageType<ListAccessLogTopPol
             { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 15, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
             { no: 16, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
+            { no: 17, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -7557,6 +8259,7 @@ class ListAccessLogTopPolicyRequest$Type extends MessageType<ListAccessLogTopPol
         message.isAnonymous = false;
         message.reason = 0;
         message.mode = 0;
+        message.countryCode = "";
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopPolicyRequest>(this, message, value);
@@ -7605,6 +8308,9 @@ class ListAccessLogTopPolicyRequest$Type extends MessageType<ListAccessLogTopPol
                     break;
                 case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 16:
                     message.mode = reader.int32();
+                    break;
+                case /* string countryCode */ 17:
+                    message.countryCode = reader.string();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -7660,6 +8366,9 @@ class ListAccessLogTopPolicyRequest$Type extends MessageType<ListAccessLogTopPol
         /* octelium.api.main.core.v1.Service.Spec.Mode mode = 16; */
         if (message.mode !== 0)
             writer.tag(16, WireType.Varint).int32(message.mode);
+        /* string countryCode = 17; */
+        if (message.countryCode !== "")
+            writer.tag(17, WireType.LengthDelimited).string(message.countryCode);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -7807,6 +8516,7 @@ class ListAccessLogTopDenyReasonRequest$Type extends MessageType<ListAccessLogTo
             { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 15, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
             { no: 16, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
+            { no: 17, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -7816,6 +8526,7 @@ class ListAccessLogTopDenyReasonRequest$Type extends MessageType<ListAccessLogTo
         message.isAnonymous = false;
         message.reason = 0;
         message.mode = 0;
+        message.countryCode = "";
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAccessLogTopDenyReasonRequest>(this, message, value);
@@ -7864,6 +8575,9 @@ class ListAccessLogTopDenyReasonRequest$Type extends MessageType<ListAccessLogTo
                     break;
                 case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 16:
                     message.mode = reader.int32();
+                    break;
+                case /* string countryCode */ 17:
+                    message.countryCode = reader.string();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -7919,6 +8633,9 @@ class ListAccessLogTopDenyReasonRequest$Type extends MessageType<ListAccessLogTo
         /* octelium.api.main.core.v1.Service.Spec.Mode mode = 16; */
         if (message.mode !== 0)
             writer.tag(16, WireType.Varint).int32(message.mode);
+        /* string countryCode = 17; */
+        if (message.countryCode !== "")
+            writer.tag(17, WireType.LengthDelimited).string(message.countryCode);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -8068,6 +8785,7 @@ class ListAuthenticationLogTopUserRequest$Type extends MessageType<ListAuthentic
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
             { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status", AuthenticationLog_Entry_Status] },
             { no: 13, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] },
+            { no: 14, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -8075,6 +8793,7 @@ class ListAuthenticationLogTopUserRequest$Type extends MessageType<ListAuthentic
         const message = globalThis.Object.create((this.messagePrototype!));
         message.status = 0;
         message.reason = 0;
+        message.countryCode = "";
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuthenticationLogTopUserRequest>(this, message, value);
@@ -8105,6 +8824,9 @@ class ListAuthenticationLogTopUserRequest$Type extends MessageType<ListAuthentic
                     break;
                 case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason */ 13:
                     message.reason = reader.int32();
+                    break;
+                case /* string countryCode */ 14:
+                    message.countryCode = reader.string();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -8142,6 +8864,9 @@ class ListAuthenticationLogTopUserRequest$Type extends MessageType<ListAuthentic
         /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13; */
         if (message.reason !== 0)
             writer.tag(13, WireType.Varint).int32(message.reason);
+        /* string countryCode = 14; */
+        if (message.countryCode !== "")
+            writer.tag(14, WireType.LengthDelimited).string(message.countryCode);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -8285,6 +9010,7 @@ class ListAuthenticationLogTopCredentialRequest$Type extends MessageType<ListAut
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
             { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status", AuthenticationLog_Entry_Status] },
             { no: 13, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] },
+            { no: 14, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -8292,6 +9018,7 @@ class ListAuthenticationLogTopCredentialRequest$Type extends MessageType<ListAut
         const message = globalThis.Object.create((this.messagePrototype!));
         message.status = 0;
         message.reason = 0;
+        message.countryCode = "";
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuthenticationLogTopCredentialRequest>(this, message, value);
@@ -8328,6 +9055,9 @@ class ListAuthenticationLogTopCredentialRequest$Type extends MessageType<ListAut
                     break;
                 case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason */ 13:
                     message.reason = reader.int32();
+                    break;
+                case /* string countryCode */ 14:
+                    message.countryCode = reader.string();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -8371,6 +9101,9 @@ class ListAuthenticationLogTopCredentialRequest$Type extends MessageType<ListAut
         /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13; */
         if (message.reason !== 0)
             writer.tag(13, WireType.Varint).int32(message.reason);
+        /* string countryCode = 14; */
+        if (message.countryCode !== "")
+            writer.tag(14, WireType.LengthDelimited).string(message.countryCode);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -8515,6 +9248,7 @@ class ListAuthenticationLogTopIdentityProviderRequest$Type extends MessageType<L
             { no: 5, name: "to", kind: "message", T: () => Timestamp },
             { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status", AuthenticationLog_Entry_Status] },
             { no: 13, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] },
+            { no: 14, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -8522,6 +9256,7 @@ class ListAuthenticationLogTopIdentityProviderRequest$Type extends MessageType<L
         const message = globalThis.Object.create((this.messagePrototype!));
         message.status = 0;
         message.reason = 0;
+        message.countryCode = "";
         message.limit = 0;
         if (value !== undefined)
             reflectionMergePartial<ListAuthenticationLogTopIdentityProviderRequest>(this, message, value);
@@ -8561,6 +9296,9 @@ class ListAuthenticationLogTopIdentityProviderRequest$Type extends MessageType<L
                     break;
                 case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason */ 13:
                     message.reason = reader.int32();
+                    break;
+                case /* string countryCode */ 14:
+                    message.countryCode = reader.string();
                     break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
@@ -8607,6 +9345,9 @@ class ListAuthenticationLogTopIdentityProviderRequest$Type extends MessageType<L
         /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13; */
         if (message.reason !== 0)
             writer.tag(13, WireType.Varint).int32(message.reason);
+        /* string countryCode = 14; */
+        if (message.countryCode !== "")
+            writer.tag(14, WireType.LengthDelimited).string(message.countryCode);
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);
@@ -8737,6 +9478,930 @@ class ListAuthenticationLogTopIdentityProviderResponse_Item$Type extends Message
  * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderResponse.Item
  */
 export const ListAuthenticationLogTopIdentityProviderResponse_Item = new ListAuthenticationLogTopIdentityProviderResponse_Item$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListAccessLogTopCountryRequest$Type extends MessageType<ListAccessLogTopCountryRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest", [
+            { no: 1, name: "regionRef", kind: "message", T: () => ObjectReference },
+            { no: 6, name: "sessionRef", kind: "message", T: () => ObjectReference },
+            { no: 7, name: "userRef", kind: "message", T: () => ObjectReference },
+            { no: 8, name: "deviceRef", kind: "message", T: () => ObjectReference },
+            { no: 9, name: "serviceRef", kind: "message", T: () => ObjectReference },
+            { no: 10, name: "namespaceRef", kind: "message", T: () => ObjectReference },
+            { no: 11, name: "policyRef", kind: "message", T: () => ObjectReference },
+            { no: 4, name: "from", kind: "message", T: () => Timestamp },
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] },
+            { no: 13, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 14, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 15, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
+            { no: 16, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListAccessLogTopCountryRequest>): ListAccessLogTopCountryRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.status = 0;
+        message.isPublic = false;
+        message.isAnonymous = false;
+        message.reason = 0;
+        message.mode = 0;
+        message.limit = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListAccessLogTopCountryRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListAccessLogTopCountryRequest): ListAccessLogTopCountryRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference regionRef */ 1:
+                    message.regionRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.regionRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference sessionRef */ 6:
+                    message.sessionRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.sessionRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 7:
+                    message.userRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.userRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference deviceRef */ 8:
+                    message.deviceRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.deviceRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference serviceRef */ 9:
+                    message.serviceRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.serviceRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference namespaceRef */ 10:
+                    message.namespaceRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.namespaceRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference policyRef */ 11:
+                    message.policyRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.policyRef);
+                    break;
+                case /* google.protobuf.Timestamp from */ 4:
+                    message.from = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.from);
+                    break;
+                case /* google.protobuf.Timestamp to */ 5:
+                    message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Status status */ 12:
+                    message.status = reader.int32();
+                    break;
+                case /* bool isPublic */ 13:
+                    message.isPublic = reader.bool();
+                    break;
+                case /* bool isAnonymous */ 14:
+                    message.isAnonymous = reader.bool();
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason */ 15:
+                    message.reason = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Mode mode */ 16:
+                    message.mode = reader.int32();
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListAccessLogTopCountryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference regionRef = 1; */
+        if (message.regionRef)
+            ObjectReference.internalBinaryWrite(message.regionRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp from = 4; */
+        if (message.from)
+            Timestamp.internalBinaryWrite(message.from, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp to = 5; */
+        if (message.to)
+            Timestamp.internalBinaryWrite(message.to, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference sessionRef = 6; */
+        if (message.sessionRef)
+            ObjectReference.internalBinaryWrite(message.sessionRef, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 7; */
+        if (message.userRef)
+            ObjectReference.internalBinaryWrite(message.userRef, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference deviceRef = 8; */
+        if (message.deviceRef)
+            ObjectReference.internalBinaryWrite(message.deviceRef, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference serviceRef = 9; */
+        if (message.serviceRef)
+            ObjectReference.internalBinaryWrite(message.serviceRef, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference namespaceRef = 10; */
+        if (message.namespaceRef)
+            ObjectReference.internalBinaryWrite(message.namespaceRef, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference policyRef = 11; */
+        if (message.policyRef)
+            ObjectReference.internalBinaryWrite(message.policyRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Status status = 12; */
+        if (message.status !== 0)
+            writer.tag(12, WireType.Varint).int32(message.status);
+        /* bool isPublic = 13; */
+        if (message.isPublic !== false)
+            writer.tag(13, WireType.Varint).bool(message.isPublic);
+        /* bool isAnonymous = 14; */
+        if (message.isAnonymous !== false)
+            writer.tag(14, WireType.Varint).bool(message.isAnonymous);
+        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type reason = 15; */
+        if (message.reason !== 0)
+            writer.tag(15, WireType.Varint).int32(message.reason);
+        /* octelium.api.main.core.v1.Service.Spec.Mode mode = 16; */
+        if (message.mode !== 0)
+            writer.tag(16, WireType.Varint).int32(message.mode);
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest
+ */
+export const ListAccessLogTopCountryRequest = new ListAccessLogTopCountryRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListAccessLogTopCountryResponse$Type extends MessageType<ListAccessLogTopCountryResponse> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse", [
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAccessLogTopCountryResponse_Item },
+            { no: 100, name: "totalCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 101, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 102, name: "totalUnknown", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListAccessLogTopCountryResponse>): ListAccessLogTopCountryResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.items = [];
+        message.totalCount = 0;
+        message.totalOther = 0;
+        message.totalUnknown = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListAccessLogTopCountryResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListAccessLogTopCountryResponse): ListAccessLogTopCountryResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse.Item items */ 1:
+                    message.items.push(ListAccessLogTopCountryResponse_Item.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 totalCount */ 100:
+                    message.totalCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 101:
+                    message.totalOther = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalUnknown */ 102:
+                    message.totalUnknown = reader.uint64().toNumber();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListAccessLogTopCountryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse.Item items = 1; */
+        for (let i = 0; i < message.items.length; i++)
+            ListAccessLogTopCountryResponse_Item.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCount = 100; */
+        if (message.totalCount !== 0)
+            writer.tag(100, WireType.Varint).uint64(message.totalCount);
+        /* uint64 totalOther = 101; */
+        if (message.totalOther !== 0)
+            writer.tag(101, WireType.Varint).uint64(message.totalOther);
+        /* uint64 totalUnknown = 102; */
+        if (message.totalUnknown !== 0)
+            writer.tag(102, WireType.Varint).uint64(message.totalUnknown);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse
+ */
+export const ListAccessLogTopCountryResponse = new ListAccessLogTopCountryResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListAccessLogTopCountryResponse_Item$Type extends MessageType<ListAccessLogTopCountryResponse_Item> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse.Item", [
+            { no: 1, name: "country", kind: "message", T: () => GeoIP_Country },
+            { no: 2, name: "count", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "countAllowed", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "countDenied", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "countUser", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "countSession", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "countService", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "lastSeenAt", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<ListAccessLogTopCountryResponse_Item>): ListAccessLogTopCountryResponse_Item {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.count = 0;
+        message.countAllowed = 0;
+        message.countDenied = 0;
+        message.countUser = 0;
+        message.countSession = 0;
+        message.countService = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListAccessLogTopCountryResponse_Item>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListAccessLogTopCountryResponse_Item): ListAccessLogTopCountryResponse_Item {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.GeoIP.Country country */ 1:
+                    message.country = GeoIP_Country.internalBinaryRead(reader, reader.uint32(), options, message.country);
+                    break;
+                case /* uint64 count */ 2:
+                    message.count = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countAllowed */ 3:
+                    message.countAllowed = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countDenied */ 4:
+                    message.countDenied = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countUser */ 5:
+                    message.countUser = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countSession */ 6:
+                    message.countSession = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countService */ 7:
+                    message.countService = reader.uint64().toNumber();
+                    break;
+                case /* google.protobuf.Timestamp lastSeenAt */ 8:
+                    message.lastSeenAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSeenAt);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListAccessLogTopCountryResponse_Item, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.GeoIP.Country country = 1; */
+        if (message.country)
+            GeoIP_Country.internalBinaryWrite(message.country, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 count = 2; */
+        if (message.count !== 0)
+            writer.tag(2, WireType.Varint).uint64(message.count);
+        /* uint64 countAllowed = 3; */
+        if (message.countAllowed !== 0)
+            writer.tag(3, WireType.Varint).uint64(message.countAllowed);
+        /* uint64 countDenied = 4; */
+        if (message.countDenied !== 0)
+            writer.tag(4, WireType.Varint).uint64(message.countDenied);
+        /* uint64 countUser = 5; */
+        if (message.countUser !== 0)
+            writer.tag(5, WireType.Varint).uint64(message.countUser);
+        /* uint64 countSession = 6; */
+        if (message.countSession !== 0)
+            writer.tag(6, WireType.Varint).uint64(message.countSession);
+        /* uint64 countService = 7; */
+        if (message.countService !== 0)
+            writer.tag(7, WireType.Varint).uint64(message.countService);
+        /* google.protobuf.Timestamp lastSeenAt = 8; */
+        if (message.lastSeenAt)
+            Timestamp.internalBinaryWrite(message.lastSeenAt, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse.Item
+ */
+export const ListAccessLogTopCountryResponse_Item = new ListAccessLogTopCountryResponse_Item$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListAuthenticationLogTopCountryRequest$Type extends MessageType<ListAuthenticationLogTopCountryRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest", [
+            { no: 6, name: "sessionRef", kind: "message", T: () => ObjectReference },
+            { no: 7, name: "userRef", kind: "message", T: () => ObjectReference },
+            { no: 8, name: "deviceRef", kind: "message", T: () => ObjectReference },
+            { no: 9, name: "identityProviderRef", kind: "message", T: () => ObjectReference },
+            { no: 10, name: "credentialRef", kind: "message", T: () => ObjectReference },
+            { no: 11, name: "authenticatorRef", kind: "message", T: () => ObjectReference },
+            { no: 4, name: "from", kind: "message", T: () => Timestamp },
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status", AuthenticationLog_Entry_Status] },
+            { no: 13, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListAuthenticationLogTopCountryRequest>): ListAuthenticationLogTopCountryRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.status = 0;
+        message.reason = 0;
+        message.limit = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListAuthenticationLogTopCountryRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListAuthenticationLogTopCountryRequest): ListAuthenticationLogTopCountryRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference sessionRef */ 6:
+                    message.sessionRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.sessionRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 7:
+                    message.userRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.userRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference deviceRef */ 8:
+                    message.deviceRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.deviceRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference identityProviderRef */ 9:
+                    message.identityProviderRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.identityProviderRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference credentialRef */ 10:
+                    message.credentialRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.credentialRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference authenticatorRef */ 11:
+                    message.authenticatorRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.authenticatorRef);
+                    break;
+                case /* google.protobuf.Timestamp from */ 4:
+                    message.from = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.from);
+                    break;
+                case /* google.protobuf.Timestamp to */ 5:
+                    message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status */ 12:
+                    message.status = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason */ 13:
+                    message.reason = reader.int32();
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListAuthenticationLogTopCountryRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* google.protobuf.Timestamp from = 4; */
+        if (message.from)
+            Timestamp.internalBinaryWrite(message.from, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp to = 5; */
+        if (message.to)
+            Timestamp.internalBinaryWrite(message.to, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference sessionRef = 6; */
+        if (message.sessionRef)
+            ObjectReference.internalBinaryWrite(message.sessionRef, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 7; */
+        if (message.userRef)
+            ObjectReference.internalBinaryWrite(message.userRef, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference deviceRef = 8; */
+        if (message.deviceRef)
+            ObjectReference.internalBinaryWrite(message.deviceRef, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference identityProviderRef = 9; */
+        if (message.identityProviderRef)
+            ObjectReference.internalBinaryWrite(message.identityProviderRef, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference credentialRef = 10; */
+        if (message.credentialRef)
+            ObjectReference.internalBinaryWrite(message.credentialRef, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference authenticatorRef = 11; */
+        if (message.authenticatorRef)
+            ObjectReference.internalBinaryWrite(message.authenticatorRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12; */
+        if (message.status !== 0)
+            writer.tag(12, WireType.Varint).int32(message.status);
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13; */
+        if (message.reason !== 0)
+            writer.tag(13, WireType.Varint).int32(message.reason);
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest
+ */
+export const ListAuthenticationLogTopCountryRequest = new ListAuthenticationLogTopCountryRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListAuthenticationLogTopCountryResponse$Type extends MessageType<ListAuthenticationLogTopCountryResponse> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse", [
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAuthenticationLogTopCountryResponse_Item },
+            { no: 100, name: "totalCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 101, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 102, name: "totalUnknown", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListAuthenticationLogTopCountryResponse>): ListAuthenticationLogTopCountryResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.items = [];
+        message.totalCount = 0;
+        message.totalOther = 0;
+        message.totalUnknown = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListAuthenticationLogTopCountryResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListAuthenticationLogTopCountryResponse): ListAuthenticationLogTopCountryResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.Item items */ 1:
+                    message.items.push(ListAuthenticationLogTopCountryResponse_Item.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 totalCount */ 100:
+                    message.totalCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 101:
+                    message.totalOther = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalUnknown */ 102:
+                    message.totalUnknown = reader.uint64().toNumber();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListAuthenticationLogTopCountryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.Item items = 1; */
+        for (let i = 0; i < message.items.length; i++)
+            ListAuthenticationLogTopCountryResponse_Item.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCount = 100; */
+        if (message.totalCount !== 0)
+            writer.tag(100, WireType.Varint).uint64(message.totalCount);
+        /* uint64 totalOther = 101; */
+        if (message.totalOther !== 0)
+            writer.tag(101, WireType.Varint).uint64(message.totalOther);
+        /* uint64 totalUnknown = 102; */
+        if (message.totalUnknown !== 0)
+            writer.tag(102, WireType.Varint).uint64(message.totalUnknown);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse
+ */
+export const ListAuthenticationLogTopCountryResponse = new ListAuthenticationLogTopCountryResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListAuthenticationLogTopCountryResponse_Item$Type extends MessageType<ListAuthenticationLogTopCountryResponse_Item> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.Item", [
+            { no: 1, name: "country", kind: "message", T: () => GeoIP_Country },
+            { no: 2, name: "continent", kind: "message", T: () => GeoIP_Continent },
+            { no: 3, name: "count", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "countSuccess", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "countFailure", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "countUser", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "countSession", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "lastSeenAt", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<ListAuthenticationLogTopCountryResponse_Item>): ListAuthenticationLogTopCountryResponse_Item {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.count = 0;
+        message.countSuccess = 0;
+        message.countFailure = 0;
+        message.countUser = 0;
+        message.countSession = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListAuthenticationLogTopCountryResponse_Item>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListAuthenticationLogTopCountryResponse_Item): ListAuthenticationLogTopCountryResponse_Item {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.GeoIP.Country country */ 1:
+                    message.country = GeoIP_Country.internalBinaryRead(reader, reader.uint32(), options, message.country);
+                    break;
+                case /* octelium.api.main.core.v1.GeoIP.Continent continent */ 2:
+                    message.continent = GeoIP_Continent.internalBinaryRead(reader, reader.uint32(), options, message.continent);
+                    break;
+                case /* uint64 count */ 3:
+                    message.count = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countSuccess */ 4:
+                    message.countSuccess = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countFailure */ 5:
+                    message.countFailure = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countUser */ 6:
+                    message.countUser = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countSession */ 7:
+                    message.countSession = reader.uint64().toNumber();
+                    break;
+                case /* google.protobuf.Timestamp lastSeenAt */ 8:
+                    message.lastSeenAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSeenAt);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListAuthenticationLogTopCountryResponse_Item, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.GeoIP.Country country = 1; */
+        if (message.country)
+            GeoIP_Country.internalBinaryWrite(message.country, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.GeoIP.Continent continent = 2; */
+        if (message.continent)
+            GeoIP_Continent.internalBinaryWrite(message.continent, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 count = 3; */
+        if (message.count !== 0)
+            writer.tag(3, WireType.Varint).uint64(message.count);
+        /* uint64 countSuccess = 4; */
+        if (message.countSuccess !== 0)
+            writer.tag(4, WireType.Varint).uint64(message.countSuccess);
+        /* uint64 countFailure = 5; */
+        if (message.countFailure !== 0)
+            writer.tag(5, WireType.Varint).uint64(message.countFailure);
+        /* uint64 countUser = 6; */
+        if (message.countUser !== 0)
+            writer.tag(6, WireType.Varint).uint64(message.countUser);
+        /* uint64 countSession = 7; */
+        if (message.countSession !== 0)
+            writer.tag(7, WireType.Varint).uint64(message.countSession);
+        /* google.protobuf.Timestamp lastSeenAt = 8; */
+        if (message.lastSeenAt)
+            Timestamp.internalBinaryWrite(message.lastSeenAt, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.Item
+ */
+export const ListAuthenticationLogTopCountryResponse_Item = new ListAuthenticationLogTopCountryResponse_Item$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListAuthenticationLogTopCityRequest$Type extends MessageType<ListAuthenticationLogTopCityRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest", [
+            { no: 6, name: "sessionRef", kind: "message", T: () => ObjectReference },
+            { no: 7, name: "userRef", kind: "message", T: () => ObjectReference },
+            { no: 8, name: "deviceRef", kind: "message", T: () => ObjectReference },
+            { no: 9, name: "identityProviderRef", kind: "message", T: () => ObjectReference },
+            { no: 10, name: "credentialRef", kind: "message", T: () => ObjectReference },
+            { no: 11, name: "authenticatorRef", kind: "message", T: () => ObjectReference },
+            { no: 4, name: "from", kind: "message", T: () => Timestamp },
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status", AuthenticationLog_Entry_Status] },
+            { no: 13, name: "reason", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason", AuthenticationLog_Entry_Failure_Reason] },
+            { no: 14, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListAuthenticationLogTopCityRequest>): ListAuthenticationLogTopCityRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.status = 0;
+        message.reason = 0;
+        message.countryCode = "";
+        message.limit = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListAuthenticationLogTopCityRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListAuthenticationLogTopCityRequest): ListAuthenticationLogTopCityRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference sessionRef */ 6:
+                    message.sessionRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.sessionRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 7:
+                    message.userRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.userRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference deviceRef */ 8:
+                    message.deviceRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.deviceRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference identityProviderRef */ 9:
+                    message.identityProviderRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.identityProviderRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference credentialRef */ 10:
+                    message.credentialRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.credentialRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference authenticatorRef */ 11:
+                    message.authenticatorRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.authenticatorRef);
+                    break;
+                case /* google.protobuf.Timestamp from */ 4:
+                    message.from = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.from);
+                    break;
+                case /* google.protobuf.Timestamp to */ 5:
+                    message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status */ 12:
+                    message.status = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason */ 13:
+                    message.reason = reader.int32();
+                    break;
+                case /* string countryCode */ 14:
+                    message.countryCode = reader.string();
+                    break;
+                case /* uint32 limit */ 100:
+                    message.limit = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListAuthenticationLogTopCityRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* google.protobuf.Timestamp from = 4; */
+        if (message.from)
+            Timestamp.internalBinaryWrite(message.from, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp to = 5; */
+        if (message.to)
+            Timestamp.internalBinaryWrite(message.to, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference sessionRef = 6; */
+        if (message.sessionRef)
+            ObjectReference.internalBinaryWrite(message.sessionRef, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 7; */
+        if (message.userRef)
+            ObjectReference.internalBinaryWrite(message.userRef, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference deviceRef = 8; */
+        if (message.deviceRef)
+            ObjectReference.internalBinaryWrite(message.deviceRef, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference identityProviderRef = 9; */
+        if (message.identityProviderRef)
+            ObjectReference.internalBinaryWrite(message.identityProviderRef, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference credentialRef = 10; */
+        if (message.credentialRef)
+            ObjectReference.internalBinaryWrite(message.credentialRef, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference authenticatorRef = 11; */
+        if (message.authenticatorRef)
+            ObjectReference.internalBinaryWrite(message.authenticatorRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status status = 12; */
+        if (message.status !== 0)
+            writer.tag(12, WireType.Varint).int32(message.status);
+        /* octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason reason = 13; */
+        if (message.reason !== 0)
+            writer.tag(13, WireType.Varint).int32(message.reason);
+        /* string countryCode = 14; */
+        if (message.countryCode !== "")
+            writer.tag(14, WireType.LengthDelimited).string(message.countryCode);
+        /* uint32 limit = 100; */
+        if (message.limit !== 0)
+            writer.tag(100, WireType.Varint).uint32(message.limit);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest
+ */
+export const ListAuthenticationLogTopCityRequest = new ListAuthenticationLogTopCityRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListAuthenticationLogTopCityResponse$Type extends MessageType<ListAuthenticationLogTopCityResponse> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse", [
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ListAuthenticationLogTopCityResponse_Item },
+            { no: 100, name: "totalCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 101, name: "totalOther", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 102, name: "totalUnknown", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListAuthenticationLogTopCityResponse>): ListAuthenticationLogTopCityResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.items = [];
+        message.totalCount = 0;
+        message.totalOther = 0;
+        message.totalUnknown = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListAuthenticationLogTopCityResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListAuthenticationLogTopCityResponse): ListAuthenticationLogTopCityResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item items */ 1:
+                    message.items.push(ListAuthenticationLogTopCityResponse_Item.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint64 totalCount */ 100:
+                    message.totalCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalOther */ 101:
+                    message.totalOther = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalUnknown */ 102:
+                    message.totalUnknown = reader.uint64().toNumber();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListAuthenticationLogTopCityResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item items = 1; */
+        for (let i = 0; i < message.items.length; i++)
+            ListAuthenticationLogTopCityResponse_Item.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 totalCount = 100; */
+        if (message.totalCount !== 0)
+            writer.tag(100, WireType.Varint).uint64(message.totalCount);
+        /* uint64 totalOther = 101; */
+        if (message.totalOther !== 0)
+            writer.tag(101, WireType.Varint).uint64(message.totalOther);
+        /* uint64 totalUnknown = 102; */
+        if (message.totalUnknown !== 0)
+            writer.tag(102, WireType.Varint).uint64(message.totalUnknown);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse
+ */
+export const ListAuthenticationLogTopCityResponse = new ListAuthenticationLogTopCityResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListAuthenticationLogTopCityResponse_Item$Type extends MessageType<ListAuthenticationLogTopCityResponse_Item> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item", [
+            { no: 1, name: "country", kind: "message", T: () => GeoIP_Country },
+            { no: 2, name: "region", kind: "message", T: () => GeoIP_Region },
+            { no: 3, name: "city", kind: "message", T: () => GeoIP_City },
+            { no: 4, name: "coordinates", kind: "message", T: () => GeoIP_Coordinates },
+            { no: 5, name: "count", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "countSuccess", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "countFailure", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "countUser", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 9, name: "countSession", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "lastSeenAt", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<ListAuthenticationLogTopCityResponse_Item>): ListAuthenticationLogTopCityResponse_Item {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.count = 0;
+        message.countSuccess = 0;
+        message.countFailure = 0;
+        message.countUser = 0;
+        message.countSession = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ListAuthenticationLogTopCityResponse_Item>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListAuthenticationLogTopCityResponse_Item): ListAuthenticationLogTopCityResponse_Item {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.GeoIP.Country country */ 1:
+                    message.country = GeoIP_Country.internalBinaryRead(reader, reader.uint32(), options, message.country);
+                    break;
+                case /* octelium.api.main.core.v1.GeoIP.Region region */ 2:
+                    message.region = GeoIP_Region.internalBinaryRead(reader, reader.uint32(), options, message.region);
+                    break;
+                case /* octelium.api.main.core.v1.GeoIP.City city */ 3:
+                    message.city = GeoIP_City.internalBinaryRead(reader, reader.uint32(), options, message.city);
+                    break;
+                case /* octelium.api.main.core.v1.GeoIP.Coordinates coordinates */ 4:
+                    message.coordinates = GeoIP_Coordinates.internalBinaryRead(reader, reader.uint32(), options, message.coordinates);
+                    break;
+                case /* uint64 count */ 5:
+                    message.count = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countSuccess */ 6:
+                    message.countSuccess = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countFailure */ 7:
+                    message.countFailure = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countUser */ 8:
+                    message.countUser = reader.uint64().toNumber();
+                    break;
+                case /* uint64 countSession */ 9:
+                    message.countSession = reader.uint64().toNumber();
+                    break;
+                case /* google.protobuf.Timestamp lastSeenAt */ 10:
+                    message.lastSeenAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSeenAt);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListAuthenticationLogTopCityResponse_Item, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.GeoIP.Country country = 1; */
+        if (message.country)
+            GeoIP_Country.internalBinaryWrite(message.country, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.GeoIP.Region region = 2; */
+        if (message.region)
+            GeoIP_Region.internalBinaryWrite(message.region, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.GeoIP.City city = 3; */
+        if (message.city)
+            GeoIP_City.internalBinaryWrite(message.city, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.GeoIP.Coordinates coordinates = 4; */
+        if (message.coordinates)
+            GeoIP_Coordinates.internalBinaryWrite(message.coordinates, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 count = 5; */
+        if (message.count !== 0)
+            writer.tag(5, WireType.Varint).uint64(message.count);
+        /* uint64 countSuccess = 6; */
+        if (message.countSuccess !== 0)
+            writer.tag(6, WireType.Varint).uint64(message.countSuccess);
+        /* uint64 countFailure = 7; */
+        if (message.countFailure !== 0)
+            writer.tag(7, WireType.Varint).uint64(message.countFailure);
+        /* uint64 countUser = 8; */
+        if (message.countUser !== 0)
+            writer.tag(8, WireType.Varint).uint64(message.countUser);
+        /* uint64 countSession = 9; */
+        if (message.countSession !== 0)
+            writer.tag(9, WireType.Varint).uint64(message.countSession);
+        /* google.protobuf.Timestamp lastSeenAt = 10; */
+        if (message.lastSeenAt)
+            Timestamp.internalBinaryWrite(message.lastSeenAt, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item
+ */
+export const ListAuthenticationLogTopCityResponse_Item = new ListAuthenticationLogTopCityResponse_Item$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class ComponentSelector$Type extends MessageType<ComponentSelector> {
     constructor() {
@@ -11292,7 +12957,8 @@ export const AccessLogService = new ServiceType("octelium.api.main.visibility.v1
     { name: "ListAccessLogTopService", options: {}, I: ListAccessLogTopServiceRequest, O: ListAccessLogTopServiceResponse },
     { name: "ListAccessLogTopSession", options: {}, I: ListAccessLogTopSessionRequest, O: ListAccessLogTopSessionResponse },
     { name: "ListAccessLogTopPolicy", options: {}, I: ListAccessLogTopPolicyRequest, O: ListAccessLogTopPolicyResponse },
-    { name: "ListAccessLogTopDenyReason", options: {}, I: ListAccessLogTopDenyReasonRequest, O: ListAccessLogTopDenyReasonResponse }
+    { name: "ListAccessLogTopDenyReason", options: {}, I: ListAccessLogTopDenyReasonRequest, O: ListAccessLogTopDenyReasonResponse },
+    { name: "ListAccessLogTopCountry", options: {}, I: ListAccessLogTopCountryRequest, O: ListAccessLogTopCountryResponse }
 ]);
 /**
  * @generated ServiceType for protobuf service octelium.api.main.visibility.v1.AuthenticationLogService
@@ -11303,7 +12969,9 @@ export const AuthenticationLogService = new ServiceType("octelium.api.main.visib
     { name: "GetAuthenticationLogDataPoint", options: {}, I: GetAuthenticationLogDataPointRequest, O: GetAuthenticationLogDataPointResponse },
     { name: "ListAuthenticationLogTopUser", options: {}, I: ListAuthenticationLogTopUserRequest, O: ListAuthenticationLogTopUserResponse },
     { name: "ListAuthenticationLogTopCredential", options: {}, I: ListAuthenticationLogTopCredentialRequest, O: ListAuthenticationLogTopCredentialResponse },
-    { name: "ListAuthenticationLogTopIdentityProvider", options: {}, I: ListAuthenticationLogTopIdentityProviderRequest, O: ListAuthenticationLogTopIdentityProviderResponse }
+    { name: "ListAuthenticationLogTopIdentityProvider", options: {}, I: ListAuthenticationLogTopIdentityProviderRequest, O: ListAuthenticationLogTopIdentityProviderResponse },
+    { name: "ListAuthenticationLogTopCountry", options: {}, I: ListAuthenticationLogTopCountryRequest, O: ListAuthenticationLogTopCountryResponse },
+    { name: "ListAuthenticationLogTopCity", options: {}, I: ListAuthenticationLogTopCityRequest, O: ListAuthenticationLogTopCityResponse }
 ]);
 /**
  * @generated ServiceType for protobuf service octelium.api.main.visibility.v1.AuditLogService

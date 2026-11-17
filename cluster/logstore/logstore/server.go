@@ -316,7 +316,15 @@ func (s *Server) initDB(ctx context.Context) error {
 		return err
 	}
 
-	return s.initLogColumns(ctx)
+	if err := s.initSessionLocations(ctx); err != nil {
+		return err
+	}
+
+	if err := s.initLogColumns(ctx); err != nil {
+		return err
+	}
+
+	return s.setSessionLocations(ctx)
 }
 
 func (s *Server) startCleanupLoop(ctx context.Context) {
@@ -378,6 +386,11 @@ func (s *Server) doCleanup(ctx context.Context) error {
 				zap.L().Warn("Could not cleanup logs", zap.String("table", table), zap.Error(err))
 			}
 		}
+	}
+
+	if _, err := s.db.ExecContext(ctx,
+		fmt.Sprintf(`DELETE FROM %s WHERE updated_at < ?`, tableSessionLocations), monthAgo); err != nil {
+		zap.L().Warn("Could not cleanup Session locations", zap.Error(err))
 	}
 
 	{

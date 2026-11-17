@@ -38,6 +38,7 @@ export const useLogListReq = () => {
     policyRef?: objectRef;
     status?: string;
     reason?: string;
+    countryCode?: string;
     level?: string;
     component?: {
       namespace?: string;

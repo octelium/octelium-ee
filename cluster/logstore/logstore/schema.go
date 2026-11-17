@@ -30,15 +30,22 @@ const (
 	colNamespaceUID = "namespace_uid"
 	colRegionUID    = "region_uid"
 	colPolicyUID    = "policy_uid"
+	colCountryCode  = "country_code"
 )
 
 type logColumn struct {
-	name string
-	kind string
-	path string
+	name   string
+	kind   string
+	path   string
+	lookup string
 }
 
 func (c *logColumn) sourceExpr(source string) string {
+	if c.lookup != "" {
+		return fmt.Sprintf(`(SELECT %s FROM %s WHERE %s = json_extract_string(%s, '%s'))`,
+			c.lookup, tableSessionLocations, colSessionUID, source, c.path)
+	}
+
 	if c.kind == "TIMESTAMP" {
 		return fmt.Sprintf(`TRY_CAST(json_extract_string(%s, '%s') AS TIMESTAMP)`, source, c.path)
 	}
@@ -82,6 +89,8 @@ func getLogTableColumns(table string) []*logColumn {
 			&logColumn{name: colRegionUID, kind: "VARCHAR", path: "$.entry.common.regionRef.uid"},
 			&logColumn{name: colPolicyUID, kind: "VARCHAR",
 				path: "$.entry.common.reason.details.policyMatch.policy.policyRef.uid"},
+			&logColumn{name: colCountryCode, kind: "VARCHAR",
+				path: "$.entry.common.sessionRef.uid", lookup: colCountryCode},
 		)
 	case "component_logs":
 		ret = append(ret,

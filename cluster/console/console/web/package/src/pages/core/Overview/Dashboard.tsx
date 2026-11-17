@@ -7,9 +7,11 @@ import {
   AutoRefreshContext,
   useDashboardRange,
 } from "@/components/Dashboard/utils";
+import GeoActivity from "@/components/GeoActivity";
 import Meta from "@/components/Meta";
 import { motion } from "framer-motion";
 import {
+  Earth,
   Gauge,
   Globe,
   Layers,
@@ -48,6 +50,20 @@ const Dashboard = () => {
       icon: Terminal,
       eager: true,
       render: () => <Sessions periodMinutes={periodMinutes} />,
+    },
+    {
+      id: "geography",
+      title: "Session geography",
+      description: "Where Sessions sign in from and where sign-ins fail",
+      icon: Earth,
+      height: 760,
+      render: () => (
+        <GeoActivity
+          periodMinutes={periodMinutes}
+          sources={["sessions", "signins", "failures"]}
+          title="Session geography"
+        />
+      ),
     },
     {
       id: "authentication",

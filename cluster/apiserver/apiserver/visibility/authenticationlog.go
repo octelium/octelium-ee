@@ -37,3 +37,11 @@ func (s *ServerAuthenticationLog) ListAuthenticationLogTopCredential(ctx context
 func (s *ServerAuthenticationLog) ListAuthenticationLogTopIdentityProvider(ctx context.Context, req *visibilityv1.ListAuthenticationLogTopIdentityProviderRequest) (*visibilityv1.ListAuthenticationLogTopIdentityProviderResponse, error) {
 	return s.c.ListAuthenticationLogTopIdentityProvider(ctx, req)
 }
+
+func (s *ServerAuthenticationLog) ListAuthenticationLogTopCountry(ctx context.Context, req *visibilityv1.ListAuthenticationLogTopCountryRequest) (*visibilityv1.ListAuthenticationLogTopCountryResponse, error) {
+	return s.c.ListAuthenticationLogTopCountry(ctx, req)
+}
+
+func (s *ServerAuthenticationLog) ListAuthenticationLogTopCity(ctx context.Context, req *visibilityv1.ListAuthenticationLogTopCityRequest) (*visibilityv1.ListAuthenticationLogTopCityResponse, error) {
+	return s.c.ListAuthenticationLogTopCity(ctx, req)
+}

@@ -39,6 +39,7 @@ export default () => {
         status={req?.status as AccessLogStatusFilter | undefined}
         reason={reason}
         mode={mode}
+        countryCode={req?.countryCode}
         query={req?.common?.query}
         itemsPerPage={25}
         page={pagination.page}

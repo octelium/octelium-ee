@@ -101,6 +101,7 @@ const (
 	colStatusReadyBuildID        = "status_ready_build_id"
 	colStatusRunningBuildID      = "status_running_build_id"
 	colStatusExtCordiumIsEnabled = "status_ext_cordium_is_enabled"
+	colStatusCountryCode         = "status_country_code"
 
 	colUserUID               = "user_uid"
 	colUserName              = "user_name"
@@ -266,6 +267,8 @@ func getResourceColumns() []*resourceColumn {
 		{name: colStatusReadyBuildID, kind: kindVarchar, path: "$.status.buildInfo.currentReadyBuildID"},
 		{name: colStatusRunningBuildID, kind: kindVarchar, path: "$.status.buildInfo.currentRunningBuildID"},
 		{name: colStatusExtCordiumIsEnabled, kind: kindBoolean, path: "$.status.ext.cordium.isEnabled"},
+		{name: colStatusCountryCode, kind: kindVarchar,
+			path: "$.status.authentication.info.geoip.country.code"},
 
 		{name: colUserUID, kind: kindVarchar, path: "$.status.userRef.uid"},
 		{name: colUserName, kind: kindVarchar, path: "$.status.userRef.name"},

@@ -52,6 +52,8 @@ func getAccessLogGroupBy(groupBy visibilityv1.GetAccessLogDataPointRequest_Group
 		return &groupByDimension{expr: colRegionUID, kind: "Region"}
 	case visibilityv1.GetAccessLogDataPointRequest_POLICY:
 		return &groupByDimension{expr: colPolicyUID, kind: "Policy"}
+	case visibilityv1.GetAccessLogDataPointRequest_COUNTRY:
+		return &groupByDimension{expr: colCountryCode}
 	default:
 		return nil
 	}
@@ -89,6 +91,8 @@ func getAuthenticationLogGroupBy(
 		return &groupByDimension{expr: sqlAuthenticationStatus}
 	case visibilityv1.GetAuthenticationLogDataPointRequest_FAILURE_REASON:
 		return &groupByDimension{expr: jsonAuthenticationFailureReason}
+	case visibilityv1.GetAuthenticationLogDataPointRequest_COUNTRY:
+		return &groupByDimension{expr: sqlAuthenticationCountryCode}
 	default:
 		return nil
 	}

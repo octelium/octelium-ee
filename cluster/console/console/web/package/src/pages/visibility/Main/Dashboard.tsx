@@ -7,10 +7,12 @@ import {
   AutoRefreshContext,
   useDashboardRange,
 } from "@/components/Dashboard/utils";
+import GeoActivity from "@/components/GeoActivity";
 import Meta from "@/components/Meta";
 import { motion } from "framer-motion";
 import {
   ChartSpline,
+  Earth,
   Library,
   ScrollText,
   ShieldUser,
@@ -53,6 +55,19 @@ const Dashboard = () => {
       icon: ChartSpline,
       eager: true,
       render: () => <Breakdown periodMinutes={periodMinutes} />,
+    },
+    {
+      id: "geography",
+      title: "Geography",
+      description: "Requests and sign-ins by country, with failed sign-ins",
+      icon: Earth,
+      height: 760,
+      render: () => (
+        <GeoActivity
+          periodMinutes={periodMinutes}
+          sources={["requests", "signins", "failures"]}
+        />
+      ),
     },
     {
       id: "components",

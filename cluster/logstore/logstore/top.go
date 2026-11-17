@@ -56,6 +56,11 @@ func (s *Server) listAccessLogTopUser(ctx context.Context, req *visibilityv1.Lis
 
 	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
 
+	filters, err = appendAccessCountryFilter(filters, req.CountryCode)
+	if err != nil {
+		return nil, err
+	}
+
 	filters = appendTimeFilters(filters, req.From, req.To)
 
 	res, err := s.getTop(ctx, "access_logs", getTopLimit(req.Limit), colUserUID, "entry.common.userRef", filters)
@@ -123,6 +128,11 @@ func (s *Server) listAccessLogTopService(ctx context.Context, req *visibilityv1.
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
 
 	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
+
+	filters, err = appendAccessCountryFilter(filters, req.CountryCode)
+	if err != nil {
+		return nil, err
+	}
 
 	filters = appendTimeFilters(filters, req.From, req.To)
 
@@ -194,6 +204,11 @@ func (s *Server) listAccessLogTopPolicy(ctx context.Context, req *visibilityv1.L
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
 
 	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
+
+	filters, err = appendAccessCountryFilter(filters, req.CountryCode)
+	if err != nil {
+		return nil, err
+	}
 
 	filters = appendTimeFilters(filters, req.From, req.To)
 
@@ -269,6 +284,11 @@ func (s *Server) listAccessLogTopSession(ctx context.Context, req *visibilityv1.
 
 	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
 
+	filters, err = appendAccessCountryFilter(filters, req.CountryCode)
+	if err != nil {
+		return nil, err
+	}
+
 	filters = appendTimeFilters(filters, req.From, req.To)
 
 	res, err := s.getTop(ctx, "access_logs", getTopLimit(req.Limit), colSessionUID, "entry.common.sessionRef", filters)
@@ -321,6 +341,11 @@ func (s *Server) listAuthenticationLogTopUser(ctx context.Context, req *visibili
 	}
 
 	filters = appendAuthenticationStatusFilters(filters, req.Status, req.Reason)
+
+	filters, err = appendAuthenticationCountryFilter(filters, req.CountryCode)
+	if err != nil {
+		return nil, err
+	}
 	filters = appendTimeFilters(filters, req.From, req.To)
 
 	res, err := s.getTop(ctx, "authentication_logs", getTopLimit(req.Limit), "", "entry.userRef", filters)
@@ -381,6 +406,11 @@ func (s *Server) listAuthenticationLogTopCredential(ctx context.Context, req *vi
 	}
 
 	filters = appendAuthenticationStatusFilters(filters, req.Status, req.Reason)
+
+	filters, err = appendAuthenticationCountryFilter(filters, req.CountryCode)
+	if err != nil {
+		return nil, err
+	}
 	filters = appendTimeFilters(filters, req.From, req.To)
 
 	res, err := s.getTop(ctx, "authentication_logs", getTopLimit(req.Limit), "", "entry.authentication.info.credential.credentialRef", filters)
@@ -445,6 +475,11 @@ func (s *Server) listAuthenticationLogTopIdentityProvider(ctx context.Context, r
 	}
 
 	filters = appendAuthenticationStatusFilters(filters, req.Status, req.Reason)
+
+	filters, err = appendAuthenticationCountryFilter(filters, req.CountryCode)
+	if err != nil {
+		return nil, err
+	}
 	filters = appendTimeFilters(filters, req.From, req.To)
 
 	res, err := s.getTop(ctx, "authentication_logs", getTopLimit(req.Limit), "", "entry.authentication.info.identityProvider.identityProviderRef", filters)
@@ -709,6 +744,11 @@ func (s *Server) listAccessLogTopDenyReason(ctx context.Context,
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
 
 	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
+
+	filters, err = appendAccessCountryFilter(filters, req.CountryCode)
+	if err != nil {
+		return nil, err
+	}
 
 	filters = appendTimeFilters(filters, req.From, req.To)
 

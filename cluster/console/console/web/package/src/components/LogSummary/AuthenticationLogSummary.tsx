@@ -13,6 +13,7 @@ import {
 } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Earth,
   LogIn,
   RefreshCw,
   Shield,
@@ -33,6 +34,7 @@ const AuthenticationLogSummary = (props: {
   to?: Timestamp;
   status?: AuthenticationLog_Entry_Status;
   reason?: AuthenticationLog_Entry_Failure_Reason;
+  countryCode?: string;
 }) => {
   const qry = useQuery({
     queryKey: ["visibility", "getAuthenticationLogSummary", { ...props }],
@@ -66,6 +68,7 @@ const AuthenticationLogSummary = (props: {
       const value = ref?.name || ref?.uid;
       if (value) params.set(`${key}.${ref?.name ? "name" : "uid"}`, value);
     });
+    if (props.countryCode) params.set("countryCode", props.countryCode);
     if (status) params.set("status", status);
     const query = params.toString();
     return query
@@ -95,6 +98,9 @@ const AuthenticationLogSummary = (props: {
           </SummaryItemCount>
           <SummaryItemCount showZero count={qry.data.totalFailure} icon={ShieldX} to={authenticationLogsPath("failure")}>
             Failed
+          </SummaryItemCount>
+          <SummaryItemCount showZero count={qry.data.totalCountry} icon={Earth}>
+            Countries
           </SummaryItemCount>
           <SummaryItemCount showZero count={qry.data.totalAAL2} icon={Shield}>
             AAL2

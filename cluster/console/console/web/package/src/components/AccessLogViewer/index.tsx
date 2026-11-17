@@ -42,6 +42,7 @@ import CardService from "../Card/CardService";
 import CardSession from "../Card/CardSession";
 import CopyText from "../CopyText";
 import AccessLogSummary from "../LogSummary/AccessLogSummary";
+import { CountryFilter } from "../SelectCountry";
 import { ResourceListLabel } from "../ResourceList";
 import TimeAgo from "../TimeAgo";
 import { CompactSummary } from "../Summary";
@@ -944,6 +945,7 @@ const DoAccessLogViewer = (props: {
   status?: AccessLogStatusFilter;
   reason?: AccessLog_Entry_Common_Reason_Type;
   mode?: Service_Spec_Mode;
+  countryCode?: string;
   query?: string;
   page?: number;
   onPageChange?: (page: number) => void;
@@ -979,6 +981,7 @@ const DoAccessLogViewer = (props: {
         status: accessLogStatusValue(props.status ?? "all"),
         reason: props.reason,
         mode: props.mode,
+        countryCode: props.countryCode,
       });
       const { response } =
         await getClientVisibilityAccessLog().listAccessLog(req);
@@ -1101,15 +1104,25 @@ const AccessLogViewer = (props: {
   status?: AccessLogStatusFilter;
   reason?: AccessLog_Entry_Common_Reason_Type;
   mode?: Service_Spec_Mode;
+  countryCode?: string;
   query?: string;
 }) => {
   const [from, setFrom] = React.useState<Timestamp>(
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
   );
+  const [countryCode, setCountryCode] = React.useState<string | undefined>(
+    props.countryCode?.toUpperCase(),
+  );
+  const [prevCountryCode, setPrevCountryCode] = React.useState(props.countryCode);
+
+  if (props.countryCode !== prevCountryCode) {
+    setPrevCountryCode(props.countryCode);
+    setCountryCode(props.countryCode?.toUpperCase());
+  }
 
   return (
     <div className="w-full flex flex-col gap-6">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 shrink-0">
           Since
         </span>
@@ -1117,6 +1130,13 @@ const AccessLogViewer = (props: {
           initialValue="6 hour"
           onUpdate={(value) => {
             setFrom(value);
+            props.onPageChange?.(0);
+          }}
+        />
+        <CountryFilter
+          value={countryCode}
+          onChange={(value) => {
+            setCountryCode(value);
             props.onPageChange?.(0);
           }}
         />
@@ -1134,6 +1154,7 @@ const AccessLogViewer = (props: {
             deviceRef={props.deviceRef}
             reason={props.reason}
             mode={props.mode}
+            countryCode={countryCode}
             from={from}
           />
         </CompactSummary>
@@ -1151,6 +1172,7 @@ const AccessLogViewer = (props: {
         status={props.status}
         reason={props.reason}
         mode={props.mode}
+        countryCode={countryCode}
         query={props.query}
         itemsPerPage={props.itemsPerPage}
         page={props.page}

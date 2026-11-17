@@ -43,6 +43,10 @@ import type { GetAuditLogSummaryRequest } from "./visibilityv1";
 import type { ListAuditLogResponse } from "./visibilityv1";
 import type { ListAuditLogRequest } from "./visibilityv1";
 import { AuthenticationLogService } from "./visibilityv1";
+import type { ListAuthenticationLogTopCityResponse } from "./visibilityv1";
+import type { ListAuthenticationLogTopCityRequest } from "./visibilityv1";
+import type { ListAuthenticationLogTopCountryResponse } from "./visibilityv1";
+import type { ListAuthenticationLogTopCountryRequest } from "./visibilityv1";
 import type { ListAuthenticationLogTopIdentityProviderResponse } from "./visibilityv1";
 import type { ListAuthenticationLogTopIdentityProviderRequest } from "./visibilityv1";
 import type { ListAuthenticationLogTopCredentialResponse } from "./visibilityv1";
@@ -58,6 +62,8 @@ import type { ListAuthenticationLogRequest } from "./visibilityv1";
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { AccessLogService } from "./visibilityv1";
+import type { ListAccessLogTopCountryResponse } from "./visibilityv1";
+import type { ListAccessLogTopCountryRequest } from "./visibilityv1";
 import type { ListAccessLogTopDenyReasonResponse } from "./visibilityv1";
 import type { ListAccessLogTopDenyReasonRequest } from "./visibilityv1";
 import type { ListAccessLogTopPolicyResponse } from "./visibilityv1";
@@ -131,6 +137,10 @@ export interface IAccessLogServiceClient {
      * @generated from protobuf rpc: ListAccessLogTopDenyReason
      */
     listAccessLogTopDenyReason(input: ListAccessLogTopDenyReasonRequest, options?: RpcOptions): UnaryCall<ListAccessLogTopDenyReasonRequest, ListAccessLogTopDenyReasonResponse>;
+    /**
+     * @generated from protobuf rpc: ListAccessLogTopCountry
+     */
+    listAccessLogTopCountry(input: ListAccessLogTopCountryRequest, options?: RpcOptions): UnaryCall<ListAccessLogTopCountryRequest, ListAccessLogTopCountryResponse>;
 }
 /**
  * @generated from protobuf service octelium.api.main.visibility.v1.AccessLogService
@@ -218,6 +228,13 @@ export class AccessLogServiceClient implements IAccessLogServiceClient, ServiceI
         const method = this.methods[10], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListAccessLogTopDenyReasonRequest, ListAccessLogTopDenyReasonResponse>("unary", this._transport, method, opt, input);
     }
+    /**
+     * @generated from protobuf rpc: ListAccessLogTopCountry
+     */
+    listAccessLogTopCountry(input: ListAccessLogTopCountryRequest, options?: RpcOptions): UnaryCall<ListAccessLogTopCountryRequest, ListAccessLogTopCountryResponse> {
+        const method = this.methods[11], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListAccessLogTopCountryRequest, ListAccessLogTopCountryResponse>("unary", this._transport, method, opt, input);
+    }
 }
 /**
  * @generated from protobuf service octelium.api.main.visibility.v1.AuthenticationLogService
@@ -247,6 +264,14 @@ export interface IAuthenticationLogServiceClient {
      * @generated from protobuf rpc: ListAuthenticationLogTopIdentityProvider
      */
     listAuthenticationLogTopIdentityProvider(input: ListAuthenticationLogTopIdentityProviderRequest, options?: RpcOptions): UnaryCall<ListAuthenticationLogTopIdentityProviderRequest, ListAuthenticationLogTopIdentityProviderResponse>;
+    /**
+     * @generated from protobuf rpc: ListAuthenticationLogTopCountry
+     */
+    listAuthenticationLogTopCountry(input: ListAuthenticationLogTopCountryRequest, options?: RpcOptions): UnaryCall<ListAuthenticationLogTopCountryRequest, ListAuthenticationLogTopCountryResponse>;
+    /**
+     * @generated from protobuf rpc: ListAuthenticationLogTopCity
+     */
+    listAuthenticationLogTopCity(input: ListAuthenticationLogTopCityRequest, options?: RpcOptions): UnaryCall<ListAuthenticationLogTopCityRequest, ListAuthenticationLogTopCityResponse>;
 }
 /**
  * @generated from protobuf service octelium.api.main.visibility.v1.AuthenticationLogService
@@ -298,6 +323,20 @@ export class AuthenticationLogServiceClient implements IAuthenticationLogService
     listAuthenticationLogTopIdentityProvider(input: ListAuthenticationLogTopIdentityProviderRequest, options?: RpcOptions): UnaryCall<ListAuthenticationLogTopIdentityProviderRequest, ListAuthenticationLogTopIdentityProviderResponse> {
         const method = this.methods[5], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListAuthenticationLogTopIdentityProviderRequest, ListAuthenticationLogTopIdentityProviderResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: ListAuthenticationLogTopCountry
+     */
+    listAuthenticationLogTopCountry(input: ListAuthenticationLogTopCountryRequest, options?: RpcOptions): UnaryCall<ListAuthenticationLogTopCountryRequest, ListAuthenticationLogTopCountryResponse> {
+        const method = this.methods[6], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListAuthenticationLogTopCountryRequest, ListAuthenticationLogTopCountryResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: ListAuthenticationLogTopCity
+     */
+    listAuthenticationLogTopCity(input: ListAuthenticationLogTopCityRequest, options?: RpcOptions): UnaryCall<ListAuthenticationLogTopCityRequest, ListAuthenticationLogTopCityResponse> {
+        const method = this.methods[7], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListAuthenticationLogTopCityRequest, ListAuthenticationLogTopCityResponse>("unary", this._transport, method, opt, input);
     }
 }
 /**

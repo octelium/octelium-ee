@@ -6,37 +6,17 @@ import {
 } from "@mantine/core";
 import countries from "i18n-iso-countries";
 import enLocale from "i18n-iso-countries/langs/en.json";
+import { CountryFlag } from "./CountryFlag";
+
+export { CountryFlag };
 
 countries.registerLocale(enLocale);
-
-const flags = import.meta.glob<string>(
-  "/node_modules/flag-icons/flags/4x3/*.svg",
-  { eager: true, query: "?url&no-inline", import: "default" },
-);
 
 const countryOptions = Object.entries(
   countries.getNames("en", { select: "official" }),
 )
   .map(([value, label]) => ({ value, label }))
   .sort((a, b) => a.label.localeCompare(b.label));
-
-export const CountryFlag = (props: { code?: string }) => {
-  const code = props.code?.trim().toLowerCase();
-  if (!code || code.length !== 2) return null;
-  const src = flags[`/node_modules/flag-icons/flags/4x3/${code}.svg`];
-  if (!src) return null;
-
-  return (
-    <img
-      src={src}
-      alt=""
-      aria-hidden="true"
-      loading="lazy"
-      className="shrink-0 rounded-[2px]"
-      style={{ width: "1.4rem", height: "1.05rem" }}
-    />
-  );
-};
 
 const renderOption: SelectProps["renderOption"] = ({ option }) => (
   <span className="flex items-center gap-2">
@@ -99,3 +79,25 @@ const SelectCountry = (props: {
 };
 
 export default SelectCountry;
+
+export const CountryFilter = (props: {
+  value?: string;
+  onChange: (value?: string) => void;
+  className?: string;
+}) => (
+  <Select
+    size="xs"
+    className={props.className ?? "w-52"}
+    placeholder="Any country"
+    aria-label="Country"
+    searchable
+    clearable
+    data={countryOptions}
+    value={props.value ?? null}
+    renderOption={renderOption}
+    leftSection={<CountryFlag code={props.value} />}
+    onChange={(value) => props.onChange(value ?? undefined)}
+    maxDropdownHeight={320}
+    comboboxProps={{ width: 280, position: "bottom-start" }}
+  />
+);

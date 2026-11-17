@@ -227,6 +227,7 @@ type authenticationLogOptions struct {
 	IdentityProviderRef *metav1.ObjectReference
 	Status              enterprisev1.AuthenticationLog_Entry_Status
 	FailureReason       enterprisev1.AuthenticationLog_Entry_Failure_Reason
+	GeoIP               *corev1.GeoIP
 }
 
 func newAuthenticationLog(opts *authenticationLogOptions) *enterprisev1.AuthenticationLog {
@@ -238,8 +239,9 @@ func newAuthenticationLog(opts *authenticationLogOptions) *enterprisev1.Authenti
 	}
 
 	info := &corev1.Session_Status_Authentication_Info{
-		Type: opts.Type,
-		Aal:  opts.AAL,
+		Type:  opts.Type,
+		Aal:   opts.AAL,
+		Geoip: opts.GeoIP,
 	}
 
 	if opts.CredentialRef != nil {

@@ -126,6 +126,7 @@ describe("Resource overview details", () => {
       };
       return [...card.querySelectorAll("*")]
         .filter((element) => {
+          if (element.ownerSVGElement) return false;
           const box = element.getBoundingClientRect();
           return box.width > 0 && box.right > limit && !scrolls(element);
         })

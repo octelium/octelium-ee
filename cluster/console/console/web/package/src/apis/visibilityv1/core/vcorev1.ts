@@ -324,6 +324,16 @@ export interface GetSessionSummaryResponse {
      * @generated from protobuf field: octelium.api.main.visibility.core.v1.GetSessionSummaryResponse previous = 13
      */
     previous?: GetSessionSummaryResponse;
+    /**
+     * TotalByCountry is the number of the Sessions keyed by the ISO 3166-1
+     * alpha-2 country code of the GeoIP information of their latest
+     * authentication (e.g. "US").
+     *
+     * @generated from protobuf field: map<string, uint64> totalByCountry = 14
+     */
+    totalByCountry: {
+        [key: string]: number;
+    };
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetServiceSummaryResponse
@@ -919,6 +929,13 @@ export interface ListSessionOptions {
      * @generated from protobuf field: bool isConnected = 8
      */
     isConnected: boolean;
+    /**
+     * CountryCode lists the Sessions whose latest authentication's GeoIP country
+     * is this ISO 3166-1 alpha-2 country code (e.g. "US").
+     *
+     * @generated from protobuf field: string countryCode = 9
+     */
+    countryCode: string;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.ListSecretOptions
@@ -1999,7 +2016,8 @@ class GetSessionSummaryResponse$Type extends MessageType<GetSessionSummaryRespon
             { no: 10, name: "totalActive", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 11, name: "totalRejected", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 12, name: "totalPending", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 13, name: "previous", kind: "message", T: () => GetSessionSummaryResponse }
+            { no: 13, name: "previous", kind: "message", T: () => GetSessionSummaryResponse },
+            { no: 14, name: "totalByCountry", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ } }
         ]);
     }
     create(value?: PartialMessage<GetSessionSummaryResponse>): GetSessionSummaryResponse {
@@ -2016,6 +2034,7 @@ class GetSessionSummaryResponse$Type extends MessageType<GetSessionSummaryRespon
         message.totalActive = 0;
         message.totalRejected = 0;
         message.totalPending = 0;
+        message.totalByCountry = {};
         if (value !== undefined)
             reflectionMergePartial<GetSessionSummaryResponse>(this, message, value);
         return message;
@@ -2064,6 +2083,9 @@ class GetSessionSummaryResponse$Type extends MessageType<GetSessionSummaryRespon
                 case /* octelium.api.main.visibility.core.v1.GetSessionSummaryResponse previous */ 13:
                     message.previous = GetSessionSummaryResponse.internalBinaryRead(reader, reader.uint32(), options, message.previous);
                     break;
+                case /* map<string, uint64> totalByCountry */ 14:
+                    this.binaryReadMap14(message.totalByCountry, reader, options);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -2074,6 +2096,22 @@ class GetSessionSummaryResponse$Type extends MessageType<GetSessionSummaryRespon
             }
         }
         return message;
+    }
+    private binaryReadMap14(map: GetSessionSummaryResponse["totalByCountry"], reader: IBinaryReader, options: BinaryReadOptions): void {
+        let len = reader.uint32(), end = reader.pos + len, key: keyof GetSessionSummaryResponse["totalByCountry"] | undefined, val: GetSessionSummaryResponse["totalByCountry"][any] | undefined;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case 1:
+                    key = reader.string();
+                    break;
+                case 2:
+                    val = reader.uint64().toNumber();
+                    break;
+                default: throw new globalThis.Error("unknown map entry field for octelium.api.main.visibility.core.v1.GetSessionSummaryResponse.totalByCountry");
+            }
+        }
+        map[key ?? ""] = val ?? 0;
     }
     internalBinaryWrite(message: GetSessionSummaryResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* uint64 totalNumber = 1; */
@@ -2115,6 +2153,9 @@ class GetSessionSummaryResponse$Type extends MessageType<GetSessionSummaryRespon
         /* octelium.api.main.visibility.core.v1.GetSessionSummaryResponse previous = 13; */
         if (message.previous)
             GetSessionSummaryResponse.internalBinaryWrite(message.previous, writer.tag(13, WireType.LengthDelimited).fork(), options).join();
+        /* map<string, uint64> totalByCountry = 14; */
+        for (let k of globalThis.Object.keys(message.totalByCountry))
+            writer.tag(14, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.Varint).uint64(message.totalByCountry[k]).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3581,7 +3622,8 @@ class ListSessionOptions$Type extends MessageType<ListSessionOptions> {
             { no: 5, name: "type", kind: "enum", T: () => ["octelium.api.main.core.v1.Session.Status.Type", Session_Status_Type] },
             { no: 6, name: "isBrowser", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 7, name: "credentialRef", kind: "message", T: () => ObjectReference },
-            { no: 8, name: "isConnected", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 8, name: "isConnected", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 9, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<ListSessionOptions>): ListSessionOptions {
@@ -3590,6 +3632,7 @@ class ListSessionOptions$Type extends MessageType<ListSessionOptions> {
         message.type = 0;
         message.isBrowser = false;
         message.isConnected = false;
+        message.countryCode = "";
         if (value !== undefined)
             reflectionMergePartial<ListSessionOptions>(this, message, value);
         return message;
@@ -3622,6 +3665,9 @@ class ListSessionOptions$Type extends MessageType<ListSessionOptions> {
                     break;
                 case /* bool isConnected */ 8:
                     message.isConnected = reader.bool();
+                    break;
+                case /* string countryCode */ 9:
+                    message.countryCode = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -3659,6 +3705,9 @@ class ListSessionOptions$Type extends MessageType<ListSessionOptions> {
         /* bool isConnected = 8; */
         if (message.isConnected !== false)
             writer.tag(8, WireType.Varint).bool(message.isConnected);
+        /* string countryCode = 9; */
+        if (message.countryCode !== "")
+            writer.tag(9, WireType.LengthDelimited).string(message.countryCode);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

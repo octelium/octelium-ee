@@ -2,6 +2,7 @@ import { Space_Status_Type } from "@/apis/cordiumv1/cordiumv1";
 import * as CoreC from "@/apis/corev1/corev1";
 import * as CoreP from "@/apis/corev1/corev1";
 import AccessLogViewer from "@/components/AccessLogViewer";
+import { formatDistance } from "@/components/GeoMap/geo";
 import Label from "@/components/Label";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
 import {
@@ -43,6 +44,7 @@ import {
   MapPin,
   MonitorSmartphone,
   Network,
+  Plane,
   Server,
   ShieldCheck,
   ShieldQuestion,
@@ -66,6 +68,7 @@ import {
   scopeItems,
   servedItems,
 } from "./Info";
+import SessionLocations, { getImpossibleTravel, getSessionTrail } from "./Location";
 import { getCordiumSessionInfo } from "./utils";
 
 export const AccessLog = (props: { item: CoreC.Session }) => {
@@ -137,6 +140,7 @@ const SessionHero = (props: { item: CoreC.Session }) => {
   const source = getAuthenticationSource(signIn);
   const info = status?.authentication?.info;
   const location = formatLocation(info?.geoip);
+  const impossible = getImpossibleTravel(item).at(-1)?.fromPrevious;
   const lifetime = remainingPercent(
     toDate(item.metadata?.createdAt),
     expiry.expiresAt,
@@ -227,6 +231,13 @@ const SessionHero = (props: { item: CoreC.Session }) => {
         />
       }
     >
+      {impossible && (
+        <OverviewNotice tone="warning" icon={Plane} title="Impossible travel.">
+          Two consecutive sign-ins were {formatDistance(impossible.km)} apart
+          within {formatSeconds(impossible.seconds)}, faster than any flight.
+          It can be a VPN or a proxy, or a stolen token.
+        </OverviewNotice>
+      )}
       {status?.isLocked && (
         <OverviewNotice tone="danger" icon={Lock} title="Locked by the Cluster.">
           Every request of this Session is rejected until it is unlocked.
@@ -337,6 +348,17 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
 
       ...authenticationItems(item, "Authentication"),
       ...clientItems(item, "Client & location"),
+      ...(getSessionTrail(item).length > 0
+        ? [
+            {
+              label: "Sign-in locations",
+              group: "Client & location",
+              span: "full" as const,
+              layout: "stacked" as const,
+              value: <SessionLocations item={item} />,
+            },
+          ]
+        : []),
       ...connectionItems(item, "Connection"),
       ...servedItems(item, "Served Services"),
       ...authorizationItems(item.spec?.authorization),

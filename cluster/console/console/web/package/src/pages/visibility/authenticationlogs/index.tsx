@@ -25,6 +25,7 @@ export default () => {
         authenticatorRef={toObjectRef(req?.authenticatorRef)}
         status={parseAuthenticationLogStatus(req?.status)}
         reason={parseFailureReason(req?.reason)}
+        countryCode={req?.countryCode}
         itemsPerPage={25}
         page={pagination.page}
         onPageChange={pagination.setPage}

@@ -64,6 +64,10 @@ func (s *srvAccessLog) ListAccessLogTopDenyReason(ctx context.Context, req *visi
 	return s.s.listAccessLogTopDenyReason(ctx, req)
 }
 
+func (s *srvAccessLog) ListAccessLogTopCountry(ctx context.Context, req *visibilityv1.ListAccessLogTopCountryRequest) (*visibilityv1.ListAccessLogTopCountryResponse, error) {
+	return s.s.listAccessLogTopCountry(ctx, req)
+}
+
 type srvLLM struct {
 	s *Server
 	vllmv1.UnimplementedLLMServiceServer
@@ -136,6 +140,14 @@ func (s *srvAuthenticationLog) ListAuthenticationLogTopCredential(ctx context.Co
 
 func (s *srvAuthenticationLog) ListAuthenticationLogTopIdentityProvider(ctx context.Context, req *visibilityv1.ListAuthenticationLogTopIdentityProviderRequest) (*visibilityv1.ListAuthenticationLogTopIdentityProviderResponse, error) {
 	return s.s.listAuthenticationLogTopIdentityProvider(ctx, req)
+}
+
+func (s *srvAuthenticationLog) ListAuthenticationLogTopCountry(ctx context.Context, req *visibilityv1.ListAuthenticationLogTopCountryRequest) (*visibilityv1.ListAuthenticationLogTopCountryResponse, error) {
+	return s.s.listAuthenticationLogTopCountry(ctx, req)
+}
+
+func (s *srvAuthenticationLog) ListAuthenticationLogTopCity(ctx context.Context, req *visibilityv1.ListAuthenticationLogTopCityRequest) (*visibilityv1.ListAuthenticationLogTopCityResponse, error) {
+	return s.s.listAuthenticationLogTopCity(ctx, req)
 }
 
 type srvAuditLog struct {

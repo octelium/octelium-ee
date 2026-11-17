@@ -7,10 +7,12 @@ import {
   AutoRefreshContext,
   useDashboardRange,
 } from "@/components/Dashboard/utils";
+import GeoActivity from "@/components/GeoActivity";
 import Meta from "@/components/Meta";
 import { motion } from "framer-motion";
 import {
   Activity as ActivityIcon,
+  Earth,
   Gauge,
   HeartPulse,
   Layers,
@@ -78,6 +80,20 @@ const Dashboard = () => {
       icon: ShieldUser,
       height: 680,
       render: () => <Identity periodMinutes={periodMinutes} />,
+    },
+    {
+      id: "geography",
+      title: "Global activity",
+      description: "Where sign-ins, failed sign-ins and requests come from",
+      icon: Earth,
+      height: 760,
+      render: () => (
+        <GeoActivity
+          periodMinutes={periodMinutes}
+          sources={["signins", "failures", "requests"]}
+          title="Global activity"
+        />
+      ),
     },
     {
       id: "governance",

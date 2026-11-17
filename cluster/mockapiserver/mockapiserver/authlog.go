@@ -119,7 +119,9 @@ func (s *tstVisibilityLog) getAuthenticationLogs(ctx context.Context, from, to t
 
 		reason := mockAuthFailureReasons[slot%int64(len(mockAuthFailureReasons))]
 		info.Aal = corev1.Session_Status_Authentication_Info_AAL_UNSET
-		info.Geoip = nil
+		if slot%4 != 0 {
+			info.Geoip = mockGeoFailureLocations[slot%int64(len(mockGeoFailureLocations))].toGeoIP(int(slot % 1000))
+		}
 
 		switch reason {
 		case enterprisev1.AuthenticationLog_Entry_Failure_USER_NOT_FOUND:
@@ -195,6 +197,7 @@ func (s *tstVisibilityLog) ListAuthenticationLog(ctx context.Context, req *visib
 	}
 
 	items = filterMockAuthenticationLogs(items, req.Status, req.Reason, req.UserRef)
+	items = filterMockAuthenticationLogsCountry(items, req.CountryCode)
 
 	itemsPerPage := uint32(25)
 	var page uint32
@@ -231,6 +234,7 @@ func (s *tstVisibilityLog) doGetAuthenticationLogSummary(ctx context.Context,
 	}
 
 	items = filterMockAuthenticationLogs(items, req.Status, req.Reason, req.UserRef)
+	items = filterMockAuthenticationLogsCountry(items, req.CountryCode)
 
 	ret := &visibilityv1.GetAuthenticationLogSummaryResponse{
 		TotalByFailureReason: make(map[string]uint64),
@@ -238,6 +242,7 @@ func (s *tstVisibilityLog) doGetAuthenticationLogSummary(ctx context.Context,
 
 	users := make(map[string]struct{})
 	sessions := make(map[string]struct{})
+	countries := make(map[string]struct{})
 
 	for _, itm := range items {
 		entry := itm.Entry
@@ -256,6 +261,9 @@ func (s *tstVisibilityLog) doGetAuthenticationLogSummary(ctx context.Context,
 		}
 		if entry.SessionRef.GetUid() != "" {
 			sessions[entry.SessionRef.Uid] = struct{}{}
+		}
+		if code := getMockAuthLogCountry(itm); code != "" {
+			countries[code] = struct{}{}
 		}
 		if entry.AuthenticationIndex > 0 {
 			ret.TotalReauthentication++
@@ -300,6 +308,7 @@ func (s *tstVisibilityLog) doGetAuthenticationLogSummary(ctx context.Context,
 
 	ret.TotalUser = uint64(len(users))
 	ret.TotalSession = uint64(len(sessions))
+	ret.TotalCountry = uint64(len(countries))
 
 	return ret, nil
 }
@@ -343,6 +352,8 @@ func getMockAuthLogSeriesKey(itm *enterprisev1.AuthenticationLog,
 		return ""
 	case visibilityv1.GetAuthenticationLogDataPointRequest_TYPE:
 		return itm.Entry.Authentication.GetInfo().GetType().String()
+	case visibilityv1.GetAuthenticationLogDataPointRequest_COUNTRY:
+		return getMockAuthLogCountry(itm)
 	default:
 		return ""
 	}
@@ -357,6 +368,7 @@ func (s *tstVisibilityLog) GetAuthenticationLogDataPoint(ctx context.Context, re
 	}
 
 	items = filterMockAuthenticationLogs(items, req.Status, req.Reason, req.UserRef)
+	items = filterMockAuthenticationLogsCountry(items, req.CountryCode)
 
 	interval := umetav1.ToDuration(req.Interval).ToGo()
 	if interval < mockAuthLogStep {

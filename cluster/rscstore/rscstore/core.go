@@ -132,6 +132,55 @@ func (s *Server) doSummaryCoreSession(ctx context.Context, common *vmetav1.Commo
 		return nil, grpcutils.InternalWithErr(err)
 	}
 
+	ret.TotalByCountry, err = s.getSessionCountryCounts(ctx, filters)
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	return ret, nil
+}
+
+func (s *Server) getSessionCountryCounts(ctx context.Context,
+	filters []exp.Expression) (map[string]uint64, error) {
+
+	ds := goqu.From("resources").Where(filters...).
+		Where(goqu.L(fmt.Sprintf(`%s IS NOT NULL AND %s <> ''`, colStatusCountryCode, colStatusCountryCode))).
+		Select(
+			goqu.L(fmt.Sprintf(`upper(%s)`, colStatusCountryCode)).As("code"),
+			goqu.L(`COUNT(*)`).As("count"),
+		).GroupBy(goqu.L("code"))
+
+	sqln, sqlargs, err := ds.ToSQL()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := s.db.QueryContext(ctx, sqln, sqlargs...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	ret := make(map[string]uint64)
+	for rows.Next() {
+		var code string
+		var count uint64
+		if err := rows.Scan(&code, &count); err != nil {
+			return nil, err
+		}
+
+		ret[code] = count
+	}
+
+	return ret, rows.Err()
+}
+
+func getCountryCode(code string) (string, error) {
+	ret := strings.ToUpper(strings.TrimSpace(code))
+	if len(ret) != 2 || ret[0] < 'A' || ret[0] > 'Z' || ret[1] < 'A' || ret[1] > 'Z' {
+		return "", grpcutils.InvalidArg("Invalid country code: %s", code)
+	}
+
 	return ret, nil
 }
 

@@ -620,7 +620,8 @@ export const clientItems = (
             group,
             value: (
               <span className="tabular-nums">
-                {geoip.coordinates.latitude}, {geoip.coordinates.longitude}
+                {geoip.coordinates.latitude.toFixed(4)},{" "}
+                {geoip.coordinates.longitude.toFixed(4)}
                 {!!geoip.coordinates.accuracyRadius && (
                   <span className="ml-1 text-xs text-slate-500">
                     ±{geoip.coordinates.accuracyRadius} km

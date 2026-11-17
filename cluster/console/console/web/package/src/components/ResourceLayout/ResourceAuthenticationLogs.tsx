@@ -1,5 +1,6 @@
 import { ObjectReference } from "@/apis/metav1/metav1";
 
+import { ResourceGeoActivity } from "@/components/GeoActivity";
 import PageWrap from "@/components/PageWrap";
 import { getResourceRef, Resource } from "@/utils/pb";
 import { usePeriodRange } from "@/hooks/use-period-range";
@@ -100,6 +101,18 @@ export const ResourceAuthenticationLogs = (props: {
         authenticatorRef={authenticatorRef}
         periodMinutes={periodMinutes}
         onPeriodChange={setPeriodMinutes}
+      />
+
+      <ResourceGeoActivity
+        periodMinutes={periodMinutes}
+        refs={{
+          userRef,
+          sessionRef,
+          deviceRef,
+          identityProviderRef,
+          credentialRef,
+          authenticatorRef,
+        }}
       />
 
       <section className="flex w-full flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-raised">

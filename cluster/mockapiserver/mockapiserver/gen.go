@@ -500,13 +500,17 @@ func genResources(ctx context.Context, octeliumC octeliumc.ClientInterface) erro
 			}
 
 			for j := 0; j < 2; j++ {
-				_, err := sessionc.CreateSession(ctx, &sessionc.CreateSessionOpts{
+				sess, err := sessionc.CreateSession(ctx, &sessionc.CreateSessionOpts{
 					Usr:       usr,
 					Device:    dev,
 					OcteliumC: octeliumC,
 					SessType:  corev1.Session_Status_CLIENT,
 				})
 				if err != nil {
+					return err
+				}
+
+				if err := setMockSessionGeoIP(ctx, octeliumC, sess, i*4+x*2+j); err != nil {
 					return err
 				}
 			}

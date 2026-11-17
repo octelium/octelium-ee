@@ -12,7 +12,7 @@ import {
   refetchIntervalChart,
 } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, ShieldCheck, ShieldX } from "lucide-react";
+import { Activity, Earth, ShieldCheck, ShieldX } from "lucide-react";
 import { SummaryItemCount, SummaryItemCountWrap } from "../Summary";
 
 const AccessLogSummary = (props: {
@@ -25,6 +25,7 @@ const AccessLogSummary = (props: {
   policyRef?: ObjectReference;
   reason?: AccessLog_Entry_Common_Reason_Type;
   mode?: Service_Spec_Mode;
+  countryCode?: string;
   from?: Timestamp;
   to?: Timestamp;
 }) => {
@@ -49,6 +50,7 @@ const AccessLogSummary = (props: {
       params.set("reason", AccessLog_Entry_Common_Reason_Type[props.reason]);
     }
     if (props.mode) params.set("mode", Service_Spec_Mode[props.mode]);
+    if (props.countryCode) params.set("countryCode", props.countryCode);
 
     const refs: Array<[string, ObjectReference | undefined]> = [
       ["userRef", props.userRef],
@@ -80,6 +82,9 @@ const AccessLogSummary = (props: {
           </SummaryItemCount>
           <SummaryItemCount showZero count={qry.data.totalDenied} icon={ShieldX} to={accessLogsPath("DENIED")}>
             Denied
+          </SummaryItemCount>
+          <SummaryItemCount showZero count={qry.data.totalCountry} icon={Earth}>
+            Countries
           </SummaryItemCount>
         </SummaryItemCountWrap>
       ) : qry.isError ? (

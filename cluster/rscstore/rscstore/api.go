@@ -482,6 +482,16 @@ func (s *srvCore) ListSession(ctx context.Context, req *vcorev1.ListSessionOptio
 		}
 	}
 
+	if req.CountryCode != "" {
+		code, err := getCountryCode(req.CountryCode)
+		if err != nil {
+			return nil, err
+		}
+
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`upper(%s)`, colStatusCountryCode)).Eq(code))
+	}
+
 	ret, err := s.s.doList(ctx, doListReq)
 	if err != nil {
 		return nil, err

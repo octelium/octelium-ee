@@ -74,9 +74,13 @@ func (s *Server) insertLogBatches(ctx context.Context, batches []*pendingLogBatc
 	}()
 
 	statements := make(map[logTable]*sql.Stmt)
+	var locationStmt *sql.Stmt
 	defer func() {
 		for _, stmt := range statements {
 			_ = stmt.Close()
+		}
+		if locationStmt != nil {
+			_ = locationStmt.Close()
 		}
 	}()
 
@@ -98,6 +102,21 @@ func (s *Server) insertLogBatches(ctx context.Context, batches []*pendingLogBatc
 			}
 
 			if _, err := stmt.ExecContext(ctx, string(item.data)); err != nil {
+				return err
+			}
+
+			if item.table != logTableAuthentication {
+				continue
+			}
+
+			if locationStmt == nil {
+				locationStmt, err = tx.PrepareContext(ctx, getSessionLocationUpsertQuery())
+				if err != nil {
+					return err
+				}
+			}
+
+			if _, err := locationStmt.ExecContext(ctx, string(item.data)); err != nil {
 				return err
 			}
 		}
@@ -147,7 +166,11 @@ func (s *Server) insertAuthenticationLog(logJSON []byte) error {
 		return err
 	}
 
-	_, err = s.db.Exec(query, string(logJSON))
+	if _, err := s.db.Exec(query, string(logJSON)); err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec(getSessionLocationUpsertQuery(), string(logJSON))
 
 	return err
 }
@@ -235,6 +258,11 @@ func (s *Server) listAccessLog(ctx context.Context, req *visibilityv1.ListAccess
 	filters = appendAccessStatusFilter(filters, req.Status)
 
 	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
+
+	filters, err = appendAccessCountryFilter(filters, req.CountryCode)
+	if err != nil {
+		return nil, err
+	}
 	filters = appendAccessFlagFilters(filters, req.IsPublic, req.IsAnonymous)
 
 	filters = appendTimeFilters(filters, req.From, req.To)
@@ -696,6 +724,11 @@ func (s *Server) doSummaryAccessLog(ctx context.Context, req *visibilityv1.GetAc
 
 	filters = appendAccessReasonModeFilters(filters, req.Reason, req.Mode)
 
+	filters, err = appendAccessCountryFilter(filters, req.CountryCode)
+	if err != nil {
+		return nil, err
+	}
+
 	filters = appendTimeFilters(filters, from, to)
 
 	latency := &visibilityv1.GetAccessLogSummaryResponse_Latency{}
@@ -720,6 +753,7 @@ func (s *Server) doSummaryAccessLog(ctx context.Context, req *visibilityv1.GetAc
 		goqu.L(fmt.Sprintf(`COALESCE(quantile_cont(%s, 0.99), 0) AS latency_p99`, sqlAccessLogDurationMillis)),
 		goqu.L(fmt.Sprintf(`COALESCE(MAX(%s), 0) AS latency_max`, sqlAccessLogDurationMillis)),
 		goqu.L(fmt.Sprintf(`COALESCE(AVG(%s), 0) AS latency_avg`, sqlAccessLogDurationMillis)),
+		goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_country`, colCountryCode)),
 	)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -745,7 +779,8 @@ func (s *Server) doSummaryAccessLog(ctx context.Context, req *visibilityv1.GetAc
 			&ret.TotalPublic, &ret.TotalAnonymous,
 			&ret.TotalBytesSent, &ret.TotalBytesReceived,
 			&latency.Count, &latency.P50Milliseconds, &latency.P95Milliseconds,
-			&latency.P99Milliseconds, &latency.MaxMilliseconds, &latency.AvgMilliseconds)
+			&latency.P99Milliseconds, &latency.MaxMilliseconds, &latency.AvgMilliseconds,
+			&ret.TotalCountry)
 		if err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
@@ -824,6 +859,11 @@ func (s *Server) doSummaryAuthenticationLog(ctx context.Context, req *visibility
 	*/
 
 	filters = appendAuthenticationStatusFilters(filters, req.Status, req.Reason)
+
+	filters, err = appendAuthenticationCountryFilter(filters, req.CountryCode)
+	if err != nil {
+		return nil, err
+	}
 	filters = appendTimeFilters(filters, from, to)
 
 	ds := goqu.From("authentication_logs").Where(filters...).Select(
@@ -851,6 +891,7 @@ func (s *Server) doSummaryAuthenticationLog(ctx context.Context, req *visibility
 
 		goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.userRef.uid')) AS count_user`),
 		goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.sessionRef.uid')) AS count_session`),
+		goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_country`, sqlAuthenticationCountryCode)),
 		// goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.identityProviderRef.uid')) AS count_identity_provider`),
 	)
 
@@ -875,7 +916,7 @@ func (s *Server) doSummaryAuthenticationLog(ctx context.Context, req *visibility
 			&ret.TotalAAL1, &ret.TotalAAL2, &ret.TotalAAL3,
 			&ret.TotalAuthenticatorFIDO, &ret.TotalAuthenticatorTOTP, &ret.TotalAuthenticatorTPM,
 			&ret.TotalAuthenticatorPasskey, &ret.TotalAuthenticatorMFA, &ret.TotalReauthentication,
-			&ret.TotalUser, &ret.TotalSession)
+			&ret.TotalUser, &ret.TotalSession, &ret.TotalCountry)
 		if err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
@@ -944,6 +985,11 @@ func (s *Server) listAuthenticationLog(ctx context.Context, req *visibilityv1.Li
 	*/
 
 	filters = appendAuthenticationStatusFilters(filters, req.Status, req.Reason)
+
+	filters, err = appendAuthenticationCountryFilter(filters, req.CountryCode)
+	if err != nil {
+		return nil, err
+	}
 	filters = appendTimeFilters(filters, req.From, req.To)
 
 	totalCount, err := s.countLogs(ctx, "authentication_logs", filters)

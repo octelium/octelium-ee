@@ -38,6 +38,7 @@ const (
 	AccessLogService_ListAccessLogTopSession_FullMethodName    = "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLogTopSession"
 	AccessLogService_ListAccessLogTopPolicy_FullMethodName     = "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLogTopPolicy"
 	AccessLogService_ListAccessLogTopDenyReason_FullMethodName = "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLogTopDenyReason"
+	AccessLogService_ListAccessLogTopCountry_FullMethodName    = "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLogTopCountry"
 )
 
 // AccessLogServiceClient is the client API for AccessLogService service.
@@ -55,6 +56,7 @@ type AccessLogServiceClient interface {
 	ListAccessLogTopSession(ctx context.Context, in *ListAccessLogTopSessionRequest, opts ...grpc.CallOption) (*ListAccessLogTopSessionResponse, error)
 	ListAccessLogTopPolicy(ctx context.Context, in *ListAccessLogTopPolicyRequest, opts ...grpc.CallOption) (*ListAccessLogTopPolicyResponse, error)
 	ListAccessLogTopDenyReason(ctx context.Context, in *ListAccessLogTopDenyReasonRequest, opts ...grpc.CallOption) (*ListAccessLogTopDenyReasonResponse, error)
+	ListAccessLogTopCountry(ctx context.Context, in *ListAccessLogTopCountryRequest, opts ...grpc.CallOption) (*ListAccessLogTopCountryResponse, error)
 }
 
 type accessLogServiceClient struct {
@@ -175,6 +177,16 @@ func (c *accessLogServiceClient) ListAccessLogTopDenyReason(ctx context.Context,
 	return out, nil
 }
 
+func (c *accessLogServiceClient) ListAccessLogTopCountry(ctx context.Context, in *ListAccessLogTopCountryRequest, opts ...grpc.CallOption) (*ListAccessLogTopCountryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAccessLogTopCountryResponse)
+	err := c.cc.Invoke(ctx, AccessLogService_ListAccessLogTopCountry_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AccessLogServiceServer is the server API for AccessLogService service.
 // All implementations must embed UnimplementedAccessLogServiceServer
 // for forward compatibility.
@@ -190,6 +202,7 @@ type AccessLogServiceServer interface {
 	ListAccessLogTopSession(context.Context, *ListAccessLogTopSessionRequest) (*ListAccessLogTopSessionResponse, error)
 	ListAccessLogTopPolicy(context.Context, *ListAccessLogTopPolicyRequest) (*ListAccessLogTopPolicyResponse, error)
 	ListAccessLogTopDenyReason(context.Context, *ListAccessLogTopDenyReasonRequest) (*ListAccessLogTopDenyReasonResponse, error)
+	ListAccessLogTopCountry(context.Context, *ListAccessLogTopCountryRequest) (*ListAccessLogTopCountryResponse, error)
 	mustEmbedUnimplementedAccessLogServiceServer()
 }
 
@@ -232,6 +245,9 @@ func (UnimplementedAccessLogServiceServer) ListAccessLogTopPolicy(context.Contex
 }
 func (UnimplementedAccessLogServiceServer) ListAccessLogTopDenyReason(context.Context, *ListAccessLogTopDenyReasonRequest) (*ListAccessLogTopDenyReasonResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAccessLogTopDenyReason not implemented")
+}
+func (UnimplementedAccessLogServiceServer) ListAccessLogTopCountry(context.Context, *ListAccessLogTopCountryRequest) (*ListAccessLogTopCountryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAccessLogTopCountry not implemented")
 }
 func (UnimplementedAccessLogServiceServer) mustEmbedUnimplementedAccessLogServiceServer() {}
 func (UnimplementedAccessLogServiceServer) testEmbeddedByValue()                          {}
@@ -452,6 +468,24 @@ func _AccessLogService_ListAccessLogTopDenyReason_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AccessLogService_ListAccessLogTopCountry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAccessLogTopCountryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccessLogServiceServer).ListAccessLogTopCountry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccessLogService_ListAccessLogTopCountry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccessLogServiceServer).ListAccessLogTopCountry(ctx, req.(*ListAccessLogTopCountryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AccessLogService_ServiceDesc is the grpc.ServiceDesc for AccessLogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -503,6 +537,10 @@ var AccessLogService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "ListAccessLogTopDenyReason",
 			Handler:    _AccessLogService_ListAccessLogTopDenyReason_Handler,
 		},
+		{
+			MethodName: "ListAccessLogTopCountry",
+			Handler:    _AccessLogService_ListAccessLogTopCountry_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "visibilityv1.proto",
@@ -515,6 +553,8 @@ const (
 	AuthenticationLogService_ListAuthenticationLogTopUser_FullMethodName             = "/octelium.api.main.visibility.v1.AuthenticationLogService/ListAuthenticationLogTopUser"
 	AuthenticationLogService_ListAuthenticationLogTopCredential_FullMethodName       = "/octelium.api.main.visibility.v1.AuthenticationLogService/ListAuthenticationLogTopCredential"
 	AuthenticationLogService_ListAuthenticationLogTopIdentityProvider_FullMethodName = "/octelium.api.main.visibility.v1.AuthenticationLogService/ListAuthenticationLogTopIdentityProvider"
+	AuthenticationLogService_ListAuthenticationLogTopCountry_FullMethodName          = "/octelium.api.main.visibility.v1.AuthenticationLogService/ListAuthenticationLogTopCountry"
+	AuthenticationLogService_ListAuthenticationLogTopCity_FullMethodName             = "/octelium.api.main.visibility.v1.AuthenticationLogService/ListAuthenticationLogTopCity"
 )
 
 // AuthenticationLogServiceClient is the client API for AuthenticationLogService service.
@@ -527,6 +567,8 @@ type AuthenticationLogServiceClient interface {
 	ListAuthenticationLogTopUser(ctx context.Context, in *ListAuthenticationLogTopUserRequest, opts ...grpc.CallOption) (*ListAuthenticationLogTopUserResponse, error)
 	ListAuthenticationLogTopCredential(ctx context.Context, in *ListAuthenticationLogTopCredentialRequest, opts ...grpc.CallOption) (*ListAuthenticationLogTopCredentialResponse, error)
 	ListAuthenticationLogTopIdentityProvider(ctx context.Context, in *ListAuthenticationLogTopIdentityProviderRequest, opts ...grpc.CallOption) (*ListAuthenticationLogTopIdentityProviderResponse, error)
+	ListAuthenticationLogTopCountry(ctx context.Context, in *ListAuthenticationLogTopCountryRequest, opts ...grpc.CallOption) (*ListAuthenticationLogTopCountryResponse, error)
+	ListAuthenticationLogTopCity(ctx context.Context, in *ListAuthenticationLogTopCityRequest, opts ...grpc.CallOption) (*ListAuthenticationLogTopCityResponse, error)
 }
 
 type authenticationLogServiceClient struct {
@@ -597,6 +639,26 @@ func (c *authenticationLogServiceClient) ListAuthenticationLogTopIdentityProvide
 	return out, nil
 }
 
+func (c *authenticationLogServiceClient) ListAuthenticationLogTopCountry(ctx context.Context, in *ListAuthenticationLogTopCountryRequest, opts ...grpc.CallOption) (*ListAuthenticationLogTopCountryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAuthenticationLogTopCountryResponse)
+	err := c.cc.Invoke(ctx, AuthenticationLogService_ListAuthenticationLogTopCountry_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authenticationLogServiceClient) ListAuthenticationLogTopCity(ctx context.Context, in *ListAuthenticationLogTopCityRequest, opts ...grpc.CallOption) (*ListAuthenticationLogTopCityResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAuthenticationLogTopCityResponse)
+	err := c.cc.Invoke(ctx, AuthenticationLogService_ListAuthenticationLogTopCity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthenticationLogServiceServer is the server API for AuthenticationLogService service.
 // All implementations must embed UnimplementedAuthenticationLogServiceServer
 // for forward compatibility.
@@ -607,6 +669,8 @@ type AuthenticationLogServiceServer interface {
 	ListAuthenticationLogTopUser(context.Context, *ListAuthenticationLogTopUserRequest) (*ListAuthenticationLogTopUserResponse, error)
 	ListAuthenticationLogTopCredential(context.Context, *ListAuthenticationLogTopCredentialRequest) (*ListAuthenticationLogTopCredentialResponse, error)
 	ListAuthenticationLogTopIdentityProvider(context.Context, *ListAuthenticationLogTopIdentityProviderRequest) (*ListAuthenticationLogTopIdentityProviderResponse, error)
+	ListAuthenticationLogTopCountry(context.Context, *ListAuthenticationLogTopCountryRequest) (*ListAuthenticationLogTopCountryResponse, error)
+	ListAuthenticationLogTopCity(context.Context, *ListAuthenticationLogTopCityRequest) (*ListAuthenticationLogTopCityResponse, error)
 	mustEmbedUnimplementedAuthenticationLogServiceServer()
 }
 
@@ -634,6 +698,12 @@ func (UnimplementedAuthenticationLogServiceServer) ListAuthenticationLogTopCrede
 }
 func (UnimplementedAuthenticationLogServiceServer) ListAuthenticationLogTopIdentityProvider(context.Context, *ListAuthenticationLogTopIdentityProviderRequest) (*ListAuthenticationLogTopIdentityProviderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAuthenticationLogTopIdentityProvider not implemented")
+}
+func (UnimplementedAuthenticationLogServiceServer) ListAuthenticationLogTopCountry(context.Context, *ListAuthenticationLogTopCountryRequest) (*ListAuthenticationLogTopCountryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAuthenticationLogTopCountry not implemented")
+}
+func (UnimplementedAuthenticationLogServiceServer) ListAuthenticationLogTopCity(context.Context, *ListAuthenticationLogTopCityRequest) (*ListAuthenticationLogTopCityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAuthenticationLogTopCity not implemented")
 }
 func (UnimplementedAuthenticationLogServiceServer) mustEmbedUnimplementedAuthenticationLogServiceServer() {
 }
@@ -765,6 +835,42 @@ func _AuthenticationLogService_ListAuthenticationLogTopIdentityProvider_Handler(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthenticationLogService_ListAuthenticationLogTopCountry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAuthenticationLogTopCountryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthenticationLogServiceServer).ListAuthenticationLogTopCountry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthenticationLogService_ListAuthenticationLogTopCountry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthenticationLogServiceServer).ListAuthenticationLogTopCountry(ctx, req.(*ListAuthenticationLogTopCountryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthenticationLogService_ListAuthenticationLogTopCity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAuthenticationLogTopCityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthenticationLogServiceServer).ListAuthenticationLogTopCity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthenticationLogService_ListAuthenticationLogTopCity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthenticationLogServiceServer).ListAuthenticationLogTopCity(ctx, req.(*ListAuthenticationLogTopCityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthenticationLogService_ServiceDesc is the grpc.ServiceDesc for AuthenticationLogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -795,6 +901,14 @@ var AuthenticationLogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListAuthenticationLogTopIdentityProvider",
 			Handler:    _AuthenticationLogService_ListAuthenticationLogTopIdentityProvider_Handler,
+		},
+		{
+			MethodName: "ListAuthenticationLogTopCountry",
+			Handler:    _AuthenticationLogService_ListAuthenticationLogTopCountry_Handler,
+		},
+		{
+			MethodName: "ListAuthenticationLogTopCity",
+			Handler:    _AuthenticationLogService_ListAuthenticationLogTopCity_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

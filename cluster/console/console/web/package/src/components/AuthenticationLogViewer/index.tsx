@@ -37,6 +37,8 @@ import Editor from "../AccessLogViewer/Editor";
 import { SelectFromTimestamp } from "../AccessLogViewer/utils";
 import CardSession from "../Card/CardSession";
 import CopyText from "../CopyText";
+import { CountryFilter } from "../SelectCountry";
+import { CountryFlag } from "../SelectCountry/CountryFlag";
 import AuthenticationLogSummary from "../LogSummary/AuthenticationLogSummary";
 import { ResourceListLabel } from "../ResourceList";
 import TimeAgo from "../TimeAgo";
@@ -467,9 +469,15 @@ const AuthenticationLogDetails = ({
               )}
               {(info.geoip.city?.name || info.geoip.country?.name) && (
                 <DetailField label="Location">
-                  {[info.geoip.city?.name, info.geoip.country?.name]
-                    .filter(Boolean)
-                    .join(", ")}
+                  <span className="inline-flex items-center gap-1.5">
+                    <CountryFlag
+                      code={info.geoip.country?.code}
+                      className="h-3 w-4 shrink-0 rounded-[2px]"
+                    />
+                    {[info.geoip.city?.name, info.geoip.country?.name]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </span>
                 </DetailField>
               )}
               {(info.geoip.region?.name || info.geoip.region?.code) && (
@@ -492,6 +500,21 @@ const AuthenticationLogDetails = ({
                     .join(" · ")}
                 </DetailField>
               )}
+              {info.geoip.timezone?.id && (
+                <DetailField label="Timezone">
+                  {info.geoip.timezone.id}
+                </DetailField>
+              )}
+              {info.geoip.coordinates &&
+                (info.geoip.coordinates.latitude !== 0 ||
+                  info.geoip.coordinates.longitude !== 0) && (
+                  <DetailField label="Coordinates" mono>
+                    {info.geoip.coordinates.latitude.toFixed(4)},{" "}
+                    {info.geoip.coordinates.longitude.toFixed(4)}
+                    {!!info.geoip.coordinates.accuracyRadius &&
+                      ` ±${info.geoip.coordinates.accuracyRadius} km`}
+                  </DetailField>
+                )}
             </div>
           </div>
         )}
@@ -606,7 +629,15 @@ export const AuthenticationLogC = ({
             {info?.downstream?.clientVersion && (
               <span>Client {info.downstream.clientVersion}</span>
             )}
-            {location && <span>{location}</span>}
+            {location && (
+              <span className="inline-flex items-center gap-1">
+                <CountryFlag
+                  code={info?.geoip?.country?.code}
+                  className="h-2.5 w-3.5 shrink-0 rounded-[1px]"
+                />
+                {location}
+              </span>
+            )}
             {x.metadata?.createdAt && (
               <TimeAgo rfc3339={x.metadata.createdAt} />
             )}
@@ -665,6 +696,7 @@ const DoAuthenticationLogViewer = (props: {
   query?: string;
   status?: AuthenticationLog_Entry_Status;
   reason?: AuthenticationLog_Entry_Failure_Reason;
+  countryCode?: string;
 }) => {
   const [page, setPage] = React.useState(props.page ?? 0);
 
@@ -693,6 +725,7 @@ const DoAuthenticationLogViewer = (props: {
         query: props.query,
         status: props.status,
         reason: props.reason,
+        countryCode: props.countryCode,
       },
     ],
     queryFn: async () => {
@@ -713,6 +746,7 @@ const DoAuthenticationLogViewer = (props: {
             from: props.from,
             status: props.status,
             reason: props.reason,
+            countryCode: props.countryCode,
           }),
         );
       return response;
@@ -830,6 +864,7 @@ const AuthenticationLogViewer = (props: {
   query?: string;
   status?: AuthenticationLogStatusFilter;
   reason?: string;
+  countryCode?: string;
 }) => {
   const [from, setFrom] = React.useState<Timestamp>(
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
@@ -838,6 +873,15 @@ const AuthenticationLogViewer = (props: {
     props.status ?? (props.reason ? "failure" : "all"),
   );
   const [reason, setReason] = React.useState<string | undefined>(props.reason);
+  const [countryCode, setCountryCode] = React.useState<string | undefined>(
+    props.countryCode?.toUpperCase(),
+  );
+  const [prevCountryCode, setPrevCountryCode] = React.useState(props.countryCode);
+
+  if (props.countryCode !== prevCountryCode) {
+    setPrevCountryCode(props.countryCode);
+    setCountryCode(props.countryCode?.toUpperCase());
+  }
 
   React.useEffect(() => {
     setStatus(props.status ?? (props.reason ? "failure" : "all"));
@@ -891,6 +935,13 @@ const AuthenticationLogViewer = (props: {
             }}
           />
         )}
+        <CountryFilter
+          value={countryCode}
+          onChange={(value) => {
+            setCountryCode(value);
+            props.onPageChange?.(0);
+          }}
+        />
       </div>
 
       {!props.query && (
@@ -905,6 +956,7 @@ const AuthenticationLogViewer = (props: {
             from={from}
             status={statusValue}
             reason={reasonValue}
+            countryCode={countryCode}
           />
         </CompactSummary>
       )}
@@ -923,6 +975,7 @@ const AuthenticationLogViewer = (props: {
         query={props.query}
         status={statusValue}
         reason={reasonValue}
+        countryCode={countryCode}
       />
     </div>
   );

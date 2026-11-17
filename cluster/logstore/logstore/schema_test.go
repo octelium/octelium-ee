@@ -71,7 +71,7 @@ func TestGetLogTableColumns(t *testing.T) {
 		assert.Equal(t, "TIMESTAMP", columns[0].kind)
 	}
 
-	assert.Len(t, getLogTableColumns("access_logs"), 9)
+	assert.Len(t, getLogTableColumns("access_logs"), 10)
 	assert.Len(t, getLogTableColumns("component_logs"), 2)
 	assert.Len(t, getLogTableColumns("authentication_logs"), 1)
 	assert.Len(t, getLogTableColumns("audit_logs"), 1)
@@ -83,6 +83,8 @@ func TestGetLogInsertQuery(t *testing.T) {
 	assert.Contains(t, query, "INSERT INTO access_logs")
 	assert.Contains(t, query, colUserUID)
 	assert.Contains(t, query, "$.entry.common.reason.details.policyMatch.policy.policyRef.uid")
+	assert.Contains(t, query, fmt.Sprintf(`(SELECT %s FROM %s WHERE %s = json_extract_string($1, '$.entry.common.sessionRef.uid'))`,
+		colCountryCode, tableSessionLocations, colSessionUID))
 
 	query, err = getLogInsertQuery(logTableAudit)
 	assert.Nil(t, err, "%+v", err)
