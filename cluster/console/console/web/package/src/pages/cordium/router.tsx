@@ -6,6 +6,7 @@ import ResourceListPage from "@/components/ResourceLayout/ResourceList";
 import { getResourcePathFromAPIKind } from "@/utils/pb";
 import { ResourceComponentInfo } from "../utils/types";
 
+import clusterConfigRouter from "./ClusterConfig/router";
 import gitProviderRouter from "./GitProvider/router";
 import membershipRouter from "./Membership/router";
 import regionRouter from "./Region/router";
@@ -57,7 +58,7 @@ export default (): RouteObject => {
     ),
     children: resourceList
       .map((x) => getResourceChildrenRouter(x))
-      .concat([{ path: "", element: <MainPage /> }]),
+      .concat([clusterConfigRouter(), { path: "", element: <MainPage /> }]),
   };
 
   return ret;

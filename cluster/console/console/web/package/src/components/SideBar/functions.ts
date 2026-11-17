@@ -122,6 +122,7 @@ export const functionGroups: FunctionGroup[] = [
       item("/core/clusterconfig", "Core configuration"),
       item("/enterprise/clusterconfig", "Enterprise configuration"),
       item("/access/clusterconfig", "Access configuration"),
+      item("/cordium/clusterconfig", "Cordium configuration"),
       item("/core/secrets", "Core secrets"),
       item("/enterprise/secrets", "Enterprise secrets"),
       item("/access/secrets", "Access secrets"),

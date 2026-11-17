@@ -379,6 +379,19 @@ describe("Console sidebar", () => {
     );
   });
 
+  it("includes Cordium configuration in API and functional navigation", async () => {
+    await load("/cordium/clusterconfig");
+    assert.equal(
+      await sidebar().getByRole("link", { name: "ClusterConfig", exact: true }).getAttribute("aria-current"),
+      "page",
+    );
+    await functions();
+    assert.equal(
+      await sidebar().getByRole("link", { name: "Cordium configuration", exact: true }).getAttribute("aria-current"),
+      "page",
+    );
+  });
+
   it("keeps the selected resource visible within a short sidebar", async () => {
     await page.setViewportSize({ width: 1024, height: 640 });
     await load("/core/clusterconfig");

@@ -197,6 +197,13 @@ export const getClientCordium = (): CordiumC.MainServiceClient => {
   return cordiumClient;
 };
 
+let cordiumManagementClient: CordiumC.ManagementServiceClient | undefined;
+
+export const getClientCordiumManagement = (): CordiumC.ManagementServiceClient => {
+  cordiumManagementClient ??= new CordiumC.ManagementServiceClient(getTransport());
+  return cordiumManagementClient;
+};
+
 const cordiumWorkspaceClients = new Map<
   string,
   CordiumC.WorkspaceServiceClient

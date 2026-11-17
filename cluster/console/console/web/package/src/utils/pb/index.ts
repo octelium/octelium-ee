@@ -29,6 +29,7 @@ import { match } from "ts-pattern";
 import {
   getClientAccess,
   getClientCordium,
+  getClientCordiumManagement,
   getClientCore,
   getClientEnterprise,
   getClientVisibilityCore,
@@ -87,6 +88,7 @@ export type ResourceAccess =
   | AccessP.Integration;
 
 export type ResourceCordium =
+  | CordiumP.ClusterConfig
   | CordiumP.Workspace
   | CordiumP.Template
   | CordiumP.Space
@@ -438,6 +440,9 @@ export const getClient = (api: API) =>
 export const getResourceClient = (arg: Resource) => {
   const api = getAPI(arg);
   if (!api) return undefined;
+  if (api === "cordium" && arg.kind === "ClusterConfig") {
+    return getClientCordiumManagement();
+  }
   return getClient(api);
 };
 
@@ -504,9 +509,11 @@ const getResourceFromListPB = async (
 };
 
 export const getResourcePB = (api: API, kind: string, arg: unknown) =>
-  api === "cordium"
-    ? getResourceFromListPB(api, kind, arg as { name?: string })
-    : (getClient(api) as unknown as AnyClient)[`get${kind}`](arg);
+  api === "cordium" && kind === "ClusterConfig"
+    ? getClientCordiumManagement().getClusterConfig({})
+    : api === "cordium"
+      ? getResourceFromListPB(api, kind, arg as { name?: string })
+      : (getClient(api) as unknown as AnyClient)[`get${kind}`](arg);
 
 export const createResourcePB = (api: API, kind: string, arg: unknown) =>
   (getClient(api) as unknown as AnyClient)[`create${kind}`](arg);

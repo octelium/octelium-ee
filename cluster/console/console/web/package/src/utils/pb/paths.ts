@@ -46,6 +46,7 @@ export type ResourceAccessName =
   | "Integration";
 
 export type ResourceCordiumName =
+  | "ClusterConfig"
   | "Workspace"
   | "Template"
   | "Space"
@@ -95,6 +96,7 @@ const accessResourcePathMap = new Map<string, ResourceAccessName>([
 ]);
 
 const cordiumResourcePathMap = new Map<string, ResourceCordiumName>([
+  ["clusterconfig", "ClusterConfig"],
   ["workspaces", "Workspace"],
   ["templates", "Template"],
   ["spaces", "Space"],

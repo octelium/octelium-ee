@@ -97,7 +97,7 @@ describe("Resource route mappings", () => {
     core: { services: "Service", identityproviders: "IdentityProvider", clusterconfig: "ClusterConfig", policies: "Policy", devices: "Device", namespaces: "Namespace", users: "User", groups: "Group", secrets: "Secret", sessions: "Session", credentials: "Credential", configs: "Config", regions: "Region", gateways: "Gateway", authenticators: "Authenticator" },
     enterprise: { clusterconfig: "ClusterConfig", secrets: "Secret", dnsproviders: "DNSProvider", collectorexporters: "CollectorExporter", certificates: "Certificate", certificateissuers: "CertificateIssuer", directoryproviders: "DirectoryProvider", secretstores: "SecretStore", devicemanagers: "DeviceManager" },
     access: { catalogs: "Catalog", policies: "Policy", requests: "Request", reviews: "Review", secrets: "Secret", integrations: "Integration" },
-    cordium: { workspaces: "Workspace", templates: "Template", spaces: "Space", memberships: "Membership", gitproviders: "GitProvider", secrets: "Secret", usersecrets: "UserSecret", regions: "Region" },
+    cordium: { clusterconfig: "ClusterConfig", workspaces: "Workspace", templates: "Template", spaces: "Space", memberships: "Membership", gitproviders: "GitProvider", secrets: "Secret", usersecrets: "UserSecret", regions: "Region" },
   };
   for (const [api, kinds] of Object.entries(resources)) {
     for (const [path, kind] of Object.entries(kinds)) {

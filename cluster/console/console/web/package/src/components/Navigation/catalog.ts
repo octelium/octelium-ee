@@ -248,6 +248,12 @@ export const itemsCordium: NavItem[] = [
   { title: "Secrets", url: "/cordium/secrets", icon: KeyRound },
   { title: "User Secrets", url: "/cordium/usersecrets", icon: KeySquare },
   { title: "Regions", url: "/cordium/regions", icon: Globe },
+  {
+    title: "ClusterConfig",
+    url: "/cordium/clusterconfig",
+    icon: Settings2,
+    keywords: ["cordium configuration", "cluster configuration", "settings"],
+  },
 ];
 
 export const itemsVisibility: NavItem[] = [
