@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-acme/lego/v4/acme"
+	"github.com/go-acme/lego/v5/acme"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -44,12 +44,20 @@ func TestParseRetryAfter(t *testing.T) {
 }
 
 func TestGetRetryAfter(t *testing.T) {
+	for _, delay := range []time.Duration{-time.Minute, 0, 250 * time.Millisecond} {
+		err := &acme.RateLimitedError{
+			ProblemDetails: &acme.ProblemDetails{Type: acme.RateLimitedErrorType},
+			RetryAfter:     delay,
+		}
+		assert.Equal(t, max(delay, 0), getRetryAfter(errors.Wrap(err, "Could not obtain")))
+	}
+
 	{
 		err := &acme.RateLimitedError{
 			ProblemDetails: &acme.ProblemDetails{
-				Type: acme.RateLimitedErr,
+				Type: acme.RateLimitedErrorType,
 			},
-			RetryAfter: "120",
+			RetryAfter: 2 * time.Minute,
 		}
 
 		assert.Equal(t, 2*time.Minute, getRetryAfter(errors.Wrap(err, "Could not obtain")))
@@ -71,12 +79,12 @@ func TestGetRetryAfter(t *testing.T) {
 func TestIsBadNonce(t *testing.T) {
 	assert.True(t, isBadNonce(&acme.NonceError{
 		ProblemDetails: &acme.ProblemDetails{
-			Type: acme.BadNonceErr,
+			Type: acme.BadNonceErrorType,
 		},
 	}))
 
 	assert.True(t, isBadNonce(errors.Wrap(&acme.ProblemDetails{
-		Type: acme.BadNonceErr,
+		Type: acme.BadNonceErrorType,
 	}, "Could not obtain")))
 
 	assert.False(t, isBadNonce(errors.Errorf("Could not do it")))
@@ -84,7 +92,7 @@ func TestIsBadNonce(t *testing.T) {
 
 func TestIsRateLimited(t *testing.T) {
 	assert.True(t, isRateLimited(&acme.RateLimitedError{
-		ProblemDetails: &acme.ProblemDetails{Type: acme.RateLimitedErr},
+		ProblemDetails: &acme.ProblemDetails{Type: acme.RateLimitedErrorType},
 	}))
 
 	assert.True(t, isRateLimited(&acme.ProblemDetails{
@@ -130,6 +138,20 @@ func TestIsTransientError(t *testing.T) {
 }
 
 func TestGetRetryDelay(t *testing.T) {
+	for _, itm := range []struct {
+		delay time.Duration
+		want  time.Duration
+	}{
+		{delay: 250 * time.Millisecond, want: time.Second},
+		{delay: 24 * time.Hour, want: maxRetryDelay},
+	} {
+		err := &acme.RateLimitedError{
+			ProblemDetails: &acme.ProblemDetails{Type: acme.RateLimitedErrorType},
+			RetryAfter:     itm.delay,
+		}
+		assert.Equal(t, itm.want, getRetryDelay(1, errors.Wrap(err, "Could not obtain")))
+	}
+
 	{
 		err := &deferredError{
 			err:   errors.Errorf("Not ready yet"),
@@ -149,8 +171,8 @@ func TestGetRetryDelay(t *testing.T) {
 
 	{
 		err := &acme.RateLimitedError{
-			ProblemDetails: &acme.ProblemDetails{Type: acme.RateLimitedErr},
-			RetryAfter:     "600",
+			ProblemDetails: &acme.ProblemDetails{Type: acme.RateLimitedErrorType},
+			RetryAfter:     10 * time.Minute,
 		}
 
 		assert.Equal(t, 10*time.Minute, getRetryDelay(5, err))

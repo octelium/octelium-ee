@@ -14,8 +14,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-acme/lego/v4/lego"
-	"github.com/go-acme/lego/v4/registration"
+	"github.com/go-acme/lego/v5/acme"
+	"github.com/go-acme/lego/v5/lego"
+	"github.com/go-acme/lego/v5/registration"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
@@ -130,19 +131,13 @@ func (c *Controller) reconcileCertificateIssuer(ctx context.Context, uid string)
 		privateKeyPEM = []byte(keyPEM)
 	}
 
-	acmeC, err := c.newLegoClientWithAccount(lockCtx, account, directoryURL)
-	if err != nil {
-		c.setIssuerNotReady(ctx, uid)
-		return err
-	}
-
-	rsc, err := doRegisterACMEAccount(acmeC, account)
+	rsc, err := c.registerACMEAccount(lockCtx, account, directoryURL)
 	if err != nil {
 		c.setIssuerNotReady(ctx, uid)
 		return errors.Wrap(err, "Could not register the ACME account")
 	}
 
-	account.Registration = rsc
+	account.setRegistration(rsc)
 
 	sec, err := c.upsertACMEAccountSecret(lockCtx, iss, account, privateKeyPEM, directoryURL)
 	if err != nil {
@@ -169,35 +164,44 @@ func (c *Controller) reconcileCertificateIssuer(ctx context.Context, uid string)
 	return nil
 }
 
-func doRegisterACMEAccount(acmeC *lego.Client, account *Account) (
-	*registration.Resource, error) {
+func (c *Controller) registerACMEAccount(ctx context.Context,
+	account *Account, directoryURL string) (*acme.ExtendedAccount, error) {
+
+	acmeC, err := c.newLegoClientWithAccount(ctx, account, directoryURL)
+	if err != nil {
+		return nil, err
+	}
 
 	opts := registration.RegisterOptions{
 		TermsOfServiceAgreed: true,
 	}
 
 	if account.Registration != nil {
-		rsc, err := acmeC.Registration.QueryRegistration()
+		rsc, err := acmeC.Registration.QueryRegistration(ctx)
 		if err == nil {
-			account.Registration = rsc
-			return acmeC.Registration.UpdateRegistration(opts)
+			account.setRegistration(rsc)
+			return acmeC.Registration.UpdateRegistration(ctx, opts)
 		}
 		if !isAccountDoesNotExist(err) {
 			return nil, err
 		}
 		account.Registration = nil
+		acmeC, err = c.newLegoClientWithAccount(ctx, account, directoryURL)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	rsc, err := acmeC.Registration.ResolveAccountByKey()
+	rsc, err := acmeC.Registration.ResolveAccountByKey(ctx)
 	if err == nil {
-		account.Registration = rsc
-		return acmeC.Registration.UpdateRegistration(opts)
+		account.setRegistration(rsc)
+		return acmeC.Registration.UpdateRegistration(ctx, opts)
 	}
 	if !isAccountDoesNotExist(err) {
 		return nil, err
 	}
 
-	return acmeC.Registration.Register(opts)
+	return acmeC.Registration.Register(ctx, opts)
 }
 
 func (c *Controller) getIssuerEmail(ctx context.Context,

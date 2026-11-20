@@ -16,8 +16,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-acme/lego/v4/challenge/dns01"
-	"github.com/go-acme/lego/v4/registration"
+	"github.com/go-acme/lego/v5/acme"
+	"github.com/go-acme/lego/v5/challenge/dns01"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
@@ -71,21 +71,40 @@ type Interface interface {
 }
 
 type Account struct {
-	Email        string                 `json:"email"`
-	Registration *registration.Resource `json:"registration"`
-	key          crypto.PrivateKey
+	Email        string               `json:"email"`
+	Registration *accountRegistration `json:"registration"`
+	key          crypto.Signer
+}
+
+type accountRegistration struct {
+	Body acme.Account `json:"body"`
+	URI  string       `json:"uri,omitempty"`
 }
 
 func (a *Account) GetEmail() string {
 	return a.Email
 }
 
-func (a *Account) GetPrivateKey() crypto.PrivateKey {
+func (a *Account) GetPrivateKey() crypto.Signer {
 	return a.key
 }
 
-func (a *Account) GetRegistration() *registration.Resource {
-	return a.Registration
+func (a *Account) GetRegistration() *acme.ExtendedAccount {
+	if a.Registration == nil {
+		return nil
+	}
+
+	return &acme.ExtendedAccount{
+		Account:  a.Registration.Body,
+		Location: a.Registration.URI,
+	}
+}
+
+func (a *Account) setRegistration(reg *acme.ExtendedAccount) {
+	a.Registration = &accountRegistration{
+		Body: reg.Account,
+		URI:  reg.Location,
+	}
 }
 
 type workType uint8
@@ -622,8 +641,10 @@ func (c *Controller) detachedContext(ctx context.Context) (context.Context, cont
 
 func setDNS01Defaults() {
 	dns01Once.Do(func() {
-		_ = dns01.AddDNSTimeout(dnsQueryTimeout)(nil)
-		_ = dns01.AddRecursiveNameservers(recursiveNameservers)(nil)
+		opts := dns01.NewOptions()
+		opts.Timeout = dnsQueryTimeout
+		opts.RecursiveNameservers = recursiveNameservers
+		dns01.SetDefaultClient(dns01.NewClient(opts))
 	})
 }
 

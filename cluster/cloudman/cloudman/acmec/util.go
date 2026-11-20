@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-acme/lego/v4/lego"
+	"github.com/go-acme/lego/v5/lego"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/pkg/errors"
@@ -98,21 +98,14 @@ func getCADirURL(iss *enterprisev1.CertificateIssuer) string {
 	}
 
 	if ldflags.IsDev() || ldflags.IsTest() {
-		return lego.LEDirectoryStaging
+		return lego.DirectoryURLLetsEncryptStaging
 	}
 
-	return lego.LEDirectoryProduction
+	return lego.DirectoryURLLetsEncrypt
 }
 
 func isAllowedACMEScheme(scheme string) bool {
-	switch scheme {
-	case "https":
-		return true
-	case "http":
-		return ldflags.IsDev() || ldflags.IsTest()
-	default:
-		return false
-	}
+	return scheme == "https"
 }
 
 func validateDirectoryURL(arg string) error {

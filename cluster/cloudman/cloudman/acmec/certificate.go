@@ -16,7 +16,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-acme/lego/v4/certificate"
+	"github.com/go-acme/lego/v5/certcrypto"
+	"github.com/go-acme/lego/v5/certificate"
 	"github.com/octelium/octelium-ee/cluster/common/certutils"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/corev1"
@@ -90,9 +91,11 @@ func (c *Controller) reconcileCertificate(ctx context.Context, uid string) (err 
 		zap.String("name", crt.Metadata.Name),
 		zap.Strings("domains", domains))
 
-	rsc, err := acmeC.Certificate.Obtain(certificate.ObtainRequest{
-		Domains: domains,
-		Bundle:  true,
+	rsc, err := acmeC.Certificate.Obtain(lockCtx, certificate.ObtainRequest{
+		Domains:          domains,
+		Bundle:           true,
+		KeyType:          certcrypto.RSA2048,
+		EnableCommonName: true,
 	})
 	if err != nil {
 		return errors.Wrap(err, "Could not obtain the Certificate from the ACME server")

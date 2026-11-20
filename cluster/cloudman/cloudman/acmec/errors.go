@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-acme/lego/v4/acme"
+	"github.com/go-acme/lego/v5/acme"
 )
 
 var retryAfterRegexp = regexp.MustCompile(
@@ -121,8 +121,8 @@ func addJitter(delay time.Duration) time.Duration {
 func getRetryAfter(err error) time.Duration {
 	var rateLimited *acme.RateLimitedError
 	if stderrors.As(err, &rateLimited) {
-		if delay := parseRetryAfter(rateLimited.RetryAfter); delay > 0 {
-			return delay
+		if rateLimited.RetryAfter > 0 {
+			return rateLimited.RetryAfter
 		}
 	}
 
@@ -170,7 +170,7 @@ func isBadNonce(err error) bool {
 	}
 
 	var problem *acme.ProblemDetails
-	return stderrors.As(err, &problem) && problem.Type == acme.BadNonceErr
+	return stderrors.As(err, &problem) && problem.Type == acme.BadNonceErrorType
 }
 
 func isRateLimited(err error) bool {
@@ -181,7 +181,7 @@ func isRateLimited(err error) bool {
 
 	var problem *acme.ProblemDetails
 	if stderrors.As(err, &problem) {
-		return problem.Type == acme.RateLimitedErr ||
+		return problem.Type == acme.RateLimitedErrorType ||
 			problem.HTTPStatus == http.StatusTooManyRequests
 	}
 
@@ -239,7 +239,7 @@ func isTransientError(err error) bool {
 		case problem.HTTPStatus >= 500,
 			problem.HTTPStatus == http.StatusRequestTimeout,
 			problem.HTTPStatus == http.StatusTooManyRequests,
-			problem.Type == acme.BadNonceErr,
+			problem.Type == acme.BadNonceErrorType,
 			strings.HasSuffix(problem.Type, ":serverInternal"),
 			strings.HasSuffix(problem.Type, ":connection"),
 			strings.HasSuffix(problem.Type, ":dns"):

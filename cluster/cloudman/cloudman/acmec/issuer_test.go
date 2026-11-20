@@ -10,11 +10,17 @@ package acmec
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/go-acme/lego/v5/acme"
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
@@ -24,8 +30,214 @@ import (
 	utils_cert "github.com/octelium/octelium/pkg/utils/cert"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
+
+func newTestACMEServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {
+	t.Helper()
+
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Replay-Nonce", utilrand.GetRandomStringCanonical(32))
+
+		switch r.URL.Path {
+		case "/directory":
+			baseURL := "https://" + r.Host
+			assert.Nil(t, json.NewEncoder(w).Encode(acme.Directory{
+				NewNonceURL:   baseURL + "/nonce",
+				NewAccountURL: baseURL + "/new-account",
+				NewOrderURL:   baseURL + "/new-order",
+			}))
+		case "/nonce":
+			w.WriteHeader(http.StatusOK)
+		default:
+			handler(w, r)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	previous := http.DefaultTransport
+	transport := previous.(*http.Transport).Clone()
+	if transport.TLSClientConfig == nil {
+		transport.TLSClientConfig = &tls.Config{}
+	}
+	pool, err := x509.SystemCertPool()
+	require.NoError(t, err)
+	pool.AddCert(srv.Certificate())
+	transport.TLSClientConfig.RootCAs = pool
+	http.DefaultTransport = transport
+	t.Cleanup(func() {
+		http.DefaultTransport = previous
+		transport.CloseIdleConnections()
+	})
+
+	return srv
+}
+
+func readTestACMEPayload(t *testing.T, r *http.Request) []byte {
+	t.Helper()
+
+	var msg struct {
+		Payload   string `json:"payload"`
+		Protected string `json:"protected"`
+	}
+	if !assert.Nil(t, json.NewDecoder(r.Body).Decode(&msg)) {
+		return nil
+	}
+
+	protected, err := base64.RawURLEncoding.DecodeString(msg.Protected)
+	assert.Nil(t, err)
+	var header struct {
+		KeyID string          `json:"kid"`
+		Key   json.RawMessage `json:"jwk"`
+		URL   string          `json:"url"`
+	}
+	assert.Nil(t, json.Unmarshal(protected, &header))
+	assert.Equal(t, "https://"+r.Host+r.URL.Path, header.URL)
+	if r.URL.Path == "/new-account" {
+		assert.Empty(t, header.KeyID)
+		assert.NotEmpty(t, header.Key)
+	} else {
+		assert.NotEmpty(t, header.KeyID)
+		assert.Empty(t, header.Key)
+	}
+
+	payload, err := base64.RawURLEncoding.DecodeString(msg.Payload)
+	assert.Nil(t, err)
+	return payload
+}
+
+func TestACMEAccountRegistration(t *testing.T) {
+	val := `{"email":"contact@example.com","registration":{"body":{"status":"valid","contact":["mailto:contact@example.com"],"termsOfServiceAgreed":true,"orders":"https://acme.example.com/orders/1"},"uri":"https://acme.example.com/account/1"}}`
+
+	var account Account
+	assert.Nil(t, account.GetRegistration())
+	require.NoError(t, json.Unmarshal([]byte(val), &account))
+
+	reg := account.GetRegistration()
+	require.NotNil(t, reg)
+	assert.Equal(t, "https://acme.example.com/account/1", reg.Location)
+	assert.Equal(t, acme.StatusValid, reg.Status)
+	assert.Equal(t, []string{"mailto:contact@example.com"}, reg.Contact)
+	assert.Equal(t, "https://acme.example.com/orders/1", reg.Orders)
+	assert.True(t, reg.TermsOfServiceAgreed)
+
+	account.setRegistration(reg)
+	encoded, err := json.Marshal(&account)
+	require.NoError(t, err)
+	assert.JSONEq(t, val, string(encoded))
+}
+
+func TestRegisterACMEAccount(t *testing.T) {
+	for _, itm := range []struct {
+		name         string
+		saved        bool
+		missing      bool
+		exists       bool
+		unauthorized bool
+		wantCalls    []string
+	}{
+		{name: "Saved", saved: true, exists: true, wantCalls: []string{"query", "update"}},
+		{name: "Recovered", exists: true, wantCalls: []string{"lookup", "update"}},
+		{name: "New", wantCalls: []string{"lookup", "register"}},
+		{name: "MissingSaved", saved: true, missing: true, exists: true, wantCalls: []string{"missing", "lookup", "update"}},
+		{name: "Removed", saved: true, missing: true, wantCalls: []string{"missing", "lookup", "register"}},
+		{name: "QueryError", saved: true, unauthorized: true, wantCalls: []string{"query"}},
+		{name: "LookupError", unauthorized: true, wantCalls: []string{"lookup"}},
+	} {
+		t.Run(itm.name, func(t *testing.T) {
+			calls := make(chan string, 8)
+			srv := newTestACMEServer(t, func(w http.ResponseWriter, r *http.Request) {
+				payload := readTestACMEPayload(t, r)
+				var account acme.Account
+				if len(payload) > 0 {
+					assert.Nil(t, json.Unmarshal(payload, &account))
+				}
+
+				switch r.URL.Path {
+				case "/missing":
+					calls <- "missing"
+				case "/account/1":
+					if len(payload) == 0 {
+						calls <- "query"
+					} else {
+						calls <- "update"
+					}
+				case "/new-account":
+					if account.OnlyReturnExisting {
+						calls <- "lookup"
+					} else {
+						calls <- "register"
+					}
+				default:
+					t.Errorf("Unexpected ACME request: %s", r.URL.Path)
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+
+				if itm.unauthorized {
+					w.WriteHeader(http.StatusForbidden)
+					assert.Nil(t, json.NewEncoder(w).Encode(acme.ProblemDetails{
+						Type: acme.UnauthorizedErrorType,
+					}))
+					return
+				}
+
+				if r.URL.Path == "/missing" || (account.OnlyReturnExisting && !itm.exists) {
+					w.WriteHeader(http.StatusBadRequest)
+					assert.Nil(t, json.NewEncoder(w).Encode(acme.ProblemDetails{
+						Type: acme.AccountDoesNotExistErrorType,
+					}))
+					return
+				}
+
+				if !account.OnlyReturnExisting && len(payload) > 0 {
+					assert.Equal(t, []string{"mailto:contact@example.com"}, account.Contact)
+					assert.True(t, account.TermsOfServiceAgreed)
+				}
+
+				w.Header().Set("Location", "https://"+r.Host+"/account/1")
+				assert.Nil(t, json.NewEncoder(w).Encode(acme.Account{Status: acme.StatusValid}))
+			})
+
+			key, err := utils_cert.GenerateECDSA()
+			require.NoError(t, err)
+			account := &Account{Email: "contact@example.com", key: key.PrivateKey}
+			if itm.saved {
+				uri := srv.URL + "/account/1"
+				if itm.missing {
+					uri = srv.URL + "/missing"
+				}
+				account.setRegistration(&acme.ExtendedAccount{Location: uri})
+			}
+
+			c := NewController(nil)
+			reg, err := c.registerACMEAccount(t.Context(), account, srv.URL+"/directory")
+			if itm.unauthorized {
+				assert.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, reg)
+				assert.Equal(t, srv.URL+"/account/1", reg.Location)
+				assert.Equal(t, acme.StatusValid, reg.Status)
+				assert.Equal(t, key.PrivateKey, account.GetPrivateKey())
+			}
+
+			var gotCalls []string
+			for len(calls) > 0 {
+				gotCalls = append(gotCalls, <-calls)
+			}
+			assert.Equal(t, itm.wantCalls, gotCalls)
+
+			cancelCtx, cancel := context.WithCancel(t.Context())
+			cancel()
+			_, err = c.registerACMEAccount(cancelCtx, account, srv.URL+"/directory")
+			assert.ErrorIs(t, err, context.Canceled)
+			assert.Empty(t, calls)
+		})
+	}
+}
 
 func TestCertificateIssuer(t *testing.T) {
 	ctx := context.Background()
@@ -42,6 +254,11 @@ func TestCertificateIssuer(t *testing.T) {
 
 	c := NewController(fakeC.OcteliumC)
 	t.Cleanup(c.shutdown)
+
+	srv := newTestACMEServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Location", "https://"+r.Host+"/account/1")
+		assert.Nil(t, json.NewEncoder(w).Encode(acme.Account{Status: acme.StatusValid}))
+	})
 
 	cc, err := fakeC.OcteliumC.CoreV1Utils().GetClusterConfig(ctx)
 	assert.Nil(t, err)
@@ -110,7 +327,8 @@ func TestCertificateIssuer(t *testing.T) {
 	})
 
 	iss := newIssuer(&enterprisev1.CertificateIssuer_Spec_ACME{
-		Email: fmt.Sprintf("contact@%s", cc.Status.Domain),
+		Server: srv.URL + "/directory",
+		Email:  fmt.Sprintf("contact@%s", cc.Status.Domain),
 		Solver: &enterprisev1.CertificateIssuer_Spec_ACME_Solver{
 			Type: &enterprisev1.CertificateIssuer_Spec_ACME_Solver_Dns{
 				Dns: &enterprisev1.CertificateIssuer_Spec_ACME_Solver_DNS{},

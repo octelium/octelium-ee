@@ -10,11 +10,21 @@ package acmec
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/json"
+	"encoding/pem"
 	"fmt"
+	"math/big"
+	"net/http"
 	"slices"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/go-acme/lego/v5/acme"
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
@@ -29,6 +39,7 @@ import (
 	utils_cert "github.com/octelium/octelium/pkg/utils/cert"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
@@ -80,6 +91,194 @@ func TestValidateIssuedCertificate(t *testing.T) {
 		_, _, err = validateIssuedCertificate(expiredK.MustGetCertPEM(),
 			expiredK.MustGetPrivateKeyPEM(), domains)
 		assert.NotNil(t, err)
+	}
+}
+
+func TestCertificateIssuance(t *testing.T) {
+	ctx := t.Context()
+	tst, err := otests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
+
+	c := NewController(tst.C.OcteliumC)
+	t.Cleanup(c.shutdown)
+
+	ca, err := utils_cert.GenerateCARoot()
+	require.NoError(t, err)
+
+	var mu sync.Mutex
+	var identifiers []acme.Identifier
+	var certPEM []byte
+	var issued int64
+	csrs := make(chan *x509.CertificateRequest, 2)
+	srv := newTestACMEServer(t, func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		defer mu.Unlock()
+
+		baseURL := "https://" + r.Host
+		switch r.URL.Path {
+		case "/new-account", "/account/1":
+			w.Header().Set("Location", baseURL+"/account/1")
+			assert.Nil(t, json.NewEncoder(w).Encode(acme.Account{Status: acme.StatusValid}))
+		case "/new-order":
+			var order acme.Order
+			assert.Nil(t, json.Unmarshal(readTestACMEPayload(t, r), &order))
+			identifiers = order.Identifiers
+			w.Header().Set("Location", baseURL+"/order/1")
+			assert.Nil(t, json.NewEncoder(w).Encode(acme.Order{
+				Status:      acme.StatusReady,
+				Identifiers: identifiers,
+				Finalize:    baseURL + "/finalize",
+			}))
+		case "/finalize":
+			var msg acme.CSRMessage
+			if !assert.Nil(t, json.Unmarshal(readTestACMEPayload(t, r), &msg)) {
+				return
+			}
+			der, err := base64.RawURLEncoding.DecodeString(msg.Csr)
+			if !assert.Nil(t, err) {
+				return
+			}
+			csr, err := x509.ParseCertificateRequest(der)
+			if !assert.Nil(t, err) {
+				return
+			}
+			assert.Nil(t, csr.CheckSignature())
+			csrs <- csr
+
+			issued++
+			der, err = x509.CreateCertificate(rand.Reader, &x509.Certificate{
+				SerialNumber: big.NewInt(issued),
+				Subject:      csr.Subject,
+				DNSNames:     csr.DNSNames,
+				NotBefore:    time.Now().Add(-time.Minute),
+				NotAfter:     time.Now().Add(90 * 24 * time.Hour),
+				KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+				ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			}, ca.Certificate, csr.PublicKey, ca.PrivateKey)
+			if !assert.Nil(t, err) {
+				return
+			}
+			certPEM = append(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}),
+				ca.MustGetCertPEM()...)
+
+			assert.Nil(t, json.NewEncoder(w).Encode(acme.Order{
+				Status:      acme.StatusValid,
+				Certificate: baseURL + "/certificate",
+			}))
+		case "/certificate":
+			w.Header().Set("Content-Type", "application/pem-certificate-chain")
+			_, err := w.Write(certPEM)
+			assert.Nil(t, err)
+		default:
+			t.Errorf("Unexpected ACME request: %s", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
+
+	iss, err := c.octeliumC.EnterpriseC().GetCertificateIssuer(ctx,
+		&rmetav1.GetOptions{Name: "default"})
+	require.NoError(t, err)
+	iss.Spec.GetAcme().Server = srv.URL + "/directory"
+	iss, err = c.octeliumC.EnterpriseC().UpdateCertificateIssuer(ctx, iss)
+	require.NoError(t, err)
+	require.NoError(t, c.reconcileCertificateIssuer(ctx, iss.Metadata.Uid))
+
+	sec, err := c.octeliumC.EnterpriseC().CreateSecret(ctx, &enterprisev1.Secret{
+		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
+		Spec:     &enterprisev1.Secret_Spec{},
+		Status:   &enterprisev1.Secret_Status{},
+		Data: &enterprisev1.Secret_Data{
+			Type: &enterprisev1.Secret_Data_Value{Value: "test-token"},
+		},
+	})
+	require.NoError(t, err)
+	_, err = c.octeliumC.EnterpriseC().CreateDNSProvider(ctx, &enterprisev1.DNSProvider{
+		Metadata: &metav1.Metadata{Name: "default"},
+		Spec: &enterprisev1.DNSProvider_Spec{
+			Type: &enterprisev1.DNSProvider_Spec_Cloudflare_{
+				Cloudflare: &enterprisev1.DNSProvider_Spec_Cloudflare{
+					ApiToken: &enterprisev1.DNSProvider_Spec_Cloudflare_APIToken{
+						Type: &enterprisev1.DNSProvider_Spec_Cloudflare_APIToken_FromSecret{
+							FromSecret: sec.Metadata.Name,
+						},
+					},
+				},
+			},
+		},
+		Status: &enterprisev1.DNSProvider_Status{},
+	})
+	require.NoError(t, err)
+
+	cc, err := c.octeliumC.CoreV1Utils().GetClusterConfig(ctx)
+	require.NoError(t, err)
+	cc.Status.Domain = "example.com"
+	_, err = c.octeliumC.CoreC().UpdateClusterConfig(ctx, cc)
+	require.NoError(t, err)
+	ns, err := c.octeliumC.CoreC().GetNamespace(ctx, &rmetav1.GetOptions{Name: "default"})
+	require.NoError(t, err)
+
+	crt, err := c.octeliumC.EnterpriseC().CreateCertificate(ctx, &enterprisev1.Certificate{
+		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
+		Spec:     &enterprisev1.Certificate_Spec{Mode: enterprisev1.Certificate_Spec_MANAGED},
+		Status: &enterprisev1.Certificate_Status{
+			CertificateIssuerRef: umetav1.GetObjectReference(iss),
+			NamespaceRef:         umetav1.GetObjectReference(ns),
+		},
+	})
+	require.NoError(t, err)
+	domains, err := c.getCertificateDomains(ctx, crt)
+	require.NoError(t, err)
+
+	var secretUID string
+	var previousKey []byte
+	for i := uint32(1); i <= 2; i++ {
+		if i > 1 {
+			crt.Status.Issuance.ExpiresAt = pbutils.Timestamp(time.Now().Add(renewBefore / 2))
+			crt, err = c.octeliumC.EnterpriseC().UpdateCertificate(ctx, crt)
+			require.NoError(t, err)
+		}
+
+		require.NoError(t, c.reconcileCertificate(ctx, crt.Metadata.Uid))
+		crt, err = c.octeliumC.EnterpriseC().GetCertificate(ctx,
+			&rmetav1.GetOptions{Uid: crt.Metadata.Uid})
+		require.NoError(t, err)
+		assert.Equal(t, enterprisev1.Certificate_Status_Issuance_SUCCESS, crt.Status.Issuance.State)
+		assert.Equal(t, i, crt.Status.SuccessfulIssuances)
+		assert.Equal(t, uint32(0), crt.Status.FailedIssuances)
+		assert.Equal(t, domains[0], crt.Status.Info.CommonName)
+		assert.True(t, crt.Status.Issuance.ExpiresAt.AsTime().After(time.Now().Add(renewBefore)))
+
+		csr := <-csrs
+		assert.Equal(t, domains[0], csr.Subject.CommonName)
+		assert.ElementsMatch(t, domains, csr.DNSNames)
+		require.IsType(t, &rsa.PublicKey{}, csr.PublicKey)
+		assert.Equal(t, 2048, csr.PublicKey.(*rsa.PublicKey).N.BitLen())
+
+		sec, err := c.octeliumC.CoreC().GetSecret(ctx,
+			&rmetav1.GetOptions{Uid: crt.Status.SecretRef.Uid})
+		require.NoError(t, err)
+		if secretUID != "" {
+			assert.Equal(t, secretUID, sec.Metadata.Uid)
+		}
+		secretUID = sec.Metadata.Uid
+
+		chain, key, err := ucorev1.ToSecret(sec).GetCertificateChainAndKey()
+		require.NoError(t, err)
+		_, _, err = validateIssuedCertificate(chain, key, domains)
+		require.NoError(t, err)
+		block, _ := pem.Decode(key)
+		require.NotNil(t, block)
+		assert.Equal(t, "PRIVATE KEY", block.Type)
+		_, err = x509.ParsePKCS8PrivateKey(block.Bytes)
+		assert.Nil(t, err)
+		assert.NotEqual(t, previousKey, key)
+		previousKey = key
+
+		require.NoError(t, c.reconcileCertificate(ctx, crt.Metadata.Uid))
+		assert.Empty(t, csrs)
 	}
 }
 

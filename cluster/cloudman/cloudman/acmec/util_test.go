@@ -70,6 +70,7 @@ func TestValidateDirectoryURL(t *testing.T) {
 	assert.Nil(t, validateDirectoryURL("https://acme-v02.api.letsencrypt.org/directory"))
 
 	assert.NotNil(t, validateDirectoryURL("ftp://example.com/directory"))
+	assert.NotNil(t, validateDirectoryURL("http://example.com/directory"))
 	assert.NotNil(t, validateDirectoryURL("https:///directory"))
 	assert.NotNil(t, validateDirectoryURL("https://user:pass@example.com/directory"))
 	assert.NotNil(t, validateDirectoryURL(""))
