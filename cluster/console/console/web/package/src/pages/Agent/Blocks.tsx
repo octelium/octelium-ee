@@ -14,6 +14,7 @@ import type {
   ThinkingBlock,
   ToolBlock,
 } from "@/apis/consoleagent/protocol";
+import { ApplyCodeButton } from "@/components/AgentDock/apply";
 import Markdown from "@/components/LLMPlayground/Markdown";
 import {
   CHART_FONT,
@@ -288,7 +289,11 @@ const AgentLink = (props: { href?: string; children?: React.ReactNode }) => {
 
 export const AgentMarkdown = React.memo((props: { children: string }) => (
   <div className="text-body break-words">
-    <Markdown urlTransform={urlTransform} components={{ a: AgentLink }}>
+    <Markdown
+      urlTransform={urlTransform}
+      components={{ a: AgentLink }}
+      codeActions={(code) => <ApplyCodeButton {...code} />}
+    >
       {props.children}
     </Markdown>
   </div>

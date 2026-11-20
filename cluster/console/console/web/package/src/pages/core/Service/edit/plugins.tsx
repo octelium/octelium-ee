@@ -735,7 +735,7 @@ export const ConditionField = (props: {
 }) => (
   <div className="flex min-w-0 flex-col gap-1">
     <FieldText label={props.label} description={props.description} />
-    <Cond item={props.value} onChange={props.onChange} />
+    <Cond item={props.value} scope="request" onChange={props.onChange} />
   </div>
 );
 

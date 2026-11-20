@@ -111,12 +111,12 @@ describe("Cordium ClusterConfig", () => {
     await storage.getByRole("button", { name: "Remove rule 2", exact: true }).click();
     await storage.getByRole("button", { name: "Add", exact: true }).click();
     await storage.getByLabel(/^Storage class/).last().fill("archive");
-    await storage.getByText("Match everything", { exact: true }).last().click();
+    await storage.getByRole("button", { name: "Match every request", exact: true }).last().click();
     const ownership = section("Space ownership rules");
     await ownership.getByRole("button", { name: "Add", exact: true }).click();
     await ownership.getByLabel(/^Effect/).last().click();
     await page.getByRole("option", { name: "Deny", exact: true }).click();
-    await ownership.getByText("Match everything", { exact: true }).last().click();
+    await ownership.getByRole("button", { name: "Match every request", exact: true }).last().click();
     const saved = await save();
     assert.deepEqual(saved.spec.workspace.storage.storageClass.rules, [
       { storageClass: "standard", condition: { matchAny: true } },

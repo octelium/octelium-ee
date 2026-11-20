@@ -42,13 +42,19 @@ const SelectCountry = (props: {
   val?: string;
   values?: string[];
   multiple?: boolean;
+  label?: string;
+  description?: string;
   onUpdate: (value?: string | string[]) => void;
 }) => {
   if (props.multiple) {
     return (
       <MultiSelect
-        label="Allowed countries"
-        description="Add one or more ISO 3166-1 alpha-2 country codes."
+        label={props.label ?? "Allowed countries"}
+        description={
+          props.label
+            ? props.description
+            : "Add one or more ISO 3166-1 alpha-2 country codes."
+        }
         placeholder="Search and add countries"
         searchable
         clearable

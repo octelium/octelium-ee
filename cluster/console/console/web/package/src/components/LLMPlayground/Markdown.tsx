@@ -8,7 +8,16 @@ import ReactMarkdown, {
 import remarkGfm from "remark-gfm";
 import { twMerge } from "@/lib/utils";
 
-const CodeBlock = (props: { language?: string; code: string }) => {
+type CodeActions = (code: {
+  language?: string;
+  code: string;
+}) => React.ReactNode;
+
+const CodeBlock = (props: {
+  language?: string;
+  code: string;
+  actions?: CodeActions;
+}) => {
   const [copied, setCopied] = React.useState(false);
 
   const copy = async () => {
@@ -23,21 +32,24 @@ const CodeBlock = (props: { language?: string; code: string }) => {
         <span className="text-micro font-semibold uppercase tracking-[0.08em] text-terminal-muted">
           {props.language || "code"}
         </span>
-        <Tooltip label={copied ? "Copied" : "Copy code"} withArrow>
-          <ActionIcon
-            size="sm"
-            variant="subtle"
-            color="gray"
-            aria-label="Copy code"
-            onClick={copy}
-          >
-            {copied ? (
-              <Check size={13} className="text-emerald-400" />
-            ) : (
-              <Copy size={13} className="text-terminal-muted" />
-            )}
-          </ActionIcon>
-        </Tooltip>
+        <span className="flex min-w-0 items-center gap-1.5">
+          {props.actions?.({ language: props.language, code: props.code })}
+          <Tooltip label={copied ? "Copied" : "Copy code"} withArrow>
+            <ActionIcon
+              size="sm"
+              variant="subtle"
+              color="gray"
+              aria-label="Copy code"
+              onClick={copy}
+            >
+              {copied ? (
+                <Check size={13} className="text-emerald-400" />
+              ) : (
+                <Copy size={13} className="text-terminal-muted" />
+              )}
+            </ActionIcon>
+          </Tooltip>
+        </span>
       </div>
       <pre className="overflow-x-auto px-3 py-3">
         <code className="font-mono text-xs leading-6 text-terminal-text">
@@ -53,6 +65,7 @@ const Markdown = (props: {
   className?: string;
   components?: Components;
   urlTransform?: UrlTransform;
+  codeActions?: CodeActions;
 }) => (
   <div
     className={twMerge(
@@ -148,7 +161,13 @@ const Markdown = (props: {
           const isBlock = language !== undefined || text.includes("\n");
 
           if (isBlock) {
-            return <CodeBlock language={language} code={text} />;
+            return (
+              <CodeBlock
+                language={language}
+                code={text}
+                actions={props.codeActions}
+              />
+            );
           }
 
           return (

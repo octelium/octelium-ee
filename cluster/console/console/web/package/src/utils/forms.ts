@@ -38,6 +38,22 @@ export const useRegisterDirtyForm = (dirty: boolean) => {
   );
 };
 
+export const FormIssuesContext = React.createContext<
+  ((id: string, issues: string[]) => void) | undefined
+>(undefined);
+
+export const useFormIssues = (issues: string[]) => {
+  const report = React.useContext(FormIssuesContext);
+  const id = React.useId();
+  const key = issues.join("\n");
+
+  React.useEffect(() => {
+    report?.(id, key ? key.split("\n") : []);
+  }, [report, id, key]);
+
+  React.useEffect(() => () => report?.(id, []), [report, id]);
+};
+
 export const useHasDirtyForm = () =>
   React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 

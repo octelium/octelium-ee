@@ -3,6 +3,7 @@ import MetadataEdit from "@/components/MetadataEdit";
 import ResourceEditor from "@/components/ResourceEditor";
 import {
   consumeNavigationApproval,
+  FormIssuesContext,
   useRegisterDirtyForm,
   validateResourceName,
 } from "@/utils/forms";
@@ -101,6 +102,19 @@ const ResourceForm = (props: ResourceFormProps) => {
   }>(() => ({ item: cloneResource(props.item), version: 0 }));
 
   const lastItem = React.useRef(resourceFingerprint(props.item));
+  const [specIssues, setSpecIssues] = React.useState<Record<string, string[]>>(
+    {},
+  );
+  const reportIssues = React.useCallback((id: string, issues: string[]) => {
+    setSpecIssues((prev) => {
+      if ((prev[id] ?? []).join("\n") === issues.join("\n")) return prev;
+      const next = { ...prev };
+      if (issues.length > 0) next[id] = issues;
+      else delete next[id];
+      return next;
+    });
+  }, []);
+  const blockingIssues = Object.values(specIssues).flat();
 
   const reseed = React.useCallback((item: Resource) => {
     setSource((prev) => ({ item, version: prev.version + 1 }));
@@ -130,6 +144,7 @@ const ResourceForm = (props: ResourceFormProps) => {
     !props.isPending &&
     !nameError &&
     (activeTab !== "yaml" || yamlError === null) &&
+    (activeTab !== "main" || blockingIssues.length === 0) &&
     (!props.requireDirty || isDirty);
 
   useRegisterDirtyForm(isDirty && !props.readOnly);
@@ -266,13 +281,15 @@ const ResourceForm = (props: ResourceFormProps) => {
                 disabled={props.readOnly}
                 className={props.readOnly ? "opacity-60" : undefined}
               >
-                <React.Suspense fallback={<FormSkeleton />}>
-                  {React.createElement(props.specComponent, {
-                    key: source.version,
-                    item: source.item,
-                    onUpdate: updateSpec,
-                  })}
-                </React.Suspense>
+                <FormIssuesContext.Provider value={reportIssues}>
+                  <React.Suspense fallback={<FormSkeleton />}>
+                    {React.createElement(props.specComponent, {
+                      key: source.version,
+                      item: source.item,
+                      onUpdate: updateSpec,
+                    })}
+                  </React.Suspense>
+                </FormIssuesContext.Provider>
               </fieldset>
             </ContainerGen>
           )}
@@ -331,6 +348,18 @@ const ResourceForm = (props: ResourceFormProps) => {
             ) : nameError ? (
               <span className="text-xs font-medium text-red-600">
                 {nameError}
+              </span>
+            ) : activeTab === "main" && blockingIssues.length > 0 ? (
+              <span
+                className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-amber-700"
+                title={blockingIssues.join("\n")}
+              >
+                <AlertTriangle size={12} className="shrink-0" />
+                <span className="truncate">
+                  {blockingIssues.length === 1
+                    ? blockingIssues[0]
+                    : `${blockingIssues.length} things to fix before saving · ${blockingIssues[0]}`}
+                </span>
               </span>
             ) : (
               <span className="text-xs font-normal text-slate-500">

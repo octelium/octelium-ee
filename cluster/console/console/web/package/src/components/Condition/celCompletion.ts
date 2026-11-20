@@ -14,7 +14,9 @@ interface SchemaCompletion extends Completion {
 
 const memberPattern = /[A-Za-z_]\w*(?:\s*(?:\.\s*\w*|\[\s*(?:\d+|[A-Za-z_]\w*|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')\s*\]))*/;
 
-const functions: SchemaCompletion[] = [
+type FunctionEntry = [string, string, string, string];
+
+const BUILTIN_FUNCTIONS: FunctionEntry[] = [
   ["has", "value", "bool", "Check whether a field is present."],
   ["size", "value", "int", "Count the elements in a string, list, or map."],
   ["type", "value", "type", "Return the type of a value."],
@@ -25,14 +27,89 @@ const functions: SchemaCompletion[] = [
   ["bool", "value", "bool", "Convert a value to a boolean."],
   ["duration", "string", "duration", "Parse a duration such as \"300s\"."],
   ["timestamp", "string", "timestamp", "Parse an RFC 3339 timestamp."],
-].map(([label, argument, result, description]) => ({
-  ...snippetCompletion(`${label}(\${${argument}})`, {
+  ["now", "", "timestamp", "The current time. Use getHours(\"Europe/Berlin\"), getDayOfWeek(…) and friends to read it in a timezone."],
+];
+
+export const CEL_NAMESPACES: Record<string, { description: string; functions: FunctionEntry[] }> = {
+  net: {
+    description: "IP address functions",
+    functions: [
+      ["isIPInRange", "ip, cidr", "bool", "Check whether an IP address is in a CIDR range."],
+      ["isPrivateIP", "ip", "bool", "Check whether an IP address is private."],
+      ["isIP", "value", "bool", "Check whether a string is an IP address."],
+      ["isIPv4", "value", "bool", "Check whether a string is an IPv4 address."],
+      ["isIPv6", "value", "bool", "Check whether a string is an IPv6 address."],
+    ],
+  },
+  time: {
+    description: "Calendar functions",
+    functions: [
+      ["isWeekday", "timestamp", "bool", "Check whether a time falls on Monday to Friday, in UTC."],
+      ["isWeekend", "timestamp", "bool", "Check whether a time falls on a weekend, in UTC."],
+      ["isWeekdayInTZ", "timestamp, timezone", "bool", "Check whether a time falls on Monday to Friday in a timezone."],
+      ["isWeekendInTZ", "timestamp, timezone", "bool", "Check whether a time falls on a weekend in a timezone."],
+    ],
+  },
+  json: {
+    description: "JSON functions",
+    functions: [
+      ["parse", "string", "value", "Parse a JSON string, e.g. a header value."],
+      ["marshal", "value", "string", "Serialize a value to a JSON string."],
+    ],
+  },
+};
+
+const snippet = (label: string, argument: string) =>
+  argument
+    ? `${label}(${argument
+        .split(",")
+        .map((part) => `\${${part.trim()}}`)
+        .join(", ")})`
+    : `${label}()`;
+
+const toCompletions = (entries: FunctionEntry[]): SchemaCompletion[] =>
+  entries.map(([label, argument, result, description]) => ({
+    ...snippetCompletion(snippet(label, argument), {
+      label,
+      type: "function",
+      detail: `(${argument}) → ${result}`,
+    }),
+    description,
+  }));
+
+const functions: SchemaCompletion[] = [
+  ...toCompletions(BUILTIN_FUNCTIONS),
+  ...Object.entries(CEL_NAMESPACES).map(([label, namespace]) => ({
     label,
-    type: "function",
-    detail: `(${argument}) → ${result}`,
-  }),
-  description,
-}));
+    type: "namespace",
+    detail: "functions",
+    description: namespace.description,
+  })),
+];
+
+const namespaceCompletions = Object.fromEntries(
+  Object.entries(CEL_NAMESPACES).map(([name, namespace]) => [
+    name,
+    toCompletions(namespace.functions),
+  ]),
+);
+
+export const CEL_FUNCTIONS = [
+  ...BUILTIN_FUNCTIONS.map(([name, argument, result, description]) => ({
+    name,
+    signature: `${name}(${argument}) → ${result}`,
+    insert: `${name}()`,
+    description,
+  })),
+  ...Object.entries(CEL_NAMESPACES).flatMap(([namespace, value]) =>
+    value.functions.map(([name, argument, result, description]) => ({
+      name: `${namespace}.${name}`,
+      signature: `${namespace}.${name}(${argument}) → ${result}`,
+      insert: `${namespace}.${name}()`,
+      description,
+    })),
+  ),
+];
 
 const methods = (schema: JSONSchema7): SchemaCompletion[] => {
   const type = Array.isArray(schema.type) ? schema.type[0] : schema.type;
@@ -274,6 +351,14 @@ export function schemaCompletionSource(schema: JSONSchema7): CompletionSource {
     const prefix = text.match(/[A-Za-z_]\w*$/)?.[0] ?? "";
     const parentText = text.slice(0, text.length - prefix.length).trim();
     if (parentText && !parentText.endsWith(".")) return null;
+    const namespace = namespaceCompletions[parentText.replace(/\s*\.\s*$/, "")];
+    if (namespace) {
+      return {
+        from: context.pos - prefix.length,
+        options: namespace,
+        validFor: /^[A-Za-z_]\w*$|^$/,
+      };
+    }
     const parent = schemaAtPath(root, parentText.replace(/\.\s*$/, ""));
     if (!parent) return null;
     const options: SchemaCompletion[] = Object.entries(parent.properties ?? {})
@@ -310,6 +395,28 @@ export function schemaCompletionSource(schema: JSONSchema7): CompletionSource {
         !available.some((option) => option.label === text && typeof option.apply !== "function"),
     };
   };
+}
+
+export function schemaFields(root: JSONSchema7, maxDepth = 6, limit = 4000) {
+  const ret: { path: string; type: string; description?: string; values?: string[] }[] = [];
+  const walk = (definition: JSONSchema7Definition | undefined, path: string, depth: number) => {
+    if (ret.length >= limit) return;
+    const node = normalizeSchema(definition, root);
+    for (const [key, child] of Object.entries(node.properties ?? {})) {
+      if (child === false || ret.length >= limit) continue;
+      const value = normalizeSchema(child, root);
+      const childPath = path ? `${path}.${key}` : key;
+      ret.push({
+        path: childPath,
+        type: schemaType(value),
+        description: value.description,
+        values: value.enum?.map(String),
+      });
+      if (depth < maxDepth && value.properties) walk(child, childPath, depth + 1);
+    }
+  };
+  walk(root, "", 0);
+  return ret;
 }
 
 export function schemaAutocomplete(schema: JSONSchema7) {
