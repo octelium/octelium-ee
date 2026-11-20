@@ -17,7 +17,7 @@ import {
   Zap,
 } from "lucide-react";
 import * as React from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { EFFECT_META, EffectBadge, EffectKey, getEffectKey, normalizeRef, RefChip } from "../common";
 import { ConditionView, GrantSummary, StepTimeline, SurfaceChip } from "../rules";
 

@@ -27,7 +27,7 @@ import {
   Server,
   Shield,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { EffectBadge, EmptyNote, RefChip } from "../common";
 import { LiveRow, PendingRow, useNow } from "../Overview/Queues";
 import { ConditionView } from "../rules";

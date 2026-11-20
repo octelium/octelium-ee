@@ -11,7 +11,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { Save } from "lucide-react";
 import * as React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 import { notifications } from "@mantine/notifications";
 import ResourceForm from "./ResourceForm";
 import { useContextResource } from "./utils";

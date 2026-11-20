@@ -19,7 +19,7 @@ import {
   Outlet,
   ScrollRestoration,
   useLocation,
-} from "react-router-dom";
+} from "react-router";
 
 import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/700.css";

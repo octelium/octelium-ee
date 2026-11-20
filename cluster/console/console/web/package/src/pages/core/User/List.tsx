@@ -31,7 +31,7 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import * as React from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import { match } from "ts-pattern";
 
 const getType = (svc: User) => {

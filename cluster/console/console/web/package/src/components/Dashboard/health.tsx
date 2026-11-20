@@ -18,7 +18,7 @@ import {
   ShieldCheck,
   UserCheck,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { twMerge } from "@/lib/utils";
 import { PILL } from "./components";
 import RpcError from "@/components/RpcError";

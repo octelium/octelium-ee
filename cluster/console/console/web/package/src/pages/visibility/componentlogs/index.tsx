@@ -5,7 +5,7 @@ import LogPageShell, {
 import { useLogListReq } from "@/components/AccessLogViewer/listReq";
 import { ComponentLog_Entry_Level } from "@/apis/corev1/corev1";
 import { ComponentSelector } from "@/apis/visibilityv1/visibilityv1";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 
 export default () => {
   const req = useLogListReq();

@@ -32,7 +32,7 @@ import {
   Textarea,
   Tooltip,
 } from "@mantine/core";
-import ReactEChartsCore from "echarts-for-react/esm/core";
+import ReactEChartsCore from "echarts-for-react/lib/core";
 import { BarChart, LineChart, PieChart, ScatterChart } from "echarts/charts";
 import {
   AriaComponent,
@@ -80,7 +80,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import * as React from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { twMerge } from "@/lib/utils";
 import { AgentClient } from "./client";
 import { fileIcon } from "./files";

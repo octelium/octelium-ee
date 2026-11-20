@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import { parseQueryString } from "../ResourceLayout/queryParse";
 import { ObjectReference } from "@/apis/metav1/metav1";
 import type { AccessLogStatusFilter } from "./utils";

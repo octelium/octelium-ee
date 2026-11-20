@@ -20,7 +20,7 @@ import {
   Waves,
 } from "lucide-react";
 import * as React from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router";
 import AccessLeaders from "./AccessLeaders";
 import Breakdown from "./Breakdown";
 import ChangeLeaders from "./ChangeLeaders";

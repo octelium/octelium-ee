@@ -23,7 +23,7 @@ import {
   X,
 } from "lucide-react";
 import * as React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { notifications } from "@mantine/notifications";
 import CopyText from "../CopyText";
 import ResourceYAML from "../ResourceYAML";

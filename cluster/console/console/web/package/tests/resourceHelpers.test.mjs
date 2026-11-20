@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, afterEach, before, describe, it, mock } from "node:test";
-import Yaml from "js-yaml";
+import * as Yaml from "js-yaml";
 import { createConsoleModules } from "./helpers/consoleModules.mjs";
 
 describe("Resource serialization, references and API dispatch", () => {
@@ -69,6 +69,46 @@ describe("Resource serialization, references and API dispatch", () => {
     assert.equal(pb.resourceFromYAML("metadata: [unterminated"), undefined);
     assert.equal(pb.resourceFromYAML(""), undefined);
     assert.equal(pb.resourceFromYAML("null"), undefined);
+  });
+  it("preserves ambiguous string values through resource YAML", () => {
+    const labels = Object.fromEntries(
+      ["yes", "no", "on", "off", "true", "null", "012", "0b101", "1e3", "2026-11-20"]
+        .map((value, index) => [`value${index}`, value]),
+    );
+    const value = resource("core", "Service", {
+      metadata: { name: "example.default", labels },
+    });
+    assert.deepEqual(pb.resourceFromYAML(pb.resourceToYAML(value)), value);
+  });
+  it("preserves resource merges, aliases, timestamps and binary integers", () => {
+    const value = pb.resourceFromYAML(`
+apiVersion: core/v1
+kind: Service
+metadata:
+  <<: &metadata {name: example.default, displayName: Example}
+  labels:
+    enabled: on
+    started: 2026-11-20
+    fractional: -.5
+spec:
+  port: 0b101
+`);
+    assert.equal(value.metadata.name, "example.default");
+    assert.equal(value.metadata.displayName, "Example");
+    assert.deepEqual(value.metadata.labels, {
+      enabled: "on",
+      started: "2026-11-20T00:00:00.000Z",
+      fractional: "-.5",
+    });
+    assert.equal(value.spec.port, 5);
+  });
+  it("rejects empty, duplicate, cyclic and multiple resource documents", () => {
+    mock.method(console, "error", () => {});
+    for (const source of [
+      " \n ", "# resource\n", "---\n", "kind: Service\nkind: User",
+      "&resource {apiVersion: core/v1, kind: Service, spec: *resource}",
+      "apiVersion: core/v1\nkind: Service\n---\napiVersion: core/v1\nkind: User",
+    ]) assert.equal(pb.resourceFromYAML(source), undefined);
   });
   it("serializes metadata, spec and status sections independently", () => {
     const value = resource("core", "Service", { spec: { isPublic: true }, status: { namespaceRef: { name: "default" } } });

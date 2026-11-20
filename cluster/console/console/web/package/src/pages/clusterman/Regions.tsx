@@ -11,7 +11,7 @@ import { twMerge } from "@/lib/utils";
 import { getResourcePath } from "@/utils/pb";
 import { Alert, Button, Skeleton } from "@mantine/core";
 import { Globe2, Loader2, PlusCircle, Star, TriangleAlert } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { JoinStateBadge } from "./components";
 import {
   isDefaultRegion,

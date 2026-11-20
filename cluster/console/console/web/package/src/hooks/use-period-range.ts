@@ -5,7 +5,7 @@ import {
 } from "@/utils/visibility";
 import { useDebouncedCallback } from "@mantine/hooks";
 import * as React from "react";
-import { useLocation, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router";
 
 export const usePeriodRange = (
   options: {

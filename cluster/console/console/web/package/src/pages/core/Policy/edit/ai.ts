@@ -1,6 +1,7 @@
 import * as CoreP from "@/apis/corev1/corev1";
 import { looksComplete } from "@/components/Condition/cel";
-import Yaml from "js-yaml";
+import { loadYAML } from "@/utils/pb/yaml";
+import * as Yaml from "js-yaml";
 
 export type RuleAIAction = "write" | "explain" | "review" | "stricter";
 export type PolicyAIAction = "draft" | "review" | "explain" | "tests";
@@ -181,7 +182,7 @@ export const parseSpec = (
 ): { spec: CoreP.Policy_Spec } | { error: string } => {
   let value: unknown;
   try {
-    value = Yaml.load(code);
+    value = loadYAML(code);
   } catch (err) {
     return {
       error: `The YAML cannot be parsed: ${(err as Error).message.split("\n")[0]}`,

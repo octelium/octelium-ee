@@ -23,7 +23,7 @@ import {
   KeyRound,
 } from "lucide-react";
 import { SiGithub } from "react-icons/si";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import { match } from "ts-pattern";
 
 export const getType = (svc: IdentityProvider): string => {

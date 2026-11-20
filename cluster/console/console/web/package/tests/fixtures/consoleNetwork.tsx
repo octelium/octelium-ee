@@ -31,7 +31,7 @@ import {
 } from "@tanstack/react-query";
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
+import { MemoryRouter, useLocation, useNavigate } from "react-router";
 
 const params = new URLSearchParams(window.location.search);
 const scenario = params.get("scenario") ?? "utilities";

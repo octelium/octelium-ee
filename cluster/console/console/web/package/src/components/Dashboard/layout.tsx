@@ -21,7 +21,7 @@ import {
   Plus,
 } from "lucide-react";
 import * as React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { showActionNotification } from "@/utils/notifications";
 import { Deferred } from "./components";
 import { WidgetContext } from "./widget";

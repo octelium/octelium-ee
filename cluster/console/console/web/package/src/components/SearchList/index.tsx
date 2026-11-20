@@ -1,7 +1,7 @@
 import { TextInput } from "@mantine/core";
 import { Search, X } from "lucide-react";
 import * as React from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 
 const SearchList = (props: {
   placeholder?: string;

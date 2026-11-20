@@ -18,7 +18,7 @@ import {
   Workflow,
 } from "lucide-react";
 import * as React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { Avatar, formatSeconds } from "../common";
 import { useAccessTotals, useLiveAccess, useOldestPending } from "./queries";
 import { resourceIcon, resourceOf, subjectOf } from "./shared";

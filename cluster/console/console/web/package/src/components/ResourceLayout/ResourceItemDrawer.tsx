@@ -6,7 +6,7 @@ import { Drawer } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router";
 import ResourceItemPage from "./ResourceItemPage";
 
 const drawerID = "resource-item-drawer";

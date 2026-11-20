@@ -30,7 +30,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import * as React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { notifications } from "@mantine/notifications";
 import { twMerge } from "@/lib/utils";
 import { snapshotSection } from "./snapshot";

@@ -36,7 +36,7 @@ import {
   Users,
   Wifi,
 } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router";
 import { twMerge } from "@/lib/utils";
 import { workspaceRefOf } from "@/pages/cordium/utils";
 import { getCordiumSessionInfo } from "./utils";

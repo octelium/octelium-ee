@@ -18,7 +18,7 @@ import {
   ShieldAlert,
   TriangleAlert,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useAccessCreated, useAccessTotals } from "./queries";
 
 type Severity = "critical" | "warning" | "info";

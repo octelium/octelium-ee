@@ -23,7 +23,7 @@ import {
   SquareTerminal,
   Terminal,
 } from "lucide-react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router";
 import { match } from "ts-pattern";
 import PageWrap from "../PageWrap";
 import KeepAliveScope from "./KeepAliveScope";

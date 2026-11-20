@@ -8,7 +8,7 @@ import {
   ResourceList,
 } from "@/utils/pb";
 import { Link2 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { twMerge } from "@/lib/utils";
 import { createContext, useContext } from "react";
 import TimeAgo from "../TimeAgo";

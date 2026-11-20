@@ -15,7 +15,7 @@ import CopyText from "@/components/CopyText";
 import InfoItem from "@/components/InfoItem";
 import { getDomain } from "@/utils";
 import { BiLinkExternal } from "react-icons/bi";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router";
 
 import { Button, Collapse } from "@mantine/core";
 

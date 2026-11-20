@@ -19,7 +19,7 @@ import {
   X,
 } from "lucide-react";
 import * as React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router";
 import { functionGroups, type FunctionGroup } from "./functions";
 import classes from "./styles.module.css";
 

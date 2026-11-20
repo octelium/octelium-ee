@@ -1,7 +1,7 @@
 import { FilterChips, buildFilterChips } from "@/components/Paginator";
 import SearchList from "@/components/SearchList";
 import * as React from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 
 export const useLogPageParams = () => {
   const [searchParams, setSearchParams] = useSearchParams();

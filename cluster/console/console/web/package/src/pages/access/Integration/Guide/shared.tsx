@@ -8,7 +8,7 @@ import {
   ShieldAlert,
   ShieldCheck,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { RefChip } from "../../common";
 import { getSyncStateMeta } from "../utils";
 import type { GuideContext, GuideStep, GuideStepStatus } from ".";

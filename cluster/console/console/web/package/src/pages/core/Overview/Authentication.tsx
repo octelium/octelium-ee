@@ -34,7 +34,7 @@ import {
   ShieldUser,
   Usb,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { AUTH_BY_ASSURANCE, useCoreTotals } from "./queries";
 
 const Authentication = (props: { periodMinutes: number }) => {

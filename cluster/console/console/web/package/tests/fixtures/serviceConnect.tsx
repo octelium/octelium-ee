@@ -47,9 +47,9 @@ import { Provider } from "react-redux";
 import {
   createMemoryRouter,
   Outlet,
-  RouterProvider,
   useLocation,
-} from "react-router-dom";
+} from "react-router";
+import { RouterProvider } from "react-router/dom";
 
 interface FakeTerminal {
   id: string;

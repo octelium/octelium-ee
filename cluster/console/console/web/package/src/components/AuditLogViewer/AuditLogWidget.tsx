@@ -25,7 +25,7 @@ import {
   Users,
 } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";
 import ChartPanel from "../Charts/ChartPanel";

@@ -16,7 +16,7 @@ import {
   SunMoon,
   UserRound,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 const initials = (value: string) =>
   value

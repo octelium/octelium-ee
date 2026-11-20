@@ -35,7 +35,7 @@ import {
   Outlet,
   useLocation,
   useNavigate,
-} from "react-router-dom";
+} from "react-router";
 import { notifications } from "@mantine/notifications";
 import { twMerge } from "@/lib/utils";
 import RpcError from "@/components/RpcError";

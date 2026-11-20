@@ -1,7 +1,7 @@
 import { Service } from "@/apis/corev1/corev1";
 import ServiceConnect from "@/components/ServiceConnect";
 import { hasConnect } from "@/utils/pb";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import { useContextResource } from "./utils";
 
 const ServiceConnectPage = () => {

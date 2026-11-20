@@ -4,7 +4,7 @@ import type { LLMScope } from "@/components/LLMVisibility/utils";
 import PageWrap from "@/components/PageWrap";
 import { getResourceRef, hasLLMVisibility, Resource } from "@/utils/pb";
 import { BrainCircuit } from "lucide-react";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import { match } from "ts-pattern";
 import { useContextResource } from "./utils";
 

@@ -39,7 +39,7 @@ import { Users } from "lucide-react";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router";
 
 const mode = new URLSearchParams(window.location.search).get("mode");
 const queryClient = new QueryClient({

@@ -13,7 +13,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
 import { Copy, Loader2, X } from "lucide-react";
 import * as React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { notifications } from "@mantine/notifications";
 
 const makeCloneName = (name: string) => {

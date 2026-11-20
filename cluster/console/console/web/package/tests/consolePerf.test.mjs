@@ -34,6 +34,10 @@ describe("Console performance regressions", () => {
     sources = new Map();
     for (const [key, entry] of Object.entries(manifest)) {
       if (!entry.file.endsWith(".js")) continue;
+      if (entry.name === "rolldown-runtime") {
+        sources.set(key, []);
+        continue;
+      }
       const map = JSON.parse(
         await readFile(join(appDirectory, `${entry.file}.map`), "utf8"),
       );
@@ -125,6 +129,12 @@ describe("Console performance regressions", () => {
     assert.ok(
       files.some((file) => file.endsWith("shims/buffer/dist/index.js")),
     );
+  });
+
+  it("keeps unused Node crypto polyfills out of browser assets", () => {
+    for (const file of [...sources.values()].flat()) {
+      assert.doesNotMatch(file, /\/(elliptic|crypto-browserify|browserify-sign|create-ecdh)\//);
+    }
   });
 
   it("keeps dates, terminal, and flag styles out of the entry CSS", async () => {

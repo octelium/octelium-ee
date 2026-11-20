@@ -1,4 +1,4 @@
-import { RouteObject, useRoutes } from "react-router-dom";
+import { RouteObject, useRoutes } from "react-router";
 import { PageLoading } from "@/components/Loading";
 import { RouteErrorBoundary } from "@/components/ErrorBoundary";
 import routerAgent from "./Agent/router";

@@ -27,7 +27,7 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import { getType } from "./Main";
 import { match } from "ts-pattern";
 

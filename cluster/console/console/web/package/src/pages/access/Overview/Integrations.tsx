@@ -8,7 +8,7 @@ import { STATUS_COLORS, useChartColorScheme } from "@/utils/charts/palette";
 import { n } from "@/utils/visibility";
 import { QUERY_PRIORITY } from "@/utils/visibility/queue";
 import { AlertTriangle, ChevronRight, Plug, Plus } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import {
   getProviderKind,
   PROVIDER_LABEL,

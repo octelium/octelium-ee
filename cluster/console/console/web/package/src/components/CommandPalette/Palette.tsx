@@ -33,7 +33,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import * as React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 import { twMerge } from "@/lib/utils";
 import { isQuestion, normalize, scoreEntry } from "./match";
 import { frecency, readRecents } from "./recents";

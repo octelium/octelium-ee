@@ -1,4 +1,4 @@
-import { RouteObject } from "react-router-dom";
+import { RouteObject } from "react-router";
 
 import { PageLoading } from "@/components/Loading";
 import * as React from "react";

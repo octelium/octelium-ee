@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { after, afterEach, before, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import yaml from "js-yaml";
+import * as yaml from "js-yaml";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
@@ -186,17 +186,22 @@ describe("Cordium ClusterConfig", () => {
     assert.deepEqual(saved.spec.agent.image, { git: { url: "https://github.com/example/agent.git", checkout: "stable" } });
   });
 
-  it("protects unsaved configuration when navigating away", async () => {
-    await load();
-    await page.getByLabel("Agent version", { exact: true }).fill("next");
-    await page.getByRole("link", { name: "Leave configuration", exact: true }).click();
-    await page.getByText("Discard unsaved changes?", { exact: true }).waitFor();
-    await page.getByRole("button", { name: "Keep editing", exact: true }).click();
-    assert.equal(await page.getByLabel("Agent version", { exact: true }).inputValue(), "next");
-    await page.getByRole("link", { name: "Leave configuration", exact: true }).click();
-    await page.getByRole("button", { name: "Discard changes", exact: true }).click();
-    await page.getByText("Another page", { exact: true }).waitFor();
-  });
+  for (const reducedMotion of ["reduce", "no-preference"]) {
+    it(`protects unsaved configuration when navigating away with ${reducedMotion}`, async () => {
+      await page.emulateMedia({ reducedMotion });
+      await load();
+      await page.getByLabel("Agent version", { exact: true }).fill("next");
+      for (let attempt = 0; attempt < 3; attempt++) {
+        await page.getByRole("link", { name: "Leave configuration", exact: true }).click();
+        await page.getByText("Discard unsaved changes?", { exact: true }).waitFor();
+        await page.getByRole("button", { name: "Keep editing", exact: true }).click();
+        assert.equal(await page.getByLabel("Agent version", { exact: true }).inputValue(), "next");
+      }
+      await page.getByRole("link", { name: "Leave configuration", exact: true }).click();
+      await page.getByRole("button", { name: "Discard changes", exact: true }).click();
+      await page.getByText("Another page", { exact: true }).waitFor();
+    });
+  }
 
   it("shows loading before the configuration arrives", async () => {
     await navigate({ scenario: "loading" });

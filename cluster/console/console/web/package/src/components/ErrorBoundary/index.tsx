@@ -19,7 +19,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import * as React from "react";
-import { useLocation, useNavigate, useRouteError } from "react-router-dom";
+import { useLocation, useNavigate, useRouteError } from "react-router";
 import { twMerge } from "@/lib/utils";
 import { describeRpcError } from "@/utils/rpcError";
 

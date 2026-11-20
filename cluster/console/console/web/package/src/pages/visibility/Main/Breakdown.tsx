@@ -11,7 +11,7 @@ import { n, periodLabel } from "@/utils/visibility";
 import { SegmentedControl, Select } from "@mantine/core";
 import { ChartSpline } from "lucide-react";
 import * as React from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import {
   BREAKDOWN_SERIES,
   DIMENSIONS,

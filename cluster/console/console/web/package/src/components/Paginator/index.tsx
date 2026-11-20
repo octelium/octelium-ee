@@ -1,7 +1,7 @@
 import { ListResponseMeta } from "@/apis/metav1/metav1";
 import { Pagination } from "@mantine/core";
 import { X } from "lucide-react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 
 const REF_PARAM_LABELS: Record<string, string> = {
   "userRef.name": "User",

@@ -10,7 +10,7 @@ import themeMantine from "@/utils/theme/mantine";
 import { MantineProvider } from "@mantine/core";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
-import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
+import { MemoryRouter, useLocation, useNavigate } from "react-router";
 
 const params = new URLSearchParams(window.location.search);
 

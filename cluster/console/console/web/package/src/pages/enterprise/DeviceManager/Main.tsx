@@ -38,7 +38,7 @@ import {
   Plug,
   RefreshCcw,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { devicesURL, getManagerPresentation } from "./List";
 import { ManagerMark } from "./providers";
 

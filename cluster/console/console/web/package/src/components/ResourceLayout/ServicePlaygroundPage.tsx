@@ -2,7 +2,7 @@ import { Service, Service_Spec_Mode } from "@/apis/corev1/corev1";
 import LLMPlayground from "@/components/LLMPlayground";
 import MCPPlayground from "@/components/MCPPlayground";
 import { hasPlayground } from "@/utils/pb";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import { useContextResource } from "./utils";
 
 const ServicePlaygroundPage = () => {

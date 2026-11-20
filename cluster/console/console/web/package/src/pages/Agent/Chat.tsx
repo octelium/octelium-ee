@@ -27,7 +27,7 @@ import {
   Waypoints,
 } from "lucide-react";
 import * as React from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import { notifications } from "@mantine/notifications";
 import { twMerge } from "@/lib/utils";
 import { type BlockContext } from "./Blocks";

@@ -42,7 +42,7 @@ import {
 } from "@/components/ResourceLayout/overviewItems";
 import { CountryFlag } from "@/components/SelectCountry";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { notifications } from "@mantine/notifications";
 import { twMerge } from "@/lib/utils";
 import { match } from "ts-pattern";

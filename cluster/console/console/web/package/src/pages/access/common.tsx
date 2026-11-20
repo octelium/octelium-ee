@@ -19,7 +19,7 @@ import {
   Webhook,
 } from "lucide-react";
 import * as React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 
 export type Tone = "neutral" | "success" | "warning" | "danger" | "info";
 

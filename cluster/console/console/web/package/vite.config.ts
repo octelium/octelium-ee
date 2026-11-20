@@ -33,6 +33,7 @@ export default defineConfig({
     react(),
     svgr(),
     nodePolyfills({
+      include: ["buffer"],
       globals: {
         Buffer: true,
         global: false,

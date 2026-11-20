@@ -6,7 +6,7 @@ import {
 } from "@/utils/pb";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import * as React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 import { listResourcesForSelect } from "../listResourcesForSelect";
 import { NON_CREATABLE } from "./constants";
 

@@ -3,7 +3,7 @@ import {
   Outlet,
   RouteObject,
   useRouteError,
-} from "react-router-dom";
+} from "react-router";
 import * as React from "react";
 import { PageLoading } from "@/components/Loading";
 import TerminalPage from "./Terminal";

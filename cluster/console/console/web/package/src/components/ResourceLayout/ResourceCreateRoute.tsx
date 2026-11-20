@@ -2,7 +2,7 @@ import { API, Resource, ResourceName } from "@/utils/pb";
 import { Drawer } from "@mantine/core";
 import * as React from "react";
 import { approveNextNavigation, useHasDirtyForm } from "@/utils/forms";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 import ResourceCreatePage from "./ResourceCreate";
 
 type CreateRouteState = {

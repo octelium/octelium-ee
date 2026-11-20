@@ -2,7 +2,7 @@ import { formatCount as formatCountValue } from "@/utils/format";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Inbox } from "lucide-react";
 import { createContext, useContext, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { twMerge } from "@/lib/utils";
 
 type SummaryIcon = React.ElementType<{

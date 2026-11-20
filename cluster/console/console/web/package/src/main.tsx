@@ -8,7 +8,7 @@ import { MotionConfig } from "framer-motion";
 import { MantineProvider } from "@mantine/core";
 
 import { Provider } from "react-redux";
-import { RouterProvider } from "react-router-dom";
+import { RouterProvider } from "react-router/dom";
 
 import Notifications from "@/components/Notifications";
 import store from "@/store";

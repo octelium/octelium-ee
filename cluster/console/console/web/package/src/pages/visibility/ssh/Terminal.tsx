@@ -11,7 +11,7 @@ import { getClientVisibilityAccessLog } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, RotateCcw, SquareTerminal } from "lucide-react";
 import * as React from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 
 const XTermSSHReplay = React.lazy(() =>
   import("@/components/SSHRecordingPlayer/Player").then((module) => ({

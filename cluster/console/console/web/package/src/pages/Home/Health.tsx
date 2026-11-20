@@ -1,7 +1,7 @@
 import { n, periodLabel } from "@/utils/visibility";
 import { QUERY_PRIORITY } from "@/utils/visibility/queue";
 import { HeartPulse } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Panel } from "@/components/Dashboard/components";
 import { StatusBadge, SubsystemGrid } from "@/components/Dashboard/health";
 import { useClusterHealth } from "@/components/Dashboard/queries";

@@ -26,7 +26,7 @@ import {
 } from "@/utils/client";
 import { retryQuery as retryMetricQuery } from "@/utils/queryPolicy";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import ReactEChartsCore from "echarts-for-react/esm/core";
+import ReactEChartsCore from "echarts-for-react/lib/core";
 import { LineChart as LineChartC } from "echarts/charts";
 import {
   AriaComponent,

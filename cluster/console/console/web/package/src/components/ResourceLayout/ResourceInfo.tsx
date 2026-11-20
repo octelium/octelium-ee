@@ -19,7 +19,7 @@ import {
   SquareTerminal,
   Tag,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import ResourceYAML from "../ResourceYAML";
 
 const Field = ({

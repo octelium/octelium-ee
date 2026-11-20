@@ -72,7 +72,7 @@ import {
   Routes,
   useLocation,
   useNavigate,
-} from "react-router-dom";
+} from "react-router";
 
 const params = new URLSearchParams(window.location.search);
 const scenario = params.get("scenario") ?? "counts";

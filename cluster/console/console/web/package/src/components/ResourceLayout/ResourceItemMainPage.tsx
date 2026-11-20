@@ -18,7 +18,7 @@ import {
   Tag,
 } from "lucide-react";
 import * as React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 import { twMerge } from "@/lib/utils";
 import RpcError from "@/components/RpcError";
 import CopyText from "../CopyText";

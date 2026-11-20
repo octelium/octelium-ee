@@ -2,7 +2,7 @@ import { Service, Service_Spec_Mode } from "@/apis/corev1/corev1";
 import { SSHSessionViewer } from "@/components/SSHRecordingPlayer";
 import { getResourceRef } from "@/utils/pb";
 import { Terminal } from "lucide-react";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import { useContextResource } from "./utils";
 
 const ServiceSSHPage = () => {

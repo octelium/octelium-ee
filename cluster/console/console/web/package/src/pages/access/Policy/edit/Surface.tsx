@@ -19,7 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { getProviderKind, PROVIDER_LABEL, ProviderMark } from "../../common";
 import { getSharedDestination, hasCapability } from "../../Integration/utils";
 

@@ -6,7 +6,7 @@ import {
 } from "@mantine/hooks";
 import { Menu as MenuIcon } from "lucide-react";
 import * as React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import Sidebar from ".";
 
 export default function ConsoleShell(props: {

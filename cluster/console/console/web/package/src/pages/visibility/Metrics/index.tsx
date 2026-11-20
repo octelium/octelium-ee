@@ -65,7 +65,7 @@ import {
   Waypoints,
 } from "lucide-react";
 import * as React from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 
 type View = "overview" | "traffic" | "octovigil" | "rscserver" | "components";
 type Resolution = "auto" | "1m" | "5m" | "15m";

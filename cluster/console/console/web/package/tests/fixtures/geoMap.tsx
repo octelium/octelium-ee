@@ -12,7 +12,8 @@ import { MantineProvider } from "@mantine/core";
 import { MotionConfig } from "framer-motion";
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { createMemoryRouter, RouterProvider, useLocation } from "react-router-dom";
+import { createMemoryRouter, useLocation } from "react-router";
+import { RouterProvider } from "react-router/dom";
 
 const params = new URLSearchParams(window.location.search);
 const scenario = params.get("scenario") ?? "panel";

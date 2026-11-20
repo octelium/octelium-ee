@@ -21,7 +21,7 @@ import {
   ShieldCheck,
   TriangleAlert,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { useEnterpriseTotals, useExpiringCertificates } from "./queries";
 
 const RENEWAL_WINDOW_SECONDS = 30 * 24 * 60 * 60;

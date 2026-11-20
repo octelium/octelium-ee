@@ -10,7 +10,7 @@ import {
 } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
 import { retryQuery } from "@/utils/queryPolicy";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router";
 
 export const useContextResource = () => {
   let { name } = useParams();

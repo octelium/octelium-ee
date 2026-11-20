@@ -17,7 +17,7 @@ import {
 import { Button, Modal, SegmentedControl } from "@mantine/core";
 import { AlertTriangle, FileCode, Loader2, Settings, X } from "lucide-react";
 import * as React from "react";
-import { useBlocker } from "react-router-dom";
+import { useBlocker } from "react-router";
 
 type SpecComponent = React.ComponentType<{
   item: Resource;
@@ -76,10 +76,20 @@ const DiscardModal = (props: {
         them.
       </p>
       <div className="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50/70 px-5 py-3">
-        <Button variant="default" size="sm" onClick={props.onStay}>
+        <Button
+          variant="default"
+          size="sm"
+          disabled={!props.opened}
+          onClick={props.onStay}
+        >
           Keep editing
         </Button>
-        <Button color="red" size="sm" onClick={props.onDiscard}>
+        <Button
+          color="red"
+          size="sm"
+          disabled={!props.opened}
+          onClick={props.onDiscard}
+        >
           Discard changes
         </Button>
       </div>

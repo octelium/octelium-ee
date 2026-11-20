@@ -18,10 +18,10 @@ import { Provider } from "react-redux";
 import {
   createMemoryRouter,
   Outlet,
-  RouterProvider,
   useLocation,
   useNavigate,
-} from "react-router-dom";
+} from "react-router";
+import { RouterProvider } from "react-router/dom";
 
 type ListRequest = {
   common?: { page: number; itemsPerPage: number; query: string };

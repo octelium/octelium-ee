@@ -4,7 +4,7 @@ import { ListTopResponse } from "@/apis/visibilityv1/access/vaccessv1";
 import { compact, exact } from "@/components/Dashboard/utils";
 import { twMerge } from "@/lib/utils";
 import { Layers, LucideIcon, Server, Shield } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { Avatar, getRefPath } from "../common";
 
 export const resourceOf = (item: Request): ObjectReference | undefined => {

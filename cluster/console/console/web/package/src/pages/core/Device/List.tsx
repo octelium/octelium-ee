@@ -19,7 +19,7 @@ import { GetDeviceSummaryResponse } from "@/apis/visibilityv1/core/vcorev1";
 import { useQuery } from "@tanstack/react-query";
 import { getClientVisibilityCore } from "@/utils/client";
 import { toURLWithQry } from "@/pages/utils";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import PieChart from "@/components/Charts/PieChart";
 import {
   CircleCheck,

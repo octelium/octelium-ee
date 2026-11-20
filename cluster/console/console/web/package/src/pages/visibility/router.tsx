@@ -1,4 +1,4 @@
-import { Outlet, RouteObject } from "react-router-dom";
+import { Outlet, RouteObject } from "react-router";
 import * as React from "react";
 import { PageLoading } from "@/components/Loading";
 import sshRouter from "./ssh/router";

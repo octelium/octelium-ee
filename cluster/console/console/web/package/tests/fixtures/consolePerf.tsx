@@ -11,7 +11,8 @@ import * as echarts from "echarts/core";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
-import { createMemoryRouter, RouterProvider } from "react-router-dom";
+import { createMemoryRouter } from "react-router";
+import { RouterProvider } from "react-router/dom";
 import store from "@/store";
 import { queryClient } from "@/utils";
 import {

@@ -422,6 +422,28 @@ describe("Policy conditions", () => {
       assert.equal(ai.extractCEL(""), undefined);
     });
 
+    it("preserves YAML aliases and scalar values in proposed Policies", () => {
+      const parsed = ai.parseSpec(`
+rules:
+  - &rule
+    name: on
+    effect: ALLOW
+    priority: 0b1
+    condition: {match: 'true'}
+  - <<: *rule
+    name: off
+    effect: DENY
+`);
+      assert.deepEqual(parsed.spec.rules.map(({ name, priority, effect }) => ({ name, priority, effect })), [
+        { name: "on", priority: 1, effect: core.Policy_Spec_Rule_Effect.ALLOW },
+        { name: "off", priority: 1, effect: core.Policy_Spec_Rule_Effect.DENY },
+      ]);
+      assert.deepEqual(ai.parseSpec(ai.specToYAML(parsed.spec)), parsed);
+      for (const source of ["", " \n", "# draft"]) {
+        assert.deepEqual(ai.parseSpec(source), { error: "The code is not a Policy spec" });
+      }
+    });
+
     it("describes the evaluation rules and the expected answer format", () => {
       const rule = ai.rulePrompt({ action: "write", text: "sre on weekdays", kind: "rule", name: "r", index: 0, effect: "ALLOW", priority: -1, cel: "true" });
       assert.match(rule, /^Write the condition of the rule "r" of the Policy draft in the console context \(effect ALLOW, priority -1\)\. It must match: sre on weekdays/);

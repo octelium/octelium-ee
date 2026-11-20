@@ -3,7 +3,7 @@ import { getResourcePath, printResourceNameWithDisplay, Resource } from "@/utils
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
 import * as React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router";
 import { twMerge } from "@/lib/utils";
 
 const COLLAPSED_COUNT = 5;

@@ -20,7 +20,7 @@ import {
   Terminal,
   TriangleAlert,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { twMerge } from "@/lib/utils";
 import { Panel } from "@/components/Dashboard/components";
 import { usePageConditions } from "@/components/PageHeader/context";

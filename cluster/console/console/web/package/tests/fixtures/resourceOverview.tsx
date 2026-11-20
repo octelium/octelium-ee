@@ -21,7 +21,8 @@ import { MotionConfig } from "framer-motion";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
-import { createMemoryRouter, Outlet, RouterProvider, useLocation } from "react-router-dom";
+import { createMemoryRouter, Outlet, useLocation } from "react-router";
+import { RouterProvider } from "react-router/dom";
 import { errors, resources } from "./resourceOverviewData";
 
 interface Call {

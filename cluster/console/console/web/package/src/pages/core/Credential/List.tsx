@@ -19,7 +19,7 @@ import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import { Ban, KeyRound, ShieldCheck, Users } from "lucide-react";
 import { MdTimer } from "react-icons/md";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import { match } from "ts-pattern";
 
 export const getType = (svc: Credential): string => {

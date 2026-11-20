@@ -26,7 +26,7 @@ import {
   UserCheck,
   UsersRound,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Panel } from "@/components/Dashboard/components";
 import {
   isKindAvailable,

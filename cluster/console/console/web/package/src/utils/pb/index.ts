@@ -1,4 +1,5 @@
-import Yaml from "js-yaml";
+import * as Yaml from "js-yaml";
+import { loadYAML } from "./yaml";
 
 import * as AccessP from "../../apis/accessv1/accessv1";
 import * as CordiumP from "../../apis/cordiumv1/cordiumv1";
@@ -285,7 +286,7 @@ const jsonToYAML = (arg: string): string => {
 
 export const resourceFromYAML = (arg: string): Resource | undefined => {
   try {
-    const obj = Yaml.load(arg) as any;
+    const obj = loadYAML(arg) as any;
     if (!obj) return undefined;
     return resourceFromJSON(JSON.stringify(obj));
   } catch (err) {

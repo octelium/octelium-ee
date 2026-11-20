@@ -16,7 +16,7 @@ import {
   useLocation,
   useNavigate,
   useParams,
-} from "react-router-dom";
+} from "react-router";
 import Paginator, { buildFilterChips, FilterChips } from "../Paginator";
 import { ResourceListItem, ResourceListWrapper } from "../ResourceList";
 import SearchList from "../SearchList";

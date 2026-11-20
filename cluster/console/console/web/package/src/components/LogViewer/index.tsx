@@ -8,7 +8,7 @@ import {
 } from "@/utils/client";
 import { getVisibilityAPIKindFromPath } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router";
 import { match } from "ts-pattern";
 import * as VisibilityP from "../../apis/visibilityv1/visibilityv1";
 import { AccessLogC } from "../AccessLogViewer";
