@@ -11,7 +11,9 @@ package access
 import (
 	"context"
 
+	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium/apis/main/accessv1"
+	"github.com/octelium/octelium/apis/main/metav1"
 	apisrvcommon "github.com/octelium/octelium/cluster/apiserver/apiserver/common"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/serr"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
@@ -36,6 +38,10 @@ func (s *ServerMain) GetClusterConfig(ctx context.Context,
 func (s *ServerMain) UpdateClusterConfig(ctx context.Context,
 	req *accessv1.ClusterConfig) (*accessv1.ClusterConfig, error) {
 	if err := validateClusterConfig(req); err != nil {
+		return nil, err
+	}
+
+	if err := s.validateClusterConfigRefs(ctx, req); err != nil {
 		return nil, err
 	}
 
@@ -73,6 +79,41 @@ func validateClusterConfig(req *accessv1.ClusterConfig) error {
 			*authz.Priority > maxClusterConfigAuthorizationPriority {
 			return grpcutils.InvalidArg("The authorization priority must be between %d and %d",
 				minClusterConfigAuthorizationPriority, maxClusterConfigAuthorizationPriority)
+		}
+	}
+
+	if r := req.Spec.Request; r != nil {
+		for _, d := range []*metav1.Duration{r.DefaultDeadline, r.MaxStartDelay} {
+			if d == nil {
+				continue
+			}
+
+			if err := apivalidation.ValidateDuration(d); err != nil {
+				return err
+			}
+		}
+
+		if accesscmd.TextLen(r.NoMatchMessage) > accesscmd.MaxMessageLen {
+			return grpcutils.InvalidArg("The no-match message cannot be longer than %d characters",
+				accesscmd.MaxMessageLen)
+		}
+	}
+
+	return nil
+}
+
+func (s *ServerMain) validateClusterConfigRefs(ctx context.Context, req *accessv1.ClusterConfig) error {
+	if r := req.Spec.Review; r != nil {
+		if err := s.validatePolicyReviewers(ctx, "fallback", 0, r.FallbackReviewers, false); err != nil {
+			return err
+		}
+	}
+
+	if n := req.Spec.Notification; n != nil {
+		for _, surface := range n.DefaultSurfaces {
+			if err := s.validatePolicySurface(ctx, "default", surface, false); err != nil {
+				return err
+			}
 		}
 	}
 

@@ -122,6 +122,12 @@ func (s *Server) listAccessLogTopService(ctx context.Context, req *visibilityv1.
 	if err != nil {
 		return nil, err
 	}
+	filters, err = appendRefFilter(filters, req.MatchInlinePolicyRef, &apivalidation.CheckGetOptionsOpts{
+		ParentsMax: 8,
+	}, "", "entry.common.reason.details.policyMatch.inlinePolicy.resourceRef")
+	if err != nil {
+		return nil, err
+	}
 
 	filters = appendAccessStatusFilter(filters, req.Status)
 

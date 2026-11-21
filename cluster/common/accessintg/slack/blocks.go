@@ -54,6 +54,15 @@ func buildBlocks(p *accessintg.Presentation, mentionUserGroupID string,
 	if p.Subject != "" {
 		fields = append(fields, markdownField("Subject", p.Subject))
 	}
+	if p.AccessLevel != "" {
+		fields = append(fields, markdownField("Access level", accessLevelLabel(p)))
+	}
+	if p.TotalServices > 0 {
+		fields = append(fields, markdownField("Services", servicesLabel(p)))
+	}
+	if p.Ticket != "" {
+		fields = append(fields, markdownField("Ticket", p.Ticket))
+	}
 	if p.Urgency != "" {
 		fields = append(fields, markdownField("Urgency", p.Urgency))
 	}
@@ -215,4 +224,28 @@ func truncate(arg string, maxLen int) string {
 	}
 
 	return fmt.Sprintf("%s...", ret)
+}
+
+func accessLevelLabel(p *accessintg.Presentation) string {
+	ret := p.AccessLevel
+
+	if p.IsFullAccess {
+		ret = fmt.Sprintf("%s (full access)", ret)
+	}
+
+	if p.OverridesGuardrails {
+		ret = fmt.Sprintf("%s, overrides guardrails", ret)
+	}
+
+	return ret
+}
+
+func servicesLabel(p *accessintg.Presentation) string {
+	ret := strings.Join(p.Services, ", ")
+
+	if p.TotalServices > len(p.Services) {
+		ret = fmt.Sprintf("%s and %d more", ret, p.TotalServices-len(p.Services))
+	}
+
+	return ret
 }

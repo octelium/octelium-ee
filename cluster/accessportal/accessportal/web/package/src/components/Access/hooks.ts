@@ -53,8 +53,8 @@ export const listAllNamespaces = async (
 
 export const listAllCatalogs = async (
   signal?: AbortSignal,
-): Promise<AccessP.Catalog[]> => {
-  const items: AccessP.Catalog[] = [];
+): Promise<AccessP.UserCatalog[]> => {
+  const items: AccessP.UserCatalog[] = [];
   let page = 0;
 
   for (;;) {
@@ -93,6 +93,68 @@ export const useCatalogs = () =>
     queryKey: ["user", "listCatalog"],
     queryFn: ({ signal }) => listAllCatalogs(signal),
     staleTime: 60 * 1000,
+  });
+
+export const listCatalogServices = async (
+  catalogName: string,
+  signal?: AbortSignal,
+): Promise<UserP.Service[]> => {
+  const items: UserP.Service[] = [];
+  let page = 0;
+
+  for (;;) {
+    const { response } = await getUserClient().listCatalogService(
+      AccessP.ListUserCatalogServiceOptions.create({
+        common: { page, itemsPerPage: 500 },
+        catalogRef: MetaP.ObjectReference.create({ name: catalogName }),
+      }),
+      { abort: signal },
+    );
+    items.push(...response.items);
+    if (!response.listResponseMeta?.hasMore || page > MAX_PAGES) break;
+    page += 1;
+  }
+
+  return items;
+};
+
+export const useCatalogServices = (catalogName?: string) =>
+  useQuery({
+    queryKey: ["user", "listCatalogService", catalogName],
+    enabled: !!catalogName,
+    staleTime: 60 * 1000,
+    queryFn: ({ signal }) => listCatalogServices(catalogName!, signal),
+  });
+
+export const useInbox = () =>
+  useQuery({
+    queryKey: ["user", "getInbox"],
+    staleTime: 15 * 1000,
+    refetchInterval: 30 * 1000,
+    queryFn: async ({ signal }) => {
+      const { response } = await getUserClient().getInbox(
+        AccessP.GetInboxRequest.create({}),
+        { abort: signal },
+      );
+      return response;
+    },
+  });
+
+export const useRequestPreview = (specJson: string) =>
+  useQuery({
+    queryKey: ["user", "previewRequest", specJson],
+    enabled: !!specJson,
+    staleTime: 10 * 1000,
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const { response } = await getUserClient().previewRequest(
+        AccessP.Request.create({
+          spec: AccessP.Request_Spec.fromJsonString(specJson),
+        }),
+        { abort: signal },
+      );
+      return response;
+    },
   });
 
 export const useService = (name?: string) =>

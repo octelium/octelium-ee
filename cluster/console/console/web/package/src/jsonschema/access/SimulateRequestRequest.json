@@ -1,0 +1,340 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/SimulateRequestRequest",
+    "definitions": {
+        "SimulateRequestRequest": {
+            "properties": {
+                "spec": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Spec",
+                    "additionalProperties": false,
+                    "description": "Spec is the specification of the simulated Request. Its subject is required."
+                },
+                "requesterRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "RequesterRef is the reference of the User that would create the Request. It defaults to the subject."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Simulate Request Request",
+            "description": "SimulateRequestRequest is the request of the SimulateRequest method."
+        },
+        "octelium.api.main.access.v1.Request.Spec": {
+            "properties": {
+                "urgency": {
+                    "enum": [
+                        "URGENCY_UNSET",
+                        "VERY_LOW",
+                        "LOW",
+                        "NORMAL",
+                        "HIGH",
+                        "VERY_HIGH",
+                        "HIGHEST"
+                    ],
+                    "type": "string",
+                    "title": "Urgency",
+                    "description": "Urgency is how urgent the requester considers the Request to be"
+                },
+                "resource": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Spec.Resource",
+                    "additionalProperties": false,
+                    "description": "Resource is the resource that the access is requested for."
+                },
+                "subject": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Spec.Subject",
+                    "additionalProperties": false,
+                    "description": "Subject is the User that the access is requested for. It is automatically set to the calling User by the CreateRequest method and it must be explicitly set for the CreateRequestForSubject method."
+                },
+                "justification": {
+                    "type": "string",
+                    "description": "Justification is the requester's free-form explanation of why the access is needed. It cannot be longer than 1500 characters."
+                },
+                "deadline": {
+                    "type": "string",
+                    "description": "Deadline is the time after which a still pending Request is automatically expired. It defaults to the access ClusterConfig's `request.defaultDeadline` from the creation of the Request.",
+                    "format": "date-time"
+                },
+                "duration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "Duration is how long the access should last for once the Request is approved. It defaults to the access level's `defaultDuration` and it is capped by its `maxDuration` as well as by the matched Rule's `maxDuration`."
+                },
+                "ticket": {
+                    "type": "string",
+                    "description": "Ticket is a reference to an external ticket that justifies the access (e.g. a Jira issue key). It cannot be longer than 256 characters."
+                },
+                "startAt": {
+                    "type": "string",
+                    "description": "StartAt is the time at which the access should start. The access starts as soon as the Request is approved if it is unset or if it has already passed by then.",
+                    "format": "date-time"
+                },
+                "extendsRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ExtendsRef is the reference of an approved Request whose access this Request extends. The extended Request ends once this one is approved and its access becomes active. It must target the same Catalog and access level as well as the same subject."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Spec",
+            "description": "Spec is the Request specification"
+        },
+        "octelium.api.main.access.v1.Request.Spec.Resource": {
+            "properties": {
+                "serviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ServiceRef is a shorthand for the access to a single Service. It is resolved upon the creation of the Request to the only Catalog that includes the Service and that the subject can request, and it is stored as such. The creation fails if there is no such Catalog or if there are several of them."
+                },
+                "catalog": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Spec.Resource.Catalog",
+                    "additionalProperties": false,
+                    "description": "Catalog is a request for the access to a Catalog."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "serviceRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "catalog"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "serviceRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "catalog"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Resource",
+            "description": "Resource is the resource that the access is requested for"
+        },
+        "octelium.api.main.access.v1.Request.Spec.Resource.Catalog": {
+            "properties": {
+                "catalogRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "CatalogRef is the reference of the Catalog. Required."
+                },
+                "accessLevel": {
+                    "type": "string",
+                    "description": "AccessLevel is the name of the requested access level of the Catalog. It defaults to the Catalog's first access level."
+                },
+                "serviceRefs": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "ServiceRefs restricts the Request to a subset of the Catalog's Services. It requires the Catalog's `allowPartialRequests`. Every Service of the Catalog is requested if it is unset."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Catalog",
+            "description": "Catalog is a request for the access to a Catalog"
+        },
+        "octelium.api.main.access.v1.Request.Spec.Subject": {
+            "properties": {
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "UserRef is the reference of the subject User."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "userRef"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "userRef"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Subject",
+            "description": "Subject is the User that the access is requested for which is not necessarily the same User that created the Request"
+        },
+        "octelium.api.main.meta.v1.Duration": {
+            "properties": {
+                "milliseconds": {
+                    "type": "integer",
+                    "description": "Milliseconds is the duration set in milliseconds"
+                },
+                "seconds": {
+                    "type": "integer",
+                    "description": "Seconds is the duration set in seconds"
+                },
+                "minutes": {
+                    "type": "integer",
+                    "description": "Minutes is the duration set in minutes"
+                },
+                "hours": {
+                    "type": "integer",
+                    "description": "Hours is the duration set in hours"
+                },
+                "days": {
+                    "type": "integer",
+                    "description": "Days is the duration set in days"
+                },
+                "weeks": {
+                    "type": "integer",
+                    "description": "Weeks is the duration set in weeks"
+                },
+                "months": {
+                    "type": "integer",
+                    "description": "Months is the duration set in months"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "milliseconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "seconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "minutes"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "hours"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "days"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "weeks"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "months"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "milliseconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "seconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "minutes"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "hours"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "days"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "weeks"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "months"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Duration",
+            "description": "Duration is a length of time that is expressed in a single unit of choice. Exactly one of the units is set (e.g. `seconds: 30`)."
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
+        }
+    }
+}

@@ -18,7 +18,9 @@ import { getClientVisibilityAccess } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
 import {
+  AlertTriangle,
   ArrowUpRight,
+  Ban,
   Folder,
   Hourglass,
   KeyRound,
@@ -26,11 +28,14 @@ import {
   Scale,
   Server,
   Shield,
+  User,
+  UserCog,
+  Users,
 } from "lucide-react";
 import { Link, useLocation } from "react-router";
-import { EffectBadge, EmptyNote, RefChip } from "../common";
+import { EffectBadge, EmptyNote, formatDurationShort, RefChip } from "../common";
 import { LiveRow, PendingRow, useNow } from "../Overview/Queues";
-import { ConditionView } from "../rules";
+import { ConditionView, ConfigurationIssues, GrantSummary } from "../rules";
 
 const WINDOW_DAYS = 30;
 
@@ -311,6 +316,67 @@ const Contents = (props: { values: string[]; kind: "Service" | "Namespace" }) =>
     </span>
   );
 
+const Principals = (props: { users: string[]; groups: string[]; empty: string }) =>
+  props.users.length === 0 && props.groups.length === 0 ? (
+    <span className="text-xs text-slate-500">{props.empty}</span>
+  ) : (
+    <span className="flex flex-wrap gap-1.5">
+      {props.groups.map((name) => (
+        <RefChip
+          key={`group-${name}`}
+          itemRef={ObjectReference.create({ apiVersion: "core/v1", kind: "Group", name })}
+          icon={Users}
+        />
+      ))}
+      {props.users.map((name) => (
+        <RefChip
+          key={`user-${name}`}
+          itemRef={ObjectReference.create({ apiVersion: "core/v1", kind: "User", name })}
+          icon={User}
+        />
+      ))}
+    </span>
+  );
+
+const AccessLevels = (props: { levels: AccessC.Catalog_Spec_AccessLevel[] }) =>
+  props.levels.length === 0 ? (
+    <span className="text-xs text-amber-700">
+      No access level: this Catalog cannot be requested.
+    </span>
+  ) : (
+    <ul className="flex flex-col gap-2">
+      {props.levels.map((level, index) => (
+        <li
+          key={level.name}
+          className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2"
+        >
+          <span className="flex flex-wrap items-center gap-2">
+            <GrantSummary
+              level={level}
+              overridesGuardrails={
+                level.type.oneofKind === "full" && (level.type.full.priority ?? 0) < 0
+              }
+              compact
+            />
+            {index === 0 && <span className="text-micro text-slate-500">default</span>}
+          </span>
+          {level.description && (
+            <span className="text-xs leading-5 text-slate-600">{level.description}</span>
+          )}
+          {(level.defaultDuration || (level.verification?.minAAL ?? 0) > 0) && (
+            <span className="text-micro text-slate-500">
+              {level.defaultDuration &&
+                `${formatDurationShort(level.defaultDuration)} by default`}
+              {level.defaultDuration && (level.verification?.minAAL ?? 0) > 0 && " · "}
+              {(level.verification?.minAAL ?? 0) > 0 &&
+                `requires authentication assurance level ${level.verification!.minAAL}`}
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+
 export const ItemInfo = (props: { item: AccessC.Catalog }) => {
   const service = props.item.spec?.resourceCollection?.service;
   return (
@@ -336,27 +402,149 @@ export const MainInfo = (props: { item: AccessC.Catalog }): ResourceMainInfo => 
   const service = item.spec?.resourceCollection?.service;
   const services = service?.services.filter(Boolean) ?? [];
   const namespaces = service?.namespaces.filter(Boolean) ?? [];
+  const spec = item.spec;
+  const levels = spec?.accessLevels ?? [];
+  const audience = spec?.audience;
+  const issues = item.status?.issues ?? [];
+  const dynamic = spec?.membership === AccessC.Catalog_Spec_Membership.DYNAMIC;
+  const ticket = spec?.requirements?.ticket;
+  const justification = spec?.requirements?.justification;
 
   return {
     header: <Activity item={item} />,
     groupOrder: [
+      ...(issues.length > 0 ? [{ title: "Configuration issues", icon: AlertTriangle }] : []),
+      { title: "Access levels", icon: KeyRound },
+      { title: "Who can request", icon: Users },
       { title: "Contents", icon: Folder },
       { title: "Decided by", icon: Scale },
       { title: "Live access", icon: KeyRound },
       { title: "Waiting for a decision", icon: Hourglass },
     ],
     items: [
+      ...(spec?.isDisabled
+        ? [
+            {
+              label: "State",
+              primary: true,
+              icon: Ban,
+              value: <span className="font-semibold text-slate-600">Disabled</span>,
+            },
+          ]
+        : []),
       {
         label: "Services",
         primary: true,
         icon: Server,
-        value: <span className="font-semibold">{services.length}</span>,
+        value: (
+          <span className="font-semibold">
+            {item.status?.checkedAt ? item.status.totalService : services.length}
+          </span>
+        ),
       },
       {
         label: "Namespaces",
         primary: true,
         icon: Layers,
         value: <span className="font-semibold">{namespaces.length}</span>,
+      },
+      {
+        label: "Access levels",
+        primary: true,
+        icon: KeyRound,
+        value: <span className="font-semibold">{levels.length}</span>,
+      },
+      ...(issues.length > 0
+        ? [
+            {
+              label: "Issues",
+              primary: true,
+              icon: AlertTriangle,
+              value: <span className="font-semibold text-amber-700">{issues.length}</span>,
+            },
+            {
+              label: "",
+              group: "Configuration issues",
+              layout: "stacked" as const,
+              value: (
+                <ConfigurationIssues issues={issues} checkedAt={item.status?.checkedAt} />
+              ),
+            },
+          ]
+        : []),
+      {
+        label: "",
+        group: "Access levels",
+        layout: "stacked" as const,
+        value: <AccessLevels levels={levels} />,
+      },
+      {
+        label: "Requesters",
+        group: "Who can request",
+        span: "full" as const,
+        value: audience?.match ? (
+          <span className="flex flex-col gap-1">
+            <Principals
+              users={audience.users}
+              groups={audience.groups}
+              empty="Users matching the expression below"
+            />
+            <code className="break-all rounded bg-slate-100 px-1.5 py-0.5 font-mono text-micro text-slate-700">
+              {audience.match}
+            </code>
+          </span>
+        ) : (
+          <Principals
+            users={audience?.users ?? []}
+            groups={audience?.groups ?? []}
+            empty="Every User"
+          />
+        ),
+      },
+      {
+        label: "On behalf of others",
+        group: "Who can request",
+        span: "full" as const,
+        value: (
+          <Principals
+            users={audience?.onBehalf?.users ?? []}
+            groups={audience?.onBehalf?.groups ?? []}
+            empty="Nobody"
+          />
+        ),
+      },
+      {
+        label: "Owners",
+        group: "Who can request",
+        span: "full" as const,
+        value: (
+          <span className="flex items-center gap-1.5">
+            <UserCog size={12} className="shrink-0 text-slate-500" />
+            <Principals
+              users={spec?.owners?.users ?? []}
+              groups={spec?.owners?.groups ?? []}
+              empty="No owner"
+            />
+          </span>
+        ),
+      },
+      {
+        label: "Requirements",
+        group: "Who can request",
+        span: "full" as const,
+        value: (
+          <span className="text-xs text-slate-700">
+            {[
+              justification?.isRequired &&
+                `Justification${justification.minLength ? ` of at least ${justification.minLength} characters` : ""}`,
+              ticket?.isRequired &&
+                `${ticket.label || "Ticket"}${ticket.pattern ? ` matching ${ticket.pattern}` : ""}`,
+              spec?.allowPartialRequests && "Requesters may pick individual Services",
+            ]
+              .filter(Boolean)
+              .join(" · ") || "None"}
+          </span>
+        ),
       },
       {
         label: "Services",
@@ -373,7 +561,12 @@ export const MainInfo = (props: { item: AccessC.Catalog }): ResourceMainInfo => 
             <Contents kind="Namespace" values={namespaces} />
             {namespaces.length > 0 && (
               <span className="text-micro text-slate-500">
-                Every Service of these Namespaces, including the ones added later.
+                {dynamic
+                  ? "Every Service of these Namespaces, including the ones added during an approved access."
+                  : "The Services of these Namespaces when a request is approved."}
+                {spec?.allowSystemResources
+                  ? " System Services are included."
+                  : " System Services are excluded."}
               </span>
             )}
           </span>

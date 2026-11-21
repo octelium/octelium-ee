@@ -111,6 +111,15 @@ func (s *Server) setReviewDecision(ctx context.Context, integration *accessv1.In
 		}
 	}
 
+	if step, _, err := accesscmd.CurrentStep(req); err == nil &&
+		action.Justification == "" && accesscmd.IsReasonRequired(step, decision) {
+		return &accessintg.ActionResult{
+			Message:     "This decision requires a justification. Decide in the access portal instead.",
+			RequestName: req.Metadata.Name,
+			PortalURL:   s.portalURL(fmt.Sprintf("reviewer/requests/%s", req.Metadata.Name)),
+		}, nil
+	}
+
 	review, err := accesscmd.SetReviewDecision(ctx, &accesscmd.SetReviewDecisionOpts{
 		OcteliumC:        s.octeliumC,
 		Reviewer:         resolution.User,
@@ -195,8 +204,14 @@ func (s *Server) createRequest(ctx context.Context, integration *accessv1.Integr
 		}
 	}
 
+	celEngine, err := s.getCELEngine(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	req, err := accesscmd.CreateRequest(ctx, &accesscmd.CreateRequestOpts{
 		OcteliumC: s.octeliumC,
+		CELEngine: celEngine,
 		Requester: resolution.User,
 		Spec:      spec,
 		Origin: &accessv1.Origin{

@@ -127,6 +127,12 @@ func (s *Server) getAccessLogDataPoint(ctx context.Context, req *visibilityv1.Ge
 	if err != nil {
 		return nil, err
 	}
+	filters, err = appendRefFilter(filters, req.MatchInlinePolicyRef, &apivalidation.CheckGetOptionsOpts{
+		ParentsMax: 8,
+	}, "", "entry.common.reason.details.policyMatch.inlinePolicy.resourceRef")
+	if err != nil {
+		return nil, err
+	}
 
 	if req.Status != corev1.AccessLog_Entry_Common_STATUS_UNSET {
 		filters = append(filters, goqu.L(`rsc->>'$.entry.common.status'`).Eq(req.Status.String()))

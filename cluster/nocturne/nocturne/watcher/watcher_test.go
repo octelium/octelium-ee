@@ -47,7 +47,10 @@ func newWatcherTest(t *testing.T) (context.Context, *Watcher, octeliumc.ClientIn
 	bindingCtl, err := integrationbindings.NewController(ctx, tst.C.OcteliumC)
 	assert.Nil(t, err)
 
-	return ctx, InitWatcher(tst.C.OcteliumC, bindingCtl), tst.C.OcteliumC
+	return ctx, InitWatcher(&Opts{
+		OcteliumC:  tst.C.OcteliumC,
+		BindingCtl: bindingCtl,
+	}), tst.C.OcteliumC
 }
 
 func objRef(kind string) *metav1.ObjectReference {
@@ -323,7 +326,7 @@ func TestWatcherPendingDeadlinePassed(t *testing.T) {
 	req, err := octeliumC.AccessC().UpdateRequest(ctx, req)
 	assert.Nil(t, err, "%+v", err)
 
-	assert.Nil(t, w.doCheckRequest(ctx, req))
+	assert.Nil(t, w.doCheckRequest(ctx, req, nil))
 	assert.Equal(t, accessv1.Request_Status_State_EXPIRED,
 		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
 }
@@ -343,7 +346,7 @@ func TestWatcherPendingDeadlineNotPassed(t *testing.T) {
 	req, err := octeliumC.AccessC().UpdateRequest(ctx, req)
 	assert.Nil(t, err, "%+v", err)
 
-	assert.Nil(t, w.doCheckRequest(ctx, req))
+	assert.Nil(t, w.doCheckRequest(ctx, req, nil))
 	assert.Equal(t, accessv1.Request_Status_State_PENDING,
 		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
 }
@@ -357,7 +360,7 @@ func TestWatcherStepTimeoutGotoNextStep(t *testing.T) {
 
 	req := createPendingRequest(t, ctx, octeliumC, rule, time.Now().Add(-time.Hour))
 
-	assert.Nil(t, w.doCheckRequest(ctx, req))
+	assert.Nil(t, w.doCheckRequest(ctx, req, nil))
 
 	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_PENDING, reqG.Status.State.Status)
@@ -373,7 +376,7 @@ func TestWatcherStepTimeoutGotoNextStepAtLastStep(t *testing.T) {
 
 	req := createPendingRequest(t, ctx, octeliumC, rule, time.Now().Add(-time.Hour))
 
-	assert.Nil(t, w.doCheckRequest(ctx, req))
+	assert.Nil(t, w.doCheckRequest(ctx, req, nil))
 	assert.Equal(t, accessv1.Request_Status_State_EXPIRED,
 		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
 }
@@ -386,7 +389,7 @@ func TestWatcherStepTimeoutReject(t *testing.T) {
 
 	req := createPendingRequest(t, ctx, octeliumC, rule, time.Now().Add(-time.Hour))
 
-	assert.Nil(t, w.doCheckRequest(ctx, req))
+	assert.Nil(t, w.doCheckRequest(ctx, req, nil))
 	assert.Equal(t, accessv1.Request_Status_State_REJECTED,
 		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
 }
@@ -399,7 +402,7 @@ func TestWatcherStepTimeoutUnsetExpires(t *testing.T) {
 
 	req := createPendingRequest(t, ctx, octeliumC, rule, time.Now().Add(-time.Hour))
 
-	assert.Nil(t, w.doCheckRequest(ctx, req))
+	assert.Nil(t, w.doCheckRequest(ctx, req, nil))
 	assert.Equal(t, accessv1.Request_Status_State_EXPIRED,
 		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
 }
@@ -412,7 +415,7 @@ func TestWatcherStepTimeoutNotPassed(t *testing.T) {
 
 	req := createPendingRequest(t, ctx, octeliumC, rule, time.Now().Add(-time.Minute))
 
-	assert.Nil(t, w.doCheckRequest(ctx, req))
+	assert.Nil(t, w.doCheckRequest(ctx, req, nil))
 
 	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_PENDING, reqG.Status.State.Status)
@@ -427,7 +430,7 @@ func TestWatcherStepWithoutTimeoutNeverExpires(t *testing.T) {
 
 	req := createPendingRequest(t, ctx, octeliumC, rule, time.Now().Add(-8760*time.Hour))
 
-	assert.Nil(t, w.doCheckRequest(ctx, req))
+	assert.Nil(t, w.doCheckRequest(ctx, req, nil))
 	assert.Equal(t, accessv1.Request_Status_State_PENDING,
 		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
 }
@@ -444,7 +447,7 @@ func TestWatcherApprovedAccessEndsAtPassed(t *testing.T) {
 		AccessEndsAt: pbutils.Timestamp(time.Now().Add(-time.Minute)),
 	})
 
-	assert.Nil(t, w.doCheckRequest(ctx, req))
+	assert.Nil(t, w.doCheckRequest(ctx, req, nil))
 	assert.Equal(t, accessv1.Request_Status_State_EXPIRED,
 		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
 }
@@ -461,7 +464,7 @@ func TestWatcherApprovedAccessEndsAtNotPassed(t *testing.T) {
 		AccessEndsAt: pbutils.Timestamp(time.Now().Add(time.Hour)),
 	})
 
-	assert.Nil(t, w.doCheckRequest(ctx, req))
+	assert.Nil(t, w.doCheckRequest(ctx, req, nil))
 	assert.Equal(t, accessv1.Request_Status_State_APPROVED,
 		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
 }
@@ -484,7 +487,7 @@ func TestWatcherTerminalRequestsUntouched(t *testing.T) {
 			AccessEndsAt: pbutils.Timestamp(time.Now().Add(-time.Hour)),
 		})
 
-		assert.Nil(t, w.doCheckRequest(ctx, req), "%s", status)
+		assert.Nil(t, w.doCheckRequest(ctx, req, nil), "%s", status)
 
 		reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
 		assert.Equal(t, status, reqG.Status.State.Status)
@@ -577,7 +580,7 @@ func TestWatcherListsEveryPage(t *testing.T) {
 					}
 					return nil
 				}}
-				w := InitWatcher(&watcherPagingClient{conn: conn}, nil)
+				w := InitWatcher(&Opts{OcteliumC: &watcherPagingClient{conn: conn}})
 				names, err := watcherListNames(t.Context(), w, kind)
 				if failAt >= 0 {
 					assert.ErrorIs(t, err, failure)
@@ -665,9 +668,169 @@ func TestWatchersPollAndStopOnCancellation(t *testing.T) {
 		}
 		return nil
 	}}
-	w := InitWatcher(&watcherPagingClient{conn: conn}, reconciler)
+	w := InitWatcher(&Opts{OcteliumC: &watcherPagingClient{conn: conn}, BindingCtl: reconciler})
 	for _, run := range []func(context.Context){w.runRequests, w.runPolicyTriggers, w.runIntegrationBindings} {
 		go func() { defer func() { done <- struct{}{} }(); run(ctx) }()
 	}
 	require.Eventually(t, func() bool { return requestCalls.Load() > 0 && policyCalls.Load() > 0 && reconciler.calls.Load() > 0 }, 2*time.Second, 5*time.Millisecond)
+}
+
+type watcherRequestReconciler struct {
+	names []string
+}
+
+func (r *watcherRequestReconciler) Reconcile(ctx context.Context, itm *accessv1.Request) error {
+	r.names = append(r.names, itm.Metadata.Name)
+	return nil
+}
+
+func TestWatcherRecordsReasonsAndStepOutcomes(t *testing.T) {
+	ctx, w, octeliumC := newWatcherTest(t)
+
+	expired := createRequest(t, ctx, octeliumC, &accessv1.Request_Status{
+		UserRef: objRef("User"),
+		State: &accessv1.Request_Status_State{
+			CreatedAt: pbutils.Now(),
+			Status:    accessv1.Request_Status_State_PENDING,
+		},
+	})
+	expired.Spec.Deadline = pbutils.Timestamp(time.Now().Add(-time.Minute))
+	expired, err := octeliumC.AccessC().UpdateRequest(ctx, expired)
+	require.NoError(t, err)
+
+	require.NoError(t, w.doCheckRequest(ctx, expired, nil))
+	assert.Equal(t, accessv1.Request_Status_State_DEADLINE_PASSED,
+		getRequest(t, ctx, octeliumC, expired.Metadata.Uid).Status.State.Reason)
+
+	rule := reviewRule(
+		timeoutStep(seconds(30), accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_GOTO_NEXT_STEP),
+		timeoutStep(seconds(30), accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_REJECT))
+
+	req := createPendingRequest(t, ctx, octeliumC, rule, time.Now().Add(-time.Hour))
+	req.Status.Review.Steps = []*accessv1.Request_Status_Review_StepState{
+		{Name: "step-1", Index: 0, StartedAt: pbutils.Timestamp(time.Now().Add(-time.Hour))},
+	}
+	req, err = octeliumC.AccessC().UpdateRequest(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, w.doCheckRequest(ctx, req, nil))
+
+	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, int32(1), reqG.Status.Review.CurrentStep)
+	require.Len(t, reqG.Status.Review.Steps, 2)
+	assert.Equal(t, accessv1.Request_Status_Review_StepState_TIMED_OUT, reqG.Status.Review.Steps[0].Outcome)
+	assert.True(t, reqG.Status.Review.Steps[1].IsUnroutable)
+
+	reqG.Status.Review.CurrentStepStartedAt = pbutils.Timestamp(time.Now().Add(-time.Hour))
+	reqG, err = octeliumC.AccessC().UpdateRequest(ctx, reqG)
+	require.NoError(t, err)
+
+	require.NoError(t, w.doCheckRequest(ctx, reqG, nil))
+
+	reqG = getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqG.Status.State.Status)
+	assert.Equal(t, accessv1.Request_Status_State_REVIEW_TIMED_OUT, reqG.Status.State.Reason)
+	assert.Equal(t, accessv1.Request_Status_Review_StepState_TIMED_OUT, reqG.Status.Review.Steps[1].Outcome)
+
+	approved := createRequest(t, ctx, octeliumC, &accessv1.Request_Status{
+		UserRef: objRef("User"),
+		State: &accessv1.Request_Status_State{
+			CreatedAt: pbutils.Now(),
+			Status:    accessv1.Request_Status_State_APPROVED,
+		},
+		AccessEndsAt: pbutils.Timestamp(time.Now().Add(-time.Minute)),
+		Grant: &accessv1.Request_Status_Grant{
+			State: accessv1.Request_Status_Grant_ACTIVE,
+		},
+	})
+	require.NoError(t, w.doCheckRequest(ctx, approved, nil))
+
+	approvedG := getRequest(t, ctx, octeliumC, approved.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_ACCESS_ENDED, approvedG.Status.State.Reason)
+	assert.Equal(t, accessv1.Request_Status_Grant_ENDED, approvedG.Status.Grant.State)
+}
+
+func TestWatcherEscalatesAfterTheEscalationDelay(t *testing.T) {
+	ctx, w, octeliumC := newWatcherTest(t)
+
+	escalation, err := octeliumC.CoreC().CreateUser(ctx, &corev1.User{
+		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
+		Spec:     &corev1.User_Spec{Type: corev1.User_Spec_HUMAN},
+		Status:   &corev1.User_Status{},
+	})
+	require.NoError(t, err)
+
+	step := timeoutStep(nil, accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_UNSET)
+	step.Escalation = &accessv1.Policy_Spec_Rule_Action_Review_Step_Escalation{
+		After:     seconds(60),
+		Reviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{userReviewer(umetav1.GetObjectReference(escalation))},
+	}
+
+	req := createPendingRequest(t, ctx, octeliumC, reviewRule(step), time.Now().Add(-time.Hour))
+	req.Status.Review.Steps = []*accessv1.Request_Status_Review_StepState{
+		{Name: "step-1", Index: 0, StartedAt: pbutils.Timestamp(time.Now().Add(-time.Hour))},
+	}
+	req, err = octeliumC.AccessC().UpdateRequest(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, w.doCheckRequest(ctx, req, nil))
+
+	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	stepState := reqG.Status.Review.Steps[0]
+	assert.True(t, stepState.IsEscalated)
+	assert.NotNil(t, stepState.EscalatedAt)
+	require.Len(t, stepState.EligibleReviewers, 1)
+	assert.Equal(t, escalation.Metadata.Uid, stepState.EligibleReviewers[0].Uid)
+
+	require.NoError(t, w.doCheckRequest(ctx, reqG, nil))
+	assert.Equal(t, reqG.Metadata.ResourceVersion,
+		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Metadata.ResourceVersion)
+}
+
+func TestWatcherHandsRetriesToTheRequestController(t *testing.T) {
+	ctx, w, octeliumC := newWatcherTest(t)
+
+	reconciler := &watcherRequestReconciler{}
+	w.requestCtl = reconciler
+
+	retrying := createRequest(t, ctx, octeliumC, &accessv1.Request_Status{
+		UserRef: objRef("User"),
+		State: &accessv1.Request_Status_State{
+			CreatedAt: pbutils.Now(),
+			Status:    accessv1.Request_Status_State_PENDING,
+		},
+		Evaluation: &accessv1.Request_Status_Evaluation{
+			State: accessv1.Request_Status_Evaluation_RETRYING,
+		},
+	})
+
+	scheduled := createRequest(t, ctx, octeliumC, &accessv1.Request_Status{
+		UserRef: objRef("User"),
+		State: &accessv1.Request_Status_State{
+			CreatedAt: pbutils.Now(),
+			Status:    accessv1.Request_Status_State_APPROVED,
+		},
+		AccessEndsAt: pbutils.Timestamp(time.Now().Add(time.Hour)),
+		Grant: &accessv1.Request_Status_Grant{
+			State: accessv1.Request_Status_Grant_SCHEDULED,
+		},
+	})
+
+	active := createRequest(t, ctx, octeliumC, &accessv1.Request_Status{
+		UserRef: objRef("User"),
+		State: &accessv1.Request_Status_State{
+			CreatedAt: pbutils.Now(),
+			Status:    accessv1.Request_Status_State_APPROVED,
+		},
+		AccessEndsAt: pbutils.Timestamp(time.Now().Add(time.Hour)),
+		Grant: &accessv1.Request_Status_Grant{
+			State: accessv1.Request_Status_Grant_ACTIVE,
+		},
+	})
+
+	for _, req := range []*accessv1.Request{retrying, scheduled, active} {
+		require.NoError(t, w.doCheckRequest(ctx, req, nil))
+	}
+
+	assert.Equal(t, []string{retrying.Metadata.Name, scheduled.Metadata.Name}, reconciler.names)
 }

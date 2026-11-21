@@ -89,6 +89,19 @@ const (
 	colStatusRuleEffect       = "status_rule_effect"
 	colStatusOriginType       = "status_origin_type"
 
+	colStatusStateReason         = "status_state_reason"
+	colStatusGrantState          = "status_grant_state"
+	colStatusGrantActivatedAt    = "status_grant_activated_at"
+	colStatusGrantEndedAt        = "status_grant_ended_at"
+	colStatusAccessStartsAt      = "status_access_starts_at"
+	colStatusOverridesGuardrails = "status_overrides_guardrails"
+	colStatusScopeServiceUIDs    = "status_scope_service_uids"
+	colStatusScopeServiceNames   = "status_scope_service_names"
+	colStatusScopeNamespaceUIDs  = "status_scope_namespace_uids"
+	colStatusScopeNamespaceNames = "status_scope_namespace_names"
+	colSpecAccessLevel           = "spec_access_level"
+	colStatusIssueTypes          = "status_issue_types"
+
 	colStatusIsBuild             = "status_is_build"
 	colStatusSpaceType           = "status_space_type"
 	colStatusStoppingReason      = "status_stopping_reason"
@@ -257,6 +270,14 @@ func getResourceColumns() []*resourceColumn {
 		{name: colStatusApprovalEndAt, kind: kindTimestamp, path: "$.status.approvalEndAt"},
 		{name: colStatusRuleEffect, kind: kindVarchar, path: "$.status.rule.effect"},
 		{name: colStatusOriginType, kind: kindVarchar, path: "$.status.origin.type"},
+		{name: colStatusStateReason, kind: kindVarchar, path: "$.status.state.reason"},
+		{name: colStatusGrantState, kind: kindVarchar, path: "$.status.grant.state"},
+		{name: colStatusGrantActivatedAt, kind: kindTimestamp, path: "$.status.grant.activatedAt"},
+		{name: colStatusGrantEndedAt, kind: kindTimestamp, path: "$.status.grant.endedAt"},
+		{name: colStatusAccessStartsAt, kind: kindTimestamp, path: "$.status.accessStartsAt"},
+		{name: colStatusOverridesGuardrails, kind: kindBoolean,
+			path: "$.status.resolvedScope.overridesGuardrails"},
+		{name: colSpecAccessLevel, kind: kindVarchar, path: "$.spec.resource.catalog.accessLevel"},
 		{name: colStatusIsBuild, kind: kindBoolean, path: "$.status.isBuild"},
 		{name: colStatusSpaceType, kind: kindVarchar, path: "$.status.spaceType"},
 		{name: colStatusStoppingReason, kind: kindVarchar, path: "$.status.stoppingReason"},
@@ -313,6 +334,15 @@ func getResourceColumns() []*resourceColumn {
 			path: "$.spec.resourceCollection.service.services"},
 		{name: colSpecNamespaces, kind: kindVarcharList,
 			path: "$.spec.resourceCollection.service.namespaces"},
+		{name: colStatusScopeServiceUIDs, kind: kindVarcharList,
+			path: "$.status.resolvedScope.serviceRefs[*].uid"},
+		{name: colStatusScopeServiceNames, kind: kindVarcharList,
+			path: "$.status.resolvedScope.serviceRefs[*].name"},
+		{name: colStatusScopeNamespaceUIDs, kind: kindVarcharList,
+			path: "$.status.resolvedScope.namespaceRefs[*].uid"},
+		{name: colStatusScopeNamespaceNames, kind: kindVarcharList,
+			path: "$.status.resolvedScope.namespaceRefs[*].name"},
+		{name: colStatusIssueTypes, kind: kindVarcharList, path: "$.status.issues[*].type"},
 
 		{name: colSpecKeys, kind: kindKeys, path: "$.spec"},
 		{name: colStatusKeys, kind: kindKeys, path: "$.status"},

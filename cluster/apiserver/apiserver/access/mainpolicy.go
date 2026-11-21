@@ -11,18 +11,17 @@ package access
 import (
 	"context"
 
+	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium-ee/cluster/common/accessintg"
 	"github.com/octelium/octelium-ee/cluster/common/accessintg/registry"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/metav1"
-	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	apisrvcommon "github.com/octelium/octelium/cluster/apiserver/apiserver/common"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/serr"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/celengine"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
-	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
 )
 
@@ -165,14 +164,21 @@ func (s *ServerMain) validatePolicy(ctx context.Context, req *accessv1.Policy) e
 			}
 		}
 
+		if accesscmd.TextLen(rule.Message) > accesscmd.MaxMessageLen {
+			return grpcutils.InvalidArg("Rule %s message cannot be longer than %d characters",
+				rule.Name, accesscmd.MaxMessageLen)
+		}
+
+		if rule.MaxDuration != nil {
+			if err := apivalidation.ValidateDuration(rule.MaxDuration); err != nil {
+				return err
+			}
+		}
+
 		switch rule.Effect {
 		case accessv1.Policy_Spec_Rule_DENY:
 			if rule.Action != nil && rule.Action.GetReview() != nil {
 				return grpcutils.InvalidArg("DENY Rule %s cannot have Review action", rule.Name)
-			}
-			if rule.Authorization != nil &&
-				(len(rule.Authorization.Policies) > 0 || len(rule.Authorization.InlinePolicies) > 0) {
-				return grpcutils.InvalidArg("DENY Rule %s cannot have Authorization", rule.Name)
 			}
 
 		case accessv1.Policy_Spec_Rule_REVIEW:
@@ -182,20 +188,10 @@ func (s *ServerMain) validatePolicy(ctx context.Context, req *accessv1.Policy) e
 			if err := s.validatePolicyReview(ctx, rule.Name, rule.Action.GetReview()); err != nil {
 				return err
 			}
-			if rule.Authorization != nil {
-				if err := s.validatePolicyAuthorization(ctx, rule.Name, rule.Authorization); err != nil {
-					return err
-				}
-			}
 
 		case accessv1.Policy_Spec_Rule_AUTO_APPROVE:
 			if rule.Action != nil && rule.Action.GetReview() != nil {
 				return grpcutils.InvalidArg("AUTO_APPROVE Rule %s cannot have Review action", rule.Name)
-			}
-			if rule.Authorization != nil {
-				if err := s.validatePolicyAuthorization(ctx, rule.Name, rule.Authorization); err != nil {
-					return err
-				}
 			}
 
 		case accessv1.Policy_Spec_Rule_EFFECT_UNSET:
@@ -306,6 +302,21 @@ func (s *ServerMain) validatePolicyCondition(ctx context.Context,
 				return grpcutils.InternalWithErr(err)
 			}
 
+		case *accessv1.Policy_Spec_Rule_Condition_Resource_NamespaceRef:
+			if err := apivalidation.CheckObjectRef(resource.GetNamespaceRef(), &apivalidation.CheckGetOptionsOpts{
+				HasName: true,
+				HasUID:  true,
+			}); err != nil {
+				return err
+			}
+
+			if _, err := s.octeliumC.CoreC().GetNamespace(ctx, apivalidation.ObjectReferenceToRGetOptions(resource.GetNamespaceRef())); err != nil {
+				if grpcerr.IsNotFound(err) {
+					return grpcutils.InvalidArg("The Namespace does not exist")
+				}
+				return grpcutils.InternalWithErr(err)
+			}
+
 		default:
 			return grpcutils.InvalidArg("Resource condition type must be set")
 		}
@@ -356,6 +367,16 @@ func (s *ServerMain) validatePolicyCondition(ctx context.Context,
 
 		if err := validatePolicyMatch(ctx, cond.GetMatch()); err != nil {
 			return err
+		}
+
+	case *accessv1.Policy_Spec_Rule_Condition_AccessLevel:
+		if err := apivalidation.ValidateName(cond.GetAccessLevel(), 0, 0); err != nil {
+			return grpcutils.InvalidArg("Invalid access level name: %s", cond.GetAccessLevel())
+		}
+
+	case *accessv1.Policy_Spec_Rule_Condition_IsOnBehalf:
+		if !cond.GetIsOnBehalf() {
+			return grpcutils.InvalidArg("isOnBehalf must be true")
 		}
 
 	default:
@@ -414,44 +435,40 @@ func (s *ServerMain) validatePolicyReview(ctx context.Context,
 			return grpcutils.InvalidArg("Rule %s Review Step %d must include at least one Reviewer", ruleName, idx)
 		}
 
-		for _, reviewer := range step.Reviewers {
-			if reviewer == nil {
-				return grpcutils.InvalidArg("Rule %s Review Step %d has nil Reviewer", ruleName, idx)
+		if err := s.validatePolicyReviewers(ctx, ruleName, idx, step.Reviewers, true); err != nil {
+			return err
+		}
+
+		if esc := step.Escalation; esc != nil {
+			if len(esc.Reviewers) == 0 {
+				return grpcutils.InvalidArg("Rule %s Review Step %s escalation must include at least one Reviewer",
+					ruleName, step.Name)
 			}
 
-			switch reviewer.Type.(type) {
-			case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_:
-				if err := apivalidation.CheckObjectRef(reviewer.GetUser().GetUserRef(), &apivalidation.CheckGetOptionsOpts{
-					HasName: true,
-					HasUID:  true,
-				}); err != nil {
+			if err := s.validatePolicyReviewers(ctx, ruleName, idx, esc.Reviewers, true); err != nil {
+				return err
+			}
+
+			if esc.After != nil {
+				if err := apivalidation.ValidateDuration(esc.After); err != nil {
 					return err
 				}
+			}
+		}
 
-				if _, err := s.octeliumC.CoreC().GetUser(ctx, apivalidation.ObjectReferenceToRGetOptions(reviewer.GetUser().GetUserRef())); err != nil {
-					if grpcerr.IsNotFound(err) {
-						return grpcutils.InvalidArg("The User does not exist")
-					}
-					return grpcutils.InternalWithErr(err)
-				}
+		switch step.ReasonRequirement {
+		case accessv1.Policy_Spec_Rule_Action_Review_Step_REASON_REQUIREMENT_UNSET,
+			accessv1.Policy_Spec_Rule_Action_Review_Step_REJECT_ONLY,
+			accessv1.Policy_Spec_Rule_Action_Review_Step_ALWAYS:
+		default:
+			return grpcutils.InvalidArg("Rule %s Review Step %d has invalid reasonRequirement", ruleName, idx)
+		}
 
-			case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group_:
-				if err := apivalidation.CheckObjectRef(reviewer.GetGroup().GetGroupRef(), &apivalidation.CheckGetOptionsOpts{
-					HasName: true,
-					HasUID:  true,
-				}); err != nil {
-					return err
-				}
-
-				if _, err := s.octeliumC.CoreC().GetGroup(ctx, apivalidation.ObjectReferenceToRGetOptions(reviewer.GetGroup().GetGroupRef())); err != nil {
-					if grpcerr.IsNotFound(err) {
-						return grpcutils.InvalidArg("The Group does not exist")
-					}
-					return grpcutils.InternalWithErr(err)
-				}
-
-			default:
-				return grpcutils.InvalidArg("Rule %s Review Step %d Reviewer type must be set", ruleName, idx)
+		if step.ApprovalRequirement == accessv1.Policy_Spec_Rule_Action_Review_Step_COUNT {
+			if max, ok := getMaxExplicitReviewers(step); ok && step.ApprovalCount > max {
+				return grpcutils.InvalidArg(
+					"Rule %s Review Step %s requires %d approvals but only has %d reviewers",
+					ruleName, step.Name, step.ApprovalCount, max)
 			}
 		}
 
@@ -495,6 +512,81 @@ func (s *ServerMain) validatePolicyReview(ctx context.Context,
 	}
 
 	return nil
+}
+
+func (s *ServerMain) validatePolicyReviewers(ctx context.Context, ruleName string, idx int,
+	reviewers []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer, allowCatalogOwners bool) error {
+	for _, reviewer := range reviewers {
+		if reviewer == nil {
+			return grpcutils.InvalidArg("Rule %s Review Step %d has nil Reviewer", ruleName, idx)
+		}
+
+		switch reviewer.Type.(type) {
+		case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_:
+			if err := apivalidation.CheckObjectRef(reviewer.GetUser().GetUserRef(), &apivalidation.CheckGetOptionsOpts{
+				HasName: true,
+				HasUID:  true,
+			}); err != nil {
+				return err
+			}
+
+			if _, err := s.octeliumC.CoreC().GetUser(ctx, apivalidation.ObjectReferenceToRGetOptions(reviewer.GetUser().GetUserRef())); err != nil {
+				if grpcerr.IsNotFound(err) {
+					return grpcutils.InvalidArg("The User does not exist")
+				}
+				return grpcutils.InternalWithErr(err)
+			}
+
+		case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group_:
+			if err := apivalidation.CheckObjectRef(reviewer.GetGroup().GetGroupRef(), &apivalidation.CheckGetOptionsOpts{
+				HasName: true,
+				HasUID:  true,
+			}); err != nil {
+				return err
+			}
+
+			if _, err := s.octeliumC.CoreC().GetGroup(ctx, apivalidation.ObjectReferenceToRGetOptions(reviewer.GetGroup().GetGroupRef())); err != nil {
+				if grpcerr.IsNotFound(err) {
+					return grpcutils.InvalidArg("The Group does not exist")
+				}
+				return grpcutils.InternalWithErr(err)
+			}
+
+		case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners_:
+			if !allowCatalogOwners {
+				return grpcutils.InvalidArg("The Catalog owners cannot be set as reviewers here")
+			}
+
+		default:
+			return grpcutils.InvalidArg("Rule %s Review Step %d Reviewer type must be set", ruleName, idx)
+		}
+	}
+
+	return nil
+}
+
+func getMaxExplicitReviewers(step *accessv1.Policy_Spec_Rule_Action_Review_Step) (uint32, bool) {
+	seen := map[string]struct{}{}
+
+	for _, reviewer := range step.Reviewers {
+		ref := reviewer.GetUser().GetUserRef()
+		if ref == nil {
+			return 0, false
+		}
+		seen[ref.Uid] = struct{}{}
+	}
+
+	if step.Escalation != nil {
+		for _, reviewer := range step.Escalation.Reviewers {
+			ref := reviewer.GetUser().GetUserRef()
+			if ref == nil {
+				return 0, false
+			}
+			seen[ref.Uid] = struct{}{}
+		}
+	}
+
+	return uint32(len(seen)), true
 }
 
 func (s *ServerMain) validatePolicySurface(ctx context.Context, ruleName string,
@@ -590,34 +682,4 @@ func (s *ServerMain) getSurfaceIntegration(ctx context.Context, ruleName string,
 	}
 
 	return integration, nil
-}
-
-func (s *ServerMain) validatePolicyAuthorization(ctx context.Context,
-	ruleName string, authorization *accessv1.Policy_Spec_Rule_Authorization) error {
-	if authorization == nil {
-		return grpcutils.InvalidArg("Rule %s Authorization must be set", ruleName)
-	}
-
-	for _, pol := range authorization.Policies {
-		if err := apivalidation.ValidateName(pol, 0, vutils.MaxPolicyParents); err != nil {
-			return err
-		}
-
-		if _, err := s.octeliumC.CoreC().GetPolicy(ctx, &rmetav1.GetOptions{
-			Name: pol,
-		}); err != nil {
-			if grpcerr.IsNotFound(err) {
-				return serr.InvalidArg("Policy not found: %s", pol)
-			}
-			return serr.K8sNotFoundOrInternalWithErr(err)
-		}
-	}
-
-	for _, pol := range authorization.InlinePolicies {
-		if pol == nil {
-			return grpcutils.InvalidArg("Rule %s Authorization has nil InlinePolicy", ruleName)
-		}
-	}
-
-	return nil
 }

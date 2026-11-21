@@ -1,0 +1,3037 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/SimulateRequestResponse",
+    "definitions": {
+        "SimulateRequestResponse": {
+            "properties": {
+                "preview": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.RequestPreview",
+                    "additionalProperties": false,
+                    "description": "Preview is the result of the evaluation."
+                },
+                "rules": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.SimulateRequestResponse.RuleEvaluation"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Rules is the list of every Rule of every enabled Policy in their evaluation order together with their results."
+                },
+                "rule": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule",
+                    "additionalProperties": false,
+                    "description": "Rule is the matched Rule, if any."
+                },
+                "policyRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "PolicyRef is the reference of the Policy of the matched Rule, if any."
+                },
+                "reviewers": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.Review.StepState"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Reviewers is the list of the eligible reviewers of every review Step of the matched Rule, in the order of the Steps."
+                },
+                "policyTrigger": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.PolicyTrigger",
+                    "additionalProperties": false,
+                    "description": "PolicyTrigger is the core PolicyTrigger that an approval would create in order to grant the access."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Simulate Request Response",
+            "description": "SimulateRequestResponse is the response of the SimulateRequest method."
+        },
+        "octelium.api.main.access.v1.Catalog.Spec.AccessLevel": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the access level. It is required and it must be unique within the Catalog."
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is the human readable name of the access level that is shown to the requesters and to the reviewers."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description is the plain language explanation of what the access level allows."
+                },
+                "full": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Full",
+                    "additionalProperties": false,
+                    "description": "Full grants an unrestricted access."
+                },
+                "restricted": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Restricted",
+                    "additionalProperties": false,
+                    "description": "Restricted grants only what its core Policies allow."
+                },
+                "defaultDuration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "DefaultDuration is the access duration that is used when a Request does not set one. It defaults to `maxDuration`."
+                },
+                "maxDuration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "MaxDuration is the upper bound of the access duration. It defaults to 24 hours."
+                },
+                "verification": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Verification",
+                    "additionalProperties": false,
+                    "description": "Verification is the authentication assurance that the subject's Session must have in order to use the granted access."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "full"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "restricted"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "full"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "restricted"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Access Level",
+            "description": "AccessLevel is a named level of access that can be granted to the Catalog's Services"
+        },
+        "octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Full": {
+            "properties": {
+                "priority": {
+                    "type": "integer",
+                    "description": "Priority is the priority of the core Policy rule that allows the access. It must be between -4 and 0 and it defaults to the access ClusterConfig's `authorization.priority`. A negative priority takes precedence over the core Policy rules of the default priority, including their DENY rules."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Full",
+            "description": "Full grants an unrestricted access to the Catalog's Services"
+        },
+        "octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Restricted": {
+            "properties": {
+                "policies": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Policies is the list of the names of the standalone core Policies that are applied to the granted access."
+                },
+                "inlinePolicies": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.InlinePolicy"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "InlinePolicies is the list of the inline core Policies that are applied to the granted access."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Restricted",
+            "description": "Restricted grants only what its core Policies allow. Nothing else is implicitly allowed."
+        },
+        "octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Verification": {
+            "properties": {
+                "minAAL": {
+                    "enum": [
+                        "AAL_UNSET",
+                        "AAL1",
+                        "AAL2",
+                        "AAL3"
+                    ],
+                    "type": "string",
+                    "title": "AAL",
+                    "description": "AAL is the authenticator assurance level (AAL) of the authentication as defined by NIST SP 800-63B"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Verification",
+            "description": "Verification is the authentication assurance that the subject's Session must have in order to use the granted access"
+        },
+        "octelium.api.main.access.v1.Catalog.Spec.Requirements": {
+            "properties": {
+                "justification": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Catalog.Spec.Requirements.Justification",
+                    "additionalProperties": false,
+                    "description": "Justification controls the Request's justification."
+                },
+                "ticket": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Catalog.Spec.Requirements.Ticket",
+                    "additionalProperties": false,
+                    "description": "Ticket controls the Request's ticket reference."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Requirements",
+            "description": "Requirements is what a Request for the Catalog has to provide"
+        },
+        "octelium.api.main.access.v1.Catalog.Spec.Requirements.Justification": {
+            "properties": {
+                "isRequired": {
+                    "type": "boolean",
+                    "description": "IsRequired requires a justification."
+                },
+                "minLength": {
+                    "type": "integer",
+                    "description": "MinLength is the minimum number of characters of the justification."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Justification",
+            "description": "Justification controls the Request's justification"
+        },
+        "octelium.api.main.access.v1.Catalog.Spec.Requirements.Ticket": {
+            "properties": {
+                "isRequired": {
+                    "type": "boolean",
+                    "description": "IsRequired requires a ticket reference."
+                },
+                "pattern": {
+                    "type": "string",
+                    "description": "Pattern is a regular expression that the ticket reference must fully match (e.g. `^[A-Z]+-[0-9]+$`)."
+                },
+                "label": {
+                    "type": "string",
+                    "description": "Label is the name of the ticket field that is shown to the requesters (e.g. `Jira issue`)."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Ticket",
+            "description": "Ticket controls the Request's ticket reference"
+        },
+        "octelium.api.main.access.v1.Origin": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "API",
+                        "INTEGRATION",
+                        "SYSTEM"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the kind of the transport that the operation came from"
+                },
+                "integrationRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "IntegrationRef is the reference of the Integration that authenticated the external actor. It is only set for the INTEGRATION type."
+                },
+                "externalActorID": {
+                    "type": "string",
+                    "description": "ExternalActorID is the stable identifier of the external actor within the Integration's provider (e.g. a Slack user ID or an Atlassian account ID). It is only set for the INTEGRATION type."
+                },
+                "externalEventID": {
+                    "type": "string",
+                    "description": "ExternalEventID is the identifier of the provider event that carried the operation. It is used to recognize the duplicate deliveries of the same external action."
+                },
+                "sessionRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "SessionRef is the reference of the Session that performed the operation. It is only set for the API type."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Origin",
+            "description": "Origin is where an access Request or a Review came from. It is entirely derived by the Cluster from the authenticated transport of the operation itself and it is never accepted from the callers."
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule": {
+            "properties": {
+                "condition": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Condition",
+                    "additionalProperties": false,
+                    "description": "Condition is the Rule's condition that must match in order for the Rule, and subsequently the Policy as a whole, to match."
+                },
+                "effect": {
+                    "enum": [
+                        "EFFECT_UNSET",
+                        "DENY",
+                        "REVIEW",
+                        "AUTO_APPROVE"
+                    ],
+                    "type": "string",
+                    "title": "Effect",
+                    "description": "Effect is the effect of the Rule on the matched access Request"
+                },
+                "priority": {
+                    "type": "integer",
+                    "description": "Priority is an integer that sets the Rule priority level. The lower the number, the higher the priority. The Rules of the same priority are evaluated in the order of their Policies' names and then in their order within their Policy."
+                },
+                "action": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action",
+                    "additionalProperties": false,
+                    "description": "Action is what the Cluster does with the matched Request. It is required for the REVIEW effect and it must not be set for the other ones."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the Rule. It is required and it must be unique within the Policy."
+                },
+                "notifications": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Notifications is the list of the external Integration surfaces on which the outcome of the matched Requests is delivered. Unlike the review Surfaces of a Step, these are purely informational and they never carry any action."
+                },
+                "maxDuration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "MaxDuration caps how long the access of the matched Requests can last for. It can only lower the `maxDuration` of the requested access level and it is ignored by the DENY effect."
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Message is a requester-facing explanation that is shown with the outcome of the matched Requests (e.g. why a DENY Rule rejected them). It cannot be longer than 500 characters."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Rule",
+            "description": "Rule decides the fate of the access Requests that match its Condition"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Action": {
+            "properties": {
+                "review": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review",
+                    "additionalProperties": false,
+                    "description": "Review is the review workflow of the Request."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "review"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "review"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Action",
+            "description": "Action is what the Cluster does with a Request matching a Rule whose effect is REVIEW"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review": {
+            "properties": {
+                "steps": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Steps is the ordered list of the review Steps. At least one Step must be set."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Review",
+            "description": "Review is the multi-step review workflow that the Request has to go through in order to be approved"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step": {
+            "properties": {
+                "reviewers": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Reviewers is the list of the Users that are allowed to review the Requests that reach the Step."
+                },
+                "approvalRequirement": {
+                    "enum": [
+                        "APPROVAL_REQUIREMENT_UNSET",
+                        "ANY",
+                        "ALL",
+                        "COUNT"
+                    ],
+                    "type": "string",
+                    "title": "Approval Requirement",
+                    "description": "ApprovalRequirement is the condition that the Step's Reviews have to satisfy in order for the Step to be approved"
+                },
+                "approvalCount": {
+                    "type": "integer",
+                    "description": "ApprovalCount is the number of the distinct Reviewers that have to approve the Request. It is required for the COUNT approval requirement and it must not be set for the other ones."
+                },
+                "timeout": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "Timeout is how long the Step can stay waiting for a decision. It is measured from the time at which the Step started (i.e. `status.review.currentStepStartedAt` of the Request). The Step does not time out at all if it is unset."
+                },
+                "onTimeout": {
+                    "enum": [
+                        "ON_TIMEOUT_UNSET",
+                        "ON_TIMEOUT_GOTO_NEXT_STEP",
+                        "ON_TIMEOUT_REJECT"
+                    ],
+                    "type": "string",
+                    "title": "On Timeout",
+                    "description": "OnTimeout is what happens to the Request once the Step's timeout is reached"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the Step. It is required and it must be unique within the review workflow."
+                },
+                "surfaces": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Surfaces is the list of the external Integration surfaces on which the Requests reaching the Step are presented to their reviewers. The Cluster's own access portal is always available regardless of this list."
+                },
+                "separationOfDuties": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties",
+                    "additionalProperties": false,
+                    "description": "SeparationOfDuties controls whether the requester and the subject of a Request are allowed to review it themselves even when they match the Step's Reviewers. Both are denied by default."
+                },
+                "escalation": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Escalation",
+                    "additionalProperties": false,
+                    "description": "Escalation adds more reviewers to the Step once it has been waiting for too long or when it has no eligible reviewer."
+                },
+                "reasonRequirement": {
+                    "enum": [
+                        "REASON_REQUIREMENT_UNSET",
+                        "REJECT_ONLY",
+                        "ALWAYS"
+                    ],
+                    "type": "string",
+                    "title": "Reason Requirement",
+                    "description": "ReasonRequirement controls which decisions of the Step must carry a justification"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Step",
+            "description": "Step is a single stage of the review workflow. The Request only moves to the next Step once the current Step's approval requirement is satisfied and it is approved once the last Step is satisfied."
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Escalation": {
+            "properties": {
+                "after": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "After is how long the Step waits, from its start, before it is escalated. If unset, the Step is only escalated when it has no eligible reviewer at all."
+                },
+                "reviewers": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Reviewers is the list of the reviewers that are added to the Step once it is escalated. Required."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Escalation",
+            "description": "Escalation adds more reviewers to the Step once it has been waiting for too long, or immediately if nobody can review it"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer": {
+            "properties": {
+                "user": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.User",
+                    "additionalProperties": false,
+                    "description": "User is a single User reviewer."
+                },
+                "group": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.Group",
+                    "additionalProperties": false,
+                    "description": "Group is a Group of User reviewers."
+                },
+                "catalogOwners": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.CatalogOwners",
+                    "additionalProperties": false,
+                    "description": "CatalogOwners sets the owners of the requested Catalog as reviewers."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "user"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "group"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "catalogOwners"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "user"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "group"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "catalogOwners"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Reviewer",
+            "description": "Reviewer is a User that is allowed to review the Requests that reach the Step"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.CatalogOwners": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Catalog Owners",
+            "description": "CatalogOwners sets the owners of the requested Catalog as reviewers"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.Group": {
+            "properties": {
+                "groupRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "GroupRef is the reference of the Group."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Group",
+            "description": "Group sets every User belonging to a Group as a reviewer"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.User": {
+            "properties": {
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "UserRef is the reference of the User."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "User",
+            "description": "User sets a specific User as a reviewer"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Condition": {
+            "properties": {
+                "matchAny": {
+                    "type": "boolean",
+                    "description": "MatchAny matches every Request. It must be set to `true`."
+                },
+                "subject": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Subject",
+                    "additionalProperties": false,
+                    "description": "Subject matches the subject of the Request."
+                },
+                "resource": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Resource",
+                    "additionalProperties": false,
+                    "description": "Resource matches the resources that the access is requested for."
+                },
+                "all": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Condition.All",
+                    "additionalProperties": false,
+                    "description": "All matches only when every one of its child Conditions matches."
+                },
+                "any": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Any",
+                    "additionalProperties": false,
+                    "description": "Any matches when at least one of its child Conditions matches."
+                },
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "UserRef matches the requester (i.e. the User that created the Request) which is not necessarily the Request's subject."
+                },
+                "match": {
+                    "type": "string",
+                    "description": "Match is a CEL expression. It is evaluated with `ctx.request` (the Request), `ctx.requester` (the User that created the Request), `ctx.subject` (the User that the access is requested for), `ctx.user` (an alias of `ctx.requester`), `ctx.catalog` (the requested Catalog), `ctx.accessLevel` (the requested access level), `ctx.services` (the Services of the resolved scope) and `ctx.namespaces` (the Namespaces of the resolved scope)."
+                },
+                "accessLevel": {
+                    "type": "string",
+                    "description": "AccessLevel matches the Requests for a specific access level name of their Catalog."
+                },
+                "isOnBehalf": {
+                    "type": "boolean",
+                    "description": "IsOnBehalf matches the Requests whose subject is not the User that created them. It must be set to `true`."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "matchAny"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "subject"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "resource"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "all"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "any"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "userRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "match"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "accessLevel"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "isOnBehalf"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "matchAny"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "subject"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "resource"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "all"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "any"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "userRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "match"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "accessLevel"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "isOnBehalf"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Condition",
+            "description": "Condition is the Rule's condition that has to match the access Request in order for the Rule to be applied to it"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Condition.All": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Of is the list of the Conditions that must all match"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "All",
+            "description": "All acts as a logical AND operator on its list of Conditions"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Any": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Of is the list of the Conditions of which at least one must match"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Any",
+            "description": "Any acts as a logical OR operator on its list of Conditions"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Resource": {
+            "properties": {
+                "serviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ServiceRef matches the Requests whose scope includes a specific Service."
+                },
+                "catalogRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "CatalogRef matches the Requests for a specific Catalog."
+                },
+                "namespaceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "NamespaceRef matches the Requests whose scope includes at least one Service of a specific Namespace."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "serviceRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "catalogRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "namespaceRef"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "serviceRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "catalogRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "namespaceRef"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Resource",
+            "description": "Resource matches the resources that the access is requested for. It is matched against the resolved scope of the Request (i.e. the Catalog and every Service and Namespace that the Request would grant access to) rather than against the literal target of the Request."
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Subject": {
+            "properties": {
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "UserRef matches a specific User"
+                },
+                "groupRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "GroupRef matches the Users belonging to a specific Group"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "userRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "groupRef"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "userRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "groupRef"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Subject",
+            "description": "Subject matches the subject of the Request (i.e. the User that the access is requested for) which is not necessarily the same User that created the Request"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties": {
+            "properties": {
+                "allowRequesterReview": {
+                    "type": "boolean",
+                    "description": "AllowRequesterReview allows the User that created the Request to review it. It is denied by default."
+                },
+                "allowSubjectReview": {
+                    "type": "boolean",
+                    "description": "AllowSubjectReview allows the User that the access is requested for to review the Request. It is denied by default."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Separation Of Duties",
+            "description": "SeparationOfDuties controls whether the Users that are involved in a Request are allowed to review it themselves"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface": {
+            "properties": {
+                "destination": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination",
+                    "additionalProperties": false,
+                    "description": "Destination is the audience of the Surface. Required."
+                },
+                "interactionMode": {
+                    "enum": [
+                        "INTERACTION_MODE_UNSET",
+                        "DEEP_LINK_ONLY",
+                        "INTERACTIVE"
+                    ],
+                    "type": "string",
+                    "title": "Interaction Mode",
+                    "description": "InteractionMode is how much the external provider is trusted to act on the presented Request"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Surface",
+            "description": "Surface is an external Integration destination on which the Cluster presents a Request. The access Policy only describes the audience and how much the external provider is trusted. The provider-specific configuration itself belongs to the Integration."
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination": {
+            "properties": {
+                "integrationRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "IntegrationRef is the reference of the Integration that delivers the Surface. Required."
+                },
+                "audience": {
+                    "enum": [
+                        "AUDIENCE_UNSET",
+                        "SHARED",
+                        "REVIEWERS",
+                        "REQUESTER",
+                        "SUBJECT"
+                    ],
+                    "type": "string",
+                    "title": "Audience",
+                    "description": "Audience is who the Surface is presented to"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Destination",
+            "description": "Destination is the audience of the Surface"
+        },
+        "octelium.api.main.access.v1.Request": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version (i.e. \"access/v1\")"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource name (i.e. `Request`)."
+                },
+                "metadata": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
+                    "additionalProperties": false,
+                    "description": "Metadata is the object's metadata."
+                },
+                "spec": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Spec",
+                    "additionalProperties": false,
+                    "description": "Spec is the Request specification."
+                },
+                "status": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status",
+                    "additionalProperties": false,
+                    "description": "Status is the current status of the Request."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request",
+            "description": "Request is a User's request for a just-in-time access to a Catalog. Once it is created, the Cluster resolves the Services that it would grant, matches it against the access Policies and, depending on the effect of the matched Rule, the Request is either immediately rejected, immediately approved or put into a review workflow until the reviewers decide its fate. An approved Request grants its subject the requested access level of the Catalog until the access ends."
+        },
+        "octelium.api.main.access.v1.Request.Spec": {
+            "properties": {
+                "urgency": {
+                    "enum": [
+                        "URGENCY_UNSET",
+                        "VERY_LOW",
+                        "LOW",
+                        "NORMAL",
+                        "HIGH",
+                        "VERY_HIGH",
+                        "HIGHEST"
+                    ],
+                    "type": "string",
+                    "title": "Urgency",
+                    "description": "Urgency is how urgent the requester considers the Request to be"
+                },
+                "resource": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Spec.Resource",
+                    "additionalProperties": false,
+                    "description": "Resource is the resource that the access is requested for."
+                },
+                "subject": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Spec.Subject",
+                    "additionalProperties": false,
+                    "description": "Subject is the User that the access is requested for. It is automatically set to the calling User by the CreateRequest method and it must be explicitly set for the CreateRequestForSubject method."
+                },
+                "justification": {
+                    "type": "string",
+                    "description": "Justification is the requester's free-form explanation of why the access is needed. It cannot be longer than 1500 characters."
+                },
+                "deadline": {
+                    "type": "string",
+                    "description": "Deadline is the time after which a still pending Request is automatically expired. It defaults to the access ClusterConfig's `request.defaultDeadline` from the creation of the Request.",
+                    "format": "date-time"
+                },
+                "duration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "Duration is how long the access should last for once the Request is approved. It defaults to the access level's `defaultDuration` and it is capped by its `maxDuration` as well as by the matched Rule's `maxDuration`."
+                },
+                "ticket": {
+                    "type": "string",
+                    "description": "Ticket is a reference to an external ticket that justifies the access (e.g. a Jira issue key). It cannot be longer than 256 characters."
+                },
+                "startAt": {
+                    "type": "string",
+                    "description": "StartAt is the time at which the access should start. The access starts as soon as the Request is approved if it is unset or if it has already passed by then.",
+                    "format": "date-time"
+                },
+                "extendsRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ExtendsRef is the reference of an approved Request whose access this Request extends. The extended Request ends once this one is approved and its access becomes active. It must target the same Catalog and access level as well as the same subject."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Spec",
+            "description": "Spec is the Request specification"
+        },
+        "octelium.api.main.access.v1.Request.Spec.Resource": {
+            "properties": {
+                "serviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ServiceRef is a shorthand for the access to a single Service. It is resolved upon the creation of the Request to the only Catalog that includes the Service and that the subject can request, and it is stored as such. The creation fails if there is no such Catalog or if there are several of them."
+                },
+                "catalog": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Spec.Resource.Catalog",
+                    "additionalProperties": false,
+                    "description": "Catalog is a request for the access to a Catalog."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "serviceRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "catalog"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "serviceRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "catalog"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Resource",
+            "description": "Resource is the resource that the access is requested for"
+        },
+        "octelium.api.main.access.v1.Request.Spec.Resource.Catalog": {
+            "properties": {
+                "catalogRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "CatalogRef is the reference of the Catalog. Required."
+                },
+                "accessLevel": {
+                    "type": "string",
+                    "description": "AccessLevel is the name of the requested access level of the Catalog. It defaults to the Catalog's first access level."
+                },
+                "serviceRefs": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "ServiceRefs restricts the Request to a subset of the Catalog's Services. It requires the Catalog's `allowPartialRequests`. Every Service of the Catalog is requested if it is unset."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Catalog",
+            "description": "Catalog is a request for the access to a Catalog"
+        },
+        "octelium.api.main.access.v1.Request.Spec.Subject": {
+            "properties": {
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "UserRef is the reference of the subject User."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "userRef"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "userRef"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Subject",
+            "description": "Subject is the User that the access is requested for which is not necessarily the same User that created the Request"
+        },
+        "octelium.api.main.access.v1.Request.Status": {
+            "properties": {
+                "state": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.State",
+                    "additionalProperties": false,
+                    "description": "State is the current state of the Request."
+                },
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "UserRef is the reference of the User that created the Request which is not necessarily the same User set as the Request's subject."
+                },
+                "approvalStartAt": {
+                    "type": "string",
+                    "description": "ApprovalStartAt is the time at which the Request started waiting for a decision.",
+                    "format": "date-time"
+                },
+                "approvalEndAt": {
+                    "type": "string",
+                    "description": "ApprovalEndAt is the time at which the Request was decided (i.e. APPROVED, REJECTED, REVOKED, EXPIRED or CANCELLED).",
+                    "format": "date-time"
+                },
+                "lastStates": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.State"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "LastStates is the list of the previous states of the Request, ordered from the most recent to the oldest."
+                },
+                "policyTriggerRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "PolicyTriggerRef is the reference of the hidden PolicyTrigger that the Cluster creates in order to grant the access of an approved Request. It is removed once the Request is no longer approved."
+                },
+                "policyRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "PolicyRef is the reference of the Policy whose Rule matched the Request."
+                },
+                "rule": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule",
+                    "additionalProperties": false,
+                    "description": "Rule is a copy of the Policy Rule that matched the Request at the time it was evaluated. It is kept here so that the subsequent changes to the Policy do not affect the Requests that are already in flight. It is only returned by the MainService. The UserService and the ReviewerService return the `workflow` summary instead."
+                },
+                "review": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.Review",
+                    "additionalProperties": false,
+                    "description": "Review is the current progress of the Request in the review workflow."
+                },
+                "accessEndsAt": {
+                    "type": "string",
+                    "description": "AccessEndsAt is the time at which the granted access ends. The Request's state is set to EXPIRED once it passes.",
+                    "format": "date-time"
+                },
+                "origin": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Origin",
+                    "additionalProperties": false,
+                    "description": "Origin is where the Request was created from. It is entirely set by the Cluster from the authenticated transport of the creation itself."
+                },
+                "effectiveDuration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "EffectiveDuration is how long the granted access actually lasts for once the Request is approved. It is the Request's `spec.duration` capped by the requested access level, by the matched Rule and by the reviewers' approved durations. It is computed as soon as the Rule is matched and every time the spec of a pending Request changes so that it can be shown to the reviewers before they decide."
+                },
+                "resolvedScope": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.ResolvedScope",
+                    "additionalProperties": false,
+                    "description": "ResolvedScope is what the Request grants."
+                },
+                "evaluation": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.Evaluation",
+                    "additionalProperties": false,
+                    "description": "Evaluation is the state of the evaluation of the Request."
+                },
+                "grant": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.Grant",
+                    "additionalProperties": false,
+                    "description": "Grant is the state of the granted access."
+                },
+                "specRevision": {
+                    "type": "integer",
+                    "description": "SpecRevision is incremented every time the Request's spec changes while it is pending. The reviewers' decisions are bound to it."
+                },
+                "workflow": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.Workflow",
+                    "additionalProperties": false,
+                    "description": "Workflow is the summary of the matched Rule."
+                },
+                "requesterInfo": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.UserInfo",
+                    "additionalProperties": false,
+                    "description": "RequesterInfo is the display information of the User that created the Request."
+                },
+                "subjectInfo": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.UserInfo",
+                    "additionalProperties": false,
+                    "description": "SubjectInfo is the display information of the subject User."
+                },
+                "accessStartsAt": {
+                    "type": "string",
+                    "description": "AccessStartsAt is the time at which the granted access starts.",
+                    "format": "date-time"
+                },
+                "supersededByRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "SupersededByRef is the reference of the Request that extended, and replaced, the access of this Request."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Status",
+            "description": "Status is the current status of the Request"
+        },
+        "octelium.api.main.access.v1.Request.Status.Evaluation": {
+            "properties": {
+                "state": {
+                    "enum": [
+                        "STATE_UNSET",
+                        "EVALUATED",
+                        "RETRYING",
+                        "FAILED"
+                    ],
+                    "type": "string",
+                    "title": "State",
+                    "description": "State is the state of the evaluation"
+                },
+                "lastError": {
+                    "type": "string",
+                    "description": "LastError is the error of the last failed evaluation."
+                },
+                "attempts": {
+                    "type": "integer",
+                    "description": "Attempts is the number of the consecutive failed evaluations."
+                },
+                "lastAttemptAt": {
+                    "type": "string",
+                    "description": "LastAttemptAt is the time of the last evaluation.",
+                    "format": "date-time"
+                },
+                "skippedRules": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.Evaluation.SkippedRule"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "SkippedRules is the list of the Rules that were skipped because they could not be evaluated."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Evaluation",
+            "description": "Evaluation is the state of the evaluation of the Request against the access Policies"
+        },
+        "octelium.api.main.access.v1.Request.Status.Evaluation.SkippedRule": {
+            "properties": {
+                "policyRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "PolicyRef is the reference of the Policy of the Rule."
+                },
+                "ruleName": {
+                    "type": "string",
+                    "description": "RuleName is the name of the Rule."
+                },
+                "error": {
+                    "type": "string",
+                    "description": "Error is why the Rule could not be evaluated."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Skipped Rule",
+            "description": "SkippedRule is a Rule that was skipped because it could not be evaluated"
+        },
+        "octelium.api.main.access.v1.Request.Status.Grant": {
+            "properties": {
+                "state": {
+                    "enum": [
+                        "STATE_UNSET",
+                        "SCHEDULED",
+                        "PROVISIONING",
+                        "ACTIVE",
+                        "FAILED",
+                        "ENDED"
+                    ],
+                    "type": "string",
+                    "title": "State",
+                    "description": "State is the state of the granted access"
+                },
+                "activatedAt": {
+                    "type": "string",
+                    "description": "ActivatedAt is the time at which the access became enforced.",
+                    "format": "date-time"
+                },
+                "endedAt": {
+                    "type": "string",
+                    "description": "EndedAt is the time at which the access stopped being enforced.",
+                    "format": "date-time"
+                },
+                "lastError": {
+                    "type": "string",
+                    "description": "LastError is the error of the last failed activation."
+                },
+                "attempts": {
+                    "type": "integer",
+                    "description": "Attempts is the number of the consecutive failed activations."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Grant",
+            "description": "Grant is the state of the access that the Request grants"
+        },
+        "octelium.api.main.access.v1.Request.Status.ResolvedScope": {
+            "properties": {
+                "catalogRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "CatalogRef is the reference of the requested Catalog."
+                },
+                "catalogResourceVersion": {
+                    "type": "string",
+                    "description": "CatalogResourceVersion is the version of the Catalog that the scope was resolved from."
+                },
+                "catalogDisplayName": {
+                    "type": "string",
+                    "description": "CatalogDisplayName is the display name of the Catalog."
+                },
+                "accessLevel": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Catalog.Spec.AccessLevel",
+                    "additionalProperties": false,
+                    "description": "AccessLevel is a copy of the requested access level."
+                },
+                "serviceRefs": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "ServiceRefs is the list of the granted Services."
+                },
+                "namespaceRefs": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "NamespaceRefs is the list of the Namespaces that are granted as a whole. It is only set for the DYNAMIC Catalogs."
+                },
+                "membership": {
+                    "enum": [
+                        "MEMBERSHIP_UNSET",
+                        "FIXED",
+                        "DYNAMIC"
+                    ],
+                    "type": "string",
+                    "title": "Membership",
+                    "description": "Membership controls how the Namespaces of the Catalog are granted"
+                },
+                "resolvedAt": {
+                    "type": "string",
+                    "description": "ResolvedAt is the time at which the scope was resolved.",
+                    "format": "date-time"
+                },
+                "priority": {
+                    "type": "integer",
+                    "description": "Priority is the priority with which the access is granted."
+                },
+                "overridesGuardrails": {
+                    "type": "boolean",
+                    "description": "OverridesGuardrails is whether the access takes precedence over the core Policy rules of the default priority, including their DENY rules."
+                },
+                "totalExcludedService": {
+                    "type": "integer",
+                    "description": "TotalExcludedService is the number of the Catalog's Services that are excluded from the scope (e.g. the system and hidden Services)."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Resolved Scope",
+            "description": "ResolvedScope is what the Request grants. It is resolved while the Request is pending and it is frozen once the Request is approved so that the subsequent changes to the Catalog do not change the granted access."
+        },
+        "octelium.api.main.access.v1.Request.Status.Review": {
+            "properties": {
+                "currentStep": {
+                    "type": "integer",
+                    "description": "CurrentStep is the zero-based index of the review Step that the Request is currently waiting for."
+                },
+                "lastSteps": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.Review.Step"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "LastSteps is the list of the Reviews that have already been applied to the Request."
+                },
+                "currentStepStartedAt": {
+                    "type": "string",
+                    "description": "CurrentStepStartedAt is the time at which the current review Step started. It is the point from which the Step's timeout is measured.",
+                    "format": "date-time"
+                },
+                "steps": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.Review.StepState"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Steps is the progress of every review Step that has started."
+                },
+                "informationRequests": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.Review.InformationRequest"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "InformationRequests is the list of the reviewers' requests for more information, ordered from the oldest to the most recent."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Review",
+            "description": "Review is the current progress of the Request in the review workflow that is set by the matched Rule's Action"
+        },
+        "octelium.api.main.access.v1.Request.Status.Review.InformationRequest": {
+            "properties": {
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "UserRef is the reference of the reviewer that asked."
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Message is the reviewer's question."
+                },
+                "requestedAt": {
+                    "type": "string",
+                    "description": "RequestedAt is the time at which the reviewer asked.",
+                    "format": "date-time"
+                },
+                "response": {
+                    "type": "string",
+                    "description": "Response is the requester's answer."
+                },
+                "respondedAt": {
+                    "type": "string",
+                    "description": "RespondedAt is the time at which the requester answered. The Request is waiting for its requester as long as it is unset.",
+                    "format": "date-time"
+                },
+                "responderRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ResponderRef is the reference of the User that answered."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Information Request",
+            "description": "InformationRequest is a reviewer's request for more information"
+        },
+        "octelium.api.main.access.v1.Request.Status.Review.Step": {
+            "properties": {
+                "reviewRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ReviewRef is the reference of the applied Review."
+                },
+                "setAt": {
+                    "type": "string",
+                    "description": "SetAt is the time at which the Review's decision was set.",
+                    "format": "date-time"
+                },
+                "stepIndex": {
+                    "type": "integer",
+                    "description": "StepIndex is the zero-based index of the review Step that the Review was applied to."
+                },
+                "decision": {
+                    "enum": [
+                        "DECISION_UNSET",
+                        "DECISION_APPROVE",
+                        "DECISION_REJECT"
+                    ],
+                    "type": "string",
+                    "title": "Decision",
+                    "description": "Decision is the reviewer's decision on the Request"
+                },
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "UserRef is the reference of the reviewer (i.e. the User that created the applied Review)."
+                },
+                "stepName": {
+                    "type": "string",
+                    "description": "StepName is the name of the review Step that the Review was applied to."
+                },
+                "justification": {
+                    "type": "string",
+                    "description": "Justification is the reviewer's justification of the decision."
+                },
+                "duration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "Duration is the access duration that the reviewer approved, if the reviewer narrowed it."
+                },
+                "specRevision": {
+                    "type": "integer",
+                    "description": "SpecRevision is the revision of the Request's spec that the reviewer decided on."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Step",
+            "description": "Step is a Review that has already been applied to the Request"
+        },
+        "octelium.api.main.access.v1.Request.Status.Review.StepState": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the review Step."
+                },
+                "index": {
+                    "type": "integer",
+                    "description": "Index is the zero-based index of the review Step."
+                },
+                "requiredApprovals": {
+                    "type": "integer",
+                    "description": "RequiredApprovals is the number of the approvals that the Step requires."
+                },
+                "approvals": {
+                    "type": "integer",
+                    "description": "Approvals is the number of the approvals that the Step currently has."
+                },
+                "eligibleReviewers": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "EligibleReviewers is the list of the Users that can review the Step. It is computed once the Step starts and it is truncated to its first 100 Users."
+                },
+                "totalEligibleReviewer": {
+                    "type": "integer",
+                    "description": "TotalEligibleReviewer is the total number of the Users that can review the Step."
+                },
+                "outcome": {
+                    "enum": [
+                        "OUTCOME_UNSET",
+                        "SATISFIED",
+                        "TIMED_OUT",
+                        "REJECTED",
+                        "INTERRUPTED"
+                    ],
+                    "type": "string",
+                    "title": "Outcome",
+                    "description": "Outcome is how the Step ended"
+                },
+                "startedAt": {
+                    "type": "string",
+                    "description": "StartedAt is the time at which the Step started.",
+                    "format": "date-time"
+                },
+                "endedAt": {
+                    "type": "string",
+                    "description": "EndedAt is the time at which the Step ended.",
+                    "format": "date-time"
+                },
+                "isEscalated": {
+                    "type": "boolean",
+                    "description": "IsEscalated is whether the Step's escalation reviewers were added to it."
+                },
+                "escalatedAt": {
+                    "type": "string",
+                    "description": "EscalatedAt is the time at which the Step was escalated.",
+                    "format": "date-time"
+                },
+                "isUnroutable": {
+                    "type": "boolean",
+                    "description": "IsUnroutable is whether the Step has no eligible reviewer at all, including its escalation and the Cluster's fallback reviewers."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Step State",
+            "description": "StepState is the progress of a single review Step"
+        },
+        "octelium.api.main.access.v1.Request.Status.State": {
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the time at which the state was set.",
+                    "format": "date-time"
+                },
+                "status": {
+                    "enum": [
+                        "STATUS_UNKNOWN",
+                        "PENDING",
+                        "APPROVED",
+                        "REJECTED",
+                        "REVOKED",
+                        "EXPIRED",
+                        "CANCELLED"
+                    ],
+                    "type": "string",
+                    "title": "Status",
+                    "description": "Status is the state of the Request"
+                },
+                "reason": {
+                    "enum": [
+                        "REASON_UNSET",
+                        "SUBMITTED",
+                        "AWAITING_REVIEW",
+                        "NO_MATCHING_RULE",
+                        "DENIED_BY_RULE",
+                        "AUTO_APPROVED",
+                        "APPROVED_BY_REVIEWERS",
+                        "REJECTED_BY_REVIEWER",
+                        "REVIEW_TIMED_OUT",
+                        "DEADLINE_PASSED",
+                        "CANCELLED_BY_USER",
+                        "ACCESS_REVOKED",
+                        "ACCESS_ENDED",
+                        "ENDED_EARLY",
+                        "PROVISIONING_FAILED",
+                        "NOT_REQUESTABLE",
+                        "SUPERSEDED",
+                        "EVALUATION_FAILED"
+                    ],
+                    "type": "string",
+                    "title": "Reason",
+                    "description": "Reason is why the Request reached the state"
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Message is a human readable explanation of the state (e.g. the message of the matched DENY Rule or the justification of a revocation)."
+                },
+                "actorRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ActorRef is the reference of the User that caused the state, if any."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "State",
+            "description": "State is a state of the Request at a certain point in time"
+        },
+        "octelium.api.main.access.v1.Request.Status.Workflow": {
+            "properties": {
+                "effect": {
+                    "enum": [
+                        "EFFECT_UNSET",
+                        "DENY",
+                        "REVIEW",
+                        "AUTO_APPROVE"
+                    ],
+                    "type": "string",
+                    "title": "Effect",
+                    "description": "Effect is the effect of the Rule on the matched access Request"
+                },
+                "steps": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.Workflow.Step"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Steps is the list of the review Steps."
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Message is the requester-facing message of the matched Rule."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Workflow",
+            "description": "Workflow is the summary of the matched Rule that can be shown to the requesters and to the reviewers"
+        },
+        "octelium.api.main.access.v1.Request.Status.Workflow.Step": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the Step."
+                },
+                "approvalRequirement": {
+                    "enum": [
+                        "APPROVAL_REQUIREMENT_UNSET",
+                        "ANY",
+                        "ALL",
+                        "COUNT"
+                    ],
+                    "type": "string",
+                    "title": "Approval Requirement",
+                    "description": "ApprovalRequirement is the condition that the Step's Reviews have to satisfy in order for the Step to be approved"
+                },
+                "approvalCount": {
+                    "type": "integer",
+                    "description": "ApprovalCount is the approval count of the COUNT requirement."
+                },
+                "reviewers": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.Workflow.Step.Reviewer"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Reviewers is the list of the Step's reviewers."
+                },
+                "timeout": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "Timeout is the Step's timeout."
+                },
+                "onTimeout": {
+                    "enum": [
+                        "ON_TIMEOUT_UNSET",
+                        "ON_TIMEOUT_GOTO_NEXT_STEP",
+                        "ON_TIMEOUT_REJECT"
+                    ],
+                    "type": "string",
+                    "title": "On Timeout",
+                    "description": "OnTimeout is what happens to the Request once the Step's timeout is reached"
+                },
+                "reasonRequirement": {
+                    "enum": [
+                        "REASON_REQUIREMENT_UNSET",
+                        "REJECT_ONLY",
+                        "ALWAYS"
+                    ],
+                    "type": "string",
+                    "title": "Reason Requirement",
+                    "description": "ReasonRequirement controls which decisions of the Step must carry a justification"
+                },
+                "hasEscalation": {
+                    "type": "boolean",
+                    "description": "HasEscalation is whether the Step is escalated to more reviewers."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Step",
+            "description": "Step is the summary of a review Step"
+        },
+        "octelium.api.main.access.v1.Request.Status.Workflow.Step.Reviewer": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "USER",
+                        "GROUP",
+                        "CATALOG_OWNERS"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the kind of the reviewer"
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is the human readable name of the reviewer."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Reviewer",
+            "description": "Reviewer is the summary of a reviewer of the Step"
+        },
+        "octelium.api.main.access.v1.RequestPreview": {
+            "properties": {
+                "outcome": {
+                    "enum": [
+                        "OUTCOME_UNSET",
+                        "NOT_REQUESTABLE",
+                        "INCOMPLETE",
+                        "DENIED",
+                        "NO_MATCH",
+                        "AUTO_APPROVED",
+                        "REVIEW"
+                    ],
+                    "type": "string",
+                    "title": "Outcome",
+                    "description": "Outcome is what would happen to the Request"
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Message is the requester-facing message of the matched Rule or of the access ClusterConfig."
+                },
+                "problems": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.RequestPreview.Problem"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Problems is the list of the reasons why the Request cannot be created as it is."
+                },
+                "request": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request",
+                    "additionalProperties": false,
+                    "description": "Request is the Request as the Cluster would store it (i.e. with its resource resolved to a Catalog and its subject canonicalized)."
+                },
+                "resolvedScope": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.ResolvedScope",
+                    "additionalProperties": false,
+                    "description": "ResolvedScope is what the Request would grant."
+                },
+                "workflow": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.Workflow",
+                    "additionalProperties": false,
+                    "description": "Workflow is the summary of the matched Rule."
+                },
+                "effectiveDuration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "EffectiveDuration is how long the access would last for."
+                },
+                "maxDuration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "MaxDuration is the longest access duration that can be requested."
+                },
+                "requirements": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Catalog.Spec.Requirements",
+                    "additionalProperties": false,
+                    "description": "Requirements is what the Request has to provide."
+                },
+                "existingRequests": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.RequestPreview.ExistingRequest"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "ExistingRequests is the list of the subject's pending or active Requests for the same Catalog and access level."
+                },
+                "candidateCatalogs": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.UserCatalog"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "CandidateCatalogs is the list of the Catalogs that the subject can request and that include the Service of a `serviceRef` Request when there are several of them."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Preview",
+            "description": "RequestPreview is the result of the evaluation of a Request that is not created"
+        },
+        "octelium.api.main.access.v1.RequestPreview.ExistingRequest": {
+            "properties": {
+                "requestRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "RequestRef is the reference of the existing Request."
+                },
+                "state": {
+                    "enum": [
+                        "STATUS_UNKNOWN",
+                        "PENDING",
+                        "APPROVED",
+                        "REJECTED",
+                        "REVOKED",
+                        "EXPIRED",
+                        "CANCELLED"
+                    ],
+                    "type": "string",
+                    "title": "Status",
+                    "description": "Status is the state of the Request"
+                },
+                "accessEndsAt": {
+                    "type": "string",
+                    "description": "AccessEndsAt is the time at which the existing access ends, if any.",
+                    "format": "date-time"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Existing Request",
+            "description": "ExistingRequest is a Request of the same subject for the same Catalog and access level that is either pending or active"
+        },
+        "octelium.api.main.access.v1.RequestPreview.Problem": {
+            "properties": {
+                "field": {
+                    "type": "string",
+                    "description": "Field is the path of the Request's field that the problem is about, if any (e.g. `spec.justification`)."
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Message is a human readable explanation of the problem."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Problem",
+            "description": "Problem is a reason why the Request cannot be created as it is"
+        },
+        "octelium.api.main.access.v1.SimulateRequestResponse.RuleEvaluation": {
+            "properties": {
+                "policyRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "PolicyRef is the reference of the Policy of the Rule."
+                },
+                "ruleName": {
+                    "type": "string",
+                    "description": "RuleName is the name of the Rule."
+                },
+                "priority": {
+                    "type": "integer",
+                    "description": "Priority is the priority of the Rule."
+                },
+                "effect": {
+                    "enum": [
+                        "EFFECT_UNSET",
+                        "DENY",
+                        "REVIEW",
+                        "AUTO_APPROVE"
+                    ],
+                    "type": "string",
+                    "title": "Effect",
+                    "description": "Effect is the effect of the Rule on the matched access Request"
+                },
+                "result": {
+                    "enum": [
+                        "RESULT_UNSET",
+                        "MATCHED",
+                        "NOT_MATCHED",
+                        "ERROR"
+                    ],
+                    "type": "string",
+                    "title": "Result",
+                    "description": "Result is the result of the evaluation of a Rule"
+                },
+                "error": {
+                    "type": "string",
+                    "description": "Error is the evaluation error of the Rule, if any."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Rule Evaluation",
+            "description": "RuleEvaluation is the result of the evaluation of a single Rule"
+        },
+        "octelium.api.main.access.v1.UserCatalog": {
+            "properties": {
+                "metadata": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
+                    "additionalProperties": false,
+                    "description": "Metadata is the Catalog's metadata."
+                },
+                "accessLevels": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.UserCatalog.AccessLevel"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "AccessLevels is the list of the Catalog's access levels. The first one is the default access level."
+                },
+                "owners": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.UserCatalog.Owner"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Owners is the list of the Catalog's owners."
+                },
+                "requirements": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Catalog.Spec.Requirements",
+                    "additionalProperties": false,
+                    "description": "Requirements is what a Request for the Catalog has to provide."
+                },
+                "allowPartialRequests": {
+                    "type": "boolean",
+                    "description": "AllowPartialRequests is whether a Request can include only a subset of the Catalog's Services."
+                },
+                "totalService": {
+                    "type": "integer",
+                    "description": "TotalService is the number of the Services that the Catalog currently resolves to."
+                },
+                "viewer": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.UserCatalog.Viewer",
+                    "additionalProperties": false,
+                    "description": "Viewer is the relation between the Catalog and the calling User."
+                },
+                "membership": {
+                    "enum": [
+                        "MEMBERSHIP_UNSET",
+                        "FIXED",
+                        "DYNAMIC"
+                    ],
+                    "type": "string",
+                    "title": "Membership",
+                    "description": "Membership controls how the Namespaces of the Catalog are granted"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "User Catalog",
+            "description": "UserCatalog is the requester-facing view of a Catalog"
+        },
+        "octelium.api.main.access.v1.UserCatalog.AccessLevel": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the access level."
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is the human readable name of the access level."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description is the plain language explanation of the access level."
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "FULL",
+                        "RESTRICTED"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the kind of the access level"
+                },
+                "defaultDuration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "DefaultDuration is the default access duration."
+                },
+                "maxDuration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "MaxDuration is the upper bound of the access duration."
+                },
+                "overridesGuardrails": {
+                    "type": "boolean",
+                    "description": "OverridesGuardrails is whether the access takes precedence over the core Policy rules of the default priority, including their DENY rules."
+                },
+                "minAAL": {
+                    "enum": [
+                        "AAL_UNSET",
+                        "AAL1",
+                        "AAL2",
+                        "AAL3"
+                    ],
+                    "type": "string",
+                    "title": "AAL",
+                    "description": "AAL is the authenticator assurance level (AAL) of the authentication as defined by NIST SP 800-63B"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Access Level",
+            "description": "AccessLevel is the requester-facing view of an access level"
+        },
+        "octelium.api.main.access.v1.UserCatalog.Owner": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "USER",
+                        "GROUP"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the kind of the owner"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the User or the Group."
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is the display name of the User or the Group."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Owner",
+            "description": "Owner is an owner of the Catalog"
+        },
+        "octelium.api.main.access.v1.UserCatalog.Viewer": {
+            "properties": {
+                "canRequestOnBehalf": {
+                    "type": "boolean",
+                    "description": "CanRequestOnBehalf is whether the calling User can request the Catalog on behalf of others."
+                },
+                "activeRequestRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ActiveRequestRef is the reference of the calling User's approved Request whose access is currently granted, if any."
+                },
+                "accessEndsAt": {
+                    "type": "string",
+                    "description": "AccessEndsAt is the time at which that access ends.",
+                    "format": "date-time"
+                },
+                "pendingRequestRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "PendingRequestRef is the reference of the calling User's pending Request for the Catalog, if any."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Viewer",
+            "description": "Viewer is the relation between the Catalog and the calling User"
+        },
+        "octelium.api.main.access.v1.UserInfo": {
+            "properties": {
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "UserRef is the object reference of the User."
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is the display name of the User."
+                },
+                "email": {
+                    "type": "string",
+                    "description": "Email is the email of the User."
+                },
+                "picURL": {
+                    "type": "string",
+                    "description": "PicURL is the picture URL of the User."
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "HUMAN",
+                        "WORKLOAD"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the type of the User"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "User Info",
+            "description": "UserInfo is the display information of a User"
+        },
+        "octelium.api.main.core.v1.Condition": {
+            "properties": {
+                "matchAny": {
+                    "type": "boolean",
+                    "description": "MatchAny matches anything"
+                },
+                "match": {
+                    "type": "string",
+                    "description": "Match contains a single CEL expression"
+                },
+                "all": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.All",
+                    "additionalProperties": false,
+                    "description": "All acts as a logical AND operator on its list of CEL expressions"
+                },
+                "any": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.Any",
+                    "additionalProperties": false,
+                    "description": "Any acts as a logical OR operator on its list of CEL expressions"
+                },
+                "not": {
+                    "type": "string",
+                    "description": "Not acts as a logical NOT operator of a single CEL expression"
+                },
+                "none": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.None",
+                    "additionalProperties": false,
+                    "description": "None acts as a logical NOR operator on its list of CEL expressions (i.e. none of the expressions matches)"
+                },
+                "opa": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.OPA",
+                    "additionalProperties": false,
+                    "description": "OPA contains an OPA (Open Policy Agent) Rego script"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "matchAny"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "match"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "all"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "any"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "not"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "none"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "opa"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "matchAny"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "match"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "all"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "any"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "not"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "none"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "opa"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Condition",
+            "description": "Condition is a policy-as-code expression that is evaluated against the request context. It is used by the Policy rules, the Service dynamic configuration rules, the HTTP Plugins as well as by the IdentityProvider rules."
+        },
+        "octelium.api.main.core.v1.Condition.All": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Of is the list of the Conditions that must all match"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "All",
+            "description": "All acts as a logical AND operator on its list of Conditions"
+        },
+        "octelium.api.main.core.v1.Condition.Any": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Of is the list of the Conditions of which at least one must match"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Any",
+            "description": "Any acts as a logical OR operator on its list of Conditions"
+        },
+        "octelium.api.main.core.v1.Condition.None": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Of is the list of the Conditions of which none must match"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "None",
+            "description": "None acts as a logical NOR operator on its list of Conditions"
+        },
+        "octelium.api.main.core.v1.Condition.OPA": {
+            "properties": {
+                "inline": {
+                    "type": "string",
+                    "description": "Inline is the OPA Rego script directly provided as a string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "inline"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "inline"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "OPA",
+            "description": "OPA evaluates the Condition via an Open Policy Agent Rego script"
+        },
+        "octelium.api.main.core.v1.InlinePolicy": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the inline Policy"
+                },
+                "spec": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Policy.Spec",
+                    "additionalProperties": false,
+                    "description": "Spec is the Policy spec"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Inline Policy",
+            "description": "InlinePolicy is a Policy that is defined inline within the resource that attaches it instead of being created as a standalone Policy resource."
+        },
+        "octelium.api.main.core.v1.Policy.Spec": {
+            "properties": {
+                "rules": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Policy.Spec.Rule"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Rules is the list of Policy rules"
+                },
+                "enforcementRules": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Policy.Spec.EnforcementRule"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "EnforcementRules is the list of enforcement rules that are typically used as a precondition for using the Policy rules. You can simply extract your shared conditions from your rules and write them instead inside enforcementRules for better performance and readability"
+                },
+                "attrs": {
+                    "additionalProperties": true,
+                    "type": "object",
+                    "description": "Attrs is a map of user-defined attributes that can be reused inside the Policy rules. It is strongly recommended to stick to camelCase in order to be conformant with Octelium's API naming conventions."
+                },
+                "isDisabled": {
+                    "type": "boolean",
+                    "description": "IsDisabled disables (i.e. deactivates) the Policy. You can use this to temporarily disable enforcing the Policy altogether instead of having to delete it or de-attach it from the different Resources attaching it."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Spec",
+            "description": "Spec is the Policy specification"
+        },
+        "octelium.api.main.core.v1.Policy.Spec.EnforcementRule": {
+            "properties": {
+                "condition": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
+                    "additionalProperties": false,
+                    "description": "Condition is the enforcement rule's Condition"
+                },
+                "effect": {
+                    "enum": [
+                        "EFFECT_UNKNOWN",
+                        "ENFORCE",
+                        "IGNORE"
+                    ],
+                    "type": "string",
+                    "title": "Effect",
+                    "description": "Effect is the decision of the EnforcementRule once its Condition matches"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Enforcement Rule",
+            "description": "EnforcementRule is a pre-condition that decides whether the Policy is evaluated at all. If no EnforcementRule matches, or if the list of EnforcementRules is empty, then the Policy is enforced. ENFORCE rules always override IGNORE rules in the same way that DENY rules override ALLOW rules."
+        },
+        "octelium.api.main.core.v1.Policy.Spec.Rule": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is an optional name for the rule. It is currently useful in Logs to understand which rule triggered the Policy."
+                },
+                "condition": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
+                    "additionalProperties": false,
+                    "description": "Condition is the rule's Condition that must match in order for the rule, and subsequently the Policy as whole, to match"
+                },
+                "effect": {
+                    "enum": [
+                        "EFFECT_UNKNOWN",
+                        "ALLOW",
+                        "DENY"
+                    ],
+                    "type": "string",
+                    "title": "Effect",
+                    "description": "Effect is the decision of the Rule once its Condition matches"
+                },
+                "priority": {
+                    "type": "integer",
+                    "description": "Priority is an integer that sets the rule priority level. The lower the number, the higher the priority. Currently the range of numbers is between -4 (i.e. the highest priority) and 4 (i.e. the lowest priority)."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Rule",
+            "description": "Rule is a single access control rule of the Policy"
+        },
+        "octelium.api.main.core.v1.PolicyTrigger": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version (i.e. \"core/v1\")"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource name (i.e. `PolicyTrigger`)."
+                },
+                "metadata": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
+                    "additionalProperties": false,
+                    "description": "Metadata is the object's metadata."
+                },
+                "spec": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.PolicyTrigger.Spec",
+                    "additionalProperties": false,
+                    "description": "Spec is the PolicyTrigger specification."
+                },
+                "status": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.PolicyTrigger.Status",
+                    "additionalProperties": false,
+                    "description": "Status is the current status of the PolicyTrigger."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Policy Trigger",
+            "description": "PolicyTrigger dynamically attaches a set of Policies to the requests that satisfy its PreCondition. It lets the Cluster apply Policies that are scoped to specific principals or resources, and bounded in time, without having to modify the resources themselves."
+        },
+        "octelium.api.main.core.v1.PolicyTrigger.Spec": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Spec",
+            "description": "Spec is the PolicyTrigger specification"
+        },
+        "octelium.api.main.core.v1.PolicyTrigger.Status": {
+            "properties": {
+                "ownerRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "OwnerRef is the reference of the resource that owns the PolicyTrigger"
+                },
+                "preCondition": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition",
+                    "additionalProperties": false,
+                    "description": "PreCondition decides whether the PolicyTrigger's Policies are attached to a request"
+                },
+                "policies": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Policies is the list of standalone Policies"
+                },
+                "inlinePolicies": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.InlinePolicy"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "InlinePolicies is the list of inline Policies"
+                },
+                "isDisabled": {
+                    "type": "boolean",
+                    "description": "IsDisabled disables the PolicyTrigger without having to delete it"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Status",
+            "description": "Status is the current status of the PolicyTrigger"
+        },
+        "octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition": {
+            "properties": {
+                "notBefore": {
+                    "type": "string",
+                    "description": "NotBefore matches the requests that happen at or after this timestamp",
+                    "format": "date-time"
+                },
+                "notAfter": {
+                    "type": "string",
+                    "description": "NotAfter matches the requests that happen at or before this timestamp",
+                    "format": "date-time"
+                },
+                "sessionRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "SessionRef matches the requests of a specific Session"
+                },
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "UserRef matches the requests of a specific User"
+                },
+                "matchAny": {
+                    "type": "boolean",
+                    "description": "MatchAny matches every request"
+                },
+                "condition": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
+                    "additionalProperties": false,
+                    "description": "Condition matches the requests that satisfy a policy-as-code Condition"
+                },
+                "any": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.Any",
+                    "additionalProperties": false,
+                    "description": "Any acts as a logical OR operator on its list of PreConditions"
+                },
+                "all": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.All",
+                    "additionalProperties": false,
+                    "description": "All acts as a logical AND operator on its list of PreConditions"
+                },
+                "serviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ServiceRef matches the requests to a specific Service"
+                },
+                "namespaceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "NamespaceRef matches the requests to the Services of a specific Namespace"
+                },
+                "groupRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "GroupRef matches the requests of the Users belonging to a specific Group"
+                },
+                "deviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "DeviceRef matches the requests coming from a specific Device"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "notBefore"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "notAfter"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "userRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "matchAny"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "condition"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "any"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "all"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "serviceRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "namespaceRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "groupRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "deviceRef"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "notBefore"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "notAfter"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "userRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "matchAny"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "condition"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "any"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "all"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "serviceRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "namespaceRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "groupRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "deviceRef"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Pre Condition",
+            "description": "PreCondition decides whether the PolicyTrigger's Policies are attached to a request"
+        },
+        "octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.All": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Of is the list of the PreConditions that must all match"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "All",
+            "description": "All acts as a logical AND operator on its list of PreConditions"
+        },
+        "octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.Any": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Of is the list of the PreConditions of which at least one must match"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Any",
+            "description": "Any acts as a logical OR operator on its list of PreConditions"
+        },
+        "octelium.api.main.meta.v1.Duration": {
+            "properties": {
+                "milliseconds": {
+                    "type": "integer",
+                    "description": "Milliseconds is the duration set in milliseconds"
+                },
+                "seconds": {
+                    "type": "integer",
+                    "description": "Seconds is the duration set in seconds"
+                },
+                "minutes": {
+                    "type": "integer",
+                    "description": "Minutes is the duration set in minutes"
+                },
+                "hours": {
+                    "type": "integer",
+                    "description": "Hours is the duration set in hours"
+                },
+                "days": {
+                    "type": "integer",
+                    "description": "Days is the duration set in days"
+                },
+                "weeks": {
+                    "type": "integer",
+                    "description": "Weeks is the duration set in weeks"
+                },
+                "months": {
+                    "type": "integer",
+                    "description": "Months is the duration set in months"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "milliseconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "seconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "minutes"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "hours"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "days"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "weeks"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "months"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "milliseconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "seconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "minutes"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "hours"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "days"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "weeks"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "months"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Duration",
+            "description": "Duration is a length of time that is expressed in a single unit of choice. Exactly one of the units is set (e.g. `seconds: 30`)."
+        },
+        "octelium.api.main.meta.v1.Metadata": {
+            "properties": {
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the unique UUID value for the object assigned by the Cluster. Read-only."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the object. It must be unique within a certain API/Version/Kind tuple."
+                },
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the timestamp of creation of the object. Read-only.",
+                    "format": "date-time"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "description": "UpdatedAt is the timestamp of when the object was last updated. Read-only.",
+                    "format": "date-time"
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is the name that can be shown publicly for the object. Doesn't need to be unique."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description is used to describe the object in a short sentence. Maximum characters are 1000."
+                },
+                "labels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Labels is a map of string keys and values to organize objects."
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Tags is an optional array of tags that classify the Resource."
+                },
+                "annotations": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Annotations is a map of string keys and values that can be used to store arbitrary metadata about the object."
+                },
+                "picURL": {
+                    "type": "string",
+                    "description": "PicURL is the Picture URL of the resource."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is a unique ID that represent the current version of the resource object. Used by the Cluster to detect updates."
+                },
+                "lastResourceVersion": {
+                    "type": "string",
+                    "description": "LastResourceVersion is the ResourceVersion of the last update of the Resource."
+                },
+                "actorRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ActorRef is the object reference to the Actor resource, typically a Session, who is responsible for the current resource change. If ActorRef is not set, then the current change of the resource was done by the Cluster"
+                },
+                "actorOperation": {
+                    "type": "string",
+                    "description": "ActorOperation is the gRPC full method triggered by the actorRef to modify the Resource"
+                },
+                "isSystem": {
+                    "type": "boolean",
+                    "description": "IsSystem means that the resource is created by the Cluster and it cannot be managed by the administrators. Read-only."
+                },
+                "specLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SpecLabels is map used internally by the Cluster for quick searches among lists of objects. Read-only."
+                },
+                "isUserHidden": {
+                    "type": "boolean",
+                    "description": "IsUserHidden means that the resource object is hidden from ordinary Users and should not be exposed via the User APIs."
+                },
+                "isSystemHidden": {
+                    "type": "boolean",
+                    "description": "IsSystemHidden means that the resource object is hidden by the Cluster and should not be exposed via the APIs."
+                },
+                "systemLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SystemLabels is a similar map to specLabels. Used only by the Cluster."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Metadata",
+            "description": "Metadata is the metadata that is common to every Cluster resource. It carries the resource's identity (i.e. its UID and name), its human-readable information as well as the Cluster-managed bookkeeping of the resource's versioning and provenance."
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
+        }
+    }
+}

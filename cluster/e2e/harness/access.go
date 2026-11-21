@@ -187,6 +187,15 @@ func (h *H) CreateCatalog(t *testing.T, services []string, namespaces []string) 
 					Namespaces: namespaces,
 				},
 			},
+			AccessLevels: []*accessv1.Catalog_Spec_AccessLevel{
+				{
+					Name:        "full",
+					DisplayName: "Full access",
+					Type: &accessv1.Catalog_Spec_AccessLevel_Full_{
+						Full: &accessv1.Catalog_Spec_AccessLevel_Full{},
+					},
+				},
+			},
 		},
 	})
 	if err != nil {
@@ -200,6 +209,59 @@ func (h *H) CreateCatalog(t *testing.T, services []string, namespaces []string) 
 			return err
 		})
 	})
+
+	return ret
+}
+
+func (h *H) UpdateCatalogLevels(t *testing.T, cat *accessv1.Catalog,
+	levels ...*accessv1.Catalog_Spec_AccessLevel) *accessv1.Catalog {
+	t.Helper()
+
+	ctx, cancel := h.Ctx(t)
+	defer cancel()
+
+	cur, err := h.AccessC().GetCatalog(ctx, &metav1.GetOptions{Uid: cat.Metadata.Uid})
+	if err != nil {
+		t.Fatalf("Could not get the Catalog: %+v", err)
+	}
+
+	cur.Spec.AccessLevels = levels
+
+	ret, err := h.AccessC().UpdateCatalog(ctx, cur)
+	if err != nil {
+		t.Fatalf("Could not update the Catalog: %+v", err)
+	}
+
+	return ret
+}
+
+func (h *H) AllowCatalogOnBehalf(t *testing.T, cat *accessv1.Catalog,
+	users ...*corev1.User) *accessv1.Catalog {
+	t.Helper()
+
+	ctx, cancel := h.Ctx(t)
+	defer cancel()
+
+	cur, err := h.AccessC().GetCatalog(ctx, &metav1.GetOptions{Uid: cat.Metadata.Uid})
+	if err != nil {
+		t.Fatalf("Could not get the Catalog: %+v", err)
+	}
+
+	if cur.Spec.Audience == nil {
+		cur.Spec.Audience = &accessv1.Catalog_Spec_Audience{}
+	}
+	if cur.Spec.Audience.OnBehalf == nil {
+		cur.Spec.Audience.OnBehalf = &accessv1.Catalog_Spec_Audience_OnBehalf{}
+	}
+
+	for _, usr := range users {
+		cur.Spec.Audience.OnBehalf.Users = append(cur.Spec.Audience.OnBehalf.Users, usr.Metadata.Name)
+	}
+
+	ret, err := h.AccessC().UpdateCatalog(ctx, cur)
+	if err != nil {
+		t.Fatalf("Could not update the Catalog: %+v", err)
+	}
 
 	return ret
 }

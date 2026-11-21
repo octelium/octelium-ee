@@ -11,8 +11,11 @@ package apiserver
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
@@ -44,6 +47,9 @@ type mockAccessRequest struct {
 	integration   string
 	reviewers     []string
 	reject        bool
+	ticket        string
+	startIn       time.Duration
+	askedInfo     string
 }
 
 func genAccessResources(ctx context.Context, octeliumC octeliumc.ClientInterface, adminSrv *admin.Server) error {
@@ -145,21 +151,105 @@ func genAccessResources(ctx context.Context, octeliumC octeliumc.ClientInterface
 
 	catalogs := map[string]*accessv1.Catalog{}
 	for _, itm := range []struct {
-		name        string
-		displayName string
-		description string
-		services    []string
-		namespaces  []string
+		name         string
+		displayName  string
+		description  string
+		services     []string
+		namespaces   []string
+		levels       []*accessv1.Catalog_Spec_AccessLevel
+		audience     *accessv1.Catalog_Spec_Audience
+		owners       *accessv1.Catalog_Spec_Owners
+		requirements *accessv1.Catalog_Spec_Requirements
+		partial      bool
+		issues       []*accessv1.ConfigurationIssue
 	}{
 		{"production-support", "Production support",
 			"Everything the on-call engineer needs during a production incident.",
-			[]string{"billing-api.production", "postgres-prod.db"}, []string{"production"}},
+			[]string{"billing-api.production", "postgres-prod.db"}, []string{"production"},
+			[]*accessv1.Catalog_Spec_AccessLevel{
+				restrictedLevel("read", "Read only",
+					"View dashboards and query data without changing anything.",
+					`ctx.request.http.method in ["GET", "HEAD", "OPTIONS"]`, mockHours(8)),
+				restrictedLevel("operate", "Read and write",
+					"Everything in read only, plus the write operations needed to mitigate an incident.",
+					`ctx.request.http.method != "DELETE"`, mockHours(4)),
+			},
+			nil,
+			&accessv1.Catalog_Spec_Owners{Groups: []string{"sre-oncall"}},
+			&accessv1.Catalog_Spec_Requirements{
+				Justification: &accessv1.Catalog_Spec_Requirements_Justification{
+					IsRequired: true,
+					MinLength:  10,
+				},
+				Ticket: &accessv1.Catalog_Spec_Requirements_Ticket{
+					Pattern: `^(INC|JIRA)-[0-9]+$`,
+					Label:   "Incident or ticket",
+				},
+			},
+			true, nil},
 		{"database-admin", "Database administration",
 			"Administrative access to every database Service.",
-			nil, []string{"db"}},
+			nil, []string{"db"},
+			[]*accessv1.Catalog_Spec_AccessLevel{
+				{
+					Name:        "admin",
+					DisplayName: "Database administrator",
+					Description: "Full administrative access to the database Services.",
+					Type: &accessv1.Catalog_Spec_AccessLevel_Full_{
+						Full: &accessv1.Catalog_Spec_AccessLevel_Full{},
+					},
+					MaxDuration: mockHours(2),
+					Verification: &accessv1.Catalog_Spec_AccessLevel_Verification{
+						MinAAL: corev1.Session_Status_Authentication_Info_AAL2,
+					},
+				},
+			},
+			nil,
+			&accessv1.Catalog_Spec_Owners{Users: []string{"carol"}},
+			nil, false, nil},
 		{"break-glass", "Break glass",
 			"Emergency access to the whole production estate.",
-			[]string{"bastion.ssh", "k8s-prod.aws"}, []string{"production", "db", "aws"}},
+			[]string{"bastion.ssh", "k8s-prod.aws"}, []string{"production", "db", "aws"},
+			[]*accessv1.Catalog_Spec_AccessLevel{
+				{
+					Name:        "full",
+					DisplayName: "Full access",
+					Description: "Unrestricted access that also overrides the default-priority guardrails.",
+					Type: &accessv1.Catalog_Spec_AccessLevel_Full_{
+						Full: &accessv1.Catalog_Spec_AccessLevel_Full{
+							Priority: func() *int32 { p := int32(-2); return &p }(),
+						},
+					},
+					MaxDuration: mockHours(1),
+				},
+			},
+			&accessv1.Catalog_Spec_Audience{
+				Groups: []string{"sre-oncall"},
+				OnBehalf: &accessv1.Catalog_Spec_Audience_OnBehalf{
+					Groups: []string{"sre-oncall"},
+				},
+			},
+			&accessv1.Catalog_Spec_Owners{Groups: []string{"security"}},
+			&accessv1.Catalog_Spec_Requirements{
+				Justification: &accessv1.Catalog_Spec_Requirements_Justification{
+					IsRequired: true,
+					MinLength:  30,
+				},
+				Ticket: &accessv1.Catalog_Spec_Requirements_Ticket{
+					IsRequired: true,
+					Pattern:    `^INC-[0-9]+$`,
+					Label:      "Incident",
+				},
+			},
+			false,
+			[]*accessv1.ConfigurationIssue{
+				{
+					Type:        accessv1.ConfigurationIssue_OVERRIDES_GUARDRAILS,
+					Severity:    accessv1.ConfigurationIssue_WARNING,
+					Message:     "The access level full takes precedence over the core Policy rules of the default priority, including their DENY rules",
+					AccessLevel: "full",
+				},
+			}},
 	} {
 		cat, err := octeliumC.AccessC().CreateCatalog(ctx, &accessv1.Catalog{
 			Metadata: &metav1.Metadata{
@@ -174,8 +264,17 @@ func genAccessResources(ctx context.Context, octeliumC octeliumc.ClientInterface
 						Namespaces: itm.namespaces,
 					},
 				},
+				AccessLevels:         itm.levels,
+				Audience:             itm.audience,
+				Owners:               itm.owners,
+				Requirements:         itm.requirements,
+				AllowPartialRequests: itm.partial,
 			},
-			Status: &accessv1.Catalog_Status{},
+			Status: &accessv1.Catalog_Status{
+				Issues:       itm.issues,
+				TotalService: uint32(len(getMockCatalogServices(itm.services, itm.namespaces, services))),
+				CheckedAt:    timestamppb.New(now),
+			},
 		})
 		if err != nil {
 			return err
@@ -427,11 +526,9 @@ func genAccessResources(ctx context.Context, octeliumC octeliumc.ClientInterface
 								},
 							},
 						},
-						Effect: accessv1.Policy_Spec_Rule_AUTO_APPROVE,
-						Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-							Policies:          []string{"prod-read-write"},
-							MaxAccessDuration: hours(4),
-						},
+						Effect:      accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+						MaxDuration: hours(4),
+						Message:     "On-call engineers get production support access without a review.",
 						Notifications: []*accessv1.Policy_Spec_Rule_Surface{
 							surface("slack-access", accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
 								accessv1.Policy_Spec_Rule_Surface_INTERACTION_MODE_UNSET),
@@ -465,6 +562,11 @@ func genAccessResources(ctx context.Context, octeliumC octeliumc.ClientInterface
 											ApprovalCount:       1,
 											Timeout:             hours(2),
 											OnTimeout:           accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_REJECT,
+											ReasonRequirement:   accessv1.Policy_Spec_Rule_Action_Review_Step_REJECT_ONLY,
+											Escalation: &accessv1.Policy_Spec_Rule_Action_Review_Step_Escalation{
+												After:     hours(1),
+												Reviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{userReviewer("grace")},
+											},
 											Surfaces: []*accessv1.Policy_Spec_Rule_Surface{
 												surface("jira-access", accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
 													accessv1.Policy_Spec_Rule_Surface_INTERACTIVE),
@@ -474,10 +576,7 @@ func genAccessResources(ctx context.Context, octeliumC octeliumc.ClientInterface
 								},
 							},
 						},
-						Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-							Policies:          []string{"prod-read-only"},
-							MaxAccessDuration: hours(8),
-						},
+						MaxDuration: hours(8),
 						Notifications: []*accessv1.Policy_Spec_Rule_Surface{
 							surface("slack-access", accessv1.Policy_Spec_Rule_Surface_Destination_REQUESTER,
 								accessv1.Policy_Spec_Rule_Surface_INTERACTION_MODE_UNSET),
@@ -515,10 +614,7 @@ func genAccessResources(ctx context.Context, octeliumC octeliumc.ClientInterface
 								},
 							},
 						},
-						Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-							Policies:          []string{"db-admin"},
-							MaxAccessDuration: hours(2),
-						},
+						MaxDuration: hours(2),
 						Notifications: []*accessv1.Policy_Spec_Rule_Surface{
 							surface("siem-webhook", accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
 								accessv1.Policy_Spec_Rule_Surface_INTERACTION_MODE_UNSET),
@@ -547,7 +643,8 @@ func genAccessResources(ctx context.Context, octeliumC octeliumc.ClientInterface
 								},
 							},
 						},
-						Effect: accessv1.Policy_Spec_Rule_DENY,
+						Effect:  accessv1.Policy_Spec_Rule_DENY,
+						Message: "Contractors cannot request production access. Ask your Octelium contact.",
 					},
 				},
 			},
@@ -568,11 +665,8 @@ func genAccessResources(ctx context.Context, octeliumC octeliumc.ClientInterface
 								Match: `ctx.request.spec.urgency == "HIGHEST"`,
 							},
 						},
-						Effect: accessv1.Policy_Spec_Rule_AUTO_APPROVE,
-						Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-							Policies:          []string{"prod-read-write"},
-							MaxAccessDuration: hours(1),
-						},
+						Effect:      accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+						MaxDuration: hours(1),
 					},
 				},
 			},
@@ -641,7 +735,7 @@ func genAccessResources(ctx context.Context, octeliumC octeliumc.ClientInterface
 				itm.accessFor = 2 * time.Hour
 				itm.integration = "siem-webhook"
 			case i%7 == 3:
-				itm.service = "grafana.production"
+				itm.catalog = "break-glass"
 				itm.states = []accessv1.Request_Status_State_Status{rejected}
 			case i%4 == 1:
 				itm.catalog = "production-support"
@@ -678,7 +772,7 @@ func genAccessResources(ctx context.Context, octeliumC octeliumc.ClientInterface
 	items = append(items,
 		&mockAccessRequest{
 			name: "req-incident-4821", age: 35 * time.Minute, requester: "erin", subject: "erin",
-			catalog: "production-support", policy: "production-access", rule: 1,
+			catalog: "production-support", policy: "production-access", rule: 1, ticket: "INC-4821",
 			urgency: accessv1.Request_Spec_HIGHEST, justification: reasons[0],
 			duration: 2 * time.Hour, deadline: -5 * time.Minute,
 			states: []accessv1.Request_Status_State_Status{pending}, origin: accessv1.Origin_INTEGRATION,
@@ -690,6 +784,15 @@ func genAccessResources(ctx context.Context, octeliumC octeliumc.ClientInterface
 			urgency: accessv1.Request_Spec_HIGH, justification: reasons[5],
 			duration: time.Hour, states: []accessv1.Request_Status_State_Status{pending},
 			origin: accessv1.Origin_API, integration: "siem-webhook",
+			askedInfo: "Which tables does the migration touch, and is there a rollback plan?",
+		},
+		&mockAccessRequest{
+			name: "req-scheduled-window", age: 2 * time.Hour, requester: "erin", subject: "erin",
+			catalog: "production-support", policy: "production-access", rule: 1,
+			urgency: accessv1.Request_Spec_NORMAL, justification: reasons[5], ticket: "JIRA-2304",
+			duration: 2 * time.Hour, states: []accessv1.Request_Status_State_Status{pending, approved},
+			reviewers: []string{"alice", "dave"}, decision: 30 * time.Minute, startIn: 5 * time.Hour,
+			origin: accessv1.Origin_API,
 		},
 		&mockAccessRequest{
 			name: "req-stale-backfill", age: 31 * time.Hour, requester: "erin", subject: "bob",
@@ -823,16 +926,47 @@ func genMockAccessRequest(ctx context.Context, octeliumC octeliumc.ClientInterfa
 		req.Spec.Deadline = timestamppb.New(now.Add(itm.deadline))
 	}
 
-	if itm.service != "" {
-		req.Spec.Resource.Type = &accessv1.Request_Spec_Resource_ServiceRef{
-			ServiceRef: umetav1.GetObjectReference(services[itm.service]),
-		}
-	} else {
-		req.Spec.Resource.Type = &accessv1.Request_Spec_Resource_Catalog_{
-			Catalog: &accessv1.Request_Spec_Resource_Catalog{
-				CatalogRef: umetav1.GetObjectReference(catalogs[itm.catalog]),
-			},
-		}
+	catalog := catalogs[itm.catalog]
+	level := catalog.Spec.AccessLevels[0]
+	if itm.catalog == "production-support" && itm.policy == "production-access" && itm.rule == 0 {
+		level = catalog.Spec.AccessLevels[1]
+	}
+
+	req.Spec.Ticket = itm.ticket
+	req.Spec.Resource.Type = &accessv1.Request_Spec_Resource_Catalog_{
+		Catalog: &accessv1.Request_Spec_Resource_Catalog{
+			CatalogRef:  umetav1.GetObjectReference(catalog),
+			AccessLevel: level.Name,
+		},
+	}
+
+	if itm.startIn > 0 {
+		req.Spec.StartAt = timestamppb.New(now.Add(itm.startIn))
+	}
+
+	priority := accesscmd.GetAccessLevelPriority(level, 0)
+	scope := &accessv1.Request_Status_ResolvedScope{
+		CatalogRef:             umetav1.GetObjectReference(catalog),
+		CatalogResourceVersion: catalog.Metadata.ResourceVersion,
+		CatalogDisplayName:     catalog.Metadata.DisplayName,
+		AccessLevel:            level,
+		Membership:             accessv1.Catalog_Spec_FIXED,
+		ResolvedAt:             timestamppb.New(createdAt),
+		Priority:               priority,
+		OverridesGuardrails:    priority < 0,
+	}
+	coll := catalog.Spec.ResourceCollection.Service
+	for _, svc := range getMockCatalogServices(coll.Services, coll.Namespaces, services) {
+		scope.ServiceRefs = append(scope.ServiceRefs, umetav1.GetObjectReference(svc))
+	}
+
+	req.Status.ResolvedScope = scope
+	req.Status.SpecRevision = 1
+	req.Status.RequesterInfo = accesscmd.GetUserInfo(users[itm.requester])
+	req.Status.SubjectInfo = accesscmd.GetUserInfo(users[itm.subject])
+	req.Status.Evaluation = &accessv1.Request_Status_Evaluation{
+		State:         accessv1.Request_Status_Evaluation_EVALUATED,
+		LastAttemptAt: timestamppb.New(createdAt),
 	}
 
 	var rule *accessv1.Policy_Spec_Rule
@@ -840,13 +974,17 @@ func genMockAccessRequest(ctx context.Context, octeliumC octeliumc.ClientInterfa
 		req.Status.PolicyRef = umetav1.GetObjectReference(pol)
 		rule = pol.Spec.Rules[itm.rule]
 		req.Status.Rule = rule
+
+		workflow, err := accesscmd.BuildWorkflow(ctx, octeliumC, rule)
+		if err != nil {
+			return err
+		}
+		req.Status.Workflow = workflow
 	}
 
 	effectiveDuration := itm.duration
-	if rule != nil && rule.Authorization != nil && rule.Authorization.MaxAccessDuration != nil {
-		if maxDuration := umetav1.ToDuration(rule.Authorization.MaxAccessDuration).ToGo(); effectiveDuration > maxDuration {
-			effectiveDuration = maxDuration
-		}
+	if maxDuration := accesscmd.GetMaxDuration(level, rule); effectiveDuration > maxDuration {
+		effectiveDuration = maxDuration
 	}
 	if rule != nil && rule.Effect != accessv1.Policy_Spec_Rule_DENY {
 		req.Status.EffectiveDuration = &metav1.Duration{
@@ -857,6 +995,7 @@ func genMockAccessRequest(ctx context.Context, octeliumC octeliumc.ClientInterfa
 	req.Status.ApprovalStartAt = timestamppb.New(createdAt)
 
 	stateAt := createdAt
+	var approvedAt time.Time
 	for i, state := range itm.states {
 		switch {
 		case i == 0 && state != accessv1.Request_Status_State_PENDING:
@@ -879,13 +1018,37 @@ func genMockAccessRequest(ctx context.Context, octeliumC octeliumc.ClientInterfa
 			CreatedAt: timestamppb.New(stateAt),
 			Status:    state,
 		}
+		setMockStateReason(req.Status.State, itm, rule, users)
 
 		if state != accessv1.Request_Status_State_PENDING && req.Status.ApprovalEndAt == nil {
 			req.Status.ApprovalEndAt = timestamppb.New(stateAt)
 		}
 
-		if state == accessv1.Request_Status_State_APPROVED {
-			req.Status.AccessEndsAt = timestamppb.New(stateAt.Add(effectiveDuration))
+		switch state {
+		case accessv1.Request_Status_State_APPROVED:
+			approvedAt = stateAt
+			startsAt := stateAt
+			if req.Spec.StartAt != nil && req.Spec.StartAt.AsTime().After(startsAt) {
+				startsAt = req.Spec.StartAt.AsTime()
+			}
+
+			req.Status.AccessStartsAt = timestamppb.New(startsAt)
+			req.Status.AccessEndsAt = timestamppb.New(startsAt.Add(effectiveDuration))
+			req.Status.Grant = &accessv1.Request_Status_Grant{
+				State:       accessv1.Request_Status_Grant_ACTIVE,
+				ActivatedAt: timestamppb.New(startsAt),
+			}
+
+			if startsAt.After(now) {
+				req.Status.Grant.State = accessv1.Request_Status_Grant_SCHEDULED
+				req.Status.Grant.ActivatedAt = nil
+			}
+
+		case accessv1.Request_Status_State_EXPIRED, accessv1.Request_Status_State_REVOKED:
+			if req.Status.Grant != nil {
+				req.Status.Grant.State = accessv1.Request_Status_Grant_ENDED
+				req.Status.Grant.EndedAt = timestamppb.New(stateAt)
+			}
 		}
 	}
 
@@ -898,9 +1061,24 @@ func genMockAccessRequest(ctx context.Context, octeliumC octeliumc.ClientInterfa
 			req.Status.Review.CurrentStep = 1
 			req.Status.Review.CurrentStepStartedAt = timestamppb.New(createdAt.Add(12 * time.Minute))
 		}
+
+		if itm.askedInfo != "" {
+			req.Status.Review.InformationRequests = append(req.Status.Review.InformationRequests,
+				&accessv1.Request_Status_Review_InformationRequest{
+					UserRef:     umetav1.GetObjectReference(users["carol"]),
+					Message:     itm.askedInfo,
+					RequestedAt: timestamppb.New(createdAt.Add(20 * time.Minute)),
+				})
+		}
 	} else if rule != nil && rule.Action.GetReview() != nil {
 		req.Status.Review = &accessv1.Request_Status_Review{
 			CurrentStepStartedAt: timestamppb.New(createdAt),
+		}
+	}
+
+	if req.Status.Review != nil {
+		if err := setMockStepStates(ctx, octeliumC, req, createdAt, approvedAt); err != nil {
+			return err
 		}
 	}
 
@@ -941,15 +1119,16 @@ func genMockAccessRequest(ctx context.Context, octeliumC octeliumc.ClientInterfa
 			},
 			Spec: &accessv1.Review_Spec{
 				Decision:      decision,
-				Justification: "Matches the on-call schedule and the linked incident.",
+				Justification: mockReviewJustification(decision),
 			},
 			Status: &accessv1.Review_Status{
-				UserRef:    umetav1.GetObjectReference(users[reviewer]),
-				RequestRef: umetav1.GetObjectReference(created),
-				SetAt:      timestamppb.New(setAt),
-				StepIndex:  stepIndex,
-				StepName:   steps[stepIndex].Name,
-				Origin:     origin,
+				UserRef:      umetav1.GetObjectReference(users[reviewer]),
+				RequestRef:   umetav1.GetObjectReference(created),
+				SetAt:        timestamppb.New(setAt),
+				StepIndex:    stepIndex,
+				StepName:     steps[stepIndex].Name,
+				Origin:       origin,
+				SpecRevision: 1,
 			},
 		})
 		if err != nil {
@@ -966,12 +1145,14 @@ func genMockAccessRequest(ctx context.Context, octeliumC octeliumc.ClientInterfa
 		}
 
 		created.Status.Review.LastSteps = append(created.Status.Review.LastSteps, &accessv1.Request_Status_Review_Step{
-			ReviewRef: umetav1.GetObjectReference(rev),
-			SetAt:     timestamppb.New(setAt),
-			StepIndex: stepIndex,
-			Decision:  decision,
-			UserRef:   umetav1.GetObjectReference(users[reviewer]),
-			StepName:  steps[stepIndex].Name,
+			ReviewRef:     umetav1.GetObjectReference(rev),
+			SetAt:         timestamppb.New(setAt),
+			StepIndex:     stepIndex,
+			Decision:      decision,
+			UserRef:       umetav1.GetObjectReference(users[reviewer]),
+			StepName:      steps[stepIndex].Name,
+			Justification: mockReviewJustification(decision),
+			SpecRevision:  1,
 		})
 	}
 
@@ -1067,6 +1248,178 @@ func genMockAccessRequest(ctx context.Context, octeliumC octeliumc.ClientInterfa
 		}); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func mockHours(h uint32) *metav1.Duration {
+	return &metav1.Duration{
+		Type: &metav1.Duration_Hours{Hours: h},
+	}
+}
+
+func restrictedLevel(name, displayName, description, match string,
+	maxDuration *metav1.Duration) *accessv1.Catalog_Spec_AccessLevel {
+	return &accessv1.Catalog_Spec_AccessLevel{
+		Name:        name,
+		DisplayName: displayName,
+		Description: description,
+		Type: &accessv1.Catalog_Spec_AccessLevel_Restricted_{
+			Restricted: &accessv1.Catalog_Spec_AccessLevel_Restricted{
+				InlinePolicies: []*corev1.InlinePolicy{
+					{
+						Name: name,
+						Spec: &corev1.Policy_Spec{
+							Rules: []*corev1.Policy_Spec_Rule{
+								{
+									Effect: corev1.Policy_Spec_Rule_ALLOW,
+									Condition: &corev1.Condition{
+										Type: &corev1.Condition_Match{
+											Match: match,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		MaxDuration: maxDuration,
+	}
+}
+
+func getMockCatalogServices(names, namespaces []string,
+	services map[string]*corev1.Service) []*corev1.Service {
+	seen := map[string]struct{}{}
+	var ret []*corev1.Service
+
+	add := func(svc *corev1.Service) {
+		if _, ok := seen[svc.Metadata.Uid]; ok {
+			return
+		}
+		seen[svc.Metadata.Uid] = struct{}{}
+		ret = append(ret, svc)
+	}
+
+	for _, name := range names {
+		if svc, ok := services[name]; ok {
+			add(svc)
+		}
+	}
+
+	for _, ns := range namespaces {
+		for _, svc := range services {
+			if strings.HasSuffix(svc.Metadata.Name, "."+ns) {
+				add(svc)
+			}
+		}
+	}
+
+	sort.SliceStable(ret, func(i, j int) bool {
+		return ret[i].Metadata.Name < ret[j].Metadata.Name
+	})
+
+	return ret
+}
+
+func mockReviewJustification(decision accessv1.Review_Spec_Decision) string {
+	if decision == accessv1.Review_Spec_DECISION_REJECT {
+		return "The linked incident is already resolved. Ask again if it reopens."
+	}
+
+	return "Matches the on-call schedule and the linked incident."
+}
+
+func setMockStateReason(state *accessv1.Request_Status_State, itm *mockAccessRequest,
+	rule *accessv1.Policy_Spec_Rule, users map[string]*corev1.User) {
+	switch state.Status {
+	case accessv1.Request_Status_State_PENDING:
+		state.Reason = accessv1.Request_Status_State_AWAITING_REVIEW
+	case accessv1.Request_Status_State_APPROVED:
+		if rule != nil && rule.Effect == accessv1.Policy_Spec_Rule_AUTO_APPROVE {
+			state.Reason = accessv1.Request_Status_State_AUTO_APPROVED
+			state.Message = rule.Message
+		} else {
+			state.Reason = accessv1.Request_Status_State_APPROVED_BY_REVIEWERS
+			if len(itm.reviewers) > 0 {
+				state.ActorRef = umetav1.GetObjectReference(users[itm.reviewers[len(itm.reviewers)-1]])
+			}
+		}
+	case accessv1.Request_Status_State_REJECTED:
+		switch {
+		case rule == nil:
+			state.Reason = accessv1.Request_Status_State_NO_MATCHING_RULE
+		case rule.Effect == accessv1.Policy_Spec_Rule_DENY:
+			state.Reason = accessv1.Request_Status_State_DENIED_BY_RULE
+			state.Message = rule.Message
+		default:
+			state.Reason = accessv1.Request_Status_State_REJECTED_BY_REVIEWER
+			state.Message = mockReviewJustification(accessv1.Review_Spec_DECISION_REJECT)
+			if len(itm.reviewers) > 0 {
+				state.ActorRef = umetav1.GetObjectReference(users[itm.reviewers[len(itm.reviewers)-1]])
+			}
+		}
+	case accessv1.Request_Status_State_EXPIRED:
+		state.Reason = accessv1.Request_Status_State_ACCESS_ENDED
+	case accessv1.Request_Status_State_REVOKED:
+		state.Reason = accessv1.Request_Status_State_ACCESS_REVOKED
+		state.Message = "The incident was resolved."
+		state.ActorRef = umetav1.GetObjectReference(users["dave"])
+	case accessv1.Request_Status_State_CANCELLED:
+		state.Reason = accessv1.Request_Status_State_CANCELLED_BY_USER
+		state.ActorRef = umetav1.GetObjectReference(users[itm.requester])
+	}
+}
+
+func setMockStepStates(ctx context.Context, octeliumC octeliumc.ClientInterface,
+	req *accessv1.Request, createdAt, approvedAt time.Time) error {
+	steps := req.Status.Rule.GetAction().GetReview().GetSteps()
+	isPending := req.Status.State.Status == accessv1.Request_Status_State_PENDING
+
+	last := int32(len(steps) - 1)
+	if isPending {
+		last = req.Status.Review.CurrentStep
+	}
+
+	for idx := int32(0); idx <= last && int(idx) < len(steps); idx++ {
+		step := steps[idx]
+		startedAt := createdAt.Add(time.Duration(idx) * 12 * time.Minute)
+
+		stepState := &accessv1.Request_Status_Review_StepState{
+			Name:      accesscmd.StepName(step, idx),
+			Index:     idx,
+			StartedAt: timestamppb.New(startedAt),
+		}
+
+		usrs, err := accesscmd.GetStepEligibleUsers(ctx, octeliumC, req, step, stepState, nil)
+		if err != nil {
+			return err
+		}
+
+		stepState.TotalEligibleReviewer = uint32(len(usrs))
+		stepState.IsUnroutable = len(usrs) == 0
+		stepState.RequiredApprovals = accesscmd.GetRequiredApprovals(step, stepState.TotalEligibleReviewer)
+		for _, usr := range usrs {
+			stepState.EligibleReviewers = append(stepState.EligibleReviewers, umetav1.GetObjectReference(usr))
+		}
+
+		switch {
+		case isPending && idx == last:
+		case req.Status.State.Status == accessv1.Request_Status_State_REJECTED && idx == last:
+			stepState.Outcome = accessv1.Request_Status_Review_StepState_REJECTED
+			stepState.EndedAt = req.Status.ApprovalEndAt
+		case !approvedAt.IsZero() || isPending:
+			stepState.Outcome = accessv1.Request_Status_Review_StepState_SATISFIED
+			stepState.Approvals = stepState.RequiredApprovals
+			stepState.EndedAt = timestamppb.New(startedAt.Add(10 * time.Minute))
+		default:
+			stepState.Outcome = accessv1.Request_Status_Review_StepState_INTERRUPTED
+			stepState.EndedAt = req.Status.ApprovalEndAt
+		}
+
+		req.Status.Review.Steps = append(req.Status.Review.Steps, stepState)
 	}
 
 	return nil

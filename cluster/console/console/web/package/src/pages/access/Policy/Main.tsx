@@ -8,18 +8,26 @@ import { getClientVisibilityAccess } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
 import {
+  AlertTriangle,
   ArrowUpRight,
   BellRing,
   Filter,
   KeyRound,
   ListOrdered,
+  MessageSquareText,
   Scale,
   Zap,
 } from "lucide-react";
 import * as React from "react";
 import { Link } from "react-router";
 import { EFFECT_META, EffectBadge, EffectKey, getEffectKey, normalizeRef, RefChip } from "../common";
-import { ConditionView, GrantSummary, StepTimeline, SurfaceChip } from "../rules";
+import {
+  ConditionView,
+  ConfigurationIssues,
+  GrantSummary,
+  StepTimeline,
+  SurfaceChip,
+} from "../rules";
 
 const WINDOW_DAYS = 30;
 
@@ -201,8 +209,14 @@ const RuleCard = (props: {
       )}
 
       {(key === "REVIEW" || key === "AUTO_APPROVE") && (
-        <RuleBlock icon={KeyRound} label="Grants">
-          <GrantSummary authorization={rule.authorization} />
+        <RuleBlock icon={KeyRound} label="Limits">
+          <GrantSummary maxDuration={rule.maxDuration} />
+        </RuleBlock>
+      )}
+
+      {rule.message && (
+        <RuleBlock icon={MessageSquareText} label="Message">
+          <span className="text-slate-600">{rule.message}</span>
         </RuleBlock>
       )}
 
@@ -275,13 +289,35 @@ export const MainInfo = (props: { item: AccessC.Policy }): ResourceMainInfo => {
     .map((rule, index) => ({ rule, index }))
     .sort((a, b) => a.rule.priority - b.rule.priority || a.index - b.index);
   const mix = effectMix(rules);
+  const issues = item.status?.issues ?? [];
 
   return {
     header: <Activity item={item} />,
     groupOrder: [
+      ...(issues.length > 0 ? [{ title: "Configuration issues", icon: AlertTriangle }] : []),
       { title: "Rules", icon: ListOrdered },
     ],
     items: [
+      ...(issues.length > 0
+        ? [
+            {
+              label: "Issues",
+              primary: true,
+              icon: AlertTriangle,
+              value: (
+                <span className="font-semibold text-amber-700">{issues.length}</span>
+              ),
+            },
+            {
+              label: "",
+              group: "Configuration issues",
+              layout: "stacked" as const,
+              value: (
+                <ConfigurationIssues issues={issues} checkedAt={item.status?.checkedAt} />
+              ),
+            },
+          ]
+        : []),
       {
         label: "Rules",
         primary: true,

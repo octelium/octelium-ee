@@ -41,9 +41,10 @@ func TestMainRequest(t *testing.T) {
 		Spec: &accessv1.Catalog_Spec{
 			ResourceCollection: &accessv1.Catalog_Spec_ResourceCollection{
 				Service: &accessv1.Catalog_Spec_ResourceCollection_Service{
-					Services: []string{utilrand.GetRandomStringCanonical(6)},
+					Services: []string{newTestServiceName(t, tst.C.OcteliumC)},
 				},
 			},
+			AccessLevels: []*accessv1.Catalog_Spec_AccessLevel{testFullLevel("full")},
 		},
 	})
 	assert.Nil(t, err, "%+v", err)

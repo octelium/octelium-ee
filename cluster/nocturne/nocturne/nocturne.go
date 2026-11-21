@@ -18,6 +18,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium-ee/cluster/common/watchers"
+	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/accessconfig"
 	cccontroller "github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/cluster_config"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/devicemanagers"
 	devcontroller "github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/devices"
@@ -145,6 +146,9 @@ func runDefaultRegionControllers(ctx context.Context, octeliumC octeliumc.Client
 		}
 	}
 
+	var reqCtl *requests.Controller
+	var accessConfigCtl *accessconfig.Controller
+
 	{
 		ctl, err := requests.NewController(ctx, octeliumC, celEngine)
 		if err != nil {
@@ -154,9 +158,20 @@ func runDefaultRegionControllers(ctx context.Context, octeliumC octeliumc.Client
 			ctl.OnAdd, ctl.OnUpdate, ctl.OnDelete); err != nil {
 			return err
 		}
-		if err := aWatcher.ClusterConfig(ctx, nil, ctl.OnClusterConfigUpdate); err != nil {
+		reqCtl = ctl
+	}
+
+	{
+		ctl := accessconfig.NewController(octeliumC, celEngine)
+		if err := aWatcher.Catalog(ctx, nil,
+			ctl.OnCatalogAdd, ctl.OnCatalogUpdate, ctl.OnCatalogDelete); err != nil {
 			return err
 		}
+		if err := aWatcher.Policy(ctx, nil,
+			ctl.OnPolicyAdd, ctl.OnPolicyUpdate, ctl.OnPolicyDelete); err != nil {
+			return err
+		}
+		accessConfigCtl = ctl
 	}
 
 	{
@@ -204,7 +219,12 @@ func runDefaultRegionControllers(ctx context.Context, octeliumC octeliumc.Client
 		sessCtl.RunFailures(ctx)
 	}
 
-	ewatcher.InitWatcher(octeliumC, bindingCtl).Run(ctx)
+	ewatcher.InitWatcher(&ewatcher.Opts{
+		OcteliumC:    octeliumC,
+		BindingCtl:   bindingCtl,
+		RequestCtl:   reqCtl,
+		AccessConfig: accessConfigCtl,
+	}).Run(ctx)
 
 	return nil
 }

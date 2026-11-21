@@ -7,7 +7,36 @@
                 "common": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.CommonListOptions",
                     "additionalProperties": false,
-                    "description": "Common is the common list options."
+                    "description": "Common is the common list options. The pagination is applied after the filtering."
+                },
+                "filter": {
+                    "enum": [
+                        "FILTER_UNSET",
+                        "NEEDS_MY_DECISION",
+                        "WAITING_ON_OTHERS",
+                        "DECIDED_BY_ME"
+                    ],
+                    "type": "string",
+                    "title": "Filter",
+                    "description": "Filter is which of the calling User's review Requests are listed"
+                },
+                "query": {
+                    "type": "string",
+                    "description": "Query only lists the Requests whose name, Catalog, requester, subject, justification or ticket contains it."
+                },
+                "urgency": {
+                    "enum": [
+                        "URGENCY_UNSET",
+                        "VERY_LOW",
+                        "LOW",
+                        "NORMAL",
+                        "HIGH",
+                        "VERY_HIGH",
+                        "HIGHEST"
+                    ],
+                    "type": "string",
+                    "title": "Urgency",
+                    "description": "Urgency is how urgent the requester considers the Request to be"
                 }
             },
             "additionalProperties": false,

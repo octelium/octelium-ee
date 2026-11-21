@@ -70,10 +70,10 @@ describe("Production access portal", () => {
         const routes = [
           ["/user/new", "New Request", "src/pages/user/Request/new.tsx"],
           ["/reviewer/requests", "Review Queue (2)", "src/pages/reviewer/Review/queue.tsx"],
-          ["/reviewer/requests/queue-first", "Review default.database", "src/pages/reviewer/Review/request.tsx"],
+          ["/reviewer/requests/queue-first", "Review Primary storage", "src/pages/reviewer/Review/request.tsx"],
           ["/reviewer/reviews", "My Reviews", "src/pages/reviewer/Review/index.tsx"],
           ["/reviewer/reviews/rv1.queue-second", "Review of queue-second", "src/pages/reviewer/Review/detail.tsx"],
-          ["/user/requests/own-pending", "default.database", "src/pages/user/Request/detail.tsx"],
+          ["/user/requests/own-pending", "Primary storage", "src/pages/user/Request/detail.tsx"],
         ];
 
         for (const [, , source] of routes) {

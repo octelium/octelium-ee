@@ -60,6 +60,9 @@ func Phases() []suite.Phase {
 		{Name: "AccessAPIScoping", Run: testAccessAPIScoping},
 		{Name: "AccessActorTrail", Run: testAccessActorTrail},
 		{Name: "AccessPortal", Run: testAccessPortal},
+		{Name: "AccessNameOnlyReferences", Run: testAccessNameOnlyReferences},
+		{Name: "AccessSystemServicesAreNotRequestable", Run: testAccessSystemServicesAreNotRequestable},
+		{Name: "AccessGuardrailsWinByDefault", Run: testAccessGuardrailsWinByDefault},
 		{Name: "ConsolePortal", Run: testConsolePortal},
 
 		{Name: "PolicyPortalParity", Run: testPolicyPortalParity},

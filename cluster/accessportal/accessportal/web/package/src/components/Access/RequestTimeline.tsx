@@ -1,7 +1,13 @@
 import * as React from "react";
 import * as AccessP from "@/apis/accessv1/accessv1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
-import { FilePlus2, Gavel, History } from "lucide-react";
+import {
+  FilePlus2,
+  Gavel,
+  History,
+  MessageCircleQuestionMark,
+  MessageSquareReply,
+} from "lucide-react";
 
 import TimeAgo from "@/components/TimeAgo";
 import { SectionCard, Timeline, TimelineItem } from "@/ui";
@@ -11,6 +17,7 @@ import {
   reviewStepLabel,
   reviewSteps,
   shortName,
+  stateDescription,
   statusMeta,
   tsToMillis,
 } from "@/utils";
@@ -54,7 +61,7 @@ const RequestTimeline = (props: { request: AccessP.Request }) => {
       millis: tsToMillis(state.createdAt) ?? 0,
       title: meta.label,
       tone: meta.tone,
-      description: meta.hint,
+      description: stateDescription(state),
     });
   };
 
@@ -76,8 +83,34 @@ const RequestTimeline = (props: { request: AccessP.Request }) => {
             ? "emerald"
             : undefined,
       icon: <Gavel size={11} strokeWidth={2.25} />,
-      description: step.stepName || reviewStepLabel(steps[step.stepIndex], step.stepIndex),
+      description: step.justification
+        ? `${step.stepName || reviewStepLabel(steps[step.stepIndex], step.stepIndex)}: “${step.justification}”`
+        : step.stepName || reviewStepLabel(steps[step.stepIndex], step.stepIndex),
     });
+  });
+
+  (status?.review?.informationRequests ?? []).forEach((info, index) => {
+    const asker = info.userRef?.name
+      ? shortName(info.userRef.name)
+      : "A reviewer";
+    events.push({
+      key: `info-${index}`,
+      at: info.requestedAt,
+      millis: tsToMillis(info.requestedAt) ?? 0,
+      title: `${asker} asked for more information`,
+      icon: <MessageCircleQuestionMark size={11} strokeWidth={2.25} />,
+      description: info.message,
+    });
+    if (info.respondedAt) {
+      events.push({
+        key: `info-response-${index}`,
+        at: info.respondedAt,
+        millis: tsToMillis(info.respondedAt) ?? 0,
+        title: `${info.responderRef?.name ? shortName(info.responderRef.name) : "The requester"} responded`,
+        icon: <MessageSquareReply size={11} strokeWidth={2.25} />,
+        description: info.response,
+      });
+    }
   });
 
   const createdAt = requestCreatedAt(props.request);

@@ -167,6 +167,37 @@ describe("Access Policy validation", () => {
     assert.deepEqual(validation.ruleIssues(value, [value]), ["Notification: choose the integration of every delivery", "Notification: choose who every delivery goes to"]);
   });
 
+  it("requires a valid access level name and a Namespace reference", () => {
+    assert.deepEqual(validation.conditionIssues(condition({ oneofKind: "accessLevel", accessLevel: "" })), ["Name the access level"]);
+    assert.deepEqual(validation.conditionIssues(condition({ oneofKind: "accessLevel", accessLevel: "Admin" })), ["Use lowercase letters, digits and dashes in the access level"]);
+    assert.deepEqual(validation.conditionIssues(condition({ oneofKind: "accessLevel", accessLevel: "admin" })), []);
+    assert.deepEqual(validation.conditionIssues(condition({ oneofKind: "isOnBehalf", isOnBehalf: true })), []);
+    const namespace = (ref) => condition({ oneofKind: "resource", resource: { type: { oneofKind: "namespaceRef", namespaceRef: ref } } });
+    assert.deepEqual(validation.conditionIssues(namespace({})), ["Choose the Namespace"]);
+    assert.deepEqual(validation.conditionIssues(namespace({ name: "production" })), []);
+  });
+
+  it("accepts the Catalog owners as reviewers", () => {
+    const value = step({ reviewers: [{ type: { oneofKind: "catalogOwners", catalogOwners: {} } }] });
+    assert.deepEqual(validation.stepIssues(value, 0, [value]), []);
+  });
+
+  it("requires complete escalation reviewers", () => {
+    const empty = step({ escalation: { reviewers: [] } });
+    assert.deepEqual(validation.stepIssues(empty, 0, [empty]), ["review: add at least one escalation reviewer"]);
+    const missing = step({ escalation: { reviewers: [reviewer("group", {})] } });
+    assert.deepEqual(validation.stepIssues(missing, 0, [missing]), ["review: an escalation reviewer is missing its User or Group"]);
+    const valid = step({ escalation: { reviewers: [reviewer("group", { name: "sre-leads" })] } });
+    assert.deepEqual(validation.stepIssues(valid, 0, [valid]), []);
+  });
+
+  it("limits the message of a rule to 500 characters", () => {
+    const value = rule({ message: "é".repeat(500) });
+    assert.deepEqual(validation.ruleIssues(value, [value]), []);
+    const long = rule({ message: "é".repeat(501) });
+    assert.deepEqual(validation.ruleIssues(long, [long]), ["Shorten the message to at most 500 characters"]);
+  });
+
   it("CONSOLE-012: rejects a reviewer without a selected type", { todo: "CONSOLE-012" }, () => {
     const value = step({ reviewers: [access.Policy_Spec_Rule_Action_Review_Step_Reviewer.create()] });
     assert.ok(validation.stepIssues(value, 0, [value]).some((issue) => /reviewer|User|Group/.test(issue)));

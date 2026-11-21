@@ -24,6 +24,9 @@ import (
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
+	"github.com/octelium/octelium/cluster/common/vutils"
+	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
+	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -58,18 +61,6 @@ func (s *Server) doSummaryAccessPolicy(ctx context.Context, common *vmetav1.Comm
 					lambda x : json_extract_string(x, '$.effect') = 'AUTO_APPROVE'
 				))
 			), 0) AS count_rules_auto_approve`),
-			goqu.L(`COALESCE(SUM(
-				len(list_filter(
-					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-					lambda x : json_extract(x, '$.authorization') IS NOT NULL
-				))
-			), 0) AS count_rules_authorization`),
-			goqu.L(`COALESCE(SUM(
-				len(list_filter(
-					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-					lambda x : json_extract(x, '$.authorization.maxAccessDuration') IS NOT NULL
-				))
-			), 0) AS count_rules_max_access_duration`),
 			goqu.L(`COALESCE(SUM(
 				list_sum(list_transform(
 					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
@@ -112,6 +103,23 @@ func (s *Server) doSummaryAccessPolicy(ctx context.Context, common *vmetav1.Comm
 					))
 				))
 			), 0) AS count_interactive_surfaces`),
+			goqu.L(`COALESCE(SUM(
+				len(list_filter(
+					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
+					lambda x : json_extract(x, '$.maxDuration') IS NOT NULL
+				))
+			), 0) AS count_rules_max_duration`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE len(COALESCE(%s, [])) > 0) AS count_with_issues`,
+				colStatusIssueTypes)),
+			goqu.L(`COALESCE(SUM(
+				list_sum(list_transform(
+					CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
+					lambda x : len(list_filter(
+						COALESCE(CAST(json_extract(x, '$.action.review.steps') AS JSON[]), []),
+						lambda y : json_extract(y, '$.escalation') IS NOT NULL
+					))
+				))
+			), 0) AS count_review_escalations`),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -134,9 +142,9 @@ func (s *Server) doSummaryAccessPolicy(ctx context.Context, common *vmetav1.Comm
 			&ret.TotalDisabled,
 			&ret.TotalRule,
 			&ret.TotalRuleDeny, &ret.TotalRuleReview, &ret.TotalRuleAutoApprove,
-			&ret.TotalRuleAuthorization, &ret.TotalRuleMaxAccessDuration,
 			&ret.TotalReviewStep, &ret.TotalReviewer,
-			&ret.TotalRuleNotification, &ret.TotalReviewSurface, &ret.TotalInteractiveSurface)
+			&ret.TotalRuleNotification, &ret.TotalReviewSurface, &ret.TotalInteractiveSurface,
+			&ret.TotalRuleMaxDuration, &ret.TotalWithIssues, &ret.TotalReviewEscalation)
 		if err != nil {
 			return nil, err
 		}
@@ -161,6 +169,27 @@ func (s *Server) doSummaryAccessCatalog(ctx context.Context, common *vmetav1.Com
 			goqu.L(`COUNT(*) AS count_total`),
 			goqu.L(`COALESCE(SUM(json_array_length(rsc, '$.spec.resourceCollection.service.services')), 0) AS count_service`),
 			goqu.L(`COALESCE(SUM(json_array_length(rsc, '$.spec.resourceCollection.service.namespaces')), 0) AS count_namespace`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = true) AS count_disabled`, colSpecIsDisabled)),
+			goqu.L(`COALESCE(SUM(json_array_length(rsc, '$.spec.accessLevels')), 0) AS count_access_levels`),
+			goqu.L(`COALESCE(SUM(len(list_filter(
+				COALESCE(CAST(json_extract(rsc, '$.spec.accessLevels') AS JSON[]), []),
+				lambda x : json_extract(x, '$.full') IS NOT NULL
+			))), 0) AS count_full_access_levels`),
+			goqu.L(`COALESCE(SUM(len(list_filter(
+				COALESCE(CAST(json_extract(rsc, '$.spec.accessLevels') AS JSON[]), []),
+				lambda x : json_extract(x, '$.restricted') IS NOT NULL
+			))), 0) AS count_restricted_access_levels`),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE list_contains(COALESCE(%s, []), 'OVERRIDES_GUARDRAILS')) AS count_overrides_guardrails`,
+				colStatusIssueTypes)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE len(COALESCE(%s, [])) > 0) AS count_with_issues`,
+				colStatusIssueTypes)),
+			goqu.L(`COUNT(*) FILTER (WHERE COALESCE(json_array_length(rsc, '$.spec.audience.users'), 0) > 0
+				OR COALESCE(json_array_length(rsc, '$.spec.audience.groups'), 0) > 0
+				OR COALESCE(json_extract_string(rsc, '$.spec.audience.match'), '') != '') AS count_restricted_audience`),
+			goqu.L(`COUNT(*) FILTER (WHERE COALESCE(json_array_length(rsc, '$.spec.owners.users'), 0) > 0
+				OR COALESCE(json_array_length(rsc, '$.spec.owners.groups'), 0) > 0) AS count_with_owners`),
+			goqu.L(`COUNT(*) FILTER (WHERE COALESCE(json_array_length(rsc, '$.spec.audience.onBehalf.users'), 0) > 0
+				OR COALESCE(json_array_length(rsc, '$.spec.audience.onBehalf.groups'), 0) > 0) AS count_on_behalf`),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -179,7 +208,11 @@ func (s *Server) doSummaryAccessCatalog(ctx context.Context, common *vmetav1.Com
 	defer rows.Close()
 
 	for rows.Next() {
-		err := rows.Scan(&ret.TotalNumber, &ret.TotalService, &ret.TotalNamespace)
+		err := rows.Scan(&ret.TotalNumber, &ret.TotalService, &ret.TotalNamespace,
+			&ret.TotalDisabled, &ret.TotalAccessLevel,
+			&ret.TotalFullAccessLevel, &ret.TotalRestrictedAccessLevel,
+			&ret.TotalOverridesGuardrails, &ret.TotalWithIssues,
+			&ret.TotalRestrictedAudience, &ret.TotalWithOwners, &ret.TotalOnBehalf)
 		if err != nil {
 			return nil, err
 		}
@@ -191,15 +224,21 @@ func (s *Server) doSummaryAccessCatalog(ctx context.Context, common *vmetav1.Com
 	return ret, nil
 }
 
+type requestSummaryOpts struct {
+	refFilters     []exp.Expression
+	staleAfter     time.Duration
+	expiringWithin time.Duration
+}
+
 func (s *Server) doSummaryAccessRequest(ctx context.Context, common *vmetav1.CommonSummaryOptions,
-	refFilters []exp.Expression) (*vaccessv1.GetRequestSummaryResponse, error) {
+	o *requestSummaryOpts) (*vaccessv1.GetRequestSummaryResponse, error) {
 
 	ret := &vaccessv1.GetRequestSummaryResponse{}
 	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindRequest, common)
 	if err != nil {
 		return nil, err
 	}
-	filters = append(filters, refFilters...)
+	filters = append(filters, o.refFilters...)
 
 	now := time.Now().UTC()
 	decided := getRequestDecidedExpr()
@@ -218,7 +257,8 @@ func (s *Server) doSummaryAccessRequest(ctx context.Context, common *vmetav1.Com
 				now),
 			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_user`, colUserUID)),
 			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_subject_user`, colSpecSubjectUserUID)),
-			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_service`, colSpecServiceUID)),
+			goqu.L(fmt.Sprintf(`COALESCE(len(list_distinct(flatten(list(COALESCE(%s, []))))), 0) AS count_service`,
+				colStatusScopeServiceUIDs)),
 			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_catalog`, colSpecCatalogUID)),
 			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_policy`, colPolicyUID)),
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'VERY_LOW') AS count_urgency_very_low`, colSpecUrgency)),
@@ -236,9 +276,9 @@ func (s *Server) doSummaryAccessRequest(ctx context.Context, common *vmetav1.Com
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s) AS count_on_behalf`, getRequestOnBehalfExpr())),
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'INTEGRATION') AS count_from_integration`, colStatusOriginType)),
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s) AS count_expiring_soon`, getRequestExpiringSoonExpr()),
-				now, now.Add(requestExpiringSoonDuration)),
+				now, now.Add(o.expiringWithin)),
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s) AS count_pending_stale`, getRequestPendingStaleExpr()),
-				now.Add(-requestPendingStaleDuration)),
+				now.Add(-o.staleAfter)),
 			goqu.L(fmt.Sprintf(`MIN(%s) FILTER (WHERE %s = 'PENDING') AS oldest_pending_at`,
 				colStatusApprovalStartAt, colStatusStateStatus)),
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s) AS count_decided`, decided)),
@@ -249,6 +289,19 @@ func (s *Server) doSummaryAccessRequest(ctx context.Context, common *vmetav1.Com
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'PENDING' AND %s < ?) AS count_pending_deadline_passed`,
 				colStatusStateStatus, colSpecDeadline), now),
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s) AS count_granted`, getRequestGrantedExpr())),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'PROVISIONING_FAILED') AS count_provisioning_failed`,
+				colStatusStateReason)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'EVALUATION_FAILED') AS count_evaluation_failed`,
+				colStatusStateReason)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s) AS count_unroutable`, getRequestUnroutableExpr())),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s) AS count_awaiting_requester`,
+				getRequestAwaitingRequesterExpr())),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'APPROVED' AND %s = true AND ((%s IS NULL) OR (%s > ?))) AS count_overrides_guardrails`,
+				colStatusStateStatus, colStatusOverridesGuardrails, colStatusAccessEndsAt, colStatusAccessEndsAt), now),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'APPROVED' AND %s = 'SCHEDULED') AS count_scheduled`,
+				colStatusStateStatus, colStatusGrantState)),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'ENDED_EARLY') AS count_ended_early`,
+				colStatusStateReason)),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -283,7 +336,10 @@ func (s *Server) doSummaryAccessRequest(ctx context.Context, common *vmetav1.Com
 			&oldestPendingAt,
 			&decisionTime.Count, &decisionTime.AverageSeconds,
 			&decisionTime.P50Seconds, &decisionTime.P90Seconds, &decisionTime.MaxSeconds,
-			&ret.TotalPendingDeadlinePassed, &ret.TotalGranted)
+			&ret.TotalPendingDeadlinePassed, &ret.TotalGranted,
+			&ret.TotalProvisioningFailed, &ret.TotalEvaluationFailed,
+			&ret.TotalUnroutable, &ret.TotalAwaitingRequester,
+			&ret.TotalOverridesGuardrails, &ret.TotalScheduled, &ret.TotalEndedEarly)
 		if err != nil {
 			return nil, err
 		}
@@ -295,6 +351,70 @@ func (s *Server) doSummaryAccessRequest(ctx context.Context, common *vmetav1.Com
 		if decisionTime.Count > 0 {
 			ret.DecisionTime = decisionTime
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	stepDecisionTimes, err := s.getStepDecisionTimes(ctx, filters)
+	if err != nil {
+		return nil, err
+	}
+	ret.StepDecisionTimes = stepDecisionTimes
+
+	return ret, nil
+}
+
+func (s *Server) getStepDecisionTimes(ctx context.Context,
+	filters []exp.Expression) ([]*vaccessv1.StepDecisionTime, error) {
+	inner := goqu.From("resources").Where(filters...).
+		Select(goqu.L(`unnest(COALESCE(CAST(json_extract(rsc, '$.status.review.steps') AS JSON[]), [])) AS step`))
+
+	seconds := `(epoch(TRY_CAST(json_extract_string(step, '$.endedAt') AS TIMESTAMP)) - epoch(TRY_CAST(json_extract_string(step, '$.startedAt') AS TIMESTAMP)))`
+	satisfied := `json_extract_string(step, '$.outcome') = 'SATISFIED'`
+
+	ds := goqu.From(inner.As("steps")).
+		Select(
+			goqu.L(`COALESCE(json_extract_string(step, '$.name'), '')`).As("name"),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s)`, satisfied)),
+			goqu.L(fmt.Sprintf(`COALESCE(AVG(%s) FILTER (WHERE %s), 0)`, seconds, satisfied)),
+			goqu.L(fmt.Sprintf(`COALESCE(quantile_cont(%s, 0.5) FILTER (WHERE %s), 0)`, seconds, satisfied)),
+			goqu.L(fmt.Sprintf(`COALESCE(quantile_cont(%s, 0.9) FILTER (WHERE %s), 0)`, seconds, satisfied)),
+			goqu.L(fmt.Sprintf(`COALESCE(MAX(%s) FILTER (WHERE %s), 0)`, seconds, satisfied)),
+			goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(step, '$.outcome') = 'TIMED_OUT')`),
+			goqu.L(`COUNT(*) FILTER (WHERE COALESCE(TRY_CAST(json_extract_string(step, '$.isEscalated') AS BOOLEAN), false))`),
+		).
+		GroupBy(goqu.L("name")).
+		Order(goqu.L("name").Asc())
+
+	sqln, sqlargs, err := ds.ToSQL()
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	rows, err := s.db.QueryContext(ctx, sqln, sqlargs...)
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+	defer rows.Close()
+
+	var ret []*vaccessv1.StepDecisionTime
+	for rows.Next() {
+		itm := &vaccessv1.StepDecisionTime{
+			DecisionTime: &vaccessv1.DecisionTime{},
+		}
+
+		if err := rows.Scan(&itm.StepName, &itm.DecisionTime.Count, &itm.DecisionTime.AverageSeconds,
+			&itm.DecisionTime.P50Seconds, &itm.DecisionTime.P90Seconds, &itm.DecisionTime.MaxSeconds,
+			&itm.TotalTimedOut, &itm.TotalEscalated); err != nil {
+			return nil, grpcutils.InternalWithErr(err)
+		}
+
+		if itm.DecisionTime.Count == 0 {
+			itm.DecisionTime = nil
+		}
+
+		ret = append(ret, itm)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, grpcutils.InternalWithErr(err)
@@ -583,7 +703,6 @@ func (s *Server) getSummaryAccessRequest(ctx context.Context, req *vaccessv1.Get
 	refFilters, err := getAccessRefFilters([]*accessRefFilter{
 		{ref: req.GetPolicyRef(), pth: "status.policyRef"},
 		{ref: req.GetCatalogRef(), pth: "spec.resource.catalog.catalogRef"},
-		{ref: req.GetServiceRef(), pth: "spec.resource.serviceRef", opts: serviceRefCheckOpts()},
 		{ref: req.GetUserRef(), pth: "status.userRef"},
 		{ref: req.GetSubjectUserRef(), pth: "spec.subject.userRef"},
 	})
@@ -591,9 +710,20 @@ func (s *Server) getSummaryAccessRequest(ctx context.Context, req *vaccessv1.Get
 		return nil, err
 	}
 
+	refFilters, err = appendRequestScopeServiceFilter(refFilters, req.GetServiceRef())
+	if err != nil {
+		return nil, err
+	}
+
+	o := &requestSummaryOpts{
+		refFilters:     refFilters,
+		staleAfter:     getDurationOr(req.GetStaleAfter(), requestPendingStaleDuration),
+		expiringWithin: getDurationOr(req.GetExpiringWithin(), requestExpiringSoonDuration),
+	}
+
 	return withSummaryComparison(ctx, req.GetCommon(),
 		func(ctx context.Context, common *vmetav1.CommonSummaryOptions) (*vaccessv1.GetRequestSummaryResponse, error) {
-			return s.doSummaryAccessRequest(ctx, common, refFilters)
+			return s.doSummaryAccessRequest(ctx, common, o)
 		})
 }
 
@@ -700,6 +830,95 @@ func getRequestOnBehalfExpr() string {
 func getRequestExpiringSoonExpr() string {
 	return fmt.Sprintf(`(%s = 'APPROVED' AND %s > ? AND %s <= ?)`,
 		colStatusStateStatus, colStatusAccessEndsAt, colStatusAccessEndsAt)
+}
+
+func getRequestUnroutableExpr() string {
+	return fmt.Sprintf(`(%s = 'PENDING' AND COALESCE(TRY_CAST(json_extract_string(rsc, '$.status.review.steps[#-1].isUnroutable') AS BOOLEAN), false) AND COALESCE(json_extract_string(rsc, '$.status.review.steps[#-1].outcome'), 'OUTCOME_UNSET') = 'OUTCOME_UNSET')`,
+		colStatusStateStatus)
+}
+
+func getRequestAwaitingRequesterExpr() string {
+	return fmt.Sprintf(`(%s = 'PENDING' AND json_extract(rsc, '$.status.review.informationRequests[#-1].requestedAt') IS NOT NULL AND json_extract(rsc, '$.status.review.informationRequests[#-1].respondedAt') IS NULL)`,
+		colStatusStateStatus)
+}
+
+func appendRequestScopeServiceFilter(filters []exp.Expression, ref *metav1.ObjectReference) ([]exp.Expression, error) {
+	if ref == nil {
+		return filters, nil
+	}
+
+	if err := apivalidation.CheckObjectRef(ref, serviceRefCheckOpts()); err != nil {
+		return nil, err
+	}
+
+	if ref.Uid != "" {
+		filters = append(filters, goqu.L(fmt.Sprintf(`(list_contains(COALESCE(%s, []), ?) OR %s = ?)`,
+			colStatusScopeServiceUIDs, colSpecServiceUID), ref.Uid, ref.Uid))
+	}
+
+	if ref.Name != "" {
+		name := vutils.GetServiceFullNameFromName(ref.Name)
+		filters = append(filters, goqu.L(fmt.Sprintf(`(list_contains(COALESCE(%s, []), ?) OR %s = ?)`,
+			colStatusScopeServiceNames, colSpecServiceName), name, name))
+	}
+
+	return filters, nil
+}
+
+func appendRequestScopeNamespaceFilter(filters []exp.Expression, ref *metav1.ObjectReference) ([]exp.Expression, error) {
+	if ref == nil {
+		return filters, nil
+	}
+
+	if err := apivalidation.CheckObjectRef(ref, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+		return nil, err
+	}
+
+	if ref.Name != "" {
+		return append(filters, goqu.L(fmt.Sprintf(`(list_contains(COALESCE(%s, []), ?) OR len(list_filter(COALESCE(%s, []), lambda x : suffix(x, ?))) > 0)`,
+			colStatusScopeNamespaceNames, colStatusScopeServiceNames), ref.Name, "."+ref.Name)), nil
+	}
+
+	return append(filters, goqu.L(fmt.Sprintf(`list_contains(COALESCE(%s, []), ?)`,
+		colStatusScopeNamespaceUIDs), ref.Uid)), nil
+}
+
+func getCatalogOwnerFilter(ref *metav1.ObjectReference) (exp.Expression, error) {
+	if err := apivalidation.CheckObjectRef(ref, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+		return nil, err
+	}
+
+	userFilter := goqu.L(`uid`).Eq(ref.Uid)
+	if ref.Uid == "" {
+		userFilter = goqu.L(colName).Eq(ref.Name)
+	}
+
+	userDS := goqu.From("resources").Where(
+		goqu.L(`kind`).Eq(ucorev1.KindUser),
+		goqu.L(`api`).Eq(ucorev1.API),
+		userFilter,
+	).Limit(1)
+
+	namesSQL, _, err := userDS.Select(goqu.L(colName)).ToSQL()
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	groupsSQL, _, err := userDS.Select(goqu.L(fmt.Sprintf(`COALESCE(%s, [])`, colSpecGroups))).ToSQL()
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	return goqu.L(fmt.Sprintf(`(list_contains(COALESCE(TRY_CAST(json_extract_string(rsc, '$.spec.owners.users') AS VARCHAR[]), []), (%s)) OR list_has_any(COALESCE(TRY_CAST(json_extract_string(rsc, '$.spec.owners.groups') AS VARCHAR[]), []), (%s)))`,
+		namesSQL, groupsSQL)), nil
+}
+
+func getDurationOr(d *metav1.Duration, fallback time.Duration) time.Duration {
+	if ret := umetav1.ToDuration(d).ToGo(); ret > 0 {
+		return ret
+	}
+
+	return fallback
 }
 
 func getRequestPendingStaleExpr() string {

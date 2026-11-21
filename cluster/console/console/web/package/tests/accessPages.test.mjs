@@ -59,7 +59,7 @@ describe("Access pages", () => {
     let value = await rule();
     assert.equal(value.effect, "DENY");
     assert.equal(value.action, undefined);
-    assert.equal(value.authorization, undefined);
+    assert.equal(value.maxDuration, undefined);
     await page.getByText("Matching requests are rejected as soon as they are created.", { exact: false }).waitFor();
     assert.equal(await page.getByText("Review steps", { exact: true }).count(), 0);
 
@@ -70,12 +70,12 @@ describe("Access pages", () => {
       value.action.review.steps.map((item) => item.name),
       ["team-lead", "security"],
     );
-    assert.deepEqual(value.authorization.policies, ["prod-read-only"]);
+    assert.deepEqual(value.maxDuration, { hours: 8 });
 
     await effect("Auto-approve").click();
     value = await rule();
     assert.equal(value.action, undefined);
-    assert.deepEqual(value.authorization.policies, ["prod-read-only"]);
+    assert.deepEqual(value.maxDuration, { hours: 8 });
   });
 
   it("adds rules from templates with unique names and the expected priority", async () => {
@@ -145,6 +145,51 @@ describe("Access pages", () => {
     assert.ok(
       calls.some((call) => call.method === "listPolicy" && call.request.catalogRef?.name === "production-support"),
     );
+  });
+
+  it("shows the frozen scope of an approved request and links to its access logs", async () => {
+    await load("/access/requests/req-approved");
+    await page.getByText("Access granted", { exact: true }).waitFor();
+    await page.getByText("Read only", { exact: true }).first().waitFor();
+    await page.getByText("1 system Service excluded", { exact: true }).waitFor();
+    await page.getByText("Active", { exact: true }).waitFor();
+    const link = page.getByRole("link", { name: /Access logs under this grant/ });
+    assert.equal(
+      new URL(await link.getAttribute("href"), origin).searchParams.get("matchInlinePolicyRef.uid"),
+      "uid-req-approved",
+    );
+  });
+
+  it("names who revoked a request and why", async () => {
+    await load("/access/requests/req-revoked");
+    await page.getByText("Revoked by alice", { exact: true }).waitFor();
+    await page.getByText("“The incident is closed.”", { exact: true }).waitFor();
+  });
+
+  it("shows the access levels, audience and issues of a Catalog", async () => {
+    await load("/access/catalogs/production-support");
+    await page.getByText("Read the production data without changing it.", { exact: true }).waitFor();
+    await page.getByText(/^Break glass/).first().waitFor();
+    await page.getByText("The access level break-glass overrides deny guardrails.", { exact: true }).waitFor();
+    await page.getByText("Change ticket", { exact: false }).first().waitFor();
+  });
+
+  it("edits the message, limits and reason rules of a rule", async () => {
+    await load("/policy-edit");
+    await page.getByRole("textbox", { name: /^Message/ }).fill("Ask in #access instead.");
+    await page.getByText("Always required", { exact: true }).first().click();
+    const value = await rule();
+    assert.equal(value.message, "Ask in #access instead.");
+    assert.equal(value.action.review.steps[0].reasonRequirement, "ALWAYS");
+    assert.equal(value.authorization, undefined);
+  });
+
+  it("matches requests by access level", async () => {
+    await load("/policy-edit");
+    await page.getByRole("button", { name: "An access level", exact: true }).click();
+    await page.getByRole("textbox", { name: /^Access level/ }).fill("break-glass");
+    const value = await rule();
+    assert.equal(value.condition.accessLevel, "break-glass");
   });
 
   it("reloads once when a chunk of an older build is missing and then offers a reload", async () => {

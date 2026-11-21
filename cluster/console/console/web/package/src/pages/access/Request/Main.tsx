@@ -12,7 +12,9 @@ import { ResourceMainInfo } from "@/pages/utils/types";
 import { getClientVisibilityAccess } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router";
 import {
+  Activity,
   AlertTriangle,
   ArrowUpRight,
   Ban,
@@ -22,6 +24,7 @@ import {
   CircleSlash,
   Clock3,
   FileText,
+  Folder,
   Hourglass,
   Inbox,
   KeyRound,
@@ -59,6 +62,8 @@ import { OriginValue, hasOrigin } from "../Origin";
 import { GrantSummary, StepDecision, StepState, StepTimeline } from "../rules";
 import {
   getApprovalRequirementLabel,
+  getGrantStateMeta,
+  getStateReasonLabel,
   getStatusMeta,
   getStatusTone,
   getUrgencyColor,
@@ -148,6 +153,11 @@ const StatusHero = (props: { item: AccessC.Request }) => {
   const currentIndex = Math.min(status?.review?.currentStep ?? 0, Math.max(steps.length - 1, 0));
   const current = steps[currentIndex];
   const lastSteps = status?.review?.lastSteps ?? [];
+  const stepState = status?.review?.steps.find((value) => value.index === currentIndex);
+  const reason = status?.state?.reason;
+  const reasonLabel = getStateReasonLabel(reason);
+  const message = status?.state?.message;
+  const actor = status?.state?.actorRef?.name;
 
   let icon = <Clock3 size={18} strokeWidth={2.2} />;
   let title: React.ReactNode = meta.label;
@@ -183,8 +193,19 @@ const StatusHero = (props: { item: AccessC.Request }) => {
               </>
             )}
             {timeoutSeconds && ` · times out after ${timeoutSeconds}`}
+            {stepState && stepState.requiredApprovals > 0 &&
+              ` · ${stepState.approvals} of ${stepState.requiredApprovals} approvals`}
+            {stepState?.isEscalated && " · escalated"}
+            {stepState?.isUnroutable && (
+              <span className="font-semibold text-red-700">
+                {" "}· nobody can review this step
+              </span>
+            )}
           </>
         );
+      } else if (status?.evaluation?.state === AccessC.Request_Status_Evaluation_State.RETRYING) {
+        title = "Evaluation is being retried";
+        detail = `Attempt ${status.evaluation.attempts}: ${status.evaluation.lastError || "the access Policies could not be evaluated"}`;
       } else {
         title = "Being evaluated";
         detail = "The Cluster is matching the request against the access Policies.";
@@ -194,9 +215,20 @@ const StatusHero = (props: { item: AccessC.Request }) => {
     case AccessC.Request_Status_State_Status.APPROVED: {
       icon = <KeyRound size={18} strokeWidth={2.2} />;
       const endsAt = toDate(status?.accessEndsAt);
-      const startAt = toDate(status?.approvalEndAt ?? status?.state?.createdAt);
+      const startAt = toDate(
+        status?.accessStartsAt ?? status?.approvalEndAt ?? status?.state?.createdAt,
+      );
       title = "Access granted";
-      if (endsAt) {
+      if (startAt && startAt.getTime() > now) {
+        icon = <CalendarClock size={18} strokeWidth={2.2} />;
+        title = "Access scheduled";
+        detail = (
+          <>
+            Starts in {formatSeconds((startAt.getTime() - now) / 1000)} · at{" "}
+            {startAt.toLocaleString()}
+          </>
+        );
+      } else if (endsAt) {
         const left = (endsAt.getTime() - now) / 1000;
         detail = (
           <>
@@ -221,12 +253,21 @@ const StatusHero = (props: { item: AccessC.Request }) => {
       const rejected = lastSteps.find(
         (step) => step.decision === AccessC.Review_Spec_Decision.REJECT,
       );
-      if (!status?.rule) {
+      if (
+        reason === AccessC.Request_Status_State_Reason.NO_MATCHING_RULE ||
+        (!status?.rule && !reason)
+      ) {
         title = "Rejected · no matching rule";
-        detail = "No rule of any enabled access Policy matched this request.";
-      } else if (status.rule.effect === AccessC.Policy_Spec_Rule_Effect.DENY) {
+        detail = message || "No rule of any enabled access Policy matched this request.";
+      } else if (
+        reason === AccessC.Request_Status_State_Reason.NOT_REQUESTABLE ||
+        reason === AccessC.Request_Status_State_Reason.EVALUATION_FAILED
+      ) {
+        title = `Rejected · ${reasonLabel?.toLowerCase()}`;
+        detail = message;
+      } else if (status?.rule?.effect === AccessC.Policy_Spec_Rule_Effect.DENY) {
         title = "Denied by a rule";
-        detail = `The rule ${status.rule.name} rejects such requests.`;
+        detail = message || `The rule ${status.rule.name} rejects such requests.`;
       } else if (rejected) {
         title = (
           <>
@@ -241,7 +282,7 @@ const StatusHero = (props: { item: AccessC.Request }) => {
         );
       } else {
         title = "Rejected";
-        detail = "The review step timed out or was rejected.";
+        detail = reasonLabel ?? "The review step timed out or was rejected.";
       }
       break;
     }
@@ -251,15 +292,34 @@ const StatusHero = (props: { item: AccessC.Request }) => {
       detail = wasApproved(item)
         ? "The granted access reached its end."
         : "The deadline or a review step timeout passed.";
+      if (reason === AccessC.Request_Status_State_Reason.ENDED_EARLY) {
+        title = "Access ended early";
+        detail = [actor && `Ended by ${actor}`, message && `“${message}”`]
+          .filter(Boolean)
+          .join(" · ") || reasonLabel;
+      } else if (reason === AccessC.Request_Status_State_Reason.SUPERSEDED) {
+        title = "Replaced by an extension";
+        detail = status?.supersededByRef?.name
+          ? `Extended by ${status.supersededByRef.name}`
+          : reasonLabel;
+      } else if (reason === AccessC.Request_Status_State_Reason.PROVISIONING_FAILED) {
+        title = "Access could not be provisioned";
+        detail = status?.grant?.lastError || reasonLabel;
+      } else if (reasonLabel && !wasApproved(item)) {
+        detail = reasonLabel;
+      }
       break;
     case AccessC.Request_Status_State_Status.REVOKED:
       icon = <Ban size={18} strokeWidth={2.2} />;
-      title = "Revoked";
-      detail = "An administrator revoked this request; any granted access was removed.";
+      title = actor ? `Revoked by ${actor}` : "Revoked";
+      detail = message
+        ? `“${message}”`
+        : "An administrator revoked this request; any granted access was removed.";
       break;
     case AccessC.Request_Status_State_Status.CANCELLED:
       icon = <CircleSlash size={18} strokeWidth={2.2} />;
       title = "Cancelled by the requester";
+      detail = message ? `“${message}”` : undefined;
       break;
   }
 
@@ -471,6 +531,12 @@ const History = (props: { item: AccessC.Request }) => {
               )}
             />
             {getStatusMeta(state.status).label}
+            {getStateReasonLabel(state.reason) && (
+              <span className="text-slate-500">· {state.message || getStateReasonLabel(state.reason)}</span>
+            )}
+            {state.actorRef?.name && (
+              <span className="text-micro text-slate-500">by {state.actorRef.name}</span>
+            )}
             {state.createdAt && (
               <span className="text-micro text-slate-500">
                 <TimeAgo rfc3339={state.createdAt} />
@@ -518,6 +584,9 @@ export const MainInfo = (props: {
     deadline.getTime() < Date.now() &&
     status?.state?.status === AccessC.Request_Status_State_Status.PENDING;
   const policyTriggerRef = normalizeRef(status?.policyTriggerRef, "core/v1", "PolicyTrigger");
+  const scope = status?.resolvedScope;
+  const grantMeta = getGrantStateMeta(status?.grant?.state);
+  const skippedRules = status?.evaluation?.skippedRules ?? [];
 
   return {
     status: {
@@ -527,6 +596,7 @@ export const MainInfo = (props: {
     header: <StatusHero item={item} />,
     groupOrder: [
       { title: "Request", icon: FileText },
+      { title: "Access scope", icon: KeyRound },
       { title: "Review workflow", icon: ListOrdered },
       { title: "Decision", icon: Scale },
       { title: "Delivered to", icon: Send },
@@ -544,10 +614,17 @@ export const MainInfo = (props: {
         primary: true,
         icon: Server,
         value: resourceRef ? (
-          <RefChip
-            itemRef={resourceRef}
-            icon={resourceRef.kind === "Catalog" ? Layers : Server}
-          />
+          <span className="flex flex-wrap items-center gap-1.5">
+            <RefChip
+              itemRef={resourceRef}
+              icon={resourceRef.kind === "Catalog" ? Layers : Server}
+            />
+            {scope?.accessLevel && (
+              <span className="text-xs font-semibold text-slate-700">
+                {scope.accessLevel.displayName || scope.accessLevel.name}
+              </span>
+            )}
+          </span>
         ) : (
           "Unknown"
         ),
@@ -615,6 +692,169 @@ export const MainInfo = (props: {
             },
           ]
         : []),
+      ...(item.spec?.ticket
+        ? [
+            {
+              label: "Ticket",
+              group: "Request",
+              value: <span className="font-mono text-xs">{item.spec.ticket}</span>,
+            },
+          ]
+        : []),
+      ...(item.spec?.startAt
+        ? [
+            {
+              label: "Requested start",
+              group: "Request",
+              value: <TimeAgo rfc3339={item.spec.startAt} />,
+            },
+          ]
+        : []),
+      ...(item.spec?.extendsRef?.name
+        ? [
+            {
+              label: "Extends",
+              group: "Request",
+              value: (
+                <RefChip
+                  itemRef={normalizeRef(item.spec.extendsRef, "access/v1", "Request")!}
+                  icon={FileText}
+                />
+              ),
+            },
+          ]
+        : []),
+      ...((status?.specRevision ?? 0) > 1
+        ? [
+            {
+              label: "Revision",
+              group: "Request",
+              value: (
+                <span className="text-xs text-slate-600">
+                  {status!.specRevision} · changed after it was submitted
+                </span>
+              ),
+            },
+          ]
+        : []),
+      ...(scope
+        ? [
+            {
+              label: "Access level",
+              group: "Access scope",
+              span: "full" as const,
+              value: (
+                <GrantSummary
+                  level={scope.accessLevel}
+                  maxDuration={status?.rule?.maxDuration}
+                  overridesGuardrails={scope.overridesGuardrails}
+                />
+              ),
+            },
+            {
+              label: "Services",
+              group: "Access scope",
+              span: "full" as const,
+              value:
+                scope.serviceRefs.length === 0 ? (
+                  <span className="text-xs text-slate-500">No Service</span>
+                ) : (
+                  <span className="flex flex-wrap gap-1.5">
+                    {scope.serviceRefs.slice(0, 24).map((ref) => (
+                      <RefChip
+                        key={ref.uid || ref.name}
+                        itemRef={normalizeRef(ref, "core/v1", "Service")!}
+                        icon={Server}
+                      />
+                    ))}
+                    {scope.serviceRefs.length > 24 && (
+                      <span className="text-micro text-slate-500">
+                        +{scope.serviceRefs.length - 24} more
+                      </span>
+                    )}
+                    {scope.totalExcludedService > 0 && (
+                      <span className="text-micro text-slate-500">
+                        {scope.totalExcludedService} system Service
+                        {scope.totalExcludedService === 1 ? "" : "s"} excluded
+                      </span>
+                    )}
+                  </span>
+                ),
+            },
+            ...(scope.membership === AccessC.Catalog_Spec_Membership.DYNAMIC &&
+            scope.namespaceRefs.length > 0
+              ? [
+                  {
+                    label: "Namespaces",
+                    group: "Access scope",
+                    value: (
+                      <span className="flex flex-wrap gap-1.5">
+                        {scope.namespaceRefs.map((ref) => (
+                          <RefChip
+                            key={ref.uid || ref.name}
+                            itemRef={normalizeRef(ref, "core/v1", "Namespace")!}
+                            icon={Folder}
+                          />
+                        ))}
+                      </span>
+                    ),
+                  },
+                ]
+              : []),
+            ...(scope.resolvedAt
+              ? [
+                  {
+                    label: "Resolved",
+                    group: "Access scope",
+                    value: (
+                      <span className="text-xs text-slate-600">
+                        <TimeAgo rfc3339={scope.resolvedAt} />
+                        {status?.state?.status === AccessC.Request_Status_State_Status.PENDING
+                          ? " · resolved again until the request is approved"
+                          : " · frozen at approval"}
+                      </span>
+                    ),
+                  },
+                ]
+              : []),
+          ]
+        : []),
+      ...(grantMeta
+        ? [
+            {
+              label: "Grant",
+              group: "Access scope",
+              value: (
+                <span className="flex flex-wrap items-center gap-1.5">
+                  <ToneBadge tone={grantMeta.tone}>{grantMeta.label}</ToneBadge>
+                  {status?.grant?.lastError && (
+                    <span className="text-micro text-red-700">{status.grant.lastError}</span>
+                  )}
+                </span>
+              ),
+            },
+          ]
+        : []),
+      ...(wasApproved(item) && item.metadata?.uid
+        ? [
+            {
+              label: "Activity",
+              group: "Access scope",
+              value: (
+                <Link
+                  to={`/visibility/accesslogs?${new URLSearchParams({
+                    "matchInlinePolicyRef.uid": item.metadata.uid,
+                  })}`}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-800"
+                >
+                  <Activity size={12} />
+                  Access logs under this grant
+                  <ArrowUpRight size={11} strokeWidth={2.5} />
+                </Link>
+              ),
+            },
+          ]
+        : []),
       ...(hasOrigin(status?.origin)
         ? [
             {
@@ -654,13 +894,42 @@ export const MainInfo = (props: {
           </span>
         ),
       },
-      ...(status?.rule && status.rule.effect !== AccessC.Policy_Spec_Rule_Effect.DENY
+      ...(status?.state?.reason
         ? [
             {
-              label: "Grants",
+              label: "Outcome",
               group: "Decision",
               span: "full" as const,
-              value: <GrantSummary authorization={status.rule.authorization} />,
+              value: (
+                <span className="text-xs text-slate-700">
+                  {getStateReasonLabel(status.state.reason)}
+                  {status.state.message && (
+                    <span className="text-slate-500"> · {status.state.message}</span>
+                  )}
+                </span>
+              ),
+            },
+          ]
+        : []),
+      ...(skippedRules.length > 0
+        ? [
+            {
+              label: "Skipped rules",
+              group: "Decision",
+              span: "full" as const,
+              value: (
+                <ul className="flex flex-col gap-1">
+                  {skippedRules.map((rule, index) => (
+                    <li key={index} className="flex items-start gap-1.5 text-xs text-amber-800">
+                      <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                      <span>
+                        <span className="font-semibold">{rule.ruleName}</span>
+                        {rule.policyRef?.name && ` of ${rule.policyRef.name}`}: {rule.error}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ),
             },
           ]
         : []),

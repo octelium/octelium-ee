@@ -8,6 +8,10 @@
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
                     "description": "RequestRef is the reference of the Request to be cancelled."
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "Reason is an optional explanation of the cancellation. It cannot be longer than 1500 characters."
                 }
             },
             "additionalProperties": false,

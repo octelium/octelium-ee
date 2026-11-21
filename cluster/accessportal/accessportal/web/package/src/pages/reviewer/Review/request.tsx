@@ -1,14 +1,22 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import * as MetaP from "@/apis/metav1/metav1";
-import { Button, Textarea } from "@mantine/core";
+import { Button, Checkbox, Modal, Textarea } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Gavel, Info, X } from "lucide-react";
+import {
+  Check,
+  Gavel,
+  History,
+  Info,
+  MessageCircleQuestionMark,
+  X,
+} from "lucide-react";
 import * as React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { twMerge } from "@/lib/utils";
 
-import AuthorizationCard from "@/components/Access/AuthorizationCard";
+import GrantCard from "@/components/Access/GrantCard";
+import InformationRequestCard from "@/components/Access/InformationRequestCard";
 import JustificationCard from "@/components/Access/JustificationCard";
 import PeopleCard from "@/components/Access/PeopleCard";
 import RequestFacts from "@/components/Access/RequestFacts";
@@ -16,9 +24,12 @@ import RequestTimeline from "@/components/Access/RequestTimeline";
 import ResourceCard from "@/components/Access/ResourceCard";
 import ReviewWorkflow from "@/components/Access/ReviewWorkflow";
 import StatusHero from "@/components/Access/StatusHero";
+import DurationInput from "@/components/DurationInput";
+import TimeAgo from "@/components/TimeAgo";
 import UnsavedChangesDialog from "@/components/UnsavedChangesDialog";
 import {
   BackLink,
+  Badge,
   ConfirmDialog,
   DocumentTitle,
   ErrorState,
@@ -33,35 +44,124 @@ import {
   UrgencyBadge,
 } from "@/ui";
 import {
-  MAX_JUSTIFICATION_BYTES,
+  MAX_JUSTIFICATION_LENGTH,
+  MAX_MESSAGE_LENGTH,
   approvalRequirementLabel,
   currentReviewStepIndex,
+  durationToSeconds,
   formatDuration,
   grantedDuration,
   isPendingRequest,
+  isReasonRequired,
+  normalizeDuration,
   requestResourceLabel,
   requestSubjectName,
   reviewStepLabel,
   reviewStepName,
   reviewSteps,
-  utf8Length,
+  statusMeta,
+  textLength,
 } from "@/utils";
 import { getReviewerClient } from "@/utils/client";
 import { isNotFoundError } from "@/utils/rpcError";
 import { useUnsavedChanges } from "@/utils/hooks/useUnsavedChanges";
 
+const A = AccessP.ReviewCase_Action;
+
+const FLAG_LABELS: {
+  key: keyof AccessP.ReviewCase_Flags;
+  label: string;
+  tone?: "amber" | "blue";
+}[] = [
+  { key: "isSpecChanged", label: "Changed since your decision", tone: "amber" },
+  { key: "isAwaitingRequester", label: "Awaiting the requester", tone: "blue" },
+  { key: "overridesGuardrails", label: "Overrides guardrails", tone: "amber" },
+  { key: "isFullAccess", label: "Full access" },
+  { key: "isOnBehalf", label: "On behalf of another user" },
+  {
+    key: "isFirstRequest",
+    label: "First request for this access",
+    tone: "blue",
+  },
+  { key: "isExtension", label: "Extension" },
+];
+
+const RequesterHistoryCard = (props: { reviewCase: AccessP.ReviewCase }) => {
+  const items = [
+    ...props.reviewCase.activeRequests.map((item) => ({ item, active: true })),
+    ...props.reviewCase.recentRequests.map((item) => ({ item, active: false })),
+  ];
+  const groups = props.reviewCase.subjectGroups;
+  if (items.length === 0 && groups.length === 0) return null;
+
+  return (
+    <SectionCard
+      title="Context"
+      description="The recipient's groups and their other requests for this access"
+      icon={<History size={14} strokeWidth={2.25} />}
+    >
+      <div className="flex flex-col gap-3">
+        {groups.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {groups.map((group) => (
+              <Badge key={group}>{group}</Badge>
+            ))}
+          </div>
+        )}
+        {items.length > 0 && (
+          <ul className="flex flex-col gap-1.5">
+            {items.map(({ item, active }) => (
+              <li
+                key={item.metadata?.name}
+                className="flex flex-wrap items-center gap-1.5 text-xs font-normal text-slate-600"
+              >
+                <Badge
+                  tone={
+                    active
+                      ? "emerald"
+                      : statusMeta(item.status?.state?.status).tone
+                  }
+                >
+                  {active
+                    ? "Active"
+                    : statusMeta(item.status?.state?.status).label}
+                </Badge>
+                <span className="font-mono text-slate-700">
+                  {item.metadata?.name}
+                </span>
+                <TimeAgo rfc3339={item.metadata?.createdAt} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </SectionCard>
+  );
+};
+
 const DecisionPanel = (props: {
   className?: string;
   pending: boolean;
+  actions: AccessP.ReviewCase_Action[];
   requirement: string;
+  reasonHint: string;
   justification: string;
   onJustificationChange: (value: string) => void;
   error?: string;
   busy: boolean;
+  shorten: boolean;
+  onShortenChange: (value: boolean) => void;
+  duration: MetaP.Duration;
+  onDurationChange: (value: MetaP.Duration) => void;
   onApprove: () => void;
   onReject: () => void;
+  onAskInformation: () => void;
 }) => {
-  const bytes = utf8Length(props.justification);
+  const length = textLength(props.justification);
+  const canApprove = props.actions.includes(A.APPROVE);
+  const canReject = props.actions.includes(A.REJECT);
+  const canAsk = props.actions.includes(A.REQUEST_INFORMATION);
+  const canDecide = canApprove || canReject;
 
   return (
     <SectionCard
@@ -72,16 +172,16 @@ const DecisionPanel = (props: {
       icon={<Gavel size={14} strokeWidth={2.25} />}
       className={props.className}
     >
-      {props.pending ? (
+      {props.pending && canDecide ? (
         <div className="flex flex-col gap-4">
           <Textarea
             label={
               <span className="flex w-full items-baseline justify-between gap-3">
                 Reason
-                <LengthCounter length={bytes} max={MAX_JUSTIFICATION_BYTES} />
+                <LengthCounter length={length} max={MAX_JUSTIFICATION_LENGTH} />
               </span>
             }
-            description="Required when rejecting, recommended when approving"
+            description={props.reasonHint}
             error={props.error}
             autosize
             minRows={3}
@@ -92,11 +192,29 @@ const DecisionPanel = (props: {
             styles={{ label: { display: "flex", width: "100%" } }}
           />
 
+          {canApprove && (
+            <div className="flex flex-col gap-2">
+              <Checkbox
+                label="Approve a shorter duration"
+                checked={props.shorten}
+                onChange={(event) =>
+                  props.onShortenChange(event.currentTarget.checked)
+                }
+              />
+              {props.shorten && (
+                <DurationInput
+                  value={props.duration}
+                  onChange={props.onDurationChange}
+                />
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-2">
             <Button
               variant="default"
               leftSection={<X size={14} strokeWidth={2.5} />}
-              disabled={props.busy}
+              disabled={props.busy || !canReject}
               onClick={props.onReject}
             >
               Reject
@@ -105,18 +223,37 @@ const DecisionPanel = (props: {
               variant="filled"
               color="ink"
               leftSection={<Check size={14} strokeWidth={2.5} />}
-              disabled={props.busy}
+              disabled={props.busy || !canApprove}
               onClick={props.onApprove}
             >
               Approve
             </Button>
           </div>
 
+          {canAsk && (
+            <Button
+              variant="subtle"
+              color="gray"
+              leftSection={
+                <MessageCircleQuestionMark size={14} strokeWidth={2.25} />
+              }
+              disabled={props.busy}
+              onClick={props.onAskInformation}
+            >
+              Ask the requester a question
+            </Button>
+          )}
+
           <Note icon={<Info size={13} strokeWidth={2.25} />}>
             A single rejection ends the request immediately. An approval counts
             towards the current step of the workflow.
           </Note>
         </div>
+      ) : props.pending ? (
+        <Note>
+          You have already decided on the current step, or you are not one of
+          its reviewers.
+        </Note>
       ) : (
         <Note>A decision has already been reached for this request.</Note>
       )}
@@ -132,26 +269,37 @@ const ReviewRequest = () => {
   const [justificationError, setJustificationError] = React.useState<string>();
   const [decisionToSubmit, setDecisionToSubmit] =
     React.useState<AccessP.Review_Spec_Decision>();
-  const unsavedChanges = useUnsavedChanges(justification !== "");
+  const [shorten, setShorten] = React.useState(false);
+  const [approvedDuration, setApprovedDuration] =
+    React.useState<MetaP.Duration>();
+  const [askOpen, setAskOpen] = React.useState(false);
+  const [question, setQuestion] = React.useState("");
+  const unsavedChanges = useUnsavedChanges(
+    justification !== "" || question !== "",
+  );
 
   const qry = useQuery({
-    queryKey: ["reviewer", "getRequest", name],
+    queryKey: ["reviewer", "getReviewCase", name],
     enabled: !!name,
     queryFn: async ({ signal }) => {
-      const { response } = await getReviewerClient().getRequest(
-        MetaP.GetOptions.create({ name: name! }),
+      const { response } = await getReviewerClient().getReviewCase(
+        AccessP.GetReviewCaseRequest.create({
+          requestRef: MetaP.ObjectReference.create({ name: name! }),
+        }),
         { abort: signal },
       );
       return response;
     },
     refetchInterval: (query) =>
-      isPendingRequest(query.state.data) ? 15000 : false,
+      isPendingRequest(query.state.data?.request) ? 15000 : false,
   });
 
-  const item = qry.data;
+  const reviewCase = qry.data;
+  const item = reviewCase?.request;
   const steps = reviewSteps(item);
   const currentIndex = currentReviewStepIndex(item);
   const currentStep = steps[currentIndex];
+  const duration = approvedDuration ?? normalizeDuration(grantedDuration(item));
 
   const decideMutation = useMutation({
     mutationFn: async (decision: AccessP.Review_Spec_Decision) => {
@@ -161,6 +309,11 @@ const ReviewRequest = () => {
           decision,
           justification,
           expectedStepName: reviewStepName(currentStep, currentIndex),
+          expectedSpecRevision: item?.status?.specRevision ?? 0,
+          duration:
+            shorten && decision === AccessP.Review_Spec_Decision.APPROVE
+              ? duration
+              : undefined,
         }),
       );
       return response;
@@ -181,8 +334,35 @@ const ReviewRequest = () => {
     },
   });
 
+  const askMutation = useMutation({
+    mutationFn: async () => {
+      const { response } = await getReviewerClient().requestInformation(
+        AccessP.RequestInformationRequest.create({
+          requestRef: MetaP.ObjectReference.create({ name: name! }),
+          message: question.trim(),
+        }),
+      );
+      return response;
+    },
+    onSuccess: () => {
+      notifications.show({
+        color: "green",
+        message: "Question sent to the requester",
+      });
+      setAskOpen(false);
+      setQuestion("");
+      queryClient.invalidateQueries({ queryKey: ["reviewer"] });
+    },
+    onError: (e) => {
+      notifications.show({
+        color: "red",
+        message: e instanceof Error ? e.message : "Failed to send the question",
+      });
+    },
+  });
+
   if (qry.isLoading) return <Loading label="Loading request…" />;
-  if (!item) {
+  if (!item || !reviewCase) {
     return (
       <div className="w-full">
         <DocumentTitle title="Review" />
@@ -211,15 +391,41 @@ const ReviewRequest = () => {
   const resource = requestResourceLabel(item);
   const pending = isPendingRequest(item);
   const stepLabel = currentStep ? reviewStepLabel(currentStep, currentIndex) : undefined;
-  const tooLong = utf8Length(justification) > MAX_JUSTIFICATION_BYTES;
+  const tooLong = textLength(justification) > MAX_JUSTIFICATION_LENGTH;
+  const questionTooLong = textLength(question) > MAX_MESSAGE_LENGTH;
+  const reasonAlways = isReasonRequired(
+    currentStep,
+    AccessP.Review_Spec_Decision.APPROVE,
+  );
+  const flags = FLAG_LABELS.filter((flag) => reviewCase.flags?.[flag.key]);
+  const shorterThanRequested =
+    !shorten ||
+    durationToSeconds(duration) < durationToSeconds(grantedDuration(item));
 
   const requestDecision = (decision: AccessP.Review_Spec_Decision) => {
     if (tooLong) {
       setJustificationError("The reason is too long");
       return;
     }
-    if (decision === AccessP.Review_Spec_Decision.REJECT && !justification.trim()) {
-      setJustificationError("Add a reason before rejecting this request");
+    if (
+      (decision === AccessP.Review_Spec_Decision.REJECT ||
+        isReasonRequired(currentStep, decision)) &&
+      !justification.trim()
+    ) {
+      setJustificationError(
+        decision === AccessP.Review_Spec_Decision.REJECT
+          ? "Add a reason before rejecting this request"
+          : "Add a reason before approving this request",
+      );
+      return;
+    }
+    if (
+      decision === AccessP.Review_Spec_Decision.APPROVE &&
+      !shorterThanRequested
+    ) {
+      setJustificationError(
+        "The approved duration must be shorter than the requested one",
+      );
       return;
     }
     setJustificationError(undefined);
@@ -228,9 +434,18 @@ const ReviewRequest = () => {
 
   const panelProps = {
     pending,
+    actions: reviewCase.allowedActions,
     requirement: [stepLabel, approvalRequirementLabel(currentStep)]
       .filter(Boolean)
       .join(" · "),
+    reasonHint: reasonAlways
+      ? "Required for every decision on this step"
+      : "Required when rejecting, recommended when approving",
+    shorten,
+    onShortenChange: setShorten,
+    duration,
+    onDurationChange: setApprovedDuration,
+    onAskInformation: () => setAskOpen(true),
     justification,
     onJustificationChange: (value: string) => {
       setJustification(value);
@@ -246,17 +461,28 @@ const ReviewRequest = () => {
 
   return (
     <div className="w-full">
-      <DocumentTitle title={`Review ${resource.name || item.metadata!.name}`} />
+      <DocumentTitle
+        title={`Review ${resource.displayName || resource.name || item.metadata!.name}`}
+      />
       <UnsavedChangesDialog guard={unsavedChanges} />
       <BackLink to="/reviewer/requests">Review Queue</BackLink>
 
       <PageHeader
-        eyebrow={`${resource.kind} access request`}
-        title={resource.name || item.metadata!.name}
+        eyebrow={
+          resource.accessLevel
+            ? `${resource.accessLevel} access request`
+            : `${resource.kind} access request`
+        }
+        title={resource.displayName || resource.name || item.metadata!.name}
         meta={
           <>
             <StatusBadge status={item.status?.state?.status} withHint />
             <UrgencyBadge urgency={item.spec?.urgency} />
+            {flags.map((flag) => (
+              <Badge key={flag.key} tone={flag.tone}>
+                {flag.label}
+              </Badge>
+            ))}
           </>
         }
       />
@@ -264,6 +490,7 @@ const ReviewRequest = () => {
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-4">
           <StatusHero request={item} />
+          <InformationRequestCard request={item} />
           <JustificationCard
             text={item.spec?.justification}
             description="Why the requester says the access is needed"
@@ -273,7 +500,8 @@ const ReviewRequest = () => {
           <PeopleCard request={item} />
           <ResourceCard request={item} reviewer />
           <DecisionPanel {...panelProps} className="lg:hidden" />
-          <AuthorizationCard request={item} />
+          <GrantCard request={item} />
+          <RequesterHistoryCard reviewCase={reviewCase} />
           <ReviewWorkflow request={item} />
           <RequestTimeline request={item} />
         </div>
@@ -305,7 +533,9 @@ const ReviewRequest = () => {
             </SummaryRow>
             <SummaryRow label="For">{requestSubjectName(item) || "—"}</SummaryRow>
             <SummaryRow label="Duration">
-              {formatDuration(grantedDuration(item))}
+              {formatDuration(
+                shorten && !rejecting ? duration : grantedDuration(item),
+              )}
             </SummaryRow>
             {stepLabel && <SummaryRow label="Step">{stepLabel}</SummaryRow>}
             <SummaryRow label="Your reason">
@@ -319,6 +549,66 @@ const ReviewRequest = () => {
         danger={rejecting}
         loading={decideMutation.isPending}
       />
+
+      <Modal
+        opened={askOpen}
+        onClose={() => setAskOpen(false)}
+        centered
+        radius="lg"
+        title="Ask the requester a question"
+        styles={{
+          title: {
+            fontSize: "0.9375rem",
+            fontWeight: 600,
+            color: "var(--color-slate-900)",
+          },
+        }}
+      >
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (question.trim() && !questionTooLong) askMutation.mutate();
+          }}
+        >
+          <p className="text-xs font-normal leading-5 text-slate-500">
+            The requester is notified and the request stays pending. Their
+            answer appears on this page.
+          </p>
+          <Textarea
+            label={
+              <span className="flex w-full items-baseline justify-between gap-3">
+                Question
+                <LengthCounter
+                  length={textLength(question)}
+                  max={MAX_MESSAGE_LENGTH}
+                />
+              </span>
+            }
+            error={questionTooLong ? "The question is too long" : undefined}
+            autosize
+            minRows={3}
+            maxRows={6}
+            value={question}
+            onChange={(event) => setQuestion(event.currentTarget.value)}
+            styles={{ label: { display: "flex", width: "100%" } }}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="default" onClick={() => setAskOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="filled"
+              color="ink"
+              loading={askMutation.isPending}
+              disabled={!question.trim() || questionTooLong}
+            >
+              Send question
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

@@ -1385,9 +1385,13 @@ type GetAccessLogSummaryRequest struct {
 	// ISO 3166-1 alpha-2 country code (e.g. "US"). The country is resolved from
 	// the GeoIP information of the Session's latest successful authentication at
 	// the time of the entry.
-	CountryCode   string `protobuf:"bytes,19,opt,name=countryCode,proto3" json:"countryCode,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	CountryCode string `protobuf:"bytes,19,opt,name=countryCode,proto3" json:"countryCode,omitempty"`
+	// MatchInlinePolicyRef only counts the entries that were decided by a rule
+	// of an inline Policy of a specific resource (e.g. the access Request
+	// whose granted access decided them).
+	MatchInlinePolicyRef *metav1.ObjectReference `protobuf:"bytes,20,opt,name=matchInlinePolicyRef,proto3" json:"matchInlinePolicyRef,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *GetAccessLogSummaryRequest) Reset() {
@@ -1537,6 +1541,13 @@ func (x *GetAccessLogSummaryRequest) GetCountryCode() string {
 		return x.CountryCode
 	}
 	return ""
+}
+
+func (x *GetAccessLogSummaryRequest) GetMatchInlinePolicyRef() *metav1.ObjectReference {
+	if x != nil {
+		return x.MatchInlinePolicyRef
+	}
+	return nil
 }
 
 type GetAccessLogSummaryResponse struct {
@@ -2991,9 +3002,13 @@ type GetAccessLogDataPointRequest struct {
 	// ISO 3166-1 alpha-2 country code (e.g. "US"). The country is resolved from
 	// the GeoIP information of the Session's latest successful authentication at
 	// the time of the entry.
-	CountryCode   string `protobuf:"bytes,20,opt,name=countryCode,proto3" json:"countryCode,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	CountryCode string `protobuf:"bytes,20,opt,name=countryCode,proto3" json:"countryCode,omitempty"`
+	// MatchInlinePolicyRef only counts the entries that were decided by a rule
+	// of an inline Policy of a specific resource (e.g. the access Request
+	// whose granted access decided them).
+	MatchInlinePolicyRef *metav1.ObjectReference `protobuf:"bytes,21,opt,name=matchInlinePolicyRef,proto3" json:"matchInlinePolicyRef,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *GetAccessLogDataPointRequest) Reset() {
@@ -3150,6 +3165,13 @@ func (x *GetAccessLogDataPointRequest) GetCountryCode() string {
 		return x.CountryCode
 	}
 	return ""
+}
+
+func (x *GetAccessLogDataPointRequest) GetMatchInlinePolicyRef() *metav1.ObjectReference {
+	if x != nil {
+		return x.MatchInlinePolicyRef
+	}
+	return nil
 }
 
 // DataPointSeries is a single series of a grouped datapoint response.
@@ -3959,6 +3981,10 @@ type ListAccessLogTopServiceRequest struct {
 	// the GeoIP information of the Session's latest successful authentication at
 	// the time of the entry.
 	CountryCode string `protobuf:"bytes,17,opt,name=countryCode,proto3" json:"countryCode,omitempty"`
+	// MatchInlinePolicyRef only counts the entries that were decided by a rule
+	// of an inline Policy of a specific resource (e.g. the access Request
+	// whose granted access decided them).
+	MatchInlinePolicyRef *metav1.ObjectReference `protobuf:"bytes,18,opt,name=matchInlinePolicyRef,proto3" json:"matchInlinePolicyRef,omitempty"`
 	// Limit caps the number of the returned items. It defaults to 10 and it
 	// cannot exceed 100.
 	Limit         uint32 `protobuf:"varint,100,opt,name=limit,proto3" json:"limit,omitempty"`
@@ -4085,6 +4111,13 @@ func (x *ListAccessLogTopServiceRequest) GetCountryCode() string {
 		return x.CountryCode
 	}
 	return ""
+}
+
+func (x *ListAccessLogTopServiceRequest) GetMatchInlinePolicyRef() *metav1.ObjectReference {
+	if x != nil {
+		return x.MatchInlinePolicyRef
+	}
+	return nil
 }
 
 func (x *ListAccessLogTopServiceRequest) GetLimit() uint32 {
@@ -10040,7 +10073,7 @@ var file_visibilityv1_proto_rawDesc = []byte{
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61,
 	0x6d, 0x70, 0x52, 0x09, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x12, 0x12, 0x0a,
 	0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x64, 0x61, 0x74,
-	0x61, 0x22, 0xc7, 0x08, 0x0a, 0x1a, 0x47, 0x65, 0x74, 0x41, 0x63, 0x63, 0x65, 0x73, 0x73, 0x4c,
+	0x61, 0x22, 0xa7, 0x09, 0x0a, 0x1a, 0x47, 0x65, 0x74, 0x41, 0x63, 0x63, 0x65, 0x73, 0x73, 0x4c,
 	0x6f, 0x67, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
 	0x12, 0x48, 0x0a, 0x09, 0x72, 0x65, 0x67, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x66, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
@@ -10108,7 +10141,13 @@ var file_visibilityv1_proto_rawDesc = []byte{
 	0x31, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x53, 0x70, 0x65, 0x63, 0x2e, 0x4d,
 	0x6f, 0x64, 0x65, 0x52, 0x04, 0x6d, 0x6f, 0x64, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x63, 0x6f, 0x75,
 	0x6e, 0x74, 0x72, 0x79, 0x43, 0x6f, 0x64, 0x65, 0x18, 0x13, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b,
-	0x63, 0x6f, 0x75, 0x6e, 0x74, 0x72, 0x79, 0x43, 0x6f, 0x64, 0x65, 0x22, 0x86, 0x09, 0x0a, 0x1b,
+	0x63, 0x6f, 0x75, 0x6e, 0x74, 0x72, 0x79, 0x43, 0x6f, 0x64, 0x65, 0x12, 0x5e, 0x0a, 0x14, 0x6d,
+	0x61, 0x74, 0x63, 0x68, 0x49, 0x6e, 0x6c, 0x69, 0x6e, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79,
+	0x52, 0x65, 0x66, 0x18, 0x14, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65,
+	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65,
+	0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x52, 0x65, 0x66, 0x65,
+	0x72, 0x65, 0x6e, 0x63, 0x65, 0x52, 0x14, 0x6d, 0x61, 0x74, 0x63, 0x68, 0x49, 0x6e, 0x6c, 0x69,
+	0x6e, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x66, 0x22, 0x86, 0x09, 0x0a, 0x1b,
 	0x47, 0x65, 0x74, 0x41, 0x63, 0x63, 0x65, 0x73, 0x73, 0x4c, 0x6f, 0x67, 0x53, 0x75, 0x6d, 0x6d,
 	0x61, 0x72, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x74,
 	0x6f, 0x74, 0x61, 0x6c, 0x4e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04,
@@ -10569,7 +10608,7 @@ var file_visibilityv1_proto_rawDesc = []byte{
 	0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x22, 0x26,
 	0x0a, 0x14, 0x47, 0x65, 0x74, 0x53, 0x53, 0x48, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52,
 	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x22, 0xbb, 0x0a, 0x0a, 0x1c, 0x47, 0x65, 0x74, 0x41, 0x63,
+	0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x22, 0x9b, 0x0b, 0x0a, 0x1c, 0x47, 0x65, 0x74, 0x41, 0x63,
 	0x63, 0x65, 0x73, 0x73, 0x4c, 0x6f, 0x67, 0x44, 0x61, 0x74, 0x61, 0x50, 0x6f, 0x69, 0x6e, 0x74,
 	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x48, 0x0a, 0x09, 0x72, 0x65, 0x67, 0x69, 0x6f,
 	0x6e, 0x52, 0x65, 0x66, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x74,
@@ -10642,7 +10681,13 @@ var file_visibilityv1_proto_rawDesc = []byte{
 	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x53, 0x70, 0x65,
 	0x63, 0x2e, 0x4d, 0x6f, 0x64, 0x65, 0x52, 0x04, 0x6d, 0x6f, 0x64, 0x65, 0x12, 0x20, 0x0a, 0x0b,
 	0x63, 0x6f, 0x75, 0x6e, 0x74, 0x72, 0x79, 0x43, 0x6f, 0x64, 0x65, 0x18, 0x14, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x0b, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x72, 0x79, 0x43, 0x6f, 0x64, 0x65, 0x22, 0xa3,
+	0x09, 0x52, 0x0b, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x72, 0x79, 0x43, 0x6f, 0x64, 0x65, 0x12, 0x5e,
+	0x0a, 0x14, 0x6d, 0x61, 0x74, 0x63, 0x68, 0x49, 0x6e, 0x6c, 0x69, 0x6e, 0x65, 0x50, 0x6f, 0x6c,
+	0x69, 0x63, 0x79, 0x52, 0x65, 0x66, 0x18, 0x15, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x52,
+	0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x52, 0x14, 0x6d, 0x61, 0x74, 0x63, 0x68, 0x49,
+	0x6e, 0x6c, 0x69, 0x6e, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x66, 0x22, 0xa3,
 	0x01, 0x0a, 0x07, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x42, 0x79, 0x12, 0x12, 0x0a, 0x0e, 0x47, 0x52,
 	0x4f, 0x55, 0x50, 0x5f, 0x42, 0x59, 0x5f, 0x55, 0x4e, 0x53, 0x45, 0x54, 0x10, 0x00, 0x12, 0x0a,
 	0x0a, 0x06, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x10, 0x01, 0x12, 0x08, 0x0a, 0x04, 0x4d, 0x4f,
@@ -10929,7 +10974,7 @@ var file_visibilityv1_proto_rawDesc = []byte{
 	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x63, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x73,
 	0x73, 0x69, 0x6f, 0x6e, 0x52, 0x07, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x14, 0x0a,
 	0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x05, 0x63, 0x6f,
-	0x75, 0x6e, 0x74, 0x22, 0xcd, 0x06, 0x0a, 0x1e, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x63, 0x63, 0x65,
+	0x75, 0x6e, 0x74, 0x22, 0xad, 0x07, 0x0a, 0x1e, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x63, 0x63, 0x65,
 	0x73, 0x73, 0x4c, 0x6f, 0x67, 0x54, 0x6f, 0x70, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52,
 	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x48, 0x0a, 0x09, 0x72, 0x65, 0x67, 0x69, 0x6f, 0x6e,
 	0x52, 0x65, 0x66, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65,
@@ -10980,7 +11025,13 @@ var file_visibilityv1_proto_rawDesc = []byte{
 	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x53, 0x70, 0x65, 0x63,
 	0x2e, 0x4d, 0x6f, 0x64, 0x65, 0x52, 0x04, 0x6d, 0x6f, 0x64, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x63,
 	0x6f, 0x75, 0x6e, 0x74, 0x72, 0x79, 0x43, 0x6f, 0x64, 0x65, 0x18, 0x11, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x0b, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x72, 0x79, 0x43, 0x6f, 0x64, 0x65, 0x12, 0x14, 0x0a,
+	0x52, 0x0b, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x72, 0x79, 0x43, 0x6f, 0x64, 0x65, 0x12, 0x5e, 0x0a,
+	0x14, 0x6d, 0x61, 0x74, 0x63, 0x68, 0x49, 0x6e, 0x6c, 0x69, 0x6e, 0x65, 0x50, 0x6f, 0x6c, 0x69,
+	0x63, 0x79, 0x52, 0x65, 0x66, 0x18, 0x12, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f, 0x63,
+	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
+	0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x52, 0x65,
+	0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x52, 0x14, 0x6d, 0x61, 0x74, 0x63, 0x68, 0x49, 0x6e,
+	0x6c, 0x69, 0x6e, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x66, 0x12, 0x14, 0x0a,
 	0x05, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x18, 0x64, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x05, 0x6c, 0x69,
 	0x6d, 0x69, 0x74, 0x22, 0x9a, 0x02, 0x0a, 0x1f, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x63, 0x63, 0x65,
 	0x73, 0x73, 0x4c, 0x6f, 0x67, 0x54, 0x6f, 0x70, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52,
@@ -13095,435 +13146,438 @@ var file_visibilityv1_proto_depIdxs = []int32{
 	119, // 48: octelium.api.main.visibility.v1.GetAccessLogSummaryRequest.compareTo:type_name -> google.protobuf.Timestamp
 	121, // 49: octelium.api.main.visibility.v1.GetAccessLogSummaryRequest.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
 	122, // 50: octelium.api.main.visibility.v1.GetAccessLogSummaryRequest.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
-	81,  // 51: octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.latency:type_name -> octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.Latency
-	82,  // 52: octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.totalByMode:type_name -> octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.TotalByModeEntry
-	17,  // 53: octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.previous:type_name -> octelium.api.main.visibility.v1.GetAccessLogSummaryResponse
-	117, // 54: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
-	118, // 55: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 56: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 57: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 58: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 59: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 60: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 61: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 62: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.to:type_name -> google.protobuf.Timestamp
-	125, // 63: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
-	126, // 64: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
-	127, // 65: octelium.api.main.visibility.v1.ListAuthenticationLogResponse.items:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog
-	124, // 66: octelium.api.main.visibility.v1.ListAuthenticationLogResponse.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	118, // 67: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 68: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 69: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 70: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 71: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 72: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 73: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 74: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.to:type_name -> google.protobuf.Timestamp
-	119, // 75: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.compareFrom:type_name -> google.protobuf.Timestamp
-	119, // 76: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.compareTo:type_name -> google.protobuf.Timestamp
-	125, // 77: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
-	126, // 78: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
-	21,  // 79: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse.previous:type_name -> octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse
-	83,  // 80: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse.totalByFailureReason:type_name -> octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse.TotalByFailureReasonEntry
-	117, // 81: octelium.api.main.visibility.v1.ListAuditLogRequest.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
-	118, // 82: octelium.api.main.visibility.v1.ListAuditLogRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 83: octelium.api.main.visibility.v1.ListAuditLogRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 84: octelium.api.main.visibility.v1.ListAuditLogRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 85: octelium.api.main.visibility.v1.ListAuditLogRequest.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 86: octelium.api.main.visibility.v1.ListAuditLogRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 87: octelium.api.main.visibility.v1.ListAuditLogRequest.to:type_name -> google.protobuf.Timestamp
-	128, // 88: octelium.api.main.visibility.v1.ListAuditLogResponse.items:type_name -> octelium.api.main.enterprise.v1.AuditLog
-	124, // 89: octelium.api.main.visibility.v1.ListAuditLogResponse.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	119, // 90: octelium.api.main.visibility.v1.CommonQueryMetricsOptions.from:type_name -> google.protobuf.Timestamp
-	119, // 91: octelium.api.main.visibility.v1.CommonQueryMetricsOptions.to:type_name -> google.protobuf.Timestamp
-	129, // 92: octelium.api.main.visibility.v1.CommonQueryMetricsOptions.step:type_name -> octelium.api.main.meta.v1.Duration
-	84,  // 93: octelium.api.main.visibility.v1.CommonQueryMetricsOptions.attributes:type_name -> octelium.api.main.visibility.v1.CommonQueryMetricsOptions.Attribute
-	24,  // 94: octelium.api.main.visibility.v1.GetCounterRequest.common:type_name -> octelium.api.main.visibility.v1.CommonQueryMetricsOptions
-	85,  // 95: octelium.api.main.visibility.v1.GetCounterResponse.points:type_name -> octelium.api.main.visibility.v1.GetCounterResponse.DataPoint
-	130, // 96: octelium.api.main.visibility.v1.GetCounterResponse.attrs:type_name -> google.protobuf.Struct
-	24,  // 97: octelium.api.main.visibility.v1.GetGaugeRequest.common:type_name -> octelium.api.main.visibility.v1.CommonQueryMetricsOptions
-	86,  // 98: octelium.api.main.visibility.v1.GetGaugeResponse.points:type_name -> octelium.api.main.visibility.v1.GetGaugeResponse.DataPoint
-	130, // 99: octelium.api.main.visibility.v1.GetGaugeResponse.attrs:type_name -> google.protobuf.Struct
-	24,  // 100: octelium.api.main.visibility.v1.GetHistogramRequest.common:type_name -> octelium.api.main.visibility.v1.CommonQueryMetricsOptions
-	87,  // 101: octelium.api.main.visibility.v1.GetHistogramResponse.points:type_name -> octelium.api.main.visibility.v1.GetHistogramResponse.DataPoint
-	117, // 102: octelium.api.main.visibility.v1.ListComponentLogRequest.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
-	131, // 103: octelium.api.main.visibility.v1.ListComponentLogRequest.level:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Level
-	119, // 104: octelium.api.main.visibility.v1.ListComponentLogRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 105: octelium.api.main.visibility.v1.ListComponentLogRequest.to:type_name -> google.protobuf.Timestamp
-	61,  // 106: octelium.api.main.visibility.v1.ListComponentLogRequest.component:type_name -> octelium.api.main.visibility.v1.ComponentSelector
-	131, // 107: octelium.api.main.visibility.v1.ListComponentLogRequest.levels:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Level
-	132, // 108: octelium.api.main.visibility.v1.ListComponentLogResponse.items:type_name -> octelium.api.main.core.v1.ComponentLog
-	124, // 109: octelium.api.main.visibility.v1.ListComponentLogResponse.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	118, // 110: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 111: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 112: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 113: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 114: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 115: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 116: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 117: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 118: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.to:type_name -> google.protobuf.Timestamp
-	129, // 119: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.interval:type_name -> octelium.api.main.meta.v1.Duration
-	120, // 120: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.status:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Status
-	1,   // 121: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.groupBy:type_name -> octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.GroupBy
-	121, // 122: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
-	122, // 123: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
-	89,  // 124: octelium.api.main.visibility.v1.DataPointSeries.datapoints:type_name -> octelium.api.main.visibility.v1.DataPointSeries.DataPoint
-	90,  // 125: octelium.api.main.visibility.v1.GetAccessLogDataPointResponse.datapoints:type_name -> octelium.api.main.visibility.v1.GetAccessLogDataPointResponse.DataPoint
-	35,  // 126: octelium.api.main.visibility.v1.GetAccessLogDataPointResponse.series:type_name -> octelium.api.main.visibility.v1.DataPointSeries
-	118, // 127: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 128: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 129: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 130: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 131: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 132: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	129, // 133: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.interval:type_name -> octelium.api.main.meta.v1.Duration
-	119, // 134: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 135: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.to:type_name -> google.protobuf.Timestamp
-	2,   // 136: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.groupBy:type_name -> octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.GroupBy
-	125, // 137: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
-	126, // 138: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
-	91,  // 139: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse.datapoints:type_name -> octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse.DataPoint
-	35,  // 140: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse.series:type_name -> octelium.api.main.visibility.v1.DataPointSeries
-	118, // 141: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 142: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 143: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 144: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 145: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 146: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.to:type_name -> google.protobuf.Timestamp
-	120, // 147: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.status:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Status
-	121, // 148: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
-	122, // 149: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
-	92,  // 150: octelium.api.main.visibility.v1.ListAccessLogTopUserResponse.items:type_name -> octelium.api.main.visibility.v1.ListAccessLogTopUserResponse.Item
-	118, // 151: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 152: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 153: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 154: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 155: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 156: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 157: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 158: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.to:type_name -> google.protobuf.Timestamp
-	120, // 159: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.status:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Status
-	121, // 160: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
-	122, // 161: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
-	93,  // 162: octelium.api.main.visibility.v1.ListAccessLogTopSessionResponse.items:type_name -> octelium.api.main.visibility.v1.ListAccessLogTopSessionResponse.Item
-	118, // 163: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 164: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 165: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 166: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 167: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 168: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 169: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.to:type_name -> google.protobuf.Timestamp
-	120, // 170: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.status:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Status
-	121, // 171: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
-	122, // 172: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
-	94,  // 173: octelium.api.main.visibility.v1.ListAccessLogTopServiceResponse.items:type_name -> octelium.api.main.visibility.v1.ListAccessLogTopServiceResponse.Item
-	118, // 174: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 175: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 176: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 177: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 178: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 179: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 180: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 181: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.to:type_name -> google.protobuf.Timestamp
-	120, // 182: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.status:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Status
-	121, // 183: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
-	122, // 184: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
-	95,  // 185: octelium.api.main.visibility.v1.ListAccessLogTopPolicyResponse.items:type_name -> octelium.api.main.visibility.v1.ListAccessLogTopPolicyResponse.Item
-	118, // 186: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 187: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 188: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 189: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 190: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 191: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 192: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 193: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 194: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.to:type_name -> google.protobuf.Timestamp
-	121, // 195: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
-	122, // 196: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
-	96,  // 197: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse.items:type_name -> octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse.Item
-	118, // 198: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 199: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 200: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 201: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 202: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest.to:type_name -> google.protobuf.Timestamp
-	125, // 203: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
-	126, // 204: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
-	97,  // 205: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserResponse.items:type_name -> octelium.api.main.visibility.v1.ListAuthenticationLogTopUserResponse.Item
-	118, // 206: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 207: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 208: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 209: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 210: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 211: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 212: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.to:type_name -> google.protobuf.Timestamp
-	125, // 213: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
-	126, // 214: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
-	98,  // 215: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialResponse.items:type_name -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialResponse.Item
-	118, // 216: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 217: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 218: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 219: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 220: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 221: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 222: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 223: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.to:type_name -> google.protobuf.Timestamp
-	125, // 224: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
-	126, // 225: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
-	99,  // 226: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderResponse.items:type_name -> octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderResponse.Item
-	118, // 227: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 228: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 229: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 230: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 231: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 232: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 233: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 234: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 235: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.to:type_name -> google.protobuf.Timestamp
-	120, // 236: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.status:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Status
-	121, // 237: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
-	122, // 238: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
-	100, // 239: octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse.items:type_name -> octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse.Item
-	118, // 240: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 241: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 242: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 243: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 244: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 245: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 246: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 247: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.to:type_name -> google.protobuf.Timestamp
-	125, // 248: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
-	126, // 249: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
-	101, // 250: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.items:type_name -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.Item
-	118, // 251: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 252: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 253: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 254: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 255: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 256: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 257: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 258: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.to:type_name -> google.protobuf.Timestamp
-	125, // 259: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
-	126, // 260: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
-	102, // 261: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.items:type_name -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item
-	119, // 262: octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 263: octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.to:type_name -> google.protobuf.Timestamp
-	131, // 264: octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.level:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Level
-	61,  // 265: octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.component:type_name -> octelium.api.main.visibility.v1.ComponentSelector
-	3,   // 266: octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.orderBy:type_name -> octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.OrderBy
-	131, // 267: octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.levels:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Level
-	103, // 268: octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse.items:type_name -> octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse.Item
-	119, // 269: octelium.api.main.visibility.v1.GetComponentLogSummaryRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 270: octelium.api.main.visibility.v1.GetComponentLogSummaryRequest.to:type_name -> google.protobuf.Timestamp
-	61,  // 271: octelium.api.main.visibility.v1.GetComponentLogSummaryRequest.component:type_name -> octelium.api.main.visibility.v1.ComponentSelector
-	119, // 272: octelium.api.main.visibility.v1.GetComponentLogSummaryRequest.compareFrom:type_name -> google.protobuf.Timestamp
-	119, // 273: octelium.api.main.visibility.v1.GetComponentLogSummaryRequest.compareTo:type_name -> google.protobuf.Timestamp
-	65,  // 274: octelium.api.main.visibility.v1.GetComponentLogSummaryResponse.previous:type_name -> octelium.api.main.visibility.v1.GetComponentLogSummaryResponse
-	117, // 275: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
-	118, // 276: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 277: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 278: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 279: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 280: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 281: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.to:type_name -> google.protobuf.Timestamp
-	119, // 282: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.compareFrom:type_name -> google.protobuf.Timestamp
-	119, // 283: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.compareTo:type_name -> google.protobuf.Timestamp
-	104, // 284: octelium.api.main.visibility.v1.GetAuditLogSummaryResponse.totalByResourceKind:type_name -> octelium.api.main.visibility.v1.GetAuditLogSummaryResponse.TotalByResourceKindEntry
-	67,  // 285: octelium.api.main.visibility.v1.GetAuditLogSummaryResponse.previous:type_name -> octelium.api.main.visibility.v1.GetAuditLogSummaryResponse
-	118, // 286: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 287: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 288: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	118, // 289: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 290: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 291: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.to:type_name -> google.protobuf.Timestamp
-	129, // 292: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.interval:type_name -> octelium.api.main.meta.v1.Duration
-	4,   // 293: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.groupBy:type_name -> octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.GroupBy
-	105, // 294: octelium.api.main.visibility.v1.GetAuditLogDataPointResponse.datapoints:type_name -> octelium.api.main.visibility.v1.GetAuditLogDataPointResponse.DataPoint
-	35,  // 295: octelium.api.main.visibility.v1.GetAuditLogDataPointResponse.series:type_name -> octelium.api.main.visibility.v1.DataPointSeries
-	118, // 296: octelium.api.main.visibility.v1.ListAuditLogTopUserRequest.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 297: octelium.api.main.visibility.v1.ListAuditLogTopUserRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 298: octelium.api.main.visibility.v1.ListAuditLogTopUserRequest.to:type_name -> google.protobuf.Timestamp
-	118, // 299: octelium.api.main.visibility.v1.ListAuditLogTopSessionRequest.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	119, // 300: octelium.api.main.visibility.v1.ListAuditLogTopSessionRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 301: octelium.api.main.visibility.v1.ListAuditLogTopSessionRequest.to:type_name -> google.protobuf.Timestamp
-	106, // 302: octelium.api.main.visibility.v1.ListAuditLogTopUserResponse.items:type_name -> octelium.api.main.visibility.v1.ListAuditLogTopUserResponse.Item
-	107, // 303: octelium.api.main.visibility.v1.ListAuditLogTopSessionResponse.items:type_name -> octelium.api.main.visibility.v1.ListAuditLogTopSessionResponse.Item
-	119, // 304: octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 305: octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.to:type_name -> google.protobuf.Timestamp
-	129, // 306: octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.interval:type_name -> octelium.api.main.meta.v1.Duration
-	131, // 307: octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.level:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Level
-	61,  // 308: octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.component:type_name -> octelium.api.main.visibility.v1.ComponentSelector
-	5,   // 309: octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.groupBy:type_name -> octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.GroupBy
-	131, // 310: octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.levels:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Level
-	108, // 311: octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.datapoints:type_name -> octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.DataPoint
-	35,  // 312: octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.series:type_name -> octelium.api.main.visibility.v1.DataPointSeries
-	133, // 313: octelium.api.main.visibility.v1.GetClusterSummaryRequest.common:type_name -> octelium.api.main.visibility.meta.v1.CommonSummaryOptions
-	6,   // 314: octelium.api.main.visibility.v1.GetClusterSummaryRequest.kinds:type_name -> octelium.api.main.visibility.v1.GetClusterSummaryRequest.Kind
-	109, // 315: octelium.api.main.visibility.v1.GetClusterSummaryResponse.core:type_name -> octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core
-	110, // 316: octelium.api.main.visibility.v1.GetClusterSummaryResponse.access:type_name -> octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access
-	111, // 317: octelium.api.main.visibility.v1.GetClusterSummaryResponse.enterprise:type_name -> octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise
-	113, // 318: octelium.api.main.visibility.v1.GetClusterSummaryResponse.unavailables:type_name -> octelium.api.main.visibility.v1.GetClusterSummaryResponse.Unavailable
-	112, // 319: octelium.api.main.visibility.v1.GetClusterSummaryResponse.cordium:type_name -> octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium
-	119, // 320: octelium.api.main.visibility.v1.GetClusterHealthRequest.from:type_name -> google.protobuf.Timestamp
-	119, // 321: octelium.api.main.visibility.v1.GetClusterHealthRequest.to:type_name -> google.protobuf.Timestamp
-	7,   // 322: octelium.api.main.visibility.v1.GetClusterHealthResponse.status:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Status
-	114, // 323: octelium.api.main.visibility.v1.GetClusterHealthResponse.subsystems:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem
-	115, // 324: octelium.api.main.visibility.v1.GetClusterHealthResponse.components:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Component
-	116, // 325: octelium.api.main.visibility.v1.GetClusterHealthResponse.regions:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Region
-	119, // 326: octelium.api.main.visibility.v1.GetClusterHealthResponse.from:type_name -> google.protobuf.Timestamp
-	119, // 327: octelium.api.main.visibility.v1.GetClusterHealthResponse.to:type_name -> google.protobuf.Timestamp
-	119, // 328: octelium.api.main.visibility.v1.ListSSHSessionRecordingResponse.Recording.timestamp:type_name -> google.protobuf.Timestamp
-	119, // 329: octelium.api.main.visibility.v1.GetCounterResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
-	119, // 330: octelium.api.main.visibility.v1.GetGaugeResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
-	130, // 331: octelium.api.main.visibility.v1.GetHistogramResponse.DataPoint.attrs:type_name -> google.protobuf.Struct
-	88,  // 332: octelium.api.main.visibility.v1.GetHistogramResponse.DataPoint.buckets:type_name -> octelium.api.main.visibility.v1.GetHistogramResponse.DataPoint.Bucket
-	119, // 333: octelium.api.main.visibility.v1.GetHistogramResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
-	119, // 334: octelium.api.main.visibility.v1.DataPointSeries.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
-	119, // 335: octelium.api.main.visibility.v1.GetAccessLogDataPointResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
-	119, // 336: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
-	134, // 337: octelium.api.main.visibility.v1.ListAccessLogTopUserResponse.Item.user:type_name -> octelium.api.main.core.v1.User
-	135, // 338: octelium.api.main.visibility.v1.ListAccessLogTopSessionResponse.Item.session:type_name -> octelium.api.main.core.v1.Session
-	136, // 339: octelium.api.main.visibility.v1.ListAccessLogTopServiceResponse.Item.service:type_name -> octelium.api.main.core.v1.Service
-	137, // 340: octelium.api.main.visibility.v1.ListAccessLogTopPolicyResponse.Item.policy:type_name -> octelium.api.main.core.v1.Policy
-	121, // 341: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse.Item.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
-	118, // 342: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse.Item.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	134, // 343: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserResponse.Item.user:type_name -> octelium.api.main.core.v1.User
-	138, // 344: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialResponse.Item.credential:type_name -> octelium.api.main.core.v1.Credential
-	139, // 345: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderResponse.Item.identityProvider:type_name -> octelium.api.main.core.v1.IdentityProvider
-	140, // 346: octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse.Item.country:type_name -> octelium.api.main.core.v1.GeoIP.Country
-	119, // 347: octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse.Item.lastSeenAt:type_name -> google.protobuf.Timestamp
-	140, // 348: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.Item.country:type_name -> octelium.api.main.core.v1.GeoIP.Country
-	141, // 349: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.Item.continent:type_name -> octelium.api.main.core.v1.GeoIP.Continent
-	119, // 350: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.Item.lastSeenAt:type_name -> google.protobuf.Timestamp
-	140, // 351: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item.country:type_name -> octelium.api.main.core.v1.GeoIP.Country
-	142, // 352: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item.region:type_name -> octelium.api.main.core.v1.GeoIP.Region
-	143, // 353: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item.city:type_name -> octelium.api.main.core.v1.GeoIP.City
-	144, // 354: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item.coordinates:type_name -> octelium.api.main.core.v1.GeoIP.Coordinates
-	119, // 355: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item.lastSeenAt:type_name -> google.protobuf.Timestamp
-	61,  // 356: octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse.Item.component:type_name -> octelium.api.main.visibility.v1.ComponentSelector
-	119, // 357: octelium.api.main.visibility.v1.GetAuditLogDataPointResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
-	134, // 358: octelium.api.main.visibility.v1.ListAuditLogTopUserResponse.Item.user:type_name -> octelium.api.main.core.v1.User
-	135, // 359: octelium.api.main.visibility.v1.ListAuditLogTopSessionResponse.Item.session:type_name -> octelium.api.main.core.v1.Session
-	119, // 360: octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
-	145, // 361: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.user:type_name -> octelium.api.main.visibility.core.v1.GetUserSummaryResponse
-	146, // 362: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.session:type_name -> octelium.api.main.visibility.core.v1.GetSessionSummaryResponse
-	147, // 363: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.device:type_name -> octelium.api.main.visibility.core.v1.GetDeviceSummaryResponse
-	148, // 364: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.service:type_name -> octelium.api.main.visibility.core.v1.GetServiceSummaryResponse
-	149, // 365: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.namespace:type_name -> octelium.api.main.visibility.core.v1.GetNamespaceSummaryResponse
-	150, // 366: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.policy:type_name -> octelium.api.main.visibility.core.v1.GetPolicySummaryResponse
-	151, // 367: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.group:type_name -> octelium.api.main.visibility.core.v1.GetGroupSummaryResponse
-	152, // 368: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.credential:type_name -> octelium.api.main.visibility.core.v1.GetCredentialSummaryResponse
-	153, // 369: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.identityProvider:type_name -> octelium.api.main.visibility.core.v1.GetIdentityProviderSummaryResponse
-	154, // 370: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.authenticator:type_name -> octelium.api.main.visibility.core.v1.GetAuthenticatorSummaryResponse
-	155, // 371: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.secret:type_name -> octelium.api.main.visibility.core.v1.GetSecretSummaryResponse
-	156, // 372: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.gateway:type_name -> octelium.api.main.visibility.core.v1.GetGatewaySummaryResponse
-	157, // 373: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.region:type_name -> octelium.api.main.visibility.core.v1.GetRegionSummaryResponse
-	158, // 374: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.policy:type_name -> octelium.api.main.visibility.access.v1.GetPolicySummaryResponse
-	159, // 375: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.catalog:type_name -> octelium.api.main.visibility.access.v1.GetCatalogSummaryResponse
-	160, // 376: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.request:type_name -> octelium.api.main.visibility.access.v1.GetRequestSummaryResponse
-	161, // 377: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.review:type_name -> octelium.api.main.visibility.access.v1.GetReviewSummaryResponse
-	162, // 378: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.secret:type_name -> octelium.api.main.visibility.access.v1.GetSecretSummaryResponse
-	163, // 379: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.integration:type_name -> octelium.api.main.visibility.access.v1.GetIntegrationSummaryResponse
-	164, // 380: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.integrationIdentity:type_name -> octelium.api.main.visibility.access.v1.GetIntegrationIdentitySummaryResponse
-	165, // 381: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.integrationBinding:type_name -> octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryResponse
-	166, // 382: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.collectorExporter:type_name -> octelium.api.main.visibility.enterprise.v1.GetCollectorExporterSummaryResponse
-	167, // 383: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.secret:type_name -> octelium.api.main.visibility.enterprise.v1.GetSecretSummaryResponse
-	168, // 384: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.secretStore:type_name -> octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryResponse
-	169, // 385: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.certificate:type_name -> octelium.api.main.visibility.enterprise.v1.GetCertificateSummaryResponse
-	170, // 386: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.certificateIssuer:type_name -> octelium.api.main.visibility.enterprise.v1.GetCertificateIssuerSummaryResponse
-	171, // 387: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.dnsProvider:type_name -> octelium.api.main.visibility.enterprise.v1.GetDNSProviderSummaryResponse
-	172, // 388: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.directoryProvider:type_name -> octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderSummaryResponse
-	173, // 389: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.directoryProviderUser:type_name -> octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderUserSummaryResponse
-	174, // 390: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.directoryProviderGroup:type_name -> octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderGroupSummaryResponse
-	175, // 391: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.deviceManager:type_name -> octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse
-	176, // 392: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.workspace:type_name -> octelium.api.main.visibility.cordium.v1.GetWorkspaceSummaryResponse
-	177, // 393: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.template:type_name -> octelium.api.main.visibility.cordium.v1.GetTemplateSummaryResponse
-	178, // 394: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.space:type_name -> octelium.api.main.visibility.cordium.v1.GetSpaceSummaryResponse
-	179, // 395: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.membership:type_name -> octelium.api.main.visibility.cordium.v1.GetMembershipSummaryResponse
-	180, // 396: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.gitProvider:type_name -> octelium.api.main.visibility.cordium.v1.GetGitProviderSummaryResponse
-	181, // 397: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.secret:type_name -> octelium.api.main.visibility.cordium.v1.GetSecretSummaryResponse
-	182, // 398: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.userSecret:type_name -> octelium.api.main.visibility.cordium.v1.GetUserSecretSummaryResponse
-	183, // 399: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.region:type_name -> octelium.api.main.visibility.cordium.v1.GetRegionSummaryResponse
-	6,   // 400: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Unavailable.kind:type_name -> octelium.api.main.visibility.v1.GetClusterSummaryRequest.Kind
-	8,   // 401: octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem.type:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem.Type
-	7,   // 402: octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem.status:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Status
-	61,  // 403: octelium.api.main.visibility.v1.GetClusterHealthResponse.Component.component:type_name -> octelium.api.main.visibility.v1.ComponentSelector
-	7,   // 404: octelium.api.main.visibility.v1.GetClusterHealthResponse.Component.status:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Status
-	118, // 405: octelium.api.main.visibility.v1.GetClusterHealthResponse.Region.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	7,   // 406: octelium.api.main.visibility.v1.GetClusterHealthResponse.Region.status:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Status
-	16,  // 407: octelium.api.main.visibility.v1.AccessLogService.GetAccessLogSummary:input_type -> octelium.api.main.visibility.v1.GetAccessLogSummaryRequest
-	9,   // 408: octelium.api.main.visibility.v1.AccessLogService.ListAccessLog:input_type -> octelium.api.main.visibility.v1.ListAccessLogRequest
-	11,  // 409: octelium.api.main.visibility.v1.AccessLogService.ListSSHSession:input_type -> octelium.api.main.visibility.v1.ListSSHSessionRequest
-	33,  // 410: octelium.api.main.visibility.v1.AccessLogService.GetSSHSession:input_type -> octelium.api.main.visibility.v1.GetSSHSessionRequest
-	14,  // 411: octelium.api.main.visibility.v1.AccessLogService.ListSSHSessionRecording:input_type -> octelium.api.main.visibility.v1.ListSSHSessionRecordingRequest
-	34,  // 412: octelium.api.main.visibility.v1.AccessLogService.GetAccessLogDataPoint:input_type -> octelium.api.main.visibility.v1.GetAccessLogDataPointRequest
-	39,  // 413: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopUser:input_type -> octelium.api.main.visibility.v1.ListAccessLogTopUserRequest
-	43,  // 414: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopService:input_type -> octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest
-	41,  // 415: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopSession:input_type -> octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest
-	45,  // 416: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopPolicy:input_type -> octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest
-	47,  // 417: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopDenyReason:input_type -> octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest
-	55,  // 418: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopCountry:input_type -> octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest
-	18,  // 419: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLog:input_type -> octelium.api.main.visibility.v1.ListAuthenticationLogRequest
-	20,  // 420: octelium.api.main.visibility.v1.AuthenticationLogService.GetAuthenticationLogSummary:input_type -> octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest
-	37,  // 421: octelium.api.main.visibility.v1.AuthenticationLogService.GetAuthenticationLogDataPoint:input_type -> octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest
-	49,  // 422: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopUser:input_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest
-	51,  // 423: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopCredential:input_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest
-	53,  // 424: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopIdentityProvider:input_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest
-	57,  // 425: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopCountry:input_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest
-	59,  // 426: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopCity:input_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest
-	22,  // 427: octelium.api.main.visibility.v1.AuditLogService.ListAuditLog:input_type -> octelium.api.main.visibility.v1.ListAuditLogRequest
-	66,  // 428: octelium.api.main.visibility.v1.AuditLogService.GetAuditLogSummary:input_type -> octelium.api.main.visibility.v1.GetAuditLogSummaryRequest
-	68,  // 429: octelium.api.main.visibility.v1.AuditLogService.GetAuditLogDataPoint:input_type -> octelium.api.main.visibility.v1.GetAuditLogDataPointRequest
-	70,  // 430: octelium.api.main.visibility.v1.AuditLogService.ListAuditLogTopUser:input_type -> octelium.api.main.visibility.v1.ListAuditLogTopUserRequest
-	71,  // 431: octelium.api.main.visibility.v1.AuditLogService.ListAuditLogTopSession:input_type -> octelium.api.main.visibility.v1.ListAuditLogTopSessionRequest
-	31,  // 432: octelium.api.main.visibility.v1.ComponentLogService.ListComponentLog:input_type -> octelium.api.main.visibility.v1.ListComponentLogRequest
-	64,  // 433: octelium.api.main.visibility.v1.ComponentLogService.GetComponentLogSummary:input_type -> octelium.api.main.visibility.v1.GetComponentLogSummaryRequest
-	74,  // 434: octelium.api.main.visibility.v1.ComponentLogService.GetComponentLogDataPoint:input_type -> octelium.api.main.visibility.v1.GetComponentLogDataPointRequest
-	62,  // 435: octelium.api.main.visibility.v1.ComponentLogService.ListComponentLogTopComponent:input_type -> octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest
-	76,  // 436: octelium.api.main.visibility.v1.ClusterService.GetClusterSummary:input_type -> octelium.api.main.visibility.v1.GetClusterSummaryRequest
-	78,  // 437: octelium.api.main.visibility.v1.ClusterService.GetClusterHealth:input_type -> octelium.api.main.visibility.v1.GetClusterHealthRequest
-	25,  // 438: octelium.api.main.visibility.v1.MetricsService.GetCounter:input_type -> octelium.api.main.visibility.v1.GetCounterRequest
-	27,  // 439: octelium.api.main.visibility.v1.MetricsService.GetGauge:input_type -> octelium.api.main.visibility.v1.GetGaugeRequest
-	29,  // 440: octelium.api.main.visibility.v1.MetricsService.GetHistogram:input_type -> octelium.api.main.visibility.v1.GetHistogramRequest
-	17,  // 441: octelium.api.main.visibility.v1.AccessLogService.GetAccessLogSummary:output_type -> octelium.api.main.visibility.v1.GetAccessLogSummaryResponse
-	10,  // 442: octelium.api.main.visibility.v1.AccessLogService.ListAccessLog:output_type -> octelium.api.main.visibility.v1.ListAccessLogResponse
-	13,  // 443: octelium.api.main.visibility.v1.AccessLogService.ListSSHSession:output_type -> octelium.api.main.visibility.v1.ListSSHSessionResponse
-	12,  // 444: octelium.api.main.visibility.v1.AccessLogService.GetSSHSession:output_type -> octelium.api.main.visibility.v1.SSHSession
-	15,  // 445: octelium.api.main.visibility.v1.AccessLogService.ListSSHSessionRecording:output_type -> octelium.api.main.visibility.v1.ListSSHSessionRecordingResponse
-	36,  // 446: octelium.api.main.visibility.v1.AccessLogService.GetAccessLogDataPoint:output_type -> octelium.api.main.visibility.v1.GetAccessLogDataPointResponse
-	40,  // 447: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopUser:output_type -> octelium.api.main.visibility.v1.ListAccessLogTopUserResponse
-	44,  // 448: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopService:output_type -> octelium.api.main.visibility.v1.ListAccessLogTopServiceResponse
-	42,  // 449: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopSession:output_type -> octelium.api.main.visibility.v1.ListAccessLogTopSessionResponse
-	46,  // 450: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopPolicy:output_type -> octelium.api.main.visibility.v1.ListAccessLogTopPolicyResponse
-	48,  // 451: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopDenyReason:output_type -> octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse
-	56,  // 452: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopCountry:output_type -> octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse
-	19,  // 453: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLog:output_type -> octelium.api.main.visibility.v1.ListAuthenticationLogResponse
-	21,  // 454: octelium.api.main.visibility.v1.AuthenticationLogService.GetAuthenticationLogSummary:output_type -> octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse
-	38,  // 455: octelium.api.main.visibility.v1.AuthenticationLogService.GetAuthenticationLogDataPoint:output_type -> octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse
-	50,  // 456: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopUser:output_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopUserResponse
-	52,  // 457: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopCredential:output_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialResponse
-	54,  // 458: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopIdentityProvider:output_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderResponse
-	58,  // 459: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopCountry:output_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse
-	60,  // 460: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopCity:output_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse
-	23,  // 461: octelium.api.main.visibility.v1.AuditLogService.ListAuditLog:output_type -> octelium.api.main.visibility.v1.ListAuditLogResponse
-	67,  // 462: octelium.api.main.visibility.v1.AuditLogService.GetAuditLogSummary:output_type -> octelium.api.main.visibility.v1.GetAuditLogSummaryResponse
-	69,  // 463: octelium.api.main.visibility.v1.AuditLogService.GetAuditLogDataPoint:output_type -> octelium.api.main.visibility.v1.GetAuditLogDataPointResponse
-	72,  // 464: octelium.api.main.visibility.v1.AuditLogService.ListAuditLogTopUser:output_type -> octelium.api.main.visibility.v1.ListAuditLogTopUserResponse
-	73,  // 465: octelium.api.main.visibility.v1.AuditLogService.ListAuditLogTopSession:output_type -> octelium.api.main.visibility.v1.ListAuditLogTopSessionResponse
-	32,  // 466: octelium.api.main.visibility.v1.ComponentLogService.ListComponentLog:output_type -> octelium.api.main.visibility.v1.ListComponentLogResponse
-	65,  // 467: octelium.api.main.visibility.v1.ComponentLogService.GetComponentLogSummary:output_type -> octelium.api.main.visibility.v1.GetComponentLogSummaryResponse
-	75,  // 468: octelium.api.main.visibility.v1.ComponentLogService.GetComponentLogDataPoint:output_type -> octelium.api.main.visibility.v1.GetComponentLogDataPointResponse
-	63,  // 469: octelium.api.main.visibility.v1.ComponentLogService.ListComponentLogTopComponent:output_type -> octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse
-	77,  // 470: octelium.api.main.visibility.v1.ClusterService.GetClusterSummary:output_type -> octelium.api.main.visibility.v1.GetClusterSummaryResponse
-	79,  // 471: octelium.api.main.visibility.v1.ClusterService.GetClusterHealth:output_type -> octelium.api.main.visibility.v1.GetClusterHealthResponse
-	26,  // 472: octelium.api.main.visibility.v1.MetricsService.GetCounter:output_type -> octelium.api.main.visibility.v1.GetCounterResponse
-	28,  // 473: octelium.api.main.visibility.v1.MetricsService.GetGauge:output_type -> octelium.api.main.visibility.v1.GetGaugeResponse
-	30,  // 474: octelium.api.main.visibility.v1.MetricsService.GetHistogram:output_type -> octelium.api.main.visibility.v1.GetHistogramResponse
-	441, // [441:475] is the sub-list for method output_type
-	407, // [407:441] is the sub-list for method input_type
-	407, // [407:407] is the sub-list for extension type_name
-	407, // [407:407] is the sub-list for extension extendee
-	0,   // [0:407] is the sub-list for field type_name
+	118, // 51: octelium.api.main.visibility.v1.GetAccessLogSummaryRequest.matchInlinePolicyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	81,  // 52: octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.latency:type_name -> octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.Latency
+	82,  // 53: octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.totalByMode:type_name -> octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.TotalByModeEntry
+	17,  // 54: octelium.api.main.visibility.v1.GetAccessLogSummaryResponse.previous:type_name -> octelium.api.main.visibility.v1.GetAccessLogSummaryResponse
+	117, // 55: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
+	118, // 56: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 57: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 58: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 59: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 60: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 61: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 62: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 63: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.to:type_name -> google.protobuf.Timestamp
+	125, // 64: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
+	126, // 65: octelium.api.main.visibility.v1.ListAuthenticationLogRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
+	127, // 66: octelium.api.main.visibility.v1.ListAuthenticationLogResponse.items:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog
+	124, // 67: octelium.api.main.visibility.v1.ListAuthenticationLogResponse.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	118, // 68: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 69: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 70: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 71: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 72: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 73: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 74: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 75: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.to:type_name -> google.protobuf.Timestamp
+	119, // 76: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.compareFrom:type_name -> google.protobuf.Timestamp
+	119, // 77: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.compareTo:type_name -> google.protobuf.Timestamp
+	125, // 78: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
+	126, // 79: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
+	21,  // 80: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse.previous:type_name -> octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse
+	83,  // 81: octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse.totalByFailureReason:type_name -> octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse.TotalByFailureReasonEntry
+	117, // 82: octelium.api.main.visibility.v1.ListAuditLogRequest.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
+	118, // 83: octelium.api.main.visibility.v1.ListAuditLogRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 84: octelium.api.main.visibility.v1.ListAuditLogRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 85: octelium.api.main.visibility.v1.ListAuditLogRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 86: octelium.api.main.visibility.v1.ListAuditLogRequest.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 87: octelium.api.main.visibility.v1.ListAuditLogRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 88: octelium.api.main.visibility.v1.ListAuditLogRequest.to:type_name -> google.protobuf.Timestamp
+	128, // 89: octelium.api.main.visibility.v1.ListAuditLogResponse.items:type_name -> octelium.api.main.enterprise.v1.AuditLog
+	124, // 90: octelium.api.main.visibility.v1.ListAuditLogResponse.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	119, // 91: octelium.api.main.visibility.v1.CommonQueryMetricsOptions.from:type_name -> google.protobuf.Timestamp
+	119, // 92: octelium.api.main.visibility.v1.CommonQueryMetricsOptions.to:type_name -> google.protobuf.Timestamp
+	129, // 93: octelium.api.main.visibility.v1.CommonQueryMetricsOptions.step:type_name -> octelium.api.main.meta.v1.Duration
+	84,  // 94: octelium.api.main.visibility.v1.CommonQueryMetricsOptions.attributes:type_name -> octelium.api.main.visibility.v1.CommonQueryMetricsOptions.Attribute
+	24,  // 95: octelium.api.main.visibility.v1.GetCounterRequest.common:type_name -> octelium.api.main.visibility.v1.CommonQueryMetricsOptions
+	85,  // 96: octelium.api.main.visibility.v1.GetCounterResponse.points:type_name -> octelium.api.main.visibility.v1.GetCounterResponse.DataPoint
+	130, // 97: octelium.api.main.visibility.v1.GetCounterResponse.attrs:type_name -> google.protobuf.Struct
+	24,  // 98: octelium.api.main.visibility.v1.GetGaugeRequest.common:type_name -> octelium.api.main.visibility.v1.CommonQueryMetricsOptions
+	86,  // 99: octelium.api.main.visibility.v1.GetGaugeResponse.points:type_name -> octelium.api.main.visibility.v1.GetGaugeResponse.DataPoint
+	130, // 100: octelium.api.main.visibility.v1.GetGaugeResponse.attrs:type_name -> google.protobuf.Struct
+	24,  // 101: octelium.api.main.visibility.v1.GetHistogramRequest.common:type_name -> octelium.api.main.visibility.v1.CommonQueryMetricsOptions
+	87,  // 102: octelium.api.main.visibility.v1.GetHistogramResponse.points:type_name -> octelium.api.main.visibility.v1.GetHistogramResponse.DataPoint
+	117, // 103: octelium.api.main.visibility.v1.ListComponentLogRequest.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
+	131, // 104: octelium.api.main.visibility.v1.ListComponentLogRequest.level:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Level
+	119, // 105: octelium.api.main.visibility.v1.ListComponentLogRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 106: octelium.api.main.visibility.v1.ListComponentLogRequest.to:type_name -> google.protobuf.Timestamp
+	61,  // 107: octelium.api.main.visibility.v1.ListComponentLogRequest.component:type_name -> octelium.api.main.visibility.v1.ComponentSelector
+	131, // 108: octelium.api.main.visibility.v1.ListComponentLogRequest.levels:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Level
+	132, // 109: octelium.api.main.visibility.v1.ListComponentLogResponse.items:type_name -> octelium.api.main.core.v1.ComponentLog
+	124, // 110: octelium.api.main.visibility.v1.ListComponentLogResponse.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	118, // 111: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 112: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 113: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 114: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 115: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 116: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 117: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 118: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 119: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.to:type_name -> google.protobuf.Timestamp
+	129, // 120: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.interval:type_name -> octelium.api.main.meta.v1.Duration
+	120, // 121: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.status:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Status
+	1,   // 122: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.groupBy:type_name -> octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.GroupBy
+	121, // 123: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
+	122, // 124: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
+	118, // 125: octelium.api.main.visibility.v1.GetAccessLogDataPointRequest.matchInlinePolicyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	89,  // 126: octelium.api.main.visibility.v1.DataPointSeries.datapoints:type_name -> octelium.api.main.visibility.v1.DataPointSeries.DataPoint
+	90,  // 127: octelium.api.main.visibility.v1.GetAccessLogDataPointResponse.datapoints:type_name -> octelium.api.main.visibility.v1.GetAccessLogDataPointResponse.DataPoint
+	35,  // 128: octelium.api.main.visibility.v1.GetAccessLogDataPointResponse.series:type_name -> octelium.api.main.visibility.v1.DataPointSeries
+	118, // 129: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 130: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 131: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 132: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 133: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 134: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	129, // 135: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.interval:type_name -> octelium.api.main.meta.v1.Duration
+	119, // 136: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 137: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.to:type_name -> google.protobuf.Timestamp
+	2,   // 138: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.groupBy:type_name -> octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.GroupBy
+	125, // 139: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
+	126, // 140: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
+	91,  // 141: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse.datapoints:type_name -> octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse.DataPoint
+	35,  // 142: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse.series:type_name -> octelium.api.main.visibility.v1.DataPointSeries
+	118, // 143: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 144: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 145: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 146: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 147: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 148: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.to:type_name -> google.protobuf.Timestamp
+	120, // 149: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.status:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Status
+	121, // 150: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
+	122, // 151: octelium.api.main.visibility.v1.ListAccessLogTopUserRequest.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
+	92,  // 152: octelium.api.main.visibility.v1.ListAccessLogTopUserResponse.items:type_name -> octelium.api.main.visibility.v1.ListAccessLogTopUserResponse.Item
+	118, // 153: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 154: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 155: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 156: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 157: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 158: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 159: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 160: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.to:type_name -> google.protobuf.Timestamp
+	120, // 161: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.status:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Status
+	121, // 162: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
+	122, // 163: octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
+	93,  // 164: octelium.api.main.visibility.v1.ListAccessLogTopSessionResponse.items:type_name -> octelium.api.main.visibility.v1.ListAccessLogTopSessionResponse.Item
+	118, // 165: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 166: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 167: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 168: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 169: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 170: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 171: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.to:type_name -> google.protobuf.Timestamp
+	120, // 172: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.status:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Status
+	121, // 173: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
+	122, // 174: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
+	118, // 175: octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest.matchInlinePolicyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	94,  // 176: octelium.api.main.visibility.v1.ListAccessLogTopServiceResponse.items:type_name -> octelium.api.main.visibility.v1.ListAccessLogTopServiceResponse.Item
+	118, // 177: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 178: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 179: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 180: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 181: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 182: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 183: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 184: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.to:type_name -> google.protobuf.Timestamp
+	120, // 185: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.status:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Status
+	121, // 186: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
+	122, // 187: octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
+	95,  // 188: octelium.api.main.visibility.v1.ListAccessLogTopPolicyResponse.items:type_name -> octelium.api.main.visibility.v1.ListAccessLogTopPolicyResponse.Item
+	118, // 189: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 190: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 191: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 192: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 193: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 194: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 195: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 196: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 197: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.to:type_name -> google.protobuf.Timestamp
+	121, // 198: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
+	122, // 199: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
+	96,  // 200: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse.items:type_name -> octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse.Item
+	118, // 201: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 202: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 203: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 204: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 205: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest.to:type_name -> google.protobuf.Timestamp
+	125, // 206: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
+	126, // 207: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
+	97,  // 208: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserResponse.items:type_name -> octelium.api.main.visibility.v1.ListAuthenticationLogTopUserResponse.Item
+	118, // 209: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 210: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 211: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 212: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 213: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 214: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 215: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.to:type_name -> google.protobuf.Timestamp
+	125, // 216: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
+	126, // 217: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
+	98,  // 218: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialResponse.items:type_name -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialResponse.Item
+	118, // 219: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 220: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 221: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 222: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 223: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 224: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 225: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 226: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.to:type_name -> google.protobuf.Timestamp
+	125, // 227: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
+	126, // 228: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
+	99,  // 229: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderResponse.items:type_name -> octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderResponse.Item
+	118, // 230: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 231: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 232: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 233: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 234: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 235: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 236: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 237: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 238: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.to:type_name -> google.protobuf.Timestamp
+	120, // 239: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.status:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Status
+	121, // 240: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
+	122, // 241: octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
+	100, // 242: octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse.items:type_name -> octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse.Item
+	118, // 243: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 244: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 245: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 246: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 247: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 248: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 249: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 250: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.to:type_name -> google.protobuf.Timestamp
+	125, // 251: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
+	126, // 252: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
+	101, // 253: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.items:type_name -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.Item
+	118, // 254: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 255: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 256: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 257: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 258: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 259: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.authenticatorRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 260: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 261: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.to:type_name -> google.protobuf.Timestamp
+	125, // 262: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
+	126, // 263: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
+	102, // 264: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.items:type_name -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item
+	119, // 265: octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 266: octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.to:type_name -> google.protobuf.Timestamp
+	131, // 267: octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.level:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Level
+	61,  // 268: octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.component:type_name -> octelium.api.main.visibility.v1.ComponentSelector
+	3,   // 269: octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.orderBy:type_name -> octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.OrderBy
+	131, // 270: octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest.levels:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Level
+	103, // 271: octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse.items:type_name -> octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse.Item
+	119, // 272: octelium.api.main.visibility.v1.GetComponentLogSummaryRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 273: octelium.api.main.visibility.v1.GetComponentLogSummaryRequest.to:type_name -> google.protobuf.Timestamp
+	61,  // 274: octelium.api.main.visibility.v1.GetComponentLogSummaryRequest.component:type_name -> octelium.api.main.visibility.v1.ComponentSelector
+	119, // 275: octelium.api.main.visibility.v1.GetComponentLogSummaryRequest.compareFrom:type_name -> google.protobuf.Timestamp
+	119, // 276: octelium.api.main.visibility.v1.GetComponentLogSummaryRequest.compareTo:type_name -> google.protobuf.Timestamp
+	65,  // 277: octelium.api.main.visibility.v1.GetComponentLogSummaryResponse.previous:type_name -> octelium.api.main.visibility.v1.GetComponentLogSummaryResponse
+	117, // 278: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.common:type_name -> octelium.api.main.visibility.meta.v1.CommonListOptions
+	118, // 279: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 280: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 281: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 282: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 283: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 284: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.to:type_name -> google.protobuf.Timestamp
+	119, // 285: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.compareFrom:type_name -> google.protobuf.Timestamp
+	119, // 286: octelium.api.main.visibility.v1.GetAuditLogSummaryRequest.compareTo:type_name -> google.protobuf.Timestamp
+	104, // 287: octelium.api.main.visibility.v1.GetAuditLogSummaryResponse.totalByResourceKind:type_name -> octelium.api.main.visibility.v1.GetAuditLogSummaryResponse.TotalByResourceKindEntry
+	67,  // 288: octelium.api.main.visibility.v1.GetAuditLogSummaryResponse.previous:type_name -> octelium.api.main.visibility.v1.GetAuditLogSummaryResponse
+	118, // 289: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 290: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 291: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	118, // 292: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 293: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 294: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.to:type_name -> google.protobuf.Timestamp
+	129, // 295: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.interval:type_name -> octelium.api.main.meta.v1.Duration
+	4,   // 296: octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.groupBy:type_name -> octelium.api.main.visibility.v1.GetAuditLogDataPointRequest.GroupBy
+	105, // 297: octelium.api.main.visibility.v1.GetAuditLogDataPointResponse.datapoints:type_name -> octelium.api.main.visibility.v1.GetAuditLogDataPointResponse.DataPoint
+	35,  // 298: octelium.api.main.visibility.v1.GetAuditLogDataPointResponse.series:type_name -> octelium.api.main.visibility.v1.DataPointSeries
+	118, // 299: octelium.api.main.visibility.v1.ListAuditLogTopUserRequest.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 300: octelium.api.main.visibility.v1.ListAuditLogTopUserRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 301: octelium.api.main.visibility.v1.ListAuditLogTopUserRequest.to:type_name -> google.protobuf.Timestamp
+	118, // 302: octelium.api.main.visibility.v1.ListAuditLogTopSessionRequest.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	119, // 303: octelium.api.main.visibility.v1.ListAuditLogTopSessionRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 304: octelium.api.main.visibility.v1.ListAuditLogTopSessionRequest.to:type_name -> google.protobuf.Timestamp
+	106, // 305: octelium.api.main.visibility.v1.ListAuditLogTopUserResponse.items:type_name -> octelium.api.main.visibility.v1.ListAuditLogTopUserResponse.Item
+	107, // 306: octelium.api.main.visibility.v1.ListAuditLogTopSessionResponse.items:type_name -> octelium.api.main.visibility.v1.ListAuditLogTopSessionResponse.Item
+	119, // 307: octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 308: octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.to:type_name -> google.protobuf.Timestamp
+	129, // 309: octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.interval:type_name -> octelium.api.main.meta.v1.Duration
+	131, // 310: octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.level:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Level
+	61,  // 311: octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.component:type_name -> octelium.api.main.visibility.v1.ComponentSelector
+	5,   // 312: octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.groupBy:type_name -> octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.GroupBy
+	131, // 313: octelium.api.main.visibility.v1.GetComponentLogDataPointRequest.levels:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Level
+	108, // 314: octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.datapoints:type_name -> octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.DataPoint
+	35,  // 315: octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.series:type_name -> octelium.api.main.visibility.v1.DataPointSeries
+	133, // 316: octelium.api.main.visibility.v1.GetClusterSummaryRequest.common:type_name -> octelium.api.main.visibility.meta.v1.CommonSummaryOptions
+	6,   // 317: octelium.api.main.visibility.v1.GetClusterSummaryRequest.kinds:type_name -> octelium.api.main.visibility.v1.GetClusterSummaryRequest.Kind
+	109, // 318: octelium.api.main.visibility.v1.GetClusterSummaryResponse.core:type_name -> octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core
+	110, // 319: octelium.api.main.visibility.v1.GetClusterSummaryResponse.access:type_name -> octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access
+	111, // 320: octelium.api.main.visibility.v1.GetClusterSummaryResponse.enterprise:type_name -> octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise
+	113, // 321: octelium.api.main.visibility.v1.GetClusterSummaryResponse.unavailables:type_name -> octelium.api.main.visibility.v1.GetClusterSummaryResponse.Unavailable
+	112, // 322: octelium.api.main.visibility.v1.GetClusterSummaryResponse.cordium:type_name -> octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium
+	119, // 323: octelium.api.main.visibility.v1.GetClusterHealthRequest.from:type_name -> google.protobuf.Timestamp
+	119, // 324: octelium.api.main.visibility.v1.GetClusterHealthRequest.to:type_name -> google.protobuf.Timestamp
+	7,   // 325: octelium.api.main.visibility.v1.GetClusterHealthResponse.status:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Status
+	114, // 326: octelium.api.main.visibility.v1.GetClusterHealthResponse.subsystems:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem
+	115, // 327: octelium.api.main.visibility.v1.GetClusterHealthResponse.components:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Component
+	116, // 328: octelium.api.main.visibility.v1.GetClusterHealthResponse.regions:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Region
+	119, // 329: octelium.api.main.visibility.v1.GetClusterHealthResponse.from:type_name -> google.protobuf.Timestamp
+	119, // 330: octelium.api.main.visibility.v1.GetClusterHealthResponse.to:type_name -> google.protobuf.Timestamp
+	119, // 331: octelium.api.main.visibility.v1.ListSSHSessionRecordingResponse.Recording.timestamp:type_name -> google.protobuf.Timestamp
+	119, // 332: octelium.api.main.visibility.v1.GetCounterResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
+	119, // 333: octelium.api.main.visibility.v1.GetGaugeResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
+	130, // 334: octelium.api.main.visibility.v1.GetHistogramResponse.DataPoint.attrs:type_name -> google.protobuf.Struct
+	88,  // 335: octelium.api.main.visibility.v1.GetHistogramResponse.DataPoint.buckets:type_name -> octelium.api.main.visibility.v1.GetHistogramResponse.DataPoint.Bucket
+	119, // 336: octelium.api.main.visibility.v1.GetHistogramResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
+	119, // 337: octelium.api.main.visibility.v1.DataPointSeries.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
+	119, // 338: octelium.api.main.visibility.v1.GetAccessLogDataPointResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
+	119, // 339: octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
+	134, // 340: octelium.api.main.visibility.v1.ListAccessLogTopUserResponse.Item.user:type_name -> octelium.api.main.core.v1.User
+	135, // 341: octelium.api.main.visibility.v1.ListAccessLogTopSessionResponse.Item.session:type_name -> octelium.api.main.core.v1.Session
+	136, // 342: octelium.api.main.visibility.v1.ListAccessLogTopServiceResponse.Item.service:type_name -> octelium.api.main.core.v1.Service
+	137, // 343: octelium.api.main.visibility.v1.ListAccessLogTopPolicyResponse.Item.policy:type_name -> octelium.api.main.core.v1.Policy
+	121, // 344: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse.Item.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
+	118, // 345: octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse.Item.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	134, // 346: octelium.api.main.visibility.v1.ListAuthenticationLogTopUserResponse.Item.user:type_name -> octelium.api.main.core.v1.User
+	138, // 347: octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialResponse.Item.credential:type_name -> octelium.api.main.core.v1.Credential
+	139, // 348: octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderResponse.Item.identityProvider:type_name -> octelium.api.main.core.v1.IdentityProvider
+	140, // 349: octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse.Item.country:type_name -> octelium.api.main.core.v1.GeoIP.Country
+	119, // 350: octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse.Item.lastSeenAt:type_name -> google.protobuf.Timestamp
+	140, // 351: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.Item.country:type_name -> octelium.api.main.core.v1.GeoIP.Country
+	141, // 352: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.Item.continent:type_name -> octelium.api.main.core.v1.GeoIP.Continent
+	119, // 353: octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse.Item.lastSeenAt:type_name -> google.protobuf.Timestamp
+	140, // 354: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item.country:type_name -> octelium.api.main.core.v1.GeoIP.Country
+	142, // 355: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item.region:type_name -> octelium.api.main.core.v1.GeoIP.Region
+	143, // 356: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item.city:type_name -> octelium.api.main.core.v1.GeoIP.City
+	144, // 357: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item.coordinates:type_name -> octelium.api.main.core.v1.GeoIP.Coordinates
+	119, // 358: octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse.Item.lastSeenAt:type_name -> google.protobuf.Timestamp
+	61,  // 359: octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse.Item.component:type_name -> octelium.api.main.visibility.v1.ComponentSelector
+	119, // 360: octelium.api.main.visibility.v1.GetAuditLogDataPointResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
+	134, // 361: octelium.api.main.visibility.v1.ListAuditLogTopUserResponse.Item.user:type_name -> octelium.api.main.core.v1.User
+	135, // 362: octelium.api.main.visibility.v1.ListAuditLogTopSessionResponse.Item.session:type_name -> octelium.api.main.core.v1.Session
+	119, // 363: octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.DataPoint.timestamp:type_name -> google.protobuf.Timestamp
+	145, // 364: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.user:type_name -> octelium.api.main.visibility.core.v1.GetUserSummaryResponse
+	146, // 365: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.session:type_name -> octelium.api.main.visibility.core.v1.GetSessionSummaryResponse
+	147, // 366: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.device:type_name -> octelium.api.main.visibility.core.v1.GetDeviceSummaryResponse
+	148, // 367: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.service:type_name -> octelium.api.main.visibility.core.v1.GetServiceSummaryResponse
+	149, // 368: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.namespace:type_name -> octelium.api.main.visibility.core.v1.GetNamespaceSummaryResponse
+	150, // 369: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.policy:type_name -> octelium.api.main.visibility.core.v1.GetPolicySummaryResponse
+	151, // 370: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.group:type_name -> octelium.api.main.visibility.core.v1.GetGroupSummaryResponse
+	152, // 371: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.credential:type_name -> octelium.api.main.visibility.core.v1.GetCredentialSummaryResponse
+	153, // 372: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.identityProvider:type_name -> octelium.api.main.visibility.core.v1.GetIdentityProviderSummaryResponse
+	154, // 373: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.authenticator:type_name -> octelium.api.main.visibility.core.v1.GetAuthenticatorSummaryResponse
+	155, // 374: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.secret:type_name -> octelium.api.main.visibility.core.v1.GetSecretSummaryResponse
+	156, // 375: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.gateway:type_name -> octelium.api.main.visibility.core.v1.GetGatewaySummaryResponse
+	157, // 376: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Core.region:type_name -> octelium.api.main.visibility.core.v1.GetRegionSummaryResponse
+	158, // 377: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.policy:type_name -> octelium.api.main.visibility.access.v1.GetPolicySummaryResponse
+	159, // 378: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.catalog:type_name -> octelium.api.main.visibility.access.v1.GetCatalogSummaryResponse
+	160, // 379: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.request:type_name -> octelium.api.main.visibility.access.v1.GetRequestSummaryResponse
+	161, // 380: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.review:type_name -> octelium.api.main.visibility.access.v1.GetReviewSummaryResponse
+	162, // 381: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.secret:type_name -> octelium.api.main.visibility.access.v1.GetSecretSummaryResponse
+	163, // 382: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.integration:type_name -> octelium.api.main.visibility.access.v1.GetIntegrationSummaryResponse
+	164, // 383: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.integrationIdentity:type_name -> octelium.api.main.visibility.access.v1.GetIntegrationIdentitySummaryResponse
+	165, // 384: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Access.integrationBinding:type_name -> octelium.api.main.visibility.access.v1.GetIntegrationBindingSummaryResponse
+	166, // 385: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.collectorExporter:type_name -> octelium.api.main.visibility.enterprise.v1.GetCollectorExporterSummaryResponse
+	167, // 386: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.secret:type_name -> octelium.api.main.visibility.enterprise.v1.GetSecretSummaryResponse
+	168, // 387: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.secretStore:type_name -> octelium.api.main.visibility.enterprise.v1.GetSecretStoreSummaryResponse
+	169, // 388: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.certificate:type_name -> octelium.api.main.visibility.enterprise.v1.GetCertificateSummaryResponse
+	170, // 389: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.certificateIssuer:type_name -> octelium.api.main.visibility.enterprise.v1.GetCertificateIssuerSummaryResponse
+	171, // 390: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.dnsProvider:type_name -> octelium.api.main.visibility.enterprise.v1.GetDNSProviderSummaryResponse
+	172, // 391: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.directoryProvider:type_name -> octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderSummaryResponse
+	173, // 392: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.directoryProviderUser:type_name -> octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderUserSummaryResponse
+	174, // 393: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.directoryProviderGroup:type_name -> octelium.api.main.visibility.enterprise.v1.GetDirectoryProviderGroupSummaryResponse
+	175, // 394: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Enterprise.deviceManager:type_name -> octelium.api.main.visibility.enterprise.v1.GetDeviceManagerSummaryResponse
+	176, // 395: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.workspace:type_name -> octelium.api.main.visibility.cordium.v1.GetWorkspaceSummaryResponse
+	177, // 396: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.template:type_name -> octelium.api.main.visibility.cordium.v1.GetTemplateSummaryResponse
+	178, // 397: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.space:type_name -> octelium.api.main.visibility.cordium.v1.GetSpaceSummaryResponse
+	179, // 398: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.membership:type_name -> octelium.api.main.visibility.cordium.v1.GetMembershipSummaryResponse
+	180, // 399: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.gitProvider:type_name -> octelium.api.main.visibility.cordium.v1.GetGitProviderSummaryResponse
+	181, // 400: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.secret:type_name -> octelium.api.main.visibility.cordium.v1.GetSecretSummaryResponse
+	182, // 401: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.userSecret:type_name -> octelium.api.main.visibility.cordium.v1.GetUserSecretSummaryResponse
+	183, // 402: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Cordium.region:type_name -> octelium.api.main.visibility.cordium.v1.GetRegionSummaryResponse
+	6,   // 403: octelium.api.main.visibility.v1.GetClusterSummaryResponse.Unavailable.kind:type_name -> octelium.api.main.visibility.v1.GetClusterSummaryRequest.Kind
+	8,   // 404: octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem.type:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem.Type
+	7,   // 405: octelium.api.main.visibility.v1.GetClusterHealthResponse.Subsystem.status:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Status
+	61,  // 406: octelium.api.main.visibility.v1.GetClusterHealthResponse.Component.component:type_name -> octelium.api.main.visibility.v1.ComponentSelector
+	7,   // 407: octelium.api.main.visibility.v1.GetClusterHealthResponse.Component.status:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Status
+	118, // 408: octelium.api.main.visibility.v1.GetClusterHealthResponse.Region.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	7,   // 409: octelium.api.main.visibility.v1.GetClusterHealthResponse.Region.status:type_name -> octelium.api.main.visibility.v1.GetClusterHealthResponse.Status
+	16,  // 410: octelium.api.main.visibility.v1.AccessLogService.GetAccessLogSummary:input_type -> octelium.api.main.visibility.v1.GetAccessLogSummaryRequest
+	9,   // 411: octelium.api.main.visibility.v1.AccessLogService.ListAccessLog:input_type -> octelium.api.main.visibility.v1.ListAccessLogRequest
+	11,  // 412: octelium.api.main.visibility.v1.AccessLogService.ListSSHSession:input_type -> octelium.api.main.visibility.v1.ListSSHSessionRequest
+	33,  // 413: octelium.api.main.visibility.v1.AccessLogService.GetSSHSession:input_type -> octelium.api.main.visibility.v1.GetSSHSessionRequest
+	14,  // 414: octelium.api.main.visibility.v1.AccessLogService.ListSSHSessionRecording:input_type -> octelium.api.main.visibility.v1.ListSSHSessionRecordingRequest
+	34,  // 415: octelium.api.main.visibility.v1.AccessLogService.GetAccessLogDataPoint:input_type -> octelium.api.main.visibility.v1.GetAccessLogDataPointRequest
+	39,  // 416: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopUser:input_type -> octelium.api.main.visibility.v1.ListAccessLogTopUserRequest
+	43,  // 417: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopService:input_type -> octelium.api.main.visibility.v1.ListAccessLogTopServiceRequest
+	41,  // 418: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopSession:input_type -> octelium.api.main.visibility.v1.ListAccessLogTopSessionRequest
+	45,  // 419: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopPolicy:input_type -> octelium.api.main.visibility.v1.ListAccessLogTopPolicyRequest
+	47,  // 420: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopDenyReason:input_type -> octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonRequest
+	55,  // 421: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopCountry:input_type -> octelium.api.main.visibility.v1.ListAccessLogTopCountryRequest
+	18,  // 422: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLog:input_type -> octelium.api.main.visibility.v1.ListAuthenticationLogRequest
+	20,  // 423: octelium.api.main.visibility.v1.AuthenticationLogService.GetAuthenticationLogSummary:input_type -> octelium.api.main.visibility.v1.GetAuthenticationLogSummaryRequest
+	37,  // 424: octelium.api.main.visibility.v1.AuthenticationLogService.GetAuthenticationLogDataPoint:input_type -> octelium.api.main.visibility.v1.GetAuthenticationLogDataPointRequest
+	49,  // 425: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopUser:input_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopUserRequest
+	51,  // 426: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopCredential:input_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialRequest
+	53,  // 427: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopIdentityProvider:input_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderRequest
+	57,  // 428: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopCountry:input_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryRequest
+	59,  // 429: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopCity:input_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCityRequest
+	22,  // 430: octelium.api.main.visibility.v1.AuditLogService.ListAuditLog:input_type -> octelium.api.main.visibility.v1.ListAuditLogRequest
+	66,  // 431: octelium.api.main.visibility.v1.AuditLogService.GetAuditLogSummary:input_type -> octelium.api.main.visibility.v1.GetAuditLogSummaryRequest
+	68,  // 432: octelium.api.main.visibility.v1.AuditLogService.GetAuditLogDataPoint:input_type -> octelium.api.main.visibility.v1.GetAuditLogDataPointRequest
+	70,  // 433: octelium.api.main.visibility.v1.AuditLogService.ListAuditLogTopUser:input_type -> octelium.api.main.visibility.v1.ListAuditLogTopUserRequest
+	71,  // 434: octelium.api.main.visibility.v1.AuditLogService.ListAuditLogTopSession:input_type -> octelium.api.main.visibility.v1.ListAuditLogTopSessionRequest
+	31,  // 435: octelium.api.main.visibility.v1.ComponentLogService.ListComponentLog:input_type -> octelium.api.main.visibility.v1.ListComponentLogRequest
+	64,  // 436: octelium.api.main.visibility.v1.ComponentLogService.GetComponentLogSummary:input_type -> octelium.api.main.visibility.v1.GetComponentLogSummaryRequest
+	74,  // 437: octelium.api.main.visibility.v1.ComponentLogService.GetComponentLogDataPoint:input_type -> octelium.api.main.visibility.v1.GetComponentLogDataPointRequest
+	62,  // 438: octelium.api.main.visibility.v1.ComponentLogService.ListComponentLogTopComponent:input_type -> octelium.api.main.visibility.v1.ListComponentLogTopComponentRequest
+	76,  // 439: octelium.api.main.visibility.v1.ClusterService.GetClusterSummary:input_type -> octelium.api.main.visibility.v1.GetClusterSummaryRequest
+	78,  // 440: octelium.api.main.visibility.v1.ClusterService.GetClusterHealth:input_type -> octelium.api.main.visibility.v1.GetClusterHealthRequest
+	25,  // 441: octelium.api.main.visibility.v1.MetricsService.GetCounter:input_type -> octelium.api.main.visibility.v1.GetCounterRequest
+	27,  // 442: octelium.api.main.visibility.v1.MetricsService.GetGauge:input_type -> octelium.api.main.visibility.v1.GetGaugeRequest
+	29,  // 443: octelium.api.main.visibility.v1.MetricsService.GetHistogram:input_type -> octelium.api.main.visibility.v1.GetHistogramRequest
+	17,  // 444: octelium.api.main.visibility.v1.AccessLogService.GetAccessLogSummary:output_type -> octelium.api.main.visibility.v1.GetAccessLogSummaryResponse
+	10,  // 445: octelium.api.main.visibility.v1.AccessLogService.ListAccessLog:output_type -> octelium.api.main.visibility.v1.ListAccessLogResponse
+	13,  // 446: octelium.api.main.visibility.v1.AccessLogService.ListSSHSession:output_type -> octelium.api.main.visibility.v1.ListSSHSessionResponse
+	12,  // 447: octelium.api.main.visibility.v1.AccessLogService.GetSSHSession:output_type -> octelium.api.main.visibility.v1.SSHSession
+	15,  // 448: octelium.api.main.visibility.v1.AccessLogService.ListSSHSessionRecording:output_type -> octelium.api.main.visibility.v1.ListSSHSessionRecordingResponse
+	36,  // 449: octelium.api.main.visibility.v1.AccessLogService.GetAccessLogDataPoint:output_type -> octelium.api.main.visibility.v1.GetAccessLogDataPointResponse
+	40,  // 450: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopUser:output_type -> octelium.api.main.visibility.v1.ListAccessLogTopUserResponse
+	44,  // 451: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopService:output_type -> octelium.api.main.visibility.v1.ListAccessLogTopServiceResponse
+	42,  // 452: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopSession:output_type -> octelium.api.main.visibility.v1.ListAccessLogTopSessionResponse
+	46,  // 453: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopPolicy:output_type -> octelium.api.main.visibility.v1.ListAccessLogTopPolicyResponse
+	48,  // 454: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopDenyReason:output_type -> octelium.api.main.visibility.v1.ListAccessLogTopDenyReasonResponse
+	56,  // 455: octelium.api.main.visibility.v1.AccessLogService.ListAccessLogTopCountry:output_type -> octelium.api.main.visibility.v1.ListAccessLogTopCountryResponse
+	19,  // 456: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLog:output_type -> octelium.api.main.visibility.v1.ListAuthenticationLogResponse
+	21,  // 457: octelium.api.main.visibility.v1.AuthenticationLogService.GetAuthenticationLogSummary:output_type -> octelium.api.main.visibility.v1.GetAuthenticationLogSummaryResponse
+	38,  // 458: octelium.api.main.visibility.v1.AuthenticationLogService.GetAuthenticationLogDataPoint:output_type -> octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse
+	50,  // 459: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopUser:output_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopUserResponse
+	52,  // 460: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopCredential:output_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCredentialResponse
+	54,  // 461: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopIdentityProvider:output_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopIdentityProviderResponse
+	58,  // 462: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopCountry:output_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCountryResponse
+	60,  // 463: octelium.api.main.visibility.v1.AuthenticationLogService.ListAuthenticationLogTopCity:output_type -> octelium.api.main.visibility.v1.ListAuthenticationLogTopCityResponse
+	23,  // 464: octelium.api.main.visibility.v1.AuditLogService.ListAuditLog:output_type -> octelium.api.main.visibility.v1.ListAuditLogResponse
+	67,  // 465: octelium.api.main.visibility.v1.AuditLogService.GetAuditLogSummary:output_type -> octelium.api.main.visibility.v1.GetAuditLogSummaryResponse
+	69,  // 466: octelium.api.main.visibility.v1.AuditLogService.GetAuditLogDataPoint:output_type -> octelium.api.main.visibility.v1.GetAuditLogDataPointResponse
+	72,  // 467: octelium.api.main.visibility.v1.AuditLogService.ListAuditLogTopUser:output_type -> octelium.api.main.visibility.v1.ListAuditLogTopUserResponse
+	73,  // 468: octelium.api.main.visibility.v1.AuditLogService.ListAuditLogTopSession:output_type -> octelium.api.main.visibility.v1.ListAuditLogTopSessionResponse
+	32,  // 469: octelium.api.main.visibility.v1.ComponentLogService.ListComponentLog:output_type -> octelium.api.main.visibility.v1.ListComponentLogResponse
+	65,  // 470: octelium.api.main.visibility.v1.ComponentLogService.GetComponentLogSummary:output_type -> octelium.api.main.visibility.v1.GetComponentLogSummaryResponse
+	75,  // 471: octelium.api.main.visibility.v1.ComponentLogService.GetComponentLogDataPoint:output_type -> octelium.api.main.visibility.v1.GetComponentLogDataPointResponse
+	63,  // 472: octelium.api.main.visibility.v1.ComponentLogService.ListComponentLogTopComponent:output_type -> octelium.api.main.visibility.v1.ListComponentLogTopComponentResponse
+	77,  // 473: octelium.api.main.visibility.v1.ClusterService.GetClusterSummary:output_type -> octelium.api.main.visibility.v1.GetClusterSummaryResponse
+	79,  // 474: octelium.api.main.visibility.v1.ClusterService.GetClusterHealth:output_type -> octelium.api.main.visibility.v1.GetClusterHealthResponse
+	26,  // 475: octelium.api.main.visibility.v1.MetricsService.GetCounter:output_type -> octelium.api.main.visibility.v1.GetCounterResponse
+	28,  // 476: octelium.api.main.visibility.v1.MetricsService.GetGauge:output_type -> octelium.api.main.visibility.v1.GetGaugeResponse
+	30,  // 477: octelium.api.main.visibility.v1.MetricsService.GetHistogram:output_type -> octelium.api.main.visibility.v1.GetHistogramResponse
+	444, // [444:478] is the sub-list for method output_type
+	410, // [410:444] is the sub-list for method input_type
+	410, // [410:410] is the sub-list for extension type_name
+	410, // [410:410] is the sub-list for extension extendee
+	0,   // [0:410] is the sub-list for field type_name
 }
 
 func init() { file_visibilityv1_proto_init() }

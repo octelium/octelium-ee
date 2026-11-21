@@ -1163,6 +1163,11 @@ func (s *srvAccess) ListPolicy(ctx context.Context, req *vaccessv1.ListPolicyOpt
 		doListReq.filters = append(doListReq.filters, getPolicyRuleConditionRefFilter(itm.ref, itm.parent, itm.field))
 	}
 
+	if req.HasIssues {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`len(COALESCE(%s, [])) > 0`, colStatusIssueTypes)))
+	}
+
 	ret, err := s.s.doList(ctx, doListReq)
 	if err != nil {
 		return nil, err
@@ -1196,6 +1201,29 @@ func (s *srvAccess) ListCatalog(ctx context.Context, req *vaccessv1.ListCatalogO
 			goqu.L(fmt.Sprintf(`list_contains(%s, ?)`, colSpecNamespaces), req.NamespaceRef.Name))
 	}
 
+	if req.IsDisabled {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`%s = true`, colSpecIsDisabled)))
+	}
+
+	if req.HasIssues {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`len(COALESCE(%s, [])) > 0`, colStatusIssueTypes)))
+	}
+
+	if req.OverridesGuardrails {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`list_contains(COALESCE(%s, []), 'OVERRIDES_GUARDRAILS')`, colStatusIssueTypes)))
+	}
+
+	if ref := req.OwnerUserRef; ref != nil && (ref.Uid != "" || ref.Name != "") {
+		filter, err := getCatalogOwnerFilter(ref)
+		if err != nil {
+			return nil, err
+		}
+		doListReq.filters = append(doListReq.filters, filter)
+	}
+
 	ret, err := s.s.doList(ctx, doListReq)
 	if err != nil {
 		return nil, err
@@ -1222,7 +1250,11 @@ func (s *srvAccess) ListRequest(ctx context.Context, req *vaccessv1.ListRequestO
 	if err != nil {
 		return nil, err
 	}
-	doListReq.filters, err = appendRefFilter(doListReq.filters, req.ServiceRef, serviceRefCheckOpts(), "spec.resource.serviceRef")
+	doListReq.filters, err = appendRequestScopeServiceFilter(doListReq.filters, req.ServiceRef)
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRequestScopeNamespaceFilter(doListReq.filters, req.NamespaceRef)
 	if err != nil {
 		return nil, err
 	}
@@ -1251,14 +1283,25 @@ func (s *srvAccess) ListRequest(ctx context.Context, req *vaccessv1.ListRequestO
 			pth = "$.user.userRef.name"
 		}
 
+		eligiblePth := "$.uid"
+		if req.ReviewerRef.Uid == "" {
+			eligiblePth = "$.name"
+		}
+
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(fmt.Sprintf(`len(list_filter(
+			goqu.L(fmt.Sprintf(`(len(list_filter(
 				flatten(list_transform(
 					COALESCE(CAST(json_extract(rsc, '$.status.rule.action.review.steps') AS JSON[]), []),
 					lambda s : COALESCE(CAST(json_extract(s, '$.reviewers') AS JSON[]), [])
 				)),
 				lambda r : json_extract_string(r, '%s') = ?
-			)) > 0`, pth), val))
+			)) > 0 OR len(list_filter(
+				flatten(list_transform(
+					COALESCE(CAST(json_extract(rsc, '$.status.review.steps') AS JSON[]), []),
+					lambda s : COALESCE(CAST(json_extract(s, '$.eligibleReviewers') AS JSON[]), [])
+				)),
+				lambda r : json_extract_string(r, '%s') = ?
+			)) > 0)`, pth, eligiblePth), val, val))
 	}
 
 	if req.State != accessv1.Request_Status_State_STATUS_UNKNOWN {
@@ -1299,12 +1342,46 @@ func (s *srvAccess) ListRequest(ctx context.Context, req *vaccessv1.ListRequestO
 	if req.IsExpiringSoon {
 		now := time.Now().UTC()
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(getRequestExpiringSoonExpr(), now, now.Add(requestExpiringSoonDuration)))
+			goqu.L(getRequestExpiringSoonExpr(), now,
+				now.Add(getDurationOr(req.ExpiringWithin, requestExpiringSoonDuration))))
 	}
 
 	if req.IsPendingStale {
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(getRequestPendingStaleExpr(), time.Now().UTC().Add(-requestPendingStaleDuration)))
+			goqu.L(getRequestPendingStaleExpr(),
+				time.Now().UTC().Add(-getDurationOr(req.StaleAfter, requestPendingStaleDuration))))
+	}
+
+	if req.Reason != accessv1.Request_Status_State_REASON_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusStateReason).Eq(req.Reason.String()))
+	}
+
+	if req.GrantState != accessv1.Request_Status_Grant_STATE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colStatusGrantState).Eq(req.GrantState.String()))
+	}
+
+	if req.AccessLevel != "" {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(colSpecAccessLevel).Eq(req.AccessLevel))
+	}
+
+	if req.WasGranted {
+		doListReq.filters = append(doListReq.filters, goqu.L(getRequestGrantedExpr()))
+	}
+
+	if req.IsUnroutable {
+		doListReq.filters = append(doListReq.filters, goqu.L(getRequestUnroutableExpr()))
+	}
+
+	if req.IsAwaitingRequester {
+		doListReq.filters = append(doListReq.filters, goqu.L(getRequestAwaitingRequesterExpr()))
+	}
+
+	if req.OverridesGuardrails {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`%s = true`, colStatusOverridesGuardrails)))
 	}
 
 	if req.IsOnBehalf {
@@ -1534,6 +1611,8 @@ func getRequestOrderByExpr(orderBy *vaccessv1.ListRequestOptions_OrderBy) exp.Or
 		column = colStatusApprovalStartAt
 	case vaccessv1.ListRequestOptions_OrderBy_DEADLINE:
 		column = colSpecDeadline
+	case vaccessv1.ListRequestOptions_OrderBy_ACCESS_STARTS_AT:
+		column = colStatusAccessStartsAt
 	default:
 		return nil
 	}

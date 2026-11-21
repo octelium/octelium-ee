@@ -118,3 +118,54 @@ export const getOnTimeoutLabel = (
       () => "then the request is rejected",
     )
     .otherwise(() => "then the request expires");
+
+const Reason = AccessP.Request_Status_State_Reason;
+
+export const getStateReasonLabel = (
+  reason?: AccessP.Request_Status_State_Reason,
+): string | undefined =>
+  match(reason)
+    .with(Reason.SUBMITTED, () => "Submitted")
+    .with(Reason.AWAITING_REVIEW, () => "Routed to the reviewers")
+    .with(Reason.NO_MATCHING_RULE, () => "No rule of an enabled Policy matched")
+    .with(Reason.DENIED_BY_RULE, () => "Denied by a rule")
+    .with(Reason.AUTO_APPROVED, () => "Approved automatically by a rule")
+    .with(Reason.APPROVED_BY_REVIEWERS, () => "Every review step was cleared")
+    .with(Reason.REJECTED_BY_REVIEWER, () => "Rejected by a reviewer")
+    .with(Reason.REVIEW_TIMED_OUT, () => "A review step timed out")
+    .with(Reason.DEADLINE_PASSED, () => "The deadline passed before a decision")
+    .with(Reason.CANCELLED_BY_USER, () => "Cancelled by the requester")
+    .with(Reason.ACCESS_REVOKED, () => "Revoked by an administrator")
+    .with(Reason.ACCESS_ENDED, () => "The access window ended")
+    .with(Reason.ENDED_EARLY, () => "Ended early")
+    .with(Reason.PROVISIONING_FAILED, () => "The access could not be provisioned")
+    .with(Reason.NOT_REQUESTABLE, () => "The Catalog is no longer requestable")
+    .with(Reason.SUPERSEDED, () => "Replaced by an extension")
+    .with(Reason.EVALUATION_FAILED, () => "The access Policies could not be evaluated")
+    .otherwise(() => undefined);
+
+export const getGrantStateMeta = (
+  state?: AccessP.Request_Status_Grant_State,
+): { label: string; tone: "neutral" | "success" | "warning" | "danger" | "info" } | undefined =>
+  match(state)
+    .with(AccessP.Request_Status_Grant_State.SCHEDULED, () => ({
+      label: "Scheduled",
+      tone: "info" as const,
+    }))
+    .with(AccessP.Request_Status_Grant_State.PROVISIONING, () => ({
+      label: "Provisioning",
+      tone: "warning" as const,
+    }))
+    .with(AccessP.Request_Status_Grant_State.ACTIVE, () => ({
+      label: "Active",
+      tone: "success" as const,
+    }))
+    .with(AccessP.Request_Status_Grant_State.FAILED, () => ({
+      label: "Failed",
+      tone: "danger" as const,
+    }))
+    .with(AccessP.Request_Status_Grant_State.ENDED, () => ({
+      label: "Ended",
+      tone: "neutral" as const,
+    }))
+    .otherwise(() => undefined);

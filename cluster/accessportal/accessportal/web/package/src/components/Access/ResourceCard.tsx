@@ -112,33 +112,44 @@ const ServiceResource = (props: { name: string }) => {
   );
 };
 
-const CatalogResource = (props: { name: string; reviewer?: boolean }) => {
+const CatalogResource = (props: {
+  request: AccessP.Request;
+  reviewer?: boolean;
+}) => {
   const [drawerOpen, setDrawerOpen] = React.useState(false);
+  const resource = requestResourceLabel(props.request);
+  const scope = props.request.status?.resolvedScope;
   const query = useCatalogs();
-  const catalog = query.data?.find((item) => item.metadata?.name === props.name);
-  const collection = catalog?.spec?.resourceCollection?.service;
-  const services = collection?.services ?? [];
-  const namespaces = collection?.namespaces ?? [];
+  const catalog = query.data?.find(
+    (item) => item.metadata?.name === resource.name,
+  );
+  const services =
+    scope?.serviceRefs.map((ref) => ref.name) ?? resource.services;
+  const namespaces = scope?.namespaceRefs.map((ref) => ref.name) ?? [];
+  const isPartial = resource.services.length > 0;
+  const isDynamic =
+    scope?.membership === AccessP.Catalog_Spec_Membership.DYNAMIC;
 
   return (
     <div className="flex flex-col gap-4">
       <ResourceHeading
         icon={<Layers size={18} strokeWidth={2} />}
-        title={catalog?.metadata?.displayName || props.name}
-        name={props.name}
+        title={
+          resource.displayName ||
+          catalog?.metadata?.displayName ||
+          resource.name
+        }
+        name={resource.name}
         badges={
           <>
             <Badge>Catalog</Badge>
+            {resource.accessLevel && <Badge>{resource.accessLevel}</Badge>}
             {services.length > 0 && (
               <Badge>
-                {services.length} listed service{services.length === 1 ? "" : "s"}
+                {services.length} service{services.length === 1 ? "" : "s"}
               </Badge>
             )}
-            {namespaces.length > 0 && (
-              <Badge>
-                {namespaces.length} namespace{namespaces.length === 1 ? "" : "s"}
-              </Badge>
-            )}
+            {isPartial && <Badge tone="blue">Selected services only</Badge>}
           </>
         }
         action={
@@ -163,7 +174,7 @@ const CatalogResource = (props: { name: string; reviewer?: boolean }) => {
 
       {(services.length > 0 || namespaces.length > 0) && (
         <div className="flex flex-col gap-3 border-t border-slate-100 pt-4">
-          {namespaces.length > 0 && (
+          {namespaces.length > 0 && isDynamic && (
             <div className="flex flex-col gap-1.5">
               <Eyebrow>Every Service in these namespaces</Eyebrow>
               <div className="flex flex-wrap gap-1.5">
@@ -175,19 +186,15 @@ const CatalogResource = (props: { name: string; reviewer?: boolean }) => {
           )}
           {services.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <Eyebrow>Listed services</Eyebrow>
+              <Eyebrow>Services</Eyebrow>
               <div className="flex flex-wrap gap-1.5">
                 {services.slice(0, 12).map((item) => (
                   <MonoValue key={item}>{item}</MonoValue>
                 ))}
                 {services.length > 12 && (
-                  <button
-                    type="button"
-                    onClick={() => setDrawerOpen(true)}
-                    className="rounded-md px-1.5 py-0.5 text-xs font-medium text-slate-600 underline underline-offset-2 hover:text-slate-900"
-                  >
+                  <span className="rounded-md px-1.5 py-0.5 text-xs font-medium text-slate-600">
                     +{services.length - 12} more
-                  </button>
+                  </span>
                 )}
               </div>
             </div>
@@ -195,14 +202,20 @@ const CatalogResource = (props: { name: string; reviewer?: boolean }) => {
         </div>
       )}
 
-      {!catalog && !query.isLoading && (
-        <Note>The contents of this Catalog are not visible to you right now.</Note>
+      {!scope && !catalog && !query.isLoading && (
+        <Note>
+          The contents of this Catalog are not visible to you right now.
+        </Note>
       )}
 
       <Note icon={<Layers size={13} strokeWidth={2.25} />}>
-        {props.reviewer
-          ? "Approving this request grants access to every Service collected by this Catalog."
-          : "An approval grants access to every Service collected by this Catalog."}
+        {isPartial
+          ? props.reviewer
+            ? "Approving this request grants access to the selected Services only."
+            : "An approval grants access to the selected Services only."
+          : props.reviewer
+            ? "Approving this request grants access to every Service listed above."
+            : "An approval grants access to every Service listed above."}
       </Note>
 
       <CatalogDetailsDrawer
@@ -232,7 +245,7 @@ const ResourceCard = (props: { request: AccessP.Request; reviewer?: boolean }) =
       {resource.kind === "Service" ? (
         <ServiceResource name={resource.name} />
       ) : resource.kind === "Catalog" ? (
-        <CatalogResource name={resource.name} reviewer={props.reviewer} />
+        <CatalogResource request={props.request} reviewer={props.reviewer} />
       ) : (
         <Note tone="amber">This request has no resource set.</Note>
       )}

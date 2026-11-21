@@ -36,6 +36,7 @@ export const useLogListReq = () => {
     regionRef?: objectRef;
     deviceRef?: objectRef;
     policyRef?: objectRef;
+    matchInlinePolicyRef?: objectRef;
     status?: string;
     reason?: string;
     countryCode?: string;

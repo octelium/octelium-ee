@@ -31,19 +31,23 @@ import { UnknownFieldHandler } from "@protobuf-ts/runtime";
 import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
+import { PolicyTrigger } from "../corev1/corev1";
 import { CommonListOptions } from "../metav1/metav1";
 import { User_Spec_Type } from "../corev1/corev1";
-import { Timestamp } from "../google/protobuf/timestamp";
 import { ListResponseMeta } from "../metav1/metav1";
+import { Session_Status_Authentication_Info_AAL } from "../corev1/corev1";
 import { InlinePolicy } from "../corev1/corev1";
-import { Duration } from "../metav1/metav1";
+import { Timestamp } from "../google/protobuf/timestamp";
 import { ObjectReference } from "../metav1/metav1";
+import { Duration } from "../metav1/metav1";
 import { Metadata } from "../metav1/metav1";
 /**
  * Policy controls what happens to the access Requests. Once a Request is
  * created, the Cluster evaluates the Policies and the first Rule whose
  * Condition matches decides whether the Request is immediately rejected,
- * automatically approved or handed over to a review workflow. Note that this
+ * automatically approved or handed over to a review workflow. The access
+ * Policy only decides the workflow of the Requests. What an approved Request
+ * grants is set by the access level of the requested Catalog. Note that this
  * is a different resource than the core Policy which controls the
  * authorization of the access itself.
  *
@@ -122,7 +126,9 @@ export interface Policy_Spec_Rule {
     effect: Policy_Spec_Rule_Effect;
     /**
      * Priority is an integer that sets the Rule priority level. The lower
-     * the number, the higher the priority.
+     * the number, the higher the priority. The Rules of the same priority
+     * are evaluated in the order of their Policies' names and then in their
+     * order within their Policy.
      *
      * @generated from protobuf field: int32 priority = 3
      */
@@ -135,13 +141,6 @@ export interface Policy_Spec_Rule {
      * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Action action = 4
      */
     action?: Policy_Spec_Rule_Action;
-    /**
-     * Authorization is the access that is granted to the subject once the
-     * Request is approved. It must not be set for the DENY effect.
-     *
-     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Authorization authorization = 5
-     */
-    authorization?: Policy_Spec_Rule_Authorization;
     /**
      * Name is the name of the Rule. It is required and it must be unique
      * within the Policy.
@@ -158,6 +157,22 @@ export interface Policy_Spec_Rule {
      * @generated from protobuf field: repeated octelium.api.main.access.v1.Policy.Spec.Rule.Surface notifications = 7
      */
     notifications: Policy_Spec_Rule_Surface[];
+    /**
+     * MaxDuration caps how long the access of the matched Requests can last
+     * for. It can only lower the `maxDuration` of the requested access
+     * level and it is ignored by the DENY effect.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration maxDuration = 8
+     */
+    maxDuration?: Duration;
+    /**
+     * Message is a requester-facing explanation that is shown with the
+     * outcome of the matched Requests (e.g. why a DENY Rule rejected
+     * them). It cannot be longer than 500 characters.
+     *
+     * @generated from protobuf field: string message = 9
+     */
+    message: string;
 }
 /**
  * Condition is the Rule's condition that has to match the access
@@ -188,7 +203,7 @@ export interface Policy_Spec_Rule_Condition {
     } | {
         oneofKind: "resource";
         /**
-         * Resource matches the resource that the access is requested for.
+         * Resource matches the resources that the access is requested for.
          *
          * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Resource resource = 3
          */
@@ -221,17 +236,45 @@ export interface Policy_Spec_Rule_Condition {
     } | {
         oneofKind: "match";
         /**
-         * CEL expression.
+         * Match is a CEL expression. It is evaluated with `ctx.request`
+         * (the Request), `ctx.requester` (the User that created the
+         * Request), `ctx.subject` (the User that the access is requested
+         * for), `ctx.user` (an alias of `ctx.requester`), `ctx.catalog`
+         * (the requested Catalog), `ctx.accessLevel` (the requested access
+         * level), `ctx.services` (the Services of the resolved scope) and
+         * `ctx.namespaces` (the Namespaces of the resolved scope).
          *
          * @generated from protobuf field: string match = 7
          */
         match: string;
     } | {
+        oneofKind: "accessLevel";
+        /**
+         * AccessLevel matches the Requests for a specific access level name
+         * of their Catalog.
+         *
+         * @generated from protobuf field: string accessLevel = 8
+         */
+        accessLevel: string;
+    } | {
+        oneofKind: "isOnBehalf";
+        /**
+         * IsOnBehalf matches the Requests whose subject is not the User
+         * that created them. It must be set to `true`.
+         *
+         * @generated from protobuf field: bool isOnBehalf = 9
+         */
+        isOnBehalf: boolean;
+    } | {
         oneofKind: undefined;
     };
 }
 /**
- * Resource matches the resource that the access is requested for
+ * Resource matches the resources that the access is requested for.
+ * It is matched against the resolved scope of the Request (i.e. the
+ * Catalog and every Service and Namespace that the Request would
+ * grant access to) rather than against the literal target of the
+ * Request.
  *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Resource
  */
@@ -242,7 +285,8 @@ export interface Policy_Spec_Rule_Condition_Resource {
     type: {
         oneofKind: "serviceRef";
         /**
-         * ServiceRef matches a specific Service
+         * ServiceRef matches the Requests whose scope includes a
+         * specific Service.
          *
          * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference serviceRef = 1
          */
@@ -250,11 +294,20 @@ export interface Policy_Spec_Rule_Condition_Resource {
     } | {
         oneofKind: "catalogRef";
         /**
-         * CatalogRef matches a specific Catalog
+         * CatalogRef matches the Requests for a specific Catalog.
          *
          * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference catalogRef = 2
          */
         catalogRef: ObjectReference;
+    } | {
+        oneofKind: "namespaceRef";
+        /**
+         * NamespaceRef matches the Requests whose scope includes at least
+         * one Service of a specific Namespace.
+         *
+         * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference namespaceRef = 3
+         */
+        namespaceRef: ObjectReference;
     } | {
         oneofKind: undefined;
     };
@@ -425,6 +478,21 @@ export interface Policy_Spec_Rule_Action_Review_Step {
      * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties separationOfDuties = 8
      */
     separationOfDuties?: Policy_Spec_Rule_SeparationOfDuties;
+    /**
+     * Escalation adds more reviewers to the Step once it has been
+     * waiting for too long or when it has no eligible reviewer.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Escalation escalation = 9
+     */
+    escalation?: Policy_Spec_Rule_Action_Review_Step_Escalation;
+    /**
+     * ReasonRequirement controls which decisions of the Step must
+     * carry a justification. It applies to every origin of the
+     * decisions, including the Integrations.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ReasonRequirement reasonRequirement = 10
+     */
+    reasonRequirement: Policy_Spec_Rule_Action_Review_Step_ReasonRequirement;
 }
 /**
  * Reviewer is a User that is allowed to review the Requests that
@@ -452,6 +520,15 @@ export interface Policy_Spec_Rule_Action_Review_Step_Reviewer {
          * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.Group group = 2
          */
         group: Policy_Spec_Rule_Action_Review_Step_Reviewer_Group;
+    } | {
+        oneofKind: "catalogOwners";
+        /**
+         * CatalogOwners sets the owners of the requested Catalog as
+         * reviewers.
+         *
+         * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.CatalogOwners catalogOwners = 3
+         */
+        catalogOwners: Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners;
     } | {
         oneofKind: undefined;
     };
@@ -481,6 +558,37 @@ export interface Policy_Spec_Rule_Action_Review_Step_Reviewer_Group {
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference groupRef = 1
      */
     groupRef?: ObjectReference;
+}
+/**
+ * CatalogOwners sets the owners of the requested Catalog as
+ * reviewers
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.CatalogOwners
+ */
+export interface Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners {
+}
+/**
+ * Escalation adds more reviewers to the Step once it has been
+ * waiting for too long, or immediately if nobody can review it
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Escalation
+ */
+export interface Policy_Spec_Rule_Action_Review_Step_Escalation {
+    /**
+     * After is how long the Step waits, from its start, before it is
+     * escalated. If unset, the Step is only escalated when it has no
+     * eligible reviewer at all.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration after = 1
+     */
+    after?: Duration;
+    /**
+     * Reviewers is the list of the reviewers that are added to the
+     * Step once it is escalated. Required.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer reviewers = 2
+     */
+    reviewers: Policy_Spec_Rule_Action_Review_Step_Reviewer[];
 }
 /**
  * OnTimeout is what happens to the Request once the Step's
@@ -534,8 +642,8 @@ export enum Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement {
     ANY = 1,
     /**
      * ALL approves the Step only once every one of the Reviewers
-     * approves the Request. Group Reviewers are expanded to all the
-     * Users belonging to them.
+     * approves the Request. Group Reviewers are expanded to the
+     * Users belonging to them at the time the Step starts.
      *
      * @generated from protobuf enum value: ALL = 2;
      */
@@ -549,36 +657,30 @@ export enum Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement {
     COUNT = 3
 }
 /**
- * Authorization is the access that is granted to the subject of an
- * approved Request. The Cluster enforces it by creating a hidden
- * PolicyTrigger that applies these Policies to the subject User for the
- * requested Services and Namespaces until the access ends.
+ * ReasonRequirement controls which decisions of the Step must
+ * carry a justification
  *
- * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Authorization
+ * @generated from protobuf enum octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ReasonRequirement
  */
-export interface Policy_Spec_Rule_Authorization {
+export enum Policy_Spec_Rule_Action_Review_Step_ReasonRequirement {
     /**
-     * Policies is the list of the standalone core Policies that are
-     * applied to the granted access.
+     * REASON_REQUIREMENT_UNSET does not require any justification.
      *
-     * @generated from protobuf field: repeated string policies = 1
+     * @generated from protobuf enum value: REASON_REQUIREMENT_UNSET = 0;
      */
-    policies: string[];
+    REASON_REQUIREMENT_UNSET = 0,
     /**
-     * InlinePolicies is the list of the inline core Policies that are
-     * applied to the granted access.
+     * REJECT_ONLY requires a justification for the rejections.
      *
-     * @generated from protobuf field: repeated octelium.api.main.core.v1.InlinePolicy inlinePolicies = 2
+     * @generated from protobuf enum value: REJECT_ONLY = 1;
      */
-    inlinePolicies: InlinePolicy[];
+    REJECT_ONLY = 1,
     /**
-     * MaxAccessDuration is the upper bound of the access duration that
-     * the requester can ask for in the Request's `spec.duration`. It
-     * defaults to 24 hours.
+     * ALWAYS requires a justification for every decision.
      *
-     * @generated from protobuf field: octelium.api.main.meta.v1.Duration maxAccessDuration = 3
+     * @generated from protobuf enum value: ALWAYS = 2;
      */
-    maxAccessDuration?: Duration;
+    ALWAYS = 2
 }
 /**
  * SeparationOfDuties controls whether the Users that are involved in a
@@ -762,11 +864,180 @@ export enum Policy_Spec_Rule_Effect {
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Status
  */
 export interface Policy_Status {
+    /**
+     * Issues is the list of the configuration problems that the Cluster
+     * currently detects in the Policy.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.ConfigurationIssue issues = 1
+     */
+    issues: ConfigurationIssue[];
+    /**
+     * CheckedAt is the time at which the issues were last computed.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp checkedAt = 2
+     */
+    checkedAt?: Timestamp;
 }
 /**
- * Catalog is a named collection of the Cluster's resources that the Users can
- * request access to as a single unit instead of having to request the access
- * to each Service individually.
+ * ConfigurationIssue is a configuration problem that the Cluster detects in an
+ * access Policy or in a Catalog
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.ConfigurationIssue
+ */
+export interface ConfigurationIssue {
+    /**
+     * Type is the kind of the issue.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.ConfigurationIssue.Type type = 1
+     */
+    type: ConfigurationIssue_Type;
+    /**
+     * Severity is how serious the issue is.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.ConfigurationIssue.Severity severity = 2
+     */
+    severity: ConfigurationIssue_Severity;
+    /**
+     * Message is a human readable explanation of the issue.
+     *
+     * @generated from protobuf field: string message = 3
+     */
+    message: string;
+    /**
+     * RuleName is the name of the Policy Rule that the issue belongs to, if
+     * any.
+     *
+     * @generated from protobuf field: string ruleName = 4
+     */
+    ruleName: string;
+    /**
+     * StepName is the name of the review Step that the issue belongs to, if
+     * any.
+     *
+     * @generated from protobuf field: string stepName = 5
+     */
+    stepName: string;
+    /**
+     * AccessLevel is the name of the Catalog access level that the issue
+     * belongs to, if any.
+     *
+     * @generated from protobuf field: string accessLevel = 6
+     */
+    accessLevel: string;
+    /**
+     * Ref is the reference of the object that the issue is about, if any.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference ref = 7
+     */
+    ref?: ObjectReference;
+}
+/**
+ * Type is the kind of the issue
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.ConfigurationIssue.Type
+ */
+export enum ConfigurationIssue_Type {
+    /**
+     * TYPE_UNSET is the default unset value.
+     *
+     * @generated from protobuf enum value: TYPE_UNSET = 0;
+     */
+    TYPE_UNSET = 0,
+    /**
+     * MISSING_REFERENCE means that a referenced object (e.g. a User, a Group,
+     * a Service, a Namespace, a Catalog or a core Policy) does not exist.
+     *
+     * @generated from protobuf enum value: MISSING_REFERENCE = 1;
+     */
+    MISSING_REFERENCE = 1,
+    /**
+     * INVALID_EXPRESSION means that a CEL expression cannot be compiled or
+     * fails when it is evaluated.
+     *
+     * @generated from protobuf enum value: INVALID_EXPRESSION = 2;
+     */
+    INVALID_EXPRESSION = 2,
+    /**
+     * NO_ELIGIBLE_REVIEWER means that a review Step has no User that is
+     * currently able to review.
+     *
+     * @generated from protobuf enum value: NO_ELIGIBLE_REVIEWER = 3;
+     */
+    NO_ELIGIBLE_REVIEWER = 3,
+    /**
+     * IMPOSSIBLE_APPROVAL_COUNT means that the approval count of a review
+     * Step is greater than the number of its eligible reviewers.
+     *
+     * @generated from protobuf enum value: IMPOSSIBLE_APPROVAL_COUNT = 4;
+     */
+    IMPOSSIBLE_APPROVAL_COUNT = 4,
+    /**
+     * EMPTY_SCOPE means that a Catalog does not currently resolve to any
+     * requestable Service.
+     *
+     * @generated from protobuf enum value: EMPTY_SCOPE = 5;
+     */
+    EMPTY_SCOPE = 5,
+    /**
+     * SYSTEM_RESOURCE_EXCLUDED means that a Catalog includes system or hidden
+     * Services that are excluded from its scope.
+     *
+     * @generated from protobuf enum value: SYSTEM_RESOURCE_EXCLUDED = 6;
+     */
+    SYSTEM_RESOURCE_EXCLUDED = 6,
+    /**
+     * OVERRIDES_GUARDRAILS means that an access level grants its access with
+     * a priority that takes precedence over the core Policy rules of the
+     * default priority, including their DENY rules.
+     *
+     * @generated from protobuf enum value: OVERRIDES_GUARDRAILS = 7;
+     */
+    OVERRIDES_GUARDRAILS = 7,
+    /**
+     * SHADOWED_RULE means that a Rule can never be reached because a Rule of
+     * a higher priority always matches before it.
+     *
+     * @generated from protobuf enum value: SHADOWED_RULE = 8;
+     */
+    SHADOWED_RULE = 8,
+    /**
+     * NO_ACCESS_LEVEL means that a Catalog has no access level and therefore
+     * cannot be requested.
+     *
+     * @generated from protobuf enum value: NO_ACCESS_LEVEL = 9;
+     */
+    NO_ACCESS_LEVEL = 9
+}
+/**
+ * Severity is how serious the issue is
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.ConfigurationIssue.Severity
+ */
+export enum ConfigurationIssue_Severity {
+    /**
+     * SEVERITY_UNSET is the default unset value.
+     *
+     * @generated from protobuf enum value: SEVERITY_UNSET = 0;
+     */
+    SEVERITY_UNSET = 0,
+    /**
+     * WARNING means that the object works but probably not as intended.
+     *
+     * @generated from protobuf enum value: WARNING = 1;
+     */
+    WARNING = 1,
+    /**
+     * ERROR means that a part of the object does not work.
+     *
+     * @generated from protobuf enum value: ERROR = 2;
+     */
+    ERROR = 2
+}
+/**
+ * Catalog is the unit that the Users request access to. It groups a set of
+ * the Cluster's Services, sets who can see and request it, who owns it, what
+ * a Request has to provide and the access levels that can be granted to its
+ * Services.
  *
  * @generated from protobuf message octelium.api.main.access.v1.Catalog
  */
@@ -815,6 +1086,62 @@ export interface Catalog_Spec {
      * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.ResourceCollection resourceCollection = 1
      */
     resourceCollection?: Catalog_Spec_ResourceCollection;
+    /**
+     * AccessLevels is the list of the access levels that can be requested.
+     * At least one access level must be set. The first one is the default
+     * access level.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Catalog.Spec.AccessLevel accessLevels = 2
+     */
+    accessLevels: Catalog_Spec_AccessLevel[];
+    /**
+     * Audience is who can see and request the Catalog. Every User can if it
+     * is unset.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.Audience audience = 3
+     */
+    audience?: Catalog_Spec_Audience;
+    /**
+     * Owners is the list of the Users that own the Catalog. They can be set
+     * as the reviewers of its Requests by the access Policies.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.Owners owners = 4
+     */
+    owners?: Catalog_Spec_Owners;
+    /**
+     * Requirements is what a Request for the Catalog has to provide.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.Requirements requirements = 5
+     */
+    requirements?: Catalog_Spec_Requirements;
+    /**
+     * IsDisabled disables the Catalog. A disabled Catalog cannot be
+     * requested while the access that is already granted is not affected.
+     *
+     * @generated from protobuf field: bool isDisabled = 6
+     */
+    isDisabled: boolean;
+    /**
+     * AllowSystemResources allows the Catalog to include the Cluster's
+     * system and hidden Services (e.g. the Octelium API). They are silently
+     * excluded from its scope otherwise.
+     *
+     * @generated from protobuf field: bool allowSystemResources = 7
+     */
+    allowSystemResources: boolean;
+    /**
+     * Membership controls how the Namespaces of the Catalog are granted.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.Membership membership = 8
+     */
+    membership: Catalog_Spec_Membership;
+    /**
+     * AllowPartialRequests allows the Requests to only include a subset of
+     * the Catalog's Services.
+     *
+     * @generated from protobuf field: bool allowPartialRequests = 9
+     */
+    allowPartialRequests: boolean;
 }
 /**
  * ResourceCollection is the set of the resources that belong to the
@@ -852,11 +1179,328 @@ export interface Catalog_Spec_ResourceCollection_Service {
     namespaces: string[];
 }
 /**
+ * AccessLevel is a named level of access that can be granted to the
+ * Catalog's Services
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Catalog.Spec.AccessLevel
+ */
+export interface Catalog_Spec_AccessLevel {
+    /**
+     * Name is the name of the access level. It is required and it must be
+     * unique within the Catalog.
+     *
+     * @generated from protobuf field: string name = 1
+     */
+    name: string;
+    /**
+     * DisplayName is the human readable name of the access level that is
+     * shown to the requesters and to the reviewers.
+     *
+     * @generated from protobuf field: string displayName = 2
+     */
+    displayName: string;
+    /**
+     * Description is the plain language explanation of what the access
+     * level allows.
+     *
+     * @generated from protobuf field: string description = 3
+     */
+    description: string;
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "full";
+        /**
+         * Full grants an unrestricted access.
+         *
+         * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Full full = 4
+         */
+        full: Catalog_Spec_AccessLevel_Full;
+    } | {
+        oneofKind: "restricted";
+        /**
+         * Restricted grants only what its core Policies allow.
+         *
+         * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Restricted restricted = 5
+         */
+        restricted: Catalog_Spec_AccessLevel_Restricted;
+    } | {
+        oneofKind: undefined;
+    };
+    /**
+     * DefaultDuration is the access duration that is used when a Request
+     * does not set one. It defaults to `maxDuration`.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration defaultDuration = 6
+     */
+    defaultDuration?: Duration;
+    /**
+     * MaxDuration is the upper bound of the access duration. It defaults to
+     * 24 hours.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration maxDuration = 7
+     */
+    maxDuration?: Duration;
+    /**
+     * Verification is the authentication assurance that the subject's
+     * Session must have in order to use the granted access.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Verification verification = 8
+     */
+    verification?: Catalog_Spec_AccessLevel_Verification;
+}
+/**
+ * Full grants an unrestricted access to the Catalog's Services
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Full
+ */
+export interface Catalog_Spec_AccessLevel_Full {
+    /**
+     * Priority is the priority of the core Policy rule that allows the
+     * access. It must be between -4 and 0 and it defaults to the access
+     * ClusterConfig's `authorization.priority`. A negative priority
+     * takes precedence over the core Policy rules of the default
+     * priority, including their DENY rules.
+     *
+     * @generated from protobuf field: optional int32 priority = 1
+     */
+    priority?: number;
+}
+/**
+ * Restricted grants only what its core Policies allow. Nothing else is
+ * implicitly allowed.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Restricted
+ */
+export interface Catalog_Spec_AccessLevel_Restricted {
+    /**
+     * Policies is the list of the names of the standalone core Policies
+     * that are applied to the granted access.
+     *
+     * @generated from protobuf field: repeated string policies = 1
+     */
+    policies: string[];
+    /**
+     * InlinePolicies is the list of the inline core Policies that are
+     * applied to the granted access.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.InlinePolicy inlinePolicies = 2
+     */
+    inlinePolicies: InlinePolicy[];
+}
+/**
+ * Verification is the authentication assurance that the subject's
+ * Session must have in order to use the granted access
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Verification
+ */
+export interface Catalog_Spec_AccessLevel_Verification {
+    /**
+     * MinAAL is the minimum authenticator assurance level of the
+     * Session. The granted access does not apply to the requests of the
+     * Sessions with a lower level.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL minAAL = 1
+     */
+    minAAL: Session_Status_Authentication_Info_AAL;
+}
+/**
+ * Audience is who can see and request the Catalog
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Catalog.Spec.Audience
+ */
+export interface Catalog_Spec_Audience {
+    /**
+     * Users is the list of the names of the Users that belong to the
+     * audience.
+     *
+     * @generated from protobuf field: repeated string users = 1
+     */
+    users: string[];
+    /**
+     * Groups is the list of the names of the Groups whose Users belong to
+     * the audience.
+     *
+     * @generated from protobuf field: repeated string groups = 2
+     */
+    groups: string[];
+    /**
+     * Match is a CEL expression that is evaluated with `ctx.user`. The
+     * Users that it matches belong to the audience.
+     *
+     * @generated from protobuf field: string match = 3
+     */
+    match: string;
+    /**
+     * OnBehalf is who can request the Catalog on behalf of the other Users
+     * of its audience. Nobody can if it is unset.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.Audience.OnBehalf onBehalf = 4
+     */
+    onBehalf?: Catalog_Spec_Audience_OnBehalf;
+}
+/**
+ * OnBehalf is who can request the Catalog on behalf of the other Users
+ * of its audience
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Catalog.Spec.Audience.OnBehalf
+ */
+export interface Catalog_Spec_Audience_OnBehalf {
+    /**
+     * Users is the list of the names of the Users that can request on
+     * behalf of others.
+     *
+     * @generated from protobuf field: repeated string users = 1
+     */
+    users: string[];
+    /**
+     * Groups is the list of the names of the Groups whose Users can
+     * request on behalf of others.
+     *
+     * @generated from protobuf field: repeated string groups = 2
+     */
+    groups: string[];
+}
+/**
+ * Owners is the list of the Users that own the Catalog
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Catalog.Spec.Owners
+ */
+export interface Catalog_Spec_Owners {
+    /**
+     * Users is the list of the names of the owner Users.
+     *
+     * @generated from protobuf field: repeated string users = 1
+     */
+    users: string[];
+    /**
+     * Groups is the list of the names of the owner Groups.
+     *
+     * @generated from protobuf field: repeated string groups = 2
+     */
+    groups: string[];
+}
+/**
+ * Requirements is what a Request for the Catalog has to provide
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Catalog.Spec.Requirements
+ */
+export interface Catalog_Spec_Requirements {
+    /**
+     * Justification controls the Request's justification.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.Requirements.Justification justification = 1
+     */
+    justification?: Catalog_Spec_Requirements_Justification;
+    /**
+     * Ticket controls the Request's ticket reference.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.Requirements.Ticket ticket = 2
+     */
+    ticket?: Catalog_Spec_Requirements_Ticket;
+}
+/**
+ * Justification controls the Request's justification
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Catalog.Spec.Requirements.Justification
+ */
+export interface Catalog_Spec_Requirements_Justification {
+    /**
+     * IsRequired requires a justification.
+     *
+     * @generated from protobuf field: bool isRequired = 1
+     */
+    isRequired: boolean;
+    /**
+     * MinLength is the minimum number of characters of the
+     * justification.
+     *
+     * @generated from protobuf field: uint32 minLength = 2
+     */
+    minLength: number;
+}
+/**
+ * Ticket controls the Request's ticket reference
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Catalog.Spec.Requirements.Ticket
+ */
+export interface Catalog_Spec_Requirements_Ticket {
+    /**
+     * IsRequired requires a ticket reference.
+     *
+     * @generated from protobuf field: bool isRequired = 1
+     */
+    isRequired: boolean;
+    /**
+     * Pattern is a regular expression that the ticket reference must
+     * fully match (e.g. `^[A-Z]+-[0-9]+$`).
+     *
+     * @generated from protobuf field: string pattern = 2
+     */
+    pattern: string;
+    /**
+     * Label is the name of the ticket field that is shown to the
+     * requesters (e.g. `Jira issue`).
+     *
+     * @generated from protobuf field: string label = 3
+     */
+    label: string;
+}
+/**
+ * Membership controls how the Namespaces of the Catalog are granted
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.Catalog.Spec.Membership
+ */
+export enum Catalog_Spec_Membership {
+    /**
+     * MEMBERSHIP_UNSET is equivalent to FIXED.
+     *
+     * @generated from protobuf enum value: MEMBERSHIP_UNSET = 0;
+     */
+    MEMBERSHIP_UNSET = 0,
+    /**
+     * FIXED grants the Services that the Catalog resolves to at the time
+     * the Request is approved. The Services that are added to its
+     * Namespaces afterwards are not granted.
+     *
+     * @generated from protobuf enum value: FIXED = 1;
+     */
+    FIXED = 1,
+    /**
+     * DYNAMIC grants the Namespaces of the Catalog as a whole, including
+     * the Services that are added to them while the access is active.
+     *
+     * @generated from protobuf enum value: DYNAMIC = 2;
+     */
+    DYNAMIC = 2
+}
+/**
  * Status is the current status of the Catalog
  *
  * @generated from protobuf message octelium.api.main.access.v1.Catalog.Status
  */
 export interface Catalog_Status {
+    /**
+     * Issues is the list of the configuration problems that the Cluster
+     * currently detects in the Catalog.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.ConfigurationIssue issues = 1
+     */
+    issues: ConfigurationIssue[];
+    /**
+     * TotalService is the number of the requestable Services that the
+     * Catalog currently resolves to.
+     *
+     * @generated from protobuf field: uint32 totalService = 2
+     */
+    totalService: number;
+    /**
+     * CheckedAt is the time at which the status was last computed.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp checkedAt = 3
+     */
+    checkedAt?: Timestamp;
 }
 /**
  * CatalogList is the list of Catalogs returned by the ListCatalog method.
@@ -921,13 +1565,13 @@ export interface PolicyList {
     listResponseMeta?: ListResponseMeta;
 }
 /**
- * Request is a User's request for a just-in-time access to a Service or to a
- * Catalog. Once it is created, the Cluster matches it against the access
- * Policies and, depending on the effect of the matched Rule, the Request is
- * either immediately rejected, immediately approved or put into a review
- * workflow until the reviewers decide its fate. An approved Request grants
- * its subject the access that is set by the matched Rule's Authorization
- * until the access ends.
+ * Request is a User's request for a just-in-time access to a Catalog. Once it
+ * is created, the Cluster resolves the Services that it would grant, matches
+ * it against the access Policies and, depending on the effect of the matched
+ * Rule, the Request is either immediately rejected, immediately approved or
+ * put into a review workflow until the reviewers decide its fate. An approved
+ * Request grants its subject the requested access level of the Catalog until
+ * the access ends.
  *
  * @generated from protobuf message octelium.api.main.access.v1.Request
  */
@@ -998,19 +1642,45 @@ export interface Request_Spec {
     justification: string;
     /**
      * Deadline is the time after which a still pending Request is
-     * automatically expired.
+     * automatically expired. It defaults to the access ClusterConfig's
+     * `request.defaultDeadline` from the creation of the Request.
      *
      * @generated from protobuf field: google.protobuf.Timestamp deadline = 5
      */
     deadline?: Timestamp;
     /**
      * Duration is how long the access should last for once the Request is
-     * approved. It is capped by the `maxAccessDuration` of the matched Rule's
-     * Authorization which defaults to 24 hours.
+     * approved. It defaults to the access level's `defaultDuration` and it is
+     * capped by its `maxDuration` as well as by the matched Rule's
+     * `maxDuration`.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration duration = 6
      */
     duration?: Duration;
+    /**
+     * Ticket is a reference to an external ticket that justifies the access
+     * (e.g. a Jira issue key). It cannot be longer than 256 characters.
+     *
+     * @generated from protobuf field: string ticket = 7
+     */
+    ticket: string;
+    /**
+     * StartAt is the time at which the access should start. The access
+     * starts as soon as the Request is approved if it is unset or if it has
+     * already passed by then.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp startAt = 8
+     */
+    startAt?: Timestamp;
+    /**
+     * ExtendsRef is the reference of an approved Request whose access this
+     * Request extends. The extended Request ends once this one is approved
+     * and its access becomes active. It must target the same Catalog and
+     * access level as well as the same subject.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference extendsRef = 9
+     */
+    extendsRef?: ObjectReference;
 }
 /**
  * Resource is the resource that the access is requested for
@@ -1024,7 +1694,11 @@ export interface Request_Spec_Resource {
     type: {
         oneofKind: "serviceRef";
         /**
-         * ServiceRef is a request for the access to a single Service.
+         * ServiceRef is a shorthand for the access to a single Service. It is
+         * resolved upon the creation of the Request to the only Catalog that
+         * includes the Service and that the subject can request, and it is
+         * stored as such. The creation fails if there is no such Catalog or
+         * if there are several of them.
          *
          * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference serviceRef = 1
          */
@@ -1042,18 +1716,32 @@ export interface Request_Spec_Resource {
     };
 }
 /**
- * Catalog is a request for the access to every Service belonging to a
- * Catalog
+ * Catalog is a request for the access to a Catalog
  *
  * @generated from protobuf message octelium.api.main.access.v1.Request.Spec.Resource.Catalog
  */
 export interface Request_Spec_Resource_Catalog {
     /**
-     * CatalogRef is the reference of the Catalog.
+     * CatalogRef is the reference of the Catalog. Required.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference catalogRef = 1
      */
     catalogRef?: ObjectReference;
+    /**
+     * AccessLevel is the name of the requested access level of the
+     * Catalog. It defaults to the Catalog's first access level.
+     *
+     * @generated from protobuf field: string accessLevel = 2
+     */
+    accessLevel: string;
+    /**
+     * ServiceRefs restricts the Request to a subset of the Catalog's
+     * Services. It requires the Catalog's `allowPartialRequests`. Every
+     * Service of the Catalog is requested if it is unset.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.meta.v1.ObjectReference serviceRefs = 3
+     */
+    serviceRefs: ObjectReference[];
 }
 /**
  * Subject is the User that the access is requested for which is not
@@ -1153,8 +1841,8 @@ export interface Request_Status {
      */
     approvalStartAt?: Timestamp;
     /**
-     * ApprovalEndAt is the time at which the Request reached a final state
-     * (i.e. APPROVED, REJECTED, REVOKED, EXPIRED or CANCELLED).
+     * ApprovalEndAt is the time at which the Request was decided (i.e.
+     * APPROVED, REJECTED, REVOKED, EXPIRED or CANCELLED).
      *
      * @generated from protobuf field: google.protobuf.Timestamp approvalEndAt = 4
      */
@@ -1184,7 +1872,9 @@ export interface Request_Status {
     /**
      * Rule is a copy of the Policy Rule that matched the Request at the time
      * it was evaluated. It is kept here so that the subsequent changes to the
-     * Policy do not affect the Requests that are already in flight.
+     * Policy do not affect the Requests that are already in flight. It is
+     * only returned by the MainService. The UserService and the
+     * ReviewerService return the `workflow` summary instead.
      *
      * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule rule = 8
      */
@@ -1212,13 +1902,71 @@ export interface Request_Status {
     /**
      * EffectiveDuration is how long the granted access actually lasts for
      * once the Request is approved. It is the Request's `spec.duration`
-     * capped by the `maxAccessDuration` of the matched Rule's Authorization
-     * and it is computed as soon as the Rule is matched so that it can be
-     * shown to the reviewers before they decide.
+     * capped by the requested access level, by the matched Rule and by the
+     * reviewers' approved durations. It is computed as soon as the Rule is
+     * matched and every time the spec of a pending Request changes so that
+     * it can be shown to the reviewers before they decide.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration effectiveDuration = 12
      */
     effectiveDuration?: Duration;
+    /**
+     * ResolvedScope is what the Request grants.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.ResolvedScope resolvedScope = 13
+     */
+    resolvedScope?: Request_Status_ResolvedScope;
+    /**
+     * Evaluation is the state of the evaluation of the Request.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.Evaluation evaluation = 14
+     */
+    evaluation?: Request_Status_Evaluation;
+    /**
+     * Grant is the state of the granted access.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.Grant grant = 15
+     */
+    grant?: Request_Status_Grant;
+    /**
+     * SpecRevision is incremented every time the Request's spec changes
+     * while it is pending. The reviewers' decisions are bound to it.
+     *
+     * @generated from protobuf field: uint32 specRevision = 16
+     */
+    specRevision: number;
+    /**
+     * Workflow is the summary of the matched Rule.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.Workflow workflow = 17
+     */
+    workflow?: Request_Status_Workflow;
+    /**
+     * RequesterInfo is the display information of the User that created the
+     * Request.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.UserInfo requesterInfo = 18
+     */
+    requesterInfo?: UserInfo;
+    /**
+     * SubjectInfo is the display information of the subject User.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.UserInfo subjectInfo = 19
+     */
+    subjectInfo?: UserInfo;
+    /**
+     * AccessStartsAt is the time at which the granted access starts.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp accessStartsAt = 20
+     */
+    accessStartsAt?: Timestamp;
+    /**
+     * SupersededByRef is the reference of the Request that extended, and
+     * replaced, the access of this Request.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference supersededByRef = 21
+     */
+    supersededByRef?: ObjectReference;
 }
 /**
  * State is a state of the Request at a certain point in time
@@ -1238,6 +1986,26 @@ export interface Request_Status_State {
      * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.State.Status status = 2
      */
     status: Request_Status_State_Status;
+    /**
+     * Reason is why the Request reached the state.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.State.Reason reason = 3
+     */
+    reason: Request_Status_State_Reason;
+    /**
+     * Message is a human readable explanation of the state (e.g. the
+     * message of the matched DENY Rule or the justification of a
+     * revocation).
+     *
+     * @generated from protobuf field: string message = 4
+     */
+    message: string;
+    /**
+     * ActorRef is the reference of the User that caused the state, if any.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference actorRef = 5
+     */
+    actorRef?: ObjectReference;
 }
 /**
  * Status is the state of the Request
@@ -1267,7 +2035,8 @@ export enum Request_Status_State_Status {
     APPROVED = 2,
     /**
      * REJECTED means that the Request has been rejected either by a
-     * matched DENY Rule or by a reviewer.
+     * matched DENY Rule, by the absence of a matching Rule or by a
+     * reviewer.
      *
      * @generated from protobuf enum value: REJECTED = 3;
      */
@@ -1287,12 +2056,139 @@ export enum Request_Status_State_Status {
      */
     EXPIRED = 5,
     /**
-     * CANCELLED means that the Request has been cancelled by its own
-     * requester via the CancelRequest method.
+     * CANCELLED means that the Request has been cancelled by its
+     * requester or by its subject via the CancelRequest method.
      *
      * @generated from protobuf enum value: CANCELLED = 6;
      */
     CANCELLED = 6
+}
+/**
+ * Reason is why the Request reached the state
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.Request.Status.State.Reason
+ */
+export enum Request_Status_State_Reason {
+    /**
+     * REASON_UNSET means that no specific reason is recorded.
+     *
+     * @generated from protobuf enum value: REASON_UNSET = 0;
+     */
+    REASON_UNSET = 0,
+    /**
+     * SUBMITTED means that the Request was created and is being
+     * evaluated.
+     *
+     * @generated from protobuf enum value: SUBMITTED = 1;
+     */
+    SUBMITTED = 1,
+    /**
+     * AWAITING_REVIEW means that the Request is waiting for its
+     * reviewers.
+     *
+     * @generated from protobuf enum value: AWAITING_REVIEW = 2;
+     */
+    AWAITING_REVIEW = 2,
+    /**
+     * NO_MATCHING_RULE means that no Rule of any enabled Policy matched
+     * the Request.
+     *
+     * @generated from protobuf enum value: NO_MATCHING_RULE = 3;
+     */
+    NO_MATCHING_RULE = 3,
+    /**
+     * DENIED_BY_RULE means that a DENY Rule matched the Request.
+     *
+     * @generated from protobuf enum value: DENIED_BY_RULE = 4;
+     */
+    DENIED_BY_RULE = 4,
+    /**
+     * AUTO_APPROVED means that an AUTO_APPROVE Rule matched the Request.
+     *
+     * @generated from protobuf enum value: AUTO_APPROVED = 5;
+     */
+    AUTO_APPROVED = 5,
+    /**
+     * APPROVED_BY_REVIEWERS means that every review Step was satisfied.
+     *
+     * @generated from protobuf enum value: APPROVED_BY_REVIEWERS = 6;
+     */
+    APPROVED_BY_REVIEWERS = 6,
+    /**
+     * REJECTED_BY_REVIEWER means that a reviewer rejected the Request.
+     *
+     * @generated from protobuf enum value: REJECTED_BY_REVIEWER = 7;
+     */
+    REJECTED_BY_REVIEWER = 7,
+    /**
+     * REVIEW_TIMED_OUT means that a review Step timed out.
+     *
+     * @generated from protobuf enum value: REVIEW_TIMED_OUT = 8;
+     */
+    REVIEW_TIMED_OUT = 8,
+    /**
+     * DEADLINE_PASSED means that the Request's deadline passed while it
+     * was still pending.
+     *
+     * @generated from protobuf enum value: DEADLINE_PASSED = 9;
+     */
+    DEADLINE_PASSED = 9,
+    /**
+     * CANCELLED_BY_USER means that the requester or the subject
+     * cancelled the Request.
+     *
+     * @generated from protobuf enum value: CANCELLED_BY_USER = 10;
+     */
+    CANCELLED_BY_USER = 10,
+    /**
+     * ACCESS_REVOKED means that the Request was revoked via the
+     * RevokeRequest method.
+     *
+     * @generated from protobuf enum value: ACCESS_REVOKED = 11;
+     */
+    ACCESS_REVOKED = 11,
+    /**
+     * ACCESS_ENDED means that the granted access reached its end.
+     *
+     * @generated from protobuf enum value: ACCESS_ENDED = 12;
+     */
+    ACCESS_ENDED = 12,
+    /**
+     * ENDED_EARLY means that the requester or the subject ended the
+     * granted access before its end via the EndAccess method.
+     *
+     * @generated from protobuf enum value: ENDED_EARLY = 13;
+     */
+    ENDED_EARLY = 13,
+    /**
+     * PROVISIONING_FAILED means that the Cluster could not activate the
+     * granted access.
+     *
+     * @generated from protobuf enum value: PROVISIONING_FAILED = 14;
+     */
+    PROVISIONING_FAILED = 14,
+    /**
+     * NOT_REQUESTABLE means that the requested Catalog can no longer be
+     * requested by the subject (e.g. it was deleted or disabled, or the
+     * subject left its audience).
+     *
+     * @generated from protobuf enum value: NOT_REQUESTABLE = 15;
+     */
+    NOT_REQUESTABLE = 15,
+    /**
+     * SUPERSEDED means that the access was replaced by the access of a
+     * Request that extends it.
+     *
+     * @generated from protobuf enum value: SUPERSEDED = 16;
+     */
+    SUPERSEDED = 16,
+    /**
+     * EVALUATION_FAILED means that the Request could not be evaluated
+     * against the access Policies.
+     *
+     * @generated from protobuf enum value: EVALUATION_FAILED = 17;
+     */
+    EVALUATION_FAILED = 17
 }
 /**
  * Review is the current progress of the Request in the review workflow
@@ -1322,6 +2218,19 @@ export interface Request_Status_Review {
      * @generated from protobuf field: google.protobuf.Timestamp currentStepStartedAt = 3
      */
     currentStepStartedAt?: Timestamp;
+    /**
+     * Steps is the progress of every review Step that has started.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Request.Status.Review.StepState steps = 4
+     */
+    steps: Request_Status_Review_StepState[];
+    /**
+     * InformationRequests is the list of the reviewers' requests for more
+     * information, ordered from the oldest to the most recent.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Request.Status.Review.InformationRequest informationRequests = 5
+     */
+    informationRequests: Request_Status_Review_InformationRequest[];
 }
 /**
  * Step is a Review that has already been applied to the Request
@@ -1369,6 +2278,622 @@ export interface Request_Status_Review_Step {
      * @generated from protobuf field: string stepName = 6
      */
     stepName: string;
+    /**
+     * Justification is the reviewer's justification of the decision.
+     *
+     * @generated from protobuf field: string justification = 7
+     */
+    justification: string;
+    /**
+     * Duration is the access duration that the reviewer approved, if the
+     * reviewer narrowed it.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration duration = 8
+     */
+    duration?: Duration;
+    /**
+     * SpecRevision is the revision of the Request's spec that the
+     * reviewer decided on.
+     *
+     * @generated from protobuf field: uint32 specRevision = 9
+     */
+    specRevision: number;
+}
+/**
+ * StepState is the progress of a single review Step
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Request.Status.Review.StepState
+ */
+export interface Request_Status_Review_StepState {
+    /**
+     * Name is the name of the review Step.
+     *
+     * @generated from protobuf field: string name = 1
+     */
+    name: string;
+    /**
+     * Index is the zero-based index of the review Step.
+     *
+     * @generated from protobuf field: int32 index = 2
+     */
+    index: number;
+    /**
+     * RequiredApprovals is the number of the approvals that the Step
+     * requires.
+     *
+     * @generated from protobuf field: uint32 requiredApprovals = 3
+     */
+    requiredApprovals: number;
+    /**
+     * Approvals is the number of the approvals that the Step currently
+     * has.
+     *
+     * @generated from protobuf field: uint32 approvals = 4
+     */
+    approvals: number;
+    /**
+     * EligibleReviewers is the list of the Users that can review the
+     * Step. It is computed once the Step starts and it is truncated to
+     * its first 100 Users.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.meta.v1.ObjectReference eligibleReviewers = 5
+     */
+    eligibleReviewers: ObjectReference[];
+    /**
+     * TotalEligibleReviewer is the total number of the Users that can
+     * review the Step.
+     *
+     * @generated from protobuf field: uint32 totalEligibleReviewer = 6
+     */
+    totalEligibleReviewer: number;
+    /**
+     * Outcome is how the Step ended.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.Review.StepState.Outcome outcome = 7
+     */
+    outcome: Request_Status_Review_StepState_Outcome;
+    /**
+     * StartedAt is the time at which the Step started.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp startedAt = 8
+     */
+    startedAt?: Timestamp;
+    /**
+     * EndedAt is the time at which the Step ended.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp endedAt = 9
+     */
+    endedAt?: Timestamp;
+    /**
+     * IsEscalated is whether the Step's escalation reviewers were added
+     * to it.
+     *
+     * @generated from protobuf field: bool isEscalated = 10
+     */
+    isEscalated: boolean;
+    /**
+     * EscalatedAt is the time at which the Step was escalated.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp escalatedAt = 11
+     */
+    escalatedAt?: Timestamp;
+    /**
+     * IsUnroutable is whether the Step has no eligible reviewer at all,
+     * including its escalation and the Cluster's fallback reviewers.
+     *
+     * @generated from protobuf field: bool isUnroutable = 12
+     */
+    isUnroutable: boolean;
+}
+/**
+ * Outcome is how the Step ended
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.Request.Status.Review.StepState.Outcome
+ */
+export enum Request_Status_Review_StepState_Outcome {
+    /**
+     * OUTCOME_UNSET means that the Step has not ended yet.
+     *
+     * @generated from protobuf enum value: OUTCOME_UNSET = 0;
+     */
+    OUTCOME_UNSET = 0,
+    /**
+     * SATISFIED means that the Step's approval requirement was
+     * satisfied.
+     *
+     * @generated from protobuf enum value: SATISFIED = 1;
+     */
+    SATISFIED = 1,
+    /**
+     * TIMED_OUT means that the Step timed out.
+     *
+     * @generated from protobuf enum value: TIMED_OUT = 2;
+     */
+    TIMED_OUT = 2,
+    /**
+     * REJECTED means that a reviewer of the Step rejected the Request.
+     *
+     * @generated from protobuf enum value: REJECTED = 3;
+     */
+    REJECTED = 3,
+    /**
+     * INTERRUPTED means that the Request ended for another reason
+     * while it was waiting for the Step.
+     *
+     * @generated from protobuf enum value: INTERRUPTED = 4;
+     */
+    INTERRUPTED = 4
+}
+/**
+ * InformationRequest is a reviewer's request for more information
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Request.Status.Review.InformationRequest
+ */
+export interface Request_Status_Review_InformationRequest {
+    /**
+     * UserRef is the reference of the reviewer that asked.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 1
+     */
+    userRef?: ObjectReference;
+    /**
+     * Message is the reviewer's question.
+     *
+     * @generated from protobuf field: string message = 2
+     */
+    message: string;
+    /**
+     * RequestedAt is the time at which the reviewer asked.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp requestedAt = 3
+     */
+    requestedAt?: Timestamp;
+    /**
+     * Response is the requester's answer.
+     *
+     * @generated from protobuf field: string response = 4
+     */
+    response: string;
+    /**
+     * RespondedAt is the time at which the requester answered. The
+     * Request is waiting for its requester as long as it is unset.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp respondedAt = 5
+     */
+    respondedAt?: Timestamp;
+    /**
+     * ResponderRef is the reference of the User that answered.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference responderRef = 6
+     */
+    responderRef?: ObjectReference;
+}
+/**
+ * ResolvedScope is what the Request grants. It is resolved while the
+ * Request is pending and it is frozen once the Request is approved so
+ * that the subsequent changes to the Catalog do not change the granted
+ * access.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Request.Status.ResolvedScope
+ */
+export interface Request_Status_ResolvedScope {
+    /**
+     * CatalogRef is the reference of the requested Catalog.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference catalogRef = 1
+     */
+    catalogRef?: ObjectReference;
+    /**
+     * CatalogResourceVersion is the version of the Catalog that the scope
+     * was resolved from.
+     *
+     * @generated from protobuf field: string catalogResourceVersion = 2
+     */
+    catalogResourceVersion: string;
+    /**
+     * CatalogDisplayName is the display name of the Catalog.
+     *
+     * @generated from protobuf field: string catalogDisplayName = 3
+     */
+    catalogDisplayName: string;
+    /**
+     * AccessLevel is a copy of the requested access level.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.AccessLevel accessLevel = 4
+     */
+    accessLevel?: Catalog_Spec_AccessLevel;
+    /**
+     * ServiceRefs is the list of the granted Services.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.meta.v1.ObjectReference serviceRefs = 5
+     */
+    serviceRefs: ObjectReference[];
+    /**
+     * NamespaceRefs is the list of the Namespaces that are granted as a
+     * whole. It is only set for the DYNAMIC Catalogs.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.meta.v1.ObjectReference namespaceRefs = 6
+     */
+    namespaceRefs: ObjectReference[];
+    /**
+     * Membership is the membership of the Catalog.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.Membership membership = 7
+     */
+    membership: Catalog_Spec_Membership;
+    /**
+     * ResolvedAt is the time at which the scope was resolved.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp resolvedAt = 8
+     */
+    resolvedAt?: Timestamp;
+    /**
+     * Priority is the priority with which the access is granted.
+     *
+     * @generated from protobuf field: int32 priority = 9
+     */
+    priority: number;
+    /**
+     * OverridesGuardrails is whether the access takes precedence over the
+     * core Policy rules of the default priority, including their DENY
+     * rules.
+     *
+     * @generated from protobuf field: bool overridesGuardrails = 10
+     */
+    overridesGuardrails: boolean;
+    /**
+     * TotalExcludedService is the number of the Catalog's Services that
+     * are excluded from the scope (e.g. the system and hidden Services).
+     *
+     * @generated from protobuf field: uint32 totalExcludedService = 11
+     */
+    totalExcludedService: number;
+}
+/**
+ * Evaluation is the state of the evaluation of the Request against the
+ * access Policies
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Request.Status.Evaluation
+ */
+export interface Request_Status_Evaluation {
+    /**
+     * State is the state of the evaluation.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.Evaluation.State state = 1
+     */
+    state: Request_Status_Evaluation_State;
+    /**
+     * LastError is the error of the last failed evaluation.
+     *
+     * @generated from protobuf field: string lastError = 2
+     */
+    lastError: string;
+    /**
+     * Attempts is the number of the consecutive failed evaluations.
+     *
+     * @generated from protobuf field: uint32 attempts = 3
+     */
+    attempts: number;
+    /**
+     * LastAttemptAt is the time of the last evaluation.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp lastAttemptAt = 4
+     */
+    lastAttemptAt?: Timestamp;
+    /**
+     * SkippedRules is the list of the Rules that were skipped because they
+     * could not be evaluated.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Request.Status.Evaluation.SkippedRule skippedRules = 5
+     */
+    skippedRules: Request_Status_Evaluation_SkippedRule[];
+}
+/**
+ * SkippedRule is a Rule that was skipped because it could not be
+ * evaluated
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Request.Status.Evaluation.SkippedRule
+ */
+export interface Request_Status_Evaluation_SkippedRule {
+    /**
+     * PolicyRef is the reference of the Policy of the Rule.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference policyRef = 1
+     */
+    policyRef?: ObjectReference;
+    /**
+     * RuleName is the name of the Rule.
+     *
+     * @generated from protobuf field: string ruleName = 2
+     */
+    ruleName: string;
+    /**
+     * Error is why the Rule could not be evaluated.
+     *
+     * @generated from protobuf field: string error = 3
+     */
+    error: string;
+}
+/**
+ * State is the state of the evaluation
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.Request.Status.Evaluation.State
+ */
+export enum Request_Status_Evaluation_State {
+    /**
+     * STATE_UNSET means that the Request has not been evaluated yet.
+     *
+     * @generated from protobuf enum value: STATE_UNSET = 0;
+     */
+    STATE_UNSET = 0,
+    /**
+     * EVALUATED means that a Rule was matched or that no Rule matched.
+     *
+     * @generated from protobuf enum value: EVALUATED = 1;
+     */
+    EVALUATED = 1,
+    /**
+     * RETRYING means that the evaluation failed and is retried.
+     *
+     * @generated from protobuf enum value: RETRYING = 2;
+     */
+    RETRYING = 2,
+    /**
+     * FAILED means that the evaluation failed permanently.
+     *
+     * @generated from protobuf enum value: FAILED = 3;
+     */
+    FAILED = 3
+}
+/**
+ * Grant is the state of the access that the Request grants
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Request.Status.Grant
+ */
+export interface Request_Status_Grant {
+    /**
+     * State is the state of the granted access.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.Grant.State state = 1
+     */
+    state: Request_Status_Grant_State;
+    /**
+     * ActivatedAt is the time at which the access became enforced.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp activatedAt = 2
+     */
+    activatedAt?: Timestamp;
+    /**
+     * EndedAt is the time at which the access stopped being enforced.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp endedAt = 3
+     */
+    endedAt?: Timestamp;
+    /**
+     * LastError is the error of the last failed activation.
+     *
+     * @generated from protobuf field: string lastError = 4
+     */
+    lastError: string;
+    /**
+     * Attempts is the number of the consecutive failed activations.
+     *
+     * @generated from protobuf field: uint32 attempts = 5
+     */
+    attempts: number;
+}
+/**
+ * State is the state of the granted access
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.Request.Status.Grant.State
+ */
+export enum Request_Status_Grant_State {
+    /**
+     * STATE_UNSET means that no access is granted.
+     *
+     * @generated from protobuf enum value: STATE_UNSET = 0;
+     */
+    STATE_UNSET = 0,
+    /**
+     * SCHEDULED means that the access is approved but that it has not
+     * started yet.
+     *
+     * @generated from protobuf enum value: SCHEDULED = 1;
+     */
+    SCHEDULED = 1,
+    /**
+     * PROVISIONING means that the access is being activated.
+     *
+     * @generated from protobuf enum value: PROVISIONING = 2;
+     */
+    PROVISIONING = 2,
+    /**
+     * ACTIVE means that the access is enforced.
+     *
+     * @generated from protobuf enum value: ACTIVE = 3;
+     */
+    ACTIVE = 3,
+    /**
+     * FAILED means that the access could not be activated.
+     *
+     * @generated from protobuf enum value: FAILED = 4;
+     */
+    FAILED = 4,
+    /**
+     * ENDED means that the access is no longer enforced.
+     *
+     * @generated from protobuf enum value: ENDED = 5;
+     */
+    ENDED = 5
+}
+/**
+ * Workflow is the summary of the matched Rule that can be shown to the
+ * requesters and to the reviewers
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Request.Status.Workflow
+ */
+export interface Request_Status_Workflow {
+    /**
+     * Effect is the effect of the matched Rule.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Effect effect = 1
+     */
+    effect: Policy_Spec_Rule_Effect;
+    /**
+     * Steps is the list of the review Steps.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Request.Status.Workflow.Step steps = 2
+     */
+    steps: Request_Status_Workflow_Step[];
+    /**
+     * Message is the requester-facing message of the matched Rule.
+     *
+     * @generated from protobuf field: string message = 3
+     */
+    message: string;
+}
+/**
+ * Step is the summary of a review Step
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Request.Status.Workflow.Step
+ */
+export interface Request_Status_Workflow_Step {
+    /**
+     * Name is the name of the Step.
+     *
+     * @generated from protobuf field: string name = 1
+     */
+    name: string;
+    /**
+     * ApprovalRequirement is the approval requirement of the Step.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ApprovalRequirement approvalRequirement = 2
+     */
+    approvalRequirement: Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement;
+    /**
+     * ApprovalCount is the approval count of the COUNT requirement.
+     *
+     * @generated from protobuf field: uint32 approvalCount = 3
+     */
+    approvalCount: number;
+    /**
+     * Reviewers is the list of the Step's reviewers.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Request.Status.Workflow.Step.Reviewer reviewers = 4
+     */
+    reviewers: Request_Status_Workflow_Step_Reviewer[];
+    /**
+     * Timeout is the Step's timeout.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration timeout = 5
+     */
+    timeout?: Duration;
+    /**
+     * OnTimeout is what happens once the Step times out.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.OnTimeout onTimeout = 6
+     */
+    onTimeout: Policy_Spec_Rule_Action_Review_Step_OnTimeout;
+    /**
+     * ReasonRequirement is which decisions of the Step must carry a
+     * justification.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ReasonRequirement reasonRequirement = 7
+     */
+    reasonRequirement: Policy_Spec_Rule_Action_Review_Step_ReasonRequirement;
+    /**
+     * HasEscalation is whether the Step is escalated to more reviewers.
+     *
+     * @generated from protobuf field: bool hasEscalation = 8
+     */
+    hasEscalation: boolean;
+}
+/**
+ * Reviewer is the summary of a reviewer of the Step
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Request.Status.Workflow.Step.Reviewer
+ */
+export interface Request_Status_Workflow_Step_Reviewer {
+    /**
+     * Type is the kind of the reviewer.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.Workflow.Step.Reviewer.Type type = 1
+     */
+    type: Request_Status_Workflow_Step_Reviewer_Type;
+    /**
+     * DisplayName is the human readable name of the reviewer.
+     *
+     * @generated from protobuf field: string displayName = 2
+     */
+    displayName: string;
+}
+/**
+ * Type is the kind of the reviewer
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.Request.Status.Workflow.Step.Reviewer.Type
+ */
+export enum Request_Status_Workflow_Step_Reviewer_Type {
+    /**
+     * TYPE_UNSET is the default unset value.
+     *
+     * @generated from protobuf enum value: TYPE_UNSET = 0;
+     */
+    TYPE_UNSET = 0,
+    /**
+     * USER is a single User.
+     *
+     * @generated from protobuf enum value: USER = 1;
+     */
+    USER = 1,
+    /**
+     * GROUP is a Group of Users.
+     *
+     * @generated from protobuf enum value: GROUP = 2;
+     */
+    GROUP = 2,
+    /**
+     * CATALOG_OWNERS is the owners of the requested Catalog.
+     *
+     * @generated from protobuf enum value: CATALOG_OWNERS = 3;
+     */
+    CATALOG_OWNERS = 3
+}
+/**
+ * UserInfo is the display information of a User
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.UserInfo
+ */
+export interface UserInfo {
+    /**
+     * UserRef is the object reference of the User.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 1
+     */
+    userRef?: ObjectReference;
+    /**
+     * DisplayName is the display name of the User.
+     *
+     * @generated from protobuf field: string displayName = 2
+     */
+    displayName: string;
+    /**
+     * Email is the email of the User.
+     *
+     * @generated from protobuf field: string email = 3
+     */
+    email: string;
+    /**
+     * PicURL is the picture URL of the User.
+     *
+     * @generated from protobuf field: string picURL = 4
+     */
+    picURL: string;
+    /**
+     * Type is the User's type. It can either be HUMAN or WORKLOAD.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.User.Spec.Type type = 5
+     */
+    type: User_Spec_Type;
 }
 /**
  * RequestList is the list of Requests returned by the ListRequest method.
@@ -1461,6 +2986,14 @@ export interface Review_Spec {
      * @generated from protobuf field: octelium.api.main.access.v1.Review.Spec.Decision decision = 2
      */
     decision: Review_Spec_Decision;
+    /**
+     * Duration narrows the access duration of an approval. It cannot exceed
+     * the Request's effective duration. The shortest duration of all the
+     * approvals of the Request applies.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration duration = 3
+     */
+    duration?: Duration;
 }
 /**
  * Decision is the reviewer's decision on the Request
@@ -1549,6 +3082,14 @@ export interface Review_Status {
      * @generated from protobuf field: octelium.api.main.access.v1.Origin origin = 8
      */
     origin?: Origin;
+    /**
+     * SpecRevision is the revision of the Request's spec that the current
+     * decision was made on. An approval no longer counts once the Request's
+     * duration is increased or its justification is changed.
+     *
+     * @generated from protobuf field: uint32 specRevision = 9
+     */
+    specRevision: number;
 }
 /**
  * Revision is a previous version of the Review's Spec
@@ -1717,7 +3258,8 @@ export interface ListUserRequestOptions {
      */
     urgency: Request_Spec_Urgency;
     /**
-     * ServiceRef only lists the Requests for the access to a specific Service.
+     * ServiceRef only lists the Requests whose scope includes a specific
+     * Service.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference serviceRef = 4
      */
@@ -1728,6 +3270,59 @@ export interface ListUserRequestOptions {
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference catalogRef = 5
      */
     catalogRef?: ObjectReference;
+    /**
+     * Relation is how the listed Requests relate to the calling User.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.ListUserRequestOptions.Relation relation = 6
+     */
+    relation: ListUserRequestOptions_Relation;
+    /**
+     * IsActive only lists the approved Requests whose access is currently
+     * granted.
+     *
+     * @generated from protobuf field: bool isActive = 7
+     */
+    isActive: boolean;
+    /**
+     * Query only lists the Requests whose name, Catalog, justification or
+     * ticket contains it.
+     *
+     * @generated from protobuf field: string query = 8
+     */
+    query: string;
+}
+/**
+ * Relation is how the listed Requests relate to the calling User
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.ListUserRequestOptions.Relation
+ */
+export enum ListUserRequestOptions_Relation {
+    /**
+     * RELATION_UNSET is equivalent to ANY.
+     *
+     * @generated from protobuf enum value: RELATION_UNSET = 0;
+     */
+    RELATION_UNSET = 0,
+    /**
+     * CREATED_BY_ME only lists the Requests that are created by the calling
+     * User.
+     *
+     * @generated from protobuf enum value: CREATED_BY_ME = 1;
+     */
+    CREATED_BY_ME = 1,
+    /**
+     * FOR_ME only lists the Requests whose subject is the calling User.
+     *
+     * @generated from protobuf enum value: FOR_ME = 2;
+     */
+    FOR_ME = 2,
+    /**
+     * ANY lists the Requests that are either created by the calling User or
+     * whose subject is the calling User.
+     *
+     * @generated from protobuf enum value: ANY = 3;
+     */
+    ANY = 3
 }
 /**
  * ListCatalogOptions is the list options of the MainService's ListCatalog
@@ -1783,6 +3378,13 @@ export interface ListUserCatalogOptions {
      * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
      */
     common?: CommonListOptions;
+    /**
+     * Query only lists the Catalogs whose name, display name or description
+     * contains it, or that include a Service whose name contains it.
+     *
+     * @generated from protobuf field: string query = 2
+     */
+    query: string;
 }
 /**
  * ListReviewerRequestOptions is the list options of the ReviewerService's
@@ -1792,11 +3394,66 @@ export interface ListUserCatalogOptions {
  */
 export interface ListReviewerRequestOptions {
     /**
-     * Common is the common list options.
+     * Common is the common list options. The pagination is applied after the
+     * filtering.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
      */
     common?: CommonListOptions;
+    /**
+     * Filter is which of the calling User's review Requests are listed.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.ListReviewerRequestOptions.Filter filter = 2
+     */
+    filter: ListReviewerRequestOptions_Filter;
+    /**
+     * Query only lists the Requests whose name, Catalog, requester, subject,
+     * justification or ticket contains it.
+     *
+     * @generated from protobuf field: string query = 3
+     */
+    query: string;
+    /**
+     * Urgency only lists the Requests whose urgency is set to it.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request.Spec.Urgency urgency = 4
+     */
+    urgency: Request_Spec_Urgency;
+}
+/**
+ * Filter is which of the calling User's review Requests are listed
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.ListReviewerRequestOptions.Filter
+ */
+export enum ListReviewerRequestOptions_Filter {
+    /**
+     * FILTER_UNSET is equivalent to NEEDS_MY_DECISION.
+     *
+     * @generated from protobuf enum value: FILTER_UNSET = 0;
+     */
+    FILTER_UNSET = 0,
+    /**
+     * NEEDS_MY_DECISION lists the pending Requests that the calling User can
+     * currently decide on and has not decided on yet.
+     *
+     * @generated from protobuf enum value: NEEDS_MY_DECISION = 1;
+     */
+    NEEDS_MY_DECISION = 1,
+    /**
+     * WAITING_ON_OTHERS lists the pending Requests that the calling User has
+     * already decided on at their current Step and that are waiting for the
+     * other reviewers.
+     *
+     * @generated from protobuf enum value: WAITING_ON_OTHERS = 2;
+     */
+    WAITING_ON_OTHERS = 2,
+    /**
+     * DECIDED_BY_ME lists the Requests that the calling User has reviewed at
+     * any Step.
+     *
+     * @generated from protobuf enum value: DECIDED_BY_ME = 3;
+     */
+    DECIDED_BY_ME = 3
 }
 /**
  * ListUserCatalogServiceOptions is the list options of the ListCatalogService
@@ -1811,6 +3468,13 @@ export interface ListUserCatalogServiceOptions {
      * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
      */
     common?: CommonListOptions;
+    /**
+     * CatalogRef is the reference of the Catalog whose Services are listed.
+     * Required.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference catalogRef = 2
+     */
+    catalogRef?: ObjectReference;
 }
 /**
  * ListReviewerReviewOptions is the list options of the ReviewerService's
@@ -1885,6 +3549,13 @@ export interface CancelRequestRequest {
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 1
      */
     requestRef?: ObjectReference;
+    /**
+     * Reason is an optional explanation of the cancellation. It cannot be
+     * longer than 1500 characters.
+     *
+     * @generated from protobuf field: string reason = 2
+     */
+    reason: string;
 }
 /**
  * RevokeRequestRequest is the request of the RevokeRequest method.
@@ -1898,6 +3569,13 @@ export interface RevokeRequestRequest {
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 1
      */
     requestRef?: ObjectReference;
+    /**
+     * Reason is the explanation of the revocation that is shown to the
+     * requester and to the subject. It cannot be longer than 1500 characters.
+     *
+     * @generated from protobuf field: string reason = 2
+     */
+    reason: string;
 }
 /**
  * CancelReviewRequest is the request of the CancelReview method.
@@ -1911,6 +3589,871 @@ export interface CancelReviewRequest {
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference reviewRef = 1
      */
     reviewRef?: ObjectReference;
+}
+/**
+ * EndAccessRequest is the request of the EndAccess method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.EndAccessRequest
+ */
+export interface EndAccessRequest {
+    /**
+     * RequestRef is the reference of the approved Request. Required.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 1
+     */
+    requestRef?: ObjectReference;
+    /**
+     * Reason is an optional explanation. It cannot be longer than 1500
+     * characters.
+     *
+     * @generated from protobuf field: string reason = 2
+     */
+    reason: string;
+}
+/**
+ * RespondToRequestRequest is the request of the RespondToRequest method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.RespondToRequestRequest
+ */
+export interface RespondToRequestRequest {
+    /**
+     * RequestRef is the reference of the pending Request. Required.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 1
+     */
+    requestRef?: ObjectReference;
+    /**
+     * Response is the answer to the reviewer's question. Required. It cannot be
+     * longer than 1500 characters.
+     *
+     * @generated from protobuf field: string response = 2
+     */
+    response: string;
+}
+/**
+ * RequestInformationRequest is the request of the RequestInformation method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.RequestInformationRequest
+ */
+export interface RequestInformationRequest {
+    /**
+     * RequestRef is the reference of the pending Request. Required.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 1
+     */
+    requestRef?: ObjectReference;
+    /**
+     * Message is the question to the requester. Required. It cannot be longer
+     * than 1500 characters.
+     *
+     * @generated from protobuf field: string message = 2
+     */
+    message: string;
+}
+/**
+ * GetReviewCaseRequest is the request of the GetReviewCase method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.GetReviewCaseRequest
+ */
+export interface GetReviewCaseRequest {
+    /**
+     * RequestRef is the reference of the Request. Required.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 1
+     */
+    requestRef?: ObjectReference;
+}
+/**
+ * GetInboxRequest is the request of the GetInbox method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.GetInboxRequest
+ */
+export interface GetInboxRequest {
+}
+/**
+ * Inbox is the set of the counters of the items that currently need a User's
+ * attention
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Inbox
+ */
+export interface Inbox {
+    /**
+     * TotalNeedsMyDecision is the number of the pending Requests that the User
+     * can currently decide on and has not decided on yet.
+     *
+     * @generated from protobuf field: uint32 totalNeedsMyDecision = 1
+     */
+    totalNeedsMyDecision: number;
+    /**
+     * TotalMyPending is the number of the pending Requests that are created by
+     * the User or whose subject is the User.
+     *
+     * @generated from protobuf field: uint32 totalMyPending = 2
+     */
+    totalMyPending: number;
+    /**
+     * TotalActiveAccess is the number of the active accesses of the User.
+     *
+     * @generated from protobuf field: uint32 totalActiveAccess = 3
+     */
+    totalActiveAccess: number;
+    /**
+     * TotalExpiringSoon is the number of the active accesses of the User that
+     * end within the next hour.
+     *
+     * @generated from protobuf field: uint32 totalExpiringSoon = 4
+     */
+    totalExpiringSoon: number;
+    /**
+     * TotalAwaitingMyResponse is the number of the pending Requests of the
+     * User whose reviewers asked for more information.
+     *
+     * @generated from protobuf field: uint32 totalAwaitingMyResponse = 5
+     */
+    totalAwaitingMyResponse: number;
+    /**
+     * IsReviewer is whether the User is a reviewer of at least one review Step
+     * of an enabled access Policy.
+     *
+     * @generated from protobuf field: bool isReviewer = 6
+     */
+    isReviewer: boolean;
+    /**
+     * CanRequestOnBehalf is whether the User can request at least one Catalog
+     * on behalf of others.
+     *
+     * @generated from protobuf field: bool canRequestOnBehalf = 7
+     */
+    canRequestOnBehalf: boolean;
+}
+/**
+ * UserCatalog is the requester-facing view of a Catalog
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.UserCatalog
+ */
+export interface UserCatalog {
+    /**
+     * Metadata is the Catalog's metadata.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Metadata metadata = 1
+     */
+    metadata?: Metadata;
+    /**
+     * AccessLevels is the list of the Catalog's access levels. The first one
+     * is the default access level.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.UserCatalog.AccessLevel accessLevels = 2
+     */
+    accessLevels: UserCatalog_AccessLevel[];
+    /**
+     * Owners is the list of the Catalog's owners.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.UserCatalog.Owner owners = 3
+     */
+    owners: UserCatalog_Owner[];
+    /**
+     * Requirements is what a Request for the Catalog has to provide.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.Requirements requirements = 4
+     */
+    requirements?: Catalog_Spec_Requirements;
+    /**
+     * AllowPartialRequests is whether a Request can include only a subset of
+     * the Catalog's Services.
+     *
+     * @generated from protobuf field: bool allowPartialRequests = 5
+     */
+    allowPartialRequests: boolean;
+    /**
+     * TotalService is the number of the Services that the Catalog currently
+     * resolves to.
+     *
+     * @generated from protobuf field: uint32 totalService = 6
+     */
+    totalService: number;
+    /**
+     * Viewer is the relation between the Catalog and the calling User.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.UserCatalog.Viewer viewer = 7
+     */
+    viewer?: UserCatalog_Viewer;
+    /**
+     * Membership controls how the Namespaces of the Catalog are granted.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.Membership membership = 8
+     */
+    membership: Catalog_Spec_Membership;
+}
+/**
+ * AccessLevel is the requester-facing view of an access level
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.UserCatalog.AccessLevel
+ */
+export interface UserCatalog_AccessLevel {
+    /**
+     * Name is the name of the access level.
+     *
+     * @generated from protobuf field: string name = 1
+     */
+    name: string;
+    /**
+     * DisplayName is the human readable name of the access level.
+     *
+     * @generated from protobuf field: string displayName = 2
+     */
+    displayName: string;
+    /**
+     * Description is the plain language explanation of the access level.
+     *
+     * @generated from protobuf field: string description = 3
+     */
+    description: string;
+    /**
+     * Type is the kind of the access level.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.UserCatalog.AccessLevel.Type type = 4
+     */
+    type: UserCatalog_AccessLevel_Type;
+    /**
+     * DefaultDuration is the default access duration.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration defaultDuration = 5
+     */
+    defaultDuration?: Duration;
+    /**
+     * MaxDuration is the upper bound of the access duration.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration maxDuration = 6
+     */
+    maxDuration?: Duration;
+    /**
+     * OverridesGuardrails is whether the access takes precedence over the
+     * core Policy rules of the default priority, including their DENY rules.
+     *
+     * @generated from protobuf field: bool overridesGuardrails = 7
+     */
+    overridesGuardrails: boolean;
+    /**
+     * MinAAL is the minimum authenticator assurance level that is required
+     * in order to use the access.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL minAAL = 8
+     */
+    minAAL: Session_Status_Authentication_Info_AAL;
+}
+/**
+ * Type is the kind of the access level
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.UserCatalog.AccessLevel.Type
+ */
+export enum UserCatalog_AccessLevel_Type {
+    /**
+     * TYPE_UNSET is the default unset value.
+     *
+     * @generated from protobuf enum value: TYPE_UNSET = 0;
+     */
+    TYPE_UNSET = 0,
+    /**
+     * FULL grants an unrestricted access.
+     *
+     * @generated from protobuf enum value: FULL = 1;
+     */
+    FULL = 1,
+    /**
+     * RESTRICTED grants only what its core Policies allow.
+     *
+     * @generated from protobuf enum value: RESTRICTED = 2;
+     */
+    RESTRICTED = 2
+}
+/**
+ * Owner is an owner of the Catalog
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.UserCatalog.Owner
+ */
+export interface UserCatalog_Owner {
+    /**
+     * Type is the kind of the owner.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.UserCatalog.Owner.Type type = 1
+     */
+    type: UserCatalog_Owner_Type;
+    /**
+     * Name is the name of the User or the Group.
+     *
+     * @generated from protobuf field: string name = 2
+     */
+    name: string;
+    /**
+     * DisplayName is the display name of the User or the Group.
+     *
+     * @generated from protobuf field: string displayName = 3
+     */
+    displayName: string;
+}
+/**
+ * Type is the kind of the owner
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.UserCatalog.Owner.Type
+ */
+export enum UserCatalog_Owner_Type {
+    /**
+     * TYPE_UNSET is the default unset value.
+     *
+     * @generated from protobuf enum value: TYPE_UNSET = 0;
+     */
+    TYPE_UNSET = 0,
+    /**
+     * USER is a single User.
+     *
+     * @generated from protobuf enum value: USER = 1;
+     */
+    USER = 1,
+    /**
+     * GROUP is a Group of Users.
+     *
+     * @generated from protobuf enum value: GROUP = 2;
+     */
+    GROUP = 2
+}
+/**
+ * Viewer is the relation between the Catalog and the calling User
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.UserCatalog.Viewer
+ */
+export interface UserCatalog_Viewer {
+    /**
+     * CanRequestOnBehalf is whether the calling User can request the Catalog
+     * on behalf of others.
+     *
+     * @generated from protobuf field: bool canRequestOnBehalf = 1
+     */
+    canRequestOnBehalf: boolean;
+    /**
+     * ActiveRequestRef is the reference of the calling User's approved
+     * Request whose access is currently granted, if any.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference activeRequestRef = 2
+     */
+    activeRequestRef?: ObjectReference;
+    /**
+     * AccessEndsAt is the time at which that access ends.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp accessEndsAt = 3
+     */
+    accessEndsAt?: Timestamp;
+    /**
+     * PendingRequestRef is the reference of the calling User's pending
+     * Request for the Catalog, if any.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference pendingRequestRef = 4
+     */
+    pendingRequestRef?: ObjectReference;
+}
+/**
+ * UserCatalogList is the list of UserCatalogs returned by the UserService's
+ * ListCatalog method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.UserCatalogList
+ */
+export interface UserCatalogList {
+    /**
+     * APIVersion is the API version (i.e. "access/v1")
+     *
+     * @generated from protobuf field: string apiVersion = 1
+     */
+    apiVersion: string;
+    /**
+     * Kind is the resource name (i.e. `UserCatalogList`).
+     *
+     * @generated from protobuf field: string kind = 2
+     */
+    kind: string;
+    /**
+     * Items is the list of UserCatalogs.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.UserCatalog items = 3
+     */
+    items: UserCatalog[];
+    /**
+     * ListResponseMeta is common information about the list.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4
+     */
+    listResponseMeta?: ListResponseMeta;
+}
+/**
+ * RequestPreview is the result of the evaluation of a Request that is not
+ * created
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.RequestPreview
+ */
+export interface RequestPreview {
+    /**
+     * Outcome is what would happen to the Request.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.RequestPreview.Outcome outcome = 1
+     */
+    outcome: RequestPreview_Outcome;
+    /**
+     * Message is the requester-facing message of the matched Rule or of the
+     * access ClusterConfig.
+     *
+     * @generated from protobuf field: string message = 2
+     */
+    message: string;
+    /**
+     * Problems is the list of the reasons why the Request cannot be created as
+     * it is.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.RequestPreview.Problem problems = 3
+     */
+    problems: RequestPreview_Problem[];
+    /**
+     * Request is the Request as the Cluster would store it (i.e. with its
+     * resource resolved to a Catalog and its subject canonicalized).
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request request = 4
+     */
+    request?: Request;
+    /**
+     * ResolvedScope is what the Request would grant.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.ResolvedScope resolvedScope = 5
+     */
+    resolvedScope?: Request_Status_ResolvedScope;
+    /**
+     * Workflow is the summary of the matched Rule.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.Workflow workflow = 6
+     */
+    workflow?: Request_Status_Workflow;
+    /**
+     * EffectiveDuration is how long the access would last for.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration effectiveDuration = 7
+     */
+    effectiveDuration?: Duration;
+    /**
+     * MaxDuration is the longest access duration that can be requested.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration maxDuration = 8
+     */
+    maxDuration?: Duration;
+    /**
+     * Requirements is what the Request has to provide.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.Requirements requirements = 9
+     */
+    requirements?: Catalog_Spec_Requirements;
+    /**
+     * ExistingRequests is the list of the subject's pending or active Requests
+     * for the same Catalog and access level.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.RequestPreview.ExistingRequest existingRequests = 10
+     */
+    existingRequests: RequestPreview_ExistingRequest[];
+    /**
+     * CandidateCatalogs is the list of the Catalogs that the subject can
+     * request and that include the Service of a `serviceRef` Request when
+     * there are several of them.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.UserCatalog candidateCatalogs = 11
+     */
+    candidateCatalogs: UserCatalog[];
+}
+/**
+ * Problem is a reason why the Request cannot be created as it is
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.RequestPreview.Problem
+ */
+export interface RequestPreview_Problem {
+    /**
+     * Field is the path of the Request's field that the problem is about,
+     * if any (e.g. `spec.justification`).
+     *
+     * @generated from protobuf field: string field = 1
+     */
+    field: string;
+    /**
+     * Message is a human readable explanation of the problem.
+     *
+     * @generated from protobuf field: string message = 2
+     */
+    message: string;
+}
+/**
+ * ExistingRequest is a Request of the same subject for the same Catalog
+ * and access level that is either pending or active
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.RequestPreview.ExistingRequest
+ */
+export interface RequestPreview_ExistingRequest {
+    /**
+     * RequestRef is the reference of the existing Request.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 1
+     */
+    requestRef?: ObjectReference;
+    /**
+     * State is the state of the existing Request.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.State.Status state = 2
+     */
+    state: Request_Status_State_Status;
+    /**
+     * AccessEndsAt is the time at which the existing access ends, if any.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp accessEndsAt = 3
+     */
+    accessEndsAt?: Timestamp;
+}
+/**
+ * Outcome is what would happen to the Request
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.RequestPreview.Outcome
+ */
+export enum RequestPreview_Outcome {
+    /**
+     * OUTCOME_UNSET is the default unset value.
+     *
+     * @generated from protobuf enum value: OUTCOME_UNSET = 0;
+     */
+    OUTCOME_UNSET = 0,
+    /**
+     * NOT_REQUESTABLE means that the Request cannot be created at all (e.g.
+     * the Catalog does not exist, is disabled or the subject is not in its
+     * audience). The `problems` explain why.
+     *
+     * @generated from protobuf enum value: NOT_REQUESTABLE = 1;
+     */
+    NOT_REQUESTABLE = 1,
+    /**
+     * INCOMPLETE means that the Request lacks something that the Catalog
+     * requires (e.g. a justification). The `problems` explain what.
+     *
+     * @generated from protobuf enum value: INCOMPLETE = 2;
+     */
+    INCOMPLETE = 2,
+    /**
+     * DENIED means that a DENY Rule would reject the Request.
+     *
+     * @generated from protobuf enum value: DENIED = 3;
+     */
+    DENIED = 3,
+    /**
+     * NO_MATCH means that no Rule would match the Request and that it would
+     * be rejected.
+     *
+     * @generated from protobuf enum value: NO_MATCH = 4;
+     */
+    NO_MATCH = 4,
+    /**
+     * AUTO_APPROVED means that the Request would be immediately approved.
+     *
+     * @generated from protobuf enum value: AUTO_APPROVED = 5;
+     */
+    AUTO_APPROVED = 5,
+    /**
+     * REVIEW means that the Request would be handed over to reviewers.
+     *
+     * @generated from protobuf enum value: REVIEW = 6;
+     */
+    REVIEW = 6
+}
+/**
+ * ReviewCase is everything that a reviewer needs in order to decide on a
+ * Request
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.ReviewCase
+ */
+export interface ReviewCase {
+    /**
+     * Request is the Request.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request request = 1
+     */
+    request?: Request;
+    /**
+     * AllowedActions is the list of the actions that the calling User can
+     * currently take.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.ReviewCase.Action allowedActions = 2
+     */
+    allowedActions: ReviewCase_Action[];
+    /**
+     * MyReview is the calling User's Review of the current Step, if any.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Review myReview = 3
+     */
+    myReview?: Review;
+    /**
+     * Reviews is the list of every Review of the Request.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Review reviews = 4
+     */
+    reviews: Review[];
+    /**
+     * ActiveRequests is the list of the subject's other approved Requests for
+     * the same Catalog whose access is currently granted.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Request activeRequests = 5
+     */
+    activeRequests: Request[];
+    /**
+     * RecentRequests is the list of the subject's most recent Requests for the
+     * same Catalog.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Request recentRequests = 6
+     */
+    recentRequests: Request[];
+    /**
+     * Flags is a set of the facts that deserve the reviewer's attention.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.ReviewCase.Flags flags = 7
+     */
+    flags?: ReviewCase_Flags;
+    /**
+     * SubjectGroups is the list of the names of the subject's Groups.
+     *
+     * @generated from protobuf field: repeated string subjectGroups = 8
+     */
+    subjectGroups: string[];
+}
+/**
+ * Flags is a set of the facts that deserve the reviewer's attention
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.ReviewCase.Flags
+ */
+export interface ReviewCase_Flags {
+    /**
+     * IsOnBehalf is whether the subject is not the User that created the
+     * Request.
+     *
+     * @generated from protobuf field: bool isOnBehalf = 1
+     */
+    isOnBehalf: boolean;
+    /**
+     * IsFirstRequest is whether this is the subject's first Request for the
+     * Catalog.
+     *
+     * @generated from protobuf field: bool isFirstRequest = 2
+     */
+    isFirstRequest: boolean;
+    /**
+     * OverridesGuardrails is whether the access takes precedence over the
+     * core Policy rules of the default priority.
+     *
+     * @generated from protobuf field: bool overridesGuardrails = 3
+     */
+    overridesGuardrails: boolean;
+    /**
+     * IsExtension is whether the Request extends an active access.
+     *
+     * @generated from protobuf field: bool isExtension = 4
+     */
+    isExtension: boolean;
+    /**
+     * IsFullAccess is whether the access level grants an unrestricted
+     * access.
+     *
+     * @generated from protobuf field: bool isFullAccess = 5
+     */
+    isFullAccess: boolean;
+    /**
+     * IsSpecChanged is whether the Request's spec changed after the calling
+     * User's decision.
+     *
+     * @generated from protobuf field: bool isSpecChanged = 6
+     */
+    isSpecChanged: boolean;
+    /**
+     * IsAwaitingRequester is whether the Request is waiting for its
+     * requester to answer a reviewer's question.
+     *
+     * @generated from protobuf field: bool isAwaitingRequester = 7
+     */
+    isAwaitingRequester: boolean;
+}
+/**
+ * Action is an action that the calling User can take on the Request
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.ReviewCase.Action
+ */
+export enum ReviewCase_Action {
+    /**
+     * ACTION_UNSET is the default unset value.
+     *
+     * @generated from protobuf enum value: ACTION_UNSET = 0;
+     */
+    ACTION_UNSET = 0,
+    /**
+     * APPROVE approves the Request at its current Step.
+     *
+     * @generated from protobuf enum value: APPROVE = 1;
+     */
+    APPROVE = 1,
+    /**
+     * REJECT rejects the Request.
+     *
+     * @generated from protobuf enum value: REJECT = 2;
+     */
+    REJECT = 2,
+    /**
+     * WITHDRAW withdraws the calling User's decision at the current Step.
+     *
+     * @generated from protobuf enum value: WITHDRAW = 3;
+     */
+    WITHDRAW = 3,
+    /**
+     * REQUEST_INFORMATION asks the requester for more information.
+     *
+     * @generated from protobuf enum value: REQUEST_INFORMATION = 4;
+     */
+    REQUEST_INFORMATION = 4
+}
+/**
+ * SimulateRequestRequest is the request of the SimulateRequest method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.SimulateRequestRequest
+ */
+export interface SimulateRequestRequest {
+    /**
+     * Spec is the specification of the simulated Request. Its subject is
+     * required.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Request.Spec spec = 1
+     */
+    spec?: Request_Spec;
+    /**
+     * RequesterRef is the reference of the User that would create the
+     * Request. It defaults to the subject.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requesterRef = 2
+     */
+    requesterRef?: ObjectReference;
+}
+/**
+ * SimulateRequestResponse is the response of the SimulateRequest method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.SimulateRequestResponse
+ */
+export interface SimulateRequestResponse {
+    /**
+     * Preview is the result of the evaluation.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.RequestPreview preview = 1
+     */
+    preview?: RequestPreview;
+    /**
+     * Rules is the list of every Rule of every enabled Policy in their
+     * evaluation order together with their results.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.SimulateRequestResponse.RuleEvaluation rules = 2
+     */
+    rules: SimulateRequestResponse_RuleEvaluation[];
+    /**
+     * Rule is the matched Rule, if any.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule rule = 3
+     */
+    rule?: Policy_Spec_Rule;
+    /**
+     * PolicyRef is the reference of the Policy of the matched Rule, if any.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference policyRef = 4
+     */
+    policyRef?: ObjectReference;
+    /**
+     * Reviewers is the list of the eligible reviewers of every review Step of
+     * the matched Rule, in the order of the Steps.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Request.Status.Review.StepState reviewers = 5
+     */
+    reviewers: Request_Status_Review_StepState[];
+    /**
+     * PolicyTrigger is the core PolicyTrigger that an approval would create in
+     * order to grant the access.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.PolicyTrigger policyTrigger = 6
+     */
+    policyTrigger?: PolicyTrigger;
+}
+/**
+ * RuleEvaluation is the result of the evaluation of a single Rule
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.SimulateRequestResponse.RuleEvaluation
+ */
+export interface SimulateRequestResponse_RuleEvaluation {
+    /**
+     * PolicyRef is the reference of the Policy of the Rule.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference policyRef = 1
+     */
+    policyRef?: ObjectReference;
+    /**
+     * RuleName is the name of the Rule.
+     *
+     * @generated from protobuf field: string ruleName = 2
+     */
+    ruleName: string;
+    /**
+     * Priority is the priority of the Rule.
+     *
+     * @generated from protobuf field: int32 priority = 3
+     */
+    priority: number;
+    /**
+     * Effect is the effect of the Rule.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Effect effect = 4
+     */
+    effect: Policy_Spec_Rule_Effect;
+    /**
+     * Result is the result of the evaluation.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.SimulateRequestResponse.RuleEvaluation.Result result = 5
+     */
+    result: SimulateRequestResponse_RuleEvaluation_Result;
+    /**
+     * Error is the evaluation error of the Rule, if any.
+     *
+     * @generated from protobuf field: string error = 6
+     */
+    error: string;
+}
+/**
+ * Result is the result of the evaluation of a Rule
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.SimulateRequestResponse.RuleEvaluation.Result
+ */
+export enum SimulateRequestResponse_RuleEvaluation_Result {
+    /**
+     * RESULT_UNSET means that the Rule was not evaluated because a Rule of
+     * a higher priority matched before it.
+     *
+     * @generated from protobuf enum value: RESULT_UNSET = 0;
+     */
+    RESULT_UNSET = 0,
+    /**
+     * MATCHED means that the Rule matched and decided the Request.
+     *
+     * @generated from protobuf enum value: MATCHED = 1;
+     */
+    MATCHED = 1,
+    /**
+     * NOT_MATCHED means that the Rule's Condition did not match.
+     *
+     * @generated from protobuf enum value: NOT_MATCHED = 2;
+     */
+    NOT_MATCHED = 2,
+    /**
+     * ERROR means that the Rule could not be evaluated and that it was
+     * skipped.
+     *
+     * @generated from protobuf enum value: ERROR = 3;
+     */
+    ERROR = 3
 }
 /**
  * Origin is where an access Request or a Review came from. It is entirely
@@ -3352,6 +5895,23 @@ export interface SetReviewDecisionRequest {
      * @generated from protobuf field: string expectedStepName = 4
      */
     expectedStepName: string;
+    /**
+     * ExpectedSpecRevision is an optional safety check. If it is set and the
+     * Request's `status.specRevision` differs from it (i.e. the requester
+     * changed the Request after the reviewer read it), the decision is
+     * rejected.
+     *
+     * @generated from protobuf field: uint32 expectedSpecRevision = 5
+     */
+    expectedSpecRevision: number;
+    /**
+     * Duration narrows the access duration of an approval. It cannot exceed
+     * the Request's effective duration and it must not be set for the other
+     * decisions.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration duration = 6
+     */
+    duration?: Duration;
 }
 /**
  * ClusterConfig is the Cluster-wide configuration of the access API. It is a
@@ -3407,6 +5967,24 @@ export interface ClusterConfig_Spec {
      * @generated from protobuf field: octelium.api.main.access.v1.ClusterConfig.Spec.Authorization authorization = 1
      */
     authorization?: ClusterConfig_Spec_Authorization;
+    /**
+     * Request sets the Cluster-wide options of the access Requests.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.ClusterConfig.Spec.Request request = 2
+     */
+    request?: ClusterConfig_Spec_Request;
+    /**
+     * Review sets the Cluster-wide options of the review workflows.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.ClusterConfig.Spec.Review review = 3
+     */
+    review?: ClusterConfig_Spec_Review;
+    /**
+     * Notification sets the Cluster-wide options of the notifications.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.ClusterConfig.Spec.Notification notification = 4
+     */
+    notification?: ClusterConfig_Spec_Notification;
 }
 /**
  * Authorization sets the Cluster-wide options of the access that is
@@ -3416,20 +5994,78 @@ export interface ClusterConfig_Spec {
  */
 export interface ClusterConfig_Spec_Authorization {
     /**
-     * Priority is the priority of the rule that allows the access of an
-     * approved Request. The Cluster enforces every approved Request by
-     * creating a hidden PolicyTrigger whose default inline core Policy
-     * allows the access with this priority, in addition to the Policies of
-     * the matched Rule's Authorization. Like any core Policy rule, the lower
-     * the number, the higher the priority. It must be between -4 (i.e. the
-     * highest priority) and 0 (i.e. the default priority of the core Policy
-     * rules). If unset, it defaults to -1 which lets the granted access take
-     * precedence over the core Policy rules of the default priority. A
-     * change applies to the already approved Requests as well.
+     * Priority is the default priority of the core Policy rule that allows
+     * the access of the FULL access levels that do not set their own
+     * priority. Like any core Policy rule, the lower the number, the higher
+     * the priority. It must be between -4 (i.e. the highest priority) and 0
+     * (i.e. the default priority of the core Policy rules). If unset, it
+     * defaults to 0 which lets the core DENY rules of the default priority
+     * take precedence over the granted access. A negative priority lets the
+     * granted access override them. A change only applies to the Requests
+     * that are approved afterwards.
      *
      * @generated from protobuf field: optional int32 priority = 1
      */
     priority?: number;
+}
+/**
+ * Request sets the Cluster-wide options of the access Requests
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.ClusterConfig.Spec.Request
+ */
+export interface ClusterConfig_Spec_Request {
+    /**
+     * DefaultDeadline is how long a Request without a deadline can stay
+     * pending before it expires. It defaults to 7 days.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration defaultDeadline = 1
+     */
+    defaultDeadline?: Duration;
+    /**
+     * MaxStartDelay is how far in the future the `spec.startAt` of a
+     * Request can be. It defaults to 30 days.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration maxStartDelay = 2
+     */
+    maxStartDelay?: Duration;
+    /**
+     * NoMatchMessage is the requester-facing message of the Requests that
+     * no Rule of any enabled Policy matches. It cannot be longer than 500
+     * characters.
+     *
+     * @generated from protobuf field: string noMatchMessage = 3
+     */
+    noMatchMessage: string;
+}
+/**
+ * Review sets the Cluster-wide options of the review workflows
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.ClusterConfig.Spec.Review
+ */
+export interface ClusterConfig_Spec_Review {
+    /**
+     * FallbackReviewers is the list of the reviewers of the review Steps
+     * that have no eligible reviewer at all, including their escalation
+     * reviewers. Only the User and Group reviewers are allowed.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer fallbackReviewers = 1
+     */
+    fallbackReviewers: Policy_Spec_Rule_Action_Review_Step_Reviewer[];
+}
+/**
+ * Notification sets the Cluster-wide options of the notifications
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.ClusterConfig.Spec.Notification
+ */
+export interface ClusterConfig_Spec_Notification {
+    /**
+     * DefaultSurfaces is the list of the notification Surfaces that are
+     * used by the Rules that do not set any notification Surface of their
+     * own.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Policy.Spec.Rule.Surface defaultSurfaces = 1
+     */
+    defaultSurfaces: Policy_Spec_Rule_Surface[];
 }
 /**
  * Status is the current status of the ClusterConfig
@@ -3687,9 +6323,10 @@ class Policy_Spec_Rule$Type extends MessageType<Policy_Spec_Rule> {
             { no: 2, name: "effect", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Effect", Policy_Spec_Rule_Effect] },
             { no: 3, name: "priority", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
             { no: 4, name: "action", kind: "message", T: () => Policy_Spec_Rule_Action },
-            { no: 5, name: "authorization", kind: "message", T: () => Policy_Spec_Rule_Authorization },
             { no: 6, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 7, name: "notifications", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Policy_Spec_Rule_Surface }
+            { no: 7, name: "notifications", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Policy_Spec_Rule_Surface },
+            { no: 8, name: "maxDuration", kind: "message", T: () => Duration },
+            { no: 9, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<Policy_Spec_Rule>): Policy_Spec_Rule {
@@ -3698,6 +6335,7 @@ class Policy_Spec_Rule$Type extends MessageType<Policy_Spec_Rule> {
         message.priority = 0;
         message.name = "";
         message.notifications = [];
+        message.message = "";
         if (value !== undefined)
             reflectionMergePartial<Policy_Spec_Rule>(this, message, value);
         return message;
@@ -3719,14 +6357,17 @@ class Policy_Spec_Rule$Type extends MessageType<Policy_Spec_Rule> {
                 case /* octelium.api.main.access.v1.Policy.Spec.Rule.Action action */ 4:
                     message.action = Policy_Spec_Rule_Action.internalBinaryRead(reader, reader.uint32(), options, message.action);
                     break;
-                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Authorization authorization */ 5:
-                    message.authorization = Policy_Spec_Rule_Authorization.internalBinaryRead(reader, reader.uint32(), options, message.authorization);
-                    break;
                 case /* string name */ 6:
                     message.name = reader.string();
                     break;
                 case /* repeated octelium.api.main.access.v1.Policy.Spec.Rule.Surface notifications */ 7:
                     message.notifications.push(Policy_Spec_Rule_Surface.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.meta.v1.Duration maxDuration */ 8:
+                    message.maxDuration = Duration.internalBinaryRead(reader, reader.uint32(), options, message.maxDuration);
+                    break;
+                case /* string message */ 9:
+                    message.message = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -3752,15 +6393,18 @@ class Policy_Spec_Rule$Type extends MessageType<Policy_Spec_Rule> {
         /* octelium.api.main.access.v1.Policy.Spec.Rule.Action action = 4; */
         if (message.action)
             Policy_Spec_Rule_Action.internalBinaryWrite(message.action, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.access.v1.Policy.Spec.Rule.Authorization authorization = 5; */
-        if (message.authorization)
-            Policy_Spec_Rule_Authorization.internalBinaryWrite(message.authorization, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
         /* string name = 6; */
         if (message.name !== "")
             writer.tag(6, WireType.LengthDelimited).string(message.name);
         /* repeated octelium.api.main.access.v1.Policy.Spec.Rule.Surface notifications = 7; */
         for (let i = 0; i < message.notifications.length; i++)
             Policy_Spec_Rule_Surface.internalBinaryWrite(message.notifications[i], writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration maxDuration = 8; */
+        if (message.maxDuration)
+            Duration.internalBinaryWrite(message.maxDuration, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* string message = 9; */
+        if (message.message !== "")
+            writer.tag(9, WireType.LengthDelimited).string(message.message);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3781,7 +6425,9 @@ class Policy_Spec_Rule_Condition$Type extends MessageType<Policy_Spec_Rule_Condi
             { no: 4, name: "all", kind: "message", oneof: "type", T: () => Policy_Spec_Rule_Condition_All },
             { no: 5, name: "any", kind: "message", oneof: "type", T: () => Policy_Spec_Rule_Condition_Any },
             { no: 6, name: "userRef", kind: "message", oneof: "type", T: () => ObjectReference },
-            { no: 7, name: "match", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+            { no: 7, name: "match", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ },
+            { no: 8, name: "accessLevel", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ },
+            { no: 9, name: "isOnBehalf", kind: "scalar", oneof: "type", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<Policy_Spec_Rule_Condition>): Policy_Spec_Rule_Condition {
@@ -3838,6 +6484,18 @@ class Policy_Spec_Rule_Condition$Type extends MessageType<Policy_Spec_Rule_Condi
                         match: reader.string()
                     };
                     break;
+                case /* string accessLevel */ 8:
+                    message.type = {
+                        oneofKind: "accessLevel",
+                        accessLevel: reader.string()
+                    };
+                    break;
+                case /* bool isOnBehalf */ 9:
+                    message.type = {
+                        oneofKind: "isOnBehalf",
+                        isOnBehalf: reader.bool()
+                    };
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -3871,6 +6529,12 @@ class Policy_Spec_Rule_Condition$Type extends MessageType<Policy_Spec_Rule_Condi
         /* string match = 7; */
         if (message.type.oneofKind === "match")
             writer.tag(7, WireType.LengthDelimited).string(message.type.match);
+        /* string accessLevel = 8; */
+        if (message.type.oneofKind === "accessLevel")
+            writer.tag(8, WireType.LengthDelimited).string(message.type.accessLevel);
+        /* bool isOnBehalf = 9; */
+        if (message.type.oneofKind === "isOnBehalf")
+            writer.tag(9, WireType.Varint).bool(message.type.isOnBehalf);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3886,7 +6550,8 @@ class Policy_Spec_Rule_Condition_Resource$Type extends MessageType<Policy_Spec_R
     constructor() {
         super("octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Resource", [
             { no: 1, name: "serviceRef", kind: "message", oneof: "type", T: () => ObjectReference },
-            { no: 2, name: "catalogRef", kind: "message", oneof: "type", T: () => ObjectReference }
+            { no: 2, name: "catalogRef", kind: "message", oneof: "type", T: () => ObjectReference },
+            { no: 3, name: "namespaceRef", kind: "message", oneof: "type", T: () => ObjectReference }
         ]);
     }
     create(value?: PartialMessage<Policy_Spec_Rule_Condition_Resource>): Policy_Spec_Rule_Condition_Resource {
@@ -3913,6 +6578,12 @@ class Policy_Spec_Rule_Condition_Resource$Type extends MessageType<Policy_Spec_R
                         catalogRef: ObjectReference.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).catalogRef)
                     };
                     break;
+                case /* octelium.api.main.meta.v1.ObjectReference namespaceRef */ 3:
+                    message.type = {
+                        oneofKind: "namespaceRef",
+                        namespaceRef: ObjectReference.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).namespaceRef)
+                    };
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -3931,6 +6602,9 @@ class Policy_Spec_Rule_Condition_Resource$Type extends MessageType<Policy_Spec_R
         /* octelium.api.main.meta.v1.ObjectReference catalogRef = 2; */
         if (message.type.oneofKind === "catalogRef")
             ObjectReference.internalBinaryWrite(message.type.catalogRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference namespaceRef = 3; */
+        if (message.type.oneofKind === "namespaceRef")
+            ObjectReference.internalBinaryWrite(message.type.namespaceRef, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4203,7 +6877,9 @@ class Policy_Spec_Rule_Action_Review_Step$Type extends MessageType<Policy_Spec_R
             { no: 5, name: "onTimeout", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.OnTimeout", Policy_Spec_Rule_Action_Review_Step_OnTimeout, "ON_TIMEOUT_"] },
             { no: 6, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 7, name: "surfaces", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Policy_Spec_Rule_Surface },
-            { no: 8, name: "separationOfDuties", kind: "message", T: () => Policy_Spec_Rule_SeparationOfDuties }
+            { no: 8, name: "separationOfDuties", kind: "message", T: () => Policy_Spec_Rule_SeparationOfDuties },
+            { no: 9, name: "escalation", kind: "message", T: () => Policy_Spec_Rule_Action_Review_Step_Escalation },
+            { no: 10, name: "reasonRequirement", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ReasonRequirement", Policy_Spec_Rule_Action_Review_Step_ReasonRequirement] }
         ]);
     }
     create(value?: PartialMessage<Policy_Spec_Rule_Action_Review_Step>): Policy_Spec_Rule_Action_Review_Step {
@@ -4214,6 +6890,7 @@ class Policy_Spec_Rule_Action_Review_Step$Type extends MessageType<Policy_Spec_R
         message.onTimeout = 0;
         message.name = "";
         message.surfaces = [];
+        message.reasonRequirement = 0;
         if (value !== undefined)
             reflectionMergePartial<Policy_Spec_Rule_Action_Review_Step>(this, message, value);
         return message;
@@ -4246,6 +6923,12 @@ class Policy_Spec_Rule_Action_Review_Step$Type extends MessageType<Policy_Spec_R
                     break;
                 case /* octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties separationOfDuties */ 8:
                     message.separationOfDuties = Policy_Spec_Rule_SeparationOfDuties.internalBinaryRead(reader, reader.uint32(), options, message.separationOfDuties);
+                    break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Escalation escalation */ 9:
+                    message.escalation = Policy_Spec_Rule_Action_Review_Step_Escalation.internalBinaryRead(reader, reader.uint32(), options, message.escalation);
+                    break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ReasonRequirement reasonRequirement */ 10:
+                    message.reasonRequirement = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4283,6 +6966,12 @@ class Policy_Spec_Rule_Action_Review_Step$Type extends MessageType<Policy_Spec_R
         /* octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties separationOfDuties = 8; */
         if (message.separationOfDuties)
             Policy_Spec_Rule_SeparationOfDuties.internalBinaryWrite(message.separationOfDuties, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Escalation escalation = 9; */
+        if (message.escalation)
+            Policy_Spec_Rule_Action_Review_Step_Escalation.internalBinaryWrite(message.escalation, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ReasonRequirement reasonRequirement = 10; */
+        if (message.reasonRequirement !== 0)
+            writer.tag(10, WireType.Varint).int32(message.reasonRequirement);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4298,7 +6987,8 @@ class Policy_Spec_Rule_Action_Review_Step_Reviewer$Type extends MessageType<Poli
     constructor() {
         super("octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer", [
             { no: 1, name: "user", kind: "message", oneof: "type", T: () => Policy_Spec_Rule_Action_Review_Step_Reviewer_User },
-            { no: 2, name: "group", kind: "message", oneof: "type", T: () => Policy_Spec_Rule_Action_Review_Step_Reviewer_Group }
+            { no: 2, name: "group", kind: "message", oneof: "type", T: () => Policy_Spec_Rule_Action_Review_Step_Reviewer_Group },
+            { no: 3, name: "catalogOwners", kind: "message", oneof: "type", T: () => Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners }
         ]);
     }
     create(value?: PartialMessage<Policy_Spec_Rule_Action_Review_Step_Reviewer>): Policy_Spec_Rule_Action_Review_Step_Reviewer {
@@ -4325,6 +7015,12 @@ class Policy_Spec_Rule_Action_Review_Step_Reviewer$Type extends MessageType<Poli
                         group: Policy_Spec_Rule_Action_Review_Step_Reviewer_Group.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).group)
                     };
                     break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.CatalogOwners catalogOwners */ 3:
+                    message.type = {
+                        oneofKind: "catalogOwners",
+                        catalogOwners: Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).catalogOwners)
+                    };
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -4343,6 +7039,9 @@ class Policy_Spec_Rule_Action_Review_Step_Reviewer$Type extends MessageType<Poli
         /* octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.Group group = 2; */
         if (message.type.oneofKind === "group")
             Policy_Spec_Rule_Action_Review_Step_Reviewer_Group.internalBinaryWrite(message.type.group, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.CatalogOwners catalogOwners = 3; */
+        if (message.type.oneofKind === "catalogOwners")
+            Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners.internalBinaryWrite(message.type.catalogOwners, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4446,35 +7145,68 @@ class Policy_Spec_Rule_Action_Review_Step_Reviewer_Group$Type extends MessageTyp
  */
 export const Policy_Spec_Rule_Action_Review_Step_Reviewer_Group = new Policy_Spec_Rule_Action_Review_Step_Reviewer_Group$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class Policy_Spec_Rule_Authorization$Type extends MessageType<Policy_Spec_Rule_Authorization> {
+class Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners$Type extends MessageType<Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners> {
     constructor() {
-        super("octelium.api.main.access.v1.Policy.Spec.Rule.Authorization", [
-            { no: 1, name: "policies", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "inlinePolicies", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => InlinePolicy },
-            { no: 3, name: "maxAccessDuration", kind: "message", T: () => Duration }
-        ]);
+        super("octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.CatalogOwners", []);
     }
-    create(value?: PartialMessage<Policy_Spec_Rule_Authorization>): Policy_Spec_Rule_Authorization {
+    create(value?: PartialMessage<Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners>): Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.policies = [];
-        message.inlinePolicies = [];
         if (value !== undefined)
-            reflectionMergePartial<Policy_Spec_Rule_Authorization>(this, message, value);
+            reflectionMergePartial<Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Policy_Spec_Rule_Authorization): Policy_Spec_Rule_Authorization {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners): Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* repeated string policies */ 1:
-                    message.policies.push(reader.string());
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.CatalogOwners
+ */
+export const Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners = new Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Policy_Spec_Rule_Action_Review_Step_Escalation$Type extends MessageType<Policy_Spec_Rule_Action_Review_Step_Escalation> {
+    constructor() {
+        super("octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Escalation", [
+            { no: 1, name: "after", kind: "message", T: () => Duration },
+            { no: 2, name: "reviewers", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Policy_Spec_Rule_Action_Review_Step_Reviewer }
+        ]);
+    }
+    create(value?: PartialMessage<Policy_Spec_Rule_Action_Review_Step_Escalation>): Policy_Spec_Rule_Action_Review_Step_Escalation {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.reviewers = [];
+        if (value !== undefined)
+            reflectionMergePartial<Policy_Spec_Rule_Action_Review_Step_Escalation>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Policy_Spec_Rule_Action_Review_Step_Escalation): Policy_Spec_Rule_Action_Review_Step_Escalation {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.Duration after */ 1:
+                    message.after = Duration.internalBinaryRead(reader, reader.uint32(), options, message.after);
                     break;
-                case /* repeated octelium.api.main.core.v1.InlinePolicy inlinePolicies */ 2:
-                    message.inlinePolicies.push(InlinePolicy.internalBinaryRead(reader, reader.uint32(), options));
-                    break;
-                case /* octelium.api.main.meta.v1.Duration maxAccessDuration */ 3:
-                    message.maxAccessDuration = Duration.internalBinaryRead(reader, reader.uint32(), options, message.maxAccessDuration);
+                case /* repeated octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer reviewers */ 2:
+                    message.reviewers.push(Policy_Spec_Rule_Action_Review_Step_Reviewer.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4487,16 +7219,13 @@ class Policy_Spec_Rule_Authorization$Type extends MessageType<Policy_Spec_Rule_A
         }
         return message;
     }
-    internalBinaryWrite(message: Policy_Spec_Rule_Authorization, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* repeated string policies = 1; */
-        for (let i = 0; i < message.policies.length; i++)
-            writer.tag(1, WireType.LengthDelimited).string(message.policies[i]);
-        /* repeated octelium.api.main.core.v1.InlinePolicy inlinePolicies = 2; */
-        for (let i = 0; i < message.inlinePolicies.length; i++)
-            InlinePolicy.internalBinaryWrite(message.inlinePolicies[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.meta.v1.Duration maxAccessDuration = 3; */
-        if (message.maxAccessDuration)
-            Duration.internalBinaryWrite(message.maxAccessDuration, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+    internalBinaryWrite(message: Policy_Spec_Rule_Action_Review_Step_Escalation, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.Duration after = 1; */
+        if (message.after)
+            Duration.internalBinaryWrite(message.after, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer reviewers = 2; */
+        for (let i = 0; i < message.reviewers.length; i++)
+            Policy_Spec_Rule_Action_Review_Step_Reviewer.internalBinaryWrite(message.reviewers[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4504,9 +7233,9 @@ class Policy_Spec_Rule_Authorization$Type extends MessageType<Policy_Spec_Rule_A
     }
 }
 /**
- * @generated MessageType for protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Authorization
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Escalation
  */
-export const Policy_Spec_Rule_Authorization = new Policy_Spec_Rule_Authorization$Type();
+export const Policy_Spec_Rule_Action_Review_Step_Escalation = new Policy_Spec_Rule_Action_Review_Step_Escalation$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Policy_Spec_Rule_SeparationOfDuties$Type extends MessageType<Policy_Spec_Rule_SeparationOfDuties> {
     constructor() {
@@ -4673,10 +7402,14 @@ export const Policy_Spec_Rule_Surface_Destination = new Policy_Spec_Rule_Surface
 // @generated message type with reflection information, may provide speed optimized methods
 class Policy_Status$Type extends MessageType<Policy_Status> {
     constructor() {
-        super("octelium.api.main.access.v1.Policy.Status", []);
+        super("octelium.api.main.access.v1.Policy.Status", [
+            { no: 1, name: "issues", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ConfigurationIssue },
+            { no: 2, name: "checkedAt", kind: "message", T: () => Timestamp }
+        ]);
     }
     create(value?: PartialMessage<Policy_Status>): Policy_Status {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.issues = [];
         if (value !== undefined)
             reflectionMergePartial<Policy_Status>(this, message, value);
         return message;
@@ -4686,6 +7419,12 @@ class Policy_Status$Type extends MessageType<Policy_Status> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* repeated octelium.api.main.access.v1.ConfigurationIssue issues */ 1:
+                    message.issues.push(ConfigurationIssue.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* google.protobuf.Timestamp checkedAt */ 2:
+                    message.checkedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.checkedAt);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -4698,6 +7437,12 @@ class Policy_Status$Type extends MessageType<Policy_Status> {
         return message;
     }
     internalBinaryWrite(message: Policy_Status, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated octelium.api.main.access.v1.ConfigurationIssue issues = 1; */
+        for (let i = 0; i < message.issues.length; i++)
+            ConfigurationIssue.internalBinaryWrite(message.issues[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp checkedAt = 2; */
+        if (message.checkedAt)
+            Timestamp.internalBinaryWrite(message.checkedAt, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4708,6 +7453,100 @@ class Policy_Status$Type extends MessageType<Policy_Status> {
  * @generated MessageType for protobuf message octelium.api.main.access.v1.Policy.Status
  */
 export const Policy_Status = new Policy_Status$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ConfigurationIssue$Type extends MessageType<ConfigurationIssue> {
+    constructor() {
+        super("octelium.api.main.access.v1.ConfigurationIssue", [
+            { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.access.v1.ConfigurationIssue.Type", ConfigurationIssue_Type] },
+            { no: 2, name: "severity", kind: "enum", T: () => ["octelium.api.main.access.v1.ConfigurationIssue.Severity", ConfigurationIssue_Severity] },
+            { no: 3, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "ruleName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "stepName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "accessLevel", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 7, name: "ref", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<ConfigurationIssue>): ConfigurationIssue {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.severity = 0;
+        message.message = "";
+        message.ruleName = "";
+        message.stepName = "";
+        message.accessLevel = "";
+        if (value !== undefined)
+            reflectionMergePartial<ConfigurationIssue>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ConfigurationIssue): ConfigurationIssue {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.ConfigurationIssue.Type type */ 1:
+                    message.type = reader.int32();
+                    break;
+                case /* octelium.api.main.access.v1.ConfigurationIssue.Severity severity */ 2:
+                    message.severity = reader.int32();
+                    break;
+                case /* string message */ 3:
+                    message.message = reader.string();
+                    break;
+                case /* string ruleName */ 4:
+                    message.ruleName = reader.string();
+                    break;
+                case /* string stepName */ 5:
+                    message.stepName = reader.string();
+                    break;
+                case /* string accessLevel */ 6:
+                    message.accessLevel = reader.string();
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference ref */ 7:
+                    message.ref = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.ref);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ConfigurationIssue, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.ConfigurationIssue.Type type = 1; */
+        if (message.type !== 0)
+            writer.tag(1, WireType.Varint).int32(message.type);
+        /* octelium.api.main.access.v1.ConfigurationIssue.Severity severity = 2; */
+        if (message.severity !== 0)
+            writer.tag(2, WireType.Varint).int32(message.severity);
+        /* string message = 3; */
+        if (message.message !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.message);
+        /* string ruleName = 4; */
+        if (message.ruleName !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.ruleName);
+        /* string stepName = 5; */
+        if (message.stepName !== "")
+            writer.tag(5, WireType.LengthDelimited).string(message.stepName);
+        /* string accessLevel = 6; */
+        if (message.accessLevel !== "")
+            writer.tag(6, WireType.LengthDelimited).string(message.accessLevel);
+        /* octelium.api.main.meta.v1.ObjectReference ref = 7; */
+        if (message.ref)
+            ObjectReference.internalBinaryWrite(message.ref, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.ConfigurationIssue
+ */
+export const ConfigurationIssue = new ConfigurationIssue$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Catalog$Type extends MessageType<Catalog> {
     constructor() {
@@ -4788,11 +7627,24 @@ export const Catalog = new Catalog$Type();
 class Catalog_Spec$Type extends MessageType<Catalog_Spec> {
     constructor() {
         super("octelium.api.main.access.v1.Catalog.Spec", [
-            { no: 1, name: "resourceCollection", kind: "message", T: () => Catalog_Spec_ResourceCollection }
+            { no: 1, name: "resourceCollection", kind: "message", T: () => Catalog_Spec_ResourceCollection },
+            { no: 2, name: "accessLevels", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Catalog_Spec_AccessLevel },
+            { no: 3, name: "audience", kind: "message", T: () => Catalog_Spec_Audience },
+            { no: 4, name: "owners", kind: "message", T: () => Catalog_Spec_Owners },
+            { no: 5, name: "requirements", kind: "message", T: () => Catalog_Spec_Requirements },
+            { no: 6, name: "isDisabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 7, name: "allowSystemResources", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 8, name: "membership", kind: "enum", T: () => ["octelium.api.main.access.v1.Catalog.Spec.Membership", Catalog_Spec_Membership] },
+            { no: 9, name: "allowPartialRequests", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<Catalog_Spec>): Catalog_Spec {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.accessLevels = [];
+        message.isDisabled = false;
+        message.allowSystemResources = false;
+        message.membership = 0;
+        message.allowPartialRequests = false;
         if (value !== undefined)
             reflectionMergePartial<Catalog_Spec>(this, message, value);
         return message;
@@ -4804,6 +7656,30 @@ class Catalog_Spec$Type extends MessageType<Catalog_Spec> {
             switch (fieldNo) {
                 case /* octelium.api.main.access.v1.Catalog.Spec.ResourceCollection resourceCollection */ 1:
                     message.resourceCollection = Catalog_Spec_ResourceCollection.internalBinaryRead(reader, reader.uint32(), options, message.resourceCollection);
+                    break;
+                case /* repeated octelium.api.main.access.v1.Catalog.Spec.AccessLevel accessLevels */ 2:
+                    message.accessLevels.push(Catalog_Spec_AccessLevel.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.access.v1.Catalog.Spec.Audience audience */ 3:
+                    message.audience = Catalog_Spec_Audience.internalBinaryRead(reader, reader.uint32(), options, message.audience);
+                    break;
+                case /* octelium.api.main.access.v1.Catalog.Spec.Owners owners */ 4:
+                    message.owners = Catalog_Spec_Owners.internalBinaryRead(reader, reader.uint32(), options, message.owners);
+                    break;
+                case /* octelium.api.main.access.v1.Catalog.Spec.Requirements requirements */ 5:
+                    message.requirements = Catalog_Spec_Requirements.internalBinaryRead(reader, reader.uint32(), options, message.requirements);
+                    break;
+                case /* bool isDisabled */ 6:
+                    message.isDisabled = reader.bool();
+                    break;
+                case /* bool allowSystemResources */ 7:
+                    message.allowSystemResources = reader.bool();
+                    break;
+                case /* octelium.api.main.access.v1.Catalog.Spec.Membership membership */ 8:
+                    message.membership = reader.int32();
+                    break;
+                case /* bool allowPartialRequests */ 9:
+                    message.allowPartialRequests = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4820,6 +7696,30 @@ class Catalog_Spec$Type extends MessageType<Catalog_Spec> {
         /* octelium.api.main.access.v1.Catalog.Spec.ResourceCollection resourceCollection = 1; */
         if (message.resourceCollection)
             Catalog_Spec_ResourceCollection.internalBinaryWrite(message.resourceCollection, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.Catalog.Spec.AccessLevel accessLevels = 2; */
+        for (let i = 0; i < message.accessLevels.length; i++)
+            Catalog_Spec_AccessLevel.internalBinaryWrite(message.accessLevels[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Catalog.Spec.Audience audience = 3; */
+        if (message.audience)
+            Catalog_Spec_Audience.internalBinaryWrite(message.audience, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Catalog.Spec.Owners owners = 4; */
+        if (message.owners)
+            Catalog_Spec_Owners.internalBinaryWrite(message.owners, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Catalog.Spec.Requirements requirements = 5; */
+        if (message.requirements)
+            Catalog_Spec_Requirements.internalBinaryWrite(message.requirements, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* bool isDisabled = 6; */
+        if (message.isDisabled !== false)
+            writer.tag(6, WireType.Varint).bool(message.isDisabled);
+        /* bool allowSystemResources = 7; */
+        if (message.allowSystemResources !== false)
+            writer.tag(7, WireType.Varint).bool(message.allowSystemResources);
+        /* octelium.api.main.access.v1.Catalog.Spec.Membership membership = 8; */
+        if (message.membership !== 0)
+            writer.tag(8, WireType.Varint).int32(message.membership);
+        /* bool allowPartialRequests = 9; */
+        if (message.allowPartialRequests !== false)
+            writer.tag(9, WireType.Varint).bool(message.allowPartialRequests);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4932,12 +7832,622 @@ class Catalog_Spec_ResourceCollection_Service$Type extends MessageType<Catalog_S
  */
 export const Catalog_Spec_ResourceCollection_Service = new Catalog_Spec_ResourceCollection_Service$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class Catalog_Spec_AccessLevel$Type extends MessageType<Catalog_Spec_AccessLevel> {
+    constructor() {
+        super("octelium.api.main.access.v1.Catalog.Spec.AccessLevel", [
+            { no: 1, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "displayName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "description", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "full", kind: "message", oneof: "type", T: () => Catalog_Spec_AccessLevel_Full },
+            { no: 5, name: "restricted", kind: "message", oneof: "type", T: () => Catalog_Spec_AccessLevel_Restricted },
+            { no: 6, name: "defaultDuration", kind: "message", T: () => Duration },
+            { no: 7, name: "maxDuration", kind: "message", T: () => Duration },
+            { no: 8, name: "verification", kind: "message", T: () => Catalog_Spec_AccessLevel_Verification }
+        ]);
+    }
+    create(value?: PartialMessage<Catalog_Spec_AccessLevel>): Catalog_Spec_AccessLevel {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.name = "";
+        message.displayName = "";
+        message.description = "";
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Catalog_Spec_AccessLevel>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Catalog_Spec_AccessLevel): Catalog_Spec_AccessLevel {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string name */ 1:
+                    message.name = reader.string();
+                    break;
+                case /* string displayName */ 2:
+                    message.displayName = reader.string();
+                    break;
+                case /* string description */ 3:
+                    message.description = reader.string();
+                    break;
+                case /* octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Full full */ 4:
+                    message.type = {
+                        oneofKind: "full",
+                        full: Catalog_Spec_AccessLevel_Full.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).full)
+                    };
+                    break;
+                case /* octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Restricted restricted */ 5:
+                    message.type = {
+                        oneofKind: "restricted",
+                        restricted: Catalog_Spec_AccessLevel_Restricted.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).restricted)
+                    };
+                    break;
+                case /* octelium.api.main.meta.v1.Duration defaultDuration */ 6:
+                    message.defaultDuration = Duration.internalBinaryRead(reader, reader.uint32(), options, message.defaultDuration);
+                    break;
+                case /* octelium.api.main.meta.v1.Duration maxDuration */ 7:
+                    message.maxDuration = Duration.internalBinaryRead(reader, reader.uint32(), options, message.maxDuration);
+                    break;
+                case /* octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Verification verification */ 8:
+                    message.verification = Catalog_Spec_AccessLevel_Verification.internalBinaryRead(reader, reader.uint32(), options, message.verification);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Catalog_Spec_AccessLevel, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string name = 1; */
+        if (message.name !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.name);
+        /* string displayName = 2; */
+        if (message.displayName !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.displayName);
+        /* string description = 3; */
+        if (message.description !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.description);
+        /* octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Full full = 4; */
+        if (message.type.oneofKind === "full")
+            Catalog_Spec_AccessLevel_Full.internalBinaryWrite(message.type.full, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Restricted restricted = 5; */
+        if (message.type.oneofKind === "restricted")
+            Catalog_Spec_AccessLevel_Restricted.internalBinaryWrite(message.type.restricted, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration defaultDuration = 6; */
+        if (message.defaultDuration)
+            Duration.internalBinaryWrite(message.defaultDuration, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration maxDuration = 7; */
+        if (message.maxDuration)
+            Duration.internalBinaryWrite(message.maxDuration, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Verification verification = 8; */
+        if (message.verification)
+            Catalog_Spec_AccessLevel_Verification.internalBinaryWrite(message.verification, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Catalog.Spec.AccessLevel
+ */
+export const Catalog_Spec_AccessLevel = new Catalog_Spec_AccessLevel$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Catalog_Spec_AccessLevel_Full$Type extends MessageType<Catalog_Spec_AccessLevel_Full> {
+    constructor() {
+        super("octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Full", [
+            { no: 1, name: "priority", kind: "scalar", opt: true, T: 5 /*ScalarType.INT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Catalog_Spec_AccessLevel_Full>): Catalog_Spec_AccessLevel_Full {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Catalog_Spec_AccessLevel_Full>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Catalog_Spec_AccessLevel_Full): Catalog_Spec_AccessLevel_Full {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* optional int32 priority */ 1:
+                    message.priority = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Catalog_Spec_AccessLevel_Full, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* optional int32 priority = 1; */
+        if (message.priority !== undefined)
+            writer.tag(1, WireType.Varint).int32(message.priority);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Full
+ */
+export const Catalog_Spec_AccessLevel_Full = new Catalog_Spec_AccessLevel_Full$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Catalog_Spec_AccessLevel_Restricted$Type extends MessageType<Catalog_Spec_AccessLevel_Restricted> {
+    constructor() {
+        super("octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Restricted", [
+            { no: 1, name: "policies", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "inlinePolicies", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => InlinePolicy }
+        ]);
+    }
+    create(value?: PartialMessage<Catalog_Spec_AccessLevel_Restricted>): Catalog_Spec_AccessLevel_Restricted {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.policies = [];
+        message.inlinePolicies = [];
+        if (value !== undefined)
+            reflectionMergePartial<Catalog_Spec_AccessLevel_Restricted>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Catalog_Spec_AccessLevel_Restricted): Catalog_Spec_AccessLevel_Restricted {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string policies */ 1:
+                    message.policies.push(reader.string());
+                    break;
+                case /* repeated octelium.api.main.core.v1.InlinePolicy inlinePolicies */ 2:
+                    message.inlinePolicies.push(InlinePolicy.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Catalog_Spec_AccessLevel_Restricted, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string policies = 1; */
+        for (let i = 0; i < message.policies.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.policies[i]);
+        /* repeated octelium.api.main.core.v1.InlinePolicy inlinePolicies = 2; */
+        for (let i = 0; i < message.inlinePolicies.length; i++)
+            InlinePolicy.internalBinaryWrite(message.inlinePolicies[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Restricted
+ */
+export const Catalog_Spec_AccessLevel_Restricted = new Catalog_Spec_AccessLevel_Restricted$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Catalog_Spec_AccessLevel_Verification$Type extends MessageType<Catalog_Spec_AccessLevel_Verification> {
+    constructor() {
+        super("octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Verification", [
+            { no: 1, name: "minAAL", kind: "enum", T: () => ["octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL", Session_Status_Authentication_Info_AAL] }
+        ]);
+    }
+    create(value?: PartialMessage<Catalog_Spec_AccessLevel_Verification>): Catalog_Spec_AccessLevel_Verification {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.minAAL = 0;
+        if (value !== undefined)
+            reflectionMergePartial<Catalog_Spec_AccessLevel_Verification>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Catalog_Spec_AccessLevel_Verification): Catalog_Spec_AccessLevel_Verification {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL minAAL */ 1:
+                    message.minAAL = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Catalog_Spec_AccessLevel_Verification, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL minAAL = 1; */
+        if (message.minAAL !== 0)
+            writer.tag(1, WireType.Varint).int32(message.minAAL);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Catalog.Spec.AccessLevel.Verification
+ */
+export const Catalog_Spec_AccessLevel_Verification = new Catalog_Spec_AccessLevel_Verification$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Catalog_Spec_Audience$Type extends MessageType<Catalog_Spec_Audience> {
+    constructor() {
+        super("octelium.api.main.access.v1.Catalog.Spec.Audience", [
+            { no: 1, name: "users", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "groups", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "match", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "onBehalf", kind: "message", T: () => Catalog_Spec_Audience_OnBehalf }
+        ]);
+    }
+    create(value?: PartialMessage<Catalog_Spec_Audience>): Catalog_Spec_Audience {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.users = [];
+        message.groups = [];
+        message.match = "";
+        if (value !== undefined)
+            reflectionMergePartial<Catalog_Spec_Audience>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Catalog_Spec_Audience): Catalog_Spec_Audience {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string users */ 1:
+                    message.users.push(reader.string());
+                    break;
+                case /* repeated string groups */ 2:
+                    message.groups.push(reader.string());
+                    break;
+                case /* string match */ 3:
+                    message.match = reader.string();
+                    break;
+                case /* octelium.api.main.access.v1.Catalog.Spec.Audience.OnBehalf onBehalf */ 4:
+                    message.onBehalf = Catalog_Spec_Audience_OnBehalf.internalBinaryRead(reader, reader.uint32(), options, message.onBehalf);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Catalog_Spec_Audience, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string users = 1; */
+        for (let i = 0; i < message.users.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.users[i]);
+        /* repeated string groups = 2; */
+        for (let i = 0; i < message.groups.length; i++)
+            writer.tag(2, WireType.LengthDelimited).string(message.groups[i]);
+        /* string match = 3; */
+        if (message.match !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.match);
+        /* octelium.api.main.access.v1.Catalog.Spec.Audience.OnBehalf onBehalf = 4; */
+        if (message.onBehalf)
+            Catalog_Spec_Audience_OnBehalf.internalBinaryWrite(message.onBehalf, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Catalog.Spec.Audience
+ */
+export const Catalog_Spec_Audience = new Catalog_Spec_Audience$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Catalog_Spec_Audience_OnBehalf$Type extends MessageType<Catalog_Spec_Audience_OnBehalf> {
+    constructor() {
+        super("octelium.api.main.access.v1.Catalog.Spec.Audience.OnBehalf", [
+            { no: 1, name: "users", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "groups", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Catalog_Spec_Audience_OnBehalf>): Catalog_Spec_Audience_OnBehalf {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.users = [];
+        message.groups = [];
+        if (value !== undefined)
+            reflectionMergePartial<Catalog_Spec_Audience_OnBehalf>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Catalog_Spec_Audience_OnBehalf): Catalog_Spec_Audience_OnBehalf {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string users */ 1:
+                    message.users.push(reader.string());
+                    break;
+                case /* repeated string groups */ 2:
+                    message.groups.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Catalog_Spec_Audience_OnBehalf, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string users = 1; */
+        for (let i = 0; i < message.users.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.users[i]);
+        /* repeated string groups = 2; */
+        for (let i = 0; i < message.groups.length; i++)
+            writer.tag(2, WireType.LengthDelimited).string(message.groups[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Catalog.Spec.Audience.OnBehalf
+ */
+export const Catalog_Spec_Audience_OnBehalf = new Catalog_Spec_Audience_OnBehalf$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Catalog_Spec_Owners$Type extends MessageType<Catalog_Spec_Owners> {
+    constructor() {
+        super("octelium.api.main.access.v1.Catalog.Spec.Owners", [
+            { no: 1, name: "users", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "groups", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Catalog_Spec_Owners>): Catalog_Spec_Owners {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.users = [];
+        message.groups = [];
+        if (value !== undefined)
+            reflectionMergePartial<Catalog_Spec_Owners>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Catalog_Spec_Owners): Catalog_Spec_Owners {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string users */ 1:
+                    message.users.push(reader.string());
+                    break;
+                case /* repeated string groups */ 2:
+                    message.groups.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Catalog_Spec_Owners, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string users = 1; */
+        for (let i = 0; i < message.users.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.users[i]);
+        /* repeated string groups = 2; */
+        for (let i = 0; i < message.groups.length; i++)
+            writer.tag(2, WireType.LengthDelimited).string(message.groups[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Catalog.Spec.Owners
+ */
+export const Catalog_Spec_Owners = new Catalog_Spec_Owners$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Catalog_Spec_Requirements$Type extends MessageType<Catalog_Spec_Requirements> {
+    constructor() {
+        super("octelium.api.main.access.v1.Catalog.Spec.Requirements", [
+            { no: 1, name: "justification", kind: "message", T: () => Catalog_Spec_Requirements_Justification },
+            { no: 2, name: "ticket", kind: "message", T: () => Catalog_Spec_Requirements_Ticket }
+        ]);
+    }
+    create(value?: PartialMessage<Catalog_Spec_Requirements>): Catalog_Spec_Requirements {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Catalog_Spec_Requirements>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Catalog_Spec_Requirements): Catalog_Spec_Requirements {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.Catalog.Spec.Requirements.Justification justification */ 1:
+                    message.justification = Catalog_Spec_Requirements_Justification.internalBinaryRead(reader, reader.uint32(), options, message.justification);
+                    break;
+                case /* octelium.api.main.access.v1.Catalog.Spec.Requirements.Ticket ticket */ 2:
+                    message.ticket = Catalog_Spec_Requirements_Ticket.internalBinaryRead(reader, reader.uint32(), options, message.ticket);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Catalog_Spec_Requirements, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.Catalog.Spec.Requirements.Justification justification = 1; */
+        if (message.justification)
+            Catalog_Spec_Requirements_Justification.internalBinaryWrite(message.justification, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Catalog.Spec.Requirements.Ticket ticket = 2; */
+        if (message.ticket)
+            Catalog_Spec_Requirements_Ticket.internalBinaryWrite(message.ticket, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Catalog.Spec.Requirements
+ */
+export const Catalog_Spec_Requirements = new Catalog_Spec_Requirements$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Catalog_Spec_Requirements_Justification$Type extends MessageType<Catalog_Spec_Requirements_Justification> {
+    constructor() {
+        super("octelium.api.main.access.v1.Catalog.Spec.Requirements.Justification", [
+            { no: 1, name: "isRequired", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "minLength", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Catalog_Spec_Requirements_Justification>): Catalog_Spec_Requirements_Justification {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.isRequired = false;
+        message.minLength = 0;
+        if (value !== undefined)
+            reflectionMergePartial<Catalog_Spec_Requirements_Justification>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Catalog_Spec_Requirements_Justification): Catalog_Spec_Requirements_Justification {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool isRequired */ 1:
+                    message.isRequired = reader.bool();
+                    break;
+                case /* uint32 minLength */ 2:
+                    message.minLength = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Catalog_Spec_Requirements_Justification, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool isRequired = 1; */
+        if (message.isRequired !== false)
+            writer.tag(1, WireType.Varint).bool(message.isRequired);
+        /* uint32 minLength = 2; */
+        if (message.minLength !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.minLength);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Catalog.Spec.Requirements.Justification
+ */
+export const Catalog_Spec_Requirements_Justification = new Catalog_Spec_Requirements_Justification$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Catalog_Spec_Requirements_Ticket$Type extends MessageType<Catalog_Spec_Requirements_Ticket> {
+    constructor() {
+        super("octelium.api.main.access.v1.Catalog.Spec.Requirements.Ticket", [
+            { no: 1, name: "isRequired", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "pattern", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "label", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Catalog_Spec_Requirements_Ticket>): Catalog_Spec_Requirements_Ticket {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.isRequired = false;
+        message.pattern = "";
+        message.label = "";
+        if (value !== undefined)
+            reflectionMergePartial<Catalog_Spec_Requirements_Ticket>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Catalog_Spec_Requirements_Ticket): Catalog_Spec_Requirements_Ticket {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool isRequired */ 1:
+                    message.isRequired = reader.bool();
+                    break;
+                case /* string pattern */ 2:
+                    message.pattern = reader.string();
+                    break;
+                case /* string label */ 3:
+                    message.label = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Catalog_Spec_Requirements_Ticket, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool isRequired = 1; */
+        if (message.isRequired !== false)
+            writer.tag(1, WireType.Varint).bool(message.isRequired);
+        /* string pattern = 2; */
+        if (message.pattern !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.pattern);
+        /* string label = 3; */
+        if (message.label !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.label);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Catalog.Spec.Requirements.Ticket
+ */
+export const Catalog_Spec_Requirements_Ticket = new Catalog_Spec_Requirements_Ticket$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class Catalog_Status$Type extends MessageType<Catalog_Status> {
     constructor() {
-        super("octelium.api.main.access.v1.Catalog.Status", []);
+        super("octelium.api.main.access.v1.Catalog.Status", [
+            { no: 1, name: "issues", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ConfigurationIssue },
+            { no: 2, name: "totalService", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 3, name: "checkedAt", kind: "message", T: () => Timestamp }
+        ]);
     }
     create(value?: PartialMessage<Catalog_Status>): Catalog_Status {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.issues = [];
+        message.totalService = 0;
         if (value !== undefined)
             reflectionMergePartial<Catalog_Status>(this, message, value);
         return message;
@@ -4947,6 +8457,15 @@ class Catalog_Status$Type extends MessageType<Catalog_Status> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
+                case /* repeated octelium.api.main.access.v1.ConfigurationIssue issues */ 1:
+                    message.issues.push(ConfigurationIssue.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint32 totalService */ 2:
+                    message.totalService = reader.uint32();
+                    break;
+                case /* google.protobuf.Timestamp checkedAt */ 3:
+                    message.checkedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.checkedAt);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -4959,6 +8478,15 @@ class Catalog_Status$Type extends MessageType<Catalog_Status> {
         return message;
     }
     internalBinaryWrite(message: Catalog_Status, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated octelium.api.main.access.v1.ConfigurationIssue issues = 1; */
+        for (let i = 0; i < message.issues.length; i++)
+            ConfigurationIssue.internalBinaryWrite(message.issues[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 totalService = 2; */
+        if (message.totalService !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.totalService);
+        /* google.protobuf.Timestamp checkedAt = 3; */
+        if (message.checkedAt)
+            Timestamp.internalBinaryWrite(message.checkedAt, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5194,13 +8722,17 @@ class Request_Spec$Type extends MessageType<Request_Spec> {
             { no: 3, name: "subject", kind: "message", T: () => Request_Spec_Subject },
             { no: 4, name: "justification", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 5, name: "deadline", kind: "message", T: () => Timestamp },
-            { no: 6, name: "duration", kind: "message", T: () => Duration }
+            { no: 6, name: "duration", kind: "message", T: () => Duration },
+            { no: 7, name: "ticket", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 8, name: "startAt", kind: "message", T: () => Timestamp },
+            { no: 9, name: "extendsRef", kind: "message", T: () => ObjectReference }
         ]);
     }
     create(value?: PartialMessage<Request_Spec>): Request_Spec {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.urgency = 0;
         message.justification = "";
+        message.ticket = "";
         if (value !== undefined)
             reflectionMergePartial<Request_Spec>(this, message, value);
         return message;
@@ -5227,6 +8759,15 @@ class Request_Spec$Type extends MessageType<Request_Spec> {
                     break;
                 case /* octelium.api.main.meta.v1.Duration duration */ 6:
                     message.duration = Duration.internalBinaryRead(reader, reader.uint32(), options, message.duration);
+                    break;
+                case /* string ticket */ 7:
+                    message.ticket = reader.string();
+                    break;
+                case /* google.protobuf.Timestamp startAt */ 8:
+                    message.startAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.startAt);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference extendsRef */ 9:
+                    message.extendsRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.extendsRef);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5258,6 +8799,15 @@ class Request_Spec$Type extends MessageType<Request_Spec> {
         /* octelium.api.main.meta.v1.Duration duration = 6; */
         if (message.duration)
             Duration.internalBinaryWrite(message.duration, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* string ticket = 7; */
+        if (message.ticket !== "")
+            writer.tag(7, WireType.LengthDelimited).string(message.ticket);
+        /* google.protobuf.Timestamp startAt = 8; */
+        if (message.startAt)
+            Timestamp.internalBinaryWrite(message.startAt, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference extendsRef = 9; */
+        if (message.extendsRef)
+            ObjectReference.internalBinaryWrite(message.extendsRef, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5332,11 +8882,15 @@ export const Request_Spec_Resource = new Request_Spec_Resource$Type();
 class Request_Spec_Resource_Catalog$Type extends MessageType<Request_Spec_Resource_Catalog> {
     constructor() {
         super("octelium.api.main.access.v1.Request.Spec.Resource.Catalog", [
-            { no: 1, name: "catalogRef", kind: "message", T: () => ObjectReference }
+            { no: 1, name: "catalogRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "accessLevel", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "serviceRefs", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ObjectReference }
         ]);
     }
     create(value?: PartialMessage<Request_Spec_Resource_Catalog>): Request_Spec_Resource_Catalog {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.accessLevel = "";
+        message.serviceRefs = [];
         if (value !== undefined)
             reflectionMergePartial<Request_Spec_Resource_Catalog>(this, message, value);
         return message;
@@ -5348,6 +8902,12 @@ class Request_Spec_Resource_Catalog$Type extends MessageType<Request_Spec_Resour
             switch (fieldNo) {
                 case /* octelium.api.main.meta.v1.ObjectReference catalogRef */ 1:
                     message.catalogRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.catalogRef);
+                    break;
+                case /* string accessLevel */ 2:
+                    message.accessLevel = reader.string();
+                    break;
+                case /* repeated octelium.api.main.meta.v1.ObjectReference serviceRefs */ 3:
+                    message.serviceRefs.push(ObjectReference.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5364,6 +8924,12 @@ class Request_Spec_Resource_Catalog$Type extends MessageType<Request_Spec_Resour
         /* octelium.api.main.meta.v1.ObjectReference catalogRef = 1; */
         if (message.catalogRef)
             ObjectReference.internalBinaryWrite(message.catalogRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string accessLevel = 2; */
+        if (message.accessLevel !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.accessLevel);
+        /* repeated octelium.api.main.meta.v1.ObjectReference serviceRefs = 3; */
+        for (let i = 0; i < message.serviceRefs.length; i++)
+            ObjectReference.internalBinaryWrite(message.serviceRefs[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5439,12 +9005,22 @@ class Request_Status$Type extends MessageType<Request_Status> {
             { no: 9, name: "review", kind: "message", T: () => Request_Status_Review },
             { no: 10, name: "accessEndsAt", kind: "message", T: () => Timestamp },
             { no: 11, name: "origin", kind: "message", T: () => Origin },
-            { no: 12, name: "effectiveDuration", kind: "message", T: () => Duration }
+            { no: 12, name: "effectiveDuration", kind: "message", T: () => Duration },
+            { no: 13, name: "resolvedScope", kind: "message", T: () => Request_Status_ResolvedScope },
+            { no: 14, name: "evaluation", kind: "message", T: () => Request_Status_Evaluation },
+            { no: 15, name: "grant", kind: "message", T: () => Request_Status_Grant },
+            { no: 16, name: "specRevision", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 17, name: "workflow", kind: "message", T: () => Request_Status_Workflow },
+            { no: 18, name: "requesterInfo", kind: "message", T: () => UserInfo },
+            { no: 19, name: "subjectInfo", kind: "message", T: () => UserInfo },
+            { no: 20, name: "accessStartsAt", kind: "message", T: () => Timestamp },
+            { no: 21, name: "supersededByRef", kind: "message", T: () => ObjectReference }
         ]);
     }
     create(value?: PartialMessage<Request_Status>): Request_Status {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.lastStates = [];
+        message.specRevision = 0;
         if (value !== undefined)
             reflectionMergePartial<Request_Status>(this, message, value);
         return message;
@@ -5489,6 +9065,33 @@ class Request_Status$Type extends MessageType<Request_Status> {
                     break;
                 case /* octelium.api.main.meta.v1.Duration effectiveDuration */ 12:
                     message.effectiveDuration = Duration.internalBinaryRead(reader, reader.uint32(), options, message.effectiveDuration);
+                    break;
+                case /* octelium.api.main.access.v1.Request.Status.ResolvedScope resolvedScope */ 13:
+                    message.resolvedScope = Request_Status_ResolvedScope.internalBinaryRead(reader, reader.uint32(), options, message.resolvedScope);
+                    break;
+                case /* octelium.api.main.access.v1.Request.Status.Evaluation evaluation */ 14:
+                    message.evaluation = Request_Status_Evaluation.internalBinaryRead(reader, reader.uint32(), options, message.evaluation);
+                    break;
+                case /* octelium.api.main.access.v1.Request.Status.Grant grant */ 15:
+                    message.grant = Request_Status_Grant.internalBinaryRead(reader, reader.uint32(), options, message.grant);
+                    break;
+                case /* uint32 specRevision */ 16:
+                    message.specRevision = reader.uint32();
+                    break;
+                case /* octelium.api.main.access.v1.Request.Status.Workflow workflow */ 17:
+                    message.workflow = Request_Status_Workflow.internalBinaryRead(reader, reader.uint32(), options, message.workflow);
+                    break;
+                case /* octelium.api.main.access.v1.UserInfo requesterInfo */ 18:
+                    message.requesterInfo = UserInfo.internalBinaryRead(reader, reader.uint32(), options, message.requesterInfo);
+                    break;
+                case /* octelium.api.main.access.v1.UserInfo subjectInfo */ 19:
+                    message.subjectInfo = UserInfo.internalBinaryRead(reader, reader.uint32(), options, message.subjectInfo);
+                    break;
+                case /* google.protobuf.Timestamp accessStartsAt */ 20:
+                    message.accessStartsAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.accessStartsAt);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference supersededByRef */ 21:
+                    message.supersededByRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.supersededByRef);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5538,6 +9141,33 @@ class Request_Status$Type extends MessageType<Request_Status> {
         /* octelium.api.main.meta.v1.Duration effectiveDuration = 12; */
         if (message.effectiveDuration)
             Duration.internalBinaryWrite(message.effectiveDuration, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Request.Status.ResolvedScope resolvedScope = 13; */
+        if (message.resolvedScope)
+            Request_Status_ResolvedScope.internalBinaryWrite(message.resolvedScope, writer.tag(13, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Request.Status.Evaluation evaluation = 14; */
+        if (message.evaluation)
+            Request_Status_Evaluation.internalBinaryWrite(message.evaluation, writer.tag(14, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Request.Status.Grant grant = 15; */
+        if (message.grant)
+            Request_Status_Grant.internalBinaryWrite(message.grant, writer.tag(15, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 specRevision = 16; */
+        if (message.specRevision !== 0)
+            writer.tag(16, WireType.Varint).uint32(message.specRevision);
+        /* octelium.api.main.access.v1.Request.Status.Workflow workflow = 17; */
+        if (message.workflow)
+            Request_Status_Workflow.internalBinaryWrite(message.workflow, writer.tag(17, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.UserInfo requesterInfo = 18; */
+        if (message.requesterInfo)
+            UserInfo.internalBinaryWrite(message.requesterInfo, writer.tag(18, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.UserInfo subjectInfo = 19; */
+        if (message.subjectInfo)
+            UserInfo.internalBinaryWrite(message.subjectInfo, writer.tag(19, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp accessStartsAt = 20; */
+        if (message.accessStartsAt)
+            Timestamp.internalBinaryWrite(message.accessStartsAt, writer.tag(20, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference supersededByRef = 21; */
+        if (message.supersededByRef)
+            ObjectReference.internalBinaryWrite(message.supersededByRef, writer.tag(21, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5553,12 +9183,17 @@ class Request_Status_State$Type extends MessageType<Request_Status_State> {
     constructor() {
         super("octelium.api.main.access.v1.Request.Status.State", [
             { no: 1, name: "createdAt", kind: "message", T: () => Timestamp },
-            { no: 2, name: "status", kind: "enum", T: () => ["octelium.api.main.access.v1.Request.Status.State.Status", Request_Status_State_Status] }
+            { no: 2, name: "status", kind: "enum", T: () => ["octelium.api.main.access.v1.Request.Status.State.Status", Request_Status_State_Status] },
+            { no: 3, name: "reason", kind: "enum", T: () => ["octelium.api.main.access.v1.Request.Status.State.Reason", Request_Status_State_Reason] },
+            { no: 4, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "actorRef", kind: "message", T: () => ObjectReference }
         ]);
     }
     create(value?: PartialMessage<Request_Status_State>): Request_Status_State {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.status = 0;
+        message.reason = 0;
+        message.message = "";
         if (value !== undefined)
             reflectionMergePartial<Request_Status_State>(this, message, value);
         return message;
@@ -5573,6 +9208,15 @@ class Request_Status_State$Type extends MessageType<Request_Status_State> {
                     break;
                 case /* octelium.api.main.access.v1.Request.Status.State.Status status */ 2:
                     message.status = reader.int32();
+                    break;
+                case /* octelium.api.main.access.v1.Request.Status.State.Reason reason */ 3:
+                    message.reason = reader.int32();
+                    break;
+                case /* string message */ 4:
+                    message.message = reader.string();
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference actorRef */ 5:
+                    message.actorRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.actorRef);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5592,6 +9236,15 @@ class Request_Status_State$Type extends MessageType<Request_Status_State> {
         /* octelium.api.main.access.v1.Request.Status.State.Status status = 2; */
         if (message.status !== 0)
             writer.tag(2, WireType.Varint).int32(message.status);
+        /* octelium.api.main.access.v1.Request.Status.State.Reason reason = 3; */
+        if (message.reason !== 0)
+            writer.tag(3, WireType.Varint).int32(message.reason);
+        /* string message = 4; */
+        if (message.message !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.message);
+        /* octelium.api.main.meta.v1.ObjectReference actorRef = 5; */
+        if (message.actorRef)
+            ObjectReference.internalBinaryWrite(message.actorRef, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5608,13 +9261,17 @@ class Request_Status_Review$Type extends MessageType<Request_Status_Review> {
         super("octelium.api.main.access.v1.Request.Status.Review", [
             { no: 1, name: "currentStep", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
             { no: 2, name: "lastSteps", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Request_Status_Review_Step },
-            { no: 3, name: "currentStepStartedAt", kind: "message", T: () => Timestamp }
+            { no: 3, name: "currentStepStartedAt", kind: "message", T: () => Timestamp },
+            { no: 4, name: "steps", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Request_Status_Review_StepState },
+            { no: 5, name: "informationRequests", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Request_Status_Review_InformationRequest }
         ]);
     }
     create(value?: PartialMessage<Request_Status_Review>): Request_Status_Review {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.currentStep = 0;
         message.lastSteps = [];
+        message.steps = [];
+        message.informationRequests = [];
         if (value !== undefined)
             reflectionMergePartial<Request_Status_Review>(this, message, value);
         return message;
@@ -5632,6 +9289,12 @@ class Request_Status_Review$Type extends MessageType<Request_Status_Review> {
                     break;
                 case /* google.protobuf.Timestamp currentStepStartedAt */ 3:
                     message.currentStepStartedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.currentStepStartedAt);
+                    break;
+                case /* repeated octelium.api.main.access.v1.Request.Status.Review.StepState steps */ 4:
+                    message.steps.push(Request_Status_Review_StepState.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated octelium.api.main.access.v1.Request.Status.Review.InformationRequest informationRequests */ 5:
+                    message.informationRequests.push(Request_Status_Review_InformationRequest.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5654,6 +9317,12 @@ class Request_Status_Review$Type extends MessageType<Request_Status_Review> {
         /* google.protobuf.Timestamp currentStepStartedAt = 3; */
         if (message.currentStepStartedAt)
             Timestamp.internalBinaryWrite(message.currentStepStartedAt, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.Request.Status.Review.StepState steps = 4; */
+        for (let i = 0; i < message.steps.length; i++)
+            Request_Status_Review_StepState.internalBinaryWrite(message.steps[i], writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.Request.Status.Review.InformationRequest informationRequests = 5; */
+        for (let i = 0; i < message.informationRequests.length; i++)
+            Request_Status_Review_InformationRequest.internalBinaryWrite(message.informationRequests[i], writer.tag(5, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5673,7 +9342,10 @@ class Request_Status_Review_Step$Type extends MessageType<Request_Status_Review_
             { no: 3, name: "stepIndex", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
             { no: 4, name: "decision", kind: "enum", T: () => ["octelium.api.main.access.v1.Review.Spec.Decision", Review_Spec_Decision, "DECISION_"] },
             { no: 5, name: "userRef", kind: "message", T: () => ObjectReference },
-            { no: 6, name: "stepName", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 6, name: "stepName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 7, name: "justification", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 8, name: "duration", kind: "message", T: () => Duration },
+            { no: 9, name: "specRevision", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<Request_Status_Review_Step>): Request_Status_Review_Step {
@@ -5681,6 +9353,8 @@ class Request_Status_Review_Step$Type extends MessageType<Request_Status_Review_
         message.stepIndex = 0;
         message.decision = 0;
         message.stepName = "";
+        message.justification = "";
+        message.specRevision = 0;
         if (value !== undefined)
             reflectionMergePartial<Request_Status_Review_Step>(this, message, value);
         return message;
@@ -5707,6 +9381,15 @@ class Request_Status_Review_Step$Type extends MessageType<Request_Status_Review_
                     break;
                 case /* string stepName */ 6:
                     message.stepName = reader.string();
+                    break;
+                case /* string justification */ 7:
+                    message.justification = reader.string();
+                    break;
+                case /* octelium.api.main.meta.v1.Duration duration */ 8:
+                    message.duration = Duration.internalBinaryRead(reader, reader.uint32(), options, message.duration);
+                    break;
+                case /* uint32 specRevision */ 9:
+                    message.specRevision = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -5738,6 +9421,15 @@ class Request_Status_Review_Step$Type extends MessageType<Request_Status_Review_
         /* string stepName = 6; */
         if (message.stepName !== "")
             writer.tag(6, WireType.LengthDelimited).string(message.stepName);
+        /* string justification = 7; */
+        if (message.justification !== "")
+            writer.tag(7, WireType.LengthDelimited).string(message.justification);
+        /* octelium.api.main.meta.v1.Duration duration = 8; */
+        if (message.duration)
+            Duration.internalBinaryWrite(message.duration, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 specRevision = 9; */
+        if (message.specRevision !== 0)
+            writer.tag(9, WireType.Varint).uint32(message.specRevision);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5748,6 +9440,860 @@ class Request_Status_Review_Step$Type extends MessageType<Request_Status_Review_
  * @generated MessageType for protobuf message octelium.api.main.access.v1.Request.Status.Review.Step
  */
 export const Request_Status_Review_Step = new Request_Status_Review_Step$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Request_Status_Review_StepState$Type extends MessageType<Request_Status_Review_StepState> {
+    constructor() {
+        super("octelium.api.main.access.v1.Request.Status.Review.StepState", [
+            { no: 1, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "index", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
+            { no: 3, name: "requiredApprovals", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 4, name: "approvals", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 5, name: "eligibleReviewers", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ObjectReference },
+            { no: 6, name: "totalEligibleReviewer", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 7, name: "outcome", kind: "enum", T: () => ["octelium.api.main.access.v1.Request.Status.Review.StepState.Outcome", Request_Status_Review_StepState_Outcome] },
+            { no: 8, name: "startedAt", kind: "message", T: () => Timestamp },
+            { no: 9, name: "endedAt", kind: "message", T: () => Timestamp },
+            { no: 10, name: "isEscalated", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 11, name: "escalatedAt", kind: "message", T: () => Timestamp },
+            { no: 12, name: "isUnroutable", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Request_Status_Review_StepState>): Request_Status_Review_StepState {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.name = "";
+        message.index = 0;
+        message.requiredApprovals = 0;
+        message.approvals = 0;
+        message.eligibleReviewers = [];
+        message.totalEligibleReviewer = 0;
+        message.outcome = 0;
+        message.isEscalated = false;
+        message.isUnroutable = false;
+        if (value !== undefined)
+            reflectionMergePartial<Request_Status_Review_StepState>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Request_Status_Review_StepState): Request_Status_Review_StepState {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string name */ 1:
+                    message.name = reader.string();
+                    break;
+                case /* int32 index */ 2:
+                    message.index = reader.int32();
+                    break;
+                case /* uint32 requiredApprovals */ 3:
+                    message.requiredApprovals = reader.uint32();
+                    break;
+                case /* uint32 approvals */ 4:
+                    message.approvals = reader.uint32();
+                    break;
+                case /* repeated octelium.api.main.meta.v1.ObjectReference eligibleReviewers */ 5:
+                    message.eligibleReviewers.push(ObjectReference.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* uint32 totalEligibleReviewer */ 6:
+                    message.totalEligibleReviewer = reader.uint32();
+                    break;
+                case /* octelium.api.main.access.v1.Request.Status.Review.StepState.Outcome outcome */ 7:
+                    message.outcome = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp startedAt */ 8:
+                    message.startedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.startedAt);
+                    break;
+                case /* google.protobuf.Timestamp endedAt */ 9:
+                    message.endedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.endedAt);
+                    break;
+                case /* bool isEscalated */ 10:
+                    message.isEscalated = reader.bool();
+                    break;
+                case /* google.protobuf.Timestamp escalatedAt */ 11:
+                    message.escalatedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.escalatedAt);
+                    break;
+                case /* bool isUnroutable */ 12:
+                    message.isUnroutable = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Request_Status_Review_StepState, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string name = 1; */
+        if (message.name !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.name);
+        /* int32 index = 2; */
+        if (message.index !== 0)
+            writer.tag(2, WireType.Varint).int32(message.index);
+        /* uint32 requiredApprovals = 3; */
+        if (message.requiredApprovals !== 0)
+            writer.tag(3, WireType.Varint).uint32(message.requiredApprovals);
+        /* uint32 approvals = 4; */
+        if (message.approvals !== 0)
+            writer.tag(4, WireType.Varint).uint32(message.approvals);
+        /* repeated octelium.api.main.meta.v1.ObjectReference eligibleReviewers = 5; */
+        for (let i = 0; i < message.eligibleReviewers.length; i++)
+            ObjectReference.internalBinaryWrite(message.eligibleReviewers[i], writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 totalEligibleReviewer = 6; */
+        if (message.totalEligibleReviewer !== 0)
+            writer.tag(6, WireType.Varint).uint32(message.totalEligibleReviewer);
+        /* octelium.api.main.access.v1.Request.Status.Review.StepState.Outcome outcome = 7; */
+        if (message.outcome !== 0)
+            writer.tag(7, WireType.Varint).int32(message.outcome);
+        /* google.protobuf.Timestamp startedAt = 8; */
+        if (message.startedAt)
+            Timestamp.internalBinaryWrite(message.startedAt, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp endedAt = 9; */
+        if (message.endedAt)
+            Timestamp.internalBinaryWrite(message.endedAt, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* bool isEscalated = 10; */
+        if (message.isEscalated !== false)
+            writer.tag(10, WireType.Varint).bool(message.isEscalated);
+        /* google.protobuf.Timestamp escalatedAt = 11; */
+        if (message.escalatedAt)
+            Timestamp.internalBinaryWrite(message.escalatedAt, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* bool isUnroutable = 12; */
+        if (message.isUnroutable !== false)
+            writer.tag(12, WireType.Varint).bool(message.isUnroutable);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Request.Status.Review.StepState
+ */
+export const Request_Status_Review_StepState = new Request_Status_Review_StepState$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Request_Status_Review_InformationRequest$Type extends MessageType<Request_Status_Review_InformationRequest> {
+    constructor() {
+        super("octelium.api.main.access.v1.Request.Status.Review.InformationRequest", [
+            { no: 1, name: "userRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "requestedAt", kind: "message", T: () => Timestamp },
+            { no: 4, name: "response", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "respondedAt", kind: "message", T: () => Timestamp },
+            { no: 6, name: "responderRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<Request_Status_Review_InformationRequest>): Request_Status_Review_InformationRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.message = "";
+        message.response = "";
+        if (value !== undefined)
+            reflectionMergePartial<Request_Status_Review_InformationRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Request_Status_Review_InformationRequest): Request_Status_Review_InformationRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 1:
+                    message.userRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.userRef);
+                    break;
+                case /* string message */ 2:
+                    message.message = reader.string();
+                    break;
+                case /* google.protobuf.Timestamp requestedAt */ 3:
+                    message.requestedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.requestedAt);
+                    break;
+                case /* string response */ 4:
+                    message.response = reader.string();
+                    break;
+                case /* google.protobuf.Timestamp respondedAt */ 5:
+                    message.respondedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.respondedAt);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference responderRef */ 6:
+                    message.responderRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.responderRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Request_Status_Review_InformationRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 1; */
+        if (message.userRef)
+            ObjectReference.internalBinaryWrite(message.userRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string message = 2; */
+        if (message.message !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.message);
+        /* google.protobuf.Timestamp requestedAt = 3; */
+        if (message.requestedAt)
+            Timestamp.internalBinaryWrite(message.requestedAt, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* string response = 4; */
+        if (message.response !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.response);
+        /* google.protobuf.Timestamp respondedAt = 5; */
+        if (message.respondedAt)
+            Timestamp.internalBinaryWrite(message.respondedAt, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference responderRef = 6; */
+        if (message.responderRef)
+            ObjectReference.internalBinaryWrite(message.responderRef, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Request.Status.Review.InformationRequest
+ */
+export const Request_Status_Review_InformationRequest = new Request_Status_Review_InformationRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Request_Status_ResolvedScope$Type extends MessageType<Request_Status_ResolvedScope> {
+    constructor() {
+        super("octelium.api.main.access.v1.Request.Status.ResolvedScope", [
+            { no: 1, name: "catalogRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "catalogResourceVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "catalogDisplayName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "accessLevel", kind: "message", T: () => Catalog_Spec_AccessLevel },
+            { no: 5, name: "serviceRefs", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ObjectReference },
+            { no: 6, name: "namespaceRefs", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ObjectReference },
+            { no: 7, name: "membership", kind: "enum", T: () => ["octelium.api.main.access.v1.Catalog.Spec.Membership", Catalog_Spec_Membership] },
+            { no: 8, name: "resolvedAt", kind: "message", T: () => Timestamp },
+            { no: 9, name: "priority", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
+            { no: 10, name: "overridesGuardrails", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 11, name: "totalExcludedService", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Request_Status_ResolvedScope>): Request_Status_ResolvedScope {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.catalogResourceVersion = "";
+        message.catalogDisplayName = "";
+        message.serviceRefs = [];
+        message.namespaceRefs = [];
+        message.membership = 0;
+        message.priority = 0;
+        message.overridesGuardrails = false;
+        message.totalExcludedService = 0;
+        if (value !== undefined)
+            reflectionMergePartial<Request_Status_ResolvedScope>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Request_Status_ResolvedScope): Request_Status_ResolvedScope {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference catalogRef */ 1:
+                    message.catalogRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.catalogRef);
+                    break;
+                case /* string catalogResourceVersion */ 2:
+                    message.catalogResourceVersion = reader.string();
+                    break;
+                case /* string catalogDisplayName */ 3:
+                    message.catalogDisplayName = reader.string();
+                    break;
+                case /* octelium.api.main.access.v1.Catalog.Spec.AccessLevel accessLevel */ 4:
+                    message.accessLevel = Catalog_Spec_AccessLevel.internalBinaryRead(reader, reader.uint32(), options, message.accessLevel);
+                    break;
+                case /* repeated octelium.api.main.meta.v1.ObjectReference serviceRefs */ 5:
+                    message.serviceRefs.push(ObjectReference.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated octelium.api.main.meta.v1.ObjectReference namespaceRefs */ 6:
+                    message.namespaceRefs.push(ObjectReference.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.access.v1.Catalog.Spec.Membership membership */ 7:
+                    message.membership = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp resolvedAt */ 8:
+                    message.resolvedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.resolvedAt);
+                    break;
+                case /* int32 priority */ 9:
+                    message.priority = reader.int32();
+                    break;
+                case /* bool overridesGuardrails */ 10:
+                    message.overridesGuardrails = reader.bool();
+                    break;
+                case /* uint32 totalExcludedService */ 11:
+                    message.totalExcludedService = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Request_Status_ResolvedScope, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference catalogRef = 1; */
+        if (message.catalogRef)
+            ObjectReference.internalBinaryWrite(message.catalogRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string catalogResourceVersion = 2; */
+        if (message.catalogResourceVersion !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.catalogResourceVersion);
+        /* string catalogDisplayName = 3; */
+        if (message.catalogDisplayName !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.catalogDisplayName);
+        /* octelium.api.main.access.v1.Catalog.Spec.AccessLevel accessLevel = 4; */
+        if (message.accessLevel)
+            Catalog_Spec_AccessLevel.internalBinaryWrite(message.accessLevel, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.meta.v1.ObjectReference serviceRefs = 5; */
+        for (let i = 0; i < message.serviceRefs.length; i++)
+            ObjectReference.internalBinaryWrite(message.serviceRefs[i], writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.meta.v1.ObjectReference namespaceRefs = 6; */
+        for (let i = 0; i < message.namespaceRefs.length; i++)
+            ObjectReference.internalBinaryWrite(message.namespaceRefs[i], writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Catalog.Spec.Membership membership = 7; */
+        if (message.membership !== 0)
+            writer.tag(7, WireType.Varint).int32(message.membership);
+        /* google.protobuf.Timestamp resolvedAt = 8; */
+        if (message.resolvedAt)
+            Timestamp.internalBinaryWrite(message.resolvedAt, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* int32 priority = 9; */
+        if (message.priority !== 0)
+            writer.tag(9, WireType.Varint).int32(message.priority);
+        /* bool overridesGuardrails = 10; */
+        if (message.overridesGuardrails !== false)
+            writer.tag(10, WireType.Varint).bool(message.overridesGuardrails);
+        /* uint32 totalExcludedService = 11; */
+        if (message.totalExcludedService !== 0)
+            writer.tag(11, WireType.Varint).uint32(message.totalExcludedService);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Request.Status.ResolvedScope
+ */
+export const Request_Status_ResolvedScope = new Request_Status_ResolvedScope$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Request_Status_Evaluation$Type extends MessageType<Request_Status_Evaluation> {
+    constructor() {
+        super("octelium.api.main.access.v1.Request.Status.Evaluation", [
+            { no: 1, name: "state", kind: "enum", T: () => ["octelium.api.main.access.v1.Request.Status.Evaluation.State", Request_Status_Evaluation_State] },
+            { no: 2, name: "lastError", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "attempts", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 4, name: "lastAttemptAt", kind: "message", T: () => Timestamp },
+            { no: 5, name: "skippedRules", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Request_Status_Evaluation_SkippedRule }
+        ]);
+    }
+    create(value?: PartialMessage<Request_Status_Evaluation>): Request_Status_Evaluation {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.state = 0;
+        message.lastError = "";
+        message.attempts = 0;
+        message.skippedRules = [];
+        if (value !== undefined)
+            reflectionMergePartial<Request_Status_Evaluation>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Request_Status_Evaluation): Request_Status_Evaluation {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.Request.Status.Evaluation.State state */ 1:
+                    message.state = reader.int32();
+                    break;
+                case /* string lastError */ 2:
+                    message.lastError = reader.string();
+                    break;
+                case /* uint32 attempts */ 3:
+                    message.attempts = reader.uint32();
+                    break;
+                case /* google.protobuf.Timestamp lastAttemptAt */ 4:
+                    message.lastAttemptAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastAttemptAt);
+                    break;
+                case /* repeated octelium.api.main.access.v1.Request.Status.Evaluation.SkippedRule skippedRules */ 5:
+                    message.skippedRules.push(Request_Status_Evaluation_SkippedRule.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Request_Status_Evaluation, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.Request.Status.Evaluation.State state = 1; */
+        if (message.state !== 0)
+            writer.tag(1, WireType.Varint).int32(message.state);
+        /* string lastError = 2; */
+        if (message.lastError !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.lastError);
+        /* uint32 attempts = 3; */
+        if (message.attempts !== 0)
+            writer.tag(3, WireType.Varint).uint32(message.attempts);
+        /* google.protobuf.Timestamp lastAttemptAt = 4; */
+        if (message.lastAttemptAt)
+            Timestamp.internalBinaryWrite(message.lastAttemptAt, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.Request.Status.Evaluation.SkippedRule skippedRules = 5; */
+        for (let i = 0; i < message.skippedRules.length; i++)
+            Request_Status_Evaluation_SkippedRule.internalBinaryWrite(message.skippedRules[i], writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Request.Status.Evaluation
+ */
+export const Request_Status_Evaluation = new Request_Status_Evaluation$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Request_Status_Evaluation_SkippedRule$Type extends MessageType<Request_Status_Evaluation_SkippedRule> {
+    constructor() {
+        super("octelium.api.main.access.v1.Request.Status.Evaluation.SkippedRule", [
+            { no: 1, name: "policyRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "ruleName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "error", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Request_Status_Evaluation_SkippedRule>): Request_Status_Evaluation_SkippedRule {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.ruleName = "";
+        message.error = "";
+        if (value !== undefined)
+            reflectionMergePartial<Request_Status_Evaluation_SkippedRule>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Request_Status_Evaluation_SkippedRule): Request_Status_Evaluation_SkippedRule {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference policyRef */ 1:
+                    message.policyRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.policyRef);
+                    break;
+                case /* string ruleName */ 2:
+                    message.ruleName = reader.string();
+                    break;
+                case /* string error */ 3:
+                    message.error = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Request_Status_Evaluation_SkippedRule, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference policyRef = 1; */
+        if (message.policyRef)
+            ObjectReference.internalBinaryWrite(message.policyRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string ruleName = 2; */
+        if (message.ruleName !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.ruleName);
+        /* string error = 3; */
+        if (message.error !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.error);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Request.Status.Evaluation.SkippedRule
+ */
+export const Request_Status_Evaluation_SkippedRule = new Request_Status_Evaluation_SkippedRule$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Request_Status_Grant$Type extends MessageType<Request_Status_Grant> {
+    constructor() {
+        super("octelium.api.main.access.v1.Request.Status.Grant", [
+            { no: 1, name: "state", kind: "enum", T: () => ["octelium.api.main.access.v1.Request.Status.Grant.State", Request_Status_Grant_State] },
+            { no: 2, name: "activatedAt", kind: "message", T: () => Timestamp },
+            { no: 3, name: "endedAt", kind: "message", T: () => Timestamp },
+            { no: 4, name: "lastError", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "attempts", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Request_Status_Grant>): Request_Status_Grant {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.state = 0;
+        message.lastError = "";
+        message.attempts = 0;
+        if (value !== undefined)
+            reflectionMergePartial<Request_Status_Grant>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Request_Status_Grant): Request_Status_Grant {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.Request.Status.Grant.State state */ 1:
+                    message.state = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp activatedAt */ 2:
+                    message.activatedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.activatedAt);
+                    break;
+                case /* google.protobuf.Timestamp endedAt */ 3:
+                    message.endedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.endedAt);
+                    break;
+                case /* string lastError */ 4:
+                    message.lastError = reader.string();
+                    break;
+                case /* uint32 attempts */ 5:
+                    message.attempts = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Request_Status_Grant, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.Request.Status.Grant.State state = 1; */
+        if (message.state !== 0)
+            writer.tag(1, WireType.Varint).int32(message.state);
+        /* google.protobuf.Timestamp activatedAt = 2; */
+        if (message.activatedAt)
+            Timestamp.internalBinaryWrite(message.activatedAt, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp endedAt = 3; */
+        if (message.endedAt)
+            Timestamp.internalBinaryWrite(message.endedAt, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* string lastError = 4; */
+        if (message.lastError !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.lastError);
+        /* uint32 attempts = 5; */
+        if (message.attempts !== 0)
+            writer.tag(5, WireType.Varint).uint32(message.attempts);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Request.Status.Grant
+ */
+export const Request_Status_Grant = new Request_Status_Grant$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Request_Status_Workflow$Type extends MessageType<Request_Status_Workflow> {
+    constructor() {
+        super("octelium.api.main.access.v1.Request.Status.Workflow", [
+            { no: 1, name: "effect", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Effect", Policy_Spec_Rule_Effect] },
+            { no: 2, name: "steps", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Request_Status_Workflow_Step },
+            { no: 3, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Request_Status_Workflow>): Request_Status_Workflow {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.effect = 0;
+        message.steps = [];
+        message.message = "";
+        if (value !== undefined)
+            reflectionMergePartial<Request_Status_Workflow>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Request_Status_Workflow): Request_Status_Workflow {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Effect effect */ 1:
+                    message.effect = reader.int32();
+                    break;
+                case /* repeated octelium.api.main.access.v1.Request.Status.Workflow.Step steps */ 2:
+                    message.steps.push(Request_Status_Workflow_Step.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* string message */ 3:
+                    message.message = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Request_Status_Workflow, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Effect effect = 1; */
+        if (message.effect !== 0)
+            writer.tag(1, WireType.Varint).int32(message.effect);
+        /* repeated octelium.api.main.access.v1.Request.Status.Workflow.Step steps = 2; */
+        for (let i = 0; i < message.steps.length; i++)
+            Request_Status_Workflow_Step.internalBinaryWrite(message.steps[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* string message = 3; */
+        if (message.message !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.message);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Request.Status.Workflow
+ */
+export const Request_Status_Workflow = new Request_Status_Workflow$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Request_Status_Workflow_Step$Type extends MessageType<Request_Status_Workflow_Step> {
+    constructor() {
+        super("octelium.api.main.access.v1.Request.Status.Workflow.Step", [
+            { no: 1, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "approvalRequirement", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ApprovalRequirement", Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement] },
+            { no: 3, name: "approvalCount", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 4, name: "reviewers", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Request_Status_Workflow_Step_Reviewer },
+            { no: 5, name: "timeout", kind: "message", T: () => Duration },
+            { no: 6, name: "onTimeout", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.OnTimeout", Policy_Spec_Rule_Action_Review_Step_OnTimeout, "ON_TIMEOUT_"] },
+            { no: 7, name: "reasonRequirement", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ReasonRequirement", Policy_Spec_Rule_Action_Review_Step_ReasonRequirement] },
+            { no: 8, name: "hasEscalation", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Request_Status_Workflow_Step>): Request_Status_Workflow_Step {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.name = "";
+        message.approvalRequirement = 0;
+        message.approvalCount = 0;
+        message.reviewers = [];
+        message.onTimeout = 0;
+        message.reasonRequirement = 0;
+        message.hasEscalation = false;
+        if (value !== undefined)
+            reflectionMergePartial<Request_Status_Workflow_Step>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Request_Status_Workflow_Step): Request_Status_Workflow_Step {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string name */ 1:
+                    message.name = reader.string();
+                    break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ApprovalRequirement approvalRequirement */ 2:
+                    message.approvalRequirement = reader.int32();
+                    break;
+                case /* uint32 approvalCount */ 3:
+                    message.approvalCount = reader.uint32();
+                    break;
+                case /* repeated octelium.api.main.access.v1.Request.Status.Workflow.Step.Reviewer reviewers */ 4:
+                    message.reviewers.push(Request_Status_Workflow_Step_Reviewer.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.meta.v1.Duration timeout */ 5:
+                    message.timeout = Duration.internalBinaryRead(reader, reader.uint32(), options, message.timeout);
+                    break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.OnTimeout onTimeout */ 6:
+                    message.onTimeout = reader.int32();
+                    break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ReasonRequirement reasonRequirement */ 7:
+                    message.reasonRequirement = reader.int32();
+                    break;
+                case /* bool hasEscalation */ 8:
+                    message.hasEscalation = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Request_Status_Workflow_Step, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string name = 1; */
+        if (message.name !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.name);
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ApprovalRequirement approvalRequirement = 2; */
+        if (message.approvalRequirement !== 0)
+            writer.tag(2, WireType.Varint).int32(message.approvalRequirement);
+        /* uint32 approvalCount = 3; */
+        if (message.approvalCount !== 0)
+            writer.tag(3, WireType.Varint).uint32(message.approvalCount);
+        /* repeated octelium.api.main.access.v1.Request.Status.Workflow.Step.Reviewer reviewers = 4; */
+        for (let i = 0; i < message.reviewers.length; i++)
+            Request_Status_Workflow_Step_Reviewer.internalBinaryWrite(message.reviewers[i], writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration timeout = 5; */
+        if (message.timeout)
+            Duration.internalBinaryWrite(message.timeout, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.OnTimeout onTimeout = 6; */
+        if (message.onTimeout !== 0)
+            writer.tag(6, WireType.Varint).int32(message.onTimeout);
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ReasonRequirement reasonRequirement = 7; */
+        if (message.reasonRequirement !== 0)
+            writer.tag(7, WireType.Varint).int32(message.reasonRequirement);
+        /* bool hasEscalation = 8; */
+        if (message.hasEscalation !== false)
+            writer.tag(8, WireType.Varint).bool(message.hasEscalation);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Request.Status.Workflow.Step
+ */
+export const Request_Status_Workflow_Step = new Request_Status_Workflow_Step$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Request_Status_Workflow_Step_Reviewer$Type extends MessageType<Request_Status_Workflow_Step_Reviewer> {
+    constructor() {
+        super("octelium.api.main.access.v1.Request.Status.Workflow.Step.Reviewer", [
+            { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.access.v1.Request.Status.Workflow.Step.Reviewer.Type", Request_Status_Workflow_Step_Reviewer_Type] },
+            { no: 2, name: "displayName", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Request_Status_Workflow_Step_Reviewer>): Request_Status_Workflow_Step_Reviewer {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.displayName = "";
+        if (value !== undefined)
+            reflectionMergePartial<Request_Status_Workflow_Step_Reviewer>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Request_Status_Workflow_Step_Reviewer): Request_Status_Workflow_Step_Reviewer {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.Request.Status.Workflow.Step.Reviewer.Type type */ 1:
+                    message.type = reader.int32();
+                    break;
+                case /* string displayName */ 2:
+                    message.displayName = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Request_Status_Workflow_Step_Reviewer, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.Request.Status.Workflow.Step.Reviewer.Type type = 1; */
+        if (message.type !== 0)
+            writer.tag(1, WireType.Varint).int32(message.type);
+        /* string displayName = 2; */
+        if (message.displayName !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.displayName);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Request.Status.Workflow.Step.Reviewer
+ */
+export const Request_Status_Workflow_Step_Reviewer = new Request_Status_Workflow_Step_Reviewer$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class UserInfo$Type extends MessageType<UserInfo> {
+    constructor() {
+        super("octelium.api.main.access.v1.UserInfo", [
+            { no: 1, name: "userRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "displayName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "email", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "picURL", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "type", kind: "enum", T: () => ["octelium.api.main.core.v1.User.Spec.Type", User_Spec_Type] }
+        ]);
+    }
+    create(value?: PartialMessage<UserInfo>): UserInfo {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.displayName = "";
+        message.email = "";
+        message.picURL = "";
+        message.type = 0;
+        if (value !== undefined)
+            reflectionMergePartial<UserInfo>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: UserInfo): UserInfo {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 1:
+                    message.userRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.userRef);
+                    break;
+                case /* string displayName */ 2:
+                    message.displayName = reader.string();
+                    break;
+                case /* string email */ 3:
+                    message.email = reader.string();
+                    break;
+                case /* string picURL */ 4:
+                    message.picURL = reader.string();
+                    break;
+                case /* octelium.api.main.core.v1.User.Spec.Type type */ 5:
+                    message.type = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: UserInfo, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 1; */
+        if (message.userRef)
+            ObjectReference.internalBinaryWrite(message.userRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string displayName = 2; */
+        if (message.displayName !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.displayName);
+        /* string email = 3; */
+        if (message.email !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.email);
+        /* string picURL = 4; */
+        if (message.picURL !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.picURL);
+        /* octelium.api.main.core.v1.User.Spec.Type type = 5; */
+        if (message.type !== 0)
+            writer.tag(5, WireType.Varint).int32(message.type);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.UserInfo
+ */
+export const UserInfo = new UserInfo$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class RequestList$Type extends MessageType<RequestList> {
     constructor() {
@@ -5899,7 +10445,8 @@ class Review_Spec$Type extends MessageType<Review_Spec> {
     constructor() {
         super("octelium.api.main.access.v1.Review.Spec", [
             { no: 1, name: "justification", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "decision", kind: "enum", T: () => ["octelium.api.main.access.v1.Review.Spec.Decision", Review_Spec_Decision, "DECISION_"] }
+            { no: 2, name: "decision", kind: "enum", T: () => ["octelium.api.main.access.v1.Review.Spec.Decision", Review_Spec_Decision, "DECISION_"] },
+            { no: 3, name: "duration", kind: "message", T: () => Duration }
         ]);
     }
     create(value?: PartialMessage<Review_Spec>): Review_Spec {
@@ -5921,6 +10468,9 @@ class Review_Spec$Type extends MessageType<Review_Spec> {
                 case /* octelium.api.main.access.v1.Review.Spec.Decision decision */ 2:
                     message.decision = reader.int32();
                     break;
+                case /* octelium.api.main.meta.v1.Duration duration */ 3:
+                    message.duration = Duration.internalBinaryRead(reader, reader.uint32(), options, message.duration);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -5939,6 +10489,9 @@ class Review_Spec$Type extends MessageType<Review_Spec> {
         /* octelium.api.main.access.v1.Review.Spec.Decision decision = 2; */
         if (message.decision !== 0)
             writer.tag(2, WireType.Varint).int32(message.decision);
+        /* octelium.api.main.meta.v1.Duration duration = 3; */
+        if (message.duration)
+            Duration.internalBinaryWrite(message.duration, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5960,7 +10513,8 @@ class Review_Status$Type extends MessageType<Review_Status> {
             { no: 5, name: "lastRevisions", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Review_Status_Revision },
             { no: 6, name: "stepIndex", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
             { no: 7, name: "stepName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 8, name: "origin", kind: "message", T: () => Origin }
+            { no: 8, name: "origin", kind: "message", T: () => Origin },
+            { no: 9, name: "specRevision", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<Review_Status>): Review_Status {
@@ -5969,6 +10523,7 @@ class Review_Status$Type extends MessageType<Review_Status> {
         message.lastRevisions = [];
         message.stepIndex = 0;
         message.stepName = "";
+        message.specRevision = 0;
         if (value !== undefined)
             reflectionMergePartial<Review_Status>(this, message, value);
         return message;
@@ -6001,6 +10556,9 @@ class Review_Status$Type extends MessageType<Review_Status> {
                     break;
                 case /* octelium.api.main.access.v1.Origin origin */ 8:
                     message.origin = Origin.internalBinaryRead(reader, reader.uint32(), options, message.origin);
+                    break;
+                case /* uint32 specRevision */ 9:
+                    message.specRevision = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6038,6 +10596,9 @@ class Review_Status$Type extends MessageType<Review_Status> {
         /* octelium.api.main.access.v1.Origin origin = 8; */
         if (message.origin)
             Origin.internalBinaryWrite(message.origin, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 specRevision = 9; */
+        if (message.specRevision !== 0)
+            writer.tag(9, WireType.Varint).uint32(message.specRevision);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6380,13 +10941,19 @@ class ListUserRequestOptions$Type extends MessageType<ListUserRequestOptions> {
             { no: 2, name: "state", kind: "enum", T: () => ["octelium.api.main.access.v1.Request.Status.State.Status", Request_Status_State_Status] },
             { no: 3, name: "urgency", kind: "enum", T: () => ["octelium.api.main.access.v1.Request.Spec.Urgency", Request_Spec_Urgency] },
             { no: 4, name: "serviceRef", kind: "message", T: () => ObjectReference },
-            { no: 5, name: "catalogRef", kind: "message", T: () => ObjectReference }
+            { no: 5, name: "catalogRef", kind: "message", T: () => ObjectReference },
+            { no: 6, name: "relation", kind: "enum", T: () => ["octelium.api.main.access.v1.ListUserRequestOptions.Relation", ListUserRequestOptions_Relation] },
+            { no: 7, name: "isActive", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 8, name: "query", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<ListUserRequestOptions>): ListUserRequestOptions {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.state = 0;
         message.urgency = 0;
+        message.relation = 0;
+        message.isActive = false;
+        message.query = "";
         if (value !== undefined)
             reflectionMergePartial<ListUserRequestOptions>(this, message, value);
         return message;
@@ -6410,6 +10977,15 @@ class ListUserRequestOptions$Type extends MessageType<ListUserRequestOptions> {
                     break;
                 case /* octelium.api.main.meta.v1.ObjectReference catalogRef */ 5:
                     message.catalogRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.catalogRef);
+                    break;
+                case /* octelium.api.main.access.v1.ListUserRequestOptions.Relation relation */ 6:
+                    message.relation = reader.int32();
+                    break;
+                case /* bool isActive */ 7:
+                    message.isActive = reader.bool();
+                    break;
+                case /* string query */ 8:
+                    message.query = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6438,6 +11014,15 @@ class ListUserRequestOptions$Type extends MessageType<ListUserRequestOptions> {
         /* octelium.api.main.meta.v1.ObjectReference catalogRef = 5; */
         if (message.catalogRef)
             ObjectReference.internalBinaryWrite(message.catalogRef, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.ListUserRequestOptions.Relation relation = 6; */
+        if (message.relation !== 0)
+            writer.tag(6, WireType.Varint).int32(message.relation);
+        /* bool isActive = 7; */
+        if (message.isActive !== false)
+            writer.tag(7, WireType.Varint).bool(message.isActive);
+        /* string query = 8; */
+        if (message.query !== "")
+            writer.tag(8, WireType.LengthDelimited).string(message.query);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6590,11 +11175,13 @@ export const ListReviewOptions = new ListReviewOptions$Type();
 class ListUserCatalogOptions$Type extends MessageType<ListUserCatalogOptions> {
     constructor() {
         super("octelium.api.main.access.v1.ListUserCatalogOptions", [
-            { no: 1, name: "common", kind: "message", T: () => CommonListOptions }
+            { no: 1, name: "common", kind: "message", T: () => CommonListOptions },
+            { no: 2, name: "query", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<ListUserCatalogOptions>): ListUserCatalogOptions {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.query = "";
         if (value !== undefined)
             reflectionMergePartial<ListUserCatalogOptions>(this, message, value);
         return message;
@@ -6606,6 +11193,9 @@ class ListUserCatalogOptions$Type extends MessageType<ListUserCatalogOptions> {
             switch (fieldNo) {
                 case /* octelium.api.main.meta.v1.CommonListOptions common */ 1:
                     message.common = CommonListOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
+                case /* string query */ 2:
+                    message.query = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6622,6 +11212,9 @@ class ListUserCatalogOptions$Type extends MessageType<ListUserCatalogOptions> {
         /* octelium.api.main.meta.v1.CommonListOptions common = 1; */
         if (message.common)
             CommonListOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string query = 2; */
+        if (message.query !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.query);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6636,11 +11229,17 @@ export const ListUserCatalogOptions = new ListUserCatalogOptions$Type();
 class ListReviewerRequestOptions$Type extends MessageType<ListReviewerRequestOptions> {
     constructor() {
         super("octelium.api.main.access.v1.ListReviewerRequestOptions", [
-            { no: 1, name: "common", kind: "message", T: () => CommonListOptions }
+            { no: 1, name: "common", kind: "message", T: () => CommonListOptions },
+            { no: 2, name: "filter", kind: "enum", T: () => ["octelium.api.main.access.v1.ListReviewerRequestOptions.Filter", ListReviewerRequestOptions_Filter] },
+            { no: 3, name: "query", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "urgency", kind: "enum", T: () => ["octelium.api.main.access.v1.Request.Spec.Urgency", Request_Spec_Urgency] }
         ]);
     }
     create(value?: PartialMessage<ListReviewerRequestOptions>): ListReviewerRequestOptions {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.filter = 0;
+        message.query = "";
+        message.urgency = 0;
         if (value !== undefined)
             reflectionMergePartial<ListReviewerRequestOptions>(this, message, value);
         return message;
@@ -6652,6 +11251,15 @@ class ListReviewerRequestOptions$Type extends MessageType<ListReviewerRequestOpt
             switch (fieldNo) {
                 case /* octelium.api.main.meta.v1.CommonListOptions common */ 1:
                     message.common = CommonListOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
+                case /* octelium.api.main.access.v1.ListReviewerRequestOptions.Filter filter */ 2:
+                    message.filter = reader.int32();
+                    break;
+                case /* string query */ 3:
+                    message.query = reader.string();
+                    break;
+                case /* octelium.api.main.access.v1.Request.Spec.Urgency urgency */ 4:
+                    message.urgency = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6668,6 +11276,15 @@ class ListReviewerRequestOptions$Type extends MessageType<ListReviewerRequestOpt
         /* octelium.api.main.meta.v1.CommonListOptions common = 1; */
         if (message.common)
             CommonListOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.ListReviewerRequestOptions.Filter filter = 2; */
+        if (message.filter !== 0)
+            writer.tag(2, WireType.Varint).int32(message.filter);
+        /* string query = 3; */
+        if (message.query !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.query);
+        /* octelium.api.main.access.v1.Request.Spec.Urgency urgency = 4; */
+        if (message.urgency !== 0)
+            writer.tag(4, WireType.Varint).int32(message.urgency);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6682,7 +11299,8 @@ export const ListReviewerRequestOptions = new ListReviewerRequestOptions$Type();
 class ListUserCatalogServiceOptions$Type extends MessageType<ListUserCatalogServiceOptions> {
     constructor() {
         super("octelium.api.main.access.v1.ListUserCatalogServiceOptions", [
-            { no: 1, name: "common", kind: "message", T: () => CommonListOptions }
+            { no: 1, name: "common", kind: "message", T: () => CommonListOptions },
+            { no: 2, name: "catalogRef", kind: "message", T: () => ObjectReference }
         ]);
     }
     create(value?: PartialMessage<ListUserCatalogServiceOptions>): ListUserCatalogServiceOptions {
@@ -6699,6 +11317,9 @@ class ListUserCatalogServiceOptions$Type extends MessageType<ListUserCatalogServ
                 case /* octelium.api.main.meta.v1.CommonListOptions common */ 1:
                     message.common = CommonListOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
                     break;
+                case /* octelium.api.main.meta.v1.ObjectReference catalogRef */ 2:
+                    message.catalogRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.catalogRef);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -6714,6 +11335,9 @@ class ListUserCatalogServiceOptions$Type extends MessageType<ListUserCatalogServ
         /* octelium.api.main.meta.v1.CommonListOptions common = 1; */
         if (message.common)
             CommonListOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference catalogRef = 2; */
+        if (message.catalogRef)
+            ObjectReference.internalBinaryWrite(message.catalogRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6889,11 +11513,13 @@ export const GetSubjectUserRequest = new GetSubjectUserRequest$Type();
 class CancelRequestRequest$Type extends MessageType<CancelRequestRequest> {
     constructor() {
         super("octelium.api.main.access.v1.CancelRequestRequest", [
-            { no: 1, name: "requestRef", kind: "message", T: () => ObjectReference }
+            { no: 1, name: "requestRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "reason", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<CancelRequestRequest>): CancelRequestRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.reason = "";
         if (value !== undefined)
             reflectionMergePartial<CancelRequestRequest>(this, message, value);
         return message;
@@ -6905,6 +11531,9 @@ class CancelRequestRequest$Type extends MessageType<CancelRequestRequest> {
             switch (fieldNo) {
                 case /* octelium.api.main.meta.v1.ObjectReference requestRef */ 1:
                     message.requestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requestRef);
+                    break;
+                case /* string reason */ 2:
+                    message.reason = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6921,6 +11550,9 @@ class CancelRequestRequest$Type extends MessageType<CancelRequestRequest> {
         /* octelium.api.main.meta.v1.ObjectReference requestRef = 1; */
         if (message.requestRef)
             ObjectReference.internalBinaryWrite(message.requestRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string reason = 2; */
+        if (message.reason !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.reason);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6935,11 +11567,13 @@ export const CancelRequestRequest = new CancelRequestRequest$Type();
 class RevokeRequestRequest$Type extends MessageType<RevokeRequestRequest> {
     constructor() {
         super("octelium.api.main.access.v1.RevokeRequestRequest", [
-            { no: 1, name: "requestRef", kind: "message", T: () => ObjectReference }
+            { no: 1, name: "requestRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "reason", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<RevokeRequestRequest>): RevokeRequestRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.reason = "";
         if (value !== undefined)
             reflectionMergePartial<RevokeRequestRequest>(this, message, value);
         return message;
@@ -6951,6 +11585,9 @@ class RevokeRequestRequest$Type extends MessageType<RevokeRequestRequest> {
             switch (fieldNo) {
                 case /* octelium.api.main.meta.v1.ObjectReference requestRef */ 1:
                     message.requestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requestRef);
+                    break;
+                case /* string reason */ 2:
+                    message.reason = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6967,6 +11604,9 @@ class RevokeRequestRequest$Type extends MessageType<RevokeRequestRequest> {
         /* octelium.api.main.meta.v1.ObjectReference requestRef = 1; */
         if (message.requestRef)
             ObjectReference.internalBinaryWrite(message.requestRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string reason = 2; */
+        if (message.reason !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.reason);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -7023,6 +11663,1411 @@ class CancelReviewRequest$Type extends MessageType<CancelReviewRequest> {
  * @generated MessageType for protobuf message octelium.api.main.access.v1.CancelReviewRequest
  */
 export const CancelReviewRequest = new CancelReviewRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class EndAccessRequest$Type extends MessageType<EndAccessRequest> {
+    constructor() {
+        super("octelium.api.main.access.v1.EndAccessRequest", [
+            { no: 1, name: "requestRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "reason", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<EndAccessRequest>): EndAccessRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.reason = "";
+        if (value !== undefined)
+            reflectionMergePartial<EndAccessRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: EndAccessRequest): EndAccessRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference requestRef */ 1:
+                    message.requestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requestRef);
+                    break;
+                case /* string reason */ 2:
+                    message.reason = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: EndAccessRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference requestRef = 1; */
+        if (message.requestRef)
+            ObjectReference.internalBinaryWrite(message.requestRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string reason = 2; */
+        if (message.reason !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.reason);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.EndAccessRequest
+ */
+export const EndAccessRequest = new EndAccessRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class RespondToRequestRequest$Type extends MessageType<RespondToRequestRequest> {
+    constructor() {
+        super("octelium.api.main.access.v1.RespondToRequestRequest", [
+            { no: 1, name: "requestRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "response", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<RespondToRequestRequest>): RespondToRequestRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.response = "";
+        if (value !== undefined)
+            reflectionMergePartial<RespondToRequestRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: RespondToRequestRequest): RespondToRequestRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference requestRef */ 1:
+                    message.requestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requestRef);
+                    break;
+                case /* string response */ 2:
+                    message.response = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: RespondToRequestRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference requestRef = 1; */
+        if (message.requestRef)
+            ObjectReference.internalBinaryWrite(message.requestRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string response = 2; */
+        if (message.response !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.response);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.RespondToRequestRequest
+ */
+export const RespondToRequestRequest = new RespondToRequestRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class RequestInformationRequest$Type extends MessageType<RequestInformationRequest> {
+    constructor() {
+        super("octelium.api.main.access.v1.RequestInformationRequest", [
+            { no: 1, name: "requestRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<RequestInformationRequest>): RequestInformationRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.message = "";
+        if (value !== undefined)
+            reflectionMergePartial<RequestInformationRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: RequestInformationRequest): RequestInformationRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference requestRef */ 1:
+                    message.requestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requestRef);
+                    break;
+                case /* string message */ 2:
+                    message.message = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: RequestInformationRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference requestRef = 1; */
+        if (message.requestRef)
+            ObjectReference.internalBinaryWrite(message.requestRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string message = 2; */
+        if (message.message !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.message);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.RequestInformationRequest
+ */
+export const RequestInformationRequest = new RequestInformationRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetReviewCaseRequest$Type extends MessageType<GetReviewCaseRequest> {
+    constructor() {
+        super("octelium.api.main.access.v1.GetReviewCaseRequest", [
+            { no: 1, name: "requestRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<GetReviewCaseRequest>): GetReviewCaseRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<GetReviewCaseRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetReviewCaseRequest): GetReviewCaseRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference requestRef */ 1:
+                    message.requestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requestRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetReviewCaseRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference requestRef = 1; */
+        if (message.requestRef)
+            ObjectReference.internalBinaryWrite(message.requestRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.GetReviewCaseRequest
+ */
+export const GetReviewCaseRequest = new GetReviewCaseRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetInboxRequest$Type extends MessageType<GetInboxRequest> {
+    constructor() {
+        super("octelium.api.main.access.v1.GetInboxRequest", []);
+    }
+    create(value?: PartialMessage<GetInboxRequest>): GetInboxRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<GetInboxRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetInboxRequest): GetInboxRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetInboxRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.GetInboxRequest
+ */
+export const GetInboxRequest = new GetInboxRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Inbox$Type extends MessageType<Inbox> {
+    constructor() {
+        super("octelium.api.main.access.v1.Inbox", [
+            { no: 1, name: "totalNeedsMyDecision", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 2, name: "totalMyPending", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 3, name: "totalActiveAccess", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 4, name: "totalExpiringSoon", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 5, name: "totalAwaitingMyResponse", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 6, name: "isReviewer", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 7, name: "canRequestOnBehalf", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Inbox>): Inbox {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.totalNeedsMyDecision = 0;
+        message.totalMyPending = 0;
+        message.totalActiveAccess = 0;
+        message.totalExpiringSoon = 0;
+        message.totalAwaitingMyResponse = 0;
+        message.isReviewer = false;
+        message.canRequestOnBehalf = false;
+        if (value !== undefined)
+            reflectionMergePartial<Inbox>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Inbox): Inbox {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint32 totalNeedsMyDecision */ 1:
+                    message.totalNeedsMyDecision = reader.uint32();
+                    break;
+                case /* uint32 totalMyPending */ 2:
+                    message.totalMyPending = reader.uint32();
+                    break;
+                case /* uint32 totalActiveAccess */ 3:
+                    message.totalActiveAccess = reader.uint32();
+                    break;
+                case /* uint32 totalExpiringSoon */ 4:
+                    message.totalExpiringSoon = reader.uint32();
+                    break;
+                case /* uint32 totalAwaitingMyResponse */ 5:
+                    message.totalAwaitingMyResponse = reader.uint32();
+                    break;
+                case /* bool isReviewer */ 6:
+                    message.isReviewer = reader.bool();
+                    break;
+                case /* bool canRequestOnBehalf */ 7:
+                    message.canRequestOnBehalf = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Inbox, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint32 totalNeedsMyDecision = 1; */
+        if (message.totalNeedsMyDecision !== 0)
+            writer.tag(1, WireType.Varint).uint32(message.totalNeedsMyDecision);
+        /* uint32 totalMyPending = 2; */
+        if (message.totalMyPending !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.totalMyPending);
+        /* uint32 totalActiveAccess = 3; */
+        if (message.totalActiveAccess !== 0)
+            writer.tag(3, WireType.Varint).uint32(message.totalActiveAccess);
+        /* uint32 totalExpiringSoon = 4; */
+        if (message.totalExpiringSoon !== 0)
+            writer.tag(4, WireType.Varint).uint32(message.totalExpiringSoon);
+        /* uint32 totalAwaitingMyResponse = 5; */
+        if (message.totalAwaitingMyResponse !== 0)
+            writer.tag(5, WireType.Varint).uint32(message.totalAwaitingMyResponse);
+        /* bool isReviewer = 6; */
+        if (message.isReviewer !== false)
+            writer.tag(6, WireType.Varint).bool(message.isReviewer);
+        /* bool canRequestOnBehalf = 7; */
+        if (message.canRequestOnBehalf !== false)
+            writer.tag(7, WireType.Varint).bool(message.canRequestOnBehalf);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Inbox
+ */
+export const Inbox = new Inbox$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class UserCatalog$Type extends MessageType<UserCatalog> {
+    constructor() {
+        super("octelium.api.main.access.v1.UserCatalog", [
+            { no: 1, name: "metadata", kind: "message", T: () => Metadata },
+            { no: 2, name: "accessLevels", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => UserCatalog_AccessLevel },
+            { no: 3, name: "owners", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => UserCatalog_Owner },
+            { no: 4, name: "requirements", kind: "message", T: () => Catalog_Spec_Requirements },
+            { no: 5, name: "allowPartialRequests", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 6, name: "totalService", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 7, name: "viewer", kind: "message", T: () => UserCatalog_Viewer },
+            { no: 8, name: "membership", kind: "enum", T: () => ["octelium.api.main.access.v1.Catalog.Spec.Membership", Catalog_Spec_Membership] }
+        ]);
+    }
+    create(value?: PartialMessage<UserCatalog>): UserCatalog {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.accessLevels = [];
+        message.owners = [];
+        message.allowPartialRequests = false;
+        message.totalService = 0;
+        message.membership = 0;
+        if (value !== undefined)
+            reflectionMergePartial<UserCatalog>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: UserCatalog): UserCatalog {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.Metadata metadata */ 1:
+                    message.metadata = Metadata.internalBinaryRead(reader, reader.uint32(), options, message.metadata);
+                    break;
+                case /* repeated octelium.api.main.access.v1.UserCatalog.AccessLevel accessLevels */ 2:
+                    message.accessLevels.push(UserCatalog_AccessLevel.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated octelium.api.main.access.v1.UserCatalog.Owner owners */ 3:
+                    message.owners.push(UserCatalog_Owner.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.access.v1.Catalog.Spec.Requirements requirements */ 4:
+                    message.requirements = Catalog_Spec_Requirements.internalBinaryRead(reader, reader.uint32(), options, message.requirements);
+                    break;
+                case /* bool allowPartialRequests */ 5:
+                    message.allowPartialRequests = reader.bool();
+                    break;
+                case /* uint32 totalService */ 6:
+                    message.totalService = reader.uint32();
+                    break;
+                case /* octelium.api.main.access.v1.UserCatalog.Viewer viewer */ 7:
+                    message.viewer = UserCatalog_Viewer.internalBinaryRead(reader, reader.uint32(), options, message.viewer);
+                    break;
+                case /* octelium.api.main.access.v1.Catalog.Spec.Membership membership */ 8:
+                    message.membership = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: UserCatalog, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.Metadata metadata = 1; */
+        if (message.metadata)
+            Metadata.internalBinaryWrite(message.metadata, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.UserCatalog.AccessLevel accessLevels = 2; */
+        for (let i = 0; i < message.accessLevels.length; i++)
+            UserCatalog_AccessLevel.internalBinaryWrite(message.accessLevels[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.UserCatalog.Owner owners = 3; */
+        for (let i = 0; i < message.owners.length; i++)
+            UserCatalog_Owner.internalBinaryWrite(message.owners[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Catalog.Spec.Requirements requirements = 4; */
+        if (message.requirements)
+            Catalog_Spec_Requirements.internalBinaryWrite(message.requirements, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* bool allowPartialRequests = 5; */
+        if (message.allowPartialRequests !== false)
+            writer.tag(5, WireType.Varint).bool(message.allowPartialRequests);
+        /* uint32 totalService = 6; */
+        if (message.totalService !== 0)
+            writer.tag(6, WireType.Varint).uint32(message.totalService);
+        /* octelium.api.main.access.v1.UserCatalog.Viewer viewer = 7; */
+        if (message.viewer)
+            UserCatalog_Viewer.internalBinaryWrite(message.viewer, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Catalog.Spec.Membership membership = 8; */
+        if (message.membership !== 0)
+            writer.tag(8, WireType.Varint).int32(message.membership);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.UserCatalog
+ */
+export const UserCatalog = new UserCatalog$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class UserCatalog_AccessLevel$Type extends MessageType<UserCatalog_AccessLevel> {
+    constructor() {
+        super("octelium.api.main.access.v1.UserCatalog.AccessLevel", [
+            { no: 1, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "displayName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "description", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "type", kind: "enum", T: () => ["octelium.api.main.access.v1.UserCatalog.AccessLevel.Type", UserCatalog_AccessLevel_Type] },
+            { no: 5, name: "defaultDuration", kind: "message", T: () => Duration },
+            { no: 6, name: "maxDuration", kind: "message", T: () => Duration },
+            { no: 7, name: "overridesGuardrails", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 8, name: "minAAL", kind: "enum", T: () => ["octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL", Session_Status_Authentication_Info_AAL] }
+        ]);
+    }
+    create(value?: PartialMessage<UserCatalog_AccessLevel>): UserCatalog_AccessLevel {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.name = "";
+        message.displayName = "";
+        message.description = "";
+        message.type = 0;
+        message.overridesGuardrails = false;
+        message.minAAL = 0;
+        if (value !== undefined)
+            reflectionMergePartial<UserCatalog_AccessLevel>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: UserCatalog_AccessLevel): UserCatalog_AccessLevel {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string name */ 1:
+                    message.name = reader.string();
+                    break;
+                case /* string displayName */ 2:
+                    message.displayName = reader.string();
+                    break;
+                case /* string description */ 3:
+                    message.description = reader.string();
+                    break;
+                case /* octelium.api.main.access.v1.UserCatalog.AccessLevel.Type type */ 4:
+                    message.type = reader.int32();
+                    break;
+                case /* octelium.api.main.meta.v1.Duration defaultDuration */ 5:
+                    message.defaultDuration = Duration.internalBinaryRead(reader, reader.uint32(), options, message.defaultDuration);
+                    break;
+                case /* octelium.api.main.meta.v1.Duration maxDuration */ 6:
+                    message.maxDuration = Duration.internalBinaryRead(reader, reader.uint32(), options, message.maxDuration);
+                    break;
+                case /* bool overridesGuardrails */ 7:
+                    message.overridesGuardrails = reader.bool();
+                    break;
+                case /* octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL minAAL */ 8:
+                    message.minAAL = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: UserCatalog_AccessLevel, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string name = 1; */
+        if (message.name !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.name);
+        /* string displayName = 2; */
+        if (message.displayName !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.displayName);
+        /* string description = 3; */
+        if (message.description !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.description);
+        /* octelium.api.main.access.v1.UserCatalog.AccessLevel.Type type = 4; */
+        if (message.type !== 0)
+            writer.tag(4, WireType.Varint).int32(message.type);
+        /* octelium.api.main.meta.v1.Duration defaultDuration = 5; */
+        if (message.defaultDuration)
+            Duration.internalBinaryWrite(message.defaultDuration, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration maxDuration = 6; */
+        if (message.maxDuration)
+            Duration.internalBinaryWrite(message.maxDuration, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* bool overridesGuardrails = 7; */
+        if (message.overridesGuardrails !== false)
+            writer.tag(7, WireType.Varint).bool(message.overridesGuardrails);
+        /* octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL minAAL = 8; */
+        if (message.minAAL !== 0)
+            writer.tag(8, WireType.Varint).int32(message.minAAL);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.UserCatalog.AccessLevel
+ */
+export const UserCatalog_AccessLevel = new UserCatalog_AccessLevel$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class UserCatalog_Owner$Type extends MessageType<UserCatalog_Owner> {
+    constructor() {
+        super("octelium.api.main.access.v1.UserCatalog.Owner", [
+            { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.access.v1.UserCatalog.Owner.Type", UserCatalog_Owner_Type] },
+            { no: 2, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "displayName", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<UserCatalog_Owner>): UserCatalog_Owner {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.name = "";
+        message.displayName = "";
+        if (value !== undefined)
+            reflectionMergePartial<UserCatalog_Owner>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: UserCatalog_Owner): UserCatalog_Owner {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.UserCatalog.Owner.Type type */ 1:
+                    message.type = reader.int32();
+                    break;
+                case /* string name */ 2:
+                    message.name = reader.string();
+                    break;
+                case /* string displayName */ 3:
+                    message.displayName = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: UserCatalog_Owner, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.UserCatalog.Owner.Type type = 1; */
+        if (message.type !== 0)
+            writer.tag(1, WireType.Varint).int32(message.type);
+        /* string name = 2; */
+        if (message.name !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.name);
+        /* string displayName = 3; */
+        if (message.displayName !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.displayName);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.UserCatalog.Owner
+ */
+export const UserCatalog_Owner = new UserCatalog_Owner$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class UserCatalog_Viewer$Type extends MessageType<UserCatalog_Viewer> {
+    constructor() {
+        super("octelium.api.main.access.v1.UserCatalog.Viewer", [
+            { no: 1, name: "canRequestOnBehalf", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "activeRequestRef", kind: "message", T: () => ObjectReference },
+            { no: 3, name: "accessEndsAt", kind: "message", T: () => Timestamp },
+            { no: 4, name: "pendingRequestRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<UserCatalog_Viewer>): UserCatalog_Viewer {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.canRequestOnBehalf = false;
+        if (value !== undefined)
+            reflectionMergePartial<UserCatalog_Viewer>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: UserCatalog_Viewer): UserCatalog_Viewer {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool canRequestOnBehalf */ 1:
+                    message.canRequestOnBehalf = reader.bool();
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference activeRequestRef */ 2:
+                    message.activeRequestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.activeRequestRef);
+                    break;
+                case /* google.protobuf.Timestamp accessEndsAt */ 3:
+                    message.accessEndsAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.accessEndsAt);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference pendingRequestRef */ 4:
+                    message.pendingRequestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.pendingRequestRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: UserCatalog_Viewer, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool canRequestOnBehalf = 1; */
+        if (message.canRequestOnBehalf !== false)
+            writer.tag(1, WireType.Varint).bool(message.canRequestOnBehalf);
+        /* octelium.api.main.meta.v1.ObjectReference activeRequestRef = 2; */
+        if (message.activeRequestRef)
+            ObjectReference.internalBinaryWrite(message.activeRequestRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp accessEndsAt = 3; */
+        if (message.accessEndsAt)
+            Timestamp.internalBinaryWrite(message.accessEndsAt, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference pendingRequestRef = 4; */
+        if (message.pendingRequestRef)
+            ObjectReference.internalBinaryWrite(message.pendingRequestRef, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.UserCatalog.Viewer
+ */
+export const UserCatalog_Viewer = new UserCatalog_Viewer$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class UserCatalogList$Type extends MessageType<UserCatalogList> {
+    constructor() {
+        super("octelium.api.main.access.v1.UserCatalogList", [
+            { no: 1, name: "apiVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "kind", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => UserCatalog },
+            { no: 4, name: "listResponseMeta", kind: "message", T: () => ListResponseMeta }
+        ]);
+    }
+    create(value?: PartialMessage<UserCatalogList>): UserCatalogList {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.apiVersion = "";
+        message.kind = "";
+        message.items = [];
+        if (value !== undefined)
+            reflectionMergePartial<UserCatalogList>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: UserCatalogList): UserCatalogList {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string apiVersion */ 1:
+                    message.apiVersion = reader.string();
+                    break;
+                case /* string kind */ 2:
+                    message.kind = reader.string();
+                    break;
+                case /* repeated octelium.api.main.access.v1.UserCatalog items */ 3:
+                    message.items.push(UserCatalog.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.meta.v1.ListResponseMeta listResponseMeta */ 4:
+                    message.listResponseMeta = ListResponseMeta.internalBinaryRead(reader, reader.uint32(), options, message.listResponseMeta);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: UserCatalogList, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string apiVersion = 1; */
+        if (message.apiVersion !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.apiVersion);
+        /* string kind = 2; */
+        if (message.kind !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.kind);
+        /* repeated octelium.api.main.access.v1.UserCatalog items = 3; */
+        for (let i = 0; i < message.items.length; i++)
+            UserCatalog.internalBinaryWrite(message.items[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4; */
+        if (message.listResponseMeta)
+            ListResponseMeta.internalBinaryWrite(message.listResponseMeta, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.UserCatalogList
+ */
+export const UserCatalogList = new UserCatalogList$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class RequestPreview$Type extends MessageType<RequestPreview> {
+    constructor() {
+        super("octelium.api.main.access.v1.RequestPreview", [
+            { no: 1, name: "outcome", kind: "enum", T: () => ["octelium.api.main.access.v1.RequestPreview.Outcome", RequestPreview_Outcome] },
+            { no: 2, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "problems", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => RequestPreview_Problem },
+            { no: 4, name: "request", kind: "message", T: () => Request },
+            { no: 5, name: "resolvedScope", kind: "message", T: () => Request_Status_ResolvedScope },
+            { no: 6, name: "workflow", kind: "message", T: () => Request_Status_Workflow },
+            { no: 7, name: "effectiveDuration", kind: "message", T: () => Duration },
+            { no: 8, name: "maxDuration", kind: "message", T: () => Duration },
+            { no: 9, name: "requirements", kind: "message", T: () => Catalog_Spec_Requirements },
+            { no: 10, name: "existingRequests", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => RequestPreview_ExistingRequest },
+            { no: 11, name: "candidateCatalogs", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => UserCatalog }
+        ]);
+    }
+    create(value?: PartialMessage<RequestPreview>): RequestPreview {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.outcome = 0;
+        message.message = "";
+        message.problems = [];
+        message.existingRequests = [];
+        message.candidateCatalogs = [];
+        if (value !== undefined)
+            reflectionMergePartial<RequestPreview>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: RequestPreview): RequestPreview {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.RequestPreview.Outcome outcome */ 1:
+                    message.outcome = reader.int32();
+                    break;
+                case /* string message */ 2:
+                    message.message = reader.string();
+                    break;
+                case /* repeated octelium.api.main.access.v1.RequestPreview.Problem problems */ 3:
+                    message.problems.push(RequestPreview_Problem.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.access.v1.Request request */ 4:
+                    message.request = Request.internalBinaryRead(reader, reader.uint32(), options, message.request);
+                    break;
+                case /* octelium.api.main.access.v1.Request.Status.ResolvedScope resolvedScope */ 5:
+                    message.resolvedScope = Request_Status_ResolvedScope.internalBinaryRead(reader, reader.uint32(), options, message.resolvedScope);
+                    break;
+                case /* octelium.api.main.access.v1.Request.Status.Workflow workflow */ 6:
+                    message.workflow = Request_Status_Workflow.internalBinaryRead(reader, reader.uint32(), options, message.workflow);
+                    break;
+                case /* octelium.api.main.meta.v1.Duration effectiveDuration */ 7:
+                    message.effectiveDuration = Duration.internalBinaryRead(reader, reader.uint32(), options, message.effectiveDuration);
+                    break;
+                case /* octelium.api.main.meta.v1.Duration maxDuration */ 8:
+                    message.maxDuration = Duration.internalBinaryRead(reader, reader.uint32(), options, message.maxDuration);
+                    break;
+                case /* octelium.api.main.access.v1.Catalog.Spec.Requirements requirements */ 9:
+                    message.requirements = Catalog_Spec_Requirements.internalBinaryRead(reader, reader.uint32(), options, message.requirements);
+                    break;
+                case /* repeated octelium.api.main.access.v1.RequestPreview.ExistingRequest existingRequests */ 10:
+                    message.existingRequests.push(RequestPreview_ExistingRequest.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated octelium.api.main.access.v1.UserCatalog candidateCatalogs */ 11:
+                    message.candidateCatalogs.push(UserCatalog.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: RequestPreview, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.RequestPreview.Outcome outcome = 1; */
+        if (message.outcome !== 0)
+            writer.tag(1, WireType.Varint).int32(message.outcome);
+        /* string message = 2; */
+        if (message.message !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.message);
+        /* repeated octelium.api.main.access.v1.RequestPreview.Problem problems = 3; */
+        for (let i = 0; i < message.problems.length; i++)
+            RequestPreview_Problem.internalBinaryWrite(message.problems[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Request request = 4; */
+        if (message.request)
+            Request.internalBinaryWrite(message.request, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Request.Status.ResolvedScope resolvedScope = 5; */
+        if (message.resolvedScope)
+            Request_Status_ResolvedScope.internalBinaryWrite(message.resolvedScope, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Request.Status.Workflow workflow = 6; */
+        if (message.workflow)
+            Request_Status_Workflow.internalBinaryWrite(message.workflow, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration effectiveDuration = 7; */
+        if (message.effectiveDuration)
+            Duration.internalBinaryWrite(message.effectiveDuration, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration maxDuration = 8; */
+        if (message.maxDuration)
+            Duration.internalBinaryWrite(message.maxDuration, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Catalog.Spec.Requirements requirements = 9; */
+        if (message.requirements)
+            Catalog_Spec_Requirements.internalBinaryWrite(message.requirements, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.RequestPreview.ExistingRequest existingRequests = 10; */
+        for (let i = 0; i < message.existingRequests.length; i++)
+            RequestPreview_ExistingRequest.internalBinaryWrite(message.existingRequests[i], writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.UserCatalog candidateCatalogs = 11; */
+        for (let i = 0; i < message.candidateCatalogs.length; i++)
+            UserCatalog.internalBinaryWrite(message.candidateCatalogs[i], writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.RequestPreview
+ */
+export const RequestPreview = new RequestPreview$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class RequestPreview_Problem$Type extends MessageType<RequestPreview_Problem> {
+    constructor() {
+        super("octelium.api.main.access.v1.RequestPreview.Problem", [
+            { no: 1, name: "field", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<RequestPreview_Problem>): RequestPreview_Problem {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.field = "";
+        message.message = "";
+        if (value !== undefined)
+            reflectionMergePartial<RequestPreview_Problem>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: RequestPreview_Problem): RequestPreview_Problem {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string field */ 1:
+                    message.field = reader.string();
+                    break;
+                case /* string message */ 2:
+                    message.message = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: RequestPreview_Problem, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string field = 1; */
+        if (message.field !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.field);
+        /* string message = 2; */
+        if (message.message !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.message);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.RequestPreview.Problem
+ */
+export const RequestPreview_Problem = new RequestPreview_Problem$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class RequestPreview_ExistingRequest$Type extends MessageType<RequestPreview_ExistingRequest> {
+    constructor() {
+        super("octelium.api.main.access.v1.RequestPreview.ExistingRequest", [
+            { no: 1, name: "requestRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "state", kind: "enum", T: () => ["octelium.api.main.access.v1.Request.Status.State.Status", Request_Status_State_Status] },
+            { no: 3, name: "accessEndsAt", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<RequestPreview_ExistingRequest>): RequestPreview_ExistingRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.state = 0;
+        if (value !== undefined)
+            reflectionMergePartial<RequestPreview_ExistingRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: RequestPreview_ExistingRequest): RequestPreview_ExistingRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference requestRef */ 1:
+                    message.requestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requestRef);
+                    break;
+                case /* octelium.api.main.access.v1.Request.Status.State.Status state */ 2:
+                    message.state = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp accessEndsAt */ 3:
+                    message.accessEndsAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.accessEndsAt);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: RequestPreview_ExistingRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference requestRef = 1; */
+        if (message.requestRef)
+            ObjectReference.internalBinaryWrite(message.requestRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Request.Status.State.Status state = 2; */
+        if (message.state !== 0)
+            writer.tag(2, WireType.Varint).int32(message.state);
+        /* google.protobuf.Timestamp accessEndsAt = 3; */
+        if (message.accessEndsAt)
+            Timestamp.internalBinaryWrite(message.accessEndsAt, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.RequestPreview.ExistingRequest
+ */
+export const RequestPreview_ExistingRequest = new RequestPreview_ExistingRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ReviewCase$Type extends MessageType<ReviewCase> {
+    constructor() {
+        super("octelium.api.main.access.v1.ReviewCase", [
+            { no: 1, name: "request", kind: "message", T: () => Request },
+            { no: 2, name: "allowedActions", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.access.v1.ReviewCase.Action", ReviewCase_Action] },
+            { no: 3, name: "myReview", kind: "message", T: () => Review },
+            { no: 4, name: "reviews", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Review },
+            { no: 5, name: "activeRequests", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Request },
+            { no: 6, name: "recentRequests", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Request },
+            { no: 7, name: "flags", kind: "message", T: () => ReviewCase_Flags },
+            { no: 8, name: "subjectGroups", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ReviewCase>): ReviewCase {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.allowedActions = [];
+        message.reviews = [];
+        message.activeRequests = [];
+        message.recentRequests = [];
+        message.subjectGroups = [];
+        if (value !== undefined)
+            reflectionMergePartial<ReviewCase>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ReviewCase): ReviewCase {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.Request request */ 1:
+                    message.request = Request.internalBinaryRead(reader, reader.uint32(), options, message.request);
+                    break;
+                case /* repeated octelium.api.main.access.v1.ReviewCase.Action allowedActions */ 2:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.allowedActions.push(reader.int32());
+                    else
+                        message.allowedActions.push(reader.int32());
+                    break;
+                case /* octelium.api.main.access.v1.Review myReview */ 3:
+                    message.myReview = Review.internalBinaryRead(reader, reader.uint32(), options, message.myReview);
+                    break;
+                case /* repeated octelium.api.main.access.v1.Review reviews */ 4:
+                    message.reviews.push(Review.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated octelium.api.main.access.v1.Request activeRequests */ 5:
+                    message.activeRequests.push(Request.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated octelium.api.main.access.v1.Request recentRequests */ 6:
+                    message.recentRequests.push(Request.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.access.v1.ReviewCase.Flags flags */ 7:
+                    message.flags = ReviewCase_Flags.internalBinaryRead(reader, reader.uint32(), options, message.flags);
+                    break;
+                case /* repeated string subjectGroups */ 8:
+                    message.subjectGroups.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ReviewCase, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.Request request = 1; */
+        if (message.request)
+            Request.internalBinaryWrite(message.request, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.ReviewCase.Action allowedActions = 2; */
+        if (message.allowedActions.length) {
+            writer.tag(2, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.allowedActions.length; i++)
+                writer.int32(message.allowedActions[i]);
+            writer.join();
+        }
+        /* octelium.api.main.access.v1.Review myReview = 3; */
+        if (message.myReview)
+            Review.internalBinaryWrite(message.myReview, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.Review reviews = 4; */
+        for (let i = 0; i < message.reviews.length; i++)
+            Review.internalBinaryWrite(message.reviews[i], writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.Request activeRequests = 5; */
+        for (let i = 0; i < message.activeRequests.length; i++)
+            Request.internalBinaryWrite(message.activeRequests[i], writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.Request recentRequests = 6; */
+        for (let i = 0; i < message.recentRequests.length; i++)
+            Request.internalBinaryWrite(message.recentRequests[i], writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.ReviewCase.Flags flags = 7; */
+        if (message.flags)
+            ReviewCase_Flags.internalBinaryWrite(message.flags, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* repeated string subjectGroups = 8; */
+        for (let i = 0; i < message.subjectGroups.length; i++)
+            writer.tag(8, WireType.LengthDelimited).string(message.subjectGroups[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.ReviewCase
+ */
+export const ReviewCase = new ReviewCase$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ReviewCase_Flags$Type extends MessageType<ReviewCase_Flags> {
+    constructor() {
+        super("octelium.api.main.access.v1.ReviewCase.Flags", [
+            { no: 1, name: "isOnBehalf", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "isFirstRequest", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 3, name: "overridesGuardrails", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 4, name: "isExtension", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 5, name: "isFullAccess", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 6, name: "isSpecChanged", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 7, name: "isAwaitingRequester", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ReviewCase_Flags>): ReviewCase_Flags {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.isOnBehalf = false;
+        message.isFirstRequest = false;
+        message.overridesGuardrails = false;
+        message.isExtension = false;
+        message.isFullAccess = false;
+        message.isSpecChanged = false;
+        message.isAwaitingRequester = false;
+        if (value !== undefined)
+            reflectionMergePartial<ReviewCase_Flags>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ReviewCase_Flags): ReviewCase_Flags {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool isOnBehalf */ 1:
+                    message.isOnBehalf = reader.bool();
+                    break;
+                case /* bool isFirstRequest */ 2:
+                    message.isFirstRequest = reader.bool();
+                    break;
+                case /* bool overridesGuardrails */ 3:
+                    message.overridesGuardrails = reader.bool();
+                    break;
+                case /* bool isExtension */ 4:
+                    message.isExtension = reader.bool();
+                    break;
+                case /* bool isFullAccess */ 5:
+                    message.isFullAccess = reader.bool();
+                    break;
+                case /* bool isSpecChanged */ 6:
+                    message.isSpecChanged = reader.bool();
+                    break;
+                case /* bool isAwaitingRequester */ 7:
+                    message.isAwaitingRequester = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ReviewCase_Flags, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool isOnBehalf = 1; */
+        if (message.isOnBehalf !== false)
+            writer.tag(1, WireType.Varint).bool(message.isOnBehalf);
+        /* bool isFirstRequest = 2; */
+        if (message.isFirstRequest !== false)
+            writer.tag(2, WireType.Varint).bool(message.isFirstRequest);
+        /* bool overridesGuardrails = 3; */
+        if (message.overridesGuardrails !== false)
+            writer.tag(3, WireType.Varint).bool(message.overridesGuardrails);
+        /* bool isExtension = 4; */
+        if (message.isExtension !== false)
+            writer.tag(4, WireType.Varint).bool(message.isExtension);
+        /* bool isFullAccess = 5; */
+        if (message.isFullAccess !== false)
+            writer.tag(5, WireType.Varint).bool(message.isFullAccess);
+        /* bool isSpecChanged = 6; */
+        if (message.isSpecChanged !== false)
+            writer.tag(6, WireType.Varint).bool(message.isSpecChanged);
+        /* bool isAwaitingRequester = 7; */
+        if (message.isAwaitingRequester !== false)
+            writer.tag(7, WireType.Varint).bool(message.isAwaitingRequester);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.ReviewCase.Flags
+ */
+export const ReviewCase_Flags = new ReviewCase_Flags$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SimulateRequestRequest$Type extends MessageType<SimulateRequestRequest> {
+    constructor() {
+        super("octelium.api.main.access.v1.SimulateRequestRequest", [
+            { no: 1, name: "spec", kind: "message", T: () => Request_Spec },
+            { no: 2, name: "requesterRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<SimulateRequestRequest>): SimulateRequestRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<SimulateRequestRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SimulateRequestRequest): SimulateRequestRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.Request.Spec spec */ 1:
+                    message.spec = Request_Spec.internalBinaryRead(reader, reader.uint32(), options, message.spec);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference requesterRef */ 2:
+                    message.requesterRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requesterRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SimulateRequestRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.Request.Spec spec = 1; */
+        if (message.spec)
+            Request_Spec.internalBinaryWrite(message.spec, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference requesterRef = 2; */
+        if (message.requesterRef)
+            ObjectReference.internalBinaryWrite(message.requesterRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.SimulateRequestRequest
+ */
+export const SimulateRequestRequest = new SimulateRequestRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SimulateRequestResponse$Type extends MessageType<SimulateRequestResponse> {
+    constructor() {
+        super("octelium.api.main.access.v1.SimulateRequestResponse", [
+            { no: 1, name: "preview", kind: "message", T: () => RequestPreview },
+            { no: 2, name: "rules", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => SimulateRequestResponse_RuleEvaluation },
+            { no: 3, name: "rule", kind: "message", T: () => Policy_Spec_Rule },
+            { no: 4, name: "policyRef", kind: "message", T: () => ObjectReference },
+            { no: 5, name: "reviewers", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Request_Status_Review_StepState },
+            { no: 6, name: "policyTrigger", kind: "message", T: () => PolicyTrigger }
+        ]);
+    }
+    create(value?: PartialMessage<SimulateRequestResponse>): SimulateRequestResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.rules = [];
+        message.reviewers = [];
+        if (value !== undefined)
+            reflectionMergePartial<SimulateRequestResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SimulateRequestResponse): SimulateRequestResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.RequestPreview preview */ 1:
+                    message.preview = RequestPreview.internalBinaryRead(reader, reader.uint32(), options, message.preview);
+                    break;
+                case /* repeated octelium.api.main.access.v1.SimulateRequestResponse.RuleEvaluation rules */ 2:
+                    message.rules.push(SimulateRequestResponse_RuleEvaluation.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule rule */ 3:
+                    message.rule = Policy_Spec_Rule.internalBinaryRead(reader, reader.uint32(), options, message.rule);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference policyRef */ 4:
+                    message.policyRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.policyRef);
+                    break;
+                case /* repeated octelium.api.main.access.v1.Request.Status.Review.StepState reviewers */ 5:
+                    message.reviewers.push(Request_Status_Review_StepState.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.core.v1.PolicyTrigger policyTrigger */ 6:
+                    message.policyTrigger = PolicyTrigger.internalBinaryRead(reader, reader.uint32(), options, message.policyTrigger);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SimulateRequestResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.RequestPreview preview = 1; */
+        if (message.preview)
+            RequestPreview.internalBinaryWrite(message.preview, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.SimulateRequestResponse.RuleEvaluation rules = 2; */
+        for (let i = 0; i < message.rules.length; i++)
+            SimulateRequestResponse_RuleEvaluation.internalBinaryWrite(message.rules[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Policy.Spec.Rule rule = 3; */
+        if (message.rule)
+            Policy_Spec_Rule.internalBinaryWrite(message.rule, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference policyRef = 4; */
+        if (message.policyRef)
+            ObjectReference.internalBinaryWrite(message.policyRef, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.Request.Status.Review.StepState reviewers = 5; */
+        for (let i = 0; i < message.reviewers.length; i++)
+            Request_Status_Review_StepState.internalBinaryWrite(message.reviewers[i], writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.PolicyTrigger policyTrigger = 6; */
+        if (message.policyTrigger)
+            PolicyTrigger.internalBinaryWrite(message.policyTrigger, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.SimulateRequestResponse
+ */
+export const SimulateRequestResponse = new SimulateRequestResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SimulateRequestResponse_RuleEvaluation$Type extends MessageType<SimulateRequestResponse_RuleEvaluation> {
+    constructor() {
+        super("octelium.api.main.access.v1.SimulateRequestResponse.RuleEvaluation", [
+            { no: 1, name: "policyRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "ruleName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "priority", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
+            { no: 4, name: "effect", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Effect", Policy_Spec_Rule_Effect] },
+            { no: 5, name: "result", kind: "enum", T: () => ["octelium.api.main.access.v1.SimulateRequestResponse.RuleEvaluation.Result", SimulateRequestResponse_RuleEvaluation_Result] },
+            { no: 6, name: "error", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SimulateRequestResponse_RuleEvaluation>): SimulateRequestResponse_RuleEvaluation {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.ruleName = "";
+        message.priority = 0;
+        message.effect = 0;
+        message.result = 0;
+        message.error = "";
+        if (value !== undefined)
+            reflectionMergePartial<SimulateRequestResponse_RuleEvaluation>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SimulateRequestResponse_RuleEvaluation): SimulateRequestResponse_RuleEvaluation {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference policyRef */ 1:
+                    message.policyRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.policyRef);
+                    break;
+                case /* string ruleName */ 2:
+                    message.ruleName = reader.string();
+                    break;
+                case /* int32 priority */ 3:
+                    message.priority = reader.int32();
+                    break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Effect effect */ 4:
+                    message.effect = reader.int32();
+                    break;
+                case /* octelium.api.main.access.v1.SimulateRequestResponse.RuleEvaluation.Result result */ 5:
+                    message.result = reader.int32();
+                    break;
+                case /* string error */ 6:
+                    message.error = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SimulateRequestResponse_RuleEvaluation, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference policyRef = 1; */
+        if (message.policyRef)
+            ObjectReference.internalBinaryWrite(message.policyRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string ruleName = 2; */
+        if (message.ruleName !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.ruleName);
+        /* int32 priority = 3; */
+        if (message.priority !== 0)
+            writer.tag(3, WireType.Varint).int32(message.priority);
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Effect effect = 4; */
+        if (message.effect !== 0)
+            writer.tag(4, WireType.Varint).int32(message.effect);
+        /* octelium.api.main.access.v1.SimulateRequestResponse.RuleEvaluation.Result result = 5; */
+        if (message.result !== 0)
+            writer.tag(5, WireType.Varint).int32(message.result);
+        /* string error = 6; */
+        if (message.error !== "")
+            writer.tag(6, WireType.LengthDelimited).string(message.error);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.SimulateRequestResponse.RuleEvaluation
+ */
+export const SimulateRequestResponse_RuleEvaluation = new SimulateRequestResponse_RuleEvaluation$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Origin$Type extends MessageType<Origin> {
     constructor() {
@@ -9160,7 +15205,9 @@ class SetReviewDecisionRequest$Type extends MessageType<SetReviewDecisionRequest
             { no: 1, name: "requestRef", kind: "message", T: () => ObjectReference },
             { no: 2, name: "decision", kind: "enum", T: () => ["octelium.api.main.access.v1.Review.Spec.Decision", Review_Spec_Decision, "DECISION_"] },
             { no: 3, name: "justification", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "expectedStepName", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 4, name: "expectedStepName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "expectedSpecRevision", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 6, name: "duration", kind: "message", T: () => Duration }
         ]);
     }
     create(value?: PartialMessage<SetReviewDecisionRequest>): SetReviewDecisionRequest {
@@ -9168,6 +15215,7 @@ class SetReviewDecisionRequest$Type extends MessageType<SetReviewDecisionRequest
         message.decision = 0;
         message.justification = "";
         message.expectedStepName = "";
+        message.expectedSpecRevision = 0;
         if (value !== undefined)
             reflectionMergePartial<SetReviewDecisionRequest>(this, message, value);
         return message;
@@ -9188,6 +15236,12 @@ class SetReviewDecisionRequest$Type extends MessageType<SetReviewDecisionRequest
                     break;
                 case /* string expectedStepName */ 4:
                     message.expectedStepName = reader.string();
+                    break;
+                case /* uint32 expectedSpecRevision */ 5:
+                    message.expectedSpecRevision = reader.uint32();
+                    break;
+                case /* octelium.api.main.meta.v1.Duration duration */ 6:
+                    message.duration = Duration.internalBinaryRead(reader, reader.uint32(), options, message.duration);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -9213,6 +15267,12 @@ class SetReviewDecisionRequest$Type extends MessageType<SetReviewDecisionRequest
         /* string expectedStepName = 4; */
         if (message.expectedStepName !== "")
             writer.tag(4, WireType.LengthDelimited).string(message.expectedStepName);
+        /* uint32 expectedSpecRevision = 5; */
+        if (message.expectedSpecRevision !== 0)
+            writer.tag(5, WireType.Varint).uint32(message.expectedSpecRevision);
+        /* octelium.api.main.meta.v1.Duration duration = 6; */
+        if (message.duration)
+            Duration.internalBinaryWrite(message.duration, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -9303,7 +15363,10 @@ export const ClusterConfig = new ClusterConfig$Type();
 class ClusterConfig_Spec$Type extends MessageType<ClusterConfig_Spec> {
     constructor() {
         super("octelium.api.main.access.v1.ClusterConfig.Spec", [
-            { no: 1, name: "authorization", kind: "message", T: () => ClusterConfig_Spec_Authorization }
+            { no: 1, name: "authorization", kind: "message", T: () => ClusterConfig_Spec_Authorization },
+            { no: 2, name: "request", kind: "message", T: () => ClusterConfig_Spec_Request },
+            { no: 3, name: "review", kind: "message", T: () => ClusterConfig_Spec_Review },
+            { no: 4, name: "notification", kind: "message", T: () => ClusterConfig_Spec_Notification }
         ]);
     }
     create(value?: PartialMessage<ClusterConfig_Spec>): ClusterConfig_Spec {
@@ -9320,6 +15383,15 @@ class ClusterConfig_Spec$Type extends MessageType<ClusterConfig_Spec> {
                 case /* octelium.api.main.access.v1.ClusterConfig.Spec.Authorization authorization */ 1:
                     message.authorization = ClusterConfig_Spec_Authorization.internalBinaryRead(reader, reader.uint32(), options, message.authorization);
                     break;
+                case /* octelium.api.main.access.v1.ClusterConfig.Spec.Request request */ 2:
+                    message.request = ClusterConfig_Spec_Request.internalBinaryRead(reader, reader.uint32(), options, message.request);
+                    break;
+                case /* octelium.api.main.access.v1.ClusterConfig.Spec.Review review */ 3:
+                    message.review = ClusterConfig_Spec_Review.internalBinaryRead(reader, reader.uint32(), options, message.review);
+                    break;
+                case /* octelium.api.main.access.v1.ClusterConfig.Spec.Notification notification */ 4:
+                    message.notification = ClusterConfig_Spec_Notification.internalBinaryRead(reader, reader.uint32(), options, message.notification);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -9335,6 +15407,15 @@ class ClusterConfig_Spec$Type extends MessageType<ClusterConfig_Spec> {
         /* octelium.api.main.access.v1.ClusterConfig.Spec.Authorization authorization = 1; */
         if (message.authorization)
             ClusterConfig_Spec_Authorization.internalBinaryWrite(message.authorization, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.ClusterConfig.Spec.Request request = 2; */
+        if (message.request)
+            ClusterConfig_Spec_Request.internalBinaryWrite(message.request, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.ClusterConfig.Spec.Review review = 3; */
+        if (message.review)
+            ClusterConfig_Spec_Review.internalBinaryWrite(message.review, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.ClusterConfig.Spec.Notification notification = 4; */
+        if (message.notification)
+            ClusterConfig_Spec_Notification.internalBinaryWrite(message.notification, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -9391,6 +15472,161 @@ class ClusterConfig_Spec_Authorization$Type extends MessageType<ClusterConfig_Sp
  * @generated MessageType for protobuf message octelium.api.main.access.v1.ClusterConfig.Spec.Authorization
  */
 export const ClusterConfig_Spec_Authorization = new ClusterConfig_Spec_Authorization$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Spec_Request$Type extends MessageType<ClusterConfig_Spec_Request> {
+    constructor() {
+        super("octelium.api.main.access.v1.ClusterConfig.Spec.Request", [
+            { no: 1, name: "defaultDeadline", kind: "message", T: () => Duration },
+            { no: 2, name: "maxStartDelay", kind: "message", T: () => Duration },
+            { no: 3, name: "noMatchMessage", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Spec_Request>): ClusterConfig_Spec_Request {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.noMatchMessage = "";
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Spec_Request>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Spec_Request): ClusterConfig_Spec_Request {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.Duration defaultDeadline */ 1:
+                    message.defaultDeadline = Duration.internalBinaryRead(reader, reader.uint32(), options, message.defaultDeadline);
+                    break;
+                case /* octelium.api.main.meta.v1.Duration maxStartDelay */ 2:
+                    message.maxStartDelay = Duration.internalBinaryRead(reader, reader.uint32(), options, message.maxStartDelay);
+                    break;
+                case /* string noMatchMessage */ 3:
+                    message.noMatchMessage = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Spec_Request, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.Duration defaultDeadline = 1; */
+        if (message.defaultDeadline)
+            Duration.internalBinaryWrite(message.defaultDeadline, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration maxStartDelay = 2; */
+        if (message.maxStartDelay)
+            Duration.internalBinaryWrite(message.maxStartDelay, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* string noMatchMessage = 3; */
+        if (message.noMatchMessage !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.noMatchMessage);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.ClusterConfig.Spec.Request
+ */
+export const ClusterConfig_Spec_Request = new ClusterConfig_Spec_Request$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Spec_Review$Type extends MessageType<ClusterConfig_Spec_Review> {
+    constructor() {
+        super("octelium.api.main.access.v1.ClusterConfig.Spec.Review", [
+            { no: 1, name: "fallbackReviewers", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Policy_Spec_Rule_Action_Review_Step_Reviewer }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Spec_Review>): ClusterConfig_Spec_Review {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.fallbackReviewers = [];
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Spec_Review>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Spec_Review): ClusterConfig_Spec_Review {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer fallbackReviewers */ 1:
+                    message.fallbackReviewers.push(Policy_Spec_Rule_Action_Review_Step_Reviewer.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Spec_Review, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer fallbackReviewers = 1; */
+        for (let i = 0; i < message.fallbackReviewers.length; i++)
+            Policy_Spec_Rule_Action_Review_Step_Reviewer.internalBinaryWrite(message.fallbackReviewers[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.ClusterConfig.Spec.Review
+ */
+export const ClusterConfig_Spec_Review = new ClusterConfig_Spec_Review$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Spec_Notification$Type extends MessageType<ClusterConfig_Spec_Notification> {
+    constructor() {
+        super("octelium.api.main.access.v1.ClusterConfig.Spec.Notification", [
+            { no: 1, name: "defaultSurfaces", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Policy_Spec_Rule_Surface }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Spec_Notification>): ClusterConfig_Spec_Notification {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.defaultSurfaces = [];
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Spec_Notification>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Spec_Notification): ClusterConfig_Spec_Notification {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated octelium.api.main.access.v1.Policy.Spec.Rule.Surface defaultSurfaces */ 1:
+                    message.defaultSurfaces.push(Policy_Spec_Rule_Surface.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Spec_Notification, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated octelium.api.main.access.v1.Policy.Spec.Rule.Surface defaultSurfaces = 1; */
+        for (let i = 0; i < message.defaultSurfaces.length; i++)
+            Policy_Spec_Rule_Surface.internalBinaryWrite(message.defaultSurfaces[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.ClusterConfig.Spec.Notification
+ */
+export const ClusterConfig_Spec_Notification = new ClusterConfig_Spec_Notification$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class ClusterConfig_Status$Type extends MessageType<ClusterConfig_Status> {
     constructor() {
@@ -9721,6 +15957,7 @@ export const MainService = new ServiceType("octelium.api.main.access.v1.MainServ
     { name: "DeleteRequest", options: {}, I: DeleteOptions, O: OperationResult },
     { name: "ListRequest", options: {}, I: ListRequestOptions, O: RequestList },
     { name: "RevokeRequest", options: {}, I: RevokeRequestRequest, O: OperationResult },
+    { name: "SimulateRequest", options: {}, I: SimulateRequestRequest, O: SimulateRequestResponse },
     { name: "ListReview", options: {}, I: ListReviewOptions, O: ReviewList },
     { name: "GetReview", options: {}, I: GetOptions, O: Review },
     { name: "DeleteReview", options: {}, I: DeleteOptions, O: OperationResult },
@@ -9745,11 +15982,16 @@ export const MainService = new ServiceType("octelium.api.main.access.v1.MainServ
 export const UserService = new ServiceType("octelium.api.main.access.v1.UserService", [
     { name: "CreateRequest", options: {}, I: Request, O: Request },
     { name: "CreateRequestForSubject", options: {}, I: Request, O: Request },
+    { name: "PreviewRequest", options: {}, I: Request, O: RequestPreview },
     { name: "UpdateRequest", options: {}, I: Request, O: Request },
     { name: "GetRequest", options: {}, I: GetOptions, O: Request },
     { name: "CancelRequest", options: {}, I: CancelRequestRequest, O: OperationResult },
     { name: "ListRequest", options: {}, I: ListUserRequestOptions, O: RequestList },
-    { name: "ListCatalog", options: {}, I: ListUserCatalogOptions, O: CatalogList },
+    { name: "EndAccess", options: {}, I: EndAccessRequest, O: Request },
+    { name: "RespondToRequest", options: {}, I: RespondToRequestRequest, O: Request },
+    { name: "GetInbox", options: {}, I: GetInboxRequest, O: Inbox },
+    { name: "ListCatalog", options: {}, I: ListUserCatalogOptions, O: UserCatalogList },
+    { name: "GetCatalog", options: {}, I: GetOptions, O: UserCatalog },
     { name: "ListCatalogService", options: {}, I: ListUserCatalogServiceOptions, O: ServiceList },
     { name: "ListSubjectUser", options: {}, I: ListSubjectUserOptions, O: SubjectUserList },
     { name: "GetSubjectUser", options: {}, I: GetSubjectUserRequest, O: SubjectUser }
@@ -9759,7 +16001,9 @@ export const UserService = new ServiceType("octelium.api.main.access.v1.UserServ
  */
 export const ReviewerService = new ServiceType("octelium.api.main.access.v1.ReviewerService", [
     { name: "GetRequest", options: {}, I: GetOptions, O: Request },
+    { name: "GetReviewCase", options: {}, I: GetReviewCaseRequest, O: ReviewCase },
     { name: "ListRequest", options: {}, I: ListReviewerRequestOptions, O: RequestList },
+    { name: "RequestInformation", options: {}, I: RequestInformationRequest, O: Request },
     { name: "ListReview", options: {}, I: ListReviewerReviewOptions, O: ReviewList },
     { name: "GetReview", options: {}, I: GetOptions, O: Review },
     { name: "CreateReview", options: {}, I: Review, O: Review },

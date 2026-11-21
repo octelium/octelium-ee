@@ -1,0 +1,42 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Inbox",
+    "definitions": {
+        "Inbox": {
+            "properties": {
+                "totalNeedsMyDecision": {
+                    "type": "integer",
+                    "description": "TotalNeedsMyDecision is the number of the pending Requests that the User can currently decide on and has not decided on yet."
+                },
+                "totalMyPending": {
+                    "type": "integer",
+                    "description": "TotalMyPending is the number of the pending Requests that are created by the User or whose subject is the User."
+                },
+                "totalActiveAccess": {
+                    "type": "integer",
+                    "description": "TotalActiveAccess is the number of the active accesses of the User."
+                },
+                "totalExpiringSoon": {
+                    "type": "integer",
+                    "description": "TotalExpiringSoon is the number of the active accesses of the User that end within the next hour."
+                },
+                "totalAwaitingMyResponse": {
+                    "type": "integer",
+                    "description": "TotalAwaitingMyResponse is the number of the pending Requests of the User whose reviewers asked for more information."
+                },
+                "isReviewer": {
+                    "type": "boolean",
+                    "description": "IsReviewer is whether the User is a reviewer of at least one review Step of an enabled access Policy."
+                },
+                "canRequestOnBehalf": {
+                    "type": "boolean",
+                    "description": "CanRequestOnBehalf is whether the User can request at least one Catalog on behalf of others."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Inbox",
+            "description": "Inbox is the set of the counters of the items that currently need a User's attention"
+        }
+    }
+}

@@ -10,6 +10,7 @@ package access
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -55,7 +56,6 @@ func TestMainPolicy(t *testing.T) {
 							MatchAny: true,
 						},
 					},
-					Authorization: &accessv1.Policy_Spec_Rule_Authorization{},
 				},
 			},
 		},
@@ -100,9 +100,6 @@ func TestMainPolicy(t *testing.T) {
 							MatchAny: true,
 						},
 					},
-					Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-						Policies: []string{utilrand.GetRandomStringCanonical(6)},
-					},
 				},
 			},
 		},
@@ -121,9 +118,6 @@ func TestMainPolicy(t *testing.T) {
 						Type: &accessv1.Policy_Spec_Rule_Condition_MatchAny{
 							MatchAny: true,
 						},
-					},
-					Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-						Policies: []string{utilrand.GetRandomStringCanonical(6)},
 					},
 				},
 			},
@@ -147,9 +141,6 @@ func TestMainPolicy(t *testing.T) {
 							MatchAny: true,
 						},
 					},
-					Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-						Policies: []string{utilrand.GetRandomStringCanonical(6)},
-					},
 				},
 				{
 					Name:   dupName,
@@ -158,9 +149,6 @@ func TestMainPolicy(t *testing.T) {
 						Type: &accessv1.Policy_Spec_Rule_Condition_MatchAny{
 							MatchAny: true,
 						},
-					},
-					Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-						Policies: []string{utilrand.GetRandomStringCanonical(6)},
 					},
 				},
 			},
@@ -183,9 +171,6 @@ func TestMainPolicy(t *testing.T) {
 							MatchAny: true,
 						},
 					},
-					Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-						Policies: []string{utilrand.GetRandomStringCanonical(6)},
-					},
 				},
 			},
 		},
@@ -207,9 +192,7 @@ func TestMainPolicy(t *testing.T) {
 							MatchAny: true,
 						},
 					},
-					Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-						Policies: []string{utilrand.GetRandomStringCanonical(6)},
-					},
+					Message: strings.Repeat("x", 501),
 				},
 			},
 		},
@@ -475,6 +458,13 @@ func TestAccessPolicyReviewValidation(t *testing.T) {
 		arg.Steps[0].ApprovalRequirement = accessv1.Policy_Spec_Rule_Action_Review_Step_COUNT
 		arg.Steps[0].ApprovalCount = 2
 		arg.Steps[0].Timeout = &metav1.Duration{Type: &metav1.Duration_Minutes{Minutes: 5}}
-		assert.Nil(t, srv.validatePolicyReview(t.Context(), "rule", arg))
+		if group {
+			assert.Nil(t, srv.validatePolicyReview(t.Context(), "rule", arg))
+		} else {
+			err := srv.validatePolicyReview(t.Context(), "rule", arg)
+			assert.ErrorContains(t, err, "requires 2 approvals but only has 1 reviewers")
+			arg.Steps[0].ApprovalCount = 1
+			assert.Nil(t, srv.validatePolicyReview(t.Context(), "rule", arg))
+		}
 	}
 }

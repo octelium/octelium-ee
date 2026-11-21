@@ -66,6 +66,7 @@ func testAccessAPIScoping(t *testing.T, ch *harness.H) {
 						Services: []string{c.alpha.Metadata.Name},
 					},
 				},
+				AccessLevels: c.alphaCatalog.Spec.AccessLevels,
 			},
 		})
 		require.NotNil(t, err)
@@ -100,9 +101,13 @@ func testAccessAPIScoping(t *testing.T, ch *harness.H) {
 			&accessv1.ListUserCatalogOptions{})
 		assert.Nil(t, err)
 
-		_, err = h.AccessUserC(c.alice.Conn).ListCatalogService(ctx,
-			&accessv1.ListUserCatalogServiceOptions{})
-		assert.Nil(t, err)
+		services, err := h.AccessUserC(c.alice.Conn).ListCatalogService(ctx,
+			&accessv1.ListUserCatalogServiceOptions{
+				CatalogRef: umetav1.GetObjectReference(c.alphaCatalog),
+			})
+		require.Nil(t, err)
+		require.Len(t, services.Items, 1)
+		assert.Equal(t, c.alpha.Metadata.Uid, services.Items[0].Metadata.Uid)
 	})
 
 	t.Run("ReviewersCannotUseTheMainService", func(t *testing.T) {

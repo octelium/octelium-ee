@@ -681,6 +681,12 @@ func (s *Server) doSummaryAccessLog(ctx context.Context, req *visibilityv1.GetAc
 	if err != nil {
 		return nil, err
 	}
+	filters, err = appendRefFilter(filters, req.MatchInlinePolicyRef, &apivalidation.CheckGetOptionsOpts{
+		ParentsMax: 8,
+	}, "", "entry.common.reason.details.policyMatch.inlinePolicy.resourceRef")
+	if err != nil {
+		return nil, err
+	}
 
 	/*
 		if req.UserRef != nil {

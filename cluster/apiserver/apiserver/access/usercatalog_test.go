@@ -20,6 +20,7 @@ import (
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/user"
 	"github.com/octelium/octelium/cluster/common/tests/tstuser"
 	"github.com/octelium/octelium/cluster/common/userctx"
+	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
@@ -78,6 +79,25 @@ func TestUserCatalog(t *testing.T) {
 					Namespaces: []string{"default"},
 				},
 			},
+			AccessLevels: []*accessv1.Catalog_Spec_AccessLevel{testFullLevel("full")},
+		},
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	hiddenCat, err := mainSrv.CreateCatalog(ctx, &accessv1.Catalog{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec: &accessv1.Catalog_Spec{
+			ResourceCollection: &accessv1.Catalog_Spec_ResourceCollection{
+				Service: &accessv1.Catalog_Spec_ResourceCollection_Service{
+					Namespaces: []string{"default"},
+				},
+			},
+			AccessLevels: []*accessv1.Catalog_Spec_AccessLevel{testFullLevel("full")},
+			Audience: &accessv1.Catalog_Spec_Audience{
+				Users: []string{"someone-else"},
+			},
 		},
 	})
 	assert.Nil(t, err, "%+v", err)
@@ -88,13 +108,29 @@ func TestUserCatalog(t *testing.T) {
 
 	foundCatalog := false
 	for _, item := range catList.Items {
+		assert.NotEqual(t, hiddenCat.Metadata.Uid, item.Metadata.Uid)
 		if item.Metadata.Uid == cat.Metadata.Uid {
 			foundCatalog = true
+			assert.Equal(t, "full", item.AccessLevels[0].Name)
+			assert.Equal(t, accessv1.UserCatalog_AccessLevel_FULL, item.AccessLevels[0].Type)
+			assert.NotNil(t, item.Viewer)
 		}
 	}
 	assert.True(t, foundCatalog)
 
-	svcList, err := srv.ListCatalogService(usr.Ctx(), &accessv1.ListUserCatalogServiceOptions{})
+	_, err = srv.GetCatalog(usr.Ctx(), &metav1.GetOptions{Uid: hiddenCat.Metadata.Uid})
+	assert.True(t, grpcerr.IsNotFound(err), "%+v", err)
+
+	catG, err := srv.GetCatalog(usr.Ctx(), &metav1.GetOptions{Uid: cat.Metadata.Uid})
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, cat.Metadata.Name, catG.Metadata.Name)
+
+	_, err = srv.ListCatalogService(usr.Ctx(), &accessv1.ListUserCatalogServiceOptions{})
+	assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+
+	svcList, err := srv.ListCatalogService(usr.Ctx(), &accessv1.ListUserCatalogServiceOptions{
+		CatalogRef: umetav1.GetObjectReference(cat),
+	})
 	assert.Nil(t, err, "%+v", err)
 
 	foundService := false
@@ -112,7 +148,12 @@ func TestUserCatalogServiceSelection(t *testing.T) {
 	t.Cleanup(func() {
 		tst.Destroy()
 	})
-	ctx := context.WithValue(t.Context(), "octelium-user-ctx", &userctx.UserCtx{})
+	ctx := context.WithValue(t.Context(), "octelium-user-ctx", &userctx.UserCtx{
+		User: &corev1.User{
+			Metadata: &metav1.Metadata{Name: "requester", Uid: vutils.UUIDv4()},
+			Spec:     &corev1.User_Spec{},
+		},
+	})
 	ns, err := tst.C.OcteliumC.CoreC().CreateNamespace(ctx, &corev1.Namespace{
 		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
 		Spec:     &corev1.Namespace_Spec{},
@@ -129,21 +170,23 @@ func TestUserCatalogServiceSelection(t *testing.T) {
 		require.Nil(t, err)
 		services = append(services, item)
 	}
-	for range 2 {
-		_, err = tst.C.OcteliumC.AccessC().CreateCatalog(ctx, &accessv1.Catalog{
-			Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
-			Spec: &accessv1.Catalog_Spec{ResourceCollection: &accessv1.Catalog_Spec_ResourceCollection{
-				Service: &accessv1.Catalog_Spec_ResourceCollection_Service{
-					Services:   []string{"", services[0].Metadata.Name, services[0].Metadata.Name, services[2].Metadata.Name, "missing." + ns.Metadata.Name},
-					Namespaces: []string{"", "missing-namespace", ns.Metadata.Name, ns.Metadata.Name},
-				},
-			}},
-			Status: &accessv1.Catalog_Status{},
-		})
-		require.Nil(t, err)
-	}
+	catalog, err := tst.C.OcteliumC.AccessC().CreateCatalog(ctx, &accessv1.Catalog{
+		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
+		Spec: &accessv1.Catalog_Spec{ResourceCollection: &accessv1.Catalog_Spec_ResourceCollection{
+			Service: &accessv1.Catalog_Spec_ResourceCollection_Service{
+				Services:   []string{"", services[0].Metadata.Name, services[0].Metadata.Name, services[2].Metadata.Name, "missing." + ns.Metadata.Name},
+				Namespaces: []string{"", "missing-namespace", ns.Metadata.Name, ns.Metadata.Name},
+			},
+		},
+			AccessLevels: []*accessv1.Catalog_Spec_AccessLevel{testFullLevel("full")},
+		},
+		Status: &accessv1.Catalog_Status{},
+	})
+	require.Nil(t, err)
 	srv := &ServerUser{octeliumC: tst.C.OcteliumC}
-	res, err := srv.ListCatalogService(ctx, &accessv1.ListUserCatalogServiceOptions{})
+	res, err := srv.ListCatalogService(ctx, &accessv1.ListUserCatalogServiceOptions{
+		CatalogRef: umetav1.GetObjectReference(catalog),
+	})
 	require.Nil(t, err)
 	require.Len(t, res.Items, 2)
 	assert.Equal(t, uint32(2), res.ListResponseMeta.TotalCount)
@@ -156,9 +199,26 @@ func TestUserCatalogServiceSelection(t *testing.T) {
 }
 
 func TestUserCatalogLookupFailure(t *testing.T) {
-	srv := &ServerUser{octeliumC: &policyValidationClient{coreC: &policyValidationCoreClient{err: status.Error(codes.Unavailable, "store unavailable")}}}
-	err := srv.addCatalogServicesByName(t.Context(), make(map[string]*corev1.Service), []string{"service"})
+	srv := &ServerUser{octeliumC: &policyValidationClient{accessC: &policyValidationAccessClient{err: status.Error(codes.Unavailable, "store unavailable")}}}
+	ctx := context.WithValue(t.Context(), "octelium-user-ctx", &userctx.UserCtx{
+		User: &corev1.User{
+			Metadata: &metav1.Metadata{Name: "requester", Uid: vutils.UUIDv4()},
+			Spec:     &corev1.User_Spec{},
+		},
+	})
+	_, err := srv.ListCatalogService(ctx, &accessv1.ListUserCatalogServiceOptions{
+		CatalogRef: &metav1.ObjectReference{Name: "catalog"},
+	})
 	assert.True(t, grpcerr.IsInternal(err), "%+v", err)
+}
+
+func testFullLevel(name string) *accessv1.Catalog_Spec_AccessLevel {
+	return &accessv1.Catalog_Spec_AccessLevel{
+		Name: name,
+		Type: &accessv1.Catalog_Spec_AccessLevel_Full_{
+			Full: &accessv1.Catalog_Spec_AccessLevel_Full{},
+		},
+	}
 }
 
 func TestUserCatalogServiceMetadata(t *testing.T) {

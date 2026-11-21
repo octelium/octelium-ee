@@ -11,6 +11,8 @@ package accesscmd
 import (
 	"context"
 	"fmt"
+	"slices"
+	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/accessv1"
@@ -27,8 +29,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const MaxJustificationLen = 1500
-
 const maxReviewRevisions = 100
 
 type SetReviewDecisionOpts struct {
@@ -39,8 +39,10 @@ type SetReviewDecisionOpts struct {
 
 	Decision      accessv1.Review_Spec_Decision
 	Justification string
+	Duration      *metav1.Duration
 
-	ExpectedStepName string
+	ExpectedStepName     string
+	ExpectedSpecRevision uint32
 
 	Origin *accessv1.Origin
 }
@@ -58,7 +60,7 @@ func SetReviewDecision(ctx context.Context, opts *SetReviewDecisionOpts) (*acces
 		return nil, grpcutils.InvalidArg("Invalid Decision")
 	}
 
-	if len(opts.Justification) > MaxJustificationLen {
+	if TextLen(opts.Justification) > MaxJustificationLen {
 		return nil, grpcutils.InvalidArg("Justification is too long")
 	}
 
@@ -72,6 +74,40 @@ func SetReviewDecision(ctx context.Context, opts *SetReviewDecisionOpts) (*acces
 	if opts.ExpectedStepName != "" && opts.ExpectedStepName != StepName(step, stepIndex) {
 		return nil, grpcutils.InvalidArg(
 			"This Request is no longer waiting for the %s review Step", opts.ExpectedStepName)
+	}
+
+	if opts.ExpectedSpecRevision != 0 && opts.ExpectedSpecRevision != req.Status.SpecRevision {
+		return nil, grpcutils.InvalidArg(
+			"This Request was changed after you opened it. Review it again")
+	}
+
+	now := time.Now()
+
+	if IsDeadlinePassed(req, now) {
+		return nil, grpcutils.InvalidArg("The deadline of this Request has passed")
+	}
+
+	if IsStepTimedOut(req, now) {
+		return nil, grpcutils.InvalidArg("The %s review Step has timed out", StepName(step, stepIndex))
+	}
+
+	if err := checkReasonRequirement(step, opts.Decision, opts.Justification); err != nil {
+		return nil, err
+	}
+
+	if opts.Duration != nil {
+		if opts.Decision != accessv1.Review_Spec_DECISION_APPROVE {
+			return nil, grpcutils.InvalidArg("A duration can only be set for an approval")
+		}
+
+		if err := apivalidation.ValidateDuration(opts.Duration); err != nil {
+			return nil, err
+		}
+
+		if effective := umetav1.ToDuration(req.Status.EffectiveDuration).ToGo(); effective > 0 &&
+			umetav1.ToDuration(opts.Duration).ToGo() > effective {
+			return nil, grpcutils.InvalidArg("The approved duration cannot exceed the requested duration")
+		}
 	}
 
 	ok, err := CanReview(ctx, opts.OcteliumC, opts.Reviewer, req)
@@ -90,10 +126,12 @@ func SetReviewDecision(ctx context.Context, opts *SetReviewDecisionOpts) (*acces
 	spec := &accessv1.Review_Spec{
 		Decision:      opts.Decision,
 		Justification: opts.Justification,
+		Duration:      opts.Duration,
 	}
 
 	if opts.Decision == accessv1.Review_Spec_DECISION_UNSET {
 		spec.Justification = ""
+		spec.Duration = nil
 	}
 
 	if item == nil {
@@ -108,12 +146,13 @@ func SetReviewDecision(ctx context.Context, opts *SetReviewDecisionOpts) (*acces
 			},
 			Spec: spec,
 			Status: &accessv1.Review_Status{
-				UserRef:    umetav1.GetObjectReference(opts.Reviewer),
-				RequestRef: umetav1.GetObjectReference(req),
-				SetAt:      pbutils.Now(),
-				StepIndex:  stepIndex,
-				StepName:   StepName(step, stepIndex),
-				Origin:     pbutils.Clone(opts.Origin).(*accessv1.Origin),
+				UserRef:      umetav1.GetObjectReference(opts.Reviewer),
+				RequestRef:   umetav1.GetObjectReference(req),
+				SetAt:        pbutils.Now(),
+				StepIndex:    stepIndex,
+				StepName:     StepName(step, stepIndex),
+				Origin:       pbutils.Clone(opts.Origin).(*accessv1.Origin),
+				SpecRevision: req.Status.SpecRevision,
 			},
 		}
 
@@ -129,7 +168,7 @@ func SetReviewDecision(ctx context.Context, opts *SetReviewDecisionOpts) (*acces
 		return nil, grpcutils.InvalidArg("Applied Reviews can no longer be changed")
 	}
 
-	if pbutils.IsEqual(item.Spec, spec) {
+	if pbutils.IsEqual(item.Spec, spec) && item.Status.SpecRevision == req.Status.SpecRevision {
 		return item, nil
 	}
 
@@ -139,6 +178,7 @@ func SetReviewDecision(ctx context.Context, opts *SetReviewDecisionOpts) (*acces
 	item.Status.SetAt = pbutils.Now()
 	item.Status.StepName = StepName(step, stepIndex)
 	item.Status.Origin = pbutils.Clone(opts.Origin).(*accessv1.Origin)
+	item.Status.SpecRevision = req.Status.SpecRevision
 
 	item, err = opts.OcteliumC.AccessC().UpdateReview(ctx, item)
 	if err != nil {
@@ -227,7 +267,86 @@ func CanReview(ctx context.Context, octeliumC octeliumc.ClientInterface,
 		return false, nil
 	}
 
-	return UserMatchesAnyReviewer(ctx, octeliumC, umetav1.GetObjectReference(usr), step.Reviewers)
+	stepState := CurrentStepState(req)
+	if stepState != nil && stepState.TotalEligibleReviewer <= uint32(len(stepState.EligibleReviewers)) {
+		for _, ref := range stepState.EligibleReviewers {
+			if ref.Uid == usr.Metadata.Uid {
+				return true, nil
+			}
+		}
+
+		return false, nil
+	}
+
+	catalog, err := getRequestCatalog(ctx, octeliumC, req)
+	if err != nil {
+		return false, err
+	}
+
+	return UserMatchesAnyReviewer(ctx, octeliumC, usr, GetStepReviewers(step, stepState), catalog)
+}
+
+func IsParticipant(ctx context.Context, octeliumC octeliumc.ClientInterface,
+	usr *corev1.User, req *accessv1.Request) (bool, error) {
+	if usr == nil || req == nil || req.Status == nil {
+		return false, nil
+	}
+
+	if req.Status.Review != nil {
+		for _, itm := range req.Status.Review.LastSteps {
+			if itm.UserRef != nil && itm.UserRef.Uid == usr.Metadata.Uid {
+				return true, nil
+			}
+		}
+
+		for _, stepState := range req.Status.Review.Steps {
+			for _, ref := range stepState.EligibleReviewers {
+				if ref.Uid == usr.Metadata.Uid {
+					return true, nil
+				}
+			}
+		}
+	}
+
+	revList, err := octeliumC.AccessC().ListReview(ctx, &rmetav1.ListOptions{
+		Filters: []*rmetav1.ListOptions_Filter{
+			urscsrv.FilterStatusUserUID(usr.Metadata.Uid),
+			urscsrv.FilterFieldEQValStr("status.requestRef.uid", req.Metadata.Uid),
+		},
+	})
+	if err != nil {
+		return false, grpcutils.InternalWithErr(err)
+	}
+	if len(revList.Items) > 0 {
+		return true, nil
+	}
+
+	return CanReview(ctx, octeliumC, usr, req)
+}
+
+func checkReasonRequirement(step *accessv1.Policy_Spec_Rule_Action_Review_Step,
+	decision accessv1.Review_Spec_Decision, justification string) error {
+	if justification != "" {
+		return nil
+	}
+
+	switch step.ReasonRequirement {
+	case accessv1.Policy_Spec_Rule_Action_Review_Step_ALWAYS:
+		if decision != accessv1.Review_Spec_DECISION_UNSET {
+			return grpcutils.InvalidArg("A justification is required for this decision")
+		}
+	case accessv1.Policy_Spec_Rule_Action_Review_Step_REJECT_ONLY:
+		if decision == accessv1.Review_Spec_DECISION_REJECT {
+			return grpcutils.InvalidArg("A justification is required in order to reject this Request")
+		}
+	}
+
+	return nil
+}
+
+func IsReasonRequired(step *accessv1.Policy_Spec_Rule_Action_Review_Step,
+	decision accessv1.Review_Spec_Decision) bool {
+	return checkReasonRequirement(step, decision, "") != nil
 }
 
 func IsUserEligible(usr *corev1.User) bool {
@@ -275,14 +394,13 @@ func GetSubjectUserRef(req *accessv1.Request) *metav1.ObjectReference {
 }
 
 func UserMatchesAnyReviewer(ctx context.Context, octeliumC octeliumc.ClientInterface,
-	userRef *metav1.ObjectReference,
-	reviewers []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer) (bool, error) {
+	usr *corev1.User, reviewers []*Reviewer, catalog *accessv1.Catalog) (bool, error) {
 	for _, reviewer := range reviewers {
 		if reviewer == nil {
 			continue
 		}
 
-		ok, err := userMatchesReviewer(ctx, octeliumC, userRef, reviewer)
+		ok, err := userMatchesReviewer(ctx, octeliumC, usr, reviewer, catalog)
 		if err != nil {
 			return false, err
 		}
@@ -295,41 +413,29 @@ func UserMatchesAnyReviewer(ctx context.Context, octeliumC octeliumc.ClientInter
 }
 
 func userMatchesReviewer(ctx context.Context, octeliumC octeliumc.ClientInterface,
-	userRef *metav1.ObjectReference,
-	reviewer *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer) (bool, error) {
-	if userRef == nil || userRef.Uid == "" {
+	usr *corev1.User, reviewer *Reviewer, catalog *accessv1.Catalog) (bool, error) {
+	if usr == nil || usr.Metadata == nil || usr.Metadata.Uid == "" {
 		return false, nil
 	}
 
 	switch reviewer.Type.(type) {
 	case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_:
 		ref := reviewer.GetUser().GetUserRef()
-		return ref != nil && ref.Uid != "" && ref.Uid == userRef.Uid, nil
+		return ref != nil && ref.Uid != "" && ref.Uid == usr.Metadata.Uid, nil
 
 	case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group_:
 		grp, err := GetGroup(ctx, octeliumC, reviewer.GetGroup().GetGroupRef())
 		if err != nil {
 			return false, err
 		}
-		if grp == nil {
+		if grp == nil || usr.Spec == nil {
 			return false, nil
 		}
 
-		usr, err := GetUser(ctx, octeliumC, userRef)
-		if err != nil {
-			return false, err
-		}
-		if usr == nil {
-			return false, nil
-		}
+		return slices.Contains(usr.Spec.Groups, grp.Metadata.Name), nil
 
-		for _, groupName := range usr.Spec.Groups {
-			if groupName == grp.Metadata.Name {
-				return true, nil
-			}
-		}
-
-		return false, nil
+	case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_CatalogOwners_:
+		return IsCatalogOwner(catalog, usr), nil
 
 	default:
 		return false, nil
@@ -339,64 +445,7 @@ func userMatchesReviewer(ctx context.Context, octeliumC octeliumc.ClientInterfac
 func GetStepReviewerUsers(ctx context.Context, octeliumC octeliumc.ClientInterface,
 	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
 	req *accessv1.Request) ([]*corev1.User, error) {
-	seen := map[string]struct{}{}
-	ret := []*corev1.User{}
-
-	addUser := func(usr *corev1.User) {
-		if usr == nil || !IsUserEligible(usr) {
-			return
-		}
-
-		if !IsSeparationOfDutiesSatisfied(step, usr, req) {
-			return
-		}
-
-		if _, ok := seen[usr.Metadata.Uid]; ok {
-			return
-		}
-		seen[usr.Metadata.Uid] = struct{}{}
-
-		ret = append(ret, usr)
-	}
-
-	for _, reviewer := range step.Reviewers {
-		if reviewer == nil {
-			continue
-		}
-
-		switch reviewer.Type.(type) {
-		case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_:
-			usr, err := GetUser(ctx, octeliumC, reviewer.GetUser().GetUserRef())
-			if err != nil {
-				return nil, err
-			}
-			addUser(usr)
-
-		case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group_:
-			grp, err := GetGroup(ctx, octeliumC, reviewer.GetGroup().GetGroupRef())
-			if err != nil {
-				return nil, err
-			}
-			if grp == nil {
-				continue
-			}
-
-			usrList, err := octeliumC.CoreC().ListUser(ctx, &rmetav1.ListOptions{
-				Filters: []*rmetav1.ListOptions_Filter{
-					urscsrv.FilterFieldIncludesValStr("spec.groups", grp.Metadata.Name),
-				},
-			})
-			if err != nil {
-				return nil, err
-			}
-
-			for _, usr := range usrList.Items {
-				addUser(usr)
-			}
-		}
-	}
-
-	return ret, nil
+	return GetStepEligibleUsers(ctx, octeliumC, req, step, CurrentStepState(req), nil)
 }
 
 func HasReviewBeenApplied(req *accessv1.Request, review *accessv1.Review) bool {
@@ -411,7 +460,8 @@ func HasReviewBeenApplied(req *accessv1.Request, review *accessv1.Review) bool {
 			continue
 		}
 
-		if step.StepIndex != req.Status.Review.CurrentStep {
+		if step.StepIndex < req.Status.Review.CurrentStep &&
+			step.SpecRevision == req.Status.SpecRevision {
 			return true
 		}
 	}

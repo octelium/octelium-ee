@@ -12,19 +12,37 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium/apis/cluster/caccessv1"
 	"github.com/octelium/octelium/apis/main/accessv1"
+	"github.com/octelium/octelium/cluster/common/celengine"
 	oc "github.com/octelium/octelium/cluster/common/octeliumc"
 	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"google.golang.org/grpc"
 )
 
+type celEngineHolder struct {
+	once   sync.Once
+	engine *celengine.CELEngine
+	err    error
+}
+
+func (h *celEngineHolder) get(ctx context.Context) (*celengine.CELEngine, error) {
+	h.once.Do(func() {
+		h.engine, h.err = celengine.New(ctx, &celengine.Opts{})
+	})
+
+	return h.engine, h.err
+}
+
 type ServerMain struct {
 	octeliumC octeliumc.ClientInterface
 	accessv1.UnimplementedMainServiceServer
+
+	cel celEngineHolder
 }
 
 func NewServerMain(octeliumC octeliumc.ClientInterface) *ServerMain {
@@ -38,6 +56,8 @@ type ServerUser struct {
 	accessv1.UnimplementedUserServiceServer
 
 	rscStoreC caccessv1.InternalServiceClient
+
+	cel celEngineHolder
 }
 
 func NewServerUser(ctx context.Context, octeliumC octeliumc.ClientInterface) (*ServerUser, error) {
@@ -72,6 +92,8 @@ func NewServerUser(ctx context.Context, octeliumC octeliumc.ClientInterface) (*S
 type ServerReviewer struct {
 	octeliumC octeliumc.ClientInterface
 	accessv1.UnimplementedReviewerServiceServer
+
+	cel celEngineHolder
 }
 
 func NewServerReviewer(octeliumC octeliumc.ClientInterface) *ServerReviewer {

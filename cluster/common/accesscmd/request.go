@@ -16,7 +16,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
-	"github.com/octelium/octelium/cluster/common/apivalidation"
+	"github.com/octelium/octelium/cluster/common/celengine"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
@@ -29,6 +29,7 @@ const MaxPendingRequestsPerUser = 32
 
 type CreateRequestOpts struct {
 	OcteliumC octeliumc.ClientInterface
+	CELEngine *celengine.CELEngine
 
 	Requester *corev1.User
 	Spec      *accessv1.Request_Spec
@@ -51,21 +52,18 @@ func CreateRequest(ctx context.Context, opts *CreateRequestOpts) (*accessv1.Requ
 		return nil, grpcutils.Unauthorized("You are not allowed to create access Requests")
 	}
 
-	spec := pbutils.Clone(opts.Spec).(*accessv1.Request_Spec)
-
-	if opts.ForSubject {
-		if spec.Subject == nil || spec.Subject.GetUserRef() == nil {
-			return nil, grpcutils.InvalidArg("Subject UserRef must be set")
-		}
-	} else {
-		spec.Subject = &accessv1.Request_Spec_Subject{
-			Type: &accessv1.Request_Spec_Subject_UserRef{
-				UserRef: umetav1.GetObjectReference(opts.Requester),
-			},
-		}
+	prepared, err := PrepareRequest(ctx, &PrepareRequestOpts{
+		OcteliumC:  opts.OcteliumC,
+		CELEngine:  opts.CELEngine,
+		Requester:  opts.Requester,
+		Spec:       opts.Spec,
+		ForSubject: opts.ForSubject,
+	})
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
-	if err := ValidateRequestSpec(ctx, opts.OcteliumC, spec); err != nil {
+	if err := ProblemsToError(prepared.Problems); err != nil {
 		return nil, err
 	}
 
@@ -82,14 +80,19 @@ func CreateRequest(ctx context.Context, opts *CreateRequestOpts) (*accessv1.Requ
 		Metadata: &metav1.Metadata{
 			Name: name,
 		},
-		Spec: spec,
+		Spec: prepared.Spec,
 		Status: &accessv1.Request_Status{
 			UserRef: umetav1.GetObjectReference(opts.Requester),
 			State: &accessv1.Request_Status_State{
 				CreatedAt: pbutils.Now(),
 				Status:    accessv1.Request_Status_State_PENDING,
+				Reason:    accessv1.Request_Status_State_SUBMITTED,
 			},
-			Origin: pbutils.Clone(opts.Origin).(*accessv1.Origin),
+			Origin:        pbutils.Clone(opts.Origin).(*accessv1.Origin),
+			ResolvedScope: prepared.Scope.Status,
+			SpecRevision:  1,
+			RequesterInfo: GetUserInfo(opts.Requester),
+			SubjectInfo:   GetUserInfo(prepared.Subject),
 		},
 	}
 
@@ -99,101 +102,6 @@ func CreateRequest(ctx context.Context, opts *CreateRequestOpts) (*accessv1.Requ
 	}
 
 	return item, nil
-}
-
-func ValidateRequestSpec(ctx context.Context, octeliumC octeliumc.ClientInterface,
-	spec *accessv1.Request_Spec) error {
-	if spec == nil {
-		return grpcutils.InvalidArg("Nil Spec")
-	}
-
-	if spec.Resource == nil {
-		return grpcutils.InvalidArg("Resource must be set")
-	}
-
-	switch spec.Resource.Type.(type) {
-	case *accessv1.Request_Spec_Resource_ServiceRef:
-		if err := apivalidation.CheckObjectRef(spec.Resource.GetServiceRef(),
-			&apivalidation.CheckGetOptionsOpts{
-				ParentsMax: 1,
-			}); err != nil {
-			return err
-		}
-
-		if _, err := octeliumC.CoreC().GetService(ctx,
-			apivalidation.ObjectReferenceToRGetOptions(spec.Resource.GetServiceRef())); err != nil {
-			if grpcerr.IsNotFound(err) {
-				return grpcutils.NotFound("The Service does not exist")
-			}
-			return grpcutils.InternalWithErr(err)
-		}
-
-	case *accessv1.Request_Spec_Resource_Catalog_:
-		if spec.Resource.GetCatalog() == nil {
-			return grpcutils.InvalidArg("Catalog resource must be set")
-		}
-
-		if err := apivalidation.CheckObjectRef(spec.Resource.GetCatalog().GetCatalogRef(),
-			&apivalidation.CheckGetOptionsOpts{}); err != nil {
-			return err
-		}
-
-		if _, err := octeliumC.AccessC().GetCatalog(ctx,
-			apivalidation.ObjectReferenceToRGetOptions(spec.Resource.GetCatalog().GetCatalogRef())); err != nil {
-			if grpcerr.IsNotFound(err) {
-				return grpcutils.NotFound("The Catalog does not exist")
-			}
-			return grpcutils.InternalWithErr(err)
-		}
-
-	default:
-		return grpcutils.InvalidArg("Resource type must be set")
-	}
-
-	if spec.Subject != nil {
-		switch spec.Subject.Type.(type) {
-		case *accessv1.Request_Spec_Subject_UserRef:
-			if err := apivalidation.CheckObjectRef(spec.Subject.GetUserRef(),
-				&apivalidation.CheckGetOptionsOpts{}); err != nil {
-				return err
-			}
-
-			if _, err := octeliumC.CoreC().GetUser(ctx,
-				apivalidation.ObjectReferenceToRGetOptions(spec.Subject.GetUserRef())); err != nil {
-				if grpcerr.IsNotFound(err) {
-					return grpcutils.NotFound("The User does not exist")
-				}
-				return grpcutils.InternalWithErr(err)
-			}
-
-		default:
-			return grpcutils.InvalidArg("Subject type must be set")
-		}
-	}
-
-	switch spec.Urgency {
-	case accessv1.Request_Spec_URGENCY_UNSET,
-		accessv1.Request_Spec_VERY_LOW,
-		accessv1.Request_Spec_LOW,
-		accessv1.Request_Spec_NORMAL,
-		accessv1.Request_Spec_HIGH,
-		accessv1.Request_Spec_VERY_HIGH,
-		accessv1.Request_Spec_HIGHEST:
-	default:
-		return grpcutils.InvalidArg("Invalid Urgency")
-	}
-
-	if len(spec.Justification) > MaxJustificationLen {
-		return grpcutils.InvalidArg("Justification is too long")
-	}
-
-	if spec.Duration != nil {
-		if err := apivalidation.ValidateDuration(spec.Duration); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func checkPendingRequestQuota(ctx context.Context, octeliumC octeliumc.ClientInterface,

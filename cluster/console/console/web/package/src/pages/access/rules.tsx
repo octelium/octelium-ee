@@ -4,6 +4,7 @@ import { ObjectReference } from "@/apis/metav1/metav1";
 import TimeAgo from "@/components/TimeAgo";
 import { twMerge } from "@/lib/utils";
 import {
+  AlertTriangle,
   Ban,
   BellRing,
   Braces,
@@ -11,6 +12,7 @@ import {
   Clock3,
   FileKey2,
   Hash,
+  KeyRound,
   Layers,
   Minus,
   Server,
@@ -105,7 +107,12 @@ export const ConditionView = (props: {
             "Requested Catalog is",
             refChip(type.resource.type.catalogRef, "access/v1", "Catalog", Layers),
           )
-        : line(
+        : type.resource.type.oneofKind === "namespaceRef"
+          ? line(
+              "Requested access includes the Namespace",
+              refChip(type.resource.type.namespaceRef, "core/v1", "Namespace", Layers),
+            )
+          : line(
             "Requested Service is",
             refChip(
               type.resource.type.oneofKind === "serviceRef"
@@ -120,6 +127,21 @@ export const ConditionView = (props: {
       return line(
         "Requested by",
         refChip(type.userRef, "core/v1", "User", UserRoundSearch),
+      );
+    case "accessLevel":
+      return line(
+        "Requested access level is",
+        <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-0.5 font-mono text-xs text-slate-700">
+          <KeyRound size={11} className="text-slate-500" />
+          {type.accessLevel || "not set"}
+        </span>,
+      );
+    case "isOnBehalf":
+      return line(
+        type.isOnBehalf
+          ? "Requested on behalf of another user"
+          : "Requested for the requester themselves",
+        null,
       );
     case "match":
       return (
@@ -174,6 +196,14 @@ export const ReviewerChips = (props: {
         <React.Fragment key={index}>
           {refChip(reviewer.type.user.userRef, "core/v1", "User", User)}
         </React.Fragment>
+      ) : reviewer.type.oneofKind === "catalogOwners" ? (
+        <span
+          key={index}
+          className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-700"
+        >
+          <Layers size={11} className="text-slate-500" />
+          Catalog owners
+        </span>
       ) : null,
     )}
   </span>
@@ -308,6 +338,13 @@ export const StepTimeline = (props: {
                   ? `Times out after ${formatDurationShort(step.timeout)}, ${getOnTimeoutLabel(step, index === props.steps.length - 1)}`
                   : "No timeout"}
               </span>
+              {step.reasonRequirement ===
+                AccessP.Policy_Spec_Rule_Action_Review_Step_ReasonRequirement.ALWAYS ? (
+                <span>Reason required for every decision</span>
+              ) : step.reasonRequirement ===
+                AccessP.Policy_Spec_Rule_Action_Review_Step_ReasonRequirement.REJECT_ONLY ? (
+                <span>Reason required to reject</span>
+              ) : null}
               {(sod?.allowRequesterReview || sod?.allowSubjectReview) && (
                 <span>
                   {sod.allowRequesterReview && sod.allowSubjectReview
@@ -318,6 +355,16 @@ export const StepTimeline = (props: {
                 </span>
               )}
             </div>
+            {step.escalation && step.escalation.reviewers.length > 0 && (
+              <span className="flex flex-wrap items-center gap-1.5 text-micro text-slate-500">
+                Escalates
+                {step.escalation.after
+                  ? ` after ${formatDurationShort(step.escalation.after)}`
+                  : " when nobody can review"}{" "}
+                to
+                <ReviewerChips reviewers={step.escalation.reviewers} />
+              </span>
+            )}
             {props.showSurfaces && step.surfaces.length > 0 && (
               <span className="flex flex-wrap gap-1.5">
                 {step.surfaces.map((surface, surfaceIndex) => (
@@ -372,18 +419,36 @@ export const StepTimeline = (props: {
 );
 
 export const GrantSummary = (props: {
-  authorization?: AccessP.Policy_Spec_Rule_Authorization;
+  maxDuration?: AccessP.Policy_Spec_Rule["maxDuration"];
+  level?: AccessP.Catalog_Spec_AccessLevel;
+  overridesGuardrails?: boolean;
   compact?: boolean;
 }) => {
-  const authz = props.authorization;
-  const policies = authz?.policies ?? [];
-  const inline = authz?.inlinePolicies ?? [];
+  const level = props.level;
+  const restricted = level?.type.oneofKind === "restricted" ? level.type.restricted : undefined;
+  const policies = restricted?.policies ?? [];
+  const inline = restricted?.inlinePolicies ?? [];
   return (
     <span className="flex flex-wrap items-center gap-1.5">
+      {level && (
+        <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-700">
+          <KeyRound size={11} className="text-slate-500" />
+          {level.displayName || level.name}
+          <span className="font-normal text-slate-500">
+            {restricted ? "restricted" : "full access"}
+          </span>
+        </span>
+      )}
       <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-700">
         <Timer size={11} className="text-slate-500" />
-        up to {formatDurationShort(authz?.maxAccessDuration, "24h")}
+        up to {formatDurationShort(props.maxDuration ?? level?.maxDuration, level ? "24h" : "the access level maximum")}
       </span>
+      {props.overridesGuardrails && (
+        <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">
+          <AlertTriangle size={11} />
+          overrides guardrails
+        </span>
+      )}
       {policies.map((name) => (
         <RefChip
           key={name}
@@ -404,14 +469,71 @@ export const GrantSummary = (props: {
           {policy.name || "inline Policy"}
         </span>
       ))}
-      {policies.length === 0 && inline.length === 0 && !props.compact && (
+      {!level && !props.compact && (
         <span className="text-micro text-slate-500">
-          access to the requested resource, with no extra core Policy
+          the access level requested from the Catalog
         </span>
       )}
     </span>
   );
 };
+
+const ISSUE_LABEL: Record<AccessP.ConfigurationIssue_Type, string> = {
+  [AccessP.ConfigurationIssue_Type.TYPE_UNSET]: "Issue",
+  [AccessP.ConfigurationIssue_Type.MISSING_REFERENCE]: "Missing reference",
+  [AccessP.ConfigurationIssue_Type.INVALID_EXPRESSION]: "Invalid expression",
+  [AccessP.ConfigurationIssue_Type.NO_ELIGIBLE_REVIEWER]: "No eligible reviewer",
+  [AccessP.ConfigurationIssue_Type.IMPOSSIBLE_APPROVAL_COUNT]: "Impossible approval count",
+  [AccessP.ConfigurationIssue_Type.EMPTY_SCOPE]: "Empty scope",
+  [AccessP.ConfigurationIssue_Type.SYSTEM_RESOURCE_EXCLUDED]: "System resource excluded",
+  [AccessP.ConfigurationIssue_Type.OVERRIDES_GUARDRAILS]: "Overrides guardrails",
+  [AccessP.ConfigurationIssue_Type.SHADOWED_RULE]: "Shadowed rule",
+  [AccessP.ConfigurationIssue_Type.NO_ACCESS_LEVEL]: "No access level",
+};
+
+export const ConfigurationIssues = (props: {
+  issues: AccessP.ConfigurationIssue[];
+  checkedAt?: Timestamp;
+}) => (
+  <div className="flex flex-col gap-2">
+    <ul className="flex flex-col gap-1.5">
+      {props.issues.map((issue, index) => {
+        const isError = issue.severity === AccessP.ConfigurationIssue_Severity.ERROR;
+        const context = [
+          issue.ruleName && `rule ${issue.ruleName}`,
+          issue.stepName && `step ${issue.stepName}`,
+          issue.accessLevel && `access level ${issue.accessLevel}`,
+        ].filter(Boolean);
+        return (
+          <li
+            key={index}
+            className={twMerge(
+              "flex flex-col gap-1 rounded-lg border px-3 py-2",
+              isError ? "border-red-200 bg-red-50/60" : "border-amber-200 bg-amber-50/60",
+            )}
+          >
+            <span className="flex flex-wrap items-center gap-1.5">
+              <ToneBadge tone={isError ? "danger" : "warning"}>
+                {ISSUE_LABEL[issue.type] ?? "Issue"}
+              </ToneBadge>
+              {context.length > 0 && (
+                <span className="text-micro text-slate-500">{context.join(" · ")}</span>
+              )}
+            </span>
+            <span className={twMerge("text-xs leading-5", isError ? "text-red-800" : "text-amber-900")}>
+              {issue.message}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+    {props.checkedAt && (
+      <span className="text-micro text-slate-500">
+        Checked <TimeAgo rfc3339={props.checkedAt} />
+      </span>
+    )}
+  </div>
+);
 
 export const providerIconForType = (type?: AccessP.Integration_Status_Type) => (
   <ProviderMark provider={getProviderKindFromStatus(type)} size={12} />

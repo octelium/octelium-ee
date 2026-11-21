@@ -100,16 +100,15 @@ func TestRequestEnsuresIntegrationBindings(t *testing.T) {
 	}
 
 	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
-		Name:      utilrand.GetRandomStringCanonical(6),
-		Effect:    accessv1.Policy_Spec_Rule_REVIEW,
-		Condition: matchAny(),
-		Action:    reviewAction(step),
-		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-			MaxAccessDuration: durationHours(2),
-		},
+		Name:        utilrand.GetRandomStringCanonical(6),
+		Effect:      accessv1.Policy_Spec_Rule_REVIEW,
+		Condition:   matchAny(),
+		Action:      reviewAction(step),
+		MaxDuration: durationHours(2),
 	})
 
-	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), serviceRef(svc)))
+	req := createRequest(t, ctx, octeliumC, baseRequest(createUserRef(t, ctx, octeliumC),
+		createCatalog(t, ctx, octeliumC, nil, svc)))
 	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
 
 	assert.Equal(t, accessv1.Request_Status_State_PENDING, reqG.Status.State.Status)
@@ -155,7 +154,8 @@ func TestRequestUpdatesBindingDesiredRevision(t *testing.T) {
 		Action:    reviewAction(step),
 	})
 
-	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), serviceRef(svc)))
+	req := createRequest(t, ctx, octeliumC, baseRequest(createUserRef(t, ctx, octeliumC),
+		createCatalog(t, ctx, octeliumC, nil, svc)))
 	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
 
 	before := listBindings(t, ctx, octeliumC, reqG)[0].Status.DesiredRevision
@@ -192,7 +192,8 @@ func TestRequestDeletesIntegrationBindings(t *testing.T) {
 		Action:    reviewAction(step),
 	})
 
-	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), serviceRef(svc)))
+	req := createRequest(t, ctx, octeliumC, baseRequest(createUserRef(t, ctx, octeliumC),
+		createCatalog(t, ctx, octeliumC, nil, svc)))
 	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
 
 	assert.Equal(t, 1, len(listBindings(t, ctx, octeliumC, reqG)))
@@ -217,7 +218,8 @@ func TestRequestWithoutSurfacesCreatesNoBindings(t *testing.T) {
 		Action:    reviewAction(step),
 	})
 
-	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), serviceRef(svc)))
+	req := createRequest(t, ctx, octeliumC, baseRequest(createUserRef(t, ctx, octeliumC),
+		createCatalog(t, ctx, octeliumC, nil, svc)))
 	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
 
 	assert.Equal(t, 0, len(listBindings(t, ctx, octeliumC, reqG)))

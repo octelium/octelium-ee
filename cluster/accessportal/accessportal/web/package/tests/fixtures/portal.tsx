@@ -99,11 +99,19 @@ const hours = (value: number) =>
 const S = AccessP.Request_Status_State_Status;
 
 const step = (name: string) =>
-  AccessP.Policy_Spec_Rule_Action_Review_Step.create({
+  AccessP.Request_Status_Workflow_Step.create({
     name,
     approvalRequirement: AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement.ANY,
-    reviewers: [{ type: { oneofKind: "user", user: { userRef: { name: "carol" } } } }],
+    reviewers: [
+      { type: AccessP.Request_Status_Workflow_Step_Reviewer_Type.USER, displayName: "carol" },
+    ],
   });
+
+const fullLevel = AccessP.Catalog_Spec_AccessLevel.create({
+  name: "full",
+  displayName: "Full access",
+  type: { oneofKind: "full", full: {} },
+});
 
 const request = (
   name: string,
@@ -119,6 +127,7 @@ const request = (
     approvalEndAgo?: number;
     lastStates?: AccessP.Request_Status_State_Status[];
     applied?: { reviewer: string; decision: AccessP.Review_Spec_Decision }[];
+    askedInfo?: string;
   } = {},
 ) =>
   AccessP.Request.create({
@@ -126,7 +135,12 @@ const request = (
     spec: {
       urgency: AccessP.Request_Spec_Urgency.NORMAL,
       duration: hours(extra.duration ?? 2),
-      resource: { type: { oneofKind: "serviceRef", serviceRef: { name: "default.database" } } },
+      resource: {
+        type: {
+          oneofKind: "catalog",
+          catalog: { catalogRef: { name: "storage" }, accessLevel: "full", serviceRefs: [] },
+        },
+      },
       subject: {
         type: { oneofKind: "userRef", userRef: { name: extra.subject ?? extra.requester ?? "alice" } },
       },
@@ -134,6 +148,13 @@ const request = (
     status: {
       state: { status, createdAt: at(-5) },
       userRef: { name: extra.requester ?? "alice" },
+      specRevision: 1,
+      resolvedScope: {
+        catalogRef: { name: "storage" },
+        catalogDisplayName: "Primary storage",
+        accessLevel: fullLevel,
+        serviceRefs: [{ name: "default.database" }],
+      },
       approvalStartAt: at(-180),
       approvalEndAt: extra.approvalEndAgo !== undefined ? at(-extra.approvalEndAgo) : undefined,
       accessEndsAt: extra.accessEndsIn !== undefined ? at(extra.accessEndsIn) : undefined,
@@ -141,17 +162,26 @@ const request = (
         ? { type: { oneofKind: "seconds", seconds: extra.effectiveSeconds } }
         : undefined,
       lastStates: (extra.lastStates ?? []).map((value) => ({ status: value, createdAt: at(-60) })),
-      rule: extra.steps
+      workflow: extra.steps
         ? {
-            name: "review",
-            action: { type: { oneofKind: "review", review: { steps: extra.steps.map(step) } } },
-            authorization: { policies: ["read-only"] },
+            effect: AccessP.Policy_Spec_Rule_Effect.REVIEW,
+            steps: extra.steps.map(step),
           }
         : undefined,
       review: extra.steps
         ? {
             currentStep: extra.currentStep ?? 0,
             currentStepStartedAt: at(-30),
+            steps: extra.steps.slice(0, (extra.currentStep ?? 0) + 1).map((name, index) => ({
+              name,
+              index,
+              requiredApprovals: 1,
+              approvals: 0,
+              startedAt: at(-30),
+            })),
+            informationRequests: extra.askedInfo
+              ? [{ userRef: { name: "carol" }, message: extra.askedInfo, requestedAt: at(-20) }]
+              : [],
             lastSteps: (extra.applied ?? []).map((applied, index) => ({
               reviewRef: { name: `rv${index}.${name}` },
               setAt: at(-90),
@@ -167,7 +197,11 @@ const request = (
 
 const myRequests = [
   request("own-pending", S.PENDING, { steps: ["team-lead"] }),
-  request("behalf-pending", S.PENDING, { subject: "bob", steps: ["team-lead"] }),
+  request("behalf-pending", S.PENDING, {
+    subject: "bob",
+    steps: ["team-lead"],
+    askedInfo: "Which tables does bob need?",
+  }),
   request("capped", S.APPROVED, {
     duration: 48,
     effectiveSeconds: 7200,
@@ -200,11 +234,33 @@ const reviews = [
 ];
 
 const catalogs = [
-  AccessP.Catalog.create({
+  AccessP.UserCatalog.create({
     metadata: { name: "team-namespace", displayName: "Team namespace" },
-    spec: { resourceCollection: { service: { namespaces: ["this-namespace"] } } },
+    accessLevels: [
+      { name: "full", displayName: "Full access", type: AccessP.UserCatalog_AccessLevel_Type.FULL },
+    ],
+    totalService: 1,
+    membership: AccessP.Catalog_Spec_Membership.DYNAMIC,
+  }),
+  AccessP.UserCatalog.create({
+    metadata: { name: "storage", displayName: "Primary storage" },
+    accessLevels: [
+      { name: "full", displayName: "Full access", type: AccessP.UserCatalog_AccessLevel_Type.FULL },
+      {
+        name: "read-only",
+        displayName: "Read only",
+        description: "Read the data without changing it",
+        type: AccessP.UserCatalog_AccessLevel_Type.RESTRICTED,
+      },
+    ],
+    totalService: 1,
   }),
 ];
+
+const catalogServices: Record<string, UserP.Service[]> = {
+  "team-namespace": [services[1]],
+  storage: [services[0]],
+};
 
 const stub = <T,>(client: object, method: string, handler: (request: T) => unknown) => {
   Object.getPrototypeOf(client)[method] = async (request: T) => {
@@ -217,7 +273,38 @@ const notFound = () => {
   throw new RpcError("not found", "NOT_FOUND");
 };
 
-stub(getUserClient(), "listCatalog", () => AccessP.CatalogList.create({ items: catalogs }));
+stub(getUserClient(), "listCatalog", () => AccessP.UserCatalogList.create({ items: catalogs }));
+stub(getUserClient(), "listCatalogService", (options: AccessP.ListUserCatalogServiceOptions) =>
+  UserP.ServiceList.create({ items: catalogServices[options.catalogRef?.name ?? ""] ?? [] }),
+);
+stub(getUserClient(), "getInbox", () =>
+  AccessP.Inbox.create({
+    isReviewer: !params.has("notReviewer"),
+    canRequestOnBehalf: true,
+    totalNeedsMyDecision: queue.length,
+  }),
+);
+stub(getUserClient(), "previewRequest", (value: AccessP.Request) =>
+  AccessP.RequestPreview.create({
+    outcome: AccessP.RequestPreview_Outcome.REVIEW,
+    workflow: { effect: AccessP.Policy_Spec_Rule_Effect.REVIEW, steps: [step("team-lead")] },
+    effectiveDuration: value.spec?.duration,
+    maxDuration: hours(24),
+    requirements:
+      value.spec?.resource?.type.oneofKind === "catalog" &&
+      value.spec.resource.type.catalog.catalogRef?.name === "storage"
+        ? { ticket: { isRequired: true, label: "Change ticket", pattern: "" } }
+        : undefined,
+  }),
+);
+stub(getUserClient(), "endAccess", (options: AccessP.EndAccessRequest) => {
+  const item = myRequests.find((value) => value.metadata?.name === options.requestRef?.name);
+  return item ?? notFound();
+});
+stub(getUserClient(), "respondToRequest", (options: AccessP.RespondToRequestRequest) => {
+  const item = myRequests.find((value) => value.metadata?.name === options.requestRef?.name);
+  return item ?? notFound();
+});
 stub(getUserClient(), "listRequest", (options: AccessP.ListUserRequestOptions) => {
   const items = myRequests.filter(
     (item) => !options.state || item.status?.state?.status === options.state,
@@ -243,6 +330,19 @@ stub(getReviewerClient(), "listRequest", (options: AccessP.ListReviewerRequestOp
 stub(getReviewerClient(), "getRequest", (options: MetaP.GetOptions) =>
   queue.find((item) => item.metadata?.name === options.name) ?? notFound(),
 );
+stub(getReviewerClient(), "getReviewCase", (options: AccessP.GetReviewCaseRequest) => {
+  const item =
+    queue.find((value) => value.metadata?.name === options.requestRef?.name) ?? notFound();
+  return AccessP.ReviewCase.create({
+    request: item,
+    allowedActions: [
+      AccessP.ReviewCase_Action.APPROVE,
+      AccessP.ReviewCase_Action.REJECT,
+      AccessP.ReviewCase_Action.REQUEST_INFORMATION,
+    ],
+    flags: { isFullAccess: true },
+  });
+});
 stub(getReviewerClient(), "listReview", () =>
   AccessP.ReviewList.create({ items: reviews, listResponseMeta: { totalCount: reviews.length } }),
 );
@@ -253,6 +353,9 @@ stub(getReviewerClient(), "setReviewDecision", (options: AccessP.SetReviewDecisi
   AccessP.Review.create({ spec: { decision: options.decision } }),
 );
 stub(getReviewerClient(), "createReview", (review: AccessP.Review) => review);
+stub(getReviewerClient(), "requestInformation", (options: AccessP.RequestInformationRequest) =>
+  queue.find((item) => item.metadata?.name === options.requestRef?.name) ?? notFound(),
+);
 stub(getReviewerClient(), "updateReview", (review: AccessP.Review) => review);
 stub(getUserClient(), "updateRequest", (value: AccessP.Request) => {
   const index = myRequests.findIndex((item) => item.metadata?.name === value.metadata?.name);

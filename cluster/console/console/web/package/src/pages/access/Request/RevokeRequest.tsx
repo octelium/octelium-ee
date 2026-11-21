@@ -6,7 +6,7 @@ import {
   invalidateResource,
   invalidateResourceList,
 } from "@/utils/pb";
-import { Button, Modal, Switch } from "@mantine/core";
+import { Button, Modal, Switch, Textarea } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
 import { Ban, Loader2, ShieldAlert, X } from "lucide-react";
@@ -23,17 +23,21 @@ const REVOCABLE_STATES = new Set([
 const RevokeRequest = (props: { item: AccessPB.Request }) => {
   const [opened, { open, close }] = useDisclosure(false);
   const [isConfirmed, setIsConfirmed] = React.useState(false);
+  const [reason, setReason] = React.useState("");
   const state = props.item.status?.state?.status;
+  const reasonTooLong = Array.from(reason).length > 500;
 
   const mutation = useMutation({
     mutationFn: () =>
       getClientAccess().revokeRequest(
         AccessPB.RevokeRequestRequest.create({
           requestRef: getResourceRef(props.item),
+          reason: reason.trim(),
         }),
       ).response,
     onSuccess: () => {
       setIsConfirmed(false);
+      setReason("");
       close();
       invalidateResource(props.item);
       invalidateResourceList(props.item);
@@ -48,6 +52,7 @@ const RevokeRequest = (props: { item: AccessPB.Request }) => {
   React.useEffect(() => {
     if (!opened) {
       setIsConfirmed(false);
+      setReason("");
       mutation.reset();
     }
   }, [opened]);
@@ -130,6 +135,18 @@ const RevokeRequest = (props: { item: AccessPB.Request }) => {
             </div>
           </div>
 
+          <Textarea
+            label="Reason"
+            description="Optional. Shown to the requester and recorded in the request history."
+            autosize
+            minRows={2}
+            maxRows={5}
+            value={reason}
+            disabled={mutation.isPending}
+            error={reasonTooLong ? "Use at most 500 characters" : undefined}
+            onChange={(event) => setReason(event.currentTarget.value)}
+          />
+
           <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-3">
             <Switch
               autoFocus
@@ -174,7 +191,7 @@ const RevokeRequest = (props: { item: AccessPB.Request }) => {
               type="button"
               color="red.8"
               size="xs"
-              disabled={!isConfirmed || mutation.isPending}
+              disabled={!isConfirmed || reasonTooLong || mutation.isPending}
               leftSection={
                 mutation.isPending ? (
                   <Loader2 className="motion-safe:animate-spin" size={13} />

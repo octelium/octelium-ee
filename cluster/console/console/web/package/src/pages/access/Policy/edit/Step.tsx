@@ -19,6 +19,7 @@ import { SurfacesEdit } from "./Surface";
 
 const Requirement = AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement;
 const OnTimeout = AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout;
+const ReasonRequirement = AccessP.Policy_Spec_Rule_Action_Review_Step_ReasonRequirement;
 
 export const newReviewStep = (name: string) =>
   AccessP.Policy_Spec_Rule_Action_Review_Step.create({
@@ -44,70 +45,96 @@ const Field = (props: { label: string; hint?: string; children: React.ReactNode;
   </div>
 );
 
-const ReviewersEdit = (props: {
-  step: AccessP.Policy_Spec_Rule_Action_Review_Step;
-  onUpdate: () => void;
+type Reviewer = AccessP.Policy_Spec_Rule_Action_Review_Step_Reviewer;
+
+export const ReviewersEdit = (props: {
+  reviewers: Reviewer[];
+  onChange: (reviewers: Reviewer[]) => void;
+  allowCatalogOwners?: boolean;
+  groupDescription?: string;
+  userDescription?: string;
 }) => {
-  const { step, onUpdate } = props;
-  const userNames = step.reviewers.flatMap((reviewer) =>
+  const { reviewers } = props;
+  const userNames = reviewers.flatMap((reviewer) =>
     reviewer.type.oneofKind === "user" && reviewer.type.user.userRef?.name
       ? [reviewer.type.user.userRef.name]
       : [],
   );
-  const groupNames = step.reviewers.flatMap((reviewer) =>
+  const groupNames = reviewers.flatMap((reviewer) =>
     reviewer.type.oneofKind === "group" && reviewer.type.group.groupRef?.name
       ? [reviewer.type.group.groupRef.name]
       : [],
   );
+  const hasOwners = reviewers.some((reviewer) => reviewer.type.oneofKind === "catalogOwners");
 
   const setReviewers = (
-    users: AccessP.Policy_Spec_Rule_Action_Review_Step_Reviewer[] | undefined,
-    groups: AccessP.Policy_Spec_Rule_Action_Review_Step_Reviewer[] | undefined,
+    users: Reviewer[] | undefined,
+    groups: Reviewer[] | undefined,
+    owners: boolean = hasOwners,
   ) => {
-    const keepUsers = step.reviewers.filter((reviewer) => reviewer.type.oneofKind === "user");
-    const keepGroups = step.reviewers.filter((reviewer) => reviewer.type.oneofKind === "group");
-    step.reviewers = [...(users ?? keepUsers), ...(groups ?? keepGroups)];
-    onUpdate();
+    const keepUsers = reviewers.filter((reviewer) => reviewer.type.oneofKind === "user");
+    const keepGroups = reviewers.filter((reviewer) => reviewer.type.oneofKind === "group");
+    props.onChange([
+      ...(users ?? keepUsers),
+      ...(groups ?? keepGroups),
+      ...(owners
+        ? [
+            AccessP.Policy_Spec_Rule_Action_Review_Step_Reviewer.create({
+              type: { oneofKind: "catalogOwners", catalogOwners: {} },
+            }),
+          ]
+        : []),
+    ]);
   };
 
   return (
-    <div className="grid grid-cols-1 gap-3 @2xl:grid-cols-2">
-      <SelectResourceMultiple
-        api="core"
-        kind="Group"
-        label="Reviewer Groups"
-        description="Any member of these Groups can review."
-        defaultValue={groupNames}
-        clearable
-        onChange={(items) =>
-          setReviewers(
-            undefined,
-            (items ?? []).map((item) =>
-              AccessP.Policy_Spec_Rule_Action_Review_Step_Reviewer.create({
-                type: { oneofKind: "group", group: { groupRef: getResourceRef(item) } },
-              }),
-            ),
-          )
-        }
-      />
-      <SelectResourceMultiple
-        api="core"
-        kind="User"
-        label="Reviewer Users"
-        description="These Users can review."
-        defaultValue={userNames}
-        clearable
-        onChange={(items) =>
-          setReviewers(
-            (items ?? []).map((item) =>
-              AccessP.Policy_Spec_Rule_Action_Review_Step_Reviewer.create({
-                type: { oneofKind: "user", user: { userRef: getResourceRef(item) } },
-              }),
-            ),
-            undefined,
-          )
-        }
-      />
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 gap-3 @2xl:grid-cols-2">
+        <SelectResourceMultiple
+          api="core"
+          kind="Group"
+          label="Reviewer Groups"
+          description={props.groupDescription ?? "Any member of these Groups can review."}
+          defaultValue={groupNames}
+          clearable
+          onChange={(items) =>
+            setReviewers(
+              undefined,
+              (items ?? []).map((item) =>
+                AccessP.Policy_Spec_Rule_Action_Review_Step_Reviewer.create({
+                  type: { oneofKind: "group", group: { groupRef: getResourceRef(item) } },
+                }),
+              ),
+            )
+          }
+        />
+        <SelectResourceMultiple
+          api="core"
+          kind="User"
+          label="Reviewer Users"
+          description={props.userDescription ?? "These Users can review."}
+          defaultValue={userNames}
+          clearable
+          onChange={(items) =>
+            setReviewers(
+              (items ?? []).map((item) =>
+                AccessP.Policy_Spec_Rule_Action_Review_Step_Reviewer.create({
+                  type: { oneofKind: "user", user: { userRef: getResourceRef(item) } },
+                }),
+              ),
+              undefined,
+            )
+          }
+        />
+      </div>
+      {props.allowCatalogOwners && (
+        <Switch
+          size="xs"
+          label="The owners of the requested Catalog can review"
+          checked={hasOwners}
+          onChange={(event) => setReviewers(undefined, undefined, event.target.checked)}
+        />
+      )}
     </div>
   );
 };
@@ -202,7 +229,14 @@ const StepEdit = (props: {
           </div>
         </div>
 
-        <ReviewersEdit step={step} onUpdate={onUpdate} />
+        <ReviewersEdit
+          reviewers={step.reviewers}
+          allowCatalogOwners
+          onChange={(reviewers) => {
+            step.reviewers = reviewers;
+            onUpdate();
+          }}
+        />
 
         <Field
           label="Approvals needed"
@@ -298,6 +332,82 @@ const StepEdit = (props: {
             )}
           </Field>
         </div>
+
+        <Field
+          label="Reason for a decision"
+          hint="Whether reviewers must explain their decision. Integrations hand such decisions off to the access portal."
+        >
+          <SegmentedControl
+            size="xs"
+            aria-label="Reason for a decision"
+            value={
+              step.reasonRequirement === ReasonRequirement.ALWAYS
+                ? "always"
+                : step.reasonRequirement === ReasonRequirement.REJECT_ONLY
+                  ? "reject"
+                  : "optional"
+            }
+            data={[
+              { label: "Optional", value: "optional" },
+              { label: "Required to reject", value: "reject" },
+              { label: "Always required", value: "always" },
+            ]}
+            onChange={(value) => {
+              step.reasonRequirement =
+                value === "always"
+                  ? ReasonRequirement.ALWAYS
+                  : value === "reject"
+                    ? ReasonRequirement.REJECT_ONLY
+                    : ReasonRequirement.REASON_REQUIREMENT_UNSET;
+              onUpdate();
+            }}
+          />
+        </Field>
+
+        <Field
+          label="Escalation"
+          hint="Bring in backup reviewers when nobody can review the step or when it waits too long."
+        >
+          <div className="flex flex-col gap-3">
+            <Switch
+              size="xs"
+              label="Escalate to backup reviewers"
+              checked={!!step.escalation}
+              onChange={(event) => {
+                step.escalation = event.target.checked
+                  ? AccessP.Policy_Spec_Rule_Action_Review_Step_Escalation.create()
+                  : undefined;
+                onUpdate();
+              }}
+            />
+            {step.escalation && (
+              <div className="flex flex-col gap-3 rounded-lg border border-dashed border-slate-200 p-3">
+                <div className="max-w-sm">
+                  <DurationPicker
+                    title="Escalate after"
+                    description="Leave empty to escalate only when nobody can review the step."
+                    placeholder="Only when nobody can review"
+                    value={step.escalation.after}
+                    onChange={(value) => {
+                      if (step.escalation) step.escalation.after = value;
+                      onUpdate();
+                    }}
+                  />
+                </div>
+                <ReviewersEdit
+                  reviewers={step.escalation.reviewers}
+                  allowCatalogOwners
+                  groupDescription="Members of these Groups can also review once the step escalates."
+                  userDescription="These Users can also review once the step escalates."
+                  onChange={(reviewers) => {
+                    if (step.escalation) step.escalation.reviewers = reviewers;
+                    onUpdate();
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </Field>
 
         <Field
           label="Present it in Slack, Jira or a webhook"

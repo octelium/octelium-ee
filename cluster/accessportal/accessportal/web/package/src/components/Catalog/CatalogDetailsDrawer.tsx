@@ -3,7 +3,7 @@ import { Drawer, SegmentedControl } from "@mantine/core";
 import { Globe2, Server } from "lucide-react";
 import * as React from "react";
 
-import { useServices } from "@/components/Access/hooks";
+import { useCatalogServices } from "@/components/Access/hooks";
 import { ServiceTypeIcon } from "@/components/Access/icons";
 import {
   Badge,
@@ -15,41 +15,74 @@ import {
   Note,
   SkeletonRows,
 } from "@/ui";
-import { namespaceFromName, serviceModeLabel, shortName } from "@/utils";
+import {
+  formatDuration,
+  namespaceFromName,
+  serviceModeLabel,
+  shortName,
+} from "@/utils";
 
 type CatalogDetailsDrawerProps = {
-  catalog?: AccessP.Catalog;
+  catalog?: AccessP.UserCatalog;
   opened: boolean;
   onClose: () => void;
 };
 
-const fullServiceName = (name: string) =>
-  name.includes(".") ? name : `${name}.default`;
+export const AccessLevelList = (props: { catalog?: AccessP.UserCatalog }) => {
+  const levels = props.catalog?.accessLevels ?? [];
+  if (levels.length === 0) return null;
 
-const catalogScope = (catalog?: AccessP.Catalog) => {
-  const scope = catalog?.spec?.resourceCollection?.service;
-  return {
-    serviceNames: new Set((scope?.services ?? []).filter(Boolean).map(fullServiceName)),
-    namespaces: new Set((scope?.namespaces ?? []).filter(Boolean)),
-  };
+  return (
+    <div className="flex flex-col gap-2">
+      <Eyebrow>Access levels</Eyebrow>
+      {levels.map((level) => (
+        <div
+          key={level.name}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5"
+        >
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-body font-semibold text-slate-800">
+              {level.displayName || level.name}
+            </span>
+            <Badge>
+              {level.type === AccessP.UserCatalog_AccessLevel_Type.RESTRICTED
+                ? "Restricted"
+                : "Full access"}
+            </Badge>
+            {level.overridesGuardrails && (
+              <Badge tone="amber">Overrides guardrails</Badge>
+            )}
+            {level.maxDuration && (
+              <Badge>Up to {formatDuration(level.maxDuration)}</Badge>
+            )}
+          </div>
+          {level.description && (
+            <p className="mt-1 text-xs font-normal leading-5 text-slate-600">
+              {level.description}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 };
 
 const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
   const [view, setView] = React.useState<"services" | "namespaces">("services");
-  const scope = catalogScope(props.catalog);
-  const servicesQuery = useServices("", props.opened && !!props.catalog);
+  const servicesQuery = useCatalogServices(
+    props.opened ? props.catalog?.metadata?.name : undefined,
+  );
+  const isDynamic =
+    props.catalog?.membership === AccessP.Catalog_Spec_Membership.DYNAMIC;
 
   const namespaceOf = (service: { metadata?: { name: string }; status?: { namespace: string } }) =>
     service.status?.namespace || namespaceFromName(service.metadata?.name);
 
-  const services = (servicesQuery.data ?? []).filter(
-    (service) =>
-      scope.serviceNames.has(service.metadata?.name ?? "") ||
-      scope.namespaces.has(namespaceOf(service)),
+  const services = servicesQuery.data ?? [];
+  const hiddenCount = Math.max(
+    0,
+    (props.catalog?.totalService ?? 0) - services.length,
   );
-
-  const visibleNames = new Set(services.map((service) => service.metadata?.name ?? ""));
-  const hiddenListed = [...scope.serviceNames].filter((name) => !visibleNames.has(name));
 
   const serviceCountByNamespace = services.reduce<Record<string, number>>(
     (counts, service) => {
@@ -60,9 +93,7 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
     {},
   );
 
-  const namespaces = [
-    ...new Set([...scope.namespaces, ...Object.keys(serviceCountByNamespace)]),
-  ].sort();
+  const namespaces = Object.keys(serviceCountByNamespace).sort();
 
   return (
     <Drawer
@@ -89,9 +120,13 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
           </MonoValue>
           <p className="mt-1 text-xs font-normal leading-5 text-slate-600">
             {props.catalog?.metadata?.description ||
-              "Every Service collected by this Catalog is granted at once when the request is approved."}
+              (props.catalog?.allowPartialRequests
+                ? "You can request the whole Catalog or only some of its Services."
+                : "Every Service collected by this Catalog is granted at once when the request is approved.")}
           </p>
         </div>
+
+        <AccessLevelList catalog={props.catalog} />
 
         <SegmentedControl
           fullWidth
@@ -129,11 +164,10 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
           ) : (
             <div className="flex flex-col gap-2">
               <Eyebrow>Included services</Eyebrow>
-              {hiddenListed.length > 0 && (
+              {hiddenCount > 0 && (
                 <Note>
-                  {hiddenListed.length} listed Service
-                  {hiddenListed.length === 1 ? " is" : "s are"} not visible to
-                  you and {hiddenListed.length === 1 ? "is" : "are"} not shown.
+                  {hiddenCount} Service{hiddenCount === 1 ? " is" : "s are"} not
+                  shown.
                 </Note>
               )}
               {services.map((service) => {
@@ -202,11 +236,9 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
                       {name}
                     </p>
                     <p className="mt-0.5 text-xs font-normal text-slate-500">
-                      {scope.namespaces.has(name)
-                        ? "Every Service in this namespace"
-                        : "Only the listed Services"}
-                      {" · "}
-                      {count} visible to you
+                      {count} Service{count === 1 ? "" : "s"}
+                      {isDynamic &&
+                        " · New Services are included automatically"}
                     </p>
                   </div>
                 </div>

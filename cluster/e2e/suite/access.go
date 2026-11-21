@@ -65,14 +65,11 @@ func newAccessCast(t *testing.T, h *eeharness.H) *accessCast {
 
 func (c *accessCast) autoApproveRule(name string) *accessv1.Policy_Spec_Rule {
 	return &accessv1.Policy_Spec_Rule{
-		Name:      name,
-		Priority:  0,
-		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
-		Condition: eeharness.CatalogResource(c.alphaCatalog),
-		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-			InlinePolicies:    harness.InlineAllowAny("granted"),
-			MaxAccessDuration: eeharness.Minutes(5),
-		},
+		Name:        name,
+		Priority:    0,
+		Effect:      accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition:   eeharness.CatalogResource(c.alphaCatalog),
+		MaxDuration: eeharness.Minutes(5),
 	}
 }
 
@@ -93,10 +90,7 @@ func (c *accessCast) reviewRuleFor(name string, cat *accessv1.Catalog,
 				Review: &accessv1.Policy_Spec_Rule_Action_Review{Steps: steps},
 			},
 		},
-		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-			InlinePolicies:    harness.InlineAllowAny("granted"),
-			MaxAccessDuration: eeharness.Minutes(5),
-		},
+		MaxDuration: eeharness.Minutes(5),
 	}
 }
 
@@ -112,10 +106,7 @@ func testAccessAutoApprove(t *testing.T, ch *harness.H) {
 		Condition: eeharness.AllOf(
 			eeharness.GroupSubject(c.sre),
 			eeharness.CatalogResource(c.alphaCatalog)),
-		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-			InlinePolicies:    harness.InlineAllowAny("granted"),
-			MaxAccessDuration: eeharness.Minutes(5),
-		},
+		MaxDuration: eeharness.Minutes(5),
 	})
 
 	alphaProbe := h.Probe(t, c.alice.User, c.alpha)
@@ -436,14 +427,11 @@ func testAccessTimeouts(t *testing.T, ch *harness.H) {
 				OnTimeout:           accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_REJECT,
 			}),
 		&accessv1.Policy_Spec_Rule{
-			Name:      "auto-approve-short",
-			Priority:  0,
-			Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
-			Condition: eeharness.CatalogResource(expiryCatalog),
-			Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-				InlinePolicies:    harness.InlineAllowAny("granted"),
-				MaxAccessDuration: eeharness.Seconds(60),
-			},
+			Name:        "auto-approve-short",
+			Priority:    0,
+			Effect:      accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+			Condition:   eeharness.CatalogResource(expiryCatalog),
+			MaxDuration: eeharness.Seconds(60),
 		})
 
 	probe := h.Probe(t, c.alice.User, c.alpha)

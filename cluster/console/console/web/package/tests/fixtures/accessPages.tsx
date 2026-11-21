@@ -83,7 +83,8 @@ const reviewRule = AccessP.Policy_Spec_Rule.create({
       review: { steps: [step("team-lead", "sre"), step("security", "security", 2)] },
     },
   },
-  authorization: { policies: ["prod-read-only"] },
+  maxDuration: { type: { oneofKind: "hours", hours: 8 } },
+  message: "Reviewers expect an incident or change ticket.",
 });
 
 const nestedRule = AccessP.Policy_Spec_Rule.create({
@@ -205,9 +206,40 @@ const request = (
     },
   });
 
+const approved = request("req-approved", S.APPROVED, reviewRule, 2);
+approved.status!.state!.reason = AccessP.Request_Status_State_Reason.APPROVED_BY_REVIEWERS;
+approved.status!.accessStartsAt = at(-30);
+approved.status!.accessEndsAt = at(150);
+approved.status!.resolvedScope = AccessP.Request_Status_ResolvedScope.create({
+  catalogRef: ref("access/v1", "Catalog", "production-support"),
+  catalogDisplayName: "Production support",
+  accessLevel: {
+    name: "read-only",
+    displayName: "Read only",
+    type: { oneofKind: "restricted", restricted: { policies: ["prod-read-only"] } },
+  },
+  serviceRefs: [ref("core/v1", "Service", "billing.production")],
+  totalExcludedService: 1,
+});
+approved.status!.grant = AccessP.Request_Status_Grant.create({
+  state: AccessP.Request_Status_Grant_State.ACTIVE,
+  activatedAt: at(-30),
+});
+
+const revoked = request("req-revoked", S.REVOKED);
+revoked.status!.state = {
+  status: S.REVOKED,
+  createdAt: at(-10),
+  reason: AccessP.Request_Status_State_Reason.ACCESS_REVOKED,
+  message: "The incident is closed.",
+  actorRef: ref("core/v1", "User", "alice"),
+};
+
 const requests: Record<string, AccessP.Request> = {
   "req-pending": request("req-pending", S.PENDING, reviewRule, 1),
   "req-unmatched": request("req-unmatched", S.REJECTED),
+  "req-approved": approved,
+  "req-revoked": revoked,
 };
 
 const reviews = [
@@ -235,6 +267,34 @@ const catalog = AccessP.Catalog.create({
     resourceCollection: {
       service: { services: ["billing.production"], namespaces: ["production"] },
     },
+    accessLevels: [
+      {
+        name: "read-only",
+        displayName: "Read only",
+        description: "Read the production data without changing it.",
+        type: { oneofKind: "restricted", restricted: { policies: ["prod-read-only"] } },
+      },
+      {
+        name: "break-glass",
+        displayName: "Break glass",
+        type: { oneofKind: "full", full: { priority: -1 } },
+      },
+    ],
+    audience: { groups: ["sre"], users: [], match: "", onBehalf: { users: [], groups: ["sre-leads"] } },
+    owners: { users: [], groups: ["platform"] },
+    requirements: { ticket: { isRequired: true, label: "Change ticket", pattern: "" } },
+  },
+  status: {
+    totalService: 3,
+    checkedAt: at(-1),
+    issues: [
+      {
+        type: AccessP.ConfigurationIssue_Type.OVERRIDES_GUARDRAILS,
+        severity: AccessP.ConfigurationIssue_Severity.WARNING,
+        message: "The access level break-glass overrides deny guardrails.",
+        accessLevel: "break-glass",
+      },
+    ],
   },
 });
 

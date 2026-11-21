@@ -5,10 +5,12 @@ import SelectResource from "@/components/ResourceLayout/SelectResource";
 import { twMerge } from "@/lib/utils";
 import { useListKeys } from "@/utils/forms";
 import { getResourceRef } from "@/utils/pb";
-import { ActionIcon, Button, Input, Tooltip } from "@mantine/core";
+import { ActionIcon, Button, Input, SegmentedControl, TextInput, Tooltip } from "@mantine/core";
 import {
   Braces,
   Combine,
+  Folder,
+  KeyRound,
   Layers,
   ListChecks,
   LucideIcon,
@@ -16,6 +18,7 @@ import {
   Plus,
   Trash2,
   User,
+  UserRoundCog,
   UserRoundSearch,
   Users,
   WandSparkles,
@@ -33,6 +36,9 @@ type ConditionChoice =
   | "subjectGroup"
   | "service"
   | "catalog"
+  | "namespace"
+  | "accessLevel"
+  | "onBehalf"
   | "all"
   | "any"
   | "requester"
@@ -49,9 +55,13 @@ const conditionChoice = (
     case "resource":
       return condition.type.resource.type.oneofKind === "catalogRef"
         ? "catalog"
-        : "service";
+        : condition.type.resource.type.oneofKind === "namespaceRef"
+          ? "namespace"
+          : "service";
     case "userRef":
       return "requester";
+    case "isOnBehalf":
+      return "onBehalf";
     case undefined:
       return undefined;
     default:
@@ -69,13 +79,16 @@ const CHOICE_GROUPS: Array<{
       { value: "subjectGroup", label: "Member of a Group", hint: "The subject belongs to a Group", icon: Users },
       { value: "subjectUser", label: "A specific User", hint: "The subject is this User", icon: User },
       { value: "requester", label: "Requested by", hint: "Who created the request, even on behalf of someone else", icon: UserRoundSearch },
+      { value: "onBehalf", label: "On behalf", hint: "Whether the request was made for someone else", icon: UserRoundCog },
     ],
   },
   {
     label: "What is requested",
     items: [
       { value: "catalog", label: "A Catalog", hint: "The request targets this Catalog", icon: Layers },
-      { value: "service", label: "A Service", hint: "The request targets this Service", icon: PanelTop },
+      { value: "accessLevel", label: "An access level", hint: "The request asks for this access level of its Catalog", icon: KeyRound },
+      { value: "service", label: "A Service", hint: "The requested access includes this Service", icon: PanelTop },
+      { value: "namespace", label: "A Namespace", hint: "The requested access includes a Service of this Namespace", icon: Folder },
     ],
   },
   {
@@ -119,6 +132,14 @@ const setConditionChoice = (
         type: { oneofKind: "catalogRef", catalogRef: MetaP.ObjectReference.create() },
       }),
     }))
+    .with("namespace", () => ({
+      oneofKind: "resource" as const,
+      resource: AccessP.Policy_Spec_Rule_Condition_Resource.create({
+        type: { oneofKind: "namespaceRef", namespaceRef: MetaP.ObjectReference.create() },
+      }),
+    }))
+    .with("accessLevel", () => ({ oneofKind: "accessLevel" as const, accessLevel: "" }))
+    .with("onBehalf", () => ({ oneofKind: "isOnBehalf" as const, isOnBehalf: true }))
     .with("all", () => ({
       oneofKind: "all" as const,
       all: AccessP.Policy_Spec_Rule_Condition_All.create({ of: [newCondition()] }),
@@ -259,12 +280,60 @@ export const ConditionEdit = (props: {
             api="core"
             kind="Service"
             label="Service"
-            description="Requests for this Service match. Catalogs that contain it do not."
+            description="Requests whose access includes this Service match, whatever Catalog they target."
             value={x.resource.type.serviceRef}
             onChange={(ref) => {
               if (x.resource.type.oneofKind === "serviceRef") x.resource.type.serviceRef = ref;
               onUpdate();
             }}
+          />
+        ) : x.oneofKind === "resource" && x.resource.type.oneofKind === "namespaceRef" ? (
+          <RefSelect
+            api="core"
+            kind="Namespace"
+            label="Namespace"
+            description="Requests whose access includes a Service of this Namespace match."
+            value={x.resource.type.namespaceRef}
+            onChange={(ref) => {
+              if (x.resource.type.oneofKind === "namespaceRef") x.resource.type.namespaceRef = ref;
+              onUpdate();
+            }}
+          />
+        ) : null,
+    )
+    .when(
+      (x) => x.oneofKind === "accessLevel",
+      (x) =>
+        x.oneofKind === "accessLevel" ? (
+          <TextInput
+            label="Access level"
+            description="The name of an access level as defined in the Catalogs, for instance admin."
+            placeholder="admin"
+            value={x.accessLevel}
+            onChange={(event) => {
+              if (condition.type.oneofKind === "accessLevel")
+                condition.type.accessLevel = event.target.value.trim();
+              onUpdate();
+            }}
+          />
+        ) : null,
+    )
+    .when(
+      (x) => x.oneofKind === "isOnBehalf",
+      (x) =>
+        x.oneofKind === "isOnBehalf" ? (
+          <SegmentedControl
+            aria-label="On behalf"
+            value={x.isOnBehalf ? "yes" : "no"}
+            onChange={(next) => {
+              if (condition.type.oneofKind === "isOnBehalf")
+                condition.type.isOnBehalf = next === "yes";
+              onUpdate();
+            }}
+            data={[
+              { value: "yes", label: "Made for someone else" },
+              { value: "no", label: "Made for themselves" },
+            ]}
           />
         ) : null,
     )

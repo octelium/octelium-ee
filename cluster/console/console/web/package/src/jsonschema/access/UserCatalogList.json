@@ -1,0 +1,526 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/UserCatalogList",
+    "definitions": {
+        "UserCatalogList": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version (i.e. \"access/v1\")"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource name (i.e. `UserCatalogList`)."
+                },
+                "items": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.UserCatalog"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Items is the list of UserCatalogs."
+                },
+                "listResponseMeta": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ListResponseMeta",
+                    "additionalProperties": false,
+                    "description": "ListResponseMeta is common information about the list."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "User Catalog List",
+            "description": "UserCatalogList is the list of UserCatalogs returned by the UserService's ListCatalog method."
+        },
+        "octelium.api.main.access.v1.Catalog.Spec.Requirements": {
+            "properties": {
+                "justification": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Catalog.Spec.Requirements.Justification",
+                    "additionalProperties": false,
+                    "description": "Justification controls the Request's justification."
+                },
+                "ticket": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Catalog.Spec.Requirements.Ticket",
+                    "additionalProperties": false,
+                    "description": "Ticket controls the Request's ticket reference."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Requirements",
+            "description": "Requirements is what a Request for the Catalog has to provide"
+        },
+        "octelium.api.main.access.v1.Catalog.Spec.Requirements.Justification": {
+            "properties": {
+                "isRequired": {
+                    "type": "boolean",
+                    "description": "IsRequired requires a justification."
+                },
+                "minLength": {
+                    "type": "integer",
+                    "description": "MinLength is the minimum number of characters of the justification."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Justification",
+            "description": "Justification controls the Request's justification"
+        },
+        "octelium.api.main.access.v1.Catalog.Spec.Requirements.Ticket": {
+            "properties": {
+                "isRequired": {
+                    "type": "boolean",
+                    "description": "IsRequired requires a ticket reference."
+                },
+                "pattern": {
+                    "type": "string",
+                    "description": "Pattern is a regular expression that the ticket reference must fully match (e.g. `^[A-Z]+-[0-9]+$`)."
+                },
+                "label": {
+                    "type": "string",
+                    "description": "Label is the name of the ticket field that is shown to the requesters (e.g. `Jira issue`)."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Ticket",
+            "description": "Ticket controls the Request's ticket reference"
+        },
+        "octelium.api.main.access.v1.UserCatalog": {
+            "properties": {
+                "metadata": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
+                    "additionalProperties": false,
+                    "description": "Metadata is the Catalog's metadata."
+                },
+                "accessLevels": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.UserCatalog.AccessLevel"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "AccessLevels is the list of the Catalog's access levels. The first one is the default access level."
+                },
+                "owners": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.UserCatalog.Owner"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Owners is the list of the Catalog's owners."
+                },
+                "requirements": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Catalog.Spec.Requirements",
+                    "additionalProperties": false,
+                    "description": "Requirements is what a Request for the Catalog has to provide."
+                },
+                "allowPartialRequests": {
+                    "type": "boolean",
+                    "description": "AllowPartialRequests is whether a Request can include only a subset of the Catalog's Services."
+                },
+                "totalService": {
+                    "type": "integer",
+                    "description": "TotalService is the number of the Services that the Catalog currently resolves to."
+                },
+                "viewer": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.UserCatalog.Viewer",
+                    "additionalProperties": false,
+                    "description": "Viewer is the relation between the Catalog and the calling User."
+                },
+                "membership": {
+                    "enum": [
+                        "MEMBERSHIP_UNSET",
+                        "FIXED",
+                        "DYNAMIC"
+                    ],
+                    "type": "string",
+                    "title": "Membership",
+                    "description": "Membership controls how the Namespaces of the Catalog are granted"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "User Catalog",
+            "description": "UserCatalog is the requester-facing view of a Catalog"
+        },
+        "octelium.api.main.access.v1.UserCatalog.AccessLevel": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the access level."
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is the human readable name of the access level."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description is the plain language explanation of the access level."
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "FULL",
+                        "RESTRICTED"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the kind of the access level"
+                },
+                "defaultDuration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "DefaultDuration is the default access duration."
+                },
+                "maxDuration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "MaxDuration is the upper bound of the access duration."
+                },
+                "overridesGuardrails": {
+                    "type": "boolean",
+                    "description": "OverridesGuardrails is whether the access takes precedence over the core Policy rules of the default priority, including their DENY rules."
+                },
+                "minAAL": {
+                    "enum": [
+                        "AAL_UNSET",
+                        "AAL1",
+                        "AAL2",
+                        "AAL3"
+                    ],
+                    "type": "string",
+                    "title": "AAL",
+                    "description": "AAL is the authenticator assurance level (AAL) of the authentication as defined by NIST SP 800-63B"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Access Level",
+            "description": "AccessLevel is the requester-facing view of an access level"
+        },
+        "octelium.api.main.access.v1.UserCatalog.Owner": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "USER",
+                        "GROUP"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the kind of the owner"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the User or the Group."
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is the display name of the User or the Group."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Owner",
+            "description": "Owner is an owner of the Catalog"
+        },
+        "octelium.api.main.access.v1.UserCatalog.Viewer": {
+            "properties": {
+                "canRequestOnBehalf": {
+                    "type": "boolean",
+                    "description": "CanRequestOnBehalf is whether the calling User can request the Catalog on behalf of others."
+                },
+                "activeRequestRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ActiveRequestRef is the reference of the calling User's approved Request whose access is currently granted, if any."
+                },
+                "accessEndsAt": {
+                    "type": "string",
+                    "description": "AccessEndsAt is the time at which that access ends.",
+                    "format": "date-time"
+                },
+                "pendingRequestRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "PendingRequestRef is the reference of the calling User's pending Request for the Catalog, if any."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Viewer",
+            "description": "Viewer is the relation between the Catalog and the calling User"
+        },
+        "octelium.api.main.meta.v1.Duration": {
+            "properties": {
+                "milliseconds": {
+                    "type": "integer",
+                    "description": "Milliseconds is the duration set in milliseconds"
+                },
+                "seconds": {
+                    "type": "integer",
+                    "description": "Seconds is the duration set in seconds"
+                },
+                "minutes": {
+                    "type": "integer",
+                    "description": "Minutes is the duration set in minutes"
+                },
+                "hours": {
+                    "type": "integer",
+                    "description": "Hours is the duration set in hours"
+                },
+                "days": {
+                    "type": "integer",
+                    "description": "Days is the duration set in days"
+                },
+                "weeks": {
+                    "type": "integer",
+                    "description": "Weeks is the duration set in weeks"
+                },
+                "months": {
+                    "type": "integer",
+                    "description": "Months is the duration set in months"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "milliseconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "seconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "minutes"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "hours"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "days"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "weeks"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "months"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "milliseconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "seconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "minutes"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "hours"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "days"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "weeks"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "months"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Duration",
+            "description": "Duration is a length of time that is expressed in a single unit of choice. Exactly one of the units is set (e.g. `seconds: 30`)."
+        },
+        "octelium.api.main.meta.v1.ListResponseMeta": {
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "description": "Page is the page number. Starts with zero."
+                },
+                "itemsPerPage": {
+                    "type": "integer",
+                    "description": "ItemsPerPage is the number of items per page."
+                },
+                "totalCount": {
+                    "type": "integer",
+                    "description": "TotalCount is the total count of items that can be obtained."
+                },
+                "hasMore": {
+                    "type": "boolean",
+                    "description": "HasMore shows whether a next page is available"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "List Response Meta",
+            "description": "ListResponseMeta is the pagination information that is common to every List response."
+        },
+        "octelium.api.main.meta.v1.Metadata": {
+            "properties": {
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the unique UUID value for the object assigned by the Cluster. Read-only."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the object. It must be unique within a certain API/Version/Kind tuple."
+                },
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the timestamp of creation of the object. Read-only.",
+                    "format": "date-time"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "description": "UpdatedAt is the timestamp of when the object was last updated. Read-only.",
+                    "format": "date-time"
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is the name that can be shown publicly for the object. Doesn't need to be unique."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description is used to describe the object in a short sentence. Maximum characters are 1000."
+                },
+                "labels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Labels is a map of string keys and values to organize objects."
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Tags is an optional array of tags that classify the Resource."
+                },
+                "annotations": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Annotations is a map of string keys and values that can be used to store arbitrary metadata about the object."
+                },
+                "picURL": {
+                    "type": "string",
+                    "description": "PicURL is the Picture URL of the resource."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is a unique ID that represent the current version of the resource object. Used by the Cluster to detect updates."
+                },
+                "lastResourceVersion": {
+                    "type": "string",
+                    "description": "LastResourceVersion is the ResourceVersion of the last update of the Resource."
+                },
+                "actorRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ActorRef is the object reference to the Actor resource, typically a Session, who is responsible for the current resource change. If ActorRef is not set, then the current change of the resource was done by the Cluster"
+                },
+                "actorOperation": {
+                    "type": "string",
+                    "description": "ActorOperation is the gRPC full method triggered by the actorRef to modify the Resource"
+                },
+                "isSystem": {
+                    "type": "boolean",
+                    "description": "IsSystem means that the resource is created by the Cluster and it cannot be managed by the administrators. Read-only."
+                },
+                "specLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SpecLabels is map used internally by the Cluster for quick searches among lists of objects. Read-only."
+                },
+                "isUserHidden": {
+                    "type": "boolean",
+                    "description": "IsUserHidden means that the resource object is hidden from ordinary Users and should not be exposed via the User APIs."
+                },
+                "isSystemHidden": {
+                    "type": "boolean",
+                    "description": "IsSystemHidden means that the resource object is hidden by the Cluster and should not be exposed via the APIs."
+                },
+                "systemLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SystemLabels is a similar map to specLabels. Used only by the Cluster."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Metadata",
+            "description": "Metadata is the metadata that is common to every Cluster resource. It carries the resource's identity (i.e. its UID and name), its human-readable information as well as the Cluster-managed bookkeeping of the resource's versioning and provenance."
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
+        }
+    }
+}

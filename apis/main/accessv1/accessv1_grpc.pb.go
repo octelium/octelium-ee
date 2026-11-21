@@ -43,6 +43,7 @@ const (
 	MainService_DeleteRequest_FullMethodName              = "/octelium.api.main.access.v1.MainService/DeleteRequest"
 	MainService_ListRequest_FullMethodName                = "/octelium.api.main.access.v1.MainService/ListRequest"
 	MainService_RevokeRequest_FullMethodName              = "/octelium.api.main.access.v1.MainService/RevokeRequest"
+	MainService_SimulateRequest_FullMethodName            = "/octelium.api.main.access.v1.MainService/SimulateRequest"
 	MainService_ListReview_FullMethodName                 = "/octelium.api.main.access.v1.MainService/ListReview"
 	MainService_GetReview_FullMethodName                  = "/octelium.api.main.access.v1.MainService/GetReview"
 	MainService_DeleteReview_FullMethodName               = "/octelium.api.main.access.v1.MainService/DeleteReview"
@@ -103,6 +104,12 @@ type MainServiceClient interface {
 	// state is set to REVOKED and the access that has been granted by it, if
 	// any, is immediately terminated.
 	RevokeRequest(ctx context.Context, in *RevokeRequestRequest, opts ...grpc.CallOption) (*metav1.OperationResult, error)
+	// SimulateRequest evaluates a hypothetical Request exactly like the
+	// Cluster evaluates a real one without creating anything. It reports the
+	// Rule that would decide the Request, the Rules that would be skipped
+	// before it, the resolved scope, the reviewers of every review Step and the
+	// core authorization that an approval would grant.
+	SimulateRequest(ctx context.Context, in *SimulateRequestRequest, opts ...grpc.CallOption) (*SimulateRequestResponse, error)
 	// ListReview lists Reviews
 	ListReview(ctx context.Context, in *ListReviewOptions, opts ...grpc.CallOption) (*ReviewList, error)
 	// GetReview retrieves a specific Review
@@ -288,6 +295,16 @@ func (c *mainServiceClient) RevokeRequest(ctx context.Context, in *RevokeRequest
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(metav1.OperationResult)
 	err := c.cc.Invoke(ctx, MainService_RevokeRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) SimulateRequest(ctx context.Context, in *SimulateRequestRequest, opts ...grpc.CallOption) (*SimulateRequestResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SimulateRequestResponse)
+	err := c.cc.Invoke(ctx, MainService_SimulateRequest_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -505,6 +522,12 @@ type MainServiceServer interface {
 	// state is set to REVOKED and the access that has been granted by it, if
 	// any, is immediately terminated.
 	RevokeRequest(context.Context, *RevokeRequestRequest) (*metav1.OperationResult, error)
+	// SimulateRequest evaluates a hypothetical Request exactly like the
+	// Cluster evaluates a real one without creating anything. It reports the
+	// Rule that would decide the Request, the Rules that would be skipped
+	// before it, the resolved scope, the reviewers of every review Step and the
+	// core authorization that an approval would grant.
+	SimulateRequest(context.Context, *SimulateRequestRequest) (*SimulateRequestResponse, error)
 	// ListReview lists Reviews
 	ListReview(context.Context, *ListReviewOptions) (*ReviewList, error)
 	// GetReview retrieves a specific Review
@@ -597,6 +620,9 @@ func (UnimplementedMainServiceServer) ListRequest(context.Context, *ListRequestO
 }
 func (UnimplementedMainServiceServer) RevokeRequest(context.Context, *RevokeRequestRequest) (*metav1.OperationResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RevokeRequest not implemented")
+}
+func (UnimplementedMainServiceServer) SimulateRequest(context.Context, *SimulateRequestRequest) (*SimulateRequestResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SimulateRequest not implemented")
 }
 func (UnimplementedMainServiceServer) ListReview(context.Context, *ListReviewOptions) (*ReviewList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListReview not implemented")
@@ -918,6 +944,24 @@ func _MainService_RevokeRequest_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MainServiceServer).RevokeRequest(ctx, req.(*RevokeRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_SimulateRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SimulateRequestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).SimulateRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_SimulateRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).SimulateRequest(ctx, req.(*SimulateRequestRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1292,6 +1336,10 @@ var MainService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MainService_RevokeRequest_Handler,
 		},
 		{
+			MethodName: "SimulateRequest",
+			Handler:    _MainService_SimulateRequest_Handler,
+		},
+		{
 			MethodName: "ListReview",
 			Handler:    _MainService_ListReview_Handler,
 		},
@@ -1367,11 +1415,16 @@ var MainService_ServiceDesc = grpc.ServiceDesc{
 const (
 	UserService_CreateRequest_FullMethodName           = "/octelium.api.main.access.v1.UserService/CreateRequest"
 	UserService_CreateRequestForSubject_FullMethodName = "/octelium.api.main.access.v1.UserService/CreateRequestForSubject"
+	UserService_PreviewRequest_FullMethodName          = "/octelium.api.main.access.v1.UserService/PreviewRequest"
 	UserService_UpdateRequest_FullMethodName           = "/octelium.api.main.access.v1.UserService/UpdateRequest"
 	UserService_GetRequest_FullMethodName              = "/octelium.api.main.access.v1.UserService/GetRequest"
 	UserService_CancelRequest_FullMethodName           = "/octelium.api.main.access.v1.UserService/CancelRequest"
 	UserService_ListRequest_FullMethodName             = "/octelium.api.main.access.v1.UserService/ListRequest"
+	UserService_EndAccess_FullMethodName               = "/octelium.api.main.access.v1.UserService/EndAccess"
+	UserService_RespondToRequest_FullMethodName        = "/octelium.api.main.access.v1.UserService/RespondToRequest"
+	UserService_GetInbox_FullMethodName                = "/octelium.api.main.access.v1.UserService/GetInbox"
 	UserService_ListCatalog_FullMethodName             = "/octelium.api.main.access.v1.UserService/ListCatalog"
+	UserService_GetCatalog_FullMethodName              = "/octelium.api.main.access.v1.UserService/GetCatalog"
 	UserService_ListCatalogService_FullMethodName      = "/octelium.api.main.access.v1.UserService/ListCatalogService"
 	UserService_ListSubjectUser_FullMethodName         = "/octelium.api.main.access.v1.UserService/ListSubjectUser"
 	UserService_GetSubjectUser_FullMethodName          = "/octelium.api.main.access.v1.UserService/GetSubjectUser"
@@ -1389,25 +1442,49 @@ type UserServiceClient interface {
 	// CreateRequest creates a Request whose subject is the calling User itself
 	CreateRequest(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Request, error)
 	// CreateRequestForSubject creates a Request on behalf of another User which
-	// must be explicitly set in the Request's spec.
+	// must be explicitly set in the Request's spec. The calling User must be
+	// allowed to request on behalf of others by the requested Catalog's
+	// audience.
 	CreateRequestForSubject(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Request, error)
-	// UpdateRequest updates a still pending Request that is owned by the
-	// calling User. Only the urgency, justification, deadline and duration can
-	// be changed.
+	// PreviewRequest evaluates a Request exactly like CreateRequest without
+	// creating it. It tells the caller whether the Request would be denied,
+	// automatically approved or reviewed, by whom, for how long and what the
+	// granted access would include.
+	PreviewRequest(ctx context.Context, in *Request, opts ...grpc.CallOption) (*RequestPreview, error)
+	// UpdateRequest updates a still pending Request that is created by the
+	// calling User. Only the urgency, justification, ticket, deadline, start
+	// and duration can be changed.
 	UpdateRequest(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Request, error)
-	// GetRequest retrieves a specific Request that is owned by the calling User
+	// GetRequest retrieves a specific Request that is either created by the
+	// calling User or whose subject is the calling User
 	GetRequest(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Request, error)
-	// CancelRequest cancels a still pending Request that is owned by the
-	// calling User
+	// CancelRequest cancels a still pending Request that is either created by
+	// the calling User or whose subject is the calling User
 	CancelRequest(ctx context.Context, in *CancelRequestRequest, opts ...grpc.CallOption) (*metav1.OperationResult, error)
 	// ListRequest lists the Requests that are created by the calling User
+	// and/or whose subject is the calling User
 	ListRequest(ctx context.Context, in *ListUserRequestOptions, opts ...grpc.CallOption) (*RequestList, error)
-	// ListCatalog lists Catalogs
-	ListCatalog(ctx context.Context, in *ListUserCatalogOptions, opts ...grpc.CallOption) (*CatalogList, error)
-	// ListCatalogService lists the Services that are included by the Catalogs
+	// EndAccess ends the access that an approved Request granted before it
+	// expires. It can be used by the User that created the Request as well as
+	// by its subject.
+	EndAccess(ctx context.Context, in *EndAccessRequest, opts ...grpc.CallOption) (*Request, error)
+	// RespondToRequest answers a reviewer's request for more information on a
+	// pending Request. The Request moves back to its reviewers.
+	RespondToRequest(ctx context.Context, in *RespondToRequestRequest, opts ...grpc.CallOption) (*Request, error)
+	// GetInbox returns the counters of the items that currently need the
+	// calling User's attention.
+	GetInbox(ctx context.Context, in *GetInboxRequest, opts ...grpc.CallOption) (*Inbox, error)
+	// ListCatalog lists the Catalogs that the calling User can request
+	ListCatalog(ctx context.Context, in *ListUserCatalogOptions, opts ...grpc.CallOption) (*UserCatalogList, error)
+	// GetCatalog retrieves a specific Catalog that the calling User can request
+	GetCatalog(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*UserCatalog, error)
+	// ListCatalogService lists the Services that are included by a Catalog that
+	// the calling User can request
 	ListCatalogService(ctx context.Context, in *ListUserCatalogServiceOptions, opts ...grpc.CallOption) (*userv1.ServiceList, error)
 	// ListSubjectUser lists the Users that can be set as the subject of a
-	// Request created via the CreateRequestForSubject method
+	// Request created via the CreateRequestForSubject method. It is only
+	// available to the Users that are allowed to request on behalf of others
+	// by at least one Catalog.
 	ListSubjectUser(ctx context.Context, in *ListSubjectUserOptions, opts ...grpc.CallOption) (*SubjectUserList, error)
 	// GetSubjectUser retrieves a specific User that can be set as the subject
 	// of a Request
@@ -1436,6 +1513,16 @@ func (c *userServiceClient) CreateRequestForSubject(ctx context.Context, in *Req
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Request)
 	err := c.cc.Invoke(ctx, UserService_CreateRequestForSubject_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) PreviewRequest(ctx context.Context, in *Request, opts ...grpc.CallOption) (*RequestPreview, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RequestPreview)
+	err := c.cc.Invoke(ctx, UserService_PreviewRequest_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1482,10 +1569,50 @@ func (c *userServiceClient) ListRequest(ctx context.Context, in *ListUserRequest
 	return out, nil
 }
 
-func (c *userServiceClient) ListCatalog(ctx context.Context, in *ListUserCatalogOptions, opts ...grpc.CallOption) (*CatalogList, error) {
+func (c *userServiceClient) EndAccess(ctx context.Context, in *EndAccessRequest, opts ...grpc.CallOption) (*Request, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CatalogList)
+	out := new(Request)
+	err := c.cc.Invoke(ctx, UserService_EndAccess_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) RespondToRequest(ctx context.Context, in *RespondToRequestRequest, opts ...grpc.CallOption) (*Request, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Request)
+	err := c.cc.Invoke(ctx, UserService_RespondToRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetInbox(ctx context.Context, in *GetInboxRequest, opts ...grpc.CallOption) (*Inbox, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Inbox)
+	err := c.cc.Invoke(ctx, UserService_GetInbox_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) ListCatalog(ctx context.Context, in *ListUserCatalogOptions, opts ...grpc.CallOption) (*UserCatalogList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserCatalogList)
 	err := c.cc.Invoke(ctx, UserService_ListCatalog_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetCatalog(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*UserCatalog, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserCatalog)
+	err := c.cc.Invoke(ctx, UserService_GetCatalog_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1534,25 +1661,49 @@ type UserServiceServer interface {
 	// CreateRequest creates a Request whose subject is the calling User itself
 	CreateRequest(context.Context, *Request) (*Request, error)
 	// CreateRequestForSubject creates a Request on behalf of another User which
-	// must be explicitly set in the Request's spec.
+	// must be explicitly set in the Request's spec. The calling User must be
+	// allowed to request on behalf of others by the requested Catalog's
+	// audience.
 	CreateRequestForSubject(context.Context, *Request) (*Request, error)
-	// UpdateRequest updates a still pending Request that is owned by the
-	// calling User. Only the urgency, justification, deadline and duration can
-	// be changed.
+	// PreviewRequest evaluates a Request exactly like CreateRequest without
+	// creating it. It tells the caller whether the Request would be denied,
+	// automatically approved or reviewed, by whom, for how long and what the
+	// granted access would include.
+	PreviewRequest(context.Context, *Request) (*RequestPreview, error)
+	// UpdateRequest updates a still pending Request that is created by the
+	// calling User. Only the urgency, justification, ticket, deadline, start
+	// and duration can be changed.
 	UpdateRequest(context.Context, *Request) (*Request, error)
-	// GetRequest retrieves a specific Request that is owned by the calling User
+	// GetRequest retrieves a specific Request that is either created by the
+	// calling User or whose subject is the calling User
 	GetRequest(context.Context, *metav1.GetOptions) (*Request, error)
-	// CancelRequest cancels a still pending Request that is owned by the
-	// calling User
+	// CancelRequest cancels a still pending Request that is either created by
+	// the calling User or whose subject is the calling User
 	CancelRequest(context.Context, *CancelRequestRequest) (*metav1.OperationResult, error)
 	// ListRequest lists the Requests that are created by the calling User
+	// and/or whose subject is the calling User
 	ListRequest(context.Context, *ListUserRequestOptions) (*RequestList, error)
-	// ListCatalog lists Catalogs
-	ListCatalog(context.Context, *ListUserCatalogOptions) (*CatalogList, error)
-	// ListCatalogService lists the Services that are included by the Catalogs
+	// EndAccess ends the access that an approved Request granted before it
+	// expires. It can be used by the User that created the Request as well as
+	// by its subject.
+	EndAccess(context.Context, *EndAccessRequest) (*Request, error)
+	// RespondToRequest answers a reviewer's request for more information on a
+	// pending Request. The Request moves back to its reviewers.
+	RespondToRequest(context.Context, *RespondToRequestRequest) (*Request, error)
+	// GetInbox returns the counters of the items that currently need the
+	// calling User's attention.
+	GetInbox(context.Context, *GetInboxRequest) (*Inbox, error)
+	// ListCatalog lists the Catalogs that the calling User can request
+	ListCatalog(context.Context, *ListUserCatalogOptions) (*UserCatalogList, error)
+	// GetCatalog retrieves a specific Catalog that the calling User can request
+	GetCatalog(context.Context, *metav1.GetOptions) (*UserCatalog, error)
+	// ListCatalogService lists the Services that are included by a Catalog that
+	// the calling User can request
 	ListCatalogService(context.Context, *ListUserCatalogServiceOptions) (*userv1.ServiceList, error)
 	// ListSubjectUser lists the Users that can be set as the subject of a
-	// Request created via the CreateRequestForSubject method
+	// Request created via the CreateRequestForSubject method. It is only
+	// available to the Users that are allowed to request on behalf of others
+	// by at least one Catalog.
 	ListSubjectUser(context.Context, *ListSubjectUserOptions) (*SubjectUserList, error)
 	// GetSubjectUser retrieves a specific User that can be set as the subject
 	// of a Request
@@ -1573,6 +1724,9 @@ func (UnimplementedUserServiceServer) CreateRequest(context.Context, *Request) (
 func (UnimplementedUserServiceServer) CreateRequestForSubject(context.Context, *Request) (*Request, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateRequestForSubject not implemented")
 }
+func (UnimplementedUserServiceServer) PreviewRequest(context.Context, *Request) (*RequestPreview, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PreviewRequest not implemented")
+}
 func (UnimplementedUserServiceServer) UpdateRequest(context.Context, *Request) (*Request, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateRequest not implemented")
 }
@@ -1585,8 +1739,20 @@ func (UnimplementedUserServiceServer) CancelRequest(context.Context, *CancelRequ
 func (UnimplementedUserServiceServer) ListRequest(context.Context, *ListUserRequestOptions) (*RequestList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRequest not implemented")
 }
-func (UnimplementedUserServiceServer) ListCatalog(context.Context, *ListUserCatalogOptions) (*CatalogList, error) {
+func (UnimplementedUserServiceServer) EndAccess(context.Context, *EndAccessRequest) (*Request, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EndAccess not implemented")
+}
+func (UnimplementedUserServiceServer) RespondToRequest(context.Context, *RespondToRequestRequest) (*Request, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RespondToRequest not implemented")
+}
+func (UnimplementedUserServiceServer) GetInbox(context.Context, *GetInboxRequest) (*Inbox, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInbox not implemented")
+}
+func (UnimplementedUserServiceServer) ListCatalog(context.Context, *ListUserCatalogOptions) (*UserCatalogList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListCatalog not implemented")
+}
+func (UnimplementedUserServiceServer) GetCatalog(context.Context, *metav1.GetOptions) (*UserCatalog, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCatalog not implemented")
 }
 func (UnimplementedUserServiceServer) ListCatalogService(context.Context, *ListUserCatalogServiceOptions) (*userv1.ServiceList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListCatalogService not implemented")
@@ -1650,6 +1816,24 @@ func _UserService_CreateRequestForSubject_Handler(srv interface{}, ctx context.C
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).CreateRequestForSubject(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_PreviewRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).PreviewRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_PreviewRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).PreviewRequest(ctx, req.(*Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1726,6 +1910,60 @@ func _UserService_ListRequest_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_EndAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EndAccessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).EndAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_EndAccess_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).EndAccess(ctx, req.(*EndAccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_RespondToRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RespondToRequestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).RespondToRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_RespondToRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).RespondToRequest(ctx, req.(*RespondToRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetInbox_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetInboxRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetInbox(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetInbox_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetInbox(ctx, req.(*GetInboxRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _UserService_ListCatalog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListUserCatalogOptions)
 	if err := dec(in); err != nil {
@@ -1740,6 +1978,24 @@ func _UserService_ListCatalog_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).ListCatalog(ctx, req.(*ListUserCatalogOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetCatalog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(metav1.GetOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetCatalog(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetCatalog_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetCatalog(ctx, req.(*metav1.GetOptions))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1814,6 +2070,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _UserService_CreateRequestForSubject_Handler,
 		},
 		{
+			MethodName: "PreviewRequest",
+			Handler:    _UserService_PreviewRequest_Handler,
+		},
+		{
 			MethodName: "UpdateRequest",
 			Handler:    _UserService_UpdateRequest_Handler,
 		},
@@ -1830,8 +2090,24 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _UserService_ListRequest_Handler,
 		},
 		{
+			MethodName: "EndAccess",
+			Handler:    _UserService_EndAccess_Handler,
+		},
+		{
+			MethodName: "RespondToRequest",
+			Handler:    _UserService_RespondToRequest_Handler,
+		},
+		{
+			MethodName: "GetInbox",
+			Handler:    _UserService_GetInbox_Handler,
+		},
+		{
 			MethodName: "ListCatalog",
 			Handler:    _UserService_ListCatalog_Handler,
+		},
+		{
+			MethodName: "GetCatalog",
+			Handler:    _UserService_GetCatalog_Handler,
 		},
 		{
 			MethodName: "ListCatalogService",
@@ -1851,14 +2127,16 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	ReviewerService_GetRequest_FullMethodName        = "/octelium.api.main.access.v1.ReviewerService/GetRequest"
-	ReviewerService_ListRequest_FullMethodName       = "/octelium.api.main.access.v1.ReviewerService/ListRequest"
-	ReviewerService_ListReview_FullMethodName        = "/octelium.api.main.access.v1.ReviewerService/ListReview"
-	ReviewerService_GetReview_FullMethodName         = "/octelium.api.main.access.v1.ReviewerService/GetReview"
-	ReviewerService_CreateReview_FullMethodName      = "/octelium.api.main.access.v1.ReviewerService/CreateReview"
-	ReviewerService_UpdateReview_FullMethodName      = "/octelium.api.main.access.v1.ReviewerService/UpdateReview"
-	ReviewerService_CancelReview_FullMethodName      = "/octelium.api.main.access.v1.ReviewerService/CancelReview"
-	ReviewerService_SetReviewDecision_FullMethodName = "/octelium.api.main.access.v1.ReviewerService/SetReviewDecision"
+	ReviewerService_GetRequest_FullMethodName         = "/octelium.api.main.access.v1.ReviewerService/GetRequest"
+	ReviewerService_GetReviewCase_FullMethodName      = "/octelium.api.main.access.v1.ReviewerService/GetReviewCase"
+	ReviewerService_ListRequest_FullMethodName        = "/octelium.api.main.access.v1.ReviewerService/ListRequest"
+	ReviewerService_RequestInformation_FullMethodName = "/octelium.api.main.access.v1.ReviewerService/RequestInformation"
+	ReviewerService_ListReview_FullMethodName         = "/octelium.api.main.access.v1.ReviewerService/ListReview"
+	ReviewerService_GetReview_FullMethodName          = "/octelium.api.main.access.v1.ReviewerService/GetReview"
+	ReviewerService_CreateReview_FullMethodName       = "/octelium.api.main.access.v1.ReviewerService/CreateReview"
+	ReviewerService_UpdateReview_FullMethodName       = "/octelium.api.main.access.v1.ReviewerService/UpdateReview"
+	ReviewerService_CancelReview_FullMethodName       = "/octelium.api.main.access.v1.ReviewerService/CancelReview"
+	ReviewerService_SetReviewDecision_FullMethodName  = "/octelium.api.main.access.v1.ReviewerService/SetReviewDecision"
 )
 
 // ReviewerServiceClient is the client API for ReviewerService service.
@@ -1869,11 +2147,21 @@ const (
 // the Users that are set as reviewers by the access Policies in order to
 // review the pending Requests that are currently assigned to them.
 type ReviewerServiceClient interface {
-	// GetRequest retrieves a specific Request that the calling User can review
+	// GetRequest retrieves a specific Request that the calling User
+	// participates in as a reviewer (i.e. that the User can review at any of
+	// its review Steps or that the User has already reviewed)
 	GetRequest(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Request, error)
-	// ListRequest lists the pending Requests that the calling User can
-	// currently review
+	// GetReviewCase retrieves everything that a reviewer needs in order to
+	// decide on a Request: the Request itself, the actions that the calling
+	// User can currently take, the calling User's own decision, the subject's
+	// existing access and the recent history of similar Requests.
+	GetReviewCase(ctx context.Context, in *GetReviewCaseRequest, opts ...grpc.CallOption) (*ReviewCase, error)
+	// ListRequest lists the Requests that the calling User participates in as
+	// a reviewer
 	ListRequest(ctx context.Context, in *ListReviewerRequestOptions, opts ...grpc.CallOption) (*RequestList, error)
+	// RequestInformation asks the requester of a pending Request for more
+	// information. The Request stays pending until the requester responds.
+	RequestInformation(ctx context.Context, in *RequestInformationRequest, opts ...grpc.CallOption) (*Request, error)
 	// ListReview lists the Reviews that are created by the calling User
 	ListReview(ctx context.Context, in *ListReviewerReviewOptions, opts ...grpc.CallOption) (*ReviewList, error)
 	// GetReview retrieves a specific Review that is owned by the calling User
@@ -1914,10 +2202,30 @@ func (c *reviewerServiceClient) GetRequest(ctx context.Context, in *metav1.GetOp
 	return out, nil
 }
 
+func (c *reviewerServiceClient) GetReviewCase(ctx context.Context, in *GetReviewCaseRequest, opts ...grpc.CallOption) (*ReviewCase, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReviewCase)
+	err := c.cc.Invoke(ctx, ReviewerService_GetReviewCase_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *reviewerServiceClient) ListRequest(ctx context.Context, in *ListReviewerRequestOptions, opts ...grpc.CallOption) (*RequestList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RequestList)
 	err := c.cc.Invoke(ctx, ReviewerService_ListRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reviewerServiceClient) RequestInformation(ctx context.Context, in *RequestInformationRequest, opts ...grpc.CallOption) (*Request, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Request)
+	err := c.cc.Invoke(ctx, ReviewerService_RequestInformation_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1992,11 +2300,21 @@ func (c *reviewerServiceClient) SetReviewDecision(ctx context.Context, in *SetRe
 // the Users that are set as reviewers by the access Policies in order to
 // review the pending Requests that are currently assigned to them.
 type ReviewerServiceServer interface {
-	// GetRequest retrieves a specific Request that the calling User can review
+	// GetRequest retrieves a specific Request that the calling User
+	// participates in as a reviewer (i.e. that the User can review at any of
+	// its review Steps or that the User has already reviewed)
 	GetRequest(context.Context, *metav1.GetOptions) (*Request, error)
-	// ListRequest lists the pending Requests that the calling User can
-	// currently review
+	// GetReviewCase retrieves everything that a reviewer needs in order to
+	// decide on a Request: the Request itself, the actions that the calling
+	// User can currently take, the calling User's own decision, the subject's
+	// existing access and the recent history of similar Requests.
+	GetReviewCase(context.Context, *GetReviewCaseRequest) (*ReviewCase, error)
+	// ListRequest lists the Requests that the calling User participates in as
+	// a reviewer
 	ListRequest(context.Context, *ListReviewerRequestOptions) (*RequestList, error)
+	// RequestInformation asks the requester of a pending Request for more
+	// information. The Request stays pending until the requester responds.
+	RequestInformation(context.Context, *RequestInformationRequest) (*Request, error)
 	// ListReview lists the Reviews that are created by the calling User
 	ListReview(context.Context, *ListReviewerReviewOptions) (*ReviewList, error)
 	// GetReview retrieves a specific Review that is owned by the calling User
@@ -2030,8 +2348,14 @@ type UnimplementedReviewerServiceServer struct{}
 func (UnimplementedReviewerServiceServer) GetRequest(context.Context, *metav1.GetOptions) (*Request, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRequest not implemented")
 }
+func (UnimplementedReviewerServiceServer) GetReviewCase(context.Context, *GetReviewCaseRequest) (*ReviewCase, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetReviewCase not implemented")
+}
 func (UnimplementedReviewerServiceServer) ListRequest(context.Context, *ListReviewerRequestOptions) (*RequestList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRequest not implemented")
+}
+func (UnimplementedReviewerServiceServer) RequestInformation(context.Context, *RequestInformationRequest) (*Request, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestInformation not implemented")
 }
 func (UnimplementedReviewerServiceServer) ListReview(context.Context, *ListReviewerReviewOptions) (*ReviewList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListReview not implemented")
@@ -2090,6 +2414,24 @@ func _ReviewerService_GetRequest_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReviewerService_GetReviewCase_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetReviewCaseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReviewerServiceServer).GetReviewCase(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReviewerService_GetReviewCase_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReviewerServiceServer).GetReviewCase(ctx, req.(*GetReviewCaseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ReviewerService_ListRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListReviewerRequestOptions)
 	if err := dec(in); err != nil {
@@ -2104,6 +2446,24 @@ func _ReviewerService_ListRequest_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReviewerServiceServer).ListRequest(ctx, req.(*ListReviewerRequestOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReviewerService_RequestInformation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestInformationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReviewerServiceServer).RequestInformation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReviewerService_RequestInformation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReviewerServiceServer).RequestInformation(ctx, req.(*RequestInformationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2228,8 +2588,16 @@ var ReviewerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ReviewerService_GetRequest_Handler,
 		},
 		{
+			MethodName: "GetReviewCase",
+			Handler:    _ReviewerService_GetReviewCase_Handler,
+		},
+		{
 			MethodName: "ListRequest",
 			Handler:    _ReviewerService_ListRequest_Handler,
+		},
+		{
+			MethodName: "RequestInformation",
+			Handler:    _ReviewerService_RequestInformation_Handler,
 		},
 		{
 			MethodName: "ListReview",

@@ -31,11 +31,12 @@ import {
   TimelineItem,
 } from "@/ui";
 import {
-  MAX_JUSTIFICATION_BYTES,
+  MAX_JUSTIFICATION_LENGTH,
   currentReviewStepIndex,
   decisionMeta,
+  isPendingRequest,
   shortName,
-  utf8Length,
+  textLength,
 } from "@/utils";
 import { getReviewerClient } from "@/utils/client";
 import { useUnsavedChanges } from "@/utils/hooks/useUnsavedChanges";
@@ -166,10 +167,16 @@ const ReviewDetail = () => {
   const reviewable = requestQry.data;
   const editable =
     !!reviewable &&
+    isPendingRequest(reviewable) &&
     currentReviewStepIndex(reviewable) === (item.status?.stepIndex ?? 0);
+  const isStale =
+    !!reviewable &&
+    isPendingRequest(reviewable) &&
+    (item.status?.specRevision ?? 0) > 0 &&
+    item.status?.specRevision !== reviewable.status?.specRevision;
   const hasDecision = item.spec?.decision !== AccessP.Review_Spec_Decision.UNSET;
   const stepLabel = item.status?.stepName || `Step ${(item.status?.stepIndex ?? 0) + 1}`;
-  const bytes = utf8Length(justification);
+  const bytes = textLength(justification);
 
   const startEditing = () => {
     const draft = {
@@ -184,7 +191,7 @@ const ReviewDetail = () => {
   };
 
   const save = () => {
-    if (bytes > MAX_JUSTIFICATION_BYTES) {
+    if (bytes > MAX_JUSTIFICATION_LENGTH) {
       setJustificationError("The reason is too long");
       return;
     }
@@ -287,7 +294,7 @@ const ReviewDetail = () => {
                   label={
                     <span className="flex w-full items-baseline justify-between gap-3">
                       Reason
-                      <LengthCounter length={bytes} max={MAX_JUSTIFICATION_BYTES} />
+                      <LengthCounter length={bytes} max={MAX_JUSTIFICATION_LENGTH} />
                     </span>
                   }
                   description="Required when rejecting the request"
@@ -357,6 +364,12 @@ const ReviewDetail = () => {
                 {readOnlyReason && (
                   <Note icon={<Lock size={12} strokeWidth={2.25} />}>
                     {readOnlyReason}
+                  </Note>
+                )}
+                {isStale && (
+                  <Note tone="amber">
+                    The request changed after this decision, so it no longer
+                    counts. Review the request again.
                   </Note>
                 )}
               </div>

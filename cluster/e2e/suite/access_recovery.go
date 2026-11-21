@@ -26,9 +26,10 @@ func testAccessControllerRecovery(t *testing.T, ch *harness.H) {
 	h := eeharness.Wrap(ch)
 	c := newAccessCast(t, h)
 	beta := h.NewPublicService(t, "default")
+	h.CreateCatalog(t, []string{beta.Metadata.Name}, nil)
 
 	short := serviceAutoApproveRule("short-grant", c.alpha)
-	short.Authorization.MaxAccessDuration = eeharness.Seconds(120)
+	short.MaxDuration = eeharness.Seconds(120)
 	h.CreateAccessPolicy(t, short, serviceReviewRule("queued-review", beta,
 		userReviewStep(eeharness.UserReviewer(c.rita.User))))
 

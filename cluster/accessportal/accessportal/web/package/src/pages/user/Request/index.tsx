@@ -38,14 +38,16 @@ import {
   formatDuration,
   isOnBehalfOf,
   isPendingRequest,
+  isScheduledRequest,
+  openInformationRequest,
   requestCreatedAt,
   requestRefetchInterval,
   requestResourceLabel,
   requestSubjectName,
   reviewSteps,
-  shortName,
   statusMeta,
   urgencyMeta,
+  userInfoLabel,
 } from "@/utils";
 import { getUserClient } from "@/utils/client";
 import { useNow } from "@/utils/time";
@@ -95,9 +97,19 @@ const RequestRow = (props: {
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-2">
               <span className="truncate text-body font-semibold text-slate-800">
-                {resource.name || item.metadata!.name}
+                {resource.displayName || resource.name || item.metadata!.name}
               </span>
-              {resource.kind === "Catalog" && <Badge>Catalog</Badge>}
+              {resource.accessLevel ? (
+                <Badge>{resource.accessLevel}</Badge>
+              ) : (
+                resource.kind === "Catalog" && <Badge>Catalog</Badge>
+              )}
+              {openInformationRequest(item) && (
+                <Badge tone="blue">Reply needed</Badge>
+              )}
+              {isScheduledRequest(item, now) && (
+                <Badge tone="blue">Scheduled</Badge>
+              )}
               <span className="ml-auto shrink-0 sm:hidden">
                 <StatusBadge status={item.status?.state?.status} />
               </span>
@@ -113,7 +125,10 @@ const RequestRow = (props: {
                   <span key="subject">
                     for{" "}
                     <span className="font-medium text-slate-700">
-                      {shortName(requestSubjectName(item))}
+                      {userInfoLabel(
+                        item.status?.subjectInfo,
+                        requestSubjectName(item),
+                      )}
                     </span>
                   </span>
                 ),
@@ -157,7 +172,7 @@ const RequestRow = (props: {
             <Button
               size="compact-xs"
               variant="default"
-              aria-label={`Cancel the request for ${resource.name || item.metadata!.name}`}
+              aria-label={`Cancel the request for ${resource.displayName || resource.name || item.metadata!.name}`}
               onClick={() => props.onCancel(item.metadata!.name)}
             >
               Cancel
@@ -189,13 +204,16 @@ const Requests = () => {
         : undefined;
 
   const qry = useQuery({
-    queryKey: ["user", "listRequest", page, serverState ?? "all"],
+    queryKey: ["user", "listRequest", page, group],
     placeholderData: keepPreviousData,
     queryFn: async ({ signal }) => {
       const { response } = await getUserClient().listRequest(
         AccessP.ListUserRequestOptions.create({
           common: { page: page - 1, itemsPerPage: ITEMS_PER_PAGE },
-          ...(serverState !== undefined ? { state: serverState } : {}),
+          ...(group === "pending"
+            ? { state: AccessP.Request_Status_State_Status.PENDING }
+            : {}),
+          ...(group === "active" ? { isActive: true } : {}),
         }),
         { abort: signal },
       );
@@ -248,6 +266,7 @@ const Requests = () => {
     const matchesQuery =
       !q ||
       resource.name.toLowerCase().includes(q) ||
+      resource.displayName.toLowerCase().includes(q) ||
       item.metadata!.name.toLowerCase().includes(q) ||
       requestSubjectName(item).toLowerCase().includes(q) ||
       (item.spec?.justification ?? "").toLowerCase().includes(q);
@@ -423,7 +442,7 @@ const Requests = () => {
         details={
           cancelTarget ? (
             <SummaryRow label="Resource">
-              {requestResourceLabel(cancelTarget).name || cancelTarget.metadata!.name}
+              {requestResourceLabel(cancelTarget).displayName || cancelTarget.metadata!.name}
             </SummaryRow>
           ) : undefined
         }

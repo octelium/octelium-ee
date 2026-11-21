@@ -46,6 +46,16 @@ type Presentation struct {
 	Resource      string `json:"resource,omitempty"`
 	Urgency       string `json:"urgency,omitempty"`
 	Justification string `json:"justification,omitempty"`
+	Ticket        string `json:"ticket,omitempty"`
+
+	AccessLevel         string   `json:"accessLevel,omitempty"`
+	IsFullAccess        bool     `json:"isFullAccess,omitempty"`
+	OverridesGuardrails bool     `json:"overridesGuardrails,omitempty"`
+	Services            []string `json:"services,omitempty"`
+	TotalServices       int      `json:"totalServices,omitempty"`
+
+	StateReason  string `json:"stateReason,omitempty"`
+	StateMessage string `json:"stateMessage,omitempty"`
 
 	RequestedDuration string `json:"requestedDuration,omitempty"`
 	EffectiveDuration string `json:"effectiveDuration,omitempty"`
@@ -95,6 +105,32 @@ func BuildPresentation(ctx context.Context, opts *BuildPresentationOpts) (*Prese
 		State:         requestState(req),
 		Urgency:       urgency(req),
 		Justification: req.Spec.Justification,
+		Ticket:        req.Spec.Ticket,
+	}
+
+	if req.Status.State != nil && req.Status.State.Reason != accessv1.Request_Status_State_REASON_UNSET {
+		ret.StateReason = req.Status.State.Reason.String()
+		ret.StateMessage = req.Status.State.Message
+	}
+
+	if scope := req.Status.ResolvedScope; scope != nil {
+		if level := scope.AccessLevel; level != nil {
+			ret.AccessLevel = level.DisplayName
+			if ret.AccessLevel == "" {
+				ret.AccessLevel = level.Name
+			}
+			ret.IsFullAccess = accesscmd.IsFullAccessLevel(level)
+		}
+
+		ret.OverridesGuardrails = scope.OverridesGuardrails
+		ret.TotalServices = len(scope.ServiceRefs)
+
+		for i, ref := range scope.ServiceRefs {
+			if i >= maxPresentationServices {
+				break
+			}
+			ret.Services = append(ret.Services, ref.Name)
+		}
 	}
 
 	requester, err := accesscmd.GetUser(ctx, opts.OcteliumC, req.Status.UserRef)
@@ -256,6 +292,8 @@ func urgency(req *accessv1.Request) string {
 	return req.Spec.Urgency.String()
 }
 
+const maxPresentationServices = 10
+
 func resourceLabel(req *accessv1.Request) string {
 	if req.Spec.Resource == nil {
 		return ""
@@ -266,7 +304,11 @@ func resourceLabel(req *accessv1.Request) string {
 		return fmt.Sprintf("Service %s", req.Spec.Resource.GetServiceRef().GetName())
 
 	case *accessv1.Request_Spec_Resource_Catalog_:
-		return fmt.Sprintf("Catalog %s", req.Spec.Resource.GetCatalog().GetCatalogRef().GetName())
+		name := req.Spec.Resource.GetCatalog().GetCatalogRef().GetName()
+		if displayName := req.Status.GetResolvedScope().GetCatalogDisplayName(); displayName != "" {
+			name = displayName
+		}
+		return fmt.Sprintf("Catalog %s", name)
 
 	default:
 		return ""

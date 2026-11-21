@@ -40,12 +40,31 @@
                 "serviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
-                    "description": "ServiceRef only lists the Requests for the access to a specific Service."
+                    "description": "ServiceRef only lists the Requests whose scope includes a specific Service."
                 },
                 "catalogRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
                     "description": "CatalogRef only lists the Requests for the access to a specific Catalog."
+                },
+                "relation": {
+                    "enum": [
+                        "RELATION_UNSET",
+                        "CREATED_BY_ME",
+                        "FOR_ME",
+                        "ANY"
+                    ],
+                    "type": "string",
+                    "title": "Relation",
+                    "description": "Relation is how the listed Requests relate to the calling User"
+                },
+                "isActive": {
+                    "type": "boolean",
+                    "description": "IsActive only lists the approved Requests whose access is currently granted."
+                },
+                "query": {
+                    "type": "string",
+                    "description": "Query only lists the Requests whose name, Catalog, justification or ticket contains it."
                 }
             },
             "additionalProperties": false,

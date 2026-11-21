@@ -22,6 +22,7 @@ import (
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
+	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -771,7 +772,59 @@ func TestAccessLogRPCFlagAndInlinePolicyFilters(t *testing.T) {
 	} {
 		_, err := client.ListAccessLog(ts.ctx, &visibilityv1.ListAccessLogRequest{MatchInlinePolicyRef: ref})
 		assert.Equal(t, codes.InvalidArgument, status.Code(err))
+
+		_, err = client.GetAccessLogSummary(ts.ctx, &visibilityv1.GetAccessLogSummaryRequest{MatchInlinePolicyRef: ref})
+		assert.Equal(t, codes.InvalidArgument, status.Code(err))
 	}
+
+	summary, err := client.GetAccessLogSummary(ts.ctx, &visibilityv1.GetAccessLogSummaryRequest{
+		MatchInlinePolicyRef: &metav1.ObjectReference{Uid: ref.Uid},
+		From:                 pbutils.Timestamp(now.Add(-time.Minute)),
+		To:                   pbutils.Timestamp(now.Add(time.Minute)),
+	})
+	require.NoError(t, err)
+	assert.EqualValues(t, 2, summary.TotalNumber)
+
+	datapoints, err := client.GetAccessLogDataPoint(ts.ctx, &visibilityv1.GetAccessLogDataPointRequest{
+		MatchInlinePolicyRef: ref,
+		From:                 pbutils.Timestamp(now.Add(-time.Minute)),
+		To:                   pbutils.Timestamp(now.Add(time.Minute)),
+	})
+	require.NoError(t, err)
+	var total int64
+	for _, itm := range datapoints.Datapoints {
+		total += itm.Count
+	}
+	assert.EqualValues(t, 2, total)
+
+	withService := newAccessLog(&accessLogOptions{CreatedAt: now, ServiceRef: umetav1.GetObjectReference(createTestService(t, ts))})
+	withService.Entry.Common.Reason = &corev1.AccessLog_Entry_Common_Reason{
+		Type: corev1.AccessLog_Entry_Common_Reason_POLICY_MATCH,
+		Details: &corev1.AccessLog_Entry_Common_Reason_Details{
+			Type: &corev1.AccessLog_Entry_Common_Reason_Details_PolicyMatch_{
+				PolicyMatch: &corev1.AccessLog_Entry_Common_Reason_Details_PolicyMatch{
+					Type: &corev1.AccessLog_Entry_Common_Reason_Details_PolicyMatch_InlinePolicy_{
+						InlinePolicy: &corev1.AccessLog_Entry_Common_Reason_Details_PolicyMatch_InlinePolicy{
+							ResourceRef: otherRef, Name: "allow",
+						},
+					},
+				},
+			},
+		},
+	}
+	insertLogJSON(t, ts.srv, "access_logs", marshalLog(t, withService))
+
+	top, err := client.ListAccessLogTopService(ts.ctx, &visibilityv1.ListAccessLogTopServiceRequest{
+		MatchInlinePolicyRef: &metav1.ObjectReference{Uid: otherRef.Uid},
+		From:                 pbutils.Timestamp(now.Add(-time.Minute)),
+		To:                   pbutils.Timestamp(now.Add(time.Minute)),
+	})
+	require.NoError(t, err)
+	var topTotal int32
+	for _, itm := range top.Items {
+		topTotal += itm.Count
+	}
+	assert.EqualValues(t, 1, topTotal)
 }
 
 func TestAuditLogRPCSummaryResourceFilter(t *testing.T) {

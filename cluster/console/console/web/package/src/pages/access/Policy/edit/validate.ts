@@ -24,9 +24,14 @@ export const conditionIssues = (
         return hasRef(type.resource.type.catalogRef) ? [] : ["Choose the Catalog"];
       if (type.resource.type.oneofKind === "serviceRef")
         return hasRef(type.resource.type.serviceRef) ? [] : ["Choose the Service"];
+      if (type.resource.type.oneofKind === "namespaceRef")
+        return hasRef(type.resource.type.namespaceRef) ? [] : ["Choose the Namespace"];
       return ["Choose the resource"];
     case "userRef":
       return hasRef(type.userRef) ? [] : ["Choose the requester"];
+    case "accessLevel":
+      if (!type.accessLevel) return ["Name the access level"];
+      return isValidName(type.accessLevel) ? [] : ["Use lowercase letters, digits and dashes in the access level"];
     case "match":
       return type.match.trim() ? [] : ["Write the CEL expression"];
     case "all":
@@ -75,6 +80,19 @@ export const stepIssues = (
   )
     issues.push(`${label}: a reviewer is missing its User or Group`);
 
+  if (step.escalation) {
+    if (step.escalation.reviewers.length === 0)
+      issues.push(`${label}: add at least one escalation reviewer`);
+    if (
+      step.escalation.reviewers.some(
+        (reviewer) =>
+          (reviewer.type.oneofKind === "user" && !hasRef(reviewer.type.user.userRef)) ||
+          (reviewer.type.oneofKind === "group" && !hasRef(reviewer.type.group.groupRef)),
+      )
+    )
+      issues.push(`${label}: an escalation reviewer is missing its User or Group`);
+  }
+
   const requirement = AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement;
   if (step.approvalRequirement === requirement.APPROVAL_REQUIREMENT_UNSET)
     issues.push(`${label}: choose how many reviewers must approve`);
@@ -111,6 +129,9 @@ export const ruleIssues = (
 
   if (rule.effect === AccessP.Policy_Spec_Rule_Effect.EFFECT_UNSET)
     issues.push("Choose what happens to matching requests");
+
+  if (Array.from(rule.message).length > 500)
+    issues.push("Shorten the message to at most 500 characters");
 
   if (rule.effect === AccessP.Policy_Spec_Rule_Effect.REVIEW) {
     const steps =

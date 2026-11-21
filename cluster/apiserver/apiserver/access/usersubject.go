@@ -12,11 +12,13 @@ import (
 	"context"
 	"strings"
 
+	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uaccessv1"
 	"github.com/octelium/octelium/apis/cluster/caccessv1"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/serr"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
@@ -28,13 +30,18 @@ const minSubjectUserQueryLen = 2
 const maxSubjectUserItemsPerPage = 50
 
 func (s *ServerUser) ListSubjectUser(ctx context.Context, req *accessv1.ListSubjectUserOptions) (*accessv1.SubjectUserList, error) {
-	if _, err := userctx.GetUserCtx(ctx); err != nil {
+	i, err := userctx.GetUserCtx(ctx)
+	if err != nil {
 		return nil, err
 	}
 
 	query := strings.TrimSpace(req.GetQuery())
 	if len(query) < minSubjectUserQueryLen {
 		return nil, grpcutils.InvalidArg("Query must be at least %d characters", minSubjectUserQueryLen)
+	}
+
+	if err := s.checkCanRequestOnBehalf(ctx, i.User); err != nil {
+		return nil, err
 	}
 
 	common := req.GetCommon()
@@ -71,7 +78,8 @@ func (s *ServerUser) ListSubjectUser(ctx context.Context, req *accessv1.ListSubj
 }
 
 func (s *ServerUser) GetSubjectUser(ctx context.Context, req *accessv1.GetSubjectUserRequest) (*accessv1.SubjectUser, error) {
-	if _, err := userctx.GetUserCtx(ctx); err != nil {
+	i, err := userctx.GetUserCtx(ctx)
+	if err != nil {
 		return nil, err
 	}
 
@@ -92,7 +100,28 @@ func (s *ServerUser) GetSubjectUser(ctx context.Context, req *accessv1.GetSubjec
 		return nil, grpcutils.NotFound("User not found")
 	}
 
+	if item.Metadata.Uid != i.User.Metadata.Uid {
+		if err := s.checkCanRequestOnBehalf(ctx, i.User); err != nil {
+			return nil, err
+		}
+	}
+
 	return toSubjectUser(item), nil
+}
+
+func (s *ServerUser) checkCanRequestOnBehalf(ctx context.Context, usr *corev1.User) error {
+	catalogList, err := s.octeliumC.AccessC().ListCatalog(ctx, &rmetav1.ListOptions{})
+	if err != nil {
+		return serr.InternalWithErr(err)
+	}
+
+	for _, catalog := range catalogList.Items {
+		if !catalog.GetSpec().GetIsDisabled() && accesscmd.CanRequestOnBehalf(catalog, usr) {
+			return nil
+		}
+	}
+
+	return grpcutils.Unauthorized("You are not allowed to request access on behalf of others")
 }
 
 func toSubjectUser(item *corev1.User) *accessv1.SubjectUser {

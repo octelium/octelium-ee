@@ -38,23 +38,17 @@ func serviceReviewRule(name string, svc *corev1.Service,
 				Review: &accessv1.Policy_Spec_Rule_Action_Review{Steps: steps},
 			},
 		},
-		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-			InlinePolicies:    harness.InlineAllowAny("granted"),
-			MaxAccessDuration: eeharness.Minutes(5),
-		},
+		MaxDuration: eeharness.Minutes(5),
 	}
 }
 
 func serviceAutoApproveRule(name string, svc *corev1.Service) *accessv1.Policy_Spec_Rule {
 	return &accessv1.Policy_Spec_Rule{
-		Name:      name,
-		Priority:  0,
-		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
-		Condition: eeharness.ServiceResource(svc),
-		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-			InlinePolicies:    harness.InlineAllowAny("granted"),
-			MaxAccessDuration: eeharness.Minutes(5),
-		},
+		Name:        name,
+		Priority:    0,
+		Effect:      accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition:   eeharness.ServiceResource(svc),
+		MaxDuration: eeharness.Minutes(5),
 	}
 }
 
@@ -90,7 +84,9 @@ func testAccessDirectService(t *testing.T, ch *harness.H) {
 	approved = h.WaitRequestPolicyTrigger(t, approved, eeharness.RequestBudget)
 
 	t.Run("TheRequestTargetsTheService", func(t *testing.T) {
-		assert.Equal(t, c.alpha.Metadata.Uid, approved.Spec.Resource.GetServiceRef().Uid)
+		assert.Equal(t, c.alphaCatalog.Metadata.Uid, approved.Spec.Resource.GetCatalog().GetCatalogRef().GetUid())
+		require.Len(t, approved.Status.ResolvedScope.GetServiceRefs(), 1)
+		assert.Equal(t, c.alpha.Metadata.Uid, approved.Status.ResolvedScope.ServiceRefs[0].Uid)
 		require.NotNil(t, approved.Status.PolicyTriggerRef)
 	})
 
@@ -124,6 +120,15 @@ func testAccessDelegatedSubject(t *testing.T, ch *harness.H) {
 			UserRef: umetav1.GetObjectReference(c.bob.User),
 		},
 	}
+
+	t.Run("RequestingOnBehalfRequiresTheCatalogAudience", func(t *testing.T) {
+		_, err := h.AccessUserC(c.alice.Conn).CreateRequestForSubject(t.Context(), reqSpec)
+		require.NotNil(t, err)
+		assert.True(t, grpcerr.IsInvalidArg(err))
+	})
+
+	h.AllowCatalogOnBehalf(t, c.alphaCatalog, c.alice.User)
+
 	req := h.CreateRequestForSubject(t, c.alice, reqSpec)
 	h.WaitRequestState(t, req, accessv1.Request_Status_State_PENDING,
 		eeharness.RequestBudget)
@@ -149,9 +154,26 @@ func testAccessDelegatedSubject(t *testing.T, ch *harness.H) {
 		assert.True(t, containsRequest(alice.Items, req))
 
 		bob, err := h.AccessUserC(c.bob.Conn).ListRequest(t.Context(),
-			&accessv1.ListUserRequestOptions{})
+			&accessv1.ListUserRequestOptions{
+				Relation: accessv1.ListUserRequestOptions_CREATED_BY_ME,
+			})
 		require.Nil(t, err)
 		assert.False(t, containsRequest(bob.Items, req))
+	})
+
+	t.Run("TheSubjectSeesTheRequestMadeForThem", func(t *testing.T) {
+		bob, err := h.AccessUserC(c.bob.Conn).ListRequest(t.Context(),
+			&accessv1.ListUserRequestOptions{
+				Relation: accessv1.ListUserRequestOptions_FOR_ME,
+			})
+		require.Nil(t, err)
+		assert.True(t, containsRequest(bob.Items, req))
+
+		cur, err := h.AccessUserC(c.bob.Conn).GetRequest(t.Context(),
+			&metav1.GetOptions{Uid: req.Metadata.Uid})
+		require.Nil(t, err)
+		assert.Nil(t, cur.Status.Rule)
+		assert.Equal(t, c.bob.User.Metadata.Uid, cur.Status.SubjectInfo.GetUserRef().GetUid())
 	})
 }
 
@@ -398,7 +420,7 @@ func testAccessPolicyPriority(t *testing.T, ch *harness.H) {
 
 	neverRule := serviceAutoApproveRule("never", c.alpha)
 	neverRule.Effect = accessv1.Policy_Spec_Rule_DENY
-	neverRule.Authorization = nil
+	neverRule.MaxDuration = nil
 	neverRule.Priority = -2
 	neverRule.Condition = eeharness.AllOf(
 		eeharness.ServiceResource(c.alpha),

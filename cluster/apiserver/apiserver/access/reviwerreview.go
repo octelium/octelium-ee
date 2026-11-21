@@ -48,13 +48,15 @@ func (s *ServerReviewer) SetReviewDecision(ctx context.Context,
 	}
 
 	return accesscmd.SetReviewDecision(ctx, &accesscmd.SetReviewDecisionOpts{
-		OcteliumC:        s.octeliumC,
-		Reviewer:         i.User,
-		Request:          request,
-		Decision:         req.Decision,
-		Justification:    req.Justification,
-		ExpectedStepName: req.ExpectedStepName,
-		Origin:           apiOrigin(i),
+		OcteliumC:            s.octeliumC,
+		Reviewer:             i.User,
+		Request:              request,
+		Decision:             req.Decision,
+		Justification:        req.Justification,
+		Duration:             req.Duration,
+		ExpectedStepName:     req.ExpectedStepName,
+		ExpectedSpecRevision: req.ExpectedSpecRevision,
+		Origin:               apiOrigin(i),
 	})
 }
 
@@ -111,6 +113,7 @@ func (s *ServerReviewer) CreateReview(ctx context.Context, req *accessv1.Review)
 		Request:          request,
 		Decision:         req.Spec.Decision,
 		Justification:    req.Spec.Justification,
+		Duration:         req.Spec.Duration,
 		ExpectedStepName: step.Name,
 		Origin:           apiOrigin(i),
 	})
@@ -209,6 +212,7 @@ func (s *ServerReviewer) UpdateReview(ctx context.Context, req *accessv1.Review)
 		Request:          request,
 		Decision:         req.Spec.Decision,
 		Justification:    req.Spec.Justification,
+		Duration:         req.Spec.Duration,
 		ExpectedStepName: item.Status.StepName,
 		Origin:           apiOrigin(i),
 	})
@@ -306,7 +310,7 @@ func validateReviewerReviewSpec(req *accessv1.Review) error {
 		return grpcutils.InvalidArg("Decision must be APPROVE or REJECT")
 	}
 
-	if len(req.Spec.Justification) > accesscmd.MaxJustificationLen {
+	if accesscmd.TextLen(req.Spec.Justification) > accesscmd.MaxJustificationLen {
 		return grpcutils.InvalidArg("Justification is too long")
 	}
 

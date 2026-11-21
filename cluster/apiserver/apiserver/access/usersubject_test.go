@@ -12,11 +12,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/cluster/caccessv1"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/raccessv1"
+	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/admin"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/user"
 	"github.com/octelium/octelium/cluster/common/tests/tstuser"
@@ -62,6 +65,44 @@ func TestUserSubjectUser(t *testing.T) {
 	subject.Usr.Spec.Type = corev1.User_Spec_HUMAN
 	subject.Usr.Spec.Email = utilrand.GetRandomStringCanonical(8) + "@example.com"
 	subject.Usr, err = tst.C.OcteliumC.CoreC().UpdateUser(ctx, subject.Usr)
+	assert.Nil(t, err, "%+v", err)
+
+	{
+		_, err := srv.GetSubjectUser(usr.Ctx(), &accessv1.GetSubjectUserRequest{
+			UserRef: umetav1.GetObjectReference(subject.Usr),
+		})
+		assert.True(t, grpcerr.IsUnauthorized(err), "%+v", err)
+
+		_, err = srv.ListSubjectUser(usr.Ctx(), &accessv1.ListSubjectUserOptions{
+			Query: subject.Usr.Metadata.Name,
+		})
+		assert.True(t, grpcerr.IsUnauthorized(err), "%+v", err)
+
+		self, err := srv.GetSubjectUser(usr.Ctx(), &accessv1.GetSubjectUserRequest{
+			UserRef: umetav1.GetObjectReference(usr.Usr),
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, usr.Usr.Metadata.Uid, self.UserRef.Uid)
+	}
+
+	_, err = NewServerMain(tst.C.OcteliumC).CreateCatalog(ctx, &accessv1.Catalog{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec: &accessv1.Catalog_Spec{
+			ResourceCollection: &accessv1.Catalog_Spec_ResourceCollection{
+				Service: &accessv1.Catalog_Spec_ResourceCollection_Service{
+					Services: []string{newTestServiceName(t, tst.C.OcteliumC)},
+				},
+			},
+			AccessLevels: []*accessv1.Catalog_Spec_AccessLevel{testFullLevel("full")},
+			Audience: &accessv1.Catalog_Spec_Audience{
+				OnBehalf: &accessv1.Catalog_Spec_Audience_OnBehalf{
+					Users: []string{usr.Usr.Metadata.Name},
+				},
+			},
+		},
+	})
 	assert.Nil(t, err, "%+v", err)
 
 	{
@@ -146,9 +187,30 @@ func TestUserCreateRequestForSubject(t *testing.T) {
 		Spec: &accessv1.Catalog_Spec{
 			ResourceCollection: &accessv1.Catalog_Spec_ResourceCollection{
 				Service: &accessv1.Catalog_Spec_ResourceCollection_Service{
-					Services: []string{utilrand.GetRandomStringCanonical(6)},
+					Services: []string{newTestServiceName(t, tst.C.OcteliumC)},
 				},
 			},
+			AccessLevels: []*accessv1.Catalog_Spec_AccessLevel{testFullLevel("full")},
+			Audience: &accessv1.Catalog_Spec_Audience{
+				OnBehalf: &accessv1.Catalog_Spec_Audience_OnBehalf{
+					Users: []string{usr.Usr.Metadata.Name},
+				},
+			},
+		},
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	selfOnly, err := mainSrv.CreateCatalog(ctx, &accessv1.Catalog{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec: &accessv1.Catalog_Spec{
+			ResourceCollection: &accessv1.Catalog_Spec_ResourceCollection{
+				Service: &accessv1.Catalog_Spec_ResourceCollection_Service{
+					Services: []string{newTestServiceName(t, tst.C.OcteliumC)},
+				},
+			},
+			AccessLevels: []*accessv1.Catalog_Spec_AccessLevel{testFullLevel("full")},
 		},
 	})
 	assert.Nil(t, err, "%+v", err)
@@ -231,8 +293,83 @@ func TestUserCreateRequestForSubject(t *testing.T) {
 				Name: utilrand.GetRandomStringCanonical(8),
 			}),
 		})
-		assert.True(t, grpcerr.IsNotFound(err), "%+v", err)
+		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
 	}
+
+	{
+		spec := newSpec(&metav1.ObjectReference{Name: subject.Usr.Metadata.Name})
+		spec.Resource.GetCatalog().CatalogRef = &metav1.ObjectReference{Name: selfOnly.Metadata.Name}
+
+		_, err := srv.CreateRequestForSubject(usr.Ctx(), &accessv1.Request{
+			Metadata: &metav1.Metadata{
+				Name: utilrand.GetRandomStringCanonical(8),
+			},
+			Spec: spec,
+		})
+		assert.ErrorContains(t, err, "on behalf of others")
+	}
+
+	{
+		spec := newSpec(&metav1.ObjectReference{Name: subject.Usr.Metadata.Name})
+		spec.Resource.GetCatalog().CatalogRef = &metav1.ObjectReference{Name: cat.Metadata.Name}
+
+		req, err := srv.CreateRequestForSubject(usr.Ctx(), &accessv1.Request{
+			Metadata: &metav1.Metadata{
+				Name: utilrand.GetRandomStringCanonical(8),
+			},
+			Spec: spec,
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, subject.Usr.Metadata.Uid, req.Spec.Subject.GetUserRef().Uid)
+		assert.Equal(t, cat.Metadata.Uid, req.Spec.Resource.GetCatalog().CatalogRef.Uid)
+		assert.Equal(t, subject.Usr.Metadata.Uid, req.Status.SubjectInfo.UserRef.Uid)
+		assert.Nil(t, req.Status.Rule)
+
+		forSubject, err := srv.GetRequest(subject.Ctx(), &metav1.GetOptions{Uid: req.Metadata.Uid})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, req.Metadata.Uid, forSubject.Metadata.Uid)
+
+		list, err := srv.ListRequest(subject.Ctx(), &accessv1.ListUserRequestOptions{
+			Relation: accessv1.ListUserRequestOptions_FOR_ME,
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, 2, len(list.Items))
+
+		list, err = srv.ListRequest(subject.Ctx(), &accessv1.ListUserRequestOptions{
+			Relation: accessv1.ListUserRequestOptions_CREATED_BY_ME,
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, 0, len(list.Items))
+	}
+}
+
+type onBehalfClient struct {
+	octeliumc.ClientInterface
+	accessC *onBehalfAccessClient
+}
+
+func (c *onBehalfClient) AccessC() raccessv1.ResourceServiceClient {
+	return c.accessC
+}
+
+type onBehalfAccessClient struct {
+	raccessv1.ResourceServiceClient
+	users []string
+}
+
+func (c *onBehalfAccessClient) ListCatalog(ctx context.Context, req *rmetav1.ListOptions, opts ...grpc.CallOption) (*accessv1.CatalogList, error) {
+	return &accessv1.CatalogList{
+		Items: []*accessv1.Catalog{
+			{
+				Metadata: &metav1.Metadata{Name: "catalog"},
+				Spec: &accessv1.Catalog_Spec{
+					Audience: &accessv1.Catalog_Spec_Audience{
+						OnBehalf: &accessv1.Catalog_Spec_Audience_OnBehalf{Users: c.users},
+					},
+				},
+			},
+		},
+	}, nil
 }
 
 type subjectLookupClient struct {
@@ -248,7 +385,10 @@ func TestListSubjectUserPagination(t *testing.T) {
 	oldMode := ldflags.TestMode
 	ldflags.TestMode = "true"
 	t.Cleanup(func() { ldflags.TestMode = oldMode })
-	ctx := context.WithValue(t.Context(), "octelium-user-ctx", &userctx.UserCtx{})
+	ctx := context.WithValue(t.Context(), "octelium-user-ctx", &userctx.UserCtx{
+		User: &corev1.User{Metadata: &metav1.Metadata{Name: "requester"}, Spec: &corev1.User_Spec{}},
+	})
+	octeliumC := &onBehalfClient{accessC: &onBehalfAccessClient{users: []string{"requester"}}}
 	for _, tt := range []struct {
 		name   string
 		common *metav1.CommonListOptions
@@ -265,7 +405,7 @@ func TestListSubjectUserPagination(t *testing.T) {
 			arg := &accessv1.ListSubjectUserOptions{Query: "  Alice  ", Common: tt.common}
 			original := proto.Clone(arg)
 			meta := &metav1.ListResponseMeta{TotalCount: 123}
-			srv := &ServerUser{rscStoreC: &subjectLookupClient{list: func(got context.Context, req *caccessv1.ListSubjectUserRequest) (*corev1.UserList, error) {
+			srv := &ServerUser{octeliumC: octeliumC, rscStoreC: &subjectLookupClient{list: func(got context.Context, req *caccessv1.ListSubjectUserRequest) (*corev1.UserList, error) {
 				assert.Same(t, ctx, got)
 				assert.Equal(t, "Alice", req.Query)
 				assert.Equal(t, tt.limit, req.ItemsPerPage)
@@ -293,7 +433,7 @@ func TestListSubjectUserPagination(t *testing.T) {
 		})
 	}
 
-	srv := &ServerUser{rscStoreC: &subjectLookupClient{list: func(ctx context.Context, req *caccessv1.ListSubjectUserRequest) (*corev1.UserList, error) {
+	srv := &ServerUser{octeliumC: octeliumC, rscStoreC: &subjectLookupClient{list: func(ctx context.Context, req *caccessv1.ListSubjectUserRequest) (*corev1.UserList, error) {
 		return nil, status.Error(codes.Unavailable, "store unavailable")
 	}}}
 	for _, arg := range []*accessv1.ListSubjectUserOptions{nil, {}, {Query: "a"}, {Query: "  a  "}, {Query: "  "}} {
@@ -304,4 +444,8 @@ func TestListSubjectUserPagination(t *testing.T) {
 	assert.True(t, grpcerr.IsInternal(err), "%+v", err)
 	_, err = srv.ListSubjectUser(t.Context(), &accessv1.ListSubjectUserOptions{Query: "al"})
 	assert.NotNil(t, err)
+
+	srv.octeliumC = &onBehalfClient{accessC: &onBehalfAccessClient{users: []string{"someone-else"}}}
+	_, err = srv.ListSubjectUser(ctx, &accessv1.ListSubjectUserOptions{Query: "al"})
+	assert.True(t, grpcerr.IsUnauthorized(err), "%+v", err)
 }

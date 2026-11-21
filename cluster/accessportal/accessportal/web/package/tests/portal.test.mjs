@@ -574,6 +574,93 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
       await page.getByText("Approved by carol", { exact: true }).waitFor();
     });
 
+    it("requests a chosen access level of a Catalog with its required ticket", async () => {
+      await load();
+      await page.getByText("Catalogs", { exact: true }).click();
+      await page.getByRole("button", { name: /^Primary storage/ }).click();
+      const level = page.getByRole("radiogroup", { name: "Access level", exact: true });
+      await level.waitFor();
+      await page.getByText("Read only", { exact: true }).click();
+      const preview = page.getByLabel("What happens next", { exact: true });
+      await preview.getByText("Goes to review", { exact: true }).waitFor();
+      await page.getByText("Change ticket is required for this access", { exact: true }).waitFor();
+      assert.equal(await page.getByRole("button", { name: "Submit Request", exact: true }).isDisabled(), true);
+      await page.getByRole("textbox", { name: /Change ticket/ }).fill("CHG-1234");
+      await page.getByRole("button", { name: "Submit Request", exact: true }).click();
+      await page.getByRole("dialog", { name: "Submit this access request?", exact: true })
+        .getByRole("button", { name: "Submit request", exact: true }).click();
+      await page.getByText("Access request submitted", { exact: true }).waitFor();
+      const create = (await page.evaluate(() => window.calls)).find((call) => call.method === "createRequest");
+      assert.equal(create.request.spec.resource.type.catalog.catalogRef.name, "storage");
+      assert.equal(create.request.spec.resource.type.catalog.accessLevel, "read-only");
+      assert.equal(create.request.spec.ticket, "CHG-1234");
+    });
+
+    it("ends an active access and offers to extend it", async () => {
+      await load("/user/requests/capped");
+      const extend = page.getByRole("link", { name: "Extend", exact: true });
+      assert.equal(new URL(await extend.getAttribute("href"), origin).searchParams.get("extends"), "capped");
+      await page.getByRole("button", { name: "End access", exact: true }).click();
+      const dialog = page.getByRole("dialog", { name: "End this access now?", exact: true });
+      await dialog.getByRole("textbox", { name: /Reason/ }).fill("Done with the migration");
+      await dialog.getByRole("button", { name: "End access", exact: true }).click();
+      await page.getByText("Access ended", { exact: true }).waitFor();
+      const end = (await page.evaluate(() => window.calls)).find((call) => call.method === "endAccess");
+      assert.equal(end.request.requestRef.name, "capped");
+      assert.equal(end.request.reason, "Done with the migration");
+    });
+
+    it("answers the question of a reviewer", async () => {
+      await load("/user/requests/behalf-pending");
+      await page.locator("section", { hasText: "Questions from reviewers" })
+        .getByText("Which tables does bob need?", { exact: true }).waitFor();
+      await page.getByRole("heading", { name: "More information requested", exact: true }).waitFor();
+      await page.getByRole("textbox", { name: /Your response/ }).fill("Only the orders table");
+      await page.getByRole("button", { name: "Send response", exact: true }).click();
+      await page.getByText("Response sent to the reviewers", { exact: true }).waitFor();
+      const respond = (await page.evaluate(() => window.calls)).find((call) => call.method === "respondToRequest");
+      assert.equal(respond.request.requestRef.name, "behalf-pending");
+      assert.equal(respond.request.response, "Only the orders table");
+    });
+
+    it("approves a shorter duration bound to the displayed revision", async () => {
+      await load("/reviewer/requests/queue-second");
+      await page.getByText("Approve a shorter duration", { exact: true }).filter({ visible: true }).click();
+      await page.getByRole("button", { name: "1 hour", exact: true }).filter({ visible: true }).click();
+      await page.getByRole("button", { name: "Approve", exact: true }).filter({ visible: true }).click();
+      await page.getByRole("dialog", { name: "Approve this request?", exact: true })
+        .getByRole("button", { name: "Approve request", exact: true }).click();
+      await page.getByRole("heading", { name: "Review Queue", exact: true }).waitFor();
+      const decision = (await page.evaluate(() => window.calls)).find((call) => call.method === "setReviewDecision");
+      assert.equal(decision.request.expectedSpecRevision, 1);
+      assert.equal(decision.request.duration.type.hours, 1);
+    });
+
+    it("asks the requester a question from the review page", async () => {
+      await load("/reviewer/requests/queue-second");
+      await page.getByRole("button", { name: "Ask the requester a question", exact: true }).filter({ visible: true }).click();
+      const dialog = page.getByRole("dialog", { name: "Ask the requester a question", exact: true });
+      await dialog.getByRole("textbox", { name: /Question/ }).fill("Which incident is this for?");
+      await dialog.getByRole("button", { name: "Send question", exact: true }).click();
+      await page.getByText("Question sent to the requester", { exact: true }).waitFor();
+      const ask = (await page.evaluate(() => window.calls)).find((call) => call.method === "requestInformation");
+      assert.equal(ask.request.requestRef.name, "queue-second");
+      assert.equal(ask.request.message, "Which incident is this for?");
+    });
+
+    it("lists the requests waiting on other reviewers", async () => {
+      await load("/reviewer/requests");
+      await page.getByText("Waiting on others", { exact: true }).click();
+      await page.waitForFunction(() =>
+        window.calls.some((call) => call.method === "listRequest" && call.request.filter === 2));
+    });
+
+    it("hides the review navigation from users who review nothing", async () => {
+      await load("/user/requests", { notReviewer: "1" });
+      await page.getByRole("link", { name: "New Request", exact: true }).waitFor();
+      assert.equal(await page.getByRole("link", { name: /Review Queue/ }).count(), 0);
+    });
+
     it("filters pending and active requests on the server", async () => {
       await load("/user/requests?group=pending");
       await page.getByRole("radio", { name: "Pending (2)" }).waitFor({ state: "attached" });

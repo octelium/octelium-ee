@@ -23,6 +23,7 @@ const AccessLogSummary = (props: {
   regionRef?: ObjectReference;
   deviceRef?: ObjectReference;
   policyRef?: ObjectReference;
+  matchInlinePolicyRef?: ObjectReference;
   reason?: AccessLog_Entry_Common_Reason_Type;
   mode?: Service_Spec_Mode;
   countryCode?: string;
@@ -60,6 +61,7 @@ const AccessLogSummary = (props: {
       ["regionRef", props.regionRef],
       ["deviceRef", props.deviceRef],
       ["policyRef", props.policyRef],
+      ["matchInlinePolicyRef", props.matchInlinePolicyRef],
     ];
     refs.forEach(([key, ref]) => {
       const value = ref?.name || ref?.uid;

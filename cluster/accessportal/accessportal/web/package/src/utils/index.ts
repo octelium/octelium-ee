@@ -151,6 +151,41 @@ export const statusMeta = (
       hint: "The Cluster has not evaluated this request yet",
     }));
 
+const R = AccessP.Request_Status_State_Reason;
+
+export const stateReasonLabel = (
+  reason?: AccessP.Request_Status_State_Reason,
+): string | undefined =>
+  match(reason)
+    .with(R.SUBMITTED, () => "Submitted")
+    .with(R.AWAITING_REVIEW, () => "Routed to reviewers")
+    .with(R.NO_MATCHING_RULE, () => "No access policy rule matched")
+    .with(R.DENIED_BY_RULE, () => "Denied by an access policy rule")
+    .with(R.AUTO_APPROVED, () => "Approved automatically")
+    .with(R.APPROVED_BY_REVIEWERS, () => "Approved by the reviewers")
+    .with(R.REJECTED_BY_REVIEWER, () => "Rejected by a reviewer")
+    .with(R.REVIEW_TIMED_OUT, () => "A review step timed out")
+    .with(R.DEADLINE_PASSED, () => "The deadline passed before a decision")
+    .with(R.CANCELLED_BY_USER, () => "Cancelled")
+    .with(R.ACCESS_REVOKED, () => "Revoked by an administrator")
+    .with(R.ACCESS_ENDED, () => "The access window ended")
+    .with(R.ENDED_EARLY, () => "Ended early")
+    .with(R.PROVISIONING_FAILED, () => "The access could not be provisioned")
+    .with(R.NOT_REQUESTABLE, () => "The resource is no longer requestable")
+    .with(R.SUPERSEDED, () => "Replaced by an extension")
+    .with(
+      R.EVALUATION_FAILED,
+      () => "The access policies could not be evaluated",
+    )
+    .otherwise(() => undefined);
+
+export const stateDescription = (
+  state?: AccessP.Request_Status_State,
+): string =>
+  state?.message ||
+  stateReasonLabel(state?.reason) ||
+  statusMeta(state?.status).hint;
+
 export const urgencyMeta = (
   urgency?: AccessP.Request_Spec_Urgency,
 ): { label: string; tone: Tone; level: number } =>
@@ -219,15 +254,58 @@ export const decisionMeta = (
 
 export const requestResourceLabel = (
   item: AccessP.Request,
-): { kind: "Service" | "Catalog" | "Unknown"; name: string } => {
+): {
+  kind: "Service" | "Catalog" | "Unknown";
+  name: string;
+  displayName: string;
+  accessLevel: string;
+  services: string[];
+} => {
   const r = item.spec?.resource?.type;
-  if (!r) return { kind: "Unknown", name: "" };
+  const scope = item.status?.resolvedScope;
+  if (!r)
+    return {
+      kind: "Unknown",
+      name: "",
+      displayName: "",
+      accessLevel: "",
+      services: [],
+    };
   if (r.oneofKind === "serviceRef")
-    return { kind: "Service", name: r.serviceRef.name };
-  if (r.oneofKind === "catalog")
-    return { kind: "Catalog", name: r.catalog.catalogRef?.name ?? "" };
-  return { kind: "Unknown", name: "" };
+    return {
+      kind: "Service",
+      name: r.serviceRef.name,
+      displayName: r.serviceRef.name,
+      accessLevel: "",
+      services: [r.serviceRef.name],
+    };
+  if (r.oneofKind === "catalog") {
+    const name = r.catalog.catalogRef?.name ?? "";
+    return {
+      kind: "Catalog",
+      name,
+      displayName: scope?.catalogDisplayName || name,
+      accessLevel: scope?.accessLevel?.displayName || r.catalog.accessLevel,
+      services: r.catalog.serviceRefs.map((ref) => ref.name),
+    };
+  }
+  return {
+    kind: "Unknown",
+    name: "",
+    displayName: "",
+    accessLevel: "",
+    services: [],
+  };
 };
+
+export const isFullAccessLevel = (
+  level?: AccessP.Catalog_Spec_AccessLevel,
+): boolean => level?.type.oneofKind === "full";
+
+export const accessLevelOf = (
+  item?: AccessP.Request,
+): AccessP.Catalog_Spec_AccessLevel | undefined =>
+  item?.status?.resolvedScope?.accessLevel;
 
 export const shortName = (name?: string): string =>
   name?.split(".").at(0) ?? "";
@@ -261,11 +339,16 @@ export const isWorkloadUser = (type?: CoreP.User_Spec_Type): boolean =>
 
 export const requestSubjectName = (item: AccessP.Request): string => {
   const subject = item.spec?.subject?.type;
-  return subject?.oneofKind === "userRef" ? subject.userRef.name : "";
+  return subject?.oneofKind === "userRef"
+    ? subject.userRef.name
+    : (item.status?.subjectInfo?.userRef?.name ?? "");
 };
 
 export const requesterName = (item: AccessP.Request): string =>
-  item.status?.userRef?.name ?? "";
+  item.status?.userRef?.name ?? item.status?.requesterInfo?.userRef?.name ?? "";
+
+export const userInfoLabel = (info?: AccessP.UserInfo, fallback = ""): string =>
+  info?.displayName || shortName(info?.userRef?.name) || shortName(fallback);
 
 export const isOnBehalfOf = (item: AccessP.Request): boolean => {
   const subject = requestSubjectName(item);
@@ -279,18 +362,32 @@ export const newRequestHref = (item: AccessP.Request): string => {
     [resource.kind === "Catalog" ? "catalogRef.name" : "serviceRef.name"]:
       resource.name,
   });
+  if (
+    resource.kind === "Catalog" &&
+    item.spec?.resource?.type.oneofKind === "catalog"
+  ) {
+    const level = item.spec.resource.type.catalog.accessLevel;
+    if (level) params.set("accessLevel", level);
+  }
+  return `/user/new?${params}`;
+};
+
+export const extendRequestHref = (item: AccessP.Request): string => {
+  const params = new URLSearchParams(newRequestHref(item).split("?")[1] ?? "");
+  if (item.metadata?.name) params.set("extends", item.metadata.name);
   return `/user/new?${params}`;
 };
 
 export const requestCreatedAt = (item?: AccessP.Request): Timestamp | undefined =>
   item?.metadata?.createdAt ?? item?.status?.approvalStartAt;
 
-export const MAX_JUSTIFICATION_BYTES = 1500;
+export const MAX_JUSTIFICATION_LENGTH = 1500;
 
-const textEncoder = new TextEncoder();
+export const MAX_TICKET_LENGTH = 256;
 
-export const utf8Length = (value: string): number =>
-  textEncoder.encode(value).length;
+export const MAX_MESSAGE_LENGTH = 500;
+
+export const textLength = (value: string): number => Array.from(value).length;
 
 const DURATION_UNITS = ["minutes", "hours", "days", "weeks"] as const;
 export type DurationUnit = (typeof DURATION_UNITS)[number];
@@ -394,31 +491,38 @@ export const tsToDate = (ts?: Timestamp): Date | undefined =>
 export const tsToMillis = (ts?: Timestamp): number | undefined =>
   ts ? Timestamp.toDate(ts).getTime() : undefined;
 
-export const reviewSteps = (
-  item?: AccessP.Request,
-): AccessP.Policy_Spec_Rule_Action_Review_Step[] => {
-  const action = item?.status?.rule?.action?.type;
-  return action?.oneofKind === "review" ? action.review.steps : [];
-};
+export type WorkflowStep = AccessP.Request_Status_Workflow_Step;
+
+export const reviewSteps = (item?: AccessP.Request): WorkflowStep[] =>
+  item?.status?.workflow?.steps ?? [];
+
+export const reviewStepState = (
+  item: AccessP.Request | undefined,
+  index: number,
+): AccessP.Request_Status_Review_StepState | undefined =>
+  item?.status?.review?.steps.find((state) => state.index === index);
 
 export const currentReviewStepIndex = (item?: AccessP.Request): number =>
   item?.status?.review?.currentStep ?? 0;
 
 export const reviewStepName = (
-  step: AccessP.Policy_Spec_Rule_Action_Review_Step | undefined,
+  step: WorkflowStep | undefined,
   index: number,
 ): string => step?.name || `step-${index + 1}`;
 
 export const reviewStepLabel = (
-  step: AccessP.Policy_Spec_Rule_Action_Review_Step | undefined,
+  step: WorkflowStep | undefined,
   index: number,
 ): string => step?.name || `Step ${index + 1}`;
 
 export const reviewStepTimeoutAt = (
   item?: AccessP.Request,
 ): Date | undefined => {
-  const step = reviewSteps(item)[currentReviewStepIndex(item)];
-  const startedAt = tsToMillis(item?.status?.review?.currentStepStartedAt);
+  const index = currentReviewStepIndex(item);
+  const step = reviewSteps(item)[index];
+  const startedAt =
+    tsToMillis(reviewStepState(item, index)?.startedAt) ??
+    tsToMillis(item?.status?.review?.currentStepStartedAt);
   const seconds = durationToSeconds(step?.timeout);
   if (!startedAt || !seconds) return undefined;
   return new Date(startedAt + seconds * 1000);
@@ -430,9 +534,7 @@ export const wasApproved = (item?: AccessP.Request): boolean =>
     (state) => state.status === AccessP.Request_Status_State_Status.APPROVED,
   );
 
-export const approvalRequirementLabel = (
-  step?: AccessP.Policy_Spec_Rule_Action_Review_Step,
-): string =>
+export const approvalRequirementLabel = (step?: WorkflowStep): string =>
   match(step?.approvalRequirement)
     .with(
       AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement.ANY,
@@ -451,9 +553,7 @@ export const approvalRequirementLabel = (
     )
     .otherwise(() => "Approval requirement unset");
 
-export const onTimeoutLabel = (
-  step?: AccessP.Policy_Spec_Rule_Action_Review_Step,
-): string =>
+export const onTimeoutLabel = (step?: WorkflowStep): string =>
   match(step?.onTimeout)
     .with(
       AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout.GOTO_NEXT_STEP,
@@ -465,22 +565,52 @@ export const onTimeoutLabel = (
     )
     .otherwise(() => "then the request expires");
 
-export type ReviewerRef = { kind: "user" | "group"; name: string };
+export type ReviewerRef = { kind: "user" | "group" | "owners"; name: string };
 
-export const stepReviewers = (
-  step?: AccessP.Policy_Spec_Rule_Action_Review_Step,
-): ReviewerRef[] =>
-  (step?.reviewers ?? []).flatMap<ReviewerRef>((reviewer) => {
-    if (reviewer.type.oneofKind === "user") {
-      const name = reviewer.type.user.userRef?.name;
-      return name ? [{ kind: "user", name }] : [];
-    }
-    if (reviewer.type.oneofKind === "group") {
-      const name = reviewer.type.group.groupRef?.name;
-      return name ? [{ kind: "group", name }] : [];
-    }
-    return [];
-  });
+export const stepReviewers = (step?: WorkflowStep): ReviewerRef[] =>
+  (step?.reviewers ?? []).flatMap<ReviewerRef>((reviewer) =>
+    match(reviewer.type)
+      .with(AccessP.Request_Status_Workflow_Step_Reviewer_Type.USER, () => [
+        { kind: "user" as const, name: reviewer.displayName },
+      ])
+      .with(AccessP.Request_Status_Workflow_Step_Reviewer_Type.GROUP, () => [
+        { kind: "group" as const, name: reviewer.displayName },
+      ])
+      .with(
+        AccessP.Request_Status_Workflow_Step_Reviewer_Type.CATALOG_OWNERS,
+        () => [
+          {
+            kind: "owners" as const,
+            name: reviewer.displayName || "Catalog owners",
+          },
+        ],
+      )
+      .otherwise(() => []),
+  );
+
+export const reasonRequirementLabel = (
+  step?: WorkflowStep,
+): string | undefined =>
+  match(step?.reasonRequirement)
+    .with(
+      AccessP.Policy_Spec_Rule_Action_Review_Step_ReasonRequirement.ALWAYS,
+      () => "Reviewers must explain every decision",
+    )
+    .with(
+      AccessP.Policy_Spec_Rule_Action_Review_Step_ReasonRequirement.REJECT_ONLY,
+      () => "Reviewers must explain a rejection",
+    )
+    .otherwise(() => undefined);
+
+export const isReasonRequired = (
+  step: WorkflowStep | undefined,
+  decision: AccessP.Review_Spec_Decision,
+): boolean =>
+  step?.reasonRequirement ===
+    AccessP.Policy_Spec_Rule_Action_Review_Step_ReasonRequirement.ALWAYS ||
+  (step?.reasonRequirement ===
+    AccessP.Policy_Spec_Rule_Action_Review_Step_ReasonRequirement.REJECT_ONLY &&
+    decision === AccessP.Review_Spec_Decision.REJECT);
 
 export const grantedDuration = (item?: AccessP.Request): MetaP.Duration | undefined =>
   item?.status?.effectiveDuration ?? item?.spec?.duration;
@@ -493,6 +623,7 @@ export const accessWindow = (
   if (!endMs) return { progress: 0 };
   const seconds = durationToSeconds(grantedDuration(item));
   const startMs =
+    tsToMillis(item?.status?.accessStartsAt) ??
     tsToMillis(item?.status?.approvalEndAt) ??
     (seconds ? endMs - seconds * 1000 : undefined);
   if (!startMs || startMs >= endMs) return { startMs, endMs, progress: 0 };
@@ -512,8 +643,40 @@ export const isApprovedRequest = (item?: AccessP.Request): boolean =>
 
 export const isEvaluatingRequest = (item?: AccessP.Request): boolean =>
   !!item &&
-  (item.status?.state?.status ?? AccessP.Request_Status_State_Status.STATUS_UNKNOWN) ===
-    AccessP.Request_Status_State_Status.STATUS_UNKNOWN;
+  ((item.status?.state?.status ??
+    AccessP.Request_Status_State_Status.STATUS_UNKNOWN) ===
+    AccessP.Request_Status_State_Status.STATUS_UNKNOWN ||
+    (isPendingRequest(item) &&
+      item.status?.state?.reason ===
+        AccessP.Request_Status_State_Reason.SUBMITTED));
+
+export const isEvaluationRetrying = (item?: AccessP.Request): boolean =>
+  item?.status?.evaluation?.state ===
+  AccessP.Request_Status_Evaluation_State.RETRYING;
+
+export const isScheduledRequest = (
+  item?: AccessP.Request,
+  now = Date.now(),
+): boolean =>
+  isApprovedRequest(item) &&
+  (tsToMillis(item?.status?.accessStartsAt) ?? 0) > now;
+
+export const isAccessActive = (
+  item?: AccessP.Request,
+  now = Date.now(),
+): boolean =>
+  isApprovedRequest(item) &&
+  (tsToMillis(item?.status?.accessStartsAt) ?? 0) <= now &&
+  (tsToMillis(item?.status?.accessEndsAt) ?? 0) > now;
+
+export const openInformationRequest = (
+  item?: AccessP.Request,
+): AccessP.Request_Status_Review_InformationRequest | undefined =>
+  isPendingRequest(item)
+    ? item?.status?.review?.informationRequests.find(
+        (info) => !info.respondedAt,
+      )
+    : undefined;
 
 export const requestRefetchInterval = (
   item?: AccessP.Request,

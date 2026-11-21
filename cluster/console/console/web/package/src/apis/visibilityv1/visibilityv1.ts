@@ -435,6 +435,14 @@ export interface GetAccessLogSummaryRequest {
      * @generated from protobuf field: string countryCode = 19
      */
     countryCode: string;
+    /**
+     * MatchInlinePolicyRef only counts the entries that were decided by a rule
+     * of an inline Policy of a specific resource (e.g. the access Request
+     * whose granted access decided them).
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference matchInlinePolicyRef = 20
+     */
+    matchInlinePolicyRef?: ObjectReference;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAccessLogSummaryResponse
@@ -1173,6 +1181,14 @@ export interface GetAccessLogDataPointRequest {
      * @generated from protobuf field: string countryCode = 20
      */
     countryCode: string;
+    /**
+     * MatchInlinePolicyRef only counts the entries that were decided by a rule
+     * of an inline Policy of a specific resource (e.g. the access Request
+     * whose granted access decided them).
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference matchInlinePolicyRef = 21
+     */
+    matchInlinePolicyRef?: ObjectReference;
 }
 /**
  * GroupBy is the dimension by which the entries are split into separate
@@ -1769,6 +1785,14 @@ export interface ListAccessLogTopServiceRequest {
      * @generated from protobuf field: string countryCode = 17
      */
     countryCode: string;
+    /**
+     * MatchInlinePolicyRef only counts the entries that were decided by a rule
+     * of an inline Policy of a specific resource (e.g. the access Request
+     * whose granted access decided them).
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference matchInlinePolicyRef = 18
+     */
+    matchInlinePolicyRef?: ObjectReference;
     /**
      * Limit caps the number of the returned items. It defaults to 10 and it
      * cannot exceed 100.
@@ -4821,7 +4845,8 @@ class GetAccessLogSummaryRequest$Type extends MessageType<GetAccessLogSummaryReq
             { no: 16, name: "compareTo", kind: "message", T: () => Timestamp },
             { no: 17, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
             { no: 18, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
-            { no: 19, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 19, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 20, name: "matchInlinePolicyRef", kind: "message", T: () => ObjectReference }
         ]);
     }
     create(value?: PartialMessage<GetAccessLogSummaryRequest>): GetAccessLogSummaryRequest {
@@ -4892,6 +4917,9 @@ class GetAccessLogSummaryRequest$Type extends MessageType<GetAccessLogSummaryReq
                 case /* string countryCode */ 19:
                     message.countryCode = reader.string();
                     break;
+                case /* octelium.api.main.meta.v1.ObjectReference matchInlinePolicyRef */ 20:
+                    message.matchInlinePolicyRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.matchInlinePolicyRef);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -4955,6 +4983,9 @@ class GetAccessLogSummaryRequest$Type extends MessageType<GetAccessLogSummaryReq
         /* string countryCode = 19; */
         if (message.countryCode !== "")
             writer.tag(19, WireType.LengthDelimited).string(message.countryCode);
+        /* octelium.api.main.meta.v1.ObjectReference matchInlinePolicyRef = 20; */
+        if (message.matchInlinePolicyRef)
+            ObjectReference.internalBinaryWrite(message.matchInlinePolicyRef, writer.tag(20, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6811,7 +6842,8 @@ class GetAccessLogDataPointRequest$Type extends MessageType<GetAccessLogDataPoin
             { no: 17, name: "limitSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 18, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
             { no: 19, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
-            { no: 20, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 20, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 21, name: "matchInlinePolicyRef", kind: "message", T: () => ObjectReference }
         ]);
     }
     create(value?: PartialMessage<GetAccessLogDataPointRequest>): GetAccessLogDataPointRequest {
@@ -6887,6 +6919,9 @@ class GetAccessLogDataPointRequest$Type extends MessageType<GetAccessLogDataPoin
                 case /* string countryCode */ 20:
                     message.countryCode = reader.string();
                     break;
+                case /* octelium.api.main.meta.v1.ObjectReference matchInlinePolicyRef */ 21:
+                    message.matchInlinePolicyRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.matchInlinePolicyRef);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -6953,6 +6988,9 @@ class GetAccessLogDataPointRequest$Type extends MessageType<GetAccessLogDataPoin
         /* string countryCode = 20; */
         if (message.countryCode !== "")
             writer.tag(20, WireType.LengthDelimited).string(message.countryCode);
+        /* octelium.api.main.meta.v1.ObjectReference matchInlinePolicyRef = 21; */
+        if (message.matchInlinePolicyRef)
+            ObjectReference.internalBinaryWrite(message.matchInlinePolicyRef, writer.tag(21, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -7987,6 +8025,7 @@ class ListAccessLogTopServiceRequest$Type extends MessageType<ListAccessLogTopSe
             { no: 15, name: "reason", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type", AccessLog_Entry_Common_Reason_Type] },
             { no: 16, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
             { no: 17, name: "countryCode", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 18, name: "matchInlinePolicyRef", kind: "message", T: () => ObjectReference },
             { no: 100, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
@@ -8047,6 +8086,9 @@ class ListAccessLogTopServiceRequest$Type extends MessageType<ListAccessLogTopSe
                 case /* string countryCode */ 17:
                     message.countryCode = reader.string();
                     break;
+                case /* octelium.api.main.meta.v1.ObjectReference matchInlinePolicyRef */ 18:
+                    message.matchInlinePolicyRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.matchInlinePolicyRef);
+                    break;
                 case /* uint32 limit */ 100:
                     message.limit = reader.uint32();
                     break;
@@ -8101,6 +8143,9 @@ class ListAccessLogTopServiceRequest$Type extends MessageType<ListAccessLogTopSe
         /* string countryCode = 17; */
         if (message.countryCode !== "")
             writer.tag(17, WireType.LengthDelimited).string(message.countryCode);
+        /* octelium.api.main.meta.v1.ObjectReference matchInlinePolicyRef = 18; */
+        if (message.matchInlinePolicyRef)
+            ObjectReference.internalBinaryWrite(message.matchInlinePolicyRef, writer.tag(18, WireType.LengthDelimited).fork(), options).join();
         /* uint32 limit = 100; */
         if (message.limit !== 0)
             writer.tag(100, WireType.Varint).uint32(message.limit);

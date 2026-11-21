@@ -36,6 +36,7 @@ export default () => {
         namespaceRef={toObjectRef(req?.namespaceRef)}
         regionRef={toObjectRef(req?.regionRef)}
         policyRef={toObjectRef(req?.policyRef)}
+        matchInlinePolicyRef={toObjectRef(req?.matchInlinePolicyRef)}
         status={req?.status as AccessLogStatusFilter | undefined}
         reason={reason}
         mode={mode}

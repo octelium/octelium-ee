@@ -19,6 +19,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/celengine"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
 	"github.com/pkg/errors"
@@ -49,6 +50,18 @@ type Server struct {
 
 	mu        sync.Mutex
 	providers map[string]*cachedProvider
+
+	celOnce   sync.Once
+	celEngine *celengine.CELEngine
+	celErr    error
+}
+
+func (s *Server) getCELEngine(ctx context.Context) (*celengine.CELEngine, error) {
+	s.celOnce.Do(func() {
+		s.celEngine, s.celErr = celengine.New(ctx, &celengine.Opts{})
+	})
+
+	return s.celEngine, s.celErr
 }
 
 type cachedProvider struct {

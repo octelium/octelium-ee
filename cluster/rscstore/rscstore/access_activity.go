@@ -193,8 +193,39 @@ func getRequestDataPointGroup(groupBy vaccessv1.GetRequestDataPointRequest_Group
 			key:  fmt.Sprintf(`COALESCE(%s, '')`, colPolicyUID),
 			name: fmt.Sprintf(`COALESCE(%s, '')`, colPolicyName),
 		}, nil
+	case vaccessv1.GetRequestDataPointRequest_REASON:
+		return &accessDataPointGroup{
+			key:  fmt.Sprintf(`COALESCE(%s, '%s')`, colStatusStateReason, accessv1.Request_Status_State_REASON_UNSET.String()),
+			name: `''`,
+		}, nil
+	case vaccessv1.GetRequestDataPointRequest_CATALOG:
+		return &accessDataPointGroup{
+			key:  fmt.Sprintf(`COALESCE(%s, '')`, colSpecCatalogUID),
+			name: fmt.Sprintf(`COALESCE(%s, '')`, colSpecCatalogName),
+		}, nil
+	case vaccessv1.GetRequestDataPointRequest_ACCESS_LEVEL:
+		return &accessDataPointGroup{
+			key:  fmt.Sprintf(`COALESCE(%s, '')`, colSpecAccessLevel),
+			name: `''`,
+		}, nil
 	default:
 		return nil, grpcutils.InvalidArg("Invalid groupBy")
+	}
+}
+
+func getRequestDataPointTimeColumn(basis vaccessv1.GetRequestDataPointRequest_TimeBasis) (string, error) {
+	switch basis {
+	case vaccessv1.GetRequestDataPointRequest_TIME_BASIS_UNSET,
+		vaccessv1.GetRequestDataPointRequest_CREATED_AT:
+		return colCreatedAt, nil
+	case vaccessv1.GetRequestDataPointRequest_DECIDED_AT:
+		return colStatusApprovalEndAt, nil
+	case vaccessv1.GetRequestDataPointRequest_ACTIVATED_AT:
+		return colStatusGrantActivatedAt, nil
+	case vaccessv1.GetRequestDataPointRequest_ENDED_AT:
+		return colStatusGrantEndedAt, nil
+	default:
+		return "", grpcutils.InvalidArg("Invalid basis")
 	}
 }
 
@@ -231,19 +262,23 @@ func (s *Server) getRequestDataPoint(ctx context.Context,
 		limitSeries = accessDataPointMaxSeries
 	}
 
-	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindRequest,
-		&vmetav1.CommonSummaryOptions{
-			From: timestamppb.New(from),
-			To:   timestamppb.New(to),
-		})
+	timeColumn, err := getRequestDataPointTimeColumn(req.Basis)
 	if err != nil {
 		return nil, err
 	}
 
+	filters, err := getSummaryFilters(uaccessv1.API, uaccessv1.Version, uaccessv1.KindRequest, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	filters = append(filters,
+		goqu.L(timeColumn).Gte(from.UTC()),
+		goqu.L(timeColumn).Lte(to.UTC()))
+
 	refFilters, err := getAccessRefFilters([]*accessRefFilter{
 		{ref: req.PolicyRef, pth: "status.policyRef"},
 		{ref: req.CatalogRef, pth: "spec.resource.catalog.catalogRef"},
-		{ref: req.ServiceRef, pth: "spec.resource.serviceRef", opts: serviceRefCheckOpts()},
 		{ref: req.UserRef, pth: "status.userRef"},
 	})
 	if err != nil {
@@ -251,11 +286,16 @@ func (s *Server) getRequestDataPoint(ctx context.Context,
 	}
 	filters = append(filters, refFilters...)
 
+	filters, err = appendRequestScopeServiceFilter(filters, req.ServiceRef)
+	if err != nil {
+		return nil, err
+	}
+
 	secs := int64(interval / time.Second)
 
 	ds := goqu.From("resources").Where(filters...).
 		Select(
-			goqu.L(fmt.Sprintf(`CAST(floor(epoch(%s) / %d) AS BIGINT) * %d`, colCreatedAt, secs, secs)).As("bucket"),
+			goqu.L(fmt.Sprintf(`CAST(floor(epoch(%s) / %d) AS BIGINT) * %d`, timeColumn, secs, secs)).As("bucket"),
 			goqu.L(group.key).As("key"),
 			goqu.L(fmt.Sprintf(`any_value(%s)`, group.name)).As("name"),
 			goqu.L(`COUNT(*)`).As("count"),
@@ -367,6 +407,9 @@ type accessTopDimension struct {
 	key  string
 	name string
 	kind string
+
+	unnestKey  string
+	unnestName string
 }
 
 func getRequestTopDimension(dim vaccessv1.ListRequestTopRequest_Dimension) (*accessTopDimension, error) {
@@ -377,9 +420,17 @@ func getRequestTopDimension(dim vaccessv1.ListRequestTopRequest_Dimension) (*acc
 		return &accessTopDimension{key: colSpecSubjectUserUID, name: colSpecSubjectUserName, kind: `'User'`}, nil
 	case vaccessv1.ListRequestTopRequest_RESOURCE:
 		return &accessTopDimension{
-			key:  fmt.Sprintf(`COALESCE(%s, %s)`, colSpecServiceUID, colSpecCatalogUID),
-			name: fmt.Sprintf(`COALESCE(%s, %s)`, colSpecServiceName, colSpecCatalogName),
-			kind: fmt.Sprintf(`CASE WHEN %s IS NOT NULL THEN 'Service' ELSE 'Catalog' END`, colSpecServiceUID),
+			key:  fmt.Sprintf(`COALESCE(%s, %s)`, colSpecCatalogUID, colSpecServiceUID),
+			name: fmt.Sprintf(`COALESCE(%s, %s)`, colSpecCatalogName, colSpecServiceName),
+			kind: fmt.Sprintf(`CASE WHEN %s IS NOT NULL THEN 'Catalog' ELSE 'Service' END`, colSpecCatalogUID),
+		}, nil
+	case vaccessv1.ListRequestTopRequest_SERVICE:
+		return &accessTopDimension{
+			key:        "top_key",
+			name:       "top_name",
+			kind:       `'Service'`,
+			unnestKey:  colStatusScopeServiceUIDs,
+			unnestName: colStatusScopeServiceNames,
 		}, nil
 	case vaccessv1.ListRequestTopRequest_POLICY:
 		return &accessTopDimension{key: colPolicyUID, name: colPolicyName, kind: `'Policy'`}, nil
@@ -432,12 +483,16 @@ func (s *Server) listRequestTop(ctx context.Context,
 	refFilters, err := getAccessRefFilters([]*accessRefFilter{
 		{ref: req.PolicyRef, pth: "status.policyRef"},
 		{ref: req.CatalogRef, pth: "spec.resource.catalog.catalogRef"},
-		{ref: req.ServiceRef, pth: "spec.resource.serviceRef", opts: serviceRefCheckOpts()},
 	})
 	if err != nil {
 		return nil, err
 	}
 	filters = append(filters, refFilters...)
+
+	filters, err = appendRequestScopeServiceFilter(filters, req.ServiceRef)
+	if err != nil {
+		return nil, err
+	}
 
 	if req.State != accessv1.Request_Status_State_STATUS_UNKNOWN {
 		filters = append(filters, goqu.L(colStatusStateStatus).Eq(req.State.String()))
@@ -473,9 +528,17 @@ func (s *Server) listReviewTop(ctx context.Context,
 func (s *Server) listAccessTop(ctx context.Context, filters []exp.Expression,
 	dim *accessTopDimension, limit uint32) (*vaccessv1.ListTopResponse, error) {
 
-	filters = append(filters, goqu.L(fmt.Sprintf(`(%s IS NOT NULL AND %s != '')`, dim.key, dim.key)))
+	source := goqu.From("resources").Where(filters...)
+	if dim.unnestKey != "" {
+		source = goqu.From(goqu.From("resources").Where(filters...).Select(
+			goqu.L(fmt.Sprintf(`unnest(COALESCE(%s, []))`, dim.unnestKey)).As(dim.key),
+			goqu.L(fmt.Sprintf(`unnest(COALESCE(%s, []))`, dim.unnestName)).As(dim.name),
+		).As("top"))
+	}
 
-	ds := goqu.From("resources").Where(filters...).
+	source = source.Where(goqu.L(fmt.Sprintf(`(%s IS NOT NULL AND %s != '')`, dim.key, dim.key)))
+
+	ds := source.
 		Select(
 			goqu.L(dim.key).As("key"),
 			goqu.L(fmt.Sprintf(`COALESCE(any_value(%s), '')`, dim.name)).As("name"),
@@ -525,7 +588,7 @@ func (s *Server) listAccessTop(ctx context.Context, filters []exp.Expression,
 	}
 
 	{
-		ds := goqu.From("resources").Where(filters...).
+		ds := source.
 			Select(
 				goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s)`, dim.key)),
 				goqu.L(`COUNT(*)`),

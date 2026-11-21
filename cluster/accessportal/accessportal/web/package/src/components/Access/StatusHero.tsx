@@ -1,22 +1,33 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import { Button } from "@mantine/core";
-import { CircleDashed, Clock3, Loader2, RotateCcw } from "lucide-react";
+import {
+  CalendarClock,
+  CircleDashed,
+  Clock3,
+  Loader2,
+  RotateCcw,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { twMerge } from "@/lib/utils";
 
 import TimeAgo, { Countdown, Elapsed } from "@/components/TimeAgo";
-import { Eyebrow, SectionCard, StatusBadge } from "@/ui";
+import { Eyebrow, Note, SectionCard, StatusBadge } from "@/ui";
 import {
   currentReviewStepIndex,
   isEvaluatingRequest,
+  isEvaluationRetrying,
   isPendingRequest,
+  isScheduledRequest,
   newRequestHref,
+  openInformationRequest,
   reviewStepLabel,
   reviewStepTimeoutAt,
   reviewSteps,
+  stateDescription,
   statusMeta,
   tsToDate,
 } from "@/utils";
+import { useNow } from "@/utils/time";
 
 import AccessWindowCard from "./AccessWindowCard";
 
@@ -25,7 +36,28 @@ const StatusHero = (props: {
   canRequestAgain?: boolean;
 }) => {
   const { request } = props;
+  const now = useNow();
   const status = statusMeta(request.status?.state?.status);
+
+  if (isScheduledRequest(request, now)) {
+    const startsAt = tsToDate(request.status?.accessStartsAt);
+    return (
+      <SectionCard
+        title="Scheduled"
+        description="The access is approved and starts at the scheduled time"
+        icon={<CalendarClock size={14} strokeWidth={2.25} />}
+      >
+        <div>
+          <Eyebrow>Starts in</Eyebrow>
+          <p className="mt-1 text-2xl font-semibold leading-none tracking-tight text-slate-900">
+            {startsAt && (
+              <Countdown date={startsAt} suffix="" endedLabel="Starting" />
+            )}
+          </p>
+        </div>
+      </SectionCard>
+    );
+  }
 
   if (status.group === "active" && request.status?.accessEndsAt) {
     return (
@@ -43,10 +75,17 @@ const StatusHero = (props: {
         description="The Cluster is matching this request against the access policies"
         icon={<Loader2 size={14} strokeWidth={2.25} className="motion-safe:animate-spin" />}
       >
-        <p className="text-body font-normal text-slate-600">
-          This usually takes a few seconds. The page updates on its own once
-          the request is approved, rejected or routed to its reviewers.
-        </p>
+        <div className="flex flex-col gap-3">
+          <p className="text-body font-normal text-slate-600">
+            This usually takes a few seconds. The page updates on its own once
+            the request is approved, rejected or routed to its reviewers.
+          </p>
+          {isEvaluationRetrying(request) && (
+            <Note tone="amber">
+              The evaluation hit a temporary problem and is being retried.
+            </Note>
+          )}
+        </div>
       </SectionCard>
     );
   }
@@ -56,10 +95,11 @@ const StatusHero = (props: {
     const current = currentReviewStepIndex(request);
     const timeoutAt = reviewStepTimeoutAt(request);
     const deadline = tsToDate(request.spec?.deadline);
+    const infoRequest = openInformationRequest(request);
 
     return (
       <SectionCard
-        title="Awaiting review"
+        title={infoRequest ? "More information requested" : "Awaiting review"}
         description={
           steps.length > 0
             ? `Step ${Math.min(current + 1, steps.length)} of ${steps.length}: ${reviewStepLabel(steps[current], current)}`
@@ -123,7 +163,7 @@ const StatusHero = (props: {
   return (
     <SectionCard
       title={status.label}
-      description={status.hint}
+      description={stateDescription(request.status?.state)}
       icon={<CircleDashed size={14} strokeWidth={2.25} />}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">

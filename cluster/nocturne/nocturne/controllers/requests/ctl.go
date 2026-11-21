@@ -10,19 +10,15 @@ package requests
 
 import (
 	"context"
-	"fmt"
-	"sort"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
-	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/celengine"
-	"github.com/octelium/octelium/cluster/common/urscsrv"
-	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
@@ -30,17 +26,15 @@ import (
 	"go.uber.org/zap"
 )
 
-const maxRequestStateHistory = 100
-const defaultAccessRequestAllowPriority int32 = -1
-const minAccessRequestAllowPriority int32 = -4
-const maxAccessRequestAllowPriority int32 = 0
-const defaultMaxAccessDuration = 24 * time.Hour
+const maxEvaluationAttempts = 5
+const maxProvisioningAttempts = 5
 
-const PolicyTriggerNamePrefix = "access-request-"
+const PolicyTriggerNamePrefix = accesscmd.PolicyTriggerNamePrefix
 
 type Controller struct {
 	octeliumC     octeliumc.ClientInterface
 	celEngine     *celengine.CELEngine
+	evaluator     *accesscmd.Evaluator
 	clusterDomain string
 }
 
@@ -57,6 +51,7 @@ func NewController(
 	return &Controller{
 		octeliumC:     octeliumC,
 		celEngine:     celEngine,
+		evaluator:     accesscmd.NewEvaluator(octeliumC, celEngine),
 		clusterDomain: cc.Status.Domain,
 	}, nil
 }
@@ -69,37 +64,16 @@ func (c *Controller) OnUpdate(ctx context.Context, new, old *accessv1.Request) e
 	return c.reconcile(ctx, new)
 }
 
-func (c *Controller) OnClusterConfigUpdate(ctx context.Context, new, old *accessv1.ClusterConfig) error {
-	if getAccessRequestAllowPriority(new) == getAccessRequestAllowPriority(old) {
-		return nil
-	}
-
-	itemList, err := c.octeliumC.AccessC().ListRequest(ctx, &rmetav1.ListOptions{
-		Filters: []*rmetav1.ListOptions_Filter{
-			urscsrv.FilterFieldEQValStr("status.state.status",
-				accessv1.Request_Status_State_APPROVED.String()),
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	for _, itm := range itemList.Items {
-		if err := c.reconcile(ctx, itm); err != nil {
-			zap.L().Warn("Could not reconcile the approved Request after a ClusterConfig update",
-				zap.String("name", itm.Metadata.Name), zap.Error(err))
-		}
-	}
-
-	return nil
-}
-
 func (c *Controller) OnDelete(ctx context.Context, itm *accessv1.Request) error {
 	if err := c.deleteIntegrationBindings(ctx, itm); err != nil {
 		return err
 	}
 
-	return c.deletePolicyTriggerOf(ctx, itm)
+	return accesscmd.DeletePolicyTriggerOf(ctx, c.octeliumC, itm)
+}
+
+func (c *Controller) Reconcile(ctx context.Context, itm *accessv1.Request) error {
+	return c.reconcile(ctx, itm)
 }
 
 func (c *Controller) reconcile(ctx context.Context, itm *accessv1.Request) error {
@@ -113,16 +87,23 @@ func (c *Controller) reconcile(ctx context.Context, itm *accessv1.Request) error
 func (c *Controller) doReconcile(ctx context.Context, itm *accessv1.Request) error {
 	next := pbutils.Clone(itm).(*accessv1.Request)
 
-	if next.Status.State == nil ||
-		next.Status.State.Status == accessv1.Request_Status_State_STATUS_UNKNOWN ||
-		(next.Status.State.Status == accessv1.Request_Status_State_PENDING && next.Status.Rule == nil) {
-		if err := c.initializeRequest(ctx, next); err != nil {
+	cc, err := accesscmd.GetClusterConfig(ctx, c.octeliumC)
+	if err != nil {
+		return err
+	}
+
+	if needsEvaluation(next) {
+		if err := c.evaluate(ctx, next, cc); err != nil {
+			return err
+		}
+	} else if accesscmd.IsPending(next) {
+		if err := c.reconcilePending(ctx, next, cc); err != nil {
 			return err
 		}
 	}
 
-	if next.Status.State.Status == accessv1.Request_Status_State_APPROVED {
-		c.ensureAccessEndsAt(next)
+	if accesscmd.IsApproved(next) {
+		c.ensureAccessWindow(next)
 		c.expireIfNeeded(next)
 	}
 
@@ -131,16 +112,13 @@ func (c *Controller) doReconcile(ctx context.Context, itm *accessv1.Request) err
 		return err
 	}
 
-	switch next.Status.State.Status {
-	case accessv1.Request_Status_State_APPROVED:
+	switch {
+	case accesscmd.IsApproved(next):
 		if err := c.ensurePolicyTrigger(ctx, next); err != nil {
 			return err
 		}
 
-	case accessv1.Request_Status_State_REJECTED,
-		accessv1.Request_Status_State_REVOKED,
-		accessv1.Request_Status_State_EXPIRED,
-		accessv1.Request_Status_State_CANCELLED:
+	case next.Status.State != nil && accesscmd.IsFinalState(next.Status.State.Status):
 		if err := c.ensureNoPolicyTrigger(ctx, next); err != nil {
 			return err
 		}
@@ -150,341 +128,536 @@ func (c *Controller) doReconcile(ctx context.Context, itm *accessv1.Request) err
 		return nil
 	}
 
-	_, err := c.octeliumC.AccessC().UpdateRequest(ctx, next)
+	_, err = c.octeliumC.AccessC().UpdateRequest(ctx, next)
 	return err
 }
 
-func (c *Controller) initializeRequest(ctx context.Context, req *accessv1.Request) error {
-	pol, rule, err := c.matchPolicyRule(ctx, req)
-	if err != nil {
-		return err
+func needsEvaluation(req *accessv1.Request) bool {
+	if req.Status.State == nil ||
+		req.Status.State.Status == accessv1.Request_Status_State_STATUS_UNKNOWN {
+		return true
 	}
 
-	if rule == nil {
-		c.setState(req, accessv1.Request_Status_State_REJECTED)
+	if req.Status.State.Status != accessv1.Request_Status_State_PENDING || req.Status.Rule != nil {
+		return false
+	}
+
+	return req.Status.Evaluation == nil ||
+		req.Status.Evaluation.State != accessv1.Request_Status_Evaluation_FAILED
+}
+
+type requestContext struct {
+	requester *corev1.User
+	subject   *corev1.User
+	scope     *accesscmd.Scope
+}
+
+func (c *Controller) loadRequestContext(ctx context.Context, req *accessv1.Request,
+	cc *accessv1.ClusterConfig) (*requestContext, *accesscmd.Problem, error) {
+	ret := &requestContext{}
+
+	requester, err := accesscmd.GetUser(ctx, c.octeliumC, req.Status.UserRef)
+	if err != nil {
+		return nil, nil, err
+	}
+	ret.requester = requester
+
+	subject, err := accesscmd.GetUser(ctx, c.octeliumC, accesscmd.GetSubjectUserRef(req))
+	if err != nil {
+		return nil, nil, err
+	}
+	if subject == nil || !accesscmd.IsUserEligible(subject) {
+		return nil, &accesscmd.Problem{
+			Message: "The subject User can no longer be granted any access",
+		}, nil
+	}
+	ret.subject = subject
+
+	resCatalog := req.Spec.GetResource().GetCatalog()
+	if resCatalog == nil {
+		return nil, &accesscmd.Problem{
+			Message: "The Request must be made for a Catalog",
+		}, nil
+	}
+
+	catalog, err := accesscmd.GetCatalog(ctx, c.octeliumC, resCatalog.CatalogRef)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	problem, err := accesscmd.CheckRequestable(ctx, &accesscmd.CheckRequestableOpts{
+		CELEngine: c.celEngine,
+		Catalog:   catalog,
+		Requester: requester,
+		Subject:   subject,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	if problem != nil {
+		return nil, problem, nil
+	}
+
+	scope, problems, err := accesscmd.ResolveScope(ctx, c.octeliumC, &accesscmd.ResolveScopeOpts{
+		Catalog:         catalog,
+		AccessLevel:     resCatalog.AccessLevel,
+		ServiceRefs:     resCatalog.ServiceRefs,
+		DefaultPriority: accesscmd.GetDefaultAccessPriority(cc),
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(problems) > 0 {
+		return nil, problems[0], nil
+	}
+	ret.scope = scope
+
+	return ret, nil, nil
+}
+
+func (c *Controller) evaluate(ctx context.Context, req *accessv1.Request, cc *accessv1.ClusterConfig) error {
+	if req.Status.Evaluation == nil {
+		req.Status.Evaluation = &accessv1.Request_Status_Evaluation{}
+	}
+	req.Status.Evaluation.LastAttemptAt = pbutils.Now()
+
+	rctx, problem, err := c.loadRequestContext(ctx, req, cc)
+	if err == nil && problem != nil {
+		req.Status.Evaluation.State = accessv1.Request_Status_Evaluation_EVALUATED
+		accesscmd.SetRequestState(req, &accesscmd.StateChange{
+			Status:  accessv1.Request_Status_State_REJECTED,
+			Reason:  accessv1.Request_Status_State_NOT_REQUESTABLE,
+			Message: problem.Message,
+		})
 		return nil
 	}
 
-	req.Status.PolicyRef = objectRef(pol)
-	req.Status.Rule = pbutils.Clone(rule).(*accessv1.Policy_Spec_Rule)
+	var res *accesscmd.EvalResult
+	if err == nil {
+		res, err = c.evaluator.Evaluate(ctx, &accesscmd.EvalInput{
+			Request:   req,
+			Requester: rctx.requester,
+			Subject:   rctx.subject,
+			Scope:     rctx.scope,
+		}, false)
+	}
+
+	if err != nil {
+		c.setEvaluationFailure(req, err)
+		return nil
+	}
+
+	req.Status.Evaluation.State = accessv1.Request_Status_Evaluation_EVALUATED
+	req.Status.Evaluation.LastError = ""
+	req.Status.Evaluation.Attempts = 0
+	req.Status.Evaluation.SkippedRules = res.SkippedRules()
+
+	for _, skipped := range req.Status.Evaluation.SkippedRules {
+		zap.L().Warn("Skipping an access Policy Rule that could not be evaluated",
+			zap.String("request", req.Metadata.Name),
+			zap.String("rule", skipped.RuleName),
+			zap.String("error", skipped.Error))
+	}
+
+	req.Status.ResolvedScope = rctx.scope.Status
+	req.Status.SubjectInfo = accesscmd.GetUserInfo(rctx.subject)
+	if rctx.requester != nil {
+		req.Status.RequesterInfo = accesscmd.GetUserInfo(rctx.requester)
+	}
+
+	if res.Rule == nil {
+		accesscmd.SetRequestState(req, &accesscmd.StateChange{
+			Status:  accessv1.Request_Status_State_REJECTED,
+			Reason:  accessv1.Request_Status_State_NO_MATCHING_RULE,
+			Message: cc.GetSpec().GetRequest().GetNoMatchMessage(),
+		})
+		return nil
+	}
+
+	rule := pbutils.Clone(res.Rule).(*accessv1.Policy_Spec_Rule)
+	if len(rule.Notifications) == 0 {
+		for _, surface := range cc.GetSpec().GetNotification().GetDefaultSurfaces() {
+			rule.Notifications = append(rule.Notifications,
+				pbutils.Clone(surface).(*accessv1.Policy_Spec_Rule_Surface))
+		}
+	}
+
+	req.Status.PolicyRef = objectRef(res.Policy)
+	req.Status.Rule = rule
+
+	workflow, err := accesscmd.BuildWorkflow(ctx, c.octeliumC, rule)
+	if err != nil {
+		return err
+	}
+	req.Status.Workflow = workflow
 
 	switch rule.Effect {
 	case accessv1.Policy_Spec_Rule_DENY:
-		c.setState(req, accessv1.Request_Status_State_REJECTED)
+		accesscmd.SetRequestState(req, &accesscmd.StateChange{
+			Status:  accessv1.Request_Status_State_REJECTED,
+			Reason:  accessv1.Request_Status_State_DENIED_BY_RULE,
+			Message: rule.Message,
+		})
 
 	case accessv1.Policy_Spec_Rule_REVIEW:
-		c.setEffectiveDuration(req, rule.Authorization)
+		c.setEffectiveDuration(req, rctx.scope.Level, rule)
 
-		if rule.Action == nil || rule.Action.GetReview() == nil {
-			return errors.Errorf("matched review rule %q has no review action", rule.Name)
+		if err := validateReviewAction(rule.GetAction().GetReview()); err != nil {
+			accesscmd.SetRequestState(req, &accesscmd.StateChange{
+				Status:  accessv1.Request_Status_State_REJECTED,
+				Reason:  accessv1.Request_Status_State_EVALUATION_FAILED,
+				Message: "The matched access Policy Rule has an invalid review workflow",
+			})
+			return nil
 		}
-
-		if err := validateReviewAction(rule.Action.GetReview()); err != nil {
-			return errors.Wrapf(err, "matched review rule %q is invalid", rule.Name)
-		}
-
-		c.setState(req, accessv1.Request_Status_State_PENDING)
 
 		if req.Status.ApprovalStartAt == nil {
 			req.Status.ApprovalStartAt = pbutils.Now()
 		}
 
-		if req.Status.Review == nil {
-			req.Status.Review = &accessv1.Request_Status_Review{
-				CurrentStep:          0,
-				CurrentStepStartedAt: pbutils.Now(),
-			}
+		accesscmd.SetRequestState(req, &accesscmd.StateChange{
+			Status:  accessv1.Request_Status_State_PENDING,
+			Reason:  accessv1.Request_Status_State_AWAITING_REVIEW,
+			Message: rule.Message,
+		})
+
+		if err := accesscmd.StartReviewStep(ctx, &accesscmd.StartReviewStepOpts{
+			OcteliumC:     c.octeliumC,
+			Request:       req,
+			Index:         0,
+			ClusterConfig: cc,
+		}); err != nil {
+			return err
 		}
 
 	case accessv1.Policy_Spec_Rule_AUTO_APPROVE:
-		c.setEffectiveDuration(req, rule.Authorization)
-
-		c.setState(req, accessv1.Request_Status_State_APPROVED)
+		c.setEffectiveDuration(req, rctx.scope.Level, rule)
 
 		if req.Status.ApprovalStartAt == nil {
 			req.Status.ApprovalStartAt = pbutils.Now()
 		}
 
-		if req.Status.ApprovalEndAt == nil {
-			req.Status.ApprovalEndAt = pbutils.Now()
-		}
+		accesscmd.SetRequestState(req, &accesscmd.StateChange{
+			Status:  accessv1.Request_Status_State_APPROVED,
+			Reason:  accessv1.Request_Status_State_AUTO_APPROVED,
+			Message: rule.Message,
+		})
 
 	default:
-		return errors.Errorf("matched rule %q has invalid effect", rule.Name)
+		accesscmd.SetRequestState(req, &accesscmd.StateChange{
+			Status:  accessv1.Request_Status_State_REJECTED,
+			Reason:  accessv1.Request_Status_State_EVALUATION_FAILED,
+			Message: "The matched access Policy Rule has an invalid effect",
+		})
 	}
 
 	return nil
 }
 
-func (c *Controller) matchPolicyRule(ctx context.Context, req *accessv1.Request) (*accessv1.Policy, *accessv1.Policy_Spec_Rule, error) {
-	polList, err := c.octeliumC.AccessC().ListPolicy(ctx, &rmetav1.ListOptions{})
-	if err != nil {
-		return nil, nil, err
+func (c *Controller) setEvaluationFailure(req *accessv1.Request, err error) {
+	zap.L().Warn("Could not evaluate an access Request",
+		zap.String("request", req.Metadata.Name), zap.Error(err))
+
+	req.Status.Evaluation.Attempts++
+	req.Status.Evaluation.LastError = err.Error()
+
+	if req.Status.Evaluation.Attempts < maxEvaluationAttempts {
+		req.Status.Evaluation.State = accessv1.Request_Status_Evaluation_RETRYING
+		return
 	}
 
-	for _, itm := range getSortedPolicyRules(polList.Items) {
-		matched, err := c.matchCondition(ctx, req, itm.rule.Condition)
-		if err != nil {
-			return nil, nil, err
-		}
-		if !matched {
-			continue
-		}
-
-		return itm.pol, itm.rule, nil
-	}
-
-	return nil, nil, nil
-}
-
-type policyRule struct {
-	pol  *accessv1.Policy
-	rule *accessv1.Policy_Spec_Rule
-}
-
-func getSortedPolicyRules(policies []*accessv1.Policy) []policyRule {
-	var ret []policyRule
-
-	for _, pol := range policies {
-		if pol == nil || pol.Spec.IsDisabled {
-			continue
-		}
-
-		for _, rule := range pol.Spec.Rules {
-			if rule == nil {
-				continue
-			}
-
-			ret = append(ret, policyRule{
-				pol:  pol,
-				rule: rule,
-			})
-		}
-	}
-
-	sort.SliceStable(ret, func(i, j int) bool {
-		if ret[i].rule.Priority != ret[j].rule.Priority {
-			return ret[i].rule.Priority < ret[j].rule.Priority
-		}
-
-		return ret[i].pol.Metadata.Name < ret[j].pol.Metadata.Name
-	})
-
-	return ret
-}
-
-func (c *Controller) matchCondition(ctx context.Context, req *accessv1.Request, cond *accessv1.Policy_Spec_Rule_Condition) (bool, error) {
-	if cond == nil {
-		return false, nil
-	}
-
-	switch cond.Type.(type) {
-	case *accessv1.Policy_Spec_Rule_Condition_MatchAny:
-		return cond.GetMatchAny(), nil
-
-	case *accessv1.Policy_Spec_Rule_Condition_Subject_:
-		return c.matchSubject(ctx, req, cond.GetSubject())
-
-	case *accessv1.Policy_Spec_Rule_Condition_Resource_:
-		return c.matchResource(req, cond.GetResource()), nil
-
-	case *accessv1.Policy_Spec_Rule_Condition_All_:
-		arg := cond.GetAll()
-		if len(arg.Of) == 0 {
-			return false, nil
-		}
-
-		for _, sub := range arg.Of {
-			matched, err := c.matchCondition(ctx, req, sub)
-			if err != nil {
-				return false, err
-			}
-			if !matched {
-				return false, nil
-			}
-		}
-
-		return true, nil
-
-	case *accessv1.Policy_Spec_Rule_Condition_Any_:
-		arg := cond.GetAny()
-		if len(arg.Of) == 0 {
-			return false, nil
-		}
-
-		for _, sub := range arg.Of {
-			matched, err := c.matchCondition(ctx, req, sub)
-			if err != nil {
-				return false, err
-			}
-			if matched {
-				return true, nil
-			}
-		}
-
-		return false, nil
-
-	case *accessv1.Policy_Spec_Rule_Condition_UserRef:
-		return refEqual(req.Status.UserRef, cond.GetUserRef()), nil
-
-	case *accessv1.Policy_Spec_Rule_Condition_Match:
-		return c.matchCEL(ctx, req, cond.GetMatch())
-
-	default:
-		return false, nil
-	}
-}
-
-func (c *Controller) matchCEL(ctx context.Context, req *accessv1.Request, exp string) (bool, error) {
-	ctxMap := map[string]any{
-		"request": pbutils.MustConvertToMap(req),
-	}
-
-	if ref := req.Status.UserRef; ref != nil && ref.Uid != "" {
-		usr, err := c.octeliumC.CoreC().GetUser(ctx, &rmetav1.GetOptions{
-			Uid: ref.Uid,
-		})
-		switch {
-		case err == nil:
-			ctxMap["user"] = pbutils.MustConvertToMap(usr)
-		case !grpcerr.IsNotFound(err):
-			return false, err
-		}
-	}
-
-	return c.celEngine.EvalPolicy(ctx, exp, map[string]any{
-		"ctx": ctxMap,
+	req.Status.Evaluation.State = accessv1.Request_Status_Evaluation_FAILED
+	accesscmd.SetRequestState(req, &accesscmd.StateChange{
+		Status:  accessv1.Request_Status_State_REJECTED,
+		Reason:  accessv1.Request_Status_State_EVALUATION_FAILED,
+		Message: "The Request could not be evaluated against the access Policies",
 	})
 }
 
-func (c *Controller) matchSubject(
-	ctx context.Context,
-	req *accessv1.Request,
-	subject *accessv1.Policy_Spec_Rule_Condition_Subject,
-) (bool, error) {
-	if subject == nil {
-		return false, nil
-	}
-
-	switch subject.Type.(type) {
-	case *accessv1.Policy_Spec_Rule_Condition_Subject_UserRef:
-		return refEqual(getRequestSubjectUserRef(req), subject.GetUserRef()), nil
-
-	case *accessv1.Policy_Spec_Rule_Condition_Subject_GroupRef:
-		return c.matchSubjectGroup(ctx, getRequestSubjectUserRef(req), subject.GetGroupRef())
-
-	default:
-		return false, nil
-	}
-}
-
-func (c *Controller) matchSubjectGroup(
-	ctx context.Context,
-	userRef *metav1.ObjectReference,
-	groupRef *metav1.ObjectReference,
-) (bool, error) {
-	if userRef == nil || userRef.Uid == "" || groupRef == nil {
-		return false, nil
-	}
-
-	grp, err := c.getGroup(ctx, groupRef)
-	if err != nil {
-		return false, err
-	}
-	if grp == nil {
-		return false, nil
-	}
-
-	usr, err := c.octeliumC.CoreC().GetUser(ctx, &rmetav1.GetOptions{
-		Uid: userRef.Uid,
-	})
-	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	for _, groupName := range usr.Spec.Groups {
-		if groupName == grp.Metadata.Name {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func (c *Controller) matchResource(req *accessv1.Request, resource *accessv1.Policy_Spec_Rule_Condition_Resource) bool {
-	if resource == nil {
-		return false
-	}
-
-	switch resource.Type.(type) {
-	case *accessv1.Policy_Spec_Rule_Condition_Resource_ServiceRef:
-		return refEqual(req.Spec.Resource.GetServiceRef(), resource.GetServiceRef())
-
-	case *accessv1.Policy_Spec_Rule_Condition_Resource_CatalogRef:
-		return refEqual(req.Spec.Resource.GetCatalog().GetCatalogRef(), resource.GetCatalogRef())
-
-	default:
-		return false
-	}
-}
-
-func (c *Controller) ensurePolicyTrigger(ctx context.Context, req *accessv1.Request) error {
-	if req.Status.Rule == nil {
-		return nil
-	}
-
-	ptDesired, err := c.buildPolicyTrigger(ctx, req, req.Status.Rule.Authorization)
+func (c *Controller) reconcilePending(ctx context.Context, req *accessv1.Request, cc *accessv1.ClusterConfig) error {
+	rctx, problem, err := c.loadRequestContext(ctx, req, cc)
 	if err != nil {
 		return err
 	}
 
-	ptExisting, err := c.octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
-		Name: ptDesired.Metadata.Name,
+	if problem != nil {
+		accesscmd.SetRequestState(req, &accesscmd.StateChange{
+			Status:  accessv1.Request_Status_State_REJECTED,
+			Reason:  accessv1.Request_Status_State_NOT_REQUESTABLE,
+			Message: problem.Message,
+		})
+		return nil
+	}
+
+	if !accesscmd.IsScopeEqual(req.Status.ResolvedScope, rctx.scope.Status) {
+		req.Status.ResolvedScope = rctx.scope.Status
+	}
+
+	c.setEffectiveDuration(req, rctx.scope.Level, req.Status.Rule)
+
+	if accesscmd.GetReviewAction(req) == nil {
+		return nil
+	}
+
+	if hasStaleAppliedSteps(req) {
+		accesscmd.EndCurrentStep(req, accessv1.Request_Status_Review_StepState_INTERRUPTED)
+		return accesscmd.StartReviewStep(ctx, &accesscmd.StartReviewStepOpts{
+			OcteliumC:     c.octeliumC,
+			Request:       req,
+			Index:         0,
+			ClusterConfig: cc,
+		})
+	}
+
+	if accesscmd.CurrentStepState(req) == nil {
+		var idx int32
+		if req.Status.Review != nil {
+			idx = req.Status.Review.CurrentStep
+		}
+
+		return accesscmd.StartReviewStep(ctx, &accesscmd.StartReviewStepOpts{
+			OcteliumC:     c.octeliumC,
+			Request:       req,
+			Index:         idx,
+			ClusterConfig: cc,
+		})
+	}
+
+	return nil
+}
+
+func hasStaleAppliedSteps(req *accessv1.Request) bool {
+	if req.Status.Review == nil || req.Status.Review.CurrentStep == 0 {
+		return false
+	}
+
+	for _, itm := range req.Status.Review.LastSteps {
+		if itm.StepIndex < req.Status.Review.CurrentStep &&
+			itm.Decision == accessv1.Review_Spec_DECISION_APPROVE &&
+			itm.SpecRevision != req.Status.SpecRevision {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (c *Controller) ensureAccessWindow(req *accessv1.Request) {
+	if req.Status.ApprovalEndAt == nil {
+		req.Status.ApprovalEndAt = pbutils.Now()
+	}
+
+	if req.Status.AccessStartsAt == nil {
+		startsAt := req.Status.ApprovalEndAt.AsTime()
+		if startAt := req.Spec.GetStartAt(); startAt != nil && startAt.IsValid() && startAt.AsTime().After(startsAt) {
+			startsAt = startAt.AsTime()
+		}
+		req.Status.AccessStartsAt = pbutils.Timestamp(startsAt)
+	}
+
+	if req.Status.AccessEndsAt == nil {
+		accessDuration := umetav1.ToDuration(req.Status.EffectiveDuration).ToGo()
+		if accessDuration <= 0 {
+			accessDuration = accesscmd.GetEffectiveDuration(req.Spec,
+				req.Status.GetResolvedScope().GetAccessLevel(), req.Status.Rule)
+		}
+
+		req.Status.AccessEndsAt = pbutils.Timestamp(req.Status.AccessStartsAt.AsTime().Add(accessDuration))
+	}
+
+	if req.Status.Grant == nil {
+		req.Status.Grant = &accessv1.Request_Status_Grant{
+			State: accessv1.Request_Status_Grant_PROVISIONING,
+		}
+	}
+}
+
+func (c *Controller) expireIfNeeded(req *accessv1.Request) {
+	if req.Status.AccessEndsAt == nil {
+		return
+	}
+
+	if req.Status.AccessEndsAt.AsTime().After(time.Now()) {
+		return
+	}
+
+	accesscmd.SetRequestState(req, &accesscmd.StateChange{
+		Status: accessv1.Request_Status_State_EXPIRED,
+		Reason: accessv1.Request_Status_State_ACCESS_ENDED,
+	})
+}
+
+func (c *Controller) setEffectiveDuration(req *accessv1.Request,
+	level *accessv1.Catalog_Spec_AccessLevel, rule *accessv1.Policy_Spec_Rule) {
+	req.Status.EffectiveDuration = accesscmd.DurationFromGo(
+		accesscmd.GetEffectiveDuration(req.Spec, level, rule))
+}
+
+func (c *Controller) ensurePolicyTrigger(ctx context.Context, req *accessv1.Request) error {
+	if req.Status.ResolvedScope == nil {
+		return c.ensureLegacyPolicyTrigger(ctx, req)
+	}
+
+	ptDesired, err := accesscmd.BuildPolicyTrigger(req)
+	if err != nil {
+		c.setProvisioningFailure(req, err)
+		return nil
+	}
+
+	pt, err := c.applyPolicyTrigger(ctx, req, ptDesired)
+	if err != nil {
+		c.setProvisioningFailure(req, err)
+		return nil
+	}
+	if pt == nil {
+		return nil
+	}
+
+	req.Status.PolicyTriggerRef = objectRef(pt)
+	c.setGrantProvisioned(req)
+
+	if req.Status.Grant.State == accessv1.Request_Status_Grant_ACTIVE {
+		return c.supersedeExtendedRequest(ctx, req)
+	}
+
+	return nil
+}
+
+func (c *Controller) ensureLegacyPolicyTrigger(ctx context.Context, req *accessv1.Request) error {
+	pt, err := c.octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
+		Name: accesscmd.PolicyTriggerName(req),
 	})
 	if err != nil {
 		if !grpcerr.IsNotFound(err) {
 			return err
 		}
 
+		c.setProvisioningFailure(req, errors.Errorf("the Request has no resolved scope"))
+		return nil
+	}
+
+	req.Status.PolicyTriggerRef = objectRef(pt)
+	c.setGrantProvisioned(req)
+
+	return nil
+}
+
+func (c *Controller) applyPolicyTrigger(ctx context.Context,
+	req *accessv1.Request, ptDesired *corev1.PolicyTrigger) (*corev1.PolicyTrigger, error) {
+	ptExisting, err := c.octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
+		Name: ptDesired.Metadata.Name,
+	})
+	if err != nil {
+		if !grpcerr.IsNotFound(err) {
+			return nil, err
+		}
+
 		pt, err := c.octeliumC.CoreC().CreatePolicyTrigger(ctx, ptDesired)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		exists, err := c.requestExists(ctx, req)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if !exists {
-			return c.deletePolicyTrigger(ctx, objectRef(pt))
+			return nil, c.deletePolicyTrigger(ctx, objectRef(pt))
 		}
 
-		req.Status.PolicyTriggerRef = objectRef(pt)
-		return nil
+		return pt, nil
 	}
 
 	ptChanged := pbutils.Clone(ptExisting).(*corev1.PolicyTrigger)
 	ptChanged.Status = ptDesired.Status
 
-	if !pbutils.IsEqual(ptExisting, ptChanged) {
-		pt, err := c.octeliumC.CoreC().UpdatePolicyTrigger(ctx, ptChanged)
-		if err != nil {
-			return err
-		}
+	if pbutils.IsEqual(ptExisting, ptChanged) {
+		return ptExisting, nil
+	}
 
-		req.Status.PolicyTriggerRef = objectRef(pt)
+	return c.octeliumC.CoreC().UpdatePolicyTrigger(ctx, ptChanged)
+}
+
+func (c *Controller) setGrantProvisioned(req *accessv1.Request) {
+	if req.Status.Grant == nil {
+		req.Status.Grant = &accessv1.Request_Status_Grant{}
+	}
+
+	grant := req.Status.Grant
+	grant.Attempts = 0
+	grant.LastError = ""
+
+	if req.Status.AccessStartsAt != nil && req.Status.AccessStartsAt.AsTime().After(time.Now()) {
+		grant.State = accessv1.Request_Status_Grant_SCHEDULED
+		return
+	}
+
+	grant.State = accessv1.Request_Status_Grant_ACTIVE
+	if grant.ActivatedAt == nil {
+		grant.ActivatedAt = pbutils.Now()
+	}
+}
+
+func (c *Controller) setProvisioningFailure(req *accessv1.Request, err error) {
+	zap.L().Warn("Could not provision the access of an approved Request",
+		zap.String("request", req.Metadata.Name), zap.Error(err))
+
+	if req.Status.Grant == nil {
+		req.Status.Grant = &accessv1.Request_Status_Grant{}
+	}
+
+	req.Status.Grant.Attempts++
+	req.Status.Grant.LastError = err.Error()
+	req.Status.Grant.State = accessv1.Request_Status_Grant_PROVISIONING
+
+	if req.Status.Grant.Attempts < maxProvisioningAttempts {
+		return
+	}
+
+	accesscmd.SetRequestState(req, &accesscmd.StateChange{
+		Status:  accessv1.Request_Status_State_EXPIRED,
+		Reason:  accessv1.Request_Status_State_PROVISIONING_FAILED,
+		Message: "The approved access could not be activated",
+	})
+	req.Status.Grant.State = accessv1.Request_Status_Grant_FAILED
+}
+
+func (c *Controller) supersedeExtendedRequest(ctx context.Context, req *accessv1.Request) error {
+	if req.Spec.ExtendsRef == nil || req.Spec.ExtendsRef.Uid == "" {
 		return nil
 	}
 
-	req.Status.PolicyTriggerRef = objectRef(ptExisting)
+	extended, err := c.octeliumC.AccessC().GetRequest(ctx, &rmetav1.GetOptions{
+		Uid: req.Spec.ExtendsRef.Uid,
+	})
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	if !accesscmd.IsApproved(extended) {
+		return nil
+	}
+
+	extended.Status.SupersededByRef = objectRef(req)
+	accesscmd.SetRequestState(extended, &accesscmd.StateChange{
+		Status:   accessv1.Request_Status_State_EXPIRED,
+		Reason:   accessv1.Request_Status_State_SUPERSEDED,
+		ActorRef: req.Status.UserRef,
+	})
+
+	_, err = c.octeliumC.AccessC().UpdateRequest(ctx, extended)
+	if err != nil && !grpcerr.IsNotFound(err) {
+		return err
+	}
+
 	return nil
 }
 
 func (c *Controller) ensureNoPolicyTrigger(ctx context.Context, req *accessv1.Request) error {
-	if err := c.deletePolicyTriggerOf(ctx, req); err != nil {
+	if err := accesscmd.DeletePolicyTriggerOf(ctx, c.octeliumC, req); err != nil {
 		return err
 	}
 
@@ -509,189 +682,6 @@ func (c *Controller) requestExists(ctx context.Context, req *accessv1.Request) (
 	return true, nil
 }
 
-func (c *Controller) buildPolicyTrigger(
-	ctx context.Context,
-	req *accessv1.Request,
-	authz *accessv1.Policy_Spec_Rule_Authorization,
-) (*corev1.PolicyTrigger, error) {
-	subjectRef := getRequestSubjectUserRef(req)
-	if subjectRef == nil {
-		return nil, errors.Errorf("request %q has no subject or requester userRef", req.Metadata.Name)
-	}
-
-	targetPreCondition, err := c.buildTargetPreCondition(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	preConditionItems := []*corev1.PolicyTrigger_Status_PreCondition{
-		{
-			Type: &corev1.PolicyTrigger_Status_PreCondition_UserRef{
-				UserRef: cloneRef(subjectRef),
-			},
-		},
-		targetPreCondition,
-	}
-
-	if req.Status.AccessEndsAt != nil {
-		preConditionItems = append(preConditionItems, &corev1.PolicyTrigger_Status_PreCondition{
-			Type: &corev1.PolicyTrigger_Status_PreCondition_NotAfter{
-				NotAfter: pbutils.Timestamp(req.Status.AccessEndsAt.AsTime()),
-			},
-		})
-	}
-
-	priority, err := c.getAccessRequestAllowPriority(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	policies := []string{}
-	inlinePolicies := []*corev1.InlinePolicy{
-		buildDefaultAccessRequestInlinePolicy(priority),
-	}
-
-	if authz != nil {
-		policies = clonePolicyNames(authz.Policies)
-		inlinePolicies = append(inlinePolicies, cloneInlinePolicies(authz.InlinePolicies)...)
-	}
-
-	return &corev1.PolicyTrigger{
-		Metadata: &metav1.Metadata{
-			Name:           policyTriggerName(req),
-			IsSystem:       true,
-			IsSystemHidden: true,
-		},
-		Spec: &corev1.PolicyTrigger_Spec{},
-		Status: &corev1.PolicyTrigger_Status{
-			OwnerRef: objectRef(req),
-			PreCondition: &corev1.PolicyTrigger_Status_PreCondition{
-				Type: &corev1.PolicyTrigger_Status_PreCondition_All_{
-					All: &corev1.PolicyTrigger_Status_PreCondition_All{
-						Of: preConditionItems,
-					},
-				},
-			},
-			Policies:       policies,
-			InlinePolicies: inlinePolicies,
-			IsDisabled:     false,
-		},
-	}, nil
-}
-
-func (c *Controller) buildTargetPreCondition(ctx context.Context, req *accessv1.Request) (*corev1.PolicyTrigger_Status_PreCondition, error) {
-	if req.Spec.Resource == nil {
-		return nil, errors.Errorf("request %q has no resource", req.Metadata.Name)
-	}
-
-	switch req.Spec.Resource.Type.(type) {
-	case *accessv1.Request_Spec_Resource_ServiceRef:
-		ref := req.Spec.Resource.GetServiceRef()
-		if ref == nil {
-			return nil, errors.Errorf("request %q has no serviceRef", req.Metadata.Name)
-		}
-
-		return servicePreCondition(ref), nil
-
-	case *accessv1.Request_Spec_Resource_Catalog_:
-		catalogRef := req.Spec.Resource.GetCatalog().GetCatalogRef()
-		if catalogRef == nil {
-			return nil, errors.Errorf("request %q has no catalogRef", req.Metadata.Name)
-		}
-
-		catalog, err := c.getCatalog(ctx, catalogRef)
-		if err != nil {
-			return nil, err
-		}
-		if catalog == nil {
-			return nil, errors.Errorf("request %q target Catalog does not exist", req.Metadata.Name)
-		}
-
-		return c.buildCatalogTargetPreCondition(ctx, req, catalog)
-
-	default:
-		return nil, errors.Errorf("request %q has invalid resource type", req.Metadata.Name)
-	}
-}
-
-func (c *Controller) buildCatalogTargetPreCondition(
-	ctx context.Context,
-	req *accessv1.Request,
-	catalog *accessv1.Catalog,
-) (*corev1.PolicyTrigger_Status_PreCondition, error) {
-	if catalog.Spec.ResourceCollection == nil ||
-		catalog.Spec.ResourceCollection.Service == nil {
-		return nil, errors.Errorf("request %q target Catalog %q has no Service resource collection",
-			req.Metadata.Name, catalog.Metadata.Name)
-	}
-
-	var preConditions []*corev1.PolicyTrigger_Status_PreCondition
-
-	for _, svcName := range catalog.Spec.ResourceCollection.Service.Services {
-		if svcName == "" {
-			continue
-		}
-
-		svc, err := c.octeliumC.CoreC().GetService(ctx, &rmetav1.GetOptions{
-			Name: vutils.GetServiceFullNameFromName(svcName),
-		})
-		if err != nil {
-			if grpcerr.IsNotFound(err) {
-				continue
-			}
-			return nil, err
-		}
-
-		preConditions = append(preConditions, servicePreCondition(objectRef(svc)))
-	}
-
-	for _, nsName := range catalog.Spec.ResourceCollection.Service.Namespaces {
-		if nsName == "" {
-			continue
-		}
-
-		ns, err := c.octeliumC.CoreC().GetNamespace(ctx, &rmetav1.GetOptions{
-			Name: nsName,
-		})
-		if err != nil {
-			if grpcerr.IsNotFound(err) {
-				continue
-			}
-			return nil, err
-		}
-
-		preConditions = append(preConditions, namespacePreCondition(objectRef(ns)))
-	}
-
-	if len(preConditions) == 0 {
-		return nil, errors.Errorf("request %q target Catalog %q does not resolve to any Service or Namespace",
-			req.Metadata.Name, catalog.Metadata.Name)
-	}
-
-	if len(preConditions) == 1 {
-		return preConditions[0], nil
-	}
-
-	return &corev1.PolicyTrigger_Status_PreCondition{
-		Type: &corev1.PolicyTrigger_Status_PreCondition_Any_{
-			Any: &corev1.PolicyTrigger_Status_PreCondition_Any{
-				Of: preConditions,
-			},
-		},
-	}, nil
-}
-
-func (c *Controller) deletePolicyTriggerOf(ctx context.Context, req *accessv1.Request) error {
-	_, err := c.octeliumC.CoreC().DeletePolicyTrigger(ctx, &rmetav1.DeleteOptions{
-		Name: policyTriggerName(req),
-	})
-	if err != nil && !grpcerr.IsNotFound(err) {
-		return err
-	}
-
-	return nil
-}
-
 func (c *Controller) deletePolicyTrigger(ctx context.Context, ref *metav1.ObjectReference) error {
 	if ref == nil || ref.Uid == "" {
 		return nil
@@ -705,151 +695,6 @@ func (c *Controller) deletePolicyTrigger(ctx context.Context, ref *metav1.Object
 	}
 
 	return nil
-}
-
-func (c *Controller) ensureAccessEndsAt(req *accessv1.Request) {
-	if req.Status.AccessEndsAt != nil {
-		return
-	}
-
-	if req.Status.Rule == nil {
-		return
-	}
-
-	accessDuration := umetav1.ToDuration(req.Status.EffectiveDuration).ToGo()
-	if accessDuration <= 0 {
-		accessDuration = c.getAccessDuration(req, req.Status.Rule.Authorization)
-	}
-	if accessDuration <= 0 {
-		return
-	}
-
-	anchor := req.Status.ApprovalEndAt
-	if anchor == nil {
-		anchor = pbutils.Now()
-		req.Status.ApprovalEndAt = anchor
-	}
-
-	req.Status.AccessEndsAt = pbutils.Timestamp(anchor.AsTime().Add(accessDuration))
-}
-
-func (c *Controller) expireIfNeeded(req *accessv1.Request) {
-	if req.Status.AccessEndsAt == nil {
-		return
-	}
-
-	now := pbutils.Now()
-	if req.Status.AccessEndsAt.AsTime().After(now.AsTime()) {
-		return
-	}
-
-	c.setState(req, accessv1.Request_Status_State_EXPIRED)
-}
-
-func (c *Controller) setState(req *accessv1.Request, status accessv1.Request_Status_State_Status) {
-	now := pbutils.Now()
-
-	if req.Status.State != nil && req.Status.State.Status == status {
-		return
-	}
-
-	if req.Status.State != nil &&
-		req.Status.State.Status != accessv1.Request_Status_State_STATUS_UNKNOWN {
-		prevState := pbutils.Clone(req.Status.State).(*accessv1.Request_Status_State)
-
-		req.Status.LastStates = append(
-			[]*accessv1.Request_Status_State{prevState},
-			req.Status.LastStates...,
-		)
-
-		if len(req.Status.LastStates) > maxRequestStateHistory {
-			req.Status.LastStates = req.Status.LastStates[:maxRequestStateHistory]
-		}
-	}
-
-	req.Status.State = &accessv1.Request_Status_State{
-		CreatedAt: now,
-		Status:    status,
-	}
-
-	switch status {
-	case accessv1.Request_Status_State_APPROVED,
-		accessv1.Request_Status_State_REJECTED,
-		accessv1.Request_Status_State_REVOKED,
-		accessv1.Request_Status_State_EXPIRED,
-		accessv1.Request_Status_State_CANCELLED:
-		if req.Status.ApprovalEndAt == nil {
-			req.Status.ApprovalEndAt = now
-		}
-	}
-}
-
-func (c *Controller) setEffectiveDuration(
-	req *accessv1.Request,
-	authz *accessv1.Policy_Spec_Rule_Authorization,
-) {
-	accessDuration := c.getAccessDuration(req, authz)
-	if accessDuration <= 0 {
-		return
-	}
-
-	req.Status.EffectiveDuration = &metav1.Duration{
-		Type: &metav1.Duration_Seconds{
-			Seconds: uint32(accessDuration.Seconds()),
-		},
-	}
-}
-
-func (c *Controller) getAccessDuration(
-	req *accessv1.Request,
-	authz *accessv1.Policy_Spec_Rule_Authorization,
-) time.Duration {
-	reqDuration := umetav1.ToDuration(req.Spec.Duration).ToGo()
-
-	maxDuration := defaultMaxAccessDuration
-	if authz != nil {
-		if authzDuration := umetav1.ToDuration(authz.MaxAccessDuration).ToGo(); authzDuration > 0 {
-			maxDuration = authzDuration
-		}
-	}
-
-	if reqDuration <= 0 || reqDuration > maxDuration {
-		return maxDuration
-	}
-
-	return reqDuration
-}
-
-func (c *Controller) getCatalog(ctx context.Context, ref *metav1.ObjectReference) (*accessv1.Catalog, error) {
-	if ref == nil {
-		return nil, nil
-	}
-
-	catalog, err := c.octeliumC.AccessC().GetCatalog(ctx, apivalidation.ObjectReferenceToRGetOptions(ref))
-	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return catalog, nil
-}
-
-func (c *Controller) getGroup(ctx context.Context, ref *metav1.ObjectReference) (*corev1.Group, error) {
-	if ref == nil {
-		return nil, nil
-	}
-
-	grp, err := c.octeliumC.CoreC().GetGroup(ctx, apivalidation.ObjectReferenceToRGetOptions(ref))
-	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return grp, nil
 }
 
 func validateReviewAction(review *accessv1.Policy_Spec_Rule_Action_Review) error {
@@ -905,112 +750,6 @@ func validateReviewAction(review *accessv1.Policy_Spec_Rule_Action_Review) error
 	return nil
 }
 
-func (c *Controller) getAccessRequestAllowPriority(ctx context.Context) (int32, error) {
-	cc, err := c.octeliumC.AccessV1Utils().GetClusterConfig(ctx)
-	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			return defaultAccessRequestAllowPriority, nil
-		}
-		return 0, err
-	}
-
-	return getAccessRequestAllowPriority(cc), nil
-}
-
-func getAccessRequestAllowPriority(cc *accessv1.ClusterConfig) int32 {
-	authz := cc.GetSpec().GetAuthorization()
-	if authz == nil || authz.Priority == nil {
-		return defaultAccessRequestAllowPriority
-	}
-
-	switch {
-	case authz.GetPriority() < minAccessRequestAllowPriority:
-		return minAccessRequestAllowPriority
-	case authz.GetPriority() > maxAccessRequestAllowPriority:
-		return maxAccessRequestAllowPriority
-	default:
-		return authz.GetPriority()
-	}
-}
-
-func buildDefaultAccessRequestInlinePolicy(priority int32) *corev1.InlinePolicy {
-	return &corev1.InlinePolicy{
-		Name: "access-request-default",
-		Spec: &corev1.Policy_Spec{
-			Rules: []*corev1.Policy_Spec_Rule{
-				{
-					Effect: corev1.Policy_Spec_Rule_ALLOW,
-					Condition: &corev1.Condition{
-						Type: &corev1.Condition_MatchAny{
-							MatchAny: true,
-						},
-					},
-					Priority: priority,
-				},
-			},
-		},
-	}
-}
-
-func servicePreCondition(ref *metav1.ObjectReference) *corev1.PolicyTrigger_Status_PreCondition {
-	return &corev1.PolicyTrigger_Status_PreCondition{
-		Type: &corev1.PolicyTrigger_Status_PreCondition_ServiceRef{
-			ServiceRef: cloneRef(ref),
-		},
-	}
-}
-
-func namespacePreCondition(ref *metav1.ObjectReference) *corev1.PolicyTrigger_Status_PreCondition {
-	return &corev1.PolicyTrigger_Status_PreCondition{
-		Type: &corev1.PolicyTrigger_Status_PreCondition_NamespaceRef{
-			NamespaceRef: cloneRef(ref),
-		},
-	}
-}
-
-func clonePolicyNames(in []string) []string {
-	if len(in) == 0 {
-		return nil
-	}
-
-	ret := make([]string, 0, len(in))
-	for _, itm := range in {
-		if itm == "" {
-			continue
-		}
-		ret = append(ret, itm)
-	}
-
-	return ret
-}
-
-func cloneInlinePolicies(in []*corev1.InlinePolicy) []*corev1.InlinePolicy {
-	if len(in) == 0 {
-		return nil
-	}
-
-	ret := make([]*corev1.InlinePolicy, 0, len(in))
-	for _, itm := range in {
-		if itm == nil {
-			continue
-		}
-		ret = append(ret, pbutils.Clone(itm).(*corev1.InlinePolicy))
-	}
-	return ret
-}
-
-func getRequestSubjectUserRef(req *accessv1.Request) *metav1.ObjectReference {
-	if req.Spec.Subject != nil && req.Spec.Subject.GetUserRef() != nil {
-		return req.Spec.Subject.GetUserRef()
-	}
-
-	return req.Status.UserRef
-}
-
-func refEqual(a, b *metav1.ObjectReference) bool {
-	return a != nil && b != nil && a.Uid != "" && b.Uid != "" && a.Uid == b.Uid
-}
-
 func objectRef(itm umetav1.ResourceObjectI) *metav1.ObjectReference {
 	return cloneRef(umetav1.GetObjectReference(itm))
 }
@@ -1027,9 +766,5 @@ func cloneRef(ref *metav1.ObjectReference) *metav1.ObjectReference {
 }
 
 func policyTriggerName(req *accessv1.Request) string {
-	if req.Metadata.Uid != "" {
-		return fmt.Sprintf("%s%s", PolicyTriggerNamePrefix, req.Metadata.Uid)
-	}
-
-	return fmt.Sprintf("%s%s", PolicyTriggerNamePrefix, req.Metadata.Name)
+	return accesscmd.PolicyTriggerName(req)
 }

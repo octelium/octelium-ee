@@ -70,6 +70,10 @@ func resolveServiceResource(ctx context.Context, octeliumC octeliumc.ClientInter
 		return nil, grpcutils.InternalWithErr(err)
 	}
 
+	if svc.Metadata.IsSystemHidden || svc.Metadata.IsUserHidden {
+		return nil, grpcutils.InvalidArg("The Service %s does not exist", name)
+	}
+
 	return &accessv1.Request_Spec_Resource{
 		Type: &accessv1.Request_Spec_Resource_ServiceRef{
 			ServiceRef: umetav1.GetObjectReference(svc),

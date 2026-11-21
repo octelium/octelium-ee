@@ -1,11 +1,9 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import DurationPicker from "@/components/DurationPicker";
 import PriorityPicker from "@/components/PriorityPicker";
-import SelectInlinePolicies from "@/components/ResourceLayout/SelectInlinePolicies";
-import SelectPolicies from "@/components/ResourceLayout/SelectPolicies";
 import { twMerge } from "@/lib/utils";
 import { useListKeys } from "@/utils/forms";
-import { ActionIcon, Collapse, TextInput, Tooltip } from "@mantine/core";
+import { ActionIcon, Collapse, Textarea, TextInput, Tooltip } from "@mantine/core";
 import {
   AlertTriangle,
   ArrowDown,
@@ -17,6 +15,7 @@ import {
   KeyRound,
   ListOrdered,
   LucideIcon,
+  MessageSquareText,
   Trash2,
   Zap,
 } from "lucide-react";
@@ -106,102 +105,45 @@ const EffectCards = (props: {
   );
 };
 
-const GrantEdit = (props: {
+const MAX_RULE_MESSAGE_LENGTH = 500;
+
+const LimitsEdit = (props: {
   rule: AccessP.Policy_Spec_Rule;
   onUpdate: () => void;
 }) => {
   const { rule, onUpdate } = props;
-  const [advanced, setAdvanced] = React.useState(
-    () =>
-      (rule.authorization?.policies.length ?? 0) > 0 ||
-      (rule.authorization?.inlinePolicies.length ?? 0) > 0,
-  );
-  const authz = () => {
-    if (!rule.authorization) rule.authorization = AccessP.Policy_Spec_Rule_Authorization.create();
-    return rule.authorization;
-  };
-  const prune = () => {
-    const a = rule.authorization;
-    if (a && !a.maxAccessDuration && a.policies.length === 0 && a.inlinePolicies.length === 0)
-      rule.authorization = undefined;
-  };
 
   return (
     <>
       <div className="max-w-sm">
         <DurationPicker
           title="Longest access"
-          description="Requesters may ask for less, never more. 24 hours when unset."
-          placeholder="24 hours"
-          value={rule.authorization?.maxAccessDuration}
+          description="Requesters may ask for less, never more. The access level of the Catalog can only lower it."
+          placeholder="Access level maximum"
+          value={rule.maxDuration}
           onChange={(value) => {
-            authz().maxAccessDuration = value;
-            prune();
+            rule.maxDuration = value;
             onUpdate();
           }}
         />
       </div>
       <p className="text-xs leading-5 text-slate-600">
-        Approved requests grant access to the requested Service or to every
-        Service of the requested Catalog, for the approved duration.
+        What an approval grants is defined by the access level that is
+        requested from the Catalog. This rule only decides whether and how the
+        access is approved.
       </p>
-      <button
-        type="button"
-        aria-expanded={advanced}
-        onClick={() => setAdvanced((value) => !value)}
-        className="flex w-fit cursor-pointer items-center gap-1 text-xs font-semibold text-slate-600 outline-none hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400"
-      >
-        <ChevronDown
-          size={13}
-          strokeWidth={2.5}
-          className={twMerge("transition-transform duration-150", !advanced && "-rotate-90")}
-        />
-        Restrict what the access allows
-        {!advanced &&
-          ((rule.authorization?.policies.length ?? 0) > 0 ||
-            (rule.authorization?.inlinePolicies.length ?? 0) > 0) && (
-            <span className="rounded-full bg-slate-100 px-1.5 text-micro text-slate-600">
-              {(rule.authorization?.policies.length ?? 0) +
-                (rule.authorization?.inlinePolicies.length ?? 0)}
-            </span>
-          )}
-      </button>
-      <Collapse expanded={advanced}>
-        <div className="flex flex-col gap-3 rounded-lg border border-dashed border-slate-200 p-3">
-          <p className="text-micro leading-4 text-slate-500">
-            Attach core Policies to the granted access, for instance to allow
-            only read-only HTTP methods or a single database role.
-          </p>
-          <SelectPolicies
-            policies={rule.authorization?.policies}
-            onUpdate={(value) => {
-              authz().policies = value ?? [];
-              prune();
-              onUpdate();
-            }}
-          />
-          <SelectInlinePolicies
-            inlinePolicies={rule.authorization?.inlinePolicies ?? []}
-            onUpdate={(value) => {
-              authz().inlinePolicies = value;
-              prune();
-              onUpdate();
-            }}
-          />
-        </div>
-      </Collapse>
     </>
   );
 };
 
 type Stash = {
   action?: AccessP.Policy_Spec_Rule_Action;
-  authorization?: AccessP.Policy_Spec_Rule_Authorization;
+  maxDuration?: AccessP.Policy_Spec_Rule["maxDuration"];
 };
 
 const setEffect = (rule: AccessP.Policy_Spec_Rule, key: EffectKey, stash: Stash) => {
   if (rule.action) stash.action = rule.action;
-  if (rule.authorization) stash.authorization = rule.authorization;
+  if (rule.maxDuration) stash.maxDuration = rule.maxDuration;
 
   rule.effect = EFFECT_META[key].value;
   if (key === "REVIEW") {
@@ -218,7 +160,7 @@ const setEffect = (rule: AccessP.Policy_Spec_Rule, key: EffectKey, stash: Stash)
   } else {
     rule.action = undefined;
   }
-  rule.authorization = key === "DENY" ? undefined : stash.authorization;
+  rule.maxDuration = key === "DENY" ? undefined : stash.maxDuration;
 };
 
 export const RuleCard = (props: {
@@ -394,14 +336,14 @@ export const RuleCard = (props: {
           {(effectKey === "REVIEW" || effectKey === "AUTO_APPROVE") && (
             <RuleSection
               icon={KeyRound}
-              title="Access granted"
+              title="Access limits"
               hint={
                 effectKey === "REVIEW"
                   ? "Applies once the last step is cleared."
                   : "Applies immediately to every matching request."
               }
             >
-              <GrantEdit rule={rule} onUpdate={onUpdate} />
+              <LimitsEdit rule={rule} onUpdate={onUpdate} />
             </RuleSection>
           )}
 
@@ -412,6 +354,34 @@ export const RuleCard = (props: {
               guardrails the highest priority.
             </p>
           )}
+
+          <RuleSection
+            icon={MessageSquareText}
+            title="Message to the requester"
+            hint="Shown to the requester before submitting and on every request this rule decides."
+          >
+            <Textarea
+              label="Message"
+              description={
+                effectKey === "DENY"
+                  ? "Explain why the access is denied and where to ask instead."
+                  : "Optional. For instance, what reviewers expect in the justification."
+              }
+              autosize
+              minRows={2}
+              maxRows={5}
+              value={rule.message}
+              error={
+                Array.from(rule.message).length > MAX_RULE_MESSAGE_LENGTH
+                  ? `Use at most ${MAX_RULE_MESSAGE_LENGTH} characters`
+                  : undefined
+              }
+              onChange={(event) => {
+                rule.message = event.target.value;
+                onUpdate();
+              }}
+            />
+          </RuleSection>
 
           <RuleSection
             icon={BellRing}

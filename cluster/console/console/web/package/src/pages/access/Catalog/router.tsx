@@ -12,6 +12,7 @@ const resourceComponentInfo: ResourceComponentInfo = {
   Item: {
     Edit: lazySpec(() => import("./Edit")),
     hasMain: true,
+    MainAction: lazySpec(() => import("./SimulateRequest")),
   },
 
   infoItemsGetter: lazyResourceInfo(() => import("./Main")),

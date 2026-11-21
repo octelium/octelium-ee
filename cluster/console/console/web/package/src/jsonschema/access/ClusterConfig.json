@@ -39,6 +39,21 @@
                     "$ref": "#/definitions/octelium.api.main.access.v1.ClusterConfig.Spec.Authorization",
                     "additionalProperties": false,
                     "description": "Authorization sets the Cluster-wide options of the access that is granted to the subjects of the approved Requests."
+                },
+                "request": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.ClusterConfig.Spec.Request",
+                    "additionalProperties": false,
+                    "description": "Request sets the Cluster-wide options of the access Requests."
+                },
+                "review": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.ClusterConfig.Spec.Review",
+                    "additionalProperties": false,
+                    "description": "Review sets the Cluster-wide options of the review workflows."
+                },
+                "notification": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.ClusterConfig.Spec.Notification",
+                    "additionalProperties": false,
+                    "description": "Notification sets the Cluster-wide options of the notifications."
                 }
             },
             "additionalProperties": false,
@@ -50,7 +65,7 @@
             "properties": {
                 "priority": {
                     "type": "integer",
-                    "description": "Priority is the priority of the rule that allows the access of an approved Request. The Cluster enforces every approved Request by creating a hidden PolicyTrigger whose default inline core Policy allows the access with this priority, in addition to the Policies of the matched Rule's Authorization. Like any core Policy rule, the lower the number, the higher the priority. It must be between -4 (i.e. the highest priority) and 0 (i.e. the default priority of the core Policy rules). If unset, it defaults to -1 which lets the granted access take precedence over the core Policy rules of the default priority. A change applies to the already approved Requests as well."
+                    "description": "Priority is the default priority of the core Policy rule that allows the access of the FULL access levels that do not set their own priority. Like any core Policy rule, the lower the number, the higher the priority. It must be between -4 (i.e. the highest priority) and 0 (i.e. the default priority of the core Policy rules). If unset, it defaults to 0 which lets the core DENY rules of the default priority take precedence over the granted access. A negative priority lets the granted access override them. A change only applies to the Requests that are approved afterwards."
                 }
             },
             "additionalProperties": false,
@@ -58,11 +73,328 @@
             "title": "Authorization",
             "description": "Authorization sets the Cluster-wide options of the access that is granted to the subjects of the approved Requests"
         },
+        "octelium.api.main.access.v1.ClusterConfig.Spec.Notification": {
+            "properties": {
+                "defaultSurfaces": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "DefaultSurfaces is the list of the notification Surfaces that are used by the Rules that do not set any notification Surface of their own."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Notification",
+            "description": "Notification sets the Cluster-wide options of the notifications"
+        },
+        "octelium.api.main.access.v1.ClusterConfig.Spec.Request": {
+            "properties": {
+                "defaultDeadline": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "DefaultDeadline is how long a Request without a deadline can stay pending before it expires. It defaults to 7 days."
+                },
+                "maxStartDelay": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "MaxStartDelay is how far in the future the `spec.startAt` of a Request can be. It defaults to 30 days."
+                },
+                "noMatchMessage": {
+                    "type": "string",
+                    "description": "NoMatchMessage is the requester-facing message of the Requests that no Rule of any enabled Policy matches. It cannot be longer than 500 characters."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request",
+            "description": "Request sets the Cluster-wide options of the access Requests"
+        },
+        "octelium.api.main.access.v1.ClusterConfig.Spec.Review": {
+            "properties": {
+                "fallbackReviewers": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "FallbackReviewers is the list of the reviewers of the review Steps that have no eligible reviewer at all, including their escalation reviewers. Only the User and Group reviewers are allowed."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Review",
+            "description": "Review sets the Cluster-wide options of the review workflows"
+        },
         "octelium.api.main.access.v1.ClusterConfig.Status": {
             "additionalProperties": false,
             "type": "object",
             "title": "Status",
             "description": "Status is the current status of the ClusterConfig"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer": {
+            "properties": {
+                "user": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.User",
+                    "additionalProperties": false,
+                    "description": "User is a single User reviewer."
+                },
+                "group": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.Group",
+                    "additionalProperties": false,
+                    "description": "Group is a Group of User reviewers."
+                },
+                "catalogOwners": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.CatalogOwners",
+                    "additionalProperties": false,
+                    "description": "CatalogOwners sets the owners of the requested Catalog as reviewers."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "user"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "group"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "catalogOwners"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "user"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "group"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "catalogOwners"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Reviewer",
+            "description": "Reviewer is a User that is allowed to review the Requests that reach the Step"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.CatalogOwners": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Catalog Owners",
+            "description": "CatalogOwners sets the owners of the requested Catalog as reviewers"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.Group": {
+            "properties": {
+                "groupRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "GroupRef is the reference of the Group."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Group",
+            "description": "Group sets every User belonging to a Group as a reviewer"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.User": {
+            "properties": {
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "UserRef is the reference of the User."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "User",
+            "description": "User sets a specific User as a reviewer"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface": {
+            "properties": {
+                "destination": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination",
+                    "additionalProperties": false,
+                    "description": "Destination is the audience of the Surface. Required."
+                },
+                "interactionMode": {
+                    "enum": [
+                        "INTERACTION_MODE_UNSET",
+                        "DEEP_LINK_ONLY",
+                        "INTERACTIVE"
+                    ],
+                    "type": "string",
+                    "title": "Interaction Mode",
+                    "description": "InteractionMode is how much the external provider is trusted to act on the presented Request"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Surface",
+            "description": "Surface is an external Integration destination on which the Cluster presents a Request. The access Policy only describes the audience and how much the external provider is trusted. The provider-specific configuration itself belongs to the Integration."
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination": {
+            "properties": {
+                "integrationRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "IntegrationRef is the reference of the Integration that delivers the Surface. Required."
+                },
+                "audience": {
+                    "enum": [
+                        "AUDIENCE_UNSET",
+                        "SHARED",
+                        "REVIEWERS",
+                        "REQUESTER",
+                        "SUBJECT"
+                    ],
+                    "type": "string",
+                    "title": "Audience",
+                    "description": "Audience is who the Surface is presented to"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Destination",
+            "description": "Destination is the audience of the Surface"
+        },
+        "octelium.api.main.meta.v1.Duration": {
+            "properties": {
+                "milliseconds": {
+                    "type": "integer",
+                    "description": "Milliseconds is the duration set in milliseconds"
+                },
+                "seconds": {
+                    "type": "integer",
+                    "description": "Seconds is the duration set in seconds"
+                },
+                "minutes": {
+                    "type": "integer",
+                    "description": "Minutes is the duration set in minutes"
+                },
+                "hours": {
+                    "type": "integer",
+                    "description": "Hours is the duration set in hours"
+                },
+                "days": {
+                    "type": "integer",
+                    "description": "Days is the duration set in days"
+                },
+                "weeks": {
+                    "type": "integer",
+                    "description": "Weeks is the duration set in weeks"
+                },
+                "months": {
+                    "type": "integer",
+                    "description": "Months is the duration set in months"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "milliseconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "seconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "minutes"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "hours"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "days"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "weeks"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "months"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "milliseconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "seconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "minutes"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "hours"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "days"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "weeks"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "months"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Duration",
+            "description": "Duration is a length of time that is expressed in a single unit of choice. Exactly one of the units is set (e.g. `seconds: 30`)."
         },
         "octelium.api.main.meta.v1.Metadata": {
             "properties": {

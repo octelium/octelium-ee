@@ -8,6 +8,10 @@
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
                     "description": "RequestRef is the reference of the Request to be revoked."
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "Reason is the explanation of the revocation that is shown to the requester and to the subject. It cannot be longer than 1500 characters."
                 }
             },
             "additionalProperties": false,

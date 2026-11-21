@@ -71,6 +71,13 @@ func TestAccessSummaries(t *testing.T) {
 												Group: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group{GroupRef: groupRef},
 											}},
 										},
+										Escalation: &accessv1.Policy_Spec_Rule_Action_Review_Step_Escalation{
+											Reviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
+												{Type: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_{
+													User: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User{UserRef: userRef},
+												}},
+											},
+										},
 									},
 								},
 							},
@@ -86,14 +93,13 @@ func TestAccessSummaries(t *testing.T) {
 							},
 						},
 					},
-					Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-						Policies:          []string{"p1"},
-						MaxAccessDuration: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 3600}},
-					},
+					MaxDuration: &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: 3600}},
 				},
 			},
 		},
-		Status: &accessv1.Policy_Status{},
+		Status: &accessv1.Policy_Status{
+			Issues: []*accessv1.ConfigurationIssue{{Type: accessv1.ConfigurationIssue_SHADOWED_RULE}},
+		},
 	})
 
 	{
@@ -105,8 +111,9 @@ func TestAccessSummaries(t *testing.T) {
 		assert.EqualValues(t, 1, resp.TotalRuleDeny)
 		assert.EqualValues(t, 1, resp.TotalRuleReview)
 		assert.EqualValues(t, 1, resp.TotalRuleAutoApprove)
-		assert.EqualValues(t, 1, resp.TotalRuleAuthorization)
-		assert.EqualValues(t, 1, resp.TotalRuleMaxAccessDuration)
+		assert.EqualValues(t, 1, resp.TotalRuleMaxDuration)
+		assert.EqualValues(t, 1, resp.TotalWithIssues)
+		assert.EqualValues(t, 1, resp.TotalReviewEscalation)
 		assert.EqualValues(t, 1, resp.TotalReviewStep)
 		assert.EqualValues(t, 2, resp.TotalReviewer)
 	}
@@ -122,6 +129,29 @@ func TestAccessSummaries(t *testing.T) {
 					Namespaces: []string{"ns-a"},
 				},
 			},
+			AccessLevels: []*accessv1.Catalog_Spec_AccessLevel{
+				{Name: "read", Type: &accessv1.Catalog_Spec_AccessLevel_Restricted_{Restricted: &accessv1.Catalog_Spec_AccessLevel_Restricted{}}},
+				{Name: "full", Type: &accessv1.Catalog_Spec_AccessLevel_Full_{Full: &accessv1.Catalog_Spec_AccessLevel_Full{}}},
+			},
+			Audience: &accessv1.Catalog_Spec_Audience{
+				Groups:   []string{"group-one"},
+				OnBehalf: &accessv1.Catalog_Spec_Audience_OnBehalf{Users: []string{"user-one"}},
+			},
+			Owners: &accessv1.Catalog_Spec_Owners{Users: []string{"user-one"}},
+		},
+		Status: &accessv1.Catalog_Status{
+			Issues: []*accessv1.ConfigurationIssue{{Type: accessv1.ConfigurationIssue_OVERRIDES_GUARDRAILS}},
+		},
+	})
+	insertRscStoreObject(t, env, &accessv1.Catalog{
+		ApiVersion: uaccessv1.APIVersion,
+		Kind:       uaccessv1.KindCatalog,
+		Metadata:   newRscStoreMetadata("catalog-two", now),
+		Spec: &accessv1.Catalog_Spec{
+			IsDisabled: true,
+			ResourceCollection: &accessv1.Catalog_Spec_ResourceCollection{
+				Service: &accessv1.Catalog_Spec_ResourceCollection_Service{},
+			},
 		},
 		Status: &accessv1.Catalog_Status{},
 	})
@@ -129,9 +159,18 @@ func TestAccessSummaries(t *testing.T) {
 	{
 		resp, err := env.srv.getSummaryAccessCatalog(env.ctx, &vaccessv1.GetCatalogSummaryRequest{})
 		assert.Nil(t, err, "%+v", err)
-		assert.EqualValues(t, 1, resp.TotalNumber)
+		assert.EqualValues(t, 2, resp.TotalNumber)
 		assert.EqualValues(t, 2, resp.TotalService)
 		assert.EqualValues(t, 1, resp.TotalNamespace)
+		assert.EqualValues(t, 1, resp.TotalDisabled)
+		assert.EqualValues(t, 2, resp.TotalAccessLevel)
+		assert.EqualValues(t, 1, resp.TotalFullAccessLevel)
+		assert.EqualValues(t, 1, resp.TotalRestrictedAccessLevel)
+		assert.EqualValues(t, 1, resp.TotalOverridesGuardrails)
+		assert.EqualValues(t, 1, resp.TotalWithIssues)
+		assert.EqualValues(t, 1, resp.TotalRestrictedAudience)
+		assert.EqualValues(t, 1, resp.TotalWithOwners)
+		assert.EqualValues(t, 1, resp.TotalOnBehalf)
 	}
 
 	insertRscStoreObject(t, env, &accessv1.Request{

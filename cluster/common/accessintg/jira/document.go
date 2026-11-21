@@ -10,6 +10,7 @@ package jira
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/octelium/octelium-ee/cluster/common/accessintg"
 )
@@ -37,6 +38,9 @@ func buildDescription(p *accessintg.Presentation) map[string]any {
 		{"Requester", p.Requester},
 		{"Subject", p.Subject},
 		{"Resource", p.Resource},
+		{"Access level", accessLevelLabel(p)},
+		{"Services", servicesLabel(p)},
+		{"Ticket", p.Ticket},
 		{"Urgency", p.Urgency},
 		{"Requested duration", p.RequestedDuration},
 		{"Effective duration", p.EffectiveDuration},
@@ -128,4 +132,36 @@ func stepLabel(p *accessintg.Presentation) string {
 	}
 
 	return fmt.Sprintf("%s (%d of %d)", p.StepName, p.StepIndex, p.StepCount)
+}
+
+func accessLevelLabel(p *accessintg.Presentation) string {
+	if p.AccessLevel == "" {
+		return ""
+	}
+
+	ret := p.AccessLevel
+
+	if p.IsFullAccess {
+		ret = fmt.Sprintf("%s (full access)", ret)
+	}
+
+	if p.OverridesGuardrails {
+		ret = fmt.Sprintf("%s, overrides guardrails", ret)
+	}
+
+	return ret
+}
+
+func servicesLabel(p *accessintg.Presentation) string {
+	if p.TotalServices == 0 {
+		return ""
+	}
+
+	ret := strings.Join(p.Services, ", ")
+
+	if p.TotalServices > len(p.Services) {
+		ret = fmt.Sprintf("%s and %d more", ret, p.TotalServices-len(p.Services))
+	}
+
+	return ret
 }

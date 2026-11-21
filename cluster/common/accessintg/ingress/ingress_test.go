@@ -344,6 +344,33 @@ func TestInboundReviewDecision(t *testing.T) {
 	assert.Equal(t, i.integration.Metadata.Uid, reviews[0].Status.Origin.IntegrationRef.Uid)
 }
 
+func TestInboundDecisionThatRequiresAReasonIsHandedToThePortal(t *testing.T) {
+	i := newIngressTest(t)
+
+	reviewer := i.createUser(t)
+	i.createIdentity(t, reviewer, tstSlackUserID)
+
+	req := i.createRequest(t, reviewer)
+	req.Status.Rule.Action.GetReview().Steps[0].ReasonRequirement =
+		accessv1.Policy_Spec_Rule_Action_Review_Step_REJECT_ONLY
+	req, err := i.octeliumC.AccessC().UpdateRequest(i.ctx, req)
+	assert.Nil(t, err, "%+v", err)
+
+	binding := i.createBinding(t, req, accessv1.Policy_Spec_Rule_Surface_INTERACTIVE)
+
+	resp, err := i.srv.Handle(i.ctx, i.integration.Status.Id,
+		i.interaction(t, "octelium-access-reject", binding.Metadata.Name, "trig-reject"))
+	assert.Nil(t, err, "%+v", err)
+	assert.Contains(t, tstResponseText(t, resp), "requires a justification")
+	assert.Equal(t, 0, len(i.listReviews(t, req)))
+
+	resp, err = i.srv.Handle(i.ctx, i.integration.Status.Id,
+		i.interaction(t, "octelium-access-approve", binding.Metadata.Name, "trig-approve"))
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 1, len(i.listReviews(t, req)))
+}
+
 func TestInboundDuplicateEventIsIgnored(t *testing.T) {
 	i := newIngressTest(t)
 
@@ -533,6 +560,33 @@ func (i *ingressTest) createService(t *testing.T) *corev1.Service {
 	return svc
 }
 
+func (i *ingressTest) createCatalog(t *testing.T, svc *corev1.Service) *accessv1.Catalog {
+	catalog, err := i.octeliumC.AccessC().CreateCatalog(i.ctx, &accessv1.Catalog{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec: &accessv1.Catalog_Spec{
+			ResourceCollection: &accessv1.Catalog_Spec_ResourceCollection{
+				Service: &accessv1.Catalog_Spec_ResourceCollection_Service{
+					Services: []string{svc.Metadata.Name},
+				},
+			},
+			AccessLevels: []*accessv1.Catalog_Spec_AccessLevel{
+				{
+					Name: "full",
+					Type: &accessv1.Catalog_Spec_AccessLevel_Full_{
+						Full: &accessv1.Catalog_Spec_AccessLevel_Full{},
+					},
+				},
+			},
+		},
+		Status: &accessv1.Catalog_Status{},
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	return catalog
+}
+
 func (i *ingressTest) command(t *testing.T, text string) *accessintg.InboundRequest {
 	body := []byte(url.Values{
 		"team_id":    []string{tstTeamID},
@@ -584,8 +638,38 @@ func TestInboundCreateRequest(t *testing.T) {
 	resp, err := i.srv.Handle(i.ctx, i.integration.Status.Id,
 		i.command(t, fmt.Sprintf("request svc:%s need it", svc.Metadata.Name)))
 	assert.Nil(t, err, "%+v", err)
+	assert.Contains(t, tstResponseText(t, resp), "is not part of any Catalog")
+	assert.Equal(t, 0, len(i.listRequests(t, usr)))
+
+	catalog := i.createCatalog(t, svc)
+
+	resp, err = i.srv.Handle(i.ctx, i.integration.Status.Id,
+		i.command(t, fmt.Sprintf("request svc:%s need it", svc.Metadata.Name)))
+	assert.Nil(t, err, "%+v", err)
 	assert.Contains(t, tstResponseText(t, resp), "was created")
 
+	reqs := i.listRequests(t, usr)
+	assert.Equal(t, 1, len(reqs))
+	assert.Equal(t, catalog.Metadata.Uid, reqs[0].Spec.Resource.GetCatalog().GetCatalogRef().GetUid())
+	assert.Equal(t, "full", reqs[0].Spec.Resource.GetCatalog().GetAccessLevel())
+	assert.Equal(t, usr.Metadata.Uid, reqs[0].Spec.Subject.GetUserRef().GetUid())
+	assert.Equal(t, svc.Metadata.Uid, reqs[0].Status.ResolvedScope.ServiceRefs[0].Uid)
+
+	hidden, err := i.octeliumC.CoreC().CreateService(i.ctx, &corev1.Service{
+		Metadata: &metav1.Metadata{
+			Name:         fmt.Sprintf("%s.default", utilrand.GetRandomStringCanonical(8)),
+			IsSystem:     true,
+			IsUserHidden: true,
+		},
+		Spec:   &corev1.Service_Spec{},
+		Status: &corev1.Service_Status{},
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	resp, err = i.srv.Handle(i.ctx, i.integration.Status.Id,
+		i.command(t, fmt.Sprintf("request svc:%s need it", hidden.Metadata.Name)))
+	assert.Nil(t, err, "%+v", err)
+	assert.Contains(t, tstResponseText(t, resp), "does not exist")
 	assert.Equal(t, 1, len(i.listRequests(t, usr)))
 }
 

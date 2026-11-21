@@ -940,6 +940,7 @@ const DoAccessLogViewer = (props: {
   regionRef?: ObjectReference;
   deviceRef?: ObjectReference;
   policyRef?: ObjectReference;
+  matchInlinePolicyRef?: ObjectReference;
   itemsPerPage?: number;
   from?: Timestamp;
   status?: AccessLogStatusFilter;
@@ -971,6 +972,7 @@ const DoAccessLogViewer = (props: {
         namespaceRef: props.namespaceRef,
         regionRef: props.regionRef,
         policyRef: props.policyRef,
+        matchInlinePolicyRef: props.matchInlinePolicyRef,
         deviceRef: props.deviceRef,
         common: {
           page,
@@ -1052,6 +1054,7 @@ export const AccessLogList = (props: {
   regionRef?: ObjectReference;
   deviceRef?: ObjectReference;
   policyRef?: ObjectReference;
+  matchInlinePolicyRef?: ObjectReference;
   itemsPerPage?: number;
   periodMinutes?: number;
   status?: AccessLogStatusFilter;
@@ -1098,6 +1101,7 @@ const AccessLogViewer = (props: {
   regionRef?: ObjectReference;
   deviceRef?: ObjectReference;
   policyRef?: ObjectReference;
+  matchInlinePolicyRef?: ObjectReference;
   itemsPerPage?: number;
   page?: number;
   onPageChange?: (page: number) => void;
@@ -1151,6 +1155,7 @@ const AccessLogViewer = (props: {
             namespaceRef={props.namespaceRef}
             regionRef={props.regionRef}
             policyRef={props.policyRef}
+            matchInlinePolicyRef={props.matchInlinePolicyRef}
             deviceRef={props.deviceRef}
             reason={props.reason}
             mode={props.mode}
@@ -1167,6 +1172,7 @@ const AccessLogViewer = (props: {
         namespaceRef={props.namespaceRef}
         regionRef={props.regionRef}
         policyRef={props.policyRef}
+        matchInlinePolicyRef={props.matchInlinePolicyRef}
         deviceRef={props.deviceRef}
         from={from}
         status={props.status}

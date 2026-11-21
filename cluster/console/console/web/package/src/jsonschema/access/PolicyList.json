@@ -31,6 +31,62 @@
             "title": "Policy List",
             "description": "PolicyList is the list of Policies returned by the ListPolicy method."
         },
+        "octelium.api.main.access.v1.ConfigurationIssue": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "MISSING_REFERENCE",
+                        "INVALID_EXPRESSION",
+                        "NO_ELIGIBLE_REVIEWER",
+                        "IMPOSSIBLE_APPROVAL_COUNT",
+                        "EMPTY_SCOPE",
+                        "SYSTEM_RESOURCE_EXCLUDED",
+                        "OVERRIDES_GUARDRAILS",
+                        "SHADOWED_RULE",
+                        "NO_ACCESS_LEVEL"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the kind of the issue"
+                },
+                "severity": {
+                    "enum": [
+                        "SEVERITY_UNSET",
+                        "WARNING",
+                        "ERROR"
+                    ],
+                    "type": "string",
+                    "title": "Severity",
+                    "description": "Severity is how serious the issue is"
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Message is a human readable explanation of the issue."
+                },
+                "ruleName": {
+                    "type": "string",
+                    "description": "RuleName is the name of the Policy Rule that the issue belongs to, if any."
+                },
+                "stepName": {
+                    "type": "string",
+                    "description": "StepName is the name of the review Step that the issue belongs to, if any."
+                },
+                "accessLevel": {
+                    "type": "string",
+                    "description": "AccessLevel is the name of the Catalog access level that the issue belongs to, if any."
+                },
+                "ref": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "Ref is the reference of the object that the issue is about, if any."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Configuration Issue",
+            "description": "ConfigurationIssue is a configuration problem that the Cluster detects in an access Policy or in a Catalog"
+        },
         "octelium.api.main.access.v1.Policy": {
             "properties": {
                 "apiVersion": {
@@ -60,7 +116,7 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Policy",
-            "description": "Policy controls what happens to the access Requests. Once a Request is created, the Cluster evaluates the Policies and the first Rule whose Condition matches decides whether the Request is immediately rejected, automatically approved or handed over to a review workflow. Note that this is a different resource than the core Policy which controls the authorization of the access itself."
+            "description": "Policy controls what happens to the access Requests. Once a Request is created, the Cluster evaluates the Policies and the first Rule whose Condition matches decides whether the Request is immediately rejected, automatically approved or handed over to a review workflow. The access Policy only decides the workflow of the Requests. What an approved Request grants is set by the access level of the requested Catalog. Note that this is a different resource than the core Policy which controls the authorization of the access itself."
         },
         "octelium.api.main.access.v1.Policy.Spec": {
             "properties": {
@@ -102,17 +158,12 @@
                 },
                 "priority": {
                     "type": "integer",
-                    "description": "Priority is an integer that sets the Rule priority level. The lower the number, the higher the priority."
+                    "description": "Priority is an integer that sets the Rule priority level. The lower the number, the higher the priority. The Rules of the same priority are evaluated in the order of their Policies' names and then in their order within their Policy."
                 },
                 "action": {
                     "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action",
                     "additionalProperties": false,
                     "description": "Action is what the Cluster does with the matched Request. It is required for the REVIEW effect and it must not be set for the other ones."
-                },
-                "authorization": {
-                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Authorization",
-                    "additionalProperties": false,
-                    "description": "Authorization is the access that is granted to the subject once the Request is approved. It must not be set for the DENY effect."
                 },
                 "name": {
                     "type": "string",
@@ -125,6 +176,15 @@
                     "additionalProperties": false,
                     "type": "array",
                     "description": "Notifications is the list of the external Integration surfaces on which the outcome of the matched Requests is delivered. Unlike the review Surfaces of a Step, these are purely informational and they never carry any action."
+                },
+                "maxDuration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "MaxDuration caps how long the access of the matched Requests can last for. It can only lower the `maxDuration` of the requested access level and it is ignored by the DENY effect."
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Message is a requester-facing explanation that is shown with the outcome of the matched Requests (e.g. why a DENY Rule rejected them). It cannot be longer than 500 characters."
                 }
             },
             "additionalProperties": false,
@@ -239,12 +299,48 @@
                     "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties",
                     "additionalProperties": false,
                     "description": "SeparationOfDuties controls whether the requester and the subject of a Request are allowed to review it themselves even when they match the Step's Reviewers. Both are denied by default."
+                },
+                "escalation": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Escalation",
+                    "additionalProperties": false,
+                    "description": "Escalation adds more reviewers to the Step once it has been waiting for too long or when it has no eligible reviewer."
+                },
+                "reasonRequirement": {
+                    "enum": [
+                        "REASON_REQUIREMENT_UNSET",
+                        "REJECT_ONLY",
+                        "ALWAYS"
+                    ],
+                    "type": "string",
+                    "title": "Reason Requirement",
+                    "description": "ReasonRequirement controls which decisions of the Step must carry a justification"
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Step",
             "description": "Step is a single stage of the review workflow. The Request only moves to the next Step once the current Step's approval requirement is satisfied and it is approved once the last Step is satisfied."
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Escalation": {
+            "properties": {
+                "after": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "After is how long the Step waits, from its start, before it is escalated. If unset, the Step is only escalated when it has no eligible reviewer at all."
+                },
+                "reviewers": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Reviewers is the list of the reviewers that are added to the Step once it is escalated. Required."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Escalation",
+            "description": "Escalation adds more reviewers to the Step once it has been waiting for too long, or immediately if nobody can review it"
         },
         "octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer": {
             "properties": {
@@ -257,6 +353,11 @@
                     "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.Group",
                     "additionalProperties": false,
                     "description": "Group is a Group of User reviewers."
+                },
+                "catalogOwners": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.CatalogOwners",
+                    "additionalProperties": false,
+                    "description": "CatalogOwners sets the owners of the requested Catalog as reviewers."
                 }
             },
             "additionalProperties": false,
@@ -276,6 +377,11 @@
                                         "required": [
                                             "group"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "catalogOwners"
+                                        ]
                                     }
                                 ]
                             }
@@ -289,12 +395,23 @@
                             "required": [
                                 "group"
                             ]
+                        },
+                        {
+                            "required": [
+                                "catalogOwners"
+                            ]
                         }
                     ]
                 }
             ],
             "title": "Reviewer",
             "description": "Reviewer is a User that is allowed to review the Requests that reach the Step"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.CatalogOwners": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Catalog Owners",
+            "description": "CatalogOwners sets the owners of the requested Catalog as reviewers"
         },
         "octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.Group": {
             "properties": {
@@ -322,34 +439,6 @@
             "title": "User",
             "description": "User sets a specific User as a reviewer"
         },
-        "octelium.api.main.access.v1.Policy.Spec.Rule.Authorization": {
-            "properties": {
-                "policies": {
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array",
-                    "description": "Policies is the list of the standalone core Policies that are applied to the granted access."
-                },
-                "inlinePolicies": {
-                    "items": {
-                        "$ref": "#/definitions/octelium.api.main.core.v1.InlinePolicy"
-                    },
-                    "additionalProperties": false,
-                    "type": "array",
-                    "description": "InlinePolicies is the list of the inline core Policies that are applied to the granted access."
-                },
-                "maxAccessDuration": {
-                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false,
-                    "description": "MaxAccessDuration is the upper bound of the access duration that the requester can ask for in the Request's `spec.duration`. It defaults to 24 hours."
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "Authorization",
-            "description": "Authorization is the access that is granted to the subject of an approved Request. The Cluster enforces it by creating a hidden PolicyTrigger that applies these Policies to the subject User for the requested Services and Namespaces until the access ends."
-        },
         "octelium.api.main.access.v1.Policy.Spec.Rule.Condition": {
             "properties": {
                 "matchAny": {
@@ -364,7 +453,7 @@
                 "resource": {
                     "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Resource",
                     "additionalProperties": false,
-                    "description": "Resource matches the resource that the access is requested for."
+                    "description": "Resource matches the resources that the access is requested for."
                 },
                 "all": {
                     "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Condition.All",
@@ -383,7 +472,15 @@
                 },
                 "match": {
                     "type": "string",
-                    "description": "CEL expression."
+                    "description": "Match is a CEL expression. It is evaluated with `ctx.request` (the Request), `ctx.requester` (the User that created the Request), `ctx.subject` (the User that the access is requested for), `ctx.user` (an alias of `ctx.requester`), `ctx.catalog` (the requested Catalog), `ctx.accessLevel` (the requested access level), `ctx.services` (the Services of the resolved scope) and `ctx.namespaces` (the Namespaces of the resolved scope)."
+                },
+                "accessLevel": {
+                    "type": "string",
+                    "description": "AccessLevel matches the Requests for a specific access level name of their Catalog."
+                },
+                "isOnBehalf": {
+                    "type": "boolean",
+                    "description": "IsOnBehalf matches the Requests whose subject is not the User that created them. It must be set to `true`."
                 }
             },
             "additionalProperties": false,
@@ -428,6 +525,16 @@
                                         "required": [
                                             "match"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "accessLevel"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "isOnBehalf"
+                                        ]
                                     }
                                 ]
                             }
@@ -465,6 +572,16 @@
                         {
                             "required": [
                                 "match"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "accessLevel"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "isOnBehalf"
                             ]
                         }
                     ]
@@ -510,12 +627,17 @@
                 "serviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
-                    "description": "ServiceRef matches a specific Service"
+                    "description": "ServiceRef matches the Requests whose scope includes a specific Service."
                 },
                 "catalogRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
-                    "description": "CatalogRef matches a specific Catalog"
+                    "description": "CatalogRef matches the Requests for a specific Catalog."
+                },
+                "namespaceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "NamespaceRef matches the Requests whose scope includes at least one Service of a specific Namespace."
                 }
             },
             "additionalProperties": false,
@@ -535,6 +657,11 @@
                                         "required": [
                                             "catalogRef"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "namespaceRef"
+                                        ]
                                     }
                                 ]
                             }
@@ -548,12 +675,17 @@
                             "required": [
                                 "catalogRef"
                             ]
+                        },
+                        {
+                            "required": [
+                                "namespaceRef"
+                            ]
                         }
                     ]
                 }
             ],
             "title": "Resource",
-            "description": "Resource matches the resource that the access is requested for"
+            "description": "Resource matches the resources that the access is requested for. It is matched against the resolved scope of the Request (i.e. the Catalog and every Service and Namespace that the Request would grant access to) rather than against the literal target of the Request."
         },
         "octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Subject": {
             "properties": {
@@ -670,318 +802,25 @@
             "description": "Destination is the audience of the Surface"
         },
         "octelium.api.main.access.v1.Policy.Status": {
+            "properties": {
+                "issues": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.ConfigurationIssue"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Issues is the list of the configuration problems that the Cluster currently detects in the Policy."
+                },
+                "checkedAt": {
+                    "type": "string",
+                    "description": "CheckedAt is the time at which the issues were last computed.",
+                    "format": "date-time"
+                }
+            },
             "additionalProperties": false,
             "type": "object",
             "title": "Status",
             "description": "Status is the current status of the Policy"
-        },
-        "octelium.api.main.core.v1.Condition": {
-            "properties": {
-                "matchAny": {
-                    "type": "boolean",
-                    "description": "MatchAny matches anything"
-                },
-                "match": {
-                    "type": "string",
-                    "description": "Match contains a single CEL expression"
-                },
-                "all": {
-                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.All",
-                    "additionalProperties": false,
-                    "description": "All acts as a logical AND operator on its list of CEL expressions"
-                },
-                "any": {
-                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.Any",
-                    "additionalProperties": false,
-                    "description": "Any acts as a logical OR operator on its list of CEL expressions"
-                },
-                "not": {
-                    "type": "string",
-                    "description": "Not acts as a logical NOT operator of a single CEL expression"
-                },
-                "none": {
-                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.None",
-                    "additionalProperties": false,
-                    "description": "None acts as a logical NOR operator on its list of CEL expressions (i.e. none of the expressions matches)"
-                },
-                "opa": {
-                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.OPA",
-                    "additionalProperties": false,
-                    "description": "OPA contains an OPA (Open Policy Agent) Rego script"
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "allOf": [
-                {
-                    "oneOf": [
-                        {
-                            "not": {
-                                "anyOf": [
-                                    {
-                                        "required": [
-                                            "matchAny"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "match"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "all"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "any"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "not"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "none"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "opa"
-                                        ]
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            "required": [
-                                "matchAny"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "match"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "all"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "any"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "not"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "none"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "opa"
-                            ]
-                        }
-                    ]
-                }
-            ],
-            "title": "Condition",
-            "description": "Condition is a policy-as-code expression that is evaluated against the request context. It is used by the Policy rules, the Service dynamic configuration rules, the HTTP Plugins as well as by the IdentityProvider rules."
-        },
-        "octelium.api.main.core.v1.Condition.All": {
-            "properties": {
-                "of": {
-                    "items": {
-                        "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
-                    },
-                    "additionalProperties": false,
-                    "type": "array",
-                    "description": "Of is the list of the Conditions that must all match"
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "All",
-            "description": "All acts as a logical AND operator on its list of Conditions"
-        },
-        "octelium.api.main.core.v1.Condition.Any": {
-            "properties": {
-                "of": {
-                    "items": {
-                        "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
-                    },
-                    "additionalProperties": false,
-                    "type": "array",
-                    "description": "Of is the list of the Conditions of which at least one must match"
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "Any",
-            "description": "Any acts as a logical OR operator on its list of Conditions"
-        },
-        "octelium.api.main.core.v1.Condition.None": {
-            "properties": {
-                "of": {
-                    "items": {
-                        "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
-                    },
-                    "additionalProperties": false,
-                    "type": "array",
-                    "description": "Of is the list of the Conditions of which none must match"
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "None",
-            "description": "None acts as a logical NOR operator on its list of Conditions"
-        },
-        "octelium.api.main.core.v1.Condition.OPA": {
-            "properties": {
-                "inline": {
-                    "type": "string",
-                    "description": "Inline is the OPA Rego script directly provided as a string"
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "allOf": [
-                {
-                    "oneOf": [
-                        {
-                            "not": {
-                                "anyOf": [
-                                    {
-                                        "required": [
-                                            "inline"
-                                        ]
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            "required": [
-                                "inline"
-                            ]
-                        }
-                    ]
-                }
-            ],
-            "title": "OPA",
-            "description": "OPA evaluates the Condition via an Open Policy Agent Rego script"
-        },
-        "octelium.api.main.core.v1.InlinePolicy": {
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "Name is the name of the inline Policy"
-                },
-                "spec": {
-                    "$ref": "#/definitions/octelium.api.main.core.v1.Policy.Spec",
-                    "additionalProperties": false,
-                    "description": "Spec is the Policy spec"
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "Inline Policy",
-            "description": "InlinePolicy is a Policy that is defined inline within the resource that attaches it instead of being created as a standalone Policy resource."
-        },
-        "octelium.api.main.core.v1.Policy.Spec": {
-            "properties": {
-                "rules": {
-                    "items": {
-                        "$ref": "#/definitions/octelium.api.main.core.v1.Policy.Spec.Rule"
-                    },
-                    "additionalProperties": false,
-                    "type": "array",
-                    "description": "Rules is the list of Policy rules"
-                },
-                "enforcementRules": {
-                    "items": {
-                        "$ref": "#/definitions/octelium.api.main.core.v1.Policy.Spec.EnforcementRule"
-                    },
-                    "additionalProperties": false,
-                    "type": "array",
-                    "description": "EnforcementRules is the list of enforcement rules that are typically used as a precondition for using the Policy rules. You can simply extract your shared conditions from your rules and write them instead inside enforcementRules for better performance and readability"
-                },
-                "attrs": {
-                    "additionalProperties": true,
-                    "type": "object",
-                    "description": "Attrs is a map of user-defined attributes that can be reused inside the Policy rules. It is strongly recommended to stick to camelCase in order to be conformant with Octelium's API naming conventions."
-                },
-                "isDisabled": {
-                    "type": "boolean",
-                    "description": "IsDisabled disables (i.e. deactivates) the Policy. You can use this to temporarily disable enforcing the Policy altogether instead of having to delete it or de-attach it from the different Resources attaching it."
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "Spec",
-            "description": "Spec is the Policy specification"
-        },
-        "octelium.api.main.core.v1.Policy.Spec.EnforcementRule": {
-            "properties": {
-                "condition": {
-                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
-                    "additionalProperties": false,
-                    "description": "Condition is the enforcement rule's Condition"
-                },
-                "effect": {
-                    "enum": [
-                        "EFFECT_UNKNOWN",
-                        "ENFORCE",
-                        "IGNORE"
-                    ],
-                    "type": "string",
-                    "title": "Effect",
-                    "description": "Effect is the decision of the EnforcementRule once its Condition matches"
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "Enforcement Rule",
-            "description": "EnforcementRule is a pre-condition that decides whether the Policy is evaluated at all. If no EnforcementRule matches, or if the list of EnforcementRules is empty, then the Policy is enforced. ENFORCE rules always override IGNORE rules in the same way that DENY rules override ALLOW rules."
-        },
-        "octelium.api.main.core.v1.Policy.Spec.Rule": {
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "Name is an optional name for the rule. It is currently useful in Logs to understand which rule triggered the Policy."
-                },
-                "condition": {
-                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
-                    "additionalProperties": false,
-                    "description": "Condition is the rule's Condition that must match in order for the rule, and subsequently the Policy as whole, to match"
-                },
-                "effect": {
-                    "enum": [
-                        "EFFECT_UNKNOWN",
-                        "ALLOW",
-                        "DENY"
-                    ],
-                    "type": "string",
-                    "title": "Effect",
-                    "description": "Effect is the decision of the Rule once its Condition matches"
-                },
-                "priority": {
-                    "type": "integer",
-                    "description": "Priority is an integer that sets the rule priority level. The lower the number, the higher the priority. Currently the range of numbers is between -4 (i.e. the highest priority) and 4 (i.e. the lowest priority)."
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "Rule",
-            "description": "Rule is a single access control rule of the Policy"
         },
         "octelium.api.main.meta.v1.Duration": {
             "properties": {

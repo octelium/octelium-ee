@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/GetInboxRequest",
+    "definitions": {
+        "GetInboxRequest": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Get Inbox Request",
+            "description": "GetInboxRequest is the request of the GetInbox method."
+        }
+    }
+}

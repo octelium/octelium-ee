@@ -5,7 +5,6 @@ import { ClipboardCheck, Flame, Hourglass, SearchX } from "lucide-react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { twMerge } from "@/lib/utils";
 
-import { useSubjectUser } from "@/components/Access/hooks";
 import { ResourceIcon } from "@/components/Access/icons";
 import { Countdown, Elapsed } from "@/components/TimeAgo";
 import {
@@ -30,16 +29,17 @@ import {
   formatDuration,
   grantedDuration,
   isOnBehalfOf,
+  openInformationRequest,
   requestResourceLabel,
   requestSubjectName,
   requesterName,
   reviewStepLabel,
   reviewStepTimeoutAt,
   reviewSteps,
-  shortName,
   tsToDate,
   tsToMillis,
   urgencyMeta,
+  userInfoLabel,
   waitingMillis,
 } from "@/utils";
 import { getReviewerClient } from "@/utils/client";
@@ -49,7 +49,37 @@ const PAGE_SIZE = 500;
 const MAX_PAGES = 100;
 const STALE_MILLIS = 24 * 3600 * 1000;
 
+const F = AccessP.ListReviewerRequestOptions_Filter;
+
+const VIEWS: Record<
+  string,
+  {
+    filter: AccessP.ListReviewerRequestOptions_Filter;
+    label: string;
+    description: string;
+  }
+> = {
+  mine: {
+    filter: F.NEEDS_MY_DECISION,
+    label: "Needs my decision",
+    description:
+      "Access requests that are waiting for your decision right now.",
+  },
+  others: {
+    filter: F.WAITING_ON_OTHERS,
+    label: "Waiting on others",
+    description:
+      "Pending requests you can review that are waiting on other reviewers or steps.",
+  },
+  decided: {
+    filter: F.DECIDED_BY_ME,
+    label: "Decided by me",
+    description: "Pending requests you already decided on.",
+  },
+};
+
 const listAllReviewerRequests = async (
+  filter: AccessP.ListReviewerRequestOptions_Filter,
   signal?: AbortSignal,
 ): Promise<AccessP.Request[]> => {
   const items: AccessP.Request[] = [];
@@ -58,6 +88,7 @@ const listAllReviewerRequests = async (
     const { response } = await getReviewerClient().listRequest(
       AccessP.ListReviewerRequestOptions.create({
         common: { page, itemsPerPage: PAGE_SIZE },
+        filter,
       }),
       { abort: signal },
     );
@@ -74,14 +105,14 @@ const QueueRow = (props: { item: AccessP.Request; returnTo: string; now: number 
   const urgency = urgencyMeta(item.spec?.urgency);
   const requester = requesterName(item);
   const onBehalf = isOnBehalfOf(item);
-  const requesterQuery = useSubjectUser(requester);
   const steps = reviewSteps(item);
   const current = currentReviewStepIndex(item);
   const timeoutAt = reviewStepTimeoutAt(item);
   const deadline = tsToDate(item.spec?.deadline);
   const stale = waitingMillis(item, props.now) > STALE_MILLIS;
   const requesterLabel =
-    requesterQuery.data?.displayName || shortName(requester) || "—";
+    userInfoLabel(item.status?.requesterInfo, requester) || "—";
+  const awaitingRequester = !!openInformationRequest(item);
 
   return (
     <Card interactive>
@@ -97,16 +128,20 @@ const QueueRow = (props: { item: AccessP.Request; returnTo: string; now: number 
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className="truncate text-body font-semibold text-slate-800">
-              {resource.name || item.metadata!.name}
+              {resource.displayName || resource.name || item.metadata!.name}
             </span>
-            {resource.kind === "Catalog" && <Badge>Catalog</Badge>}
+            {resource.accessLevel && <Badge>{resource.accessLevel}</Badge>}
+            {item.status?.resolvedScope?.overridesGuardrails && (
+              <Badge tone="amber">Overrides guardrails</Badge>
+            )}
             {onBehalf && <Badge>On behalf</Badge>}
+            {awaitingRequester && <Badge tone="blue">Awaiting requester</Badge>}
           </div>
 
           <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs font-normal text-slate-500">
             <span className="inline-flex items-center gap-1.5">
               <Avatar
-                src={requesterQuery.data?.picURL}
+                src={item.status?.requesterInfo?.picURL}
                 name={requesterLabel}
                 size="xs"
               />
@@ -116,7 +151,10 @@ const QueueRow = (props: { item: AccessP.Request; returnTo: string; now: number 
               <>
                 <span aria-label="for">→</span>
                 <span className="font-medium text-slate-700">
-                  {shortName(requestSubjectName(item))}
+                  {userInfoLabel(
+                    item.status?.subjectInfo,
+                    requestSubjectName(item),
+                  )}
                 </span>
               </>
             )}
@@ -196,10 +234,14 @@ const Queue = () => {
   const search = searchParams.get("q") ?? "";
   const sort = searchParams.get("sort") ?? "urgency";
   const focus = searchParams.get("focus") ?? "";
+  const viewKey = VIEWS[searchParams.get("view") ?? ""]
+    ? searchParams.get("view")!
+    : "mine";
+  const view = VIEWS[viewKey];
 
   const qry = useQuery({
-    queryKey: ["reviewer", "listRequest"],
-    queryFn: ({ signal }) => listAllReviewerRequests(signal),
+    queryKey: ["reviewer", "listRequest", view.filter],
+    queryFn: ({ signal }) => listAllReviewerRequests(view.filter, signal),
     refetchInterval: 15000,
   });
 
@@ -218,6 +260,7 @@ const Queue = () => {
       const matchesQuery =
         !q ||
         resource.name.toLowerCase().includes(q) ||
+        resource.displayName.toLowerCase().includes(q) ||
         item.metadata!.name.toLowerCase().includes(q) ||
         requesterName(item).toLowerCase().includes(q) ||
         requestSubjectName(item).toLowerCase().includes(q) ||
@@ -261,15 +304,27 @@ const Queue = () => {
       <DocumentTitle title={allItems.length ? `Review Queue (${allItems.length})` : "Review Queue"} />
       <PageHeader
         title="Review Queue"
-        description="Access requests that are waiting for your decision right now."
+        description={view.description}
         actions={<RefreshButton onClick={() => qry.refetch()} loading={qry.isFetching} />}
+      />
+
+      <SegmentedControl
+        className="mb-4"
+        fullWidth
+        aria-label="Review queue view"
+        value={viewKey}
+        onChange={(value) => setParam("view", value, "mine")}
+        data={Object.entries(VIEWS).map(([value, item]) => ({
+          value,
+          label: item.label,
+        }))}
       />
 
       <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <StatTile
-          label="In your queue"
+          label={viewKey === "mine" ? "In your queue" : view.label}
           value={allItems.length}
-          hint="Pending your review"
+          hint={viewKey === "mine" ? "Pending your review" : "Pending requests"}
           icon={<ClipboardCheck size={13} strokeWidth={2.25} aria-hidden />}
           active={!focus}
           onClick={() => setParam("focus", "", "")}
@@ -361,7 +416,8 @@ const Queue = () => {
       ) : (
         <>
           <Eyebrow className="mb-2 block">
-            {items.length} request{items.length === 1 ? "" : "s"} awaiting you
+            {items.length} request{items.length === 1 ? "" : "s"}
+            {viewKey === "mine" ? " awaiting you" : ""}
           </Eyebrow>
           <div className="flex flex-col gap-2">
             {items.map((item) => (

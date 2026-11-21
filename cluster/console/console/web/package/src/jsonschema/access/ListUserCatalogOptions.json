@@ -8,6 +8,10 @@
                     "$ref": "#/definitions/octelium.api.main.meta.v1.CommonListOptions",
                     "additionalProperties": false,
                     "description": "Common is the common list options."
+                },
+                "query": {
+                    "type": "string",
+                    "description": "Query only lists the Catalogs whose name, display name or description contains it, or that include a Service whose name contains it."
                 }
             },
             "additionalProperties": false,

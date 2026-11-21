@@ -41,6 +41,7 @@ func TestMainCatalog(t *testing.T) {
 					Services: []string{utilrand.GetRandomStringCanonical(6)},
 				},
 			},
+			AccessLevels: []*accessv1.Catalog_Spec_AccessLevel{testFullLevel("full")},
 		},
 	})
 	assert.Nil(t, err, "%+v", err)
@@ -79,6 +80,7 @@ func TestMainCatalog(t *testing.T) {
 					Services: []string{utilrand.GetRandomStringCanonical(6)},
 				},
 			},
+			AccessLevels: []*accessv1.Catalog_Spec_AccessLevel{testFullLevel("full")},
 		},
 	})
 	assert.NotNil(t, err)
