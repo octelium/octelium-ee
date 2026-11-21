@@ -123,8 +123,13 @@ func (c *Controller) Reconcile(ctx context.Context, itm *accessv1.IntegrationBin
 		return err
 	}
 
+	isCurrent, err := accessintg.IsBindingCurrent(ctx, c.octeliumC, itm, req)
+	if err != nil {
+		return err
+	}
+
 	desiredState := accessv1.IntegrationBinding_Status_READY
-	if isClosed(itm, req) {
+	if !isCurrent {
 		desiredState = accessv1.IntegrationBinding_Status_CLOSED
 	}
 
@@ -387,10 +392,6 @@ func (c *Controller) listBindingsOf(ctx context.Context,
 	}
 
 	return itemList.Items, nil
-}
-
-func isClosed(itm *accessv1.IntegrationBinding, req *accessv1.Request) bool {
-	return !accessintg.IsBindingCurrent(itm, req)
 }
 
 func backoff(attempts uint32) time.Duration {

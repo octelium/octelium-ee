@@ -16,21 +16,27 @@ import (
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
-	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/pkg/errors"
 )
 
+type RequestReconciler interface {
+	Reconcile(ctx context.Context, itm *accessv1.Request) error
+}
+
 type Controller struct {
-	octeliumC octeliumc.ClientInterface
+	octeliumC  octeliumc.ClientInterface
+	requestCtl RequestReconciler
 }
 
 func NewController(
 	ctx context.Context,
 	octeliumC octeliumc.ClientInterface,
+	requestCtl RequestReconciler,
 ) (*Controller, error) {
 	return &Controller{
-		octeliumC: octeliumC,
+		octeliumC:  octeliumC,
+		requestCtl: requestCtl,
 	}, nil
 }
 
@@ -59,14 +65,6 @@ func (c *Controller) reconcile(ctx context.Context, rev *accessv1.Review) error 
 		return errors.Errorf("review %q has no userRef", rev.Metadata.Name)
 	}
 
-	rev, err := c.getReview(ctx, rev)
-	if err != nil {
-		return err
-	}
-	if rev == nil {
-		return nil
-	}
-
 	req, err := c.getRequest(ctx, rev.Status.RequestRef)
 	if err != nil {
 		return err
@@ -75,41 +73,7 @@ func (c *Controller) reconcile(ctx context.Context, rev *accessv1.Review) error 
 		return nil
 	}
 
-	next := pbutils.Clone(req).(*accessv1.Request)
-
-	if err := accesscmd.ReconcileReviewStep(ctx, &accesscmd.ReconcileReviewStepOpts{
-		OcteliumC: c.octeliumC,
-		Request:   next,
-		Review:    rev,
-	}); err != nil {
-		return err
-	}
-
-	if pbutils.IsEqual(req, next) {
-		return nil
-	}
-
-	_, err = c.octeliumC.AccessC().UpdateRequest(ctx, next)
-	return err
-}
-
-func (c *Controller) getReview(ctx context.Context,
-	rev *accessv1.Review) (*accessv1.Review, error) {
-	if rev.Metadata == nil || rev.Metadata.Uid == "" {
-		return rev, nil
-	}
-
-	item, err := c.octeliumC.AccessC().GetReview(ctx, &rmetav1.GetOptions{
-		Uid: rev.Metadata.Uid,
-	})
-	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return item, nil
+	return c.requestCtl.Reconcile(ctx, req)
 }
 
 func (c *Controller) getRequest(ctx context.Context, ref *metav1.ObjectReference) (*accessv1.Request, error) {

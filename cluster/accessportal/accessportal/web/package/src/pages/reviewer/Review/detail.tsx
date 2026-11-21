@@ -58,6 +58,7 @@ const ReviewDetail = () => {
     decision: AccessP.Review_Spec_Decision.UNSET,
     justification: "",
   });
+  const [pinned, setPinned] = React.useState({ stepName: "", specRevision: 0 });
   const unsavedChanges = useUnsavedChanges(
     editing &&
       (decision !== initial.decision || justification !== initial.justification),
@@ -94,15 +95,13 @@ const ReviewDetail = () => {
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      const reviewed = requestQry.data!;
-      const stepIndex = currentReviewStepIndex(reviewed);
       const { response } = await getReviewerClient().setReviewDecision(
         AccessP.SetReviewDecisionRequest.create({
           requestRef: MetaP.ObjectReference.create({ name: requestName }),
           decision,
           justification,
-          expectedStepName: reviewStepName(reviewSteps(reviewed)[stepIndex], stepIndex),
-          expectedSpecRevision: reviewed.status?.specRevision ?? 0,
+          expectedStepName: pinned.stepName,
+          expectedSpecRevision: pinned.specRevision,
           duration:
             decision === AccessP.Review_Spec_Decision.APPROVE
               ? qry.data?.spec?.duration
@@ -187,6 +186,9 @@ const ReviewDetail = () => {
     isPendingRequest(reviewable) &&
     (item.status?.specRevision ?? 0) > 0 &&
     item.status?.specRevision !== reviewable.status?.specRevision;
+  const isOutdated =
+    editing &&
+    (!editable || pinned.specRevision !== (reviewable?.status?.specRevision ?? 0));
   const hasDecision = item.spec?.decision !== AccessP.Review_Spec_Decision.UNSET;
   const stepLabel = item.status?.stepName || `Step ${(item.status?.stepIndex ?? 0) + 1}`;
   const bytes = textLength(justification);
@@ -196,14 +198,20 @@ const ReviewDetail = () => {
       decision: item.spec?.decision ?? AccessP.Review_Spec_Decision.UNSET,
       justification: item.spec?.justification ?? "",
     };
+    const stepIndex = item.status?.stepIndex ?? 0;
     setInitial(draft);
     setDecision(draft.decision);
     setJustification(draft.justification);
     setJustificationError(undefined);
+    setPinned({
+      stepName: reviewStepName(reviewSteps(reviewable!)[stepIndex], stepIndex),
+      specRevision: reviewable!.status?.specRevision ?? 0,
+    });
     setEditing(true);
   };
 
   const save = () => {
+    if (isOutdated) return;
     if (bytes > MAX_JUSTIFICATION_LENGTH) {
       setJustificationError("The reason is too long");
       return;
@@ -327,6 +335,13 @@ const ReviewDetail = () => {
                   <Note>Choose Approve or Reject to save a decision.</Note>
                 )}
 
+                {isOutdated && (
+                  <Note tone="amber">
+                    The request changed after you started editing this decision.
+                    Discard your changes and review the request again.
+                  </Note>
+                )}
+
                 <div className="flex items-center gap-2">
                   <Button
                     type="submit"
@@ -334,7 +349,7 @@ const ReviewDetail = () => {
                     color="ink"
                     leftSection={<Check size={14} strokeWidth={2.5} />}
                     loading={updateMutation.isPending}
-                    disabled={decision === AccessP.Review_Spec_Decision.UNSET}
+                    disabled={decision === AccessP.Review_Spec_Decision.UNSET || isOutdated}
                   >
                     Save
                   </Button>

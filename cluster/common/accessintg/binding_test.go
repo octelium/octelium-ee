@@ -12,6 +12,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/accessv1"
@@ -443,4 +444,127 @@ func TestPresentationRevision(t *testing.T) {
 	assert.False(t, third.IsActionable)
 	assert.True(t, third.IsClosed)
 	assert.NotEqual(t, first.Revision(), third.Revision())
+}
+
+func TestRemovedReviewerBindingIsNoLongerCurrent(t *testing.T) {
+	ctx, octeliumC := newBindingTest(t)
+
+	integration := tstCreateIntegration(ctx, t, octeliumC,
+		accessv1.Integration_Status_DIRECT_USER_DELIVERY)
+
+	grp, err := octeliumC.CoreC().CreateGroup(ctx, &corev1.Group{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec:   &corev1.Group_Spec{},
+		Status: &corev1.Group_Status{},
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	var reviewers []*corev1.User
+	for range 3 {
+		usr := tstCreateUser(ctx, t, octeliumC)
+		usr.Spec.Groups = []string{grp.Metadata.Name}
+		usr, err = octeliumC.CoreC().UpdateUser(ctx, usr)
+		assert.Nil(t, err, "%+v", err)
+		reviewers = append(reviewers, usr)
+	}
+	removed, voter := reviewers[0], reviewers[1]
+
+	step := tstStep("review", removed,
+		tstReviewersSurface(integration, accessv1.Policy_Spec_Rule_Surface_INTERACTIVE))
+	step.ApprovalRequirement = accessv1.Policy_Spec_Rule_Action_Review_Step_COUNT
+	step.ApprovalCount = 2
+	step.Reviewers = []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
+		{
+			Type: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group_{
+				Group: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group{
+					GroupRef: umetav1.GetObjectReference(grp),
+				},
+			},
+		},
+	}
+
+	req := tstCreateRequest(ctx, t, octeliumC, tstCreateUser(ctx, t, octeliumC), tstReviewRule(step))
+	req.Status.SpecRevision = 1
+	assert.Nil(t, accesscmd.StartReviewStep(ctx, &accesscmd.StartReviewStepOpts{
+		OcteliumC: octeliumC,
+		Request:   req,
+		Index:     0,
+	}))
+	req, err = octeliumC.AccessC().UpdateRequest(ctx, req)
+	assert.Nil(t, err, "%+v", err)
+
+	desired, err := DesiredBindings(ctx, octeliumC, req)
+	assert.Nil(t, err, "%+v", err)
+
+	var binding *accessv1.IntegrationBinding
+	for _, itm := range desired {
+		if itm.Status.UserRef.Uid == removed.Metadata.Uid {
+			binding = &accessv1.IntegrationBinding{
+				Metadata: &metav1.Metadata{Name: itm.Name},
+				Spec:     &accessv1.IntegrationBinding_Spec{},
+				Status:   itm.Status,
+			}
+		}
+	}
+	assert.NotNil(t, binding)
+
+	isCurrent, err := IsBindingCurrent(ctx, octeliumC, binding, req)
+	assert.Nil(t, err, "%+v", err)
+	assert.True(t, isCurrent)
+
+	removed.Spec.Groups = nil
+	_, err = octeliumC.CoreC().UpdateUser(ctx, removed)
+	assert.Nil(t, err, "%+v", err)
+
+	assert.Nil(t, accesscmd.RefreshStepReviewers(ctx, octeliumC, req, nil))
+	req, err = octeliumC.AccessC().UpdateRequest(ctx, req)
+	assert.Nil(t, err, "%+v", err)
+
+	_, err = accesscmd.SetReviewDecision(ctx, &accesscmd.SetReviewDecisionOpts{
+		OcteliumC:            octeliumC,
+		Reviewer:             voter,
+		Request:              req,
+		Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+		Justification:        "Checked with the on-call lead",
+		ExpectedStepName:     "review",
+		ExpectedSpecRevision: 1,
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	isCurrent, err = IsBindingCurrent(ctx, octeliumC, binding, req)
+	assert.Nil(t, err, "%+v", err)
+	assert.False(t, isCurrent)
+
+	presentation, err := BuildPresentation(ctx, &BuildPresentationOpts{
+		OcteliumC:     octeliumC,
+		Binding:       binding,
+		Request:       req,
+		ClusterDomain: "example.com",
+	})
+	assert.Nil(t, err, "%+v", err)
+	assert.False(t, presentation.IsActionable)
+	assert.Empty(t, presentation.Decisions)
+	assert.Empty(t, presentation.ApprovalSummary)
+
+	for _, itm := range desired {
+		if itm.Status.UserRef.Uid != voter.Metadata.Uid {
+			continue
+		}
+
+		presentation, err := BuildPresentation(ctx, &BuildPresentationOpts{
+			OcteliumC: octeliumC,
+			Binding: &accessv1.IntegrationBinding{
+				Metadata: &metav1.Metadata{Name: itm.Name},
+				Spec:     &accessv1.IntegrationBinding_Spec{},
+				Status:   itm.Status,
+			},
+			Request:       req,
+			ClusterDomain: "example.com",
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.True(t, presentation.IsActionable)
+		assert.Len(t, presentation.Decisions, 1)
+	}
 }

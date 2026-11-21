@@ -2144,6 +2144,61 @@ func TestRequestNarrowerExtensionKeepsTheBroaderAccess(t *testing.T) {
 	assert.True(t, policyTriggerExists(t, ctx, octeliumC, original))
 }
 
+func TestRequestRestrictedExtensionKeepsTheFullAccess(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition: matchAny(),
+	})
+
+	catalog := createCatalog(t, ctx, octeliumC,
+		[]*accessv1.Catalog_Spec_AccessLevel{fullLevel("operations", durationHours(8))})
+
+	in := baseRequest(createUserRef(t, ctx, octeliumC), catalog)
+	in.Spec.Duration = durationHours(1)
+	original := converge(t, ctx, ctrl, octeliumC, createRequest(t, ctx, octeliumC, in).Metadata.Uid)
+	require.Equal(t, accessv1.Request_Status_State_APPROVED, original.Status.State.Status)
+
+	catalog.Spec.AccessLevels[0].Type = &accessv1.Catalog_Spec_AccessLevel_Restricted_{
+		Restricted: &accessv1.Catalog_Spec_AccessLevel_Restricted{
+			InlinePolicies: []*corev1.InlinePolicy{
+				{
+					Name: "read-only",
+					Spec: &corev1.Policy_Spec{
+						Rules: []*corev1.Policy_Spec_Rule{
+							{
+								Effect: corev1.Policy_Spec_Rule_ALLOW,
+								Condition: &corev1.Condition{
+									Type: &corev1.Condition_Match{
+										Match: `ctx.request.http.method == "GET"`,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	catalog, err := octeliumC.AccessC().UpdateCatalog(ctx, catalog)
+	require.NoError(t, err)
+
+	renewal := baseRequest(original.Status.UserRef, catalog)
+	renewal.Spec.Duration = durationHours(4)
+	renewal.Spec.ExtendsRef = umetav1.GetObjectReference(original)
+
+	extension := converge(t, ctx, ctrl, octeliumC, createRequest(t, ctx, octeliumC, renewal).Metadata.Uid)
+	require.Equal(t, accessv1.Request_Status_State_APPROVED, extension.Status.State.Status)
+	require.NotNil(t, extension.Status.ResolvedScope.AccessLevel.GetRestricted())
+
+	original = converge(t, ctx, ctrl, octeliumC, original.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, original.Status.State.Status)
+	assert.Nil(t, original.Status.SupersededByRef)
+	assert.True(t, policyTriggerExists(t, ctx, octeliumC, original))
+}
+
 func TestRequestStaleApprovalsRestartTheWorkflow(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 

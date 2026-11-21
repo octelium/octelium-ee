@@ -10,19 +10,24 @@ package reviews
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/tests"
+	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/requests"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/raccessv1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/celengine"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
 )
 
 func newControllerTest(t *testing.T) (context.Context, *Controller, octeliumc.ClientInterface) {
@@ -34,10 +39,20 @@ func newControllerTest(t *testing.T) (context.Context, *Controller, octeliumc.Cl
 		tst.Destroy()
 	})
 
-	ctrl, err := NewController(ctx, tst.C.OcteliumC)
+	return ctx, newController(t, ctx, tst.C.OcteliumC), tst.C.OcteliumC
+}
+
+func newController(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInterface) *Controller {
+	celEngine, err := celengine.New(ctx, nil)
 	assert.Nil(t, err)
 
-	return ctx, ctrl, tst.C.OcteliumC
+	requestCtl, err := requests.NewController(ctx, octeliumC, celEngine)
+	assert.Nil(t, err)
+
+	ctrl, err := NewController(ctx, octeliumC, requestCtl)
+	assert.Nil(t, err)
+
+	return ctrl
 }
 
 func objRef(kind string) *metav1.ObjectReference {
@@ -137,6 +152,41 @@ func reviewRule(steps ...*accessv1.Policy_Spec_Rule_Action_Review_Step) *accessv
 	}
 }
 
+func createCatalog(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInterface) *accessv1.Catalog {
+	svc, err := octeliumC.CoreC().CreateService(ctx, &corev1.Service{
+		Metadata: &metav1.Metadata{
+			Name: fmt.Sprintf("%s.default", utilrand.GetRandomStringCanonical(8)),
+		},
+		Spec:   &corev1.Service_Spec{},
+		Status: &corev1.Service_Status{},
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	catalog, err := octeliumC.AccessC().CreateCatalog(ctx, &accessv1.Catalog{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec: &accessv1.Catalog_Spec{
+			ResourceCollection: &accessv1.Catalog_Spec_ResourceCollection{
+				Service: &accessv1.Catalog_Spec_ResourceCollection_Service{
+					Services: []string{svc.Metadata.Name},
+				},
+			},
+			AccessLevels: []*accessv1.Catalog_Spec_AccessLevel{
+				{
+					Name: "full",
+					Type: &accessv1.Catalog_Spec_AccessLevel_Full_{
+						Full: &accessv1.Catalog_Spec_AccessLevel_Full{},
+					},
+				},
+			},
+		},
+		Status: &accessv1.Catalog_Status{},
+	})
+	assert.Nil(t, err, "%+v", err)
+	return catalog
+}
+
 func createPendingRequest(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInterface, rule *accessv1.Policy_Spec_Rule, currentStep int32) *accessv1.Request {
 	req, err := octeliumC.AccessC().CreateRequest(ctx, &accessv1.Request{
 		Metadata: &metav1.Metadata{
@@ -144,6 +194,13 @@ func createPendingRequest(t *testing.T, ctx context.Context, octeliumC octeliumc
 		},
 		Spec: &accessv1.Request_Spec{
 			Urgency: accessv1.Request_Spec_NORMAL,
+			Resource: &accessv1.Request_Spec_Resource{
+				Type: &accessv1.Request_Spec_Resource_Catalog_{
+					Catalog: &accessv1.Request_Spec_Resource_Catalog{
+						CatalogRef: umetav1.GetObjectReference(createCatalog(t, ctx, octeliumC)),
+					},
+				},
+			},
 		},
 		Status: &accessv1.Request_Status{
 			UserRef: newUserRef(t, ctx, octeliumC),
@@ -710,7 +767,7 @@ func TestReviewDurationOnlyEditTakesEffect(t *testing.T) {
 	userA := newUserRef(t, ctx, octeliumC)
 	userB := newUserRef(t, ctx, octeliumC)
 	req := createPendingRequest(t, ctx, octeliumC, reviewRule(countStep(2, userReviewer(userA), userReviewer(userB))), 0)
-	req.Status.EffectiveDuration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 4}}
+	req.Spec.Duration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 4}}
 	req, err := octeliumC.AccessC().UpdateRequest(ctx, req)
 	assert.Nil(t, err, "%+v", err)
 
@@ -980,7 +1037,7 @@ func TestReviewApprovedDurationNarrowsTheAccess(t *testing.T) {
 	userB := newUserRef(t, ctx, octeliumC)
 
 	req := createPendingRequest(t, ctx, octeliumC, reviewRule(countStep(2, userReviewer(userA), userReviewer(userB))), 0)
-	req.Status.EffectiveDuration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 4}}
+	req.Spec.Duration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 4}}
 	req, err := octeliumC.AccessC().UpdateRequest(ctx, req)
 	assert.Nil(t, err, "%+v", err)
 
@@ -1042,7 +1099,7 @@ func TestReviewFinalDurationIncludesEveryCountedVote(t *testing.T) {
 	userB := newUserRef(t, ctx, octeliumC)
 
 	req := createPendingRequest(t, ctx, octeliumC, reviewRule(countStep(2, userReviewer(userA), userReviewer(userB))), 0)
-	req.Status.EffectiveDuration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 8}}
+	req.Spec.Duration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 8}}
 	req, err := octeliumC.AccessC().UpdateRequest(ctx, req)
 	assert.Nil(t, err, "%+v", err)
 
@@ -1063,4 +1120,83 @@ func TestReviewFinalDurationIncludesEveryCountedVote(t *testing.T) {
 	assert.Equal(t, uint32(3600), reqG.Status.EffectiveDuration.GetSeconds())
 	assert.Len(t, reqG.Status.Review.LastSteps, 2)
 	assert.Equal(t, userB.Uid, reqG.Status.State.ActorRef.Uid)
+}
+
+func TestReviewDisabledCatalogIsNotApproved(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	userA := newUserRef(t, ctx, octeliumC)
+	req := createPendingRequest(t, ctx, octeliumC, reviewRule(anyStep(userReviewer(userA))), 0)
+
+	catalog, err := octeliumC.AccessC().GetCatalog(ctx, &rmetav1.GetOptions{
+		Uid: req.Spec.Resource.GetCatalog().CatalogRef.Uid,
+	})
+	assert.Nil(t, err, "%+v", err)
+	catalog.Spec.IsDisabled = true
+	_, err = octeliumC.AccessC().UpdateCatalog(ctx, catalog)
+	assert.Nil(t, err, "%+v", err)
+
+	rev := createReview(t, ctx, octeliumC, umetav1.GetObjectReference(req), userA, 0, accessv1.Review_Spec_DECISION_APPROVE)
+	assert.Nil(t, ctrl.OnAdd(ctx, rev))
+
+	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqG.Status.State.Status)
+	assert.Equal(t, accessv1.Request_Status_State_NOT_REQUESTABLE, reqG.Status.State.Reason)
+}
+
+type reviewListHook struct {
+	raccessv1.ResourceServiceClient
+	beforeList func()
+}
+
+func (c *reviewListHook) ListReview(ctx context.Context, req *rmetav1.ListOptions,
+	opts ...grpc.CallOption) (*accessv1.ReviewList, error) {
+	if c.beforeList != nil {
+		fn := c.beforeList
+		c.beforeList = nil
+		fn()
+	}
+
+	return c.ResourceServiceClient.ListReview(ctx, req, opts...)
+}
+
+type hookedClient struct {
+	octeliumc.ClientInterface
+	access raccessv1.ResourceServiceClient
+}
+
+func (c *hookedClient) AccessC() raccessv1.ResourceServiceClient {
+	return c.access
+}
+
+func TestReviewCountsTheStoredDecisionOverTheEvent(t *testing.T) {
+	ctx, _, octeliumC := newControllerTest(t)
+
+	userA := newUserRef(t, ctx, octeliumC)
+	req := createPendingRequest(t, ctx, octeliumC, reviewRule(anyStep(userReviewer(userA))), 0)
+	req.Spec.Duration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 8}}
+	req, err := octeliumC.AccessC().UpdateRequest(ctx, req)
+	assert.Nil(t, err, "%+v", err)
+
+	rev := createReview(t, ctx, octeliumC, umetav1.GetObjectReference(req), userA, 0, accessv1.Review_Spec_DECISION_APPROVE)
+	rev.Spec.Duration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 4}}
+	rev, err = octeliumC.AccessC().UpdateReview(ctx, rev)
+	assert.Nil(t, err, "%+v", err)
+
+	hook := &reviewListHook{
+		ResourceServiceClient: octeliumC.AccessC(),
+		beforeList: func() {
+			updated := pbutils.Clone(rev).(*accessv1.Review)
+			updated.Spec.Duration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 1}}
+			_, err := octeliumC.AccessC().UpdateReview(ctx, updated)
+			assert.Nil(t, err, "%+v", err)
+		},
+	}
+
+	ctrl := newController(t, ctx, &hookedClient{ClientInterface: octeliumC, access: hook})
+	assert.Nil(t, ctrl.OnAdd(ctx, rev))
+
+	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
+	assert.Equal(t, uint32(3600), reqG.Status.EffectiveDuration.GetSeconds())
 }

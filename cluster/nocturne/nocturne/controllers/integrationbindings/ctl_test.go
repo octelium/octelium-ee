@@ -678,6 +678,11 @@ func TestBindingRetryBoundsAndClosedState(t *testing.T) {
 		Audience:        accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
 		InteractionMode: accessv1.Policy_Spec_Rule_Surface_INTERACTIVE,
 	}}
+	isClosed := func(binding *accessv1.IntegrationBinding, req *accessv1.Request) bool {
+		isCurrent, err := accessintg.IsBindingCurrent(context.Background(), nil, binding, req)
+		require.NoError(t, err)
+		return !isCurrent
+	}
 	assert.False(t, isClosed(binding, req))
 	binding.Status.SpecRevision = 1
 	assert.True(t, isClosed(binding, req))

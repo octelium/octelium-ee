@@ -85,6 +85,13 @@ func listBindings(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientI
 	return itemList.Items
 }
 
+func isBindingCurrent(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInterface,
+	binding *accessv1.IntegrationBinding, req *accessv1.Request) bool {
+	ret, err := accessintg.IsBindingCurrent(ctx, octeliumC, binding, req)
+	require.NoError(t, err)
+	return ret
+}
+
 func TestRequestEnsuresIntegrationBindings(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
@@ -159,7 +166,7 @@ func TestRequestReevaluationReplacesTheReviewSurface(t *testing.T) {
 	bindings := listBindings(t, ctx, octeliumC, reqG)
 	require.Len(t, bindings, 1)
 	oldBinding := bindings[0]
-	assert.True(t, accessintg.IsBindingCurrent(oldBinding, reqG))
+	assert.True(t, isBindingCurrent(t, ctx, octeliumC, oldBinding, reqG))
 
 	pol.Spec.Rules[0].Action.GetReview().Steps[0].Surfaces = []*accessv1.Policy_Spec_Rule_Surface{
 		sharedSurface(newIntegration, accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY),
@@ -173,14 +180,14 @@ func TestRequestReevaluationReplacesTheReviewSurface(t *testing.T) {
 
 	reqG = converge(t, ctx, ctrl, octeliumC, reqG.Metadata.Uid)
 	require.Equal(t, uint32(2), reqG.Status.SpecRevision)
-	assert.False(t, accessintg.IsBindingCurrent(oldBinding, reqG))
+	assert.False(t, isBindingCurrent(t, ctx, octeliumC, oldBinding, reqG))
 
 	bindings = listBindings(t, ctx, octeliumC, reqG)
 	require.Len(t, bindings, 2)
 
 	var current []*accessv1.IntegrationBinding
 	for _, itm := range bindings {
-		if accessintg.IsBindingCurrent(itm, reqG) {
+		if isBindingCurrent(t, ctx, octeliumC, itm, reqG) {
 			current = append(current, itm)
 		}
 	}

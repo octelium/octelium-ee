@@ -175,7 +175,7 @@ func runDefaultRegionControllers(ctx context.Context, octeliumC octeliumc.Client
 	}
 
 	{
-		ctl, err := reviews.NewController(ctx, octeliumC)
+		ctl, err := reviews.NewController(ctx, octeliumC, reqCtl)
 		if err != nil {
 			return err
 		}

@@ -762,6 +762,56 @@ func TestIsScopeMateriallyEqual(t *testing.T) {
 	assert.False(t, IsScopeMateriallyEqual(nil, a))
 }
 
+func TestScopeCovers(t *testing.T) {
+	ns := &metav1.ObjectReference{Name: "prod", Uid: "uid-ns"}
+	api := &metav1.ObjectReference{Name: "api.prod", Uid: "uid-api"}
+	db := &metav1.ObjectReference{Name: "db.prod", Uid: "uid-db"}
+	admin := &metav1.ObjectReference{Name: "admin.prod", Uid: "uid-admin"}
+
+	newScope := func(services ...*metav1.ObjectReference) *accessv1.Request_Status_ResolvedScope {
+		return &accessv1.Request_Status_ResolvedScope{
+			AccessLevel:   fullLevel("full"),
+			Membership:    accessv1.Catalog_Spec_DYNAMIC,
+			NamespaceRefs: []*metav1.ObjectReference{ns},
+			ServiceRefs:   services,
+		}
+	}
+
+	assert.True(t, ScopeCovers(newScope(api, db), newScope(api, db)))
+	assert.True(t, ScopeCovers(newScope(api, db), newScope(api)))
+	assert.False(t, ScopeCovers(newScope(api), newScope(api, db)))
+	assert.False(t, ScopeCovers(newScope(api, db), newScope(api, db, admin)),
+		"a system Service is only covered through its explicit ref")
+
+	renamed := newScope(api, db)
+	renamed.AccessLevel.DisplayName = "Operations"
+	renamed.AccessLevel.MaxDuration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 9}}
+	assert.True(t, ScopeCovers(renamed, newScope(api, db)))
+
+	restricted := newScope(api, db)
+	restricted.AccessLevel.Type = &accessv1.Catalog_Spec_AccessLevel_Restricted_{
+		Restricted: &accessv1.Catalog_Spec_AccessLevel_Restricted{Policies: []string{"read-only"}},
+	}
+	assert.False(t, ScopeCovers(restricted, newScope(api, db)))
+
+	verified := newScope(api, db)
+	verified.AccessLevel.Verification = &accessv1.Catalog_Spec_AccessLevel_Verification{
+		MinAAL: corev1.Session_Status_Authentication_Info_AAL2,
+	}
+	assert.False(t, ScopeCovers(verified, newScope(api, db)))
+
+	prioritized := newScope(api, db)
+	prioritized.Priority = -1
+	assert.False(t, ScopeCovers(newScope(api, db), prioritized))
+
+	withoutNamespace := newScope(api, db)
+	withoutNamespace.NamespaceRefs = nil
+	assert.False(t, ScopeCovers(withoutNamespace, newScope(api, db)))
+
+	assert.False(t, ScopeCovers(nil, newScope(api)))
+	assert.False(t, ScopeCovers(newScope(api), nil))
+}
+
 func TestStepRoutingCoversTheRequiredQuorum(t *testing.T) {
 	a := newAccessTest(t)
 

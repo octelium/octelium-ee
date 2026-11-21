@@ -28,7 +28,6 @@ import (
 type ReconcileReviewStepOpts struct {
 	OcteliumC     octeliumc.ClientInterface
 	Request       *accessv1.Request
-	Review        *accessv1.Review
 	ClusterConfig *accessv1.ClusterConfig
 }
 
@@ -66,7 +65,7 @@ func ReconcileReviewStep(ctx context.Context, o *ReconcileReviewStepOpts) error 
 		return err
 	}
 
-	reviews, err := getCountedStepReviews(ctx, o.OcteliumC, req, stepIndex, o.Review)
+	reviews, err := getCountedStepReviews(ctx, o.OcteliumC, req, stepIndex)
 	if err != nil {
 		return err
 	}
@@ -116,14 +115,14 @@ func ReconcileReviewStep(ctx context.Context, o *ReconcileReviewStepOpts) error 
 	SetRequestState(req, &StateChange{
 		Status:   accessv1.Request_Status_State_APPROVED,
 		Reason:   accessv1.Request_Status_State_APPROVED_BY_REVIEWERS,
-		ActorRef: getFinalApprover(approvals, o.Review),
+		ActorRef: approvals[len(approvals)-1].Status.UserRef,
 	})
 
 	return nil
 }
 
 func getCountedStepReviews(ctx context.Context, octeliumC octeliumc.ClientInterface,
-	req *accessv1.Request, stepIndex int32, curr *accessv1.Review) ([]*accessv1.Review, error) {
+	req *accessv1.Request, stepIndex int32) ([]*accessv1.Review, error) {
 	revList, err := octeliumC.AccessC().ListReview(ctx, &rmetav1.ListOptions{
 		Filters: []*rmetav1.ListOptions_Filter{
 			urscsrv.FilterFieldEQValStr("status.requestRef.uid", req.Metadata.Uid),
@@ -133,24 +132,9 @@ func getCountedStepReviews(ctx context.Context, octeliumC octeliumc.ClientInterf
 		return nil, err
 	}
 
-	items := revList.Items
-	if curr != nil && curr.Metadata != nil && curr.Metadata.Uid != "" {
-		hasCurr := false
-		for i, rev := range items {
-			if rev.Metadata.Uid == curr.Metadata.Uid {
-				items[i] = curr
-				hasCurr = true
-			}
-		}
-
-		if !hasCurr {
-			items = append(items, curr)
-		}
-	}
-
 	byUser := map[string]*accessv1.Review{}
 
-	for _, rev := range items {
+	for _, rev := range revList.Items {
 		if rev == nil || rev.Spec == nil || rev.Status == nil ||
 			rev.Status.StepIndex != stepIndex ||
 			rev.Status.SpecRevision != req.Status.SpecRevision ||
@@ -313,22 +297,6 @@ func applyApprovedDuration(req *accessv1.Request) {
 	if effective > 0 {
 		req.Status.EffectiveDuration = DurationFromGo(effective)
 	}
-}
-
-func getFinalApprover(approvals []*accessv1.Review, curr *accessv1.Review) *metav1.ObjectReference {
-	if curr != nil && curr.Metadata != nil {
-		for _, rev := range approvals {
-			if rev.Metadata.Uid == curr.Metadata.Uid {
-				return rev.Status.UserRef
-			}
-		}
-	}
-
-	if len(approvals) == 0 {
-		return nil
-	}
-
-	return approvals[len(approvals)-1].Status.UserRef
 }
 
 func reviewSetAt(rev *accessv1.Review) *timestamppb.Timestamp {

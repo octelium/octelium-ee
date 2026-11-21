@@ -323,6 +323,12 @@ func ScopeCovers(scope, other *accessv1.Request_Status_ResolvedScope) bool {
 		return false
 	}
 
+	if scope.Priority != other.Priority ||
+		scope.OverridesGuardrails != other.OverridesGuardrails ||
+		!pbutils.IsEqual(getLevelGrant(scope.AccessLevel), getLevelGrant(other.AccessLevel)) {
+		return false
+	}
+
 	namespaces := map[string]struct{}{}
 	for _, ref := range scope.NamespaceRefs {
 		namespaces[ref.Uid] = struct{}{}
@@ -340,16 +346,23 @@ func ScopeCovers(scope, other *accessv1.Request_Status_ResolvedScope) bool {
 	}
 
 	for _, ref := range other.ServiceRefs {
-		if _, ok := services[ref.Uid]; ok {
-			continue
-		}
-
-		if !isServiceRefInNamespaces(ref, scope.NamespaceRefs) {
+		if _, ok := services[ref.Uid]; !ok {
 			return false
 		}
 	}
 
 	return true
+}
+
+func getLevelGrant(level *accessv1.Catalog_Spec_AccessLevel) *accessv1.Catalog_Spec_AccessLevel {
+	if level == nil {
+		return nil
+	}
+
+	return &accessv1.Catalog_Spec_AccessLevel{
+		Type:         level.Type,
+		Verification: level.Verification,
+	}
 }
 
 func ScopeIncludesService(scope *accessv1.Request_Status_ResolvedScope, svc *corev1.Service) bool {

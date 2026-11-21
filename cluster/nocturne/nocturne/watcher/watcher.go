@@ -376,15 +376,11 @@ func (w *Watcher) doCheckPendingRequest(ctx context.Context, req *accessv1.Reque
 		return w.updateRequestIfChanged(ctx, req, next)
 	}
 
-	if err := accesscmd.ReconcileReviewStep(ctx, &accesscmd.ReconcileReviewStepOpts{
-		OcteliumC:     w.octeliumC,
-		Request:       next,
-		ClusterConfig: cc,
-	}); err != nil {
-		return err
+	if w.requestCtl == nil {
+		return nil
 	}
 
-	return w.updateRequestIfChanged(ctx, req, next)
+	return w.requestCtl.Reconcile(ctx, next)
 }
 
 func (w *Watcher) onStepTimeout(ctx context.Context, req *accessv1.Request,

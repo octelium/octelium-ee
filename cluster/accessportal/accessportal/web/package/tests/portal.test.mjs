@@ -846,6 +846,29 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
       assert.ok(update.request.expectedSpecRevision > 0);
     });
 
+    for (const [change, update] of [
+      ["is edited", { specRevision: 2 }],
+      ["moves to its next step", { currentStep: 1 }],
+    ]) {
+      it(`stops saving an edited decision once its request ${change}`, async () => {
+        await load("/reviewer/reviews/rv1.queue-second");
+        await page.getByRole("button", { name: "Set decision", exact: true }).click();
+        await page.getByText("Approve", { exact: true }).click();
+        await page.getByRole("textbox", { name: /^Reason/ }).fill("Written for the first revision");
+        await page.evaluate(async ({ specRevision, currentStep }) => {
+          const { queryClient } = await import("/src/utils/index.ts");
+          const key = ["reviewer", "getRequest", "queue-second"];
+          const value = structuredClone(queryClient.getQueryData(key));
+          value.status.specRevision = specRevision ?? value.status.specRevision;
+          value.status.review.currentStep = currentStep ?? value.status.review.currentStep;
+          queryClient.setQueryData(key, value);
+        }, update);
+        await page.getByText("The request changed after you started editing this decision.", { exact: false }).waitFor();
+        assert.equal(await page.getByRole("button", { name: "Save", exact: true }).isDisabled(), true);
+        assert.equal((await page.evaluate(() => window.calls)).some((call) => call.method === "setReviewDecision"), false);
+      });
+    }
+
     it("offers no changes for reviews applied to an earlier step", async () => {
       await load("/reviewer/reviews/rv2.queue-first");
       await page.getByText(/applied to an earlier step/).waitFor();

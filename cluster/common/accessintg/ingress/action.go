@@ -80,7 +80,12 @@ func (s *Server) setReviewDecision(ctx context.Context, integration *accessv1.In
 		}, nil
 	}
 
-	if !accessintg.IsBindingCurrent(binding, req) {
+	isCurrent, err := accessintg.IsBindingCurrent(ctx, s.octeliumC, binding, req)
+	if err != nil {
+		return nil, err
+	}
+
+	if !isCurrent {
 		return &accessintg.ActionResult{
 			Message:     "This Request changed after this message was sent. Review it in the access portal instead.",
 			RequestName: req.Metadata.Name,

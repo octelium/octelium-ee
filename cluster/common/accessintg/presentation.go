@@ -186,7 +186,12 @@ func BuildPresentation(ctx context.Context, opts *BuildPresentationOpts) (*Prese
 		ret.StepIndex = int(binding.Status.StepIndex) + 1
 		ret.StepName = binding.Status.StepName
 
-		if int(binding.Status.StepIndex) < len(steps) {
+		isRecipient, err := isBindingRecipient(ctx, opts.OcteliumC, binding, req)
+		if err != nil {
+			return nil, err
+		}
+
+		if isRecipient && int(binding.Status.StepIndex) < len(steps) {
 			step := steps[binding.Status.StepIndex]
 
 			decisions, err := stepDecisions(ctx, opts.OcteliumC, req, binding.Status.StepIndex)
@@ -201,7 +206,10 @@ func BuildPresentation(ctx context.Context, opts *BuildPresentationOpts) (*Prese
 			}
 		}
 
-		isCurrent := IsBindingCurrent(binding, req)
+		isCurrent, err := IsBindingCurrent(ctx, opts.OcteliumC, binding, req)
+		if err != nil {
+			return nil, err
+		}
 
 		ret.IsAwaitingRequester = isCurrent && accesscmd.IsAwaitingRequester(req)
 		ret.IsActionable = isCurrent && !ret.IsAwaitingRequester &&
@@ -209,6 +217,20 @@ func BuildPresentation(ctx context.Context, opts *BuildPresentationOpts) (*Prese
 	}
 
 	return ret, nil
+}
+
+func isBindingRecipient(ctx context.Context, octeliumC octeliumc.ClientInterface,
+	binding *accessv1.IntegrationBinding, req *accessv1.Request) (bool, error) {
+	if !isReviewerBinding(binding) {
+		return true, nil
+	}
+
+	usr, err := accesscmd.GetUser(ctx, octeliumC, binding.Status.UserRef)
+	if err != nil {
+		return false, err
+	}
+
+	return accesscmd.IsParticipant(ctx, octeliumC, usr, req)
 }
 
 func stepDecisions(ctx context.Context, octeliumC octeliumc.ClientInterface,

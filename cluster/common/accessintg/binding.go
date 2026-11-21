@@ -36,31 +36,53 @@ func BindingName(requestUID string, status *accessv1.IntegrationBinding_Status, 
 		status.Audience.String(), status.InteractionMode.String())
 }
 
-func IsBindingCurrent(binding *accessv1.IntegrationBinding, req *accessv1.Request) bool {
+func IsBindingCurrent(ctx context.Context, octeliumC octeliumc.ClientInterface,
+	binding *accessv1.IntegrationBinding, req *accessv1.Request) (bool, error) {
 	if !accesscmd.IsPending(req) {
-		return false
+		return false, nil
 	}
 
 	switch binding.Status.Purpose {
 	case accessv1.IntegrationBinding_Status_REVIEW_SURFACE:
 		step, stepIndex, err := accesscmd.CurrentStep(req)
 		if err != nil || stepIndex != binding.Status.StepIndex ||
-			binding.Status.SpecRevision != req.Status.SpecRevision {
-			return false
+			binding.Status.SpecRevision != req.Status.SpecRevision ||
+			!hasBindingSurface(binding, step.Surfaces) {
+			return false, nil
 		}
 
-		return hasBindingSurface(binding, step.Surfaces)
+		if !isReviewerBinding(binding) {
+			return true, nil
+		}
+
+		usrs, err := accesscmd.GetStepReviewerUsers(ctx, octeliumC, step, req)
+		if err != nil {
+			return false, err
+		}
+
+		for _, usr := range usrs {
+			if usr.Metadata.Uid == binding.Status.UserRef.Uid {
+				return true, nil
+			}
+		}
+
+		return false, nil
 
 	case accessv1.IntegrationBinding_Status_NOTIFICATION:
 		if req.Status.Rule == nil {
-			return true
+			return true, nil
 		}
 
-		return hasBindingSurface(binding, req.Status.Rule.Notifications)
+		return hasBindingSurface(binding, req.Status.Rule.Notifications), nil
 
 	default:
-		return false
+		return false, nil
 	}
+}
+
+func isReviewerBinding(binding *accessv1.IntegrationBinding) bool {
+	return binding.Status.Audience == accessv1.Policy_Spec_Rule_Surface_Destination_REVIEWERS &&
+		binding.Status.UserRef != nil && binding.Status.UserRef.Uid != ""
 }
 
 func hasBindingSurface(binding *accessv1.IntegrationBinding, surfaces []*accessv1.Policy_Spec_Rule_Surface) bool {

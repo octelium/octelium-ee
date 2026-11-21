@@ -27,6 +27,7 @@ import (
 	"github.com/octelium/octelium/apis/rsc/raccessv1"
 	"github.com/octelium/octelium/apis/rsc/rcorev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/celengine"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
@@ -147,6 +148,81 @@ func getRequest(t *testing.T, ctx context.Context,
 	out, err := octeliumC.AccessC().GetRequest(ctx, &rmetav1.GetOptions{Uid: uid})
 	assert.Nil(t, err, "%+v", err)
 	return out
+}
+
+func useRequestController(t *testing.T, ctx context.Context, w *Watcher, octeliumC octeliumc.ClientInterface) {
+	celEngine, err := celengine.New(ctx, nil)
+	require.NoError(t, err)
+
+	ctl, err := requests.NewController(ctx, octeliumC, celEngine)
+	require.NoError(t, err)
+
+	w.requestCtl = ctl
+}
+
+func withCatalog(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInterface,
+	req *accessv1.Request) *accessv1.Catalog {
+	usr, err := octeliumC.CoreC().CreateUser(ctx, &corev1.User{
+		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
+		Spec:     &corev1.User_Spec{Type: corev1.User_Spec_HUMAN},
+		Status:   &corev1.User_Status{},
+	})
+	require.NoError(t, err)
+
+	svc, err := octeliumC.CoreC().CreateService(ctx, &corev1.Service{
+		Metadata: &metav1.Metadata{Name: fmt.Sprintf("%s.default", utilrand.GetRandomStringCanonical(8))},
+		Spec:     &corev1.Service_Spec{},
+		Status:   &corev1.Service_Status{},
+	})
+	require.NoError(t, err)
+
+	catalog, err := octeliumC.AccessC().CreateCatalog(ctx, &accessv1.Catalog{
+		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
+		Spec: &accessv1.Catalog_Spec{
+			ResourceCollection: &accessv1.Catalog_Spec_ResourceCollection{
+				Service: &accessv1.Catalog_Spec_ResourceCollection_Service{
+					Services: []string{svc.Metadata.Name},
+				},
+			},
+			AccessLevels: []*accessv1.Catalog_Spec_AccessLevel{
+				{
+					Name: "full",
+					Type: &accessv1.Catalog_Spec_AccessLevel_Full_{
+						Full: &accessv1.Catalog_Spec_AccessLevel_Full{},
+					},
+				},
+			},
+		},
+		Status: &accessv1.Catalog_Status{},
+	})
+	require.NoError(t, err)
+
+	req.Status.UserRef = umetav1.GetObjectReference(usr)
+	req.Spec.Resource = &accessv1.Request_Spec_Resource{
+		Type: &accessv1.Request_Spec_Resource_Catalog_{
+			Catalog: &accessv1.Request_Spec_Resource_Catalog{
+				CatalogRef: umetav1.GetObjectReference(catalog),
+			},
+		},
+	}
+
+	return catalog
+}
+
+func setFallbackReviewers(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInterface,
+	reviewers ...*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer) {
+	cc, err := octeliumC.AccessV1Utils().GetClusterConfig(ctx)
+	require.NoError(t, err)
+
+	if cc.Spec == nil {
+		cc.Spec = &accessv1.ClusterConfig_Spec{}
+	}
+	cc.Spec.Review = &accessv1.ClusterConfig_Spec_Review{
+		FallbackReviewers: reviewers,
+	}
+
+	_, err = octeliumC.AccessC().UpdateClusterConfig(ctx, cc)
+	require.NoError(t, err)
 }
 
 func createAccessPolicyTrigger(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInterface,
@@ -790,6 +866,7 @@ func TestWatcherEscalatesAfterTheEscalationDelay(t *testing.T) {
 
 func TestWatcherReroutesAStepWhoseReviewersLeft(t *testing.T) {
 	ctx, w, octeliumC := newWatcherTest(t)
+	useRequestController(t, ctx, w, octeliumC)
 
 	newUser := func() *corev1.User {
 		usr, err := octeliumC.CoreC().CreateUser(ctx, &corev1.User{
@@ -804,15 +881,7 @@ func TestWatcherReroutesAStepWhoseReviewersLeft(t *testing.T) {
 	reviewer := newUser()
 	fallback := newUser()
 
-	cc := &accessv1.ClusterConfig{
-		Spec: &accessv1.ClusterConfig_Spec{
-			Review: &accessv1.ClusterConfig_Spec_Review{
-				FallbackReviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
-					userReviewer(umetav1.GetObjectReference(fallback)),
-				},
-			},
-		},
-	}
+	setFallbackReviewers(t, ctx, octeliumC, userReviewer(umetav1.GetObjectReference(fallback)))
 
 	step := timeoutStep(nil, accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_UNSET)
 	step.Reviewers = []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
@@ -830,12 +899,13 @@ func TestWatcherReroutesAStepWhoseReviewersLeft(t *testing.T) {
 			RequiredApprovals:     1,
 		},
 	}
+	withCatalog(t, ctx, octeliumC, req)
 	req, err := octeliumC.AccessC().UpdateRequest(ctx, req)
 	require.NoError(t, err)
 
-	require.NoError(t, w.doCheckRequest(ctx, req, cc))
+	require.NoError(t, w.doCheckRequest(ctx, req, nil))
 	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
-	require.NoError(t, w.doCheckRequest(ctx, reqG, cc))
+	require.NoError(t, w.doCheckRequest(ctx, reqG, nil))
 	assert.Equal(t, reqG.Metadata.ResourceVersion,
 		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Metadata.ResourceVersion)
 	assert.Equal(t, reviewer.Metadata.Uid, reqG.Status.Review.Steps[0].EligibleReviewers[0].Uid)
@@ -844,7 +914,7 @@ func TestWatcherReroutesAStepWhoseReviewersLeft(t *testing.T) {
 	_, err = octeliumC.CoreC().UpdateUser(ctx, reviewer)
 	require.NoError(t, err)
 
-	require.NoError(t, w.doCheckRequest(ctx, reqG, cc))
+	require.NoError(t, w.doCheckRequest(ctx, reqG, nil))
 
 	reqG = getRequest(t, ctx, octeliumC, req.Metadata.Uid)
 	stepState := reqG.Status.Review.Steps[0]
@@ -852,6 +922,7 @@ func TestWatcherReroutesAStepWhoseReviewersLeft(t *testing.T) {
 	require.Len(t, stepState.EligibleReviewers, 1)
 	assert.Equal(t, fallback.Metadata.Uid, stepState.EligibleReviewers[0].Uid)
 
+	setFallbackReviewers(t, ctx, octeliumC)
 	require.NoError(t, w.doCheckRequest(ctx, reqG, nil))
 	assert.True(t, getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.Review.Steps[0].IsUnroutable)
 }
@@ -906,6 +977,7 @@ func TestWatcherHandsRetriesToTheRequestController(t *testing.T) {
 
 func TestWatcherCompletesAnAllStepAfterAReviewerLeaves(t *testing.T) {
 	ctx, w, octeliumC := newWatcherTest(t)
+	useRequestController(t, ctx, w, octeliumC)
 
 	newUser := func() *corev1.User {
 		usr, err := octeliumC.CoreC().CreateUser(ctx, &corev1.User{
@@ -931,6 +1003,7 @@ func TestWatcherCompletesAnAllStepAfterAReviewerLeaves(t *testing.T) {
 
 	req := createPendingRequest(t, ctx, octeliumC, reviewRule(step), time.Now())
 	req.Status.SpecRevision = 1
+	withCatalog(t, ctx, octeliumC, req)
 	require.NoError(t, accesscmd.StartReviewStep(ctx, &accesscmd.StartReviewStepOpts{
 		OcteliumC: octeliumC,
 		Request:   req,
@@ -966,4 +1039,63 @@ func TestWatcherCompletesAnAllStepAfterAReviewerLeaves(t *testing.T) {
 	assert.Equal(t, accessv1.Request_Status_State_APPROVED, req.Status.State.Status)
 	assert.Equal(t, accessv1.Request_Status_State_APPROVED_BY_REVIEWERS, req.Status.State.Reason)
 	assert.Len(t, req.Status.Review.LastSteps, 2)
+}
+
+func TestWatcherDoesNotApproveADisabledCatalog(t *testing.T) {
+	ctx, w, octeliumC := newWatcherTest(t)
+	useRequestController(t, ctx, w, octeliumC)
+
+	newUser := func() *corev1.User {
+		usr, err := octeliumC.CoreC().CreateUser(ctx, &corev1.User{
+			Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
+			Spec:     &corev1.User_Spec{Type: corev1.User_Spec_HUMAN},
+			Status:   &corev1.User_Status{},
+		})
+		require.NoError(t, err)
+		return usr
+	}
+
+	reviewerA := newUser()
+	reviewerB := newUser()
+
+	step := timeoutStep(nil, accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_UNSET)
+	step.ApprovalRequirement = accessv1.Policy_Spec_Rule_Action_Review_Step_ALL
+	step.Reviewers = []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
+		userReviewer(umetav1.GetObjectReference(reviewerA)),
+		userReviewer(umetav1.GetObjectReference(reviewerB)),
+	}
+
+	req := createPendingRequest(t, ctx, octeliumC, reviewRule(step), time.Now())
+	req.Status.SpecRevision = 1
+	catalog := withCatalog(t, ctx, octeliumC, req)
+	require.NoError(t, accesscmd.StartReviewStep(ctx, &accesscmd.StartReviewStepOpts{
+		OcteliumC: octeliumC,
+		Request:   req,
+		Index:     0,
+	}))
+	req, err := octeliumC.AccessC().UpdateRequest(ctx, req)
+	require.NoError(t, err)
+
+	_, err = accesscmd.SetReviewDecision(ctx, &accesscmd.SetReviewDecisionOpts{
+		OcteliumC:            octeliumC,
+		Reviewer:             reviewerA,
+		Request:              req,
+		Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+		ExpectedStepName:     "step-1",
+		ExpectedSpecRevision: 1,
+	})
+	require.NoError(t, err)
+
+	catalog.Spec.IsDisabled = true
+	_, err = octeliumC.AccessC().UpdateCatalog(ctx, catalog)
+	require.NoError(t, err)
+
+	reviewerB.Spec.IsDisabled = true
+	_, err = octeliumC.CoreC().UpdateUser(ctx, reviewerB)
+	require.NoError(t, err)
+
+	require.NoError(t, w.doCheckRequest(ctx, req, nil))
+	req = getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_REJECTED, req.Status.State.Status)
+	assert.Equal(t, accessv1.Request_Status_State_NOT_REQUESTABLE, req.Status.State.Reason)
 }
