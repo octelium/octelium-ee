@@ -3,6 +3,7 @@ import "@mantine/core/styles.layer.css";
 import * as AccessP from "@/apis/accessv1/accessv1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { RouteErrorBoundary } from "@/components/ErrorBoundary";
+import ResourceCreateRoute from "@/components/ResourceLayout/ResourceCreateRoute";
 import ResourceItemDrawer from "@/components/ResourceLayout/ResourceItemDrawer";
 import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
 import catalogInfo from "@/pages/access/Catalog/router";
@@ -366,6 +367,16 @@ const router = createMemoryRouter(
         { path: "policy-edit", element: <PolicyEditPage /> },
         { path: "access/requests", element: <div /> },
         { path: "access/catalogs", element: <div /> },
+        {
+          path: "access/catalogs/create",
+          element: (
+            <ResourceCreateRoute
+              api="access"
+              kind="Catalog"
+              specComponent={catalogInfo.Item!.Edit!}
+            />
+          ),
+        },
         { path: "access/requests/:name", ...drawer(requestInfo) },
         { path: "access/catalogs/:name", ...drawer(catalogInfo) },
         {

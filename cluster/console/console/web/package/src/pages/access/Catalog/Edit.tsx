@@ -353,6 +353,7 @@ const Edit = (props: {
       <EditItem
         title="Access levels"
         description="What an approved request grants. Requesters choose one of these levels; the first one is the default."
+        obj={req.spec}
       >
         <div className="flex flex-col gap-3">
           {levels.length === 0 && (
@@ -419,6 +420,7 @@ const Edit = (props: {
       <EditItem
         title="Who can request"
         description="Leave empty to let every User request this Catalog for themselves."
+        obj={req.spec}
       >
         <div className="flex flex-col gap-4">
           <Principals
@@ -462,6 +464,7 @@ const Edit = (props: {
       <EditItem
         title="Owners"
         description="The people responsible for this Catalog. Review steps can route requests to them."
+        obj={req.spec}
       >
         <Principals
           label="Owner"
@@ -481,6 +484,7 @@ const Edit = (props: {
       <EditItem
         title="Requirements"
         description="What every request for this Catalog must include."
+        obj={req.spec}
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-end gap-3">
@@ -551,7 +555,7 @@ const Edit = (props: {
         </div>
       </EditItem>
 
-      <EditItem title="Options">
+      <EditItem title="Options" obj={req.spec}>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
             <span className="text-xs font-semibold text-slate-700">Namespace membership</span>

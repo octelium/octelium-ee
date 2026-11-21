@@ -174,6 +174,47 @@ describe("Access pages", () => {
     await page.getByText("Change ticket", { exact: false }).first().waitFor();
   });
 
+  it("expands the Catalog creation sections and preserves their fields", async () => {
+    await load("/access/catalogs/create");
+
+    for (const [title, content] of [
+      ["Access levels", page.getByRole("button", { name: "Add full access", exact: true })],
+      ["Who can request", page.getByRole("textbox", { name: "Requester condition", exact: true })],
+      ["Owners", page.getByText("Owner Groups", { exact: true })],
+      ["Requirements", page.getByRole("switch", { name: "Require a justification", exact: true })],
+      ["Options", page.getByRole("switch", { name: "Let requesters pick individual Services", exact: true })],
+    ]) {
+      const toggle = page.getByRole("button", { name: new RegExp(`^${title}`) });
+      await toggle.waitFor();
+      assert.equal(await toggle.isEnabled(), true);
+      if (await toggle.getAttribute("aria-expanded") !== "true") await toggle.click();
+      await content.waitFor();
+      await toggle.click();
+      await content.waitFor({ state: "hidden" });
+      assert.equal(await toggle.getAttribute("aria-expanded"), "false");
+      await toggle.press("Enter");
+      await content.waitFor();
+      assert.equal(await toggle.getAttribute("aria-expanded"), "true");
+    }
+
+    await page.getByRole("button", { name: "Add full access", exact: true }).click();
+    const condition = page.getByRole("textbox", { name: "Requester condition", exact: true });
+    await condition.fill('ctx.user.metadata.name == "alice"');
+    const required = page.getByRole("switch", { name: "Require a justification", exact: true });
+    await required.click();
+    await page.getByRole("button", { name: /^Who can request/ }).click();
+    await page.getByRole("button", { name: /^Requirements/ }).click();
+    await page.getByRole("button", { name: /^Who can request/ }).click();
+    await page.getByRole("button", { name: /^Requirements/ }).click();
+    assert.equal(await condition.inputValue(), 'ctx.user.metadata.name == "alice"');
+    assert.equal(await required.isChecked(), true);
+    await page.getByRole("textbox", { name: "Name", exact: true }).last().waitFor();
+    assert.equal(await page.getByRole("textbox", { name: "Name", exact: true }).last().inputValue(), "full");
+
+    await page.getByRole("button", { name: /^Catalog resources/ }).click();
+    await page.getByText("Individual Services", { exact: true }).waitFor();
+  });
+
   it("edits the message, limits and reason rules of a rule", async () => {
     await load("/policy-edit");
     await page.getByRole("textbox", { name: /^Message/ }).fill("Ask in #access instead.");
