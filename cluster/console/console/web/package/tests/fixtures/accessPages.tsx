@@ -1,6 +1,7 @@
 import "@/index.css";
 import "@mantine/core/styles.layer.css";
 import * as AccessP from "@/apis/accessv1/accessv1";
+import * as CoreP from "@/apis/corev1/corev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { RouteErrorBoundary } from "@/components/ErrorBoundary";
 import ResourceCreateRoute from "@/components/ResourceLayout/ResourceCreateRoute";
@@ -309,6 +310,21 @@ const handlers: Record<string, (request: any) => unknown> = {
       ),
     }),
   listPolicy: () => AccessP.PolicyList.create({ items: [catalogPolicy] }),
+  listUser: () => CoreP.UserList.create({
+    items: ["alice", "bob"].map((name) => CoreP.User.create({
+      apiVersion: "core/v1",
+      kind: "User",
+      metadata: { name, uid: `uid-${name}` },
+      spec: { type: CoreP.User_Spec_Type.HUMAN, email: `${name}@example.com` },
+    })),
+  }),
+  simulateRequest: (request) => {
+    if (!request.spec?.subject?.type?.userRef)
+      throw new RpcError("The subject must be set", "INVALID_ARGUMENT");
+    return AccessP.SimulateRequestResponse.create({
+      preview: { outcome: AccessP.RequestPreview_Outcome.REVIEW },
+    });
+  },
 };
 
 for (const client of [
@@ -348,12 +364,17 @@ const ChunkError = () => {
   );
 };
 
-const drawer = (info: { infoItemsGetter?: any }) => ({
+const drawer = (info: { infoItemsGetter?: any; Item?: { MainAction?: any } }) => ({
   element: <ResourceItemDrawer />,
   children: [
     {
       path: "",
-      element: <ResourceItemMainPage infoComponent={info.infoItemsGetter} />,
+      element: (
+        <ResourceItemMainPage
+          infoComponent={info.infoItemsGetter}
+          mainAction={info.Item?.MainAction}
+        />
+      ),
     },
   ],
 });

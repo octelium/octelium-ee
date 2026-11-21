@@ -215,6 +215,63 @@ describe("Access pages", () => {
     await page.getByText("Individual Services", { exact: true }).waitFor();
   });
 
+  it("keeps the selected requester visible when reopening a Catalog simulation", async () => {
+    await load("/access/catalogs/production-support");
+    await page.getByRole("button", { name: "Simulate", exact: true }).click();
+    const modal = page.getByRole("dialog").filter({
+      has: page.getByRole("heading", { name: "Simulate a request", exact: true }),
+    });
+    assert.equal(await modal.getByRole("button", { name: "Run simulation", exact: true }).isDisabled(), true);
+    await modal.getByText("Select a User…", { exact: true }).click();
+    const picker = page.getByRole("dialog", { name: /Select User/ });
+    await picker.getByRole("option", { name: /^alice/ }).click();
+    await picker.waitFor({ state: "hidden" });
+    assert.equal(await modal.getByRole("button", { name: /^alice/ }).count(), 1);
+    assert.equal(await modal.getByRole("button", { name: "Run simulation", exact: true }).isEnabled(), true);
+    await modal.getByRole("button", { name: "Close", exact: true }).click();
+    await modal.waitFor({ state: "hidden" });
+    await page.getByRole("button", { name: "Simulate", exact: true }).click();
+    await modal.waitFor();
+    assert.equal(await modal.getByRole("button", { name: /^alice/ }).count(), 1);
+    assert.equal(await modal.getByRole("button", { name: "Run simulation", exact: true }).isEnabled(), true);
+  });
+
+  it("simulates Catalog access for the selected requester and updates the subject when changed", async () => {
+    await load("/access/catalogs/production-support");
+    await page.getByRole("button", { name: "Simulate", exact: true }).click();
+    const modal = page.getByRole("dialog").filter({
+      has: page.getByRole("heading", { name: "Simulate a request", exact: true }),
+    });
+    await modal.getByText("Select a User…", { exact: true }).click();
+    const picker = page.getByRole("dialog", { name: /Select User/ });
+    await picker.getByRole("option", { name: /^alice/ }).click();
+    await picker.waitFor({ state: "hidden" });
+    await modal.getByRole("button", { name: "Run simulation", exact: true }).click();
+    await page.waitForFunction(() => window.access.calls.some((call) => call.method === "simulateRequest"));
+    const first = await page.evaluate(() =>
+      window.access.calls.find((call) => call.method === "simulateRequest").request,
+    );
+    assert.equal(first.requesterRef.name, "alice");
+    assert.deepEqual(first.spec.subject?.type, { oneofKind: "userRef", userRef: first.requesterRef });
+    assert.equal(first.spec.resource.type.catalog.catalogRef.name, "production-support");
+    assert.equal(first.spec.resource.type.catalog.accessLevel, "read-only");
+    await modal.getByText("Goes to review", { exact: true }).waitFor();
+
+    await modal.getByRole("button", { name: /^alice/ }).click();
+    assert.equal(await picker.getByRole("option", { name: /^alice/ }).getAttribute("aria-selected"), "true");
+    await picker.getByRole("option", { name: /^bob/ }).click();
+    await picker.waitFor({ state: "hidden" });
+    assert.equal(await modal.getByText("Goes to review", { exact: true }).count(), 0);
+    await modal.getByRole("button", { name: "Run simulation", exact: true }).click();
+    await page.waitForFunction(() => window.access.calls.filter((call) => call.method === "simulateRequest").length === 2);
+    const second = await page.evaluate(() =>
+      window.access.calls.filter((call) => call.method === "simulateRequest")[1].request,
+    );
+    assert.equal(second.requesterRef.name, "bob");
+    assert.deepEqual(second.spec.subject?.type, { oneofKind: "userRef", userRef: second.requesterRef });
+    await modal.getByText("Goes to review", { exact: true }).waitFor();
+  });
+
   it("edits the message, limits and reason rules of a rule", async () => {
     await load("/policy-edit");
     await page.getByRole("textbox", { name: /^Message/ }).fill("Ask in #access instead.");

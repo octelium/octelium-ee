@@ -131,6 +131,11 @@ const SimulateRequest = (props: { item: AccessPB.Catalog }) => {
           AccessPB.SimulateRequestRequest.create({
             requesterRef: requester,
             spec: AccessPB.Request_Spec.create({
+              subject: requester
+                ? AccessPB.Request_Spec_Subject.create({
+                    type: { oneofKind: "userRef", userRef: requester },
+                  })
+                : undefined,
               duration,
               resource: {
                 type: {
@@ -201,6 +206,7 @@ const SimulateRequest = (props: { item: AccessPB.Catalog }) => {
             kind="User"
             label="Requester"
             description="The User who would request this Catalog for themselves."
+            defaultValue={requester?.name}
             onChange={(resource) => {
               setRequester(resource ? getResourceRef(resource) : undefined);
               mutation.reset();
