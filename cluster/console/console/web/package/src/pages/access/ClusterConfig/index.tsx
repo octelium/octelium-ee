@@ -295,7 +295,7 @@ const Edit = (props: {
       <ConfigSection
         icon={<Users size={15} strokeWidth={2.2} />}
         title="Fallback reviewers"
-        description="When a review step has nobody who can review it and no escalation, these reviewers are used instead of leaving the Request stuck."
+        description="When a review step has fewer eligible reviewers than the approvals it needs, even after its escalation, these reviewers are added to it instead of leaving the Request stuck."
       >
         <div className="@container">
           <ReviewersEdit

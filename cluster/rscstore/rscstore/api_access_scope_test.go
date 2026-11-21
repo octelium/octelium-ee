@@ -398,3 +398,80 @@ func TestAccessScopeFiltersAndCounters(t *testing.T) {
 	require.Len(t, policies.Items, 1)
 	assert.Equal(t, "broken-policy", policies.Items[0].Metadata.Name)
 }
+
+func TestAccessVisibilityMatchesTheEnforcedGrant(t *testing.T) {
+	env := newRscStoreTestEnv(t)
+	if env == nil {
+		return
+	}
+
+	srv := &srvAccess{s: env.srv}
+	now := time.Now().UTC()
+
+	ns := &metav1.ObjectReference{Name: "production", Uid: vutils.UUIDv4()}
+
+	newService := func(name string, isSystem bool) *metav1.Metadata {
+		md := newRscStoreMetadata(name, now)
+		md.IsSystem = isSystem
+		insertRscStoreObject(t, env, &corev1.Service{
+			ApiVersion: ucorev1.APIVersion,
+			Kind:       ucorev1.KindService,
+			Metadata:   md,
+			Spec:       &corev1.Service_Spec{},
+			Status:     &corev1.Service_Status{NamespaceRef: ns},
+		})
+		return md
+	}
+
+	app := newService("app.production", false)
+	admin := newService("admin.production", true)
+
+	newRequest := func(name string, grantState accessv1.Request_Status_Grant_State) {
+		insertRscStoreObject(t, env, &accessv1.Request{
+			ApiVersion: uaccessv1.APIVersion,
+			Kind:       uaccessv1.KindRequest,
+			Metadata:   newRscStoreMetadata(name, now),
+			Spec:       &accessv1.Request_Spec{},
+			Status: &accessv1.Request_Status{
+				State:          &accessv1.Request_Status_State{Status: accessv1.Request_Status_State_APPROVED},
+				AccessStartsAt: timestamppb.New(now.Add(-time.Minute)),
+				AccessEndsAt:   timestamppb.New(now.Add(time.Hour)),
+				Grant:          &accessv1.Request_Status_Grant{State: grantState},
+				ResolvedScope: &accessv1.Request_Status_ResolvedScope{
+					Membership:    accessv1.Catalog_Spec_DYNAMIC,
+					NamespaceRefs: []*metav1.ObjectReference{ns},
+				},
+			},
+		})
+	}
+
+	newRequest("active", accessv1.Request_Status_Grant_ACTIVE)
+	newRequest("provisioning", accessv1.Request_Status_Grant_PROVISIONING)
+
+	list := func(opts *vaccessv1.ListRequestOptions) []string {
+		res, err := srv.ListRequest(env.ctx, opts)
+		require.NoError(t, err)
+		var ret []string
+		for _, itm := range res.Items {
+			ret = append(ret, itm.Metadata.Name)
+		}
+		return ret
+	}
+
+	assert.ElementsMatch(t, []string{"active"}, list(&vaccessv1.ListRequestOptions{IsActive: true}))
+
+	summary, err := srv.GetRequestSummary(env.ctx, &vaccessv1.GetRequestSummaryRequest{})
+	require.NoError(t, err)
+	assert.EqualValues(t, 1, summary.TotalActive)
+
+	for _, ref := range []*metav1.ObjectReference{{Name: app.Name}, {Uid: app.Uid}} {
+		assert.ElementsMatch(t, []string{"active", "provisioning"},
+			list(&vaccessv1.ListRequestOptions{ServiceRef: ref}), "%+v", ref)
+	}
+
+	for _, ref := range []*metav1.ObjectReference{{Name: admin.Name}, {Uid: admin.Uid}} {
+		assert.Empty(t, list(&vaccessv1.ListRequestOptions{ServiceRef: ref}), "%+v", ref)
+	}
+
+	assert.Empty(t, list(&vaccessv1.ListRequestOptions{ServiceRef: &metav1.ObjectReference{Name: "deleted.production"}}))
+}

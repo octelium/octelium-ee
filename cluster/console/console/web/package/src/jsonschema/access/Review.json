@@ -145,7 +145,7 @@
                 },
                 "specRevision": {
                     "type": "integer",
-                    "description": "SpecRevision is the revision of the Request's spec that the current decision was made on. An approval no longer counts once the Request's duration is increased or its justification is changed."
+                    "description": "SpecRevision is the Request's `status.specRevision` that the current decision was made on. A decision no longer counts once the Request's spec revision changes."
                 }
             },
             "additionalProperties": false,

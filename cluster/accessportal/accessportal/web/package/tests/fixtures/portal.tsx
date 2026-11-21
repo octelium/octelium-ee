@@ -396,11 +396,9 @@ stub(getReviewerClient(), "getReview", (options: MetaP.GetOptions) =>
 stub(getReviewerClient(), "setReviewDecision", (options: AccessP.SetReviewDecisionRequest) =>
   AccessP.Review.create({ spec: { decision: options.decision } }),
 );
-stub(getReviewerClient(), "createReview", (review: AccessP.Review) => review);
 stub(getReviewerClient(), "requestInformation", (options: AccessP.RequestInformationRequest) =>
   queue.find((item) => item.metadata?.name === options.requestRef?.name) ?? notFound(),
 );
-stub(getReviewerClient(), "updateReview", (review: AccessP.Review) => review);
 stub(getUserClient(), "updateRequest", (value: AccessP.Request) => {
   const index = myRequests.findIndex((item) => item.metadata?.name === value.metadata?.name);
   myRequests[index] = value;

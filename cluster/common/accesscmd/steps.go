@@ -98,9 +98,10 @@ func StartReviewStep(ctx context.Context, o *StartReviewStepOpts) error {
 	req.Status.Review.CurrentStepStartedAt = now
 
 	stepState := &accessv1.Request_Status_Review_StepState{
-		Name:      StepName(step, o.Index),
-		Index:     o.Index,
-		StartedAt: now,
+		Name:         StepName(step, o.Index),
+		Index:        o.Index,
+		StartedAt:    now,
+		SpecRevision: req.Status.SpecRevision,
 	}
 	req.Status.Review.Steps = append(req.Status.Review.Steps, stepState)
 
@@ -142,40 +143,44 @@ func EscalateStep(ctx context.Context, octeliumC octeliumc.ClientInterface,
 
 func RefreshStepReviewers(ctx context.Context, octeliumC octeliumc.ClientInterface,
 	req *accessv1.Request, cc *accessv1.ClusterConfig) error {
+	_, err := refreshStepReviewers(ctx, octeliumC, req, cc)
+	return err
+}
+
+func refreshStepReviewers(ctx context.Context, octeliumC octeliumc.ClientInterface,
+	req *accessv1.Request, cc *accessv1.ClusterConfig) ([]*corev1.User, error) {
 	review := GetReviewAction(req)
 	stepState := CurrentStepState(req)
 	if review == nil || stepState == nil {
-		return nil
+		return nil, nil
 	}
 
-	step := review.Steps[req.Status.Review.CurrentStep]
+	return planStepReviewers(ctx, octeliumC, req, review.Steps[req.Status.Review.CurrentStep], stepState, cc)
+}
 
-	usrs, err := GetStepEligibleUsers(ctx, octeliumC, req, step, stepState, nil)
+func PlanStepReviewers(ctx context.Context, octeliumC octeliumc.ClientInterface,
+	req *accessv1.Request, step *accessv1.Policy_Spec_Rule_Action_Review_Step,
+	stepState *accessv1.Request_Status_Review_StepState, cc *accessv1.ClusterConfig) error {
+	_, err := planStepReviewers(ctx, octeliumC, req, step, stepState, cc)
+	return err
+}
+
+func planStepReviewers(ctx context.Context, octeliumC octeliumc.ClientInterface,
+	req *accessv1.Request, step *accessv1.Policy_Spec_Rule_Action_Review_Step,
+	stepState *accessv1.Request_Status_Review_StepState, cc *accessv1.ClusterConfig) ([]*corev1.User, error) {
+	resolved, err := resolveStepReviewers(ctx, octeliumC, req, step, stepState, cc)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	hasEscalation := step.Escalation != nil && len(step.Escalation.Reviewers) > 0
-
-	if len(usrs) == 0 && hasEscalation && !stepState.IsEscalated {
+	if resolved.escalate {
 		stepState.IsEscalated = true
 		stepState.EscalatedAt = pbutils.Now()
-
-		usrs, err = GetStepEligibleUsers(ctx, octeliumC, req, step, stepState, nil)
-		if err != nil {
-			return err
-		}
 	}
 
-	if len(usrs) == 0 && cc != nil {
-		usrs, err = GetStepEligibleUsers(ctx, octeliumC, req, step, stepState,
-			cc.GetSpec().GetReview().GetFallbackReviewers())
-		if err != nil {
-			return err
-		}
-	}
+	usrs := resolved.users
 
-	stepState.IsUnroutable = len(usrs) == 0
+	stepState.IsUnroutable = len(usrs) < getMinEligibleReviewers(step)
 	stepState.TotalEligibleReviewer = uint32(len(usrs))
 	stepState.EligibleReviewers = nil
 
@@ -188,7 +193,64 @@ func RefreshStepReviewers(ctx context.Context, octeliumC octeliumc.ClientInterfa
 
 	stepState.RequiredApprovals = GetRequiredApprovals(step, stepState.TotalEligibleReviewer)
 
-	return nil
+	return usrs, nil
+}
+
+type resolvedStepReviewers struct {
+	users    []*corev1.User
+	escalate bool
+}
+
+func resolveStepReviewers(ctx context.Context, octeliumC octeliumc.ClientInterface,
+	req *accessv1.Request,
+	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
+	stepState *accessv1.Request_Status_Review_StepState,
+	cc *accessv1.ClusterConfig) (*resolvedStepReviewers, error) {
+	ret := &resolvedStepReviewers{}
+	minUsers := getMinEligibleReviewers(step)
+
+	usrs, err := GetStepEligibleUsers(ctx, octeliumC, req, step, stepState, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	state := stepState
+	isEscalated := stepState != nil && stepState.IsEscalated
+	hasEscalation := step.Escalation != nil && len(step.Escalation.Reviewers) > 0
+
+	if len(usrs) < minUsers && hasEscalation && !isEscalated {
+		ret.escalate = true
+		state = &accessv1.Request_Status_Review_StepState{
+			IsEscalated: true,
+		}
+
+		usrs, err = GetStepEligibleUsers(ctx, octeliumC, req, step, state, nil)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	fallback := cc.GetSpec().GetReview().GetFallbackReviewers()
+
+	if len(usrs) < minUsers && len(fallback) > 0 {
+		usrs, err = GetStepEligibleUsers(ctx, octeliumC, req, step, state, fallback)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	ret.users = usrs
+
+	return ret, nil
+}
+
+func getMinEligibleReviewers(step *accessv1.Policy_Spec_Rule_Action_Review_Step) int {
+	if step.ApprovalRequirement == accessv1.Policy_Spec_Rule_Action_Review_Step_COUNT &&
+		step.ApprovalCount > 1 {
+		return int(step.ApprovalCount)
+	}
+
+	return 1
 }
 
 func GetRequiredApprovals(step *accessv1.Policy_Spec_Rule_Action_Review_Step, totalEligible uint32) uint32 {
@@ -354,20 +416,10 @@ func getRequestCatalog(ctx context.Context, octeliumC octeliumc.ClientInterface,
 	return GetCatalog(ctx, octeliumC, req.Spec.GetResource().GetCatalog().GetCatalogRef())
 }
 
-func HasStaleAppliedSteps(req *accessv1.Request) bool {
-	if req.Status.Review == nil || req.Status.Review.CurrentStep == 0 {
-		return false
-	}
+func IsReviewStepStale(req *accessv1.Request) bool {
+	stepState := CurrentStepState(req)
 
-	for _, itm := range req.Status.Review.LastSteps {
-		if itm.StepIndex < req.Status.Review.CurrentStep &&
-			itm.Decision == accessv1.Review_Spec_DECISION_APPROVE &&
-			itm.SpecRevision != req.Status.SpecRevision {
-			return true
-		}
-	}
-
-	return false
+	return stepState != nil && stepState.SpecRevision != req.Status.SpecRevision
 }
 
 func IsStepTimedOut(req *accessv1.Request, now time.Time) bool {

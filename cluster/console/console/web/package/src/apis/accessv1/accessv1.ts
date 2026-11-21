@@ -1930,7 +1930,10 @@ export interface Request_Status {
     grant?: Request_Status_Grant;
     /**
      * SpecRevision is incremented every time the Request's spec changes
-     * while it is pending. The reviewers' decisions are bound to it.
+     * while it is pending, as well as every time its resolved scope
+     * materially changes while it is pending. Every increment evaluates the
+     * Request again against the access Policies and restarts its review
+     * workflow. The reviewers' decisions are bound to it.
      *
      * @generated from protobuf field: uint32 specRevision = 16
      */
@@ -2076,8 +2079,8 @@ export enum Request_Status_State_Reason {
      */
     REASON_UNSET = 0,
     /**
-     * SUBMITTED means that the Request was created and is being
-     * evaluated.
+     * SUBMITTED means that the Request was created or changed and that
+     * it is being evaluated.
      *
      * @generated from protobuf enum value: SUBMITTED = 1;
      */
@@ -2378,12 +2381,21 @@ export interface Request_Status_Review_StepState {
      */
     escalatedAt?: Timestamp;
     /**
-     * IsUnroutable is whether the Step has no eligible reviewer at all,
-     * including its escalation and the Cluster's fallback reviewers.
+     * IsUnroutable is whether the Step has fewer eligible reviewers than
+     * it requires approvals, including its escalation and the Cluster's
+     * fallback reviewers.
      *
      * @generated from protobuf field: bool isUnroutable = 12
      */
     isUnroutable: boolean;
+    /**
+     * SpecRevision is the Request's `status.specRevision` at which the
+     * Step started. A Step that started at an older revision no longer
+     * counts.
+     *
+     * @generated from protobuf field: uint32 specRevision = 13
+     */
+    specRevision: number;
 }
 /**
  * Outcome is how the Step ended
@@ -2658,13 +2670,14 @@ export interface Request_Status_Grant {
      */
     state: Request_Status_Grant_State;
     /**
-     * ActivatedAt is the time at which the access became enforced.
+     * ActivatedAt is the time at which the access's PolicyTrigger was put
+     * in place.
      *
      * @generated from protobuf field: google.protobuf.Timestamp activatedAt = 2
      */
     activatedAt?: Timestamp;
     /**
-     * EndedAt is the time at which the access stopped being enforced.
+     * EndedAt is the time at which the access ended.
      *
      * @generated from protobuf field: google.protobuf.Timestamp endedAt = 3
      */
@@ -2708,7 +2721,7 @@ export enum Request_Status_Grant_State {
      */
     PROVISIONING = 2,
     /**
-     * ACTIVE means that the access is enforced.
+     * ACTIVE means that the access's PolicyTrigger is in place.
      *
      * @generated from protobuf enum value: ACTIVE = 3;
      */
@@ -2720,7 +2733,8 @@ export enum Request_Status_Grant_State {
      */
     FAILED = 4,
     /**
-     * ENDED means that the access is no longer enforced.
+     * ENDED means that the access ended. The Cluster removes its
+     * PolicyTrigger and keeps retrying until the removal succeeds.
      *
      * @generated from protobuf enum value: ENDED = 5;
      */
@@ -3083,9 +3097,9 @@ export interface Review_Status {
      */
     origin?: Origin;
     /**
-     * SpecRevision is the revision of the Request's spec that the current
-     * decision was made on. An approval no longer counts once the Request's
-     * duration is increased or its justification is changed.
+     * SpecRevision is the Request's `status.specRevision` that the current
+     * decision was made on. A decision no longer counts once the Request's
+     * spec revision changes.
      *
      * @generated from protobuf field: uint32 specRevision = 9
      */
@@ -5748,6 +5762,15 @@ export interface IntegrationBinding_Status {
      * @generated from protobuf field: repeated string lastExternalEventIDs = 19
      */
     lastExternalEventIDs: string[];
+    /**
+     * SpecRevision is the Request's `status.specRevision` that the external
+     * object presents. It is only set for the REVIEW_SURFACE purpose. The
+     * external object is closed and its decisions are rejected once the
+     * Request's spec revision changes.
+     *
+     * @generated from protobuf field: uint32 specRevision = 20
+     */
+    specRevision: number;
 }
 /**
  * Purpose is what the external object represents
@@ -5809,8 +5832,10 @@ export enum IntegrationBinding_Status_State {
      */
     DEGRADED = 3,
     /**
-     * CLOSED means that the Request reached a final state and that the
-     * external object no longer carries any action.
+     * CLOSED means that the external object no longer carries any action,
+     * either because the Request reached a final state or because the
+     * Request no longer presents it (e.g. its review Step ended, or its
+     * spec revision or its matched Rule changed).
      *
      * @generated from protobuf enum value: CLOSED = 4;
      */
@@ -5888,7 +5913,8 @@ export interface SetReviewDecisionRequest {
      */
     justification: string;
     /**
-     * ExpectedStepName is an optional safety check. If it is set and the
+     * ExpectedStepName is the name of the review Step that the reviewer
+     * decided on. It is required for an approval or a rejection. If the
      * Request is no longer waiting for that review Step, the decision is
      * rejected instead of being applied to another Step.
      *
@@ -5896,10 +5922,10 @@ export interface SetReviewDecisionRequest {
      */
     expectedStepName: string;
     /**
-     * ExpectedSpecRevision is an optional safety check. If it is set and the
-     * Request's `status.specRevision` differs from it (i.e. the requester
-     * changed the Request after the reviewer read it), the decision is
-     * rejected.
+     * ExpectedSpecRevision is the Request's `status.specRevision` that the
+     * reviewer decided on. It is required for an approval or a rejection. If
+     * the Request's `status.specRevision` differs from it (i.e. the Request
+     * changed after the reviewer read it), the decision is rejected.
      *
      * @generated from protobuf field: uint32 expectedSpecRevision = 5
      */
@@ -6044,9 +6070,10 @@ export interface ClusterConfig_Spec_Request {
  */
 export interface ClusterConfig_Spec_Review {
     /**
-     * FallbackReviewers is the list of the reviewers of the review Steps
-     * that have no eligible reviewer at all, including their escalation
-     * reviewers. Only the User and Group reviewers are allowed.
+     * FallbackReviewers is the list of the additional reviewers of the
+     * review Steps that have fewer eligible reviewers than they require
+     * approvals, including their escalation reviewers. Only the User and
+     * Group reviewers are allowed.
      *
      * @generated from protobuf field: repeated octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer fallbackReviewers = 1
      */
@@ -9455,7 +9482,8 @@ class Request_Status_Review_StepState$Type extends MessageType<Request_Status_Re
             { no: 9, name: "endedAt", kind: "message", T: () => Timestamp },
             { no: 10, name: "isEscalated", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 11, name: "escalatedAt", kind: "message", T: () => Timestamp },
-            { no: 12, name: "isUnroutable", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 12, name: "isUnroutable", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 13, name: "specRevision", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<Request_Status_Review_StepState>): Request_Status_Review_StepState {
@@ -9469,6 +9497,7 @@ class Request_Status_Review_StepState$Type extends MessageType<Request_Status_Re
         message.outcome = 0;
         message.isEscalated = false;
         message.isUnroutable = false;
+        message.specRevision = 0;
         if (value !== undefined)
             reflectionMergePartial<Request_Status_Review_StepState>(this, message, value);
         return message;
@@ -9513,6 +9542,9 @@ class Request_Status_Review_StepState$Type extends MessageType<Request_Status_Re
                     break;
                 case /* bool isUnroutable */ 12:
                     message.isUnroutable = reader.bool();
+                    break;
+                case /* uint32 specRevision */ 13:
+                    message.specRevision = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -9562,6 +9594,9 @@ class Request_Status_Review_StepState$Type extends MessageType<Request_Status_Re
         /* bool isUnroutable = 12; */
         if (message.isUnroutable !== false)
             writer.tag(12, WireType.Varint).bool(message.isUnroutable);
+        /* uint32 specRevision = 13; */
+        if (message.specRevision !== 0)
+            writer.tag(13, WireType.Varint).uint32(message.specRevision);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -14918,7 +14953,8 @@ class IntegrationBinding_Status$Type extends MessageType<IntegrationBinding_Stat
             { no: 16, name: "nextAttemptAt", kind: "message", T: () => Timestamp },
             { no: 17, name: "attempts", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 18, name: "lastError", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 19, name: "lastExternalEventIDs", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+            { no: 19, name: "lastExternalEventIDs", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 20, name: "specRevision", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<IntegrationBinding_Status>): IntegrationBinding_Status {
@@ -14937,6 +14973,7 @@ class IntegrationBinding_Status$Type extends MessageType<IntegrationBinding_Stat
         message.attempts = 0;
         message.lastError = "";
         message.lastExternalEventIDs = [];
+        message.specRevision = 0;
         if (value !== undefined)
             reflectionMergePartial<IntegrationBinding_Status>(this, message, value);
         return message;
@@ -15002,6 +15039,9 @@ class IntegrationBinding_Status$Type extends MessageType<IntegrationBinding_Stat
                     break;
                 case /* repeated string lastExternalEventIDs */ 19:
                     message.lastExternalEventIDs.push(reader.string());
+                    break;
+                case /* uint32 specRevision */ 20:
+                    message.specRevision = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -15072,6 +15112,9 @@ class IntegrationBinding_Status$Type extends MessageType<IntegrationBinding_Stat
         /* repeated string lastExternalEventIDs = 19; */
         for (let i = 0; i < message.lastExternalEventIDs.length; i++)
             writer.tag(19, WireType.LengthDelimited).string(message.lastExternalEventIDs[i]);
+        /* uint32 specRevision = 20; */
+        if (message.specRevision !== 0)
+            writer.tag(20, WireType.Varint).uint32(message.specRevision);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -16006,8 +16049,6 @@ export const ReviewerService = new ServiceType("octelium.api.main.access.v1.Revi
     { name: "RequestInformation", options: {}, I: RequestInformationRequest, O: Request },
     { name: "ListReview", options: {}, I: ListReviewerReviewOptions, O: ReviewList },
     { name: "GetReview", options: {}, I: GetOptions, O: Review },
-    { name: "CreateReview", options: {}, I: Review, O: Review },
-    { name: "UpdateReview", options: {}, I: Review, O: Review },
     { name: "CancelReview", options: {}, I: CancelReviewRequest, O: OperationResult },
     { name: "SetReviewDecision", options: {}, I: SetReviewDecisionRequest, O: Review }
 ]);

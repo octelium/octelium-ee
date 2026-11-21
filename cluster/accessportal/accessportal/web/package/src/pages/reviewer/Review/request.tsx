@@ -611,8 +611,8 @@ const ReviewRequest = () => {
           />
           <PeopleCard request={item} />
           <ResourceCard request={item} reviewer />
-          <DecisionPanel {...panelProps} className="lg:hidden" />
           <GrantCard request={item} />
+          <DecisionPanel {...panelProps} className="lg:hidden" />
           <RequesterHistoryCard reviewCase={reviewCase} />
           <ReviewWorkflow request={item} />
           <RequestTimeline request={item} />

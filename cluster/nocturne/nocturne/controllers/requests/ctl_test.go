@@ -21,6 +21,7 @@ import (
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/raccessv1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/celengine"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
@@ -30,6 +31,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 )
 
 func newControllerTest(t *testing.T) (context.Context, *Controller, octeliumc.ClientInterface) {
@@ -1115,6 +1117,38 @@ func TestRequestFailedGuardrailBlocksApproval(t *testing.T) {
 	assert.False(t, policyTriggerExists(t, ctx, octeliumC, reqG))
 }
 
+func TestRequestFailedAutoApproveRuleBlocksALaterGrant(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	createPolicy(t, ctx, octeliumC, false,
+		&accessv1.Policy_Spec_Rule{
+			Name:        "short",
+			Effect:      accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+			Condition:   celMatch("1 / 0 == 1"),
+			MaxDuration: durationHours(1),
+		},
+		&accessv1.Policy_Spec_Rule{
+			Name:        "long",
+			Effect:      accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+			Condition:   matchAny(),
+			MaxDuration: durationHours(8),
+		})
+
+	in := baseRequest(createUserRef(t, ctx, octeliumC), createCatalog(t, ctx, octeliumC, nil))
+	in.Spec.Duration = durationHours(8)
+	req := createRequest(t, ctx, octeliumC, in)
+
+	reqG := req
+	for i := 0; i < maxEvaluationAttempts+1; i++ {
+		reqG = converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
+	}
+
+	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqG.Status.State.Status)
+	assert.Equal(t, accessv1.Request_Status_State_EVALUATION_FAILED, reqG.Status.State.Reason)
+	assert.Contains(t, reqG.Status.Evaluation.LastError, "short")
+	assert.False(t, policyTriggerExists(t, ctx, octeliumC, reqG))
+}
+
 func TestRequestExpiredDeadlineIsNeverApproved(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
@@ -1258,6 +1292,136 @@ func TestRequestLateReconcileDoesNotRecreateARevokedGrant(t *testing.T) {
 	assert.False(t, policyTriggerExists(t, ctx, octeliumC, reqApproved))
 	assert.Equal(t, accessv1.Request_Status_State_REVOKED,
 		getRequest(t, ctx, octeliumC, reqApproved.Metadata.Uid).Status.State.Status)
+}
+
+type failingRequestReads struct {
+	raccessv1.ResourceServiceClient
+	uid       string
+	succeeded int
+	reads     *int
+}
+
+func (c *failingRequestReads) GetRequest(ctx context.Context, opts *rmetav1.GetOptions,
+	callOpts ...grpc.CallOption) (*accessv1.Request, error) {
+	if opts.Uid == c.uid {
+		*c.reads = *c.reads + 1
+		if *c.reads > c.succeeded {
+			return nil, errors.Errorf("temporary Request read failure")
+		}
+	}
+
+	return c.ResourceServiceClient.GetRequest(ctx, opts, callOpts...)
+}
+
+type failingRequestReadsClient struct {
+	octeliumc.ClientInterface
+	access raccessv1.ResourceServiceClient
+}
+
+func (c *failingRequestReadsClient) AccessC() raccessv1.ResourceServiceClient {
+	return c.access
+}
+
+func withFailingRequestReads(ctrl *Controller, req *accessv1.Request, succeeded int) *Controller {
+	reads := 0
+	return &Controller{
+		octeliumC: &failingRequestReadsClient{
+			ClientInterface: ctrl.octeliumC,
+			access: &failingRequestReads{
+				ResourceServiceClient: ctrl.octeliumC.AccessC(),
+				uid:                   req.Metadata.Uid,
+				succeeded:             succeeded,
+				reads:                 &reads,
+			},
+		},
+		celEngine:     ctrl.celEngine,
+		evaluator:     ctrl.evaluator,
+		clusterDomain: ctrl.clusterDomain,
+	}
+}
+
+func TestRequestFailedReadsNeverLeaveAGrantBehind(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	reqApproved := autoApprovedRequest(t, ctx, ctrl, octeliumC)
+	stale := pbutils.Clone(reqApproved).(*accessv1.Request)
+
+	accesscmd.SetRequestState(reqApproved, &accesscmd.StateChange{
+		Status: accessv1.Request_Status_State_REVOKED,
+		Reason: accessv1.Request_Status_State_ACCESS_REVOKED,
+	})
+	_, err := octeliumC.AccessC().UpdateRequest(ctx, reqApproved)
+	require.NoError(t, err)
+	require.NoError(t, accesscmd.DeletePolicyTriggerOf(ctx, octeliumC, reqApproved))
+
+	assert.NotNil(t, withFailingRequestReads(ctrl, reqApproved, 0).doReconcile(ctx, stale))
+	assert.False(t, policyTriggerExists(t, ctx, octeliumC, reqApproved))
+	assert.Equal(t, accessv1.Request_Status_State_REVOKED,
+		getRequest(t, ctx, octeliumC, reqApproved.Metadata.Uid).Status.State.Status)
+
+	active := autoApprovedRequest(t, ctx, ctrl, octeliumC)
+	require.NoError(t, accesscmd.DeletePolicyTriggerOf(ctx, octeliumC, active))
+
+	assert.Nil(t, withFailingRequestReads(ctrl, active, 1).doReconcile(ctx, getRequest(t, ctx, octeliumC, active.Metadata.Uid)))
+	assert.False(t, policyTriggerExists(t, ctx, octeliumC, active))
+
+	active = converge(t, ctx, ctrl, octeliumC, active.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, active.Status.State.Status)
+	assert.True(t, policyTriggerExists(t, ctx, octeliumC, active))
+}
+
+func TestRequestAnswerFinalizesAQueuedApproval(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	reviewer := createUser(t, ctx, octeliumC)
+	step := anyStep(userReviewer(umetav1.GetObjectReference(reviewer)))
+	step.Name = "lead"
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_REVIEW,
+		Condition: matchAny(),
+		Action:    reviewAction(step),
+	})
+
+	reqG := converge(t, ctx, ctrl, octeliumC, createRequest(t, ctx, octeliumC,
+		baseRequest(createUserRef(t, ctx, octeliumC), createCatalog(t, ctx, octeliumC, nil))).Metadata.Uid)
+	require.Equal(t, accessv1.Request_Status_State_PENDING, reqG.Status.State.Status)
+
+	_, err := accesscmd.SetReviewDecision(ctx, &accesscmd.SetReviewDecisionOpts{
+		OcteliumC:            octeliumC,
+		Reviewer:             reviewer,
+		Request:              reqG,
+		Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+		ExpectedStepName:     "lead",
+		ExpectedSpecRevision: reqG.Status.SpecRevision,
+	})
+	require.NoError(t, err)
+
+	reqG.Status.Review.InformationRequests = []*accessv1.Request_Status_Review_InformationRequest{
+		{
+			UserRef:     umetav1.GetObjectReference(reviewer),
+			Message:     "Which dataset?",
+			RequestedAt: pbutils.Now(),
+		},
+	}
+	_, err = octeliumC.AccessC().UpdateRequest(ctx, reqG)
+	require.NoError(t, err)
+
+	reqG = converge(t, ctx, ctrl, octeliumC, reqG.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_PENDING, reqG.Status.State.Status)
+	assert.Equal(t, uint32(1), accesscmd.CurrentStepState(reqG).Approvals)
+	assert.False(t, policyTriggerExists(t, ctx, octeliumC, reqG))
+
+	reqG.Status.Review.InformationRequests[0].Response = "The billing one"
+	reqG.Status.Review.InformationRequests[0].RespondedAt = pbutils.Now()
+	_, err = octeliumC.AccessC().UpdateRequest(ctx, reqG)
+	require.NoError(t, err)
+
+	reqG = converge(t, ctx, ctrl, octeliumC, reqG.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED_BY_REVIEWERS, reqG.Status.State.Reason)
+	assert.True(t, policyTriggerExists(t, ctx, octeliumC, reqG))
 }
 
 func TestRequestOnDelete(t *testing.T) {
@@ -1794,6 +1958,61 @@ func TestRequestPendingScopeFollowsTheCatalog(t *testing.T) {
 	assert.Equal(t, accessv1.Request_Status_Review_StepState_INTERRUPTED, reqG.Status.Review.Steps[1].Outcome)
 }
 
+func TestRequestPendingSystemServiceReevaluates(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	ns, err := octeliumC.CoreC().CreateNamespace(ctx, &corev1.Namespace{
+		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
+		Spec:     &corev1.Namespace_Spec{},
+		Status:   &corev1.Namespace_Status{},
+	})
+	require.NoError(t, err)
+
+	newService := func(isSystem bool) *corev1.Service {
+		svc, err := octeliumC.CoreC().CreateService(ctx, &corev1.Service{
+			Metadata: &metav1.Metadata{
+				Name:     fmt.Sprintf("%s.%s", utilrand.GetRandomStringCanonical(8), ns.Metadata.Name),
+				IsSystem: isSystem,
+			},
+			Spec:   &corev1.Service_Spec{},
+			Status: &corev1.Service_Status{NamespaceRef: umetav1.GetObjectReference(ns)},
+		})
+		require.NoError(t, err)
+		return svc
+	}
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_REVIEW,
+		Condition: matchAny(),
+		Action:    reviewAction(anyStep(userReviewer(createUserRef(t, ctx, octeliumC)))),
+	})
+
+	catalog := createCatalog(t, ctx, octeliumC, nil)
+	catalog.Spec.Membership = accessv1.Catalog_Spec_DYNAMIC
+	catalog.Spec.AllowSystemResources = true
+	catalog.Spec.ResourceCollection.Service.Namespaces = []string{ns.Metadata.Name}
+	catalog, err = octeliumC.AccessC().UpdateCatalog(ctx, catalog)
+	require.NoError(t, err)
+
+	reqG := converge(t, ctx, ctrl, octeliumC,
+		createRequest(t, ctx, octeliumC, baseRequest(createUserRef(t, ctx, octeliumC), catalog)).Metadata.Uid)
+	require.Equal(t, accessv1.Request_Status_State_PENDING, reqG.Status.State.Status)
+	require.Equal(t, uint32(1), reqG.Status.SpecRevision)
+
+	newService(false)
+	reqG = converge(t, ctx, ctrl, octeliumC, reqG.Metadata.Uid)
+	assert.Len(t, reqG.Status.ResolvedScope.ServiceRefs, 2)
+	assert.Equal(t, uint32(1), reqG.Status.SpecRevision)
+
+	admin := newService(true)
+	reqG = converge(t, ctx, ctrl, octeliumC, reqG.Metadata.Uid)
+	assert.Len(t, reqG.Status.ResolvedScope.ServiceRefs, 3)
+	assert.Equal(t, uint32(2), reqG.Status.SpecRevision)
+	assert.Equal(t, accessv1.Request_Status_State_PENDING, reqG.Status.State.Status)
+	assert.True(t, accesscmd.ScopeIncludesService(reqG.Status.ResolvedScope, admin))
+}
+
 func TestRequestScheduledStart(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
@@ -1888,6 +2107,43 @@ func TestRequestExtensionNeverShortensTheExtendedRequest(t *testing.T) {
 	assert.True(t, policyTriggerExists(t, ctx, octeliumC, extension))
 }
 
+func TestRequestNarrowerExtensionKeepsTheBroaderAccess(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition: matchAny(),
+	})
+
+	svcA := createService(t, ctx, octeliumC)
+	catalog := createCatalog(t, ctx, octeliumC,
+		[]*accessv1.Catalog_Spec_AccessLevel{fullLevel("full", durationHours(8))}, svcA, createService(t, ctx, octeliumC))
+	catalog.Spec.AllowPartialRequests = true
+	catalog, err := octeliumC.AccessC().UpdateCatalog(ctx, catalog)
+	require.NoError(t, err)
+
+	in := baseRequest(createUserRef(t, ctx, octeliumC), catalog)
+	in.Spec.Duration = durationHours(1)
+	original := converge(t, ctx, ctrl, octeliumC, createRequest(t, ctx, octeliumC, in).Metadata.Uid)
+	require.Equal(t, accessv1.Request_Status_State_APPROVED, original.Status.State.Status)
+	require.Len(t, original.Status.ResolvedScope.ServiceRefs, 2)
+
+	narrower := baseRequest(original.Status.UserRef, catalog)
+	narrower.Spec.Resource.GetCatalog().ServiceRefs = []*metav1.ObjectReference{umetav1.GetObjectReference(svcA)}
+	narrower.Spec.ExtendsRef = umetav1.GetObjectReference(original)
+	narrower.Spec.Duration = durationHours(4)
+
+	extension := converge(t, ctx, ctrl, octeliumC, createRequest(t, ctx, octeliumC, narrower).Metadata.Uid)
+	require.Equal(t, accessv1.Request_Status_State_APPROVED, extension.Status.State.Status)
+	require.Len(t, extension.Status.ResolvedScope.ServiceRefs, 1)
+
+	original = converge(t, ctx, ctrl, octeliumC, original.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, original.Status.State.Status)
+	assert.Nil(t, original.Status.SupersededByRef)
+	assert.True(t, policyTriggerExists(t, ctx, octeliumC, original))
+}
+
 func TestRequestStaleApprovalsRestartTheWorkflow(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
@@ -1936,6 +2192,99 @@ func TestRequestStaleApprovalsRestartTheWorkflow(t *testing.T) {
 	assert.Equal(t, accessv1.Request_Status_Review_StepState_INTERRUPTED, reqG.Status.Review.Steps[1].Outcome)
 	assert.Equal(t, "first", reqG.Status.Review.Steps[2].Name)
 	assert.Equal(t, accessv1.Request_Status_Review_StepState_OUTCOME_UNSET, reqG.Status.Review.Steps[2].Outcome)
+}
+
+func TestRequestEditRestartsTheReviewFromAFreshEvaluation(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	leadA := createUser(t, ctx, octeliumC)
+	leadB := createUser(t, ctx, octeliumC)
+	securityReviewer := createUser(t, ctx, octeliumC)
+
+	lead := anyStep(userReviewer(umetav1.GetObjectReference(leadA)), userReviewer(umetav1.GetObjectReference(leadB)))
+	lead.Name = "lead"
+	security := anyStep(userReviewer(umetav1.GetObjectReference(securityReviewer)))
+	security.Name = "security"
+
+	createPolicy(t, ctx, octeliumC, false,
+		&accessv1.Policy_Spec_Rule{
+			Name:      "urgent",
+			Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+			Condition: celMatch(`ctx.request.spec.urgency == "HIGHEST"`),
+		},
+		&accessv1.Policy_Spec_Rule{
+			Name:      "review",
+			Effect:    accessv1.Policy_Spec_Rule_REVIEW,
+			Condition: matchAny(),
+			Action:    reviewAction(lead, security),
+		})
+
+	reqG := converge(t, ctx, ctrl, octeliumC, createRequest(t, ctx, octeliumC,
+		baseRequest(createUserRef(t, ctx, octeliumC), createCatalog(t, ctx, octeliumC, nil))).Metadata.Uid)
+	require.Equal(t, accessv1.Request_Status_State_AWAITING_REVIEW, reqG.Status.State.Reason)
+
+	decide := func(usr *corev1.User, stepName string) {
+		cur := getRequest(t, ctx, octeliumC, reqG.Metadata.Uid)
+		_, err := accesscmd.SetReviewDecision(ctx, &accesscmd.SetReviewDecisionOpts{
+			OcteliumC:            octeliumC,
+			Reviewer:             usr,
+			Request:              cur,
+			Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+			ExpectedStepName:     stepName,
+			ExpectedSpecRevision: cur.Status.SpecRevision,
+		})
+		require.NoError(t, err)
+	}
+
+	edit := func(fn func(spec *accessv1.Request_Spec)) {
+		cur := getRequest(t, ctx, octeliumC, reqG.Metadata.Uid)
+		fn(cur.Spec)
+		accesscmd.RestartEvaluation(cur)
+		accesscmd.SetRequestState(cur, &accesscmd.StateChange{
+			Status: accessv1.Request_Status_State_PENDING,
+			Reason: accessv1.Request_Status_State_SUBMITTED,
+		})
+		_, err := octeliumC.AccessC().UpdateRequest(ctx, cur)
+		require.NoError(t, err)
+	}
+
+	decide(leadA, "lead")
+	reqG = converge(t, ctx, ctrl, octeliumC, reqG.Metadata.Uid)
+	require.Equal(t, int32(1), reqG.Status.Review.CurrentStep)
+
+	edit(func(spec *accessv1.Request_Spec) {
+		spec.Justification = "Updated reason requiring another complete review"
+	})
+
+	reqG = converge(t, ctx, ctrl, octeliumC, reqG.Metadata.Uid)
+	require.Equal(t, accessv1.Request_Status_State_AWAITING_REVIEW, reqG.Status.State.Reason)
+	assert.Equal(t, uint32(2), reqG.Status.SpecRevision)
+	assert.Equal(t, int32(0), reqG.Status.Review.CurrentStep)
+	assert.Equal(t, uint32(2), accesscmd.CurrentStepState(reqG).SpecRevision)
+
+	decide(leadB, "lead")
+	reqG = converge(t, ctx, ctrl, octeliumC, reqG.Metadata.Uid)
+	require.Equal(t, int32(1), reqG.Status.Review.CurrentStep)
+	assert.False(t, accesscmd.IsReviewStepStale(reqG))
+
+	decide(securityReviewer, "security")
+	reqG = converge(t, ctx, ctrl, octeliumC, reqG.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED_BY_REVIEWERS, reqG.Status.State.Reason)
+
+	other := converge(t, ctx, ctrl, octeliumC, createRequest(t, ctx, octeliumC,
+		baseRequest(createUserRef(t, ctx, octeliumC), createCatalog(t, ctx, octeliumC, nil))).Metadata.Uid)
+	require.Equal(t, accessv1.Request_Status_State_PENDING, other.Status.State.Status)
+
+	reqG = other
+	edit(func(spec *accessv1.Request_Spec) {
+		spec.Urgency = accessv1.Request_Spec_HIGHEST
+	})
+
+	reqG = converge(t, ctx, ctrl, octeliumC, reqG.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
+	assert.Equal(t, accessv1.Request_Status_State_AUTO_APPROVED, reqG.Status.State.Reason)
+	assert.Equal(t, "urgent", reqG.Status.Rule.Name)
 }
 
 func TestRequestProvisioningFailure(t *testing.T) {

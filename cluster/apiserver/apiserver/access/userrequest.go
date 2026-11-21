@@ -23,6 +23,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
 	"github.com/octelium/octelium/cluster/common/userctx"
+	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
@@ -163,22 +164,30 @@ func (s *ServerUser) ListRequest(ctx context.Context, req *accessv1.ListUserRequ
 		return nil, err
 	}
 
+	var svc *corev1.Service
 	serviceRef := req.ServiceRef
-	if serviceRef != nil {
+	if serviceRef != nil && (serviceRef.Uid != "" || serviceRef.Name != "") {
 		if err := apivalidation.CheckObjectRef(serviceRef, &apivalidation.CheckGetOptionsOpts{
 			ParentsMax: 1,
-		}); err != nil && (serviceRef.Uid != "" || serviceRef.Name != "") {
+		}); err != nil {
 			return nil, err
 		}
 
-		if serviceRef.Uid != "" && serviceRef.Name == "" {
-			svc, err := s.octeliumC.CoreC().GetService(ctx, &rmetav1.GetOptions{Uid: serviceRef.Uid})
-			if err != nil && !grpcerr.IsNotFound(err) {
+		getOpts := &rmetav1.GetOptions{Uid: serviceRef.Uid}
+		if serviceRef.Uid == "" {
+			getOpts.Name = vutils.GetServiceFullNameFromName(serviceRef.Name)
+		}
+
+		svc, err = s.octeliumC.CoreC().GetService(ctx, getOpts)
+		if err != nil {
+			if !grpcerr.IsNotFound(err) {
 				return nil, serr.InternalWithErr(err)
 			}
-			if svc != nil {
-				serviceRef = umetav1.GetObjectReference(svc)
-			}
+			svc = nil
+		}
+
+		if svc != nil && serviceRef.Name == "" {
+			serviceRef = umetav1.GetObjectReference(svc)
 		}
 	}
 
@@ -215,7 +224,7 @@ func (s *ServerUser) ListRequest(ctx context.Context, req *accessv1.ListUserRequ
 			continue
 		}
 
-		if !requestIncludesService(itm, serviceRef) {
+		if !requestIncludesService(itm, serviceRef, svc) {
 			continue
 		}
 
@@ -302,26 +311,12 @@ func (s *ServerUser) UpdateRequest(ctx context.Context, req *accessv1.Request) (
 		return accesscmd.RedactRequest(item), nil
 	}
 
-	if isMaterialSpecChange(item, next) {
-		next.Status.SpecRevision++
-	}
-
-	if next.Status.Rule != nil {
-		next.Status.EffectiveDuration = accesscmd.DurationFromGo(accesscmd.GetEffectiveDuration(next.Spec,
-			next.Status.GetResolvedScope().GetAccessLevel(), next.Status.Rule))
-	}
-
-	if accesscmd.HasStaleAppliedSteps(next) {
-		accesscmd.EndCurrentStep(next, accessv1.Request_Status_Review_StepState_INTERRUPTED)
-		if err := accesscmd.StartReviewStep(ctx, &accesscmd.StartReviewStepOpts{
-			OcteliumC:     s.octeliumC,
-			Request:       next,
-			Index:         0,
-			ClusterConfig: cc,
-		}); err != nil {
-			return nil, serr.InternalWithErr(err)
-		}
-	}
+	accesscmd.RestartEvaluation(next)
+	accesscmd.SetRequestState(next, &accesscmd.StateChange{
+		Status:   accessv1.Request_Status_State_PENDING,
+		Reason:   accessv1.Request_Status_State_SUBMITTED,
+		ActorRef: umetav1.GetObjectReference(i.User),
+	})
 
 	item, err = s.octeliumC.AccessC().UpdateRequest(ctx, next)
 	if err != nil {
@@ -329,19 +324,6 @@ func (s *ServerUser) UpdateRequest(ctx context.Context, req *accessv1.Request) (
 	}
 
 	return accesscmd.RedactRequest(item), nil
-}
-
-func isMaterialSpecChange(prev, next *accessv1.Request) bool {
-	if prev.Spec.Justification != next.Spec.Justification ||
-		prev.Spec.Ticket != next.Spec.Ticket ||
-		!pbutils.IsEqual(prev.Spec.StartAt, next.Spec.StartAt) {
-		return true
-	}
-
-	level := prev.Status.GetResolvedScope().GetAccessLevel()
-
-	return accesscmd.GetEffectiveDuration(next.Spec, level, prev.Status.Rule) >
-		accesscmd.GetEffectiveDuration(prev.Spec, level, prev.Status.Rule)
 }
 
 func (s *ServerUser) CancelRequest(ctx context.Context, req *accessv1.CancelRequestRequest) (*metav1.OperationResult, error) {

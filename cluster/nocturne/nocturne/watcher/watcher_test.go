@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/integrationbindings"
@@ -901,4 +902,68 @@ func TestWatcherHandsRetriesToTheRequestController(t *testing.T) {
 	}
 
 	assert.Equal(t, []string{retrying.Metadata.Name, scheduled.Metadata.Name}, reconciler.names)
+}
+
+func TestWatcherCompletesAnAllStepAfterAReviewerLeaves(t *testing.T) {
+	ctx, w, octeliumC := newWatcherTest(t)
+
+	newUser := func() *corev1.User {
+		usr, err := octeliumC.CoreC().CreateUser(ctx, &corev1.User{
+			Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
+			Spec:     &corev1.User_Spec{Type: corev1.User_Spec_HUMAN},
+			Status:   &corev1.User_Status{},
+		})
+		require.NoError(t, err)
+		return usr
+	}
+
+	reviewerA := newUser()
+	reviewerB := newUser()
+	reviewerC := newUser()
+
+	step := timeoutStep(nil, accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_UNSET)
+	step.ApprovalRequirement = accessv1.Policy_Spec_Rule_Action_Review_Step_ALL
+	step.Reviewers = []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
+		userReviewer(umetav1.GetObjectReference(reviewerA)),
+		userReviewer(umetav1.GetObjectReference(reviewerB)),
+		userReviewer(umetav1.GetObjectReference(reviewerC)),
+	}
+
+	req := createPendingRequest(t, ctx, octeliumC, reviewRule(step), time.Now())
+	req.Status.SpecRevision = 1
+	require.NoError(t, accesscmd.StartReviewStep(ctx, &accesscmd.StartReviewStepOpts{
+		OcteliumC: octeliumC,
+		Request:   req,
+		Index:     0,
+	}))
+	req, err := octeliumC.AccessC().UpdateRequest(ctx, req)
+	require.NoError(t, err)
+
+	for _, usr := range []*corev1.User{reviewerA, reviewerB} {
+		_, err := accesscmd.SetReviewDecision(ctx, &accesscmd.SetReviewDecisionOpts{
+			OcteliumC:            octeliumC,
+			Reviewer:             usr,
+			Request:              req,
+			Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+			ExpectedStepName:     "step-1",
+			ExpectedSpecRevision: 1,
+		})
+		require.NoError(t, err)
+	}
+
+	require.NoError(t, w.doCheckRequest(ctx, req, nil))
+	req = getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	require.Equal(t, accessv1.Request_Status_State_PENDING, req.Status.State.Status)
+	assert.Equal(t, uint32(2), accesscmd.CurrentStepState(req).Approvals)
+	assert.Equal(t, uint32(3), accesscmd.CurrentStepState(req).RequiredApprovals)
+
+	reviewerC.Spec.IsDisabled = true
+	_, err = octeliumC.CoreC().UpdateUser(ctx, reviewerC)
+	require.NoError(t, err)
+
+	require.NoError(t, w.doCheckRequest(ctx, req, nil))
+	req = getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, req.Status.State.Status)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED_BY_REVIEWERS, req.Status.State.Reason)
+	assert.Len(t, req.Status.Review.LastSteps, 2)
 }

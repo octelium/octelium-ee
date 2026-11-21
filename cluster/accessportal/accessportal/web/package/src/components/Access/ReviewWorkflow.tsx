@@ -203,8 +203,8 @@ const StepRow = (props: {
             icon={<ShieldAlert size={13} strokeWidth={2.25} />}
             className="mt-2"
           >
-            No one can currently review this step. An administrator has been
-            notified.
+            Not enough people can currently review this step. It cannot be
+            approved until an administrator changes its reviewers.
           </Note>
         )}
 

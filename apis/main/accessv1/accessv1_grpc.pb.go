@@ -2133,8 +2133,6 @@ const (
 	ReviewerService_RequestInformation_FullMethodName = "/octelium.api.main.access.v1.ReviewerService/RequestInformation"
 	ReviewerService_ListReview_FullMethodName         = "/octelium.api.main.access.v1.ReviewerService/ListReview"
 	ReviewerService_GetReview_FullMethodName          = "/octelium.api.main.access.v1.ReviewerService/GetReview"
-	ReviewerService_CreateReview_FullMethodName       = "/octelium.api.main.access.v1.ReviewerService/CreateReview"
-	ReviewerService_UpdateReview_FullMethodName       = "/octelium.api.main.access.v1.ReviewerService/UpdateReview"
 	ReviewerService_CancelReview_FullMethodName       = "/octelium.api.main.access.v1.ReviewerService/CancelReview"
 	ReviewerService_SetReviewDecision_FullMethodName  = "/octelium.api.main.access.v1.ReviewerService/SetReviewDecision"
 )
@@ -2166,12 +2164,6 @@ type ReviewerServiceClient interface {
 	ListReview(ctx context.Context, in *ListReviewerReviewOptions, opts ...grpc.CallOption) (*ReviewList, error)
 	// GetReview retrieves a specific Review that is owned by the calling User
 	GetReview(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Review, error)
-	// CreateReview creates a Review for a pending Request. A reviewer can have
-	// at most one Review per Request.
-	CreateReview(ctx context.Context, in *Review, opts ...grpc.CallOption) (*Review, error)
-	// UpdateReview updates a Review that has not yet been applied to its
-	// Request
-	UpdateReview(ctx context.Context, in *Review, opts ...grpc.CallOption) (*Review, error)
 	// CancelReview resets the decision of a Review that has not yet been
 	// applied to its Request
 	CancelReview(ctx context.Context, in *CancelReviewRequest, opts ...grpc.CallOption) (*metav1.OperationResult, error)
@@ -2252,26 +2244,6 @@ func (c *reviewerServiceClient) GetReview(ctx context.Context, in *metav1.GetOpt
 	return out, nil
 }
 
-func (c *reviewerServiceClient) CreateReview(ctx context.Context, in *Review, opts ...grpc.CallOption) (*Review, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Review)
-	err := c.cc.Invoke(ctx, ReviewerService_CreateReview_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *reviewerServiceClient) UpdateReview(ctx context.Context, in *Review, opts ...grpc.CallOption) (*Review, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Review)
-	err := c.cc.Invoke(ctx, ReviewerService_UpdateReview_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *reviewerServiceClient) CancelReview(ctx context.Context, in *CancelReviewRequest, opts ...grpc.CallOption) (*metav1.OperationResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(metav1.OperationResult)
@@ -2319,12 +2291,6 @@ type ReviewerServiceServer interface {
 	ListReview(context.Context, *ListReviewerReviewOptions) (*ReviewList, error)
 	// GetReview retrieves a specific Review that is owned by the calling User
 	GetReview(context.Context, *metav1.GetOptions) (*Review, error)
-	// CreateReview creates a Review for a pending Request. A reviewer can have
-	// at most one Review per Request.
-	CreateReview(context.Context, *Review) (*Review, error)
-	// UpdateReview updates a Review that has not yet been applied to its
-	// Request
-	UpdateReview(context.Context, *Review) (*Review, error)
 	// CancelReview resets the decision of a Review that has not yet been
 	// applied to its Request
 	CancelReview(context.Context, *CancelReviewRequest) (*metav1.OperationResult, error)
@@ -2362,12 +2328,6 @@ func (UnimplementedReviewerServiceServer) ListReview(context.Context, *ListRevie
 }
 func (UnimplementedReviewerServiceServer) GetReview(context.Context, *metav1.GetOptions) (*Review, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetReview not implemented")
-}
-func (UnimplementedReviewerServiceServer) CreateReview(context.Context, *Review) (*Review, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateReview not implemented")
-}
-func (UnimplementedReviewerServiceServer) UpdateReview(context.Context, *Review) (*Review, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateReview not implemented")
 }
 func (UnimplementedReviewerServiceServer) CancelReview(context.Context, *CancelReviewRequest) (*metav1.OperationResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelReview not implemented")
@@ -2504,42 +2464,6 @@ func _ReviewerService_GetReview_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReviewerService_CreateReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Review)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ReviewerServiceServer).CreateReview(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ReviewerService_CreateReview_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReviewerServiceServer).CreateReview(ctx, req.(*Review))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ReviewerService_UpdateReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Review)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ReviewerServiceServer).UpdateReview(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ReviewerService_UpdateReview_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReviewerServiceServer).UpdateReview(ctx, req.(*Review))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ReviewerService_CancelReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CancelReviewRequest)
 	if err := dec(in); err != nil {
@@ -2606,14 +2530,6 @@ var ReviewerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetReview",
 			Handler:    _ReviewerService_GetReview_Handler,
-		},
-		{
-			MethodName: "CreateReview",
-			Handler:    _ReviewerService_CreateReview_Handler,
-		},
-		{
-			MethodName: "UpdateReview",
-			Handler:    _ReviewerService_UpdateReview_Handler,
 		},
 		{
 			MethodName: "CancelReview",

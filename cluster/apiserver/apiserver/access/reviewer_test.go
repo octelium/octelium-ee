@@ -22,6 +22,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/tests/tstuser"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 )
@@ -121,7 +122,8 @@ func newReviewerTest(t *testing.T) (*ServerReviewer, *tstuser.User, *tstuser.Use
 				CreatedAt: pbutils.Now(),
 				Status:    accessv1.Request_Status_State_PENDING,
 			},
-			Rule: rule,
+			Rule:         rule,
+			SpecRevision: 1,
 			Review: &accessv1.Request_Status_Review{
 				CurrentStep: 0,
 			},
@@ -159,41 +161,31 @@ func TestReviewerRequest(t *testing.T) {
 func TestReviewerReview(t *testing.T) {
 	srv, reviewer, other, req := newReviewerTest(t)
 
-	_, err := srv.CreateReview(other.Ctx(), &accessv1.Review{
-		Metadata: &metav1.Metadata{},
-		Spec: &accessv1.Review_Spec{
-			Decision: accessv1.Review_Spec_DECISION_APPROVE,
-		},
-		Status: &accessv1.Review_Status{
-			RequestRef: umetav1.GetObjectReference(req),
-		},
-	})
+	decide := func(usr *tstuser.User, decision accessv1.Review_Spec_Decision,
+		justification string) (*accessv1.Review, error) {
+		return srv.SetReviewDecision(usr.Ctx(), &accessv1.SetReviewDecisionRequest{
+			RequestRef:           umetav1.GetObjectReference(req),
+			Decision:             decision,
+			Justification:        justification,
+			ExpectedStepName:     "step-1",
+			ExpectedSpecRevision: req.Status.SpecRevision,
+		})
+	}
+
+	_, err := decide(other, accessv1.Review_Spec_DECISION_APPROVE, "")
 	assert.NotNil(t, err)
 
-	review, err := srv.CreateReview(reviewer.Ctx(), &accessv1.Review{
-		Metadata: &metav1.Metadata{},
-		Spec: &accessv1.Review_Spec{
-			Decision:      accessv1.Review_Spec_DECISION_APPROVE,
-			Justification: utilrand.GetRandomString(16),
-		},
-		Status: &accessv1.Review_Status{
-			RequestRef: umetav1.GetObjectReference(req),
-		},
-	})
+	review, err := decide(reviewer, accessv1.Review_Spec_DECISION_APPROVE, utilrand.GetRandomString(16))
 	assert.Nil(t, err, "%+v", err)
 	assert.Equal(t, reviewer.Usr.Metadata.Uid, review.Status.UserRef.Uid)
 	assert.Equal(t, req.Metadata.Uid, review.Status.RequestRef.Uid)
 	assert.NotNil(t, review.Status.SetAt)
 
-	_, err = srv.CreateReview(reviewer.Ctx(), &accessv1.Review{
-		Spec: &accessv1.Review_Spec{
-			Decision: accessv1.Review_Spec_DECISION_APPROVE,
-		},
-		Status: &accessv1.Review_Status{
-			RequestRef: umetav1.GetObjectReference(req),
-		},
+	_, err = srv.SetReviewDecision(reviewer.Ctx(), &accessv1.SetReviewDecisionRequest{
+		RequestRef: umetav1.GetObjectReference(req),
+		Decision:   accessv1.Review_Spec_DECISION_APPROVE,
 	})
-	assert.NotNil(t, err)
+	assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
 
 	reviewG, err := srv.GetReview(reviewer.Ctx(), &metav1.GetOptions{
 		Uid: review.Metadata.Uid,
@@ -250,10 +242,9 @@ func TestReviewerReview(t *testing.T) {
 		assert.Equal(t, 0, len(itemList.Items))
 	}
 
-	review.Spec.Decision = accessv1.Review_Spec_DECISION_REJECT
-	review.Spec.Justification = utilrand.GetRandomString(20)
-	reviewU, err := srv.UpdateReview(reviewer.Ctx(), review)
+	reviewU, err := decide(reviewer, accessv1.Review_Spec_DECISION_REJECT, utilrand.GetRandomString(20))
 	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, review.Metadata.Uid, reviewU.Metadata.Uid)
 	assert.Equal(t, accessv1.Review_Spec_DECISION_REJECT, reviewU.Spec.Decision)
 
 	_, err = srv.CancelReview(reviewer.Ctx(), &accessv1.CancelReviewRequest{

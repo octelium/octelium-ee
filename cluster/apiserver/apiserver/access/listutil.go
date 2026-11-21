@@ -13,9 +13,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uaccessv1"
 	"github.com/octelium/octelium/apis/main/accessv1"
+	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/vutils"
@@ -176,7 +178,7 @@ func matchesRequestQuery(req *accessv1.Request, query string) bool {
 	return false
 }
 
-func requestIncludesService(req *accessv1.Request, ref *metav1.ObjectReference) bool {
+func requestIncludesService(req *accessv1.Request, ref *metav1.ObjectReference, svc *corev1.Service) bool {
 	if ref == nil || (ref.Uid == "" && ref.Name == "") {
 		return true
 	}
@@ -190,13 +192,5 @@ func requestIncludesService(req *accessv1.Request, ref *metav1.ObjectReference) 
 		}
 	}
 
-	if _, ns, ok := strings.Cut(name, "."); ok {
-		for _, itm := range req.GetStatus().GetResolvedScope().GetNamespaceRefs() {
-			if itm.Name == ns {
-				return true
-			}
-		}
-	}
-
-	return false
+	return svc != nil && accesscmd.ScopeIncludesService(req.GetStatus().GetResolvedScope(), svc)
 }

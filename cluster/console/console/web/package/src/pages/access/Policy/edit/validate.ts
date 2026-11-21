@@ -56,6 +56,11 @@ export const surfaceIssues = (
   return issues;
 };
 
+const isIncompleteReviewer = (reviewer: AccessP.Policy_Spec_Rule_Action_Review_Step_Reviewer): boolean =>
+  !reviewer.type.oneofKind ||
+  (reviewer.type.oneofKind === "user" && !hasRef(reviewer.type.user.userRef)) ||
+  (reviewer.type.oneofKind === "group" && !hasRef(reviewer.type.group.groupRef));
+
 export const stepIssues = (
   step: AccessP.Policy_Spec_Rule_Action_Review_Step,
   index: number,
@@ -71,25 +76,13 @@ export const stepIssues = (
     issues.push(`${label}: step names must be unique`);
 
   if (step.reviewers.length === 0) issues.push(`${label}: add at least one reviewer`);
-  if (
-    step.reviewers.some(
-      (reviewer) =>
-        (reviewer.type.oneofKind === "user" && !hasRef(reviewer.type.user.userRef)) ||
-        (reviewer.type.oneofKind === "group" && !hasRef(reviewer.type.group.groupRef)),
-    )
-  )
+  if (step.reviewers.some(isIncompleteReviewer))
     issues.push(`${label}: a reviewer is missing its User or Group`);
 
   if (step.escalation) {
     if (step.escalation.reviewers.length === 0)
       issues.push(`${label}: add at least one escalation reviewer`);
-    if (
-      step.escalation.reviewers.some(
-        (reviewer) =>
-          (reviewer.type.oneofKind === "user" && !hasRef(reviewer.type.user.userRef)) ||
-          (reviewer.type.oneofKind === "group" && !hasRef(reviewer.type.group.groupRef)),
-      )
-    )
+    if (step.escalation.reviewers.some(isIncompleteReviewer))
       issues.push(`${label}: an escalation reviewer is missing its User or Group`);
   }
 

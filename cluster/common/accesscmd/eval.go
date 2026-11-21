@@ -79,8 +79,7 @@ func (r *EvalResult) BlockingRule() *RuleEvaluation {
 	}
 
 	for _, itm := range r.Rules {
-		if itm.Result == accessv1.SimulateRequestResponse_RuleEvaluation_ERROR &&
-			itm.Rule.Effect != accessv1.Policy_Spec_Rule_AUTO_APPROVE {
+		if itm.Result == accessv1.SimulateRequestResponse_RuleEvaluation_ERROR {
 			return itm
 		}
 	}

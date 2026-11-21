@@ -83,7 +83,7 @@ const SimulationResult = (props: { result: AccessPB.SimulateRequestResponse }) =
               {step.totalEligibleReviewer === 1 ? "" : "s"}, {step.requiredApprovals} approval
               {step.requiredApprovals === 1 ? "" : "s"} needed
               {step.isUnroutable && (
-                <span className="font-semibold text-red-700"> · nobody can review</span>
+                <span className="font-semibold text-red-700"> · not enough reviewers</span>
               )}
             </li>
           ))}

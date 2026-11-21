@@ -179,8 +179,8 @@ func testAccessQuestionsBlockApproval(t *testing.T, ch *harness.H) {
 	require.Nil(t, err)
 
 	t.Run("AnUnansweredQuestionBlocksTheApproval", func(t *testing.T) {
-		_, err := h.AccessReviewerC(c.rita.Conn).CreateReview(t.Context(),
-			eeharness.ReviewOf(req, accessv1.Review_Spec_DECISION_APPROVE))
+		_, err := h.AccessReviewerC(c.rita.Conn).SetReviewDecision(t.Context(),
+			eeharness.ReviewOf(h.GetRequest(t, req), accessv1.Review_Spec_DECISION_APPROVE))
 		require.NotNil(t, err)
 		assert.True(t, grpcerr.IsInvalidArg(err))
 		probe.MustStayDenied(t, settleWindow)

@@ -198,8 +198,16 @@ describe("Access Policy validation", () => {
     assert.deepEqual(validation.ruleIssues(long, [long]), ["Shorten the message to at most 500 characters"]);
   });
 
-  it("CONSOLE-012: rejects a reviewer without a selected type", { todo: "CONSOLE-012" }, () => {
+  it("rejects a reviewer without a selected type", () => {
     const value = step({ reviewers: [access.Policy_Spec_Rule_Action_Review_Step_Reviewer.create()] });
-    assert.ok(validation.stepIssues(value, 0, [value]).some((issue) => /reviewer|User|Group/.test(issue)));
+    assert.ok(validation.stepIssues(value, 0, [value]).includes("review: a reviewer is missing its User or Group"));
+    const escalated = step({
+      escalation: access.Policy_Spec_Rule_Action_Review_Step_Escalation.create({
+        reviewers: [access.Policy_Spec_Rule_Action_Review_Step_Reviewer.create()],
+      }),
+    });
+    assert.ok(
+      validation.stepIssues(escalated, 0, [escalated]).includes("review: an escalation reviewer is missing its User or Group"),
+    );
   });
 });

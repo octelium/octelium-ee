@@ -73,8 +73,9 @@ type Presentation struct {
 
 	PortalURL string `json:"portalURL,omitempty"`
 
-	IsActionable bool `json:"isActionable,omitempty"`
-	IsClosed     bool `json:"isClosed,omitempty"`
+	IsActionable        bool `json:"isActionable,omitempty"`
+	IsAwaitingRequester bool `json:"isAwaitingRequester,omitempty"`
+	IsClosed            bool `json:"isClosed,omitempty"`
 }
 
 func (p *Presentation) Revision() string {
@@ -200,8 +201,10 @@ func BuildPresentation(ctx context.Context, opts *BuildPresentationOpts) (*Prese
 			}
 		}
 
-		ret.IsActionable = isPending &&
-			accesscmd.CurrentStepIndex(req) == binding.Status.StepIndex &&
+		isCurrent := IsBindingCurrent(binding, req)
+
+		ret.IsAwaitingRequester = isCurrent && accesscmd.IsAwaitingRequester(req)
+		ret.IsActionable = isCurrent && !ret.IsAwaitingRequester &&
 			binding.Status.InteractionMode == accessv1.Policy_Spec_Rule_Surface_INTERACTIVE
 	}
 

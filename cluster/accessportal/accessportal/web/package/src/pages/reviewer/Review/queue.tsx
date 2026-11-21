@@ -74,7 +74,7 @@ const VIEWS: Record<
   decided: {
     filter: F.DECIDED_BY_ME,
     label: "Decided by me",
-    description: "Pending requests you already decided on.",
+    description: "Requests you decided on, including the ones that are no longer pending.",
   },
 };
 

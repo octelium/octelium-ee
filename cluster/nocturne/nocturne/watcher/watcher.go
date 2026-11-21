@@ -376,7 +376,11 @@ func (w *Watcher) doCheckPendingRequest(ctx context.Context, req *accessv1.Reque
 		return w.updateRequestIfChanged(ctx, req, next)
 	}
 
-	if err := accesscmd.RefreshStepReviewers(ctx, w.octeliumC, next, cc); err != nil {
+	if err := accesscmd.ReconcileReviewStep(ctx, &accesscmd.ReconcileReviewStepOpts{
+		OcteliumC:     w.octeliumC,
+		Request:       next,
+		ClusterConfig: cc,
+	}); err != nil {
 		return err
 	}
 

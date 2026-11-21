@@ -25,11 +25,11 @@
                 },
                 "expectedStepName": {
                     "type": "string",
-                    "description": "ExpectedStepName is an optional safety check. If it is set and the Request is no longer waiting for that review Step, the decision is rejected instead of being applied to another Step."
+                    "description": "ExpectedStepName is the name of the review Step that the reviewer decided on. It is required for an approval or a rejection. If the Request is no longer waiting for that review Step, the decision is rejected instead of being applied to another Step."
                 },
                 "expectedSpecRevision": {
                     "type": "integer",
-                    "description": "ExpectedSpecRevision is an optional safety check. If it is set and the Request's `status.specRevision` differs from it (i.e. the requester changed the Request after the reviewer read it), the decision is rejected."
+                    "description": "ExpectedSpecRevision is the Request's `status.specRevision` that the reviewer decided on. It is required for an approval or a rejection. If the Request's `status.specRevision` differs from it (i.e. the Request changed after the reviewer read it), the decision is rejected."
                 },
                 "duration": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",

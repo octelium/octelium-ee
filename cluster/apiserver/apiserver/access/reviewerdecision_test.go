@@ -122,6 +122,7 @@ func (d *decisionTest) newRequest(t *testing.T, requesterRef *metav1.ObjectRefer
 				CreatedAt: pbutils.Now(),
 				Status:    accessv1.Request_Status_State_PENDING,
 			},
+			SpecRevision: 1,
 			Rule: &accessv1.Policy_Spec_Rule{
 				Name:   utilrand.GetRandomStringCanonical(6),
 				Effect: accessv1.Policy_Spec_Rule_REVIEW,
@@ -167,9 +168,11 @@ func TestSetReviewDecision(t *testing.T) {
 		tstReviewStep("first", nil, umetav1.GetObjectReference(reviewer.Usr)))
 
 	review, err := d.srv.SetReviewDecision(reviewer.Ctx(), &accessv1.SetReviewDecisionRequest{
-		RequestRef:    umetav1.GetObjectReference(req),
-		Decision:      accessv1.Review_Spec_DECISION_APPROVE,
-		Justification: utilrand.GetRandomString(16),
+		RequestRef:           umetav1.GetObjectReference(req),
+		Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+		Justification:        utilrand.GetRandomString(16),
+		ExpectedStepName:     "first",
+		ExpectedSpecRevision: req.Status.SpecRevision,
 	})
 	assert.Nil(t, err, "%+v", err)
 	assert.Equal(t, reviewer.Usr.Metadata.Uid, review.Status.UserRef.Uid)
@@ -179,9 +182,11 @@ func TestSetReviewDecision(t *testing.T) {
 
 	{
 		ret, err := d.srv.SetReviewDecision(reviewer.Ctx(), &accessv1.SetReviewDecisionRequest{
-			RequestRef:    umetav1.GetObjectReference(req),
-			Decision:      accessv1.Review_Spec_DECISION_APPROVE,
-			Justification: review.Spec.Justification,
+			RequestRef:           umetav1.GetObjectReference(req),
+			Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+			Justification:        review.Spec.Justification,
+			ExpectedStepName:     "first",
+			ExpectedSpecRevision: req.Status.SpecRevision,
 		})
 		assert.Nil(t, err, "%+v", err)
 		assert.Equal(t, review.Metadata.Uid, ret.Metadata.Uid)
@@ -190,8 +195,10 @@ func TestSetReviewDecision(t *testing.T) {
 
 	{
 		ret, err := d.srv.SetReviewDecision(reviewer.Ctx(), &accessv1.SetReviewDecisionRequest{
-			RequestRef: umetav1.GetObjectReference(req),
-			Decision:   accessv1.Review_Spec_DECISION_REJECT,
+			RequestRef:           umetav1.GetObjectReference(req),
+			Decision:             accessv1.Review_Spec_DECISION_REJECT,
+			ExpectedStepName:     "first",
+			ExpectedSpecRevision: req.Status.SpecRevision,
 		})
 		assert.Nil(t, err, "%+v", err)
 		assert.Equal(t, review.Metadata.Uid, ret.Metadata.Uid)
@@ -211,9 +218,10 @@ func TestSetReviewDecision(t *testing.T) {
 
 	{
 		_, err := d.srv.SetReviewDecision(reviewer.Ctx(), &accessv1.SetReviewDecisionRequest{
-			RequestRef:       umetav1.GetObjectReference(req),
-			Decision:         accessv1.Review_Spec_DECISION_APPROVE,
-			ExpectedStepName: "second",
+			RequestRef:           umetav1.GetObjectReference(req),
+			Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+			ExpectedStepName:     "second",
+			ExpectedSpecRevision: req.Status.SpecRevision,
 		})
 		assert.NotNil(t, err)
 		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
@@ -222,8 +230,10 @@ func TestSetReviewDecision(t *testing.T) {
 	{
 		other := d.newUser(t)
 		_, err := d.srv.SetReviewDecision(other.Ctx(), &accessv1.SetReviewDecisionRequest{
-			RequestRef: umetav1.GetObjectReference(req),
-			Decision:   accessv1.Review_Spec_DECISION_APPROVE,
+			RequestRef:           umetav1.GetObjectReference(req),
+			Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+			ExpectedStepName:     "first",
+			ExpectedSpecRevision: req.Status.SpecRevision,
 		})
 		assert.NotNil(t, err)
 		assert.True(t, grpcerr.IsUnauthorized(err), "%+v", err)
@@ -240,8 +250,10 @@ func TestSetReviewDecisionSeparationOfDuties(t *testing.T) {
 		req := d.newRequest(t, requesterRef, tstReviewStep("first", nil, requesterRef))
 
 		_, err := d.srv.SetReviewDecision(requester.Ctx(), &accessv1.SetReviewDecisionRequest{
-			RequestRef: umetav1.GetObjectReference(req),
-			Decision:   accessv1.Review_Spec_DECISION_APPROVE,
+			RequestRef:           umetav1.GetObjectReference(req),
+			Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+			ExpectedStepName:     "first",
+			ExpectedSpecRevision: req.Status.SpecRevision,
 		})
 		assert.NotNil(t, err)
 		assert.True(t, grpcerr.IsUnauthorized(err), "%+v", err)
@@ -255,8 +267,10 @@ func TestSetReviewDecisionSeparationOfDuties(t *testing.T) {
 			}, requesterRef))
 
 		review, err := d.srv.SetReviewDecision(requester.Ctx(), &accessv1.SetReviewDecisionRequest{
-			RequestRef: umetav1.GetObjectReference(req),
-			Decision:   accessv1.Review_Spec_DECISION_APPROVE,
+			RequestRef:           umetav1.GetObjectReference(req),
+			Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+			ExpectedStepName:     "first",
+			ExpectedSpecRevision: req.Status.SpecRevision,
 		})
 		assert.Nil(t, err, "%+v", err)
 		assert.Equal(t, requester.Usr.Metadata.Uid, review.Status.UserRef.Uid)
@@ -275,8 +289,10 @@ func TestSetReviewDecisionMultipleSteps(t *testing.T) {
 		tstReviewStep("second", nil, reviewerRef))
 
 	first, err := d.srv.SetReviewDecision(reviewer.Ctx(), &accessv1.SetReviewDecisionRequest{
-		RequestRef: umetav1.GetObjectReference(req),
-		Decision:   accessv1.Review_Spec_DECISION_APPROVE,
+		RequestRef:           umetav1.GetObjectReference(req),
+		Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+		ExpectedStepName:     "first",
+		ExpectedSpecRevision: req.Status.SpecRevision,
 	})
 	assert.Nil(t, err, "%+v", err)
 	assert.Equal(t, "first", first.Status.StepName)
@@ -284,8 +300,10 @@ func TestSetReviewDecisionMultipleSteps(t *testing.T) {
 	d.gotoStep(t, req, 1)
 
 	second, err := d.srv.SetReviewDecision(reviewer.Ctx(), &accessv1.SetReviewDecisionRequest{
-		RequestRef: umetav1.GetObjectReference(req),
-		Decision:   accessv1.Review_Spec_DECISION_APPROVE,
+		RequestRef:           umetav1.GetObjectReference(req),
+		Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+		ExpectedStepName:     "second",
+		ExpectedSpecRevision: req.Status.SpecRevision,
 	})
 	assert.Nil(t, err, "%+v", err)
 	assert.Equal(t, "second", second.Status.StepName)
@@ -314,8 +332,10 @@ func TestSetReviewDecisionDisabledReviewer(t *testing.T) {
 	reviewer.Resync()
 
 	_, err = d.srv.SetReviewDecision(reviewer.Ctx(), &accessv1.SetReviewDecisionRequest{
-		RequestRef: umetav1.GetObjectReference(req),
-		Decision:   accessv1.Review_Spec_DECISION_APPROVE,
+		RequestRef:           umetav1.GetObjectReference(req),
+		Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+		ExpectedStepName:     "first",
+		ExpectedSpecRevision: req.Status.SpecRevision,
 	})
 	assert.NotNil(t, err)
 	assert.True(t, grpcerr.IsUnauthorized(err), "%+v", err)

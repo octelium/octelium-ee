@@ -208,15 +208,18 @@ func (b *bindingTest) createRequest(t *testing.T) *accessv1.Request {
 				CreatedAt: pbutils.Now(),
 				Status:    accessv1.Request_Status_State_PENDING,
 			},
+			SpecRevision: 1,
 			Rule: &accessv1.Policy_Spec_Rule{
-				Name:   utilrand.GetRandomStringCanonical(6),
-				Effect: accessv1.Policy_Spec_Rule_REVIEW,
+				Name:          utilrand.GetRandomStringCanonical(6),
+				Effect:        accessv1.Policy_Spec_Rule_REVIEW,
+				Notifications: []*accessv1.Policy_Spec_Rule_Surface{b.surface(accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY)},
 				Action: &accessv1.Policy_Spec_Rule_Action{
 					Type: &accessv1.Policy_Spec_Rule_Action_Review_{
 						Review: &accessv1.Policy_Spec_Rule_Action_Review{
 							Steps: []*accessv1.Policy_Spec_Rule_Action_Review_Step{
 								{
 									Name:                "first",
+									Surfaces:            []*accessv1.Policy_Spec_Rule_Surface{b.surface(accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY)},
 									ApprovalRequirement: accessv1.Policy_Spec_Rule_Action_Review_Step_ANY,
 									Reviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
 										{
@@ -243,23 +246,35 @@ func (b *bindingTest) createRequest(t *testing.T) *accessv1.Request {
 	return req
 }
 
+func (b *bindingTest) surface(mode accessv1.Policy_Spec_Rule_Surface_InteractionMode) *accessv1.Policy_Spec_Rule_Surface {
+	return &accessv1.Policy_Spec_Rule_Surface{
+		Destination: &accessv1.Policy_Spec_Rule_Surface_Destination{
+			IntegrationRef: umetav1.GetObjectReference(b.integration),
+			Audience:       accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
+		},
+		InteractionMode: mode,
+	}
+}
+
 func (b *bindingTest) createNotificationBinding(t *testing.T,
 	req *accessv1.Request) *accessv1.IntegrationBinding {
+	status := &accessv1.IntegrationBinding_Status{
+		IntegrationRef:  umetav1.GetObjectReference(b.integration),
+		RequestRef:      umetav1.GetObjectReference(req),
+		Audience:        accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
+		Purpose:         accessv1.IntegrationBinding_Status_NOTIFICATION,
+		InteractionMode: accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY,
+		State:           accessv1.IntegrationBinding_Status_PENDING,
+	}
+
 	item, err := b.octeliumC.AccessC().CreateIntegrationBinding(b.ctx,
 		&accessv1.IntegrationBinding{
 			Metadata: &metav1.Metadata{
-				Name: accessintg.BindingName(req.Metadata.Uid,
-					accessv1.IntegrationBinding_Status_NOTIFICATION, 0, 0, ""),
+				Name:     accessintg.BindingName(req.Metadata.Uid, status, 0),
 				IsSystem: true,
 			},
-			Spec: &accessv1.IntegrationBinding_Spec{},
-			Status: &accessv1.IntegrationBinding_Status{
-				IntegrationRef: umetav1.GetObjectReference(b.integration),
-				RequestRef:     umetav1.GetObjectReference(req),
-				Audience:       accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
-				Purpose:        accessv1.IntegrationBinding_Status_NOTIFICATION,
-				State:          accessv1.IntegrationBinding_Status_PENDING,
-			},
+			Spec:   &accessv1.IntegrationBinding_Spec{},
+			Status: status,
 		})
 	assert.Nil(t, err, "%+v", err)
 
@@ -268,24 +283,26 @@ func (b *bindingTest) createNotificationBinding(t *testing.T,
 
 func (b *bindingTest) createBinding(t *testing.T,
 	req *accessv1.Request) *accessv1.IntegrationBinding {
+	status := &accessv1.IntegrationBinding_Status{
+		IntegrationRef:  umetav1.GetObjectReference(b.integration),
+		RequestRef:      umetav1.GetObjectReference(req),
+		Audience:        accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
+		StepIndex:       0,
+		StepName:        "first",
+		Purpose:         accessv1.IntegrationBinding_Status_REVIEW_SURFACE,
+		InteractionMode: accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY,
+		State:           accessv1.IntegrationBinding_Status_PENDING,
+		SpecRevision:    req.Status.SpecRevision,
+	}
+
 	item, err := b.octeliumC.AccessC().CreateIntegrationBinding(b.ctx,
 		&accessv1.IntegrationBinding{
 			Metadata: &metav1.Metadata{
-				Name: accessintg.BindingName(req.Metadata.Uid,
-					accessv1.IntegrationBinding_Status_REVIEW_SURFACE, 0, 0, ""),
+				Name:     accessintg.BindingName(req.Metadata.Uid, status, 0),
 				IsSystem: true,
 			},
-			Spec: &accessv1.IntegrationBinding_Spec{},
-			Status: &accessv1.IntegrationBinding_Status{
-				IntegrationRef:  umetav1.GetObjectReference(b.integration),
-				RequestRef:      umetav1.GetObjectReference(req),
-				Audience:        accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
-				StepIndex:       0,
-				StepName:        "first",
-				Purpose:         accessv1.IntegrationBinding_Status_REVIEW_SURFACE,
-				InteractionMode: accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY,
-				State:           accessv1.IntegrationBinding_Status_PENDING,
-			},
+			Spec:   &accessv1.IntegrationBinding_Spec{},
+			Status: status,
 		})
 	assert.Nil(t, err, "%+v", err)
 
@@ -622,15 +639,63 @@ func TestBindingRetryBoundsAndClosedState(t *testing.T) {
 	assert.Equal(t, baseBackoff, backoff(1))
 	assert.Equal(t, 2*baseBackoff, backoff(2))
 	assert.Equal(t, maxBackoff, backoff(^uint32(0)))
+	integrationRef := &metav1.ObjectReference{Name: "slack", Uid: "uid-slack"}
+	surface := func(mode accessv1.Policy_Spec_Rule_Surface_InteractionMode) *accessv1.Policy_Spec_Rule_Surface {
+		return &accessv1.Policy_Spec_Rule_Surface{
+			Destination: &accessv1.Policy_Spec_Rule_Surface_Destination{
+				IntegrationRef: integrationRef,
+				Audience:       accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
+			},
+			InteractionMode: mode,
+		}
+	}
+	step := func(name string) *accessv1.Policy_Spec_Rule_Action_Review_Step {
+		return &accessv1.Policy_Spec_Rule_Action_Review_Step{
+			Name:     name,
+			Surfaces: []*accessv1.Policy_Spec_Rule_Surface{surface(accessv1.Policy_Spec_Rule_Surface_INTERACTIVE)},
+		}
+	}
 	req := &accessv1.Request{Spec: &accessv1.Request_Spec{}, Status: &accessv1.Request_Status{
-		State:  &accessv1.Request_Status_State{Status: accessv1.Request_Status_State_PENDING},
-		Review: &accessv1.Request_Status_Review{CurrentStep: 1},
+		State:        &accessv1.Request_Status_State{Status: accessv1.Request_Status_State_PENDING},
+		Review:       &accessv1.Request_Status_Review{CurrentStep: 1},
+		SpecRevision: 2,
+		Rule: &accessv1.Policy_Spec_Rule{
+			Notifications: []*accessv1.Policy_Spec_Rule_Surface{surface(accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY)},
+			Action: &accessv1.Policy_Spec_Rule_Action{
+				Type: &accessv1.Policy_Spec_Rule_Action_Review_{
+					Review: &accessv1.Policy_Spec_Rule_Action_Review{
+						Steps: []*accessv1.Policy_Spec_Rule_Action_Review_Step{step("first"), step("second")},
+					},
+				},
+			},
+		},
 	}}
-	binding := &accessv1.IntegrationBinding{Status: &accessv1.IntegrationBinding_Status{Purpose: accessv1.IntegrationBinding_Status_REVIEW_SURFACE, StepIndex: 1}}
+	binding := &accessv1.IntegrationBinding{Status: &accessv1.IntegrationBinding_Status{
+		Purpose:         accessv1.IntegrationBinding_Status_REVIEW_SURFACE,
+		StepIndex:       1,
+		SpecRevision:    2,
+		IntegrationRef:  integrationRef,
+		Audience:        accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
+		InteractionMode: accessv1.Policy_Spec_Rule_Surface_INTERACTIVE,
+	}}
 	assert.False(t, isClosed(binding, req))
+	binding.Status.SpecRevision = 1
+	assert.True(t, isClosed(binding, req))
+	binding.Status.SpecRevision = 2
+	binding.Status.InteractionMode = accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY
+	assert.True(t, isClosed(binding, req))
+	binding.Status.InteractionMode = accessv1.Policy_Spec_Rule_Surface_INTERACTIVE
+	binding.Status.IntegrationRef = &metav1.ObjectReference{Name: "jira", Uid: "uid-jira"}
+	assert.True(t, isClosed(binding, req))
+	binding.Status.IntegrationRef = integrationRef
 	binding.Status.StepIndex = 0
 	assert.True(t, isClosed(binding, req))
 	binding.Status.Purpose = accessv1.IntegrationBinding_Status_NOTIFICATION
+	binding.Status.InteractionMode = accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY
+	assert.False(t, isClosed(binding, req))
+	req.Status.Rule.Notifications = nil
+	assert.True(t, isClosed(binding, req))
+	req.Status.Rule = nil
 	assert.False(t, isClosed(binding, req))
 	req.Status.State = nil
 	assert.True(t, isClosed(binding, req))

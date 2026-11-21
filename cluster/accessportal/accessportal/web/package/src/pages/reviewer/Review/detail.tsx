@@ -35,6 +35,8 @@ import {
   currentReviewStepIndex,
   decisionMeta,
   isPendingRequest,
+  reviewStepName,
+  reviewSteps,
   shortName,
   textLength,
 } from "@/utils";
@@ -92,10 +94,21 @@ const ReviewDetail = () => {
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      const next = AccessP.Review.clone(qry.data!);
-      next.spec!.decision = decision;
-      next.spec!.justification = justification;
-      const { response } = await getReviewerClient().updateReview(next);
+      const reviewed = requestQry.data!;
+      const stepIndex = currentReviewStepIndex(reviewed);
+      const { response } = await getReviewerClient().setReviewDecision(
+        AccessP.SetReviewDecisionRequest.create({
+          requestRef: MetaP.ObjectReference.create({ name: requestName }),
+          decision,
+          justification,
+          expectedStepName: reviewStepName(reviewSteps(reviewed)[stepIndex], stepIndex),
+          expectedSpecRevision: reviewed.status?.specRevision ?? 0,
+          duration:
+            decision === AccessP.Review_Spec_Decision.APPROVE
+              ? qry.data?.spec?.duration
+              : undefined,
+        }),
+      );
       return response;
     },
     onSuccess: () => {

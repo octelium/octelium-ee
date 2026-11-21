@@ -120,6 +120,16 @@ func IsAccessActive(req *accessv1.Request, now time.Time) bool {
 	return true
 }
 
+func RestartEvaluation(req *accessv1.Request) {
+	EndCurrentStep(req, accessv1.Request_Status_Review_StepState_INTERRUPTED)
+
+	req.Status.SpecRevision++
+	req.Status.Rule = nil
+	req.Status.PolicyRef = nil
+	req.Status.Workflow = nil
+	req.Status.Evaluation = nil
+}
+
 func IsAwaitingRequester(req *accessv1.Request) bool {
 	if !IsPending(req) || req.Status.Review == nil {
 		return false

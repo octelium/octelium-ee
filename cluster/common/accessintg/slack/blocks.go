@@ -121,6 +121,13 @@ func buildBlocks(p *accessintg.Presentation, mentionUserGroupID string,
 				button(actionIDReject, "Reject", "danger", bindingName),
 			},
 		})
+	} else if p.IsAwaitingRequester {
+		ret = append(ret, map[string]any{
+			"type": "context",
+			"elements": []any{
+				mrkdwn("This Request is waiting for information from its requester."),
+			},
+		})
 	} else if p.Purpose == accessv1.IntegrationBinding_Status_REVIEW_SURFACE.String() {
 		ret = append(ret, map[string]any{
 			"type": "context",

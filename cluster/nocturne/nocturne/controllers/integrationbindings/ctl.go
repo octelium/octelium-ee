@@ -390,16 +390,7 @@ func (c *Controller) listBindingsOf(ctx context.Context,
 }
 
 func isClosed(itm *accessv1.IntegrationBinding, req *accessv1.Request) bool {
-	if req.Status.State == nil ||
-		req.Status.State.Status != accessv1.Request_Status_State_PENDING {
-		return true
-	}
-
-	if itm.Status.Purpose != accessv1.IntegrationBinding_Status_REVIEW_SURFACE {
-		return false
-	}
-
-	return accesscmd.CurrentStepIndex(req) != itm.Status.StepIndex
+	return !accessintg.IsBindingCurrent(itm, req)
 }
 
 func backoff(attempts uint32) time.Duration {

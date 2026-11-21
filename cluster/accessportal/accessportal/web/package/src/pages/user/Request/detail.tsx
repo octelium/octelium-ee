@@ -106,19 +106,14 @@ const EditRequestModal = (props: {
     }
   }
 
-  const unsavedChanges = useUnsavedChanges(
-    props.opened &&
-      (urgency !== initial.urgency ||
-        durationToSeconds(duration) !== durationToSeconds(initial.duration) ||
-        deadline?.seconds !== initial.deadline?.seconds ||
-        deadline?.nanos !== initial.deadline?.nanos ||
-        justification !== initial.justification ||
-        ticket !== initial.ticket),
-  );
-  const restartsReview =
+  const changed =
+    urgency !== initial.urgency ||
+    durationToSeconds(duration) !== durationToSeconds(initial.duration) ||
+    deadline?.seconds !== initial.deadline?.seconds ||
+    deadline?.nanos !== initial.deadline?.nanos ||
     justification !== initial.justification ||
-    ticket !== initial.ticket ||
-    durationToSeconds(duration) > durationToSeconds(initial.duration);
+    ticket !== initial.ticket;
+  const unsavedChanges = useUnsavedChanges(props.opened && changed);
   const close = () => unsavedChanges.confirmDiscard(props.onClose);
 
   const mutation = useMutation({
@@ -233,10 +228,10 @@ const EditRequestModal = (props: {
             onChange={(event) => setTicket(event.currentTarget.value)}
           />
 
-          {restartsReview && (
+          {changed && (
             <Note tone="amber">
-              Changing the justification or the ticket, or asking for a longer
-              duration, restarts the review. Approvals already given no longer
+              Saving any change checks the request against the access policies
+              again and restarts its review. Approvals already given no longer
               count.
             </Note>
           )}

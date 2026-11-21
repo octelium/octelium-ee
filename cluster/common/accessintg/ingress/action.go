@@ -80,6 +80,14 @@ func (s *Server) setReviewDecision(ctx context.Context, integration *accessv1.In
 		}, nil
 	}
 
+	if !accessintg.IsBindingCurrent(binding, req) {
+		return &accessintg.ActionResult{
+			Message:     "This Request changed after this message was sent. Review it in the access portal instead.",
+			RequestName: req.Metadata.Name,
+			PortalURL:   s.portalURL(fmt.Sprintf("reviewer/requests/%s", req.Metadata.Name)),
+		}, nil
+	}
+
 	resolution, err := s.resolveActor(ctx, integration, provider, action.ExternalActorID)
 	if err != nil {
 		return nil, err
@@ -121,12 +129,13 @@ func (s *Server) setReviewDecision(ctx context.Context, integration *accessv1.In
 	}
 
 	review, err := accesscmd.SetReviewDecision(ctx, &accesscmd.SetReviewDecisionOpts{
-		OcteliumC:        s.octeliumC,
-		Reviewer:         resolution.User,
-		Request:          req,
-		Decision:         decision,
-		Justification:    action.Justification,
-		ExpectedStepName: binding.Status.StepName,
+		OcteliumC:            s.octeliumC,
+		Reviewer:             resolution.User,
+		Request:              req,
+		Decision:             decision,
+		Justification:        action.Justification,
+		ExpectedStepName:     binding.Status.StepName,
+		ExpectedSpecRevision: binding.Status.SpecRevision,
 		Origin: &accessv1.Origin{
 			Type:            accessv1.Origin_INTEGRATION,
 			IntegrationRef:  umetav1.GetObjectReference(integration),

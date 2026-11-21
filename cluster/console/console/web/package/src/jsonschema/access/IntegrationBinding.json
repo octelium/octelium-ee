@@ -152,6 +152,10 @@
                     },
                     "type": "array",
                     "description": "LastExternalEventIDs is the list of the identifiers of the most recent provider events that were accepted through the external object. It is used to discard the duplicate deliveries of the same external action."
+                },
+                "specRevision": {
+                    "type": "integer",
+                    "description": "SpecRevision is the Request's `status.specRevision` that the external object presents. It is only set for the REVIEW_SURFACE purpose. The external object is closed and its decisions are rejected once the Request's spec revision changes."
                 }
             },
             "additionalProperties": false,

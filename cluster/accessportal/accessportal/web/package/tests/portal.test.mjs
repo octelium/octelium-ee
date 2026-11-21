@@ -490,6 +490,19 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
       });
     }
 
+    it("warns that any edit restarts the review", async () => {
+      await load("/user/requests/own-pending");
+      await page.getByRole("button", { name: "Edit", exact: true }).click();
+      const edit = page.getByRole("dialog", { name: "Edit pending request", exact: true });
+      const note = edit.getByText(/Saving any change checks the request against the access policies again/);
+      await edit.getByRole("textbox", { name: "Ticket", exact: true }).waitFor();
+      assert.equal(await note.count(), 0);
+      await edit.getByRole("textbox", { name: "Ticket", exact: true }).fill("INC-7");
+      await note.waitFor();
+      await edit.getByRole("textbox", { name: "Ticket", exact: true }).fill("");
+      await note.waitFor({ state: "hidden" });
+    });
+
     it("edits existing custom durations without submitting the request form", async () => {
       await load("/user/requests/own-pending");
       await page.getByRole("button", { name: "Edit", exact: true }).click();
@@ -808,7 +821,14 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
       assert.equal(decision.request.requestRef.name, "queue-first");
       assert.equal(decision.request.expectedStepName, "security");
       assert.equal(decision.request.decision, 1);
-      assert.equal(calls.filter((call) => call.method === "createReview").length, 0);
+    });
+
+    it("shows the grant summary before the decision controls on narrow screens", async () => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await load("/reviewer/requests/queue-first");
+      const grant = await page.getByText("Access if approved", { exact: true }).boundingBox();
+      const approve = await page.getByRole("button", { name: "Approve", exact: true }).filter({ visible: true }).boundingBox();
+      assert.ok(grant.y < approve.y);
     });
 
     it("requires an explicit decision when editing a reset review", async () => {
@@ -818,9 +838,12 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
       assert.equal(await save.isDisabled(), true);
       await page.getByText("Approve", { exact: true }).click();
       await save.click();
-      await page.waitForFunction(() => window.calls.some((call) => call.method === "updateReview"));
-      const update = (await page.evaluate(() => window.calls)).find((call) => call.method === "updateReview");
-      assert.equal(update.request.spec.decision, 1);
+      await page.waitForFunction(() => window.calls.some((call) => call.method === "setReviewDecision"));
+      const update = (await page.evaluate(() => window.calls)).find((call) => call.method === "setReviewDecision");
+      assert.equal(update.request.decision, 1);
+      assert.equal(update.request.requestRef.name, "queue-second");
+      assert.ok(update.request.expectedStepName);
+      assert.ok(update.request.expectedSpecRevision > 0);
     });
 
     it("offers no changes for reviews applied to an earlier step", async () => {

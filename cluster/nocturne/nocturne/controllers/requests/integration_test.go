@@ -22,6 +22,7 @@ import (
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func createIntegration(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInterface,
@@ -119,9 +120,9 @@ func TestRequestEnsuresIntegrationBindings(t *testing.T) {
 	assert.Equal(t, 1, len(bindings))
 
 	binding := bindings[0]
-	assert.Equal(t, accessintg.BindingName(reqG.Metadata.Uid,
-		accessv1.IntegrationBinding_Status_REVIEW_SURFACE, 0, 0, ""),
+	assert.Equal(t, accessintg.BindingName(reqG.Metadata.Uid, binding.Status, 0),
 		binding.Metadata.Name)
+	assert.Equal(t, reqG.Status.SpecRevision, binding.Status.SpecRevision)
 	assert.Equal(t, "first", binding.Status.StepName)
 	assert.Equal(t, accessv1.Policy_Spec_Rule_Surface_INTERACTIVE, binding.Status.InteractionMode)
 	assert.Equal(t, integration.Metadata.Uid, binding.Status.IntegrationRef.Uid)
@@ -130,6 +131,64 @@ func TestRequestEnsuresIntegrationBindings(t *testing.T) {
 	assert.NotEmpty(t, binding.Status.DesiredRevision)
 
 	assert.Equal(t, 1, len(listBindings(t, ctx, octeliumC, reqG)))
+}
+
+func TestRequestReevaluationReplacesTheReviewSurface(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	oldIntegration := createIntegration(t, ctx, octeliumC, accessv1.Integration_Status_NOTIFICATION)
+	newIntegration := createIntegration(t, ctx, octeliumC, accessv1.Integration_Status_NOTIFICATION)
+
+	step := anyStep(userReviewer(umetav1.GetObjectReference(createReviewerUser(t, ctx, octeliumC))))
+	step.Name = "first"
+	step.Surfaces = []*accessv1.Policy_Spec_Rule_Surface{
+		sharedSurface(oldIntegration, accessv1.Policy_Spec_Rule_Surface_INTERACTIVE),
+	}
+
+	pol := createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_REVIEW,
+		Condition: matchAny(),
+		Action:    reviewAction(step),
+	})
+
+	catalog := createCatalog(t, ctx, octeliumC, nil)
+	reqG := converge(t, ctx, ctrl, octeliumC, createRequest(t, ctx, octeliumC,
+		baseRequest(createUserRef(t, ctx, octeliumC), catalog)).Metadata.Uid)
+
+	bindings := listBindings(t, ctx, octeliumC, reqG)
+	require.Len(t, bindings, 1)
+	oldBinding := bindings[0]
+	assert.True(t, accessintg.IsBindingCurrent(oldBinding, reqG))
+
+	pol.Spec.Rules[0].Action.GetReview().Steps[0].Surfaces = []*accessv1.Policy_Spec_Rule_Surface{
+		sharedSurface(newIntegration, accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY),
+	}
+	_, err := octeliumC.AccessC().UpdatePolicy(ctx, pol)
+	require.NoError(t, err)
+
+	catalog.Spec.AccessLevels[0].MaxDuration = durationHours(2)
+	_, err = octeliumC.AccessC().UpdateCatalog(ctx, catalog)
+	require.NoError(t, err)
+
+	reqG = converge(t, ctx, ctrl, octeliumC, reqG.Metadata.Uid)
+	require.Equal(t, uint32(2), reqG.Status.SpecRevision)
+	assert.False(t, accessintg.IsBindingCurrent(oldBinding, reqG))
+
+	bindings = listBindings(t, ctx, octeliumC, reqG)
+	require.Len(t, bindings, 2)
+
+	var current []*accessv1.IntegrationBinding
+	for _, itm := range bindings {
+		if accessintg.IsBindingCurrent(itm, reqG) {
+			current = append(current, itm)
+		}
+	}
+
+	require.Len(t, current, 1)
+	assert.Equal(t, newIntegration.Metadata.Uid, current[0].Status.IntegrationRef.Uid)
+	assert.Equal(t, accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY, current[0].Status.InteractionMode)
+	assert.Equal(t, uint32(2), current[0].Status.SpecRevision)
 }
 
 func TestRequestUpdatesBindingDesiredRevision(t *testing.T) {

@@ -187,8 +187,8 @@ func TestDesiredBindingsShared(t *testing.T) {
 	assert.Equal(t, req.Metadata.Uid, item.Status.RequestRef.Uid)
 	assert.Equal(t, accessv1.Policy_Spec_Rule_Surface_INTERACTIVE, item.Status.InteractionMode)
 	assert.Equal(t, accessv1.IntegrationBinding_Status_PENDING, item.Status.State)
-	assert.Equal(t, BindingName(req.Metadata.Uid,
-		accessv1.IntegrationBinding_Status_REVIEW_SURFACE, 0, 0, ""), item.Name)
+	assert.Equal(t, req.Status.SpecRevision, item.Status.SpecRevision)
+	assert.Equal(t, BindingName(req.Metadata.Uid, item.Status, 0), item.Name)
 }
 
 func TestDesiredBindingsSharedPerIntegration(t *testing.T) {

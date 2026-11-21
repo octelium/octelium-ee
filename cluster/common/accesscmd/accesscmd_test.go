@@ -686,54 +686,178 @@ func TestIsAccessActive(t *testing.T) {
 }
 
 func TestIsScopeMateriallyEqual(t *testing.T) {
-	newScope := func() *accessv1.Request_Status_ResolvedScope {
-		return &accessv1.Request_Status_ResolvedScope{
-			CatalogRef:             &metav1.ObjectReference{Name: "prod", Uid: "uid-prod"},
-			CatalogResourceVersion: "1",
-			CatalogDisplayName:     "Production",
-			AccessLevel:            fullLevel("full"),
-			Membership:             accessv1.Catalog_Spec_DYNAMIC,
-			ResolvedAt:             pbutils.Now(),
-			ServiceRefs: []*metav1.ObjectReference{
-				{Name: "api.default", Uid: "uid-api"},
-				{Name: "db.prod", Uid: "uid-db"},
-			},
-			NamespaceRefs: []*metav1.ObjectReference{{Name: "prod", Uid: "uid-ns"}},
+	nsDefault := &metav1.ObjectReference{Name: "default", Uid: "uid-ns-default"}
+	nsProd := &metav1.ObjectReference{Name: "prod", Uid: "uid-ns"}
+
+	newService := func(name, uid string, ns *metav1.ObjectReference, isSystem bool) *corev1.Service {
+		return &corev1.Service{
+			Metadata: &metav1.Metadata{Name: name, Uid: uid, IsSystem: isSystem},
+			Status:   &corev1.Service_Status{NamespaceRef: ns},
 		}
 	}
 
-	a := newScope()
-	b := newScope()
-	b.CatalogResourceVersion = "2"
-	b.CatalogDisplayName = "Renamed"
-	b.ResolvedAt = pbutils.Timestamp(time.Now().Add(time.Hour))
-	b.ServiceRefs = append(b.ServiceRefs, &metav1.ObjectReference{Name: "cache.prod", Uid: "uid-cache"})
-	b.TotalExcludedService = 3
-	assert.True(t, IsScopeMateriallyEqual(a, b))
-	assert.False(t, IsScopeEqual(a, b))
+	api := newService("api.default", "uid-api", nsDefault, false)
+	db := newService("db.prod", "uid-db", nsProd, false)
+	cache := newService("cache.prod", "uid-cache", nsProd, false)
+	web := newService("web.default", "uid-web", nsDefault, false)
+	admin := newService("admin.prod", "uid-admin", nsProd, true)
 
-	b.ServiceRefs = append(b.ServiceRefs, &metav1.ObjectReference{Name: "web.default", Uid: "uid-web"})
-	assert.False(t, IsScopeMateriallyEqual(a, b))
+	newScope := func(services ...*corev1.Service) *Scope {
+		ret := &Scope{
+			Services: services,
+			Status: &accessv1.Request_Status_ResolvedScope{
+				CatalogRef:             &metav1.ObjectReference{Name: "prod", Uid: "uid-prod"},
+				CatalogResourceVersion: "1",
+				CatalogDisplayName:     "Production",
+				AccessLevel:            fullLevel("full"),
+				Membership:             accessv1.Catalog_Spec_DYNAMIC,
+				ResolvedAt:             pbutils.Now(),
+				NamespaceRefs:          []*metav1.ObjectReference{nsProd},
+			},
+		}
 
-	c := newScope()
-	c.Priority = -1
-	assert.False(t, IsScopeMateriallyEqual(a, c))
+		for _, svc := range services {
+			ret.Status.ServiceRefs = append(ret.Status.ServiceRefs,
+				&metav1.ObjectReference{Name: svc.Metadata.Name, Uid: svc.Metadata.Uid})
+		}
 
-	d := newScope()
-	d.AccessLevel.MaxDuration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 9}}
-	assert.False(t, IsScopeMateriallyEqual(a, d))
+		return ret
+	}
 
-	fixed := newScope()
-	fixed.Membership = accessv1.Catalog_Spec_FIXED
-	fixed.NamespaceRefs = nil
-	fixedMore := newScope()
-	fixedMore.Membership = accessv1.Catalog_Spec_FIXED
-	fixedMore.NamespaceRefs = nil
-	fixedMore.ServiceRefs = append(fixedMore.ServiceRefs, &metav1.ObjectReference{Name: "cache.prod", Uid: "uid-cache"})
-	assert.False(t, IsScopeMateriallyEqual(fixed, fixedMore))
+	a := newScope(api, db)
+	b := newScope(api, db, cache)
+	b.Status.CatalogResourceVersion = "2"
+	b.Status.CatalogDisplayName = "Renamed"
+	b.Status.ResolvedAt = pbutils.Timestamp(time.Now().Add(time.Hour))
+	b.Status.TotalExcludedService = 3
+	assert.True(t, IsScopeMateriallyEqual(a.Status, b))
+	assert.False(t, IsScopeEqual(a.Status, b.Status))
+
+	assert.False(t, IsScopeMateriallyEqual(a.Status, newScope(api, db, cache, web)))
+	assert.False(t, IsScopeMateriallyEqual(a.Status, newScope(api, db, admin)),
+		"a system Service is only granted through its explicit ref")
+	assert.True(t, IsScopeMateriallyEqual(newScope(api, db, admin).Status, newScope(api, db, admin)))
+	assert.True(t, IsScopeMateriallyEqual(newScope(api, db, admin).Status, newScope(api, db)))
+	assert.True(t, IsScopeMateriallyEqual(a.Status, newScope(api)))
+	assert.False(t, IsScopeMateriallyEqual(a.Status, newScope(db)))
+
+	c := newScope(api, db)
+	c.Status.Priority = -1
+	assert.False(t, IsScopeMateriallyEqual(a.Status, c))
+
+	d := newScope(api, db)
+	d.Status.AccessLevel.MaxDuration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 9}}
+	assert.False(t, IsScopeMateriallyEqual(a.Status, d))
+
+	fixed := newScope(api, db)
+	fixed.Status.Membership = accessv1.Catalog_Spec_FIXED
+	fixed.Status.NamespaceRefs = nil
+	fixedMore := newScope(api, db, cache)
+	fixedMore.Status.Membership = accessv1.Catalog_Spec_FIXED
+	fixedMore.Status.NamespaceRefs = nil
+	assert.False(t, IsScopeMateriallyEqual(fixed.Status, fixedMore))
 
 	assert.True(t, IsScopeMateriallyEqual(nil, nil))
-	assert.False(t, IsScopeMateriallyEqual(a, nil))
+	assert.False(t, IsScopeMateriallyEqual(a.Status, nil))
+	assert.False(t, IsScopeMateriallyEqual(nil, a))
+}
+
+func TestStepRoutingCoversTheRequiredQuorum(t *testing.T) {
+	a := newAccessTest(t)
+
+	reviewerA := a.createUser(t)
+	reviewerB := a.createUser(t)
+	escalation := a.createUser(t)
+	fallback := a.createUser(t)
+	requester := a.createUser(t)
+
+	userReviewer := func(usr *corev1.User) *Reviewer {
+		return &Reviewer{
+			Type: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_{
+				User: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User{
+					UserRef: umetav1.GetObjectReference(usr),
+				},
+			},
+		}
+	}
+
+	newRequest := func(step *accessv1.Policy_Spec_Rule_Action_Review_Step) *accessv1.Request {
+		return &accessv1.Request{
+			Metadata: &metav1.Metadata{Name: "req", Uid: "uid-req"},
+			Spec:     &accessv1.Request_Spec{},
+			Status: &accessv1.Request_Status{
+				UserRef:      umetav1.GetObjectReference(requester),
+				SpecRevision: 1,
+				State:        &accessv1.Request_Status_State{Status: accessv1.Request_Status_State_PENDING},
+				Rule: &accessv1.Policy_Spec_Rule{
+					Action: &accessv1.Policy_Spec_Rule_Action{
+						Type: &accessv1.Policy_Spec_Rule_Action_Review_{
+							Review: &accessv1.Policy_Spec_Rule_Action_Review{
+								Steps: []*accessv1.Policy_Spec_Rule_Action_Review_Step{step},
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	newStep := func() *accessv1.Policy_Spec_Rule_Action_Review_Step {
+		return &accessv1.Policy_Spec_Rule_Action_Review_Step{
+			ApprovalRequirement: accessv1.Policy_Spec_Rule_Action_Review_Step_COUNT,
+			ApprovalCount:       3,
+			Reviewers:           []*Reviewer{userReviewer(reviewerA), userReviewer(reviewerB)},
+		}
+	}
+
+	req := newRequest(newStep())
+	require.NoError(t, StartReviewStep(a.ctx, &StartReviewStepOpts{OcteliumC: a.octeliumC, Request: req, Index: 0}))
+	stepState := CurrentStepState(req)
+	assert.True(t, stepState.IsUnroutable)
+	assert.Equal(t, uint32(2), stepState.TotalEligibleReviewer)
+	assert.Equal(t, uint32(1), stepState.SpecRevision)
+	assert.False(t, IsReviewStepStale(req))
+
+	req.Status.SpecRevision = 2
+	assert.True(t, IsReviewStepStale(req))
+
+	withFallback := newRequest(newStep())
+	require.NoError(t, StartReviewStep(a.ctx, &StartReviewStepOpts{
+		OcteliumC: a.octeliumC,
+		Request:   withFallback,
+		Index:     0,
+		ClusterConfig: &accessv1.ClusterConfig{
+			Spec: &accessv1.ClusterConfig_Spec{
+				Review: &accessv1.ClusterConfig_Spec_Review{
+					FallbackReviewers: []*Reviewer{userReviewer(fallback)},
+				},
+			},
+		},
+	}))
+	stepState = CurrentStepState(withFallback)
+	assert.False(t, stepState.IsUnroutable)
+	assert.Equal(t, uint32(3), stepState.TotalEligibleReviewer)
+
+	escalated := newStep()
+	escalated.Escalation = &accessv1.Policy_Spec_Rule_Action_Review_Step_Escalation{
+		After:     &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 1}},
+		Reviewers: []*Reviewer{userReviewer(escalation)},
+	}
+	withEscalation := newRequest(escalated)
+	require.NoError(t, StartReviewStep(a.ctx, &StartReviewStepOpts{OcteliumC: a.octeliumC, Request: withEscalation, Index: 0}))
+	stepState = CurrentStepState(withEscalation)
+	assert.True(t, stepState.IsEscalated)
+	assert.False(t, stepState.IsUnroutable)
+	assert.Equal(t, uint32(3), stepState.TotalEligibleReviewer)
+
+	stepState.IsEscalated = false
+	ok, err := CanReview(a.ctx, a.octeliumC, escalation, withEscalation)
+	require.NoError(t, err)
+	assert.True(t, ok)
+
+	ok, err = CanReview(a.ctx, a.octeliumC, fallback, withEscalation)
+	require.NoError(t, err)
+	assert.False(t, ok)
 }
 
 func TestEvalResultBlockingRule(t *testing.T) {
@@ -759,8 +883,8 @@ func TestEvalResultBlockingRule(t *testing.T) {
 		{accessv1.Policy_Spec_Rule_DENY, accessv1.Policy_Spec_Rule_REVIEW, true},
 		{accessv1.Policy_Spec_Rule_REVIEW, accessv1.Policy_Spec_Rule_AUTO_APPROVE, true},
 		{accessv1.Policy_Spec_Rule_REVIEW, accessv1.Policy_Spec_Rule_REVIEW, true},
-		{accessv1.Policy_Spec_Rule_AUTO_APPROVE, accessv1.Policy_Spec_Rule_REVIEW, false},
-		{accessv1.Policy_Spec_Rule_AUTO_APPROVE, accessv1.Policy_Spec_Rule_AUTO_APPROVE, false},
+		{accessv1.Policy_Spec_Rule_AUTO_APPROVE, accessv1.Policy_Spec_Rule_REVIEW, true},
+		{accessv1.Policy_Spec_Rule_AUTO_APPROVE, accessv1.Policy_Spec_Rule_AUTO_APPROVE, true},
 		{accessv1.Policy_Spec_Rule_DENY, accessv1.Policy_Spec_Rule_DENY, false},
 	} {
 		res := &EvalResult{
@@ -932,12 +1056,40 @@ func TestSetReviewDecisionChecks(t *testing.T) {
 		if opts.Reviewer == nil {
 			opts.Reviewer = reviewer
 		}
+		if opts.ExpectedStepName == "" {
+			opts.ExpectedStepName = "owners"
+		}
+		if opts.ExpectedSpecRevision == 0 {
+			opts.ExpectedSpecRevision = req.Status.SpecRevision
+		}
 		return SetReviewDecision(a.ctx, opts)
 	}
 
 	req := newPending(nil)
 
-	_, err := decide(req, &SetReviewDecisionOpts{Decision: accessv1.Review_Spec_DECISION_REJECT})
+	_, err := SetReviewDecision(a.ctx, &SetReviewDecisionOpts{
+		OcteliumC:            a.octeliumC,
+		Request:              req,
+		Reviewer:             reviewer,
+		Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+		ExpectedSpecRevision: req.Status.SpecRevision,
+	})
+	assert.ErrorContains(t, err, "ExpectedStepName must be set")
+
+	_, err = SetReviewDecision(a.ctx, &SetReviewDecisionOpts{
+		OcteliumC:        a.octeliumC,
+		Request:          req,
+		Reviewer:         reviewer,
+		Decision:         accessv1.Review_Spec_DECISION_REJECT,
+		Justification:    "not needed",
+		ExpectedStepName: "owners",
+	})
+	assert.ErrorContains(t, err, "ExpectedSpecRevision must be set")
+
+	_, err = decide(req, &SetReviewDecisionOpts{Decision: accessv1.Review_Spec_DECISION_APPROVE, ExpectedStepName: "security"})
+	assert.ErrorContains(t, err, "no longer waiting for the security review Step")
+
+	_, err = decide(req, &SetReviewDecisionOpts{Decision: accessv1.Review_Spec_DECISION_REJECT})
 	assert.ErrorContains(t, err, "justification is required")
 
 	_, err = decide(req, &SetReviewDecisionOpts{Decision: accessv1.Review_Spec_DECISION_APPROVE, ExpectedSpecRevision: 1})
@@ -980,6 +1132,15 @@ func TestSetReviewDecisionChecks(t *testing.T) {
 	assert.Equal(t, rev.Metadata.Uid, revAgain.Metadata.Uid)
 	assert.Equal(t, uint32(3), revAgain.Status.SpecRevision)
 	assert.Len(t, revAgain.Status.LastRevisions, 1)
+
+	withdrawn, err := SetReviewDecision(a.ctx, &SetReviewDecisionOpts{
+		OcteliumC: a.octeliumC,
+		Request:   req,
+		Reviewer:  reviewer,
+		Decision:  accessv1.Review_Spec_DECISION_UNSET,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, accessv1.Review_Spec_DECISION_UNSET, withdrawn.Spec.Decision)
 
 	timedOut := newPending(func(req *accessv1.Request) {
 		req.Status.Review.CurrentStepStartedAt = pbutils.Timestamp(time.Now().Add(-2 * time.Hour))

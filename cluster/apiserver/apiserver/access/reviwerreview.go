@@ -15,14 +15,12 @@ import (
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
-	apisrvcommon "github.com/octelium/octelium/cluster/apiserver/apiserver/common"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/serr"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
 	"github.com/octelium/octelium/cluster/common/userctx"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
-	"github.com/octelium/octelium/pkg/common/pbutils"
 )
 
 func (s *ServerReviewer) SetReviewDecision(ctx context.Context,
@@ -57,65 +55,6 @@ func (s *ServerReviewer) SetReviewDecision(ctx context.Context,
 		ExpectedStepName:     req.ExpectedStepName,
 		ExpectedSpecRevision: req.ExpectedSpecRevision,
 		Origin:               apiOrigin(i),
-	})
-}
-
-func (s *ServerReviewer) CreateReview(ctx context.Context, req *accessv1.Review) (*accessv1.Review, error) {
-	i, err := userctx.GetUserCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := apivalidation.ValidateCommon(req, &apivalidation.ValidateCommonOpts{
-		ValidateMetadataOpts: apivalidation.ValidateMetadataOpts{},
-		RequireStatus:        true,
-	}); err != nil {
-		return nil, err
-	}
-
-	if err := validateReviewerReviewSpec(req); err != nil {
-		return nil, err
-	}
-
-	if req.Status.RequestRef == nil {
-		return nil, grpcutils.InvalidArg("RequestRef must be set")
-	}
-
-	if err := apivalidation.CheckObjectRef(req.Status.RequestRef,
-		&apivalidation.CheckGetOptionsOpts{}); err != nil {
-		return nil, err
-	}
-
-	request, err := s.octeliumC.AccessC().GetRequest(ctx,
-		apivalidation.ObjectReferenceToRGetOptions(req.Status.RequestRef))
-	if err != nil {
-		return nil, serr.K8sNotFoundOrInternalWithErr(err)
-	}
-
-	step, stepIndex, err := accesscmd.CurrentStep(request)
-	if err != nil {
-		return nil, err
-	}
-
-	existing, err := accesscmd.GetStepReview(ctx, s.octeliumC, request, stepIndex,
-		i.User.Metadata.Uid)
-	if err != nil {
-		return nil, err
-	}
-	if existing != nil {
-		return nil, grpcutils.AlreadyExists(
-			"You already have a Review for this Request at the %s review Step", step.Name)
-	}
-
-	return accesscmd.SetReviewDecision(ctx, &accesscmd.SetReviewDecisionOpts{
-		OcteliumC:        s.octeliumC,
-		Reviewer:         i.User,
-		Request:          request,
-		Decision:         req.Spec.Decision,
-		Justification:    req.Spec.Justification,
-		Duration:         req.Spec.Duration,
-		ExpectedStepName: step.Name,
-		Origin:           apiOrigin(i),
 	})
 }
 
@@ -171,68 +110,6 @@ func (s *ServerReviewer) ListReview(ctx context.Context, req *accessv1.ListRevie
 	}
 
 	return itemList, nil
-}
-
-func (s *ServerReviewer) UpdateReview(ctx context.Context, req *accessv1.Review) (*accessv1.Review, error) {
-	i, err := userctx.GetUserCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := apivalidation.ValidateCommon(req, &apivalidation.ValidateCommonOpts{
-		ValidateMetadataOpts: apivalidation.ValidateMetadataOpts{
-			RequireName: true,
-			ParentsMust: 1,
-		},
-	}); err != nil {
-		return nil, err
-	}
-
-	if err := validateReviewerReviewSpec(req); err != nil {
-		return nil, err
-	}
-
-	item, err := s.octeliumC.AccessC().GetReview(ctx, apivalidation.ObjectToRGetOptions(req))
-	if err != nil {
-		return nil, serr.K8sNotFoundOrInternalWithErr(err)
-	}
-
-	if err := checkReviewerOwnsReview(i.User.Metadata.Uid, item); err != nil {
-		return nil, err
-	}
-
-	request, err := s.getReviewerReviewRequest(ctx, item)
-	if err != nil {
-		return nil, err
-	}
-
-	item, err = accesscmd.SetReviewDecision(ctx, &accesscmd.SetReviewDecisionOpts{
-		OcteliumC:        s.octeliumC,
-		Reviewer:         i.User,
-		Request:          request,
-		Decision:         req.Spec.Decision,
-		Justification:    req.Spec.Justification,
-		Duration:         req.Spec.Duration,
-		ExpectedStepName: item.Status.StepName,
-		Origin:           apiOrigin(i),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	next := pbutils.Clone(item).(*accessv1.Review)
-	apisrvcommon.MetadataUpdate(next.Metadata, req.Metadata)
-
-	if pbutils.IsEqual(item, next) {
-		return item, nil
-	}
-
-	item, err = s.octeliumC.AccessC().UpdateReview(ctx, next)
-	if err != nil {
-		return nil, serr.K8sInternal(err)
-	}
-
-	return item, nil
 }
 
 func (s *ServerReviewer) CancelReview(ctx context.Context, req *accessv1.CancelReviewRequest) (*metav1.OperationResult, error) {
@@ -296,25 +173,6 @@ func (s *ServerReviewer) getReviewerReviewRequest(ctx context.Context, review *a
 	}
 
 	return request, nil
-}
-
-func validateReviewerReviewSpec(req *accessv1.Review) error {
-	if req.Spec == nil {
-		return grpcutils.InvalidArg("Nil Spec")
-	}
-
-	switch req.Spec.Decision {
-	case accessv1.Review_Spec_DECISION_APPROVE,
-		accessv1.Review_Spec_DECISION_REJECT:
-	default:
-		return grpcutils.InvalidArg("Decision must be APPROVE or REJECT")
-	}
-
-	if accesscmd.TextLen(req.Spec.Justification) > accesscmd.MaxJustificationLen {
-		return grpcutils.InvalidArg("Justification is too long")
-	}
-
-	return nil
 }
 
 func checkReviewerOwnsReview(userUID string, review *accessv1.Review) error {

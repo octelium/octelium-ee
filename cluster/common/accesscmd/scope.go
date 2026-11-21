@@ -253,15 +253,43 @@ func IsScopeEqual(a, b *accessv1.Request_Status_ResolvedScope) bool {
 	return pbutils.IsEqual(ac, bc)
 }
 
-func IsScopeMateriallyEqual(a, b *accessv1.Request_Status_ResolvedScope) bool {
-	if a == nil || b == nil {
-		return a == b
+func IsScopeMateriallyEqual(prev *accessv1.Request_Status_ResolvedScope, scope *Scope) bool {
+	if prev == nil || scope == nil || scope.Status == nil {
+		return prev == nil && (scope == nil || scope.Status == nil)
 	}
 
-	return pbutils.IsEqual(getMaterialScope(a), getMaterialScope(b))
+	covered := map[string]struct{}{}
+	for _, svc := range scope.Services {
+		if ScopeIncludesService(&accessv1.Request_Status_ResolvedScope{
+			NamespaceRefs: scope.Status.NamespaceRefs,
+		}, svc) {
+			covered[svc.Metadata.Uid] = struct{}{}
+		}
+	}
+
+	current := map[string]struct{}{}
+	for _, ref := range scope.Status.ServiceRefs {
+		current[ref.Uid] = struct{}{}
+	}
+
+	isMaterial := func(ref *metav1.ObjectReference, isRemoved bool) bool {
+		if _, ok := covered[ref.Uid]; ok {
+			return false
+		}
+
+		return !isRemoved || !isServiceRefInNamespaces(ref, prev.NamespaceRefs)
+	}
+
+	return pbutils.IsEqual(getMaterialScope(prev, func(ref *metav1.ObjectReference) bool {
+		_, ok := current[ref.Uid]
+		return isMaterial(ref, !ok)
+	}), getMaterialScope(scope.Status, func(ref *metav1.ObjectReference) bool {
+		return isMaterial(ref, false)
+	}))
 }
 
-func getMaterialScope(scope *accessv1.Request_Status_ResolvedScope) *accessv1.Request_Status_ResolvedScope {
+func getMaterialScope(scope *accessv1.Request_Status_ResolvedScope,
+	isMaterial func(ref *metav1.ObjectReference) bool) *accessv1.Request_Status_ResolvedScope {
 	ret := &accessv1.Request_Status_ResolvedScope{
 		CatalogRef:          scope.CatalogRef,
 		AccessLevel:         scope.AccessLevel,
@@ -272,11 +300,9 @@ func getMaterialScope(scope *accessv1.Request_Status_ResolvedScope) *accessv1.Re
 	}
 
 	for _, ref := range scope.ServiceRefs {
-		if isServiceRefInNamespaces(ref, scope.NamespaceRefs) {
-			continue
+		if isMaterial(ref) {
+			ret.ServiceRefs = append(ret.ServiceRefs, ref)
 		}
-
-		ret.ServiceRefs = append(ret.ServiceRefs, ref)
 	}
 
 	return ret
@@ -290,6 +316,40 @@ func isServiceRefInNamespaces(ref *metav1.ObjectReference, namespaces []*metav1.
 	}
 
 	return false
+}
+
+func ScopeCovers(scope, other *accessv1.Request_Status_ResolvedScope) bool {
+	if scope == nil || other == nil {
+		return false
+	}
+
+	namespaces := map[string]struct{}{}
+	for _, ref := range scope.NamespaceRefs {
+		namespaces[ref.Uid] = struct{}{}
+	}
+
+	for _, ref := range other.NamespaceRefs {
+		if _, ok := namespaces[ref.Uid]; !ok {
+			return false
+		}
+	}
+
+	services := map[string]struct{}{}
+	for _, ref := range scope.ServiceRefs {
+		services[ref.Uid] = struct{}{}
+	}
+
+	for _, ref := range other.ServiceRefs {
+		if _, ok := services[ref.Uid]; ok {
+			continue
+		}
+
+		if !isServiceRefInNamespaces(ref, scope.NamespaceRefs) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func ScopeIncludesService(scope *accessv1.Request_Status_ResolvedScope, svc *corev1.Service) bool {

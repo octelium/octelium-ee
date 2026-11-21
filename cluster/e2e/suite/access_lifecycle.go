@@ -253,17 +253,14 @@ func testAccessReviewRevision(t *testing.T, ch *harness.H) {
 	assert.Equal(t, accessv1.Review_Spec_DECISION_APPROVE,
 		ritaReview.Status.LastRevisions[0].Spec.Decision)
 
-	ritaReview.Spec.Decision = accessv1.Review_Spec_DECISION_APPROVE
-	ritaReview.Spec.Justification = "e2e revised"
-	ritaReview, err = h.AccessReviewerC(c.rita.Conn).UpdateReview(t.Context(), ritaReview)
-	require.Nil(t, err)
+	h.Review(t, c.rita, req, accessv1.Review_Spec_DECISION_APPROVE)
 
 	h.WaitRequestState(t, req, accessv1.Request_Status_State_APPROVED,
 		eeharness.RequestBudget)
 	probe.MustBeAllowed(t)
 
-	ritaReview.Spec.Decision = accessv1.Review_Spec_DECISION_REJECT
-	_, err = h.AccessReviewerC(c.rita.Conn).UpdateReview(t.Context(), ritaReview)
+	_, err = h.AccessReviewerC(c.rita.Conn).SetReviewDecision(t.Context(),
+		eeharness.ReviewOf(h.GetRequest(t, req), accessv1.Review_Spec_DECISION_REJECT))
 	require.NotNil(t, err)
 	assert.True(t, grpcerr.IsInvalidArg(err))
 
@@ -273,11 +270,8 @@ func testAccessReviewRevision(t *testing.T, ch *harness.H) {
 		h.WaitRequestState(t, req, accessv1.Request_Status_State_PENDING,
 			eeharness.RequestBudget)
 
-		review := h.Review(t, c.rita, req, accessv1.Review_Spec_DECISION_APPROVE)
-		review.Spec.Decision = accessv1.Review_Spec_DECISION_REJECT
-		review.Spec.Justification = "e2e rejected"
-		_, err := h.AccessReviewerC(c.rita.Conn).UpdateReview(t.Context(), review)
-		require.Nil(t, err)
+		h.Review(t, c.rita, req, accessv1.Review_Spec_DECISION_APPROVE)
+		h.Review(t, c.rita, req, accessv1.Review_Spec_DECISION_REJECT)
 
 		h.WaitRequestState(t, req, accessv1.Request_Status_State_REJECTED,
 			eeharness.RequestBudget)
@@ -302,8 +296,8 @@ func testAccessPendingDeadline(t *testing.T, ch *harness.H) {
 	assert.Nil(t, expired.Status.PolicyTriggerRef)
 	h.Probe(t, c.alice.User, c.alpha).MustStayDenied(t, settleWindow)
 
-	_, err := h.AccessReviewerC(c.rita.Conn).CreateReview(t.Context(),
-		eeharness.ReviewOf(req, accessv1.Review_Spec_DECISION_APPROVE))
+	_, err := h.AccessReviewerC(c.rita.Conn).SetReviewDecision(t.Context(),
+		eeharness.ReviewOf(h.GetRequest(t, req), accessv1.Review_Spec_DECISION_APPROVE))
 	require.NotNil(t, err)
 }
 
@@ -326,8 +320,8 @@ func testAccessReviewerMembership(t *testing.T, ch *harness.H) {
 	c.rosa.Conn = h.UserConn(t, c.rosa.User)
 	waitReviewerRequest(t, h, c.rosa, req, false)
 
-	_, err := h.AccessReviewerC(c.rosa.Conn).CreateReview(t.Context(),
-		eeharness.ReviewOf(req, accessv1.Review_Spec_DECISION_APPROVE))
+	_, err := h.AccessReviewerC(c.rosa.Conn).SetReviewDecision(t.Context(),
+		eeharness.ReviewOf(h.GetRequest(t, req), accessv1.Review_Spec_DECISION_APPROVE))
 	require.NotNil(t, err)
 	assert.True(t, grpcerr.IsUnauthorized(err))
 

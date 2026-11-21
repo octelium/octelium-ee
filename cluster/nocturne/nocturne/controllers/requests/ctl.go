@@ -403,7 +403,7 @@ func (c *Controller) reconcilePending(ctx context.Context, req *accessv1.Request
 	}
 
 	if req.Status.ResolvedScope != nil &&
-		!accesscmd.IsScopeMateriallyEqual(req.Status.ResolvedScope, rctx.scope.Status) {
+		!accesscmd.IsScopeMateriallyEqual(req.Status.ResolvedScope, rctx.scope) {
 		return c.reevaluate(ctx, req, cc)
 	}
 
@@ -417,14 +417,16 @@ func (c *Controller) reconcilePending(ctx context.Context, req *accessv1.Request
 		return nil
 	}
 
-	if accesscmd.HasStaleAppliedSteps(req) {
+	if accesscmd.IsReviewStepStale(req) {
 		accesscmd.EndCurrentStep(req, accessv1.Request_Status_Review_StepState_INTERRUPTED)
-		return accesscmd.StartReviewStep(ctx, &accesscmd.StartReviewStepOpts{
+		if err := accesscmd.StartReviewStep(ctx, &accesscmd.StartReviewStepOpts{
 			OcteliumC:     c.octeliumC,
 			Request:       req,
 			Index:         0,
 			ClusterConfig: cc,
-		})
+		}); err != nil {
+			return err
+		}
 	}
 
 	if accesscmd.CurrentStepState(req) == nil {
@@ -433,25 +435,25 @@ func (c *Controller) reconcilePending(ctx context.Context, req *accessv1.Request
 			idx = req.Status.Review.CurrentStep
 		}
 
-		return accesscmd.StartReviewStep(ctx, &accesscmd.StartReviewStepOpts{
+		if err := accesscmd.StartReviewStep(ctx, &accesscmd.StartReviewStepOpts{
 			OcteliumC:     c.octeliumC,
 			Request:       req,
 			Index:         idx,
 			ClusterConfig: cc,
-		})
+		}); err != nil {
+			return err
+		}
 	}
 
-	return nil
+	return accesscmd.ReconcileReviewStep(ctx, &accesscmd.ReconcileReviewStepOpts{
+		OcteliumC:     c.octeliumC,
+		Request:       req,
+		ClusterConfig: cc,
+	})
 }
 
 func (c *Controller) reevaluate(ctx context.Context, req *accessv1.Request, cc *accessv1.ClusterConfig) error {
-	accesscmd.EndCurrentStep(req, accessv1.Request_Status_Review_StepState_INTERRUPTED)
-
-	req.Status.SpecRevision++
-	req.Status.Rule = nil
-	req.Status.PolicyRef = nil
-	req.Status.Workflow = nil
-	req.Status.Evaluation = nil
+	accesscmd.RestartEvaluation(req)
 
 	return c.evaluate(ctx, req, cc)
 }
@@ -566,17 +568,22 @@ func (c *Controller) applyPolicyTrigger(ctx context.Context,
 			return nil, err
 		}
 
+		approved, err := c.isRequestApproved(ctx, req)
+		if err != nil || !approved {
+			return nil, err
+		}
+
 		pt, err := c.octeliumC.CoreC().CreatePolicyTrigger(ctx, ptDesired)
 		if err != nil {
 			return nil, err
 		}
 
-		approved, err := c.isRequestApproved(ctx, req)
-		if err != nil {
+		approved, err = c.isRequestApproved(ctx, req)
+		if err != nil || !approved {
+			if errDel := c.deletePolicyTrigger(ctx, objectRef(pt)); errDel != nil {
+				return nil, errDel
+			}
 			return nil, err
-		}
-		if !approved {
-			return nil, c.deletePolicyTrigger(ctx, objectRef(pt))
 		}
 
 		return pt, nil
@@ -657,6 +664,11 @@ func (c *Controller) supersedeExtendedRequest(ctx context.Context, req *accessv1
 
 	if extended.Status.AccessEndsAt != nil && req.Status.AccessEndsAt != nil &&
 		!req.Status.AccessEndsAt.AsTime().After(extended.Status.AccessEndsAt.AsTime()) {
+		return nil
+	}
+
+	if extended.Status.ResolvedScope != nil &&
+		!accesscmd.ScopeCovers(req.Status.ResolvedScope, extended.Status.ResolvedScope) {
 		return nil
 	}
 

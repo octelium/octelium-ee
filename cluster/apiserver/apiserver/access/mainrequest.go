@@ -239,20 +239,9 @@ func (s *ServerMain) SimulateRequest(ctx context.Context,
 			Index: int32(idx),
 		}
 
-		usrs, err := accesscmd.GetStepEligibleUsers(ctx, s.octeliumC, simReq, step, stepState, nil)
-		if err != nil {
+		if err := accesscmd.PlanStepReviewers(ctx, s.octeliumC, simReq, step, stepState,
+			prepared.ClusterConfig); err != nil {
 			return nil, serr.InternalWithErr(err)
-		}
-
-		stepState.TotalEligibleReviewer = uint32(len(usrs))
-		stepState.IsUnroutable = len(usrs) == 0
-		stepState.RequiredApprovals = accesscmd.GetRequiredApprovals(step, stepState.TotalEligibleReviewer)
-
-		for i, usr := range usrs {
-			if i >= accesscmd.MaxStepEligibleReviewers {
-				break
-			}
-			stepState.EligibleReviewers = append(stepState.EligibleReviewers, umetav1.GetObjectReference(usr))
 		}
 
 		ret.Reviewers = append(ret.Reviewers, stepState)

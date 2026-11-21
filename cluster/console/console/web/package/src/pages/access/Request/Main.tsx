@@ -198,7 +198,7 @@ const StatusHero = (props: { item: AccessC.Request }) => {
             {stepState?.isEscalated && " · escalated"}
             {stepState?.isUnroutable && (
               <span className="font-semibold text-red-700">
-                {" "}· nobody can review this step
+                {" "}· not enough reviewers for this step
               </span>
             )}
           </>

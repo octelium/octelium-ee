@@ -151,9 +151,17 @@ func createPendingRequest(t *testing.T, ctx context.Context, octeliumC octeliumc
 				CreatedAt: pbutils.Now(),
 				Status:    accessv1.Request_Status_State_PENDING,
 			},
-			Rule: rule,
+			Rule:         rule,
+			SpecRevision: 1,
 			Review: &accessv1.Request_Status_Review{
 				CurrentStep: currentStep,
+				Steps: []*accessv1.Request_Status_Review_StepState{
+					{
+						Index:        currentStep,
+						StartedAt:    pbutils.Now(),
+						SpecRevision: 1,
+					},
+				},
 			},
 		},
 	})
@@ -171,10 +179,11 @@ func createReview(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientI
 			Justification: utilrand.GetRandomString(16),
 		},
 		Status: &accessv1.Review_Status{
-			RequestRef: reqRef,
-			UserRef:    userRef,
-			StepIndex:  stepIndex,
-			SetAt:      pbutils.Now(),
+			RequestRef:   reqRef,
+			UserRef:      userRef,
+			StepIndex:    stepIndex,
+			SetAt:        pbutils.Now(),
+			SpecRevision: 1,
 		},
 	})
 	assert.Nil(t, err, "%+v", err)
@@ -486,7 +495,8 @@ func TestReviewPendingNoRule(t *testing.T) {
 	reqRef := umetav1.GetObjectReference(req)
 
 	rev := createReview(t, ctx, octeliumC, reqRef, newUserRef(t, ctx, octeliumC), 0, accessv1.Review_Spec_DECISION_APPROVE)
-	assert.NotNil(t, ctrl.OnAdd(ctx, rev))
+	assert.Nil(t, ctrl.OnAdd(ctx, rev))
+	assert.True(t, pbutils.IsEqual(req, getRequest(t, ctx, octeliumC, req.Metadata.Uid)))
 }
 
 func TestReviewMissingRequestRef(t *testing.T) {
@@ -541,7 +551,7 @@ func TestReviewAllQuorumFromStore(t *testing.T) {
 
 	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
-	assert.Equal(t, 1, len(reqG.Status.Review.LastSteps))
+	assert.Equal(t, 2, len(reqG.Status.Review.LastSteps))
 }
 
 func TestReviewQuorumIgnoresOtherRequests(t *testing.T) {
@@ -846,6 +856,7 @@ func withStepState(t *testing.T, ctx context.Context, octeliumC octeliumc.Client
 			StartedAt:             pbutils.Now(),
 			EligibleReviewers:     eligible,
 			TotalEligibleReviewer: uint32(len(eligible)),
+			SpecRevision:          req.Status.SpecRevision,
 		},
 	}
 
@@ -860,6 +871,7 @@ func TestReviewStaleSpecRevisionIsIgnored(t *testing.T) {
 	userA := newUserRef(t, ctx, octeliumC)
 	req := createPendingRequest(t, ctx, octeliumC, reviewRule(anyStep(userReviewer(userA))), 0)
 	req.Status.SpecRevision = 2
+	req.Status.Review.Steps[0].SpecRevision = 2
 	req, err := octeliumC.AccessC().UpdateRequest(ctx, req)
 	assert.Nil(t, err, "%+v", err)
 
@@ -986,4 +998,69 @@ func TestReviewApprovedDurationNarrowsTheAccess(t *testing.T) {
 	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
 	assert.Equal(t, uint32(3600), reqG.Status.EffectiveDuration.GetSeconds())
+}
+
+func TestReviewQueuedApprovalWaitsForTheAnswer(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	userA := newUserRef(t, ctx, octeliumC)
+	req := createPendingRequest(t, ctx, octeliumC, reviewRule(anyStep(userReviewer(userA))), 0)
+	reqRef := umetav1.GetObjectReference(req)
+
+	rev := createReview(t, ctx, octeliumC, reqRef, userA, 0, accessv1.Review_Spec_DECISION_APPROVE)
+
+	req.Status.Review.InformationRequests = []*accessv1.Request_Status_Review_InformationRequest{
+		{
+			UserRef:     userA,
+			Message:     "Which dataset?",
+			RequestedAt: pbutils.Now(),
+		},
+	}
+	req, err := octeliumC.AccessC().UpdateRequest(ctx, req)
+	assert.Nil(t, err, "%+v", err)
+
+	assert.Nil(t, ctrl.OnAdd(ctx, rev))
+
+	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_PENDING, reqG.Status.State.Status)
+	assert.Equal(t, uint32(1), reqG.Status.Review.Steps[0].Approvals)
+	assert.Len(t, reqG.Status.Review.LastSteps, 1)
+
+	reqG.Status.Review.InformationRequests[0].Response = "The billing one"
+	reqG.Status.Review.InformationRequests[0].RespondedAt = pbutils.Now()
+	_, err = octeliumC.AccessC().UpdateRequest(ctx, reqG)
+	assert.Nil(t, err, "%+v", err)
+
+	assert.Nil(t, ctrl.OnAdd(ctx, rev))
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
+}
+
+func TestReviewFinalDurationIncludesEveryCountedVote(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	userA := newUserRef(t, ctx, octeliumC)
+	userB := newUserRef(t, ctx, octeliumC)
+
+	req := createPendingRequest(t, ctx, octeliumC, reviewRule(countStep(2, userReviewer(userA), userReviewer(userB))), 0)
+	req.Status.EffectiveDuration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 8}}
+	req, err := octeliumC.AccessC().UpdateRequest(ctx, req)
+	assert.Nil(t, err, "%+v", err)
+
+	revA := createReview(t, ctx, octeliumC, umetav1.GetObjectReference(req), userA, 0, accessv1.Review_Spec_DECISION_APPROVE)
+	revA.Spec.Duration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 1}}
+	_, err = octeliumC.AccessC().UpdateReview(ctx, revA)
+	assert.Nil(t, err, "%+v", err)
+
+	revB := createReview(t, ctx, octeliumC, umetav1.GetObjectReference(req), userB, 0, accessv1.Review_Spec_DECISION_APPROVE)
+	revB.Spec.Duration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 4}}
+	revB, err = octeliumC.AccessC().UpdateReview(ctx, revB)
+	assert.Nil(t, err, "%+v", err)
+
+	assert.Nil(t, ctrl.OnAdd(ctx, revB))
+
+	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
+	assert.Equal(t, uint32(3600), reqG.Status.EffectiveDuration.GetSeconds())
+	assert.Len(t, reqG.Status.Review.LastSteps, 2)
+	assert.Equal(t, userB.Uid, reqG.Status.State.ActorRef.Uid)
 }

@@ -159,17 +159,23 @@ func ServiceRequest(svc *corev1.Service, duration *metav1.Duration) *accessv1.Re
 }
 
 func ReviewOf(req *accessv1.Request,
-	decision accessv1.Review_Spec_Decision) *accessv1.Review {
-	return &accessv1.Review{
-		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
-		Spec: &accessv1.Review_Spec{
-			Decision:      decision,
-			Justification: "e2e",
-		},
-		Status: &accessv1.Review_Status{
-			RequestRef: umetav1.GetObjectReference(req),
-		},
+	decision accessv1.Review_Spec_Decision) *accessv1.SetReviewDecisionRequest {
+	ret := &accessv1.SetReviewDecisionRequest{
+		RequestRef:           umetav1.GetObjectReference(req),
+		Decision:             decision,
+		Justification:        "e2e",
+		ExpectedSpecRevision: req.GetStatus().GetSpecRevision(),
 	}
+
+	if review := req.GetStatus().GetReview(); review != nil {
+		for _, itm := range review.Steps {
+			if itm.Index == review.CurrentStep {
+				ret.ExpectedStepName = itm.Name
+			}
+		}
+	}
+
+	return ret
 }
 
 func (h *H) CreateCatalog(t *testing.T, services []string, namespaces []string) *accessv1.Catalog {
@@ -356,7 +362,7 @@ func (h *H) Review(t *testing.T, a *Actor,
 	ctx, cancel := h.Ctx(t)
 	defer cancel()
 
-	ret, err := h.AccessReviewerC(a.Conn).CreateReview(ctx, ReviewOf(req, decision))
+	ret, err := h.AccessReviewerC(a.Conn).SetReviewDecision(ctx, ReviewOf(h.GetRequest(t, req), decision))
 	if err != nil {
 		t.Fatalf("Could not review the Request %s as %s: %+v",
 			req.Metadata.Name, a.User.Metadata.Name, err)

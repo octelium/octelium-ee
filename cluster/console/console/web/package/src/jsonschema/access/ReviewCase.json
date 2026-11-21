@@ -1184,7 +1184,7 @@
                 },
                 "specRevision": {
                     "type": "integer",
-                    "description": "SpecRevision is incremented every time the Request's spec changes while it is pending. The reviewers' decisions are bound to it."
+                    "description": "SpecRevision is incremented every time the Request's spec changes while it is pending, as well as every time its resolved scope materially changes while it is pending. Every increment evaluates the Request again against the access Policies and restarts its review workflow. The reviewers' decisions are bound to it."
                 },
                 "workflow": {
                     "$ref": "#/definitions/octelium.api.main.access.v1.Request.Status.Workflow",
@@ -1295,12 +1295,12 @@
                 },
                 "activatedAt": {
                     "type": "string",
-                    "description": "ActivatedAt is the time at which the access became enforced.",
+                    "description": "ActivatedAt is the time at which the access's PolicyTrigger was put in place.",
                     "format": "date-time"
                 },
                 "endedAt": {
                     "type": "string",
-                    "description": "EndedAt is the time at which the access stopped being enforced.",
+                    "description": "EndedAt is the time at which the access ended.",
                     "format": "date-time"
                 },
                 "lastError": {
@@ -1580,7 +1580,11 @@
                 },
                 "isUnroutable": {
                     "type": "boolean",
-                    "description": "IsUnroutable is whether the Step has no eligible reviewer at all, including its escalation and the Cluster's fallback reviewers."
+                    "description": "IsUnroutable is whether the Step has fewer eligible reviewers than it requires approvals, including its escalation and the Cluster's fallback reviewers."
+                },
+                "specRevision": {
+                    "type": "integer",
+                    "description": "SpecRevision is the Request's `status.specRevision` at which the Step started. A Step that started at an older revision no longer counts."
                 }
             },
             "additionalProperties": false,
@@ -1873,7 +1877,7 @@
                 },
                 "specRevision": {
                     "type": "integer",
-                    "description": "SpecRevision is the revision of the Request's spec that the current decision was made on. An approval no longer counts once the Request's duration is increased or its justification is changed."
+                    "description": "SpecRevision is the Request's `status.specRevision` that the current decision was made on. A decision no longer counts once the Request's spec revision changes."
                 }
             },
             "additionalProperties": false,

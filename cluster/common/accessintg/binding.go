@@ -29,10 +29,66 @@ type DesiredBinding struct {
 	Status *accessv1.IntegrationBinding_Status
 }
 
-func BindingName(requestUID string, purpose accessv1.IntegrationBinding_Status_Purpose,
-	stepIndex int32, surfaceIndex int, recipientUID string) string {
-	return resourceNameFromKey("b", requestUID, purpose.String(),
-		fmt.Sprintf("%d", stepIndex), fmt.Sprintf("%d", surfaceIndex), recipientUID)
+func BindingName(requestUID string, status *accessv1.IntegrationBinding_Status, surfaceIndex int) string {
+	return resourceNameFromKey("b", requestUID, status.Purpose.String(),
+		fmt.Sprintf("%d", status.SpecRevision), fmt.Sprintf("%d", status.StepIndex),
+		fmt.Sprintf("%d", surfaceIndex), status.GetUserRef().GetUid(), status.GetIntegrationRef().GetUid(),
+		status.Audience.String(), status.InteractionMode.String())
+}
+
+func IsBindingCurrent(binding *accessv1.IntegrationBinding, req *accessv1.Request) bool {
+	if !accesscmd.IsPending(req) {
+		return false
+	}
+
+	switch binding.Status.Purpose {
+	case accessv1.IntegrationBinding_Status_REVIEW_SURFACE:
+		step, stepIndex, err := accesscmd.CurrentStep(req)
+		if err != nil || stepIndex != binding.Status.StepIndex ||
+			binding.Status.SpecRevision != req.Status.SpecRevision {
+			return false
+		}
+
+		return hasBindingSurface(binding, step.Surfaces)
+
+	case accessv1.IntegrationBinding_Status_NOTIFICATION:
+		if req.Status.Rule == nil {
+			return true
+		}
+
+		return hasBindingSurface(binding, req.Status.Rule.Notifications)
+
+	default:
+		return false
+	}
+}
+
+func hasBindingSurface(binding *accessv1.IntegrationBinding, surfaces []*accessv1.Policy_Spec_Rule_Surface) bool {
+	for _, surface := range surfaces {
+		if surface == nil || surface.Destination == nil || surface.Destination.IntegrationRef == nil {
+			continue
+		}
+
+		interactionMode := surface.InteractionMode
+		if binding.Status.Purpose == accessv1.IntegrationBinding_Status_NOTIFICATION {
+			interactionMode = accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY
+		}
+
+		if interactionMode != binding.Status.InteractionMode ||
+			surface.Destination.Audience != binding.Status.Audience {
+			continue
+		}
+
+		ref := surface.Destination.IntegrationRef
+		bindingRef := binding.Status.GetIntegrationRef()
+
+		if (ref.Uid != "" && ref.Uid == bindingRef.GetUid()) ||
+			(ref.Uid == "" && ref.Name != "" && ref.Name == bindingRef.GetName()) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func DesiredBindings(ctx context.Context, octeliumC octeliumc.ClientInterface,
@@ -94,25 +150,28 @@ func desiredBindingsOf(ctx context.Context, octeliumC octeliumc.ClientInterface,
 		return nil, err
 	}
 
+	var specRevision uint32
+	if purpose == accessv1.IntegrationBinding_Status_REVIEW_SURFACE {
+		specRevision = req.Status.SpecRevision
+	}
+
 	newBinding := func(userRef *metav1.ObjectReference) *DesiredBinding {
-		recipientUID := ""
-		if userRef != nil {
-			recipientUID = userRef.Uid
+		status := &accessv1.IntegrationBinding_Status{
+			State:           accessv1.IntegrationBinding_Status_PENDING,
+			IntegrationRef:  umetav1.GetObjectReference(integration),
+			RequestRef:      umetav1.GetObjectReference(req),
+			UserRef:         userRef,
+			Audience:        surface.Destination.Audience,
+			StepIndex:       stepIndex,
+			StepName:        stepName,
+			Purpose:         purpose,
+			InteractionMode: interactionMode,
+			SpecRevision:    specRevision,
 		}
 
 		return &DesiredBinding{
-			Name: BindingName(req.Metadata.Uid, purpose, stepIndex, surfaceIndex, recipientUID),
-			Status: &accessv1.IntegrationBinding_Status{
-				State:           accessv1.IntegrationBinding_Status_PENDING,
-				IntegrationRef:  umetav1.GetObjectReference(integration),
-				RequestRef:      umetav1.GetObjectReference(req),
-				UserRef:         userRef,
-				Audience:        surface.Destination.Audience,
-				StepIndex:       stepIndex,
-				StepName:        stepName,
-				Purpose:         purpose,
-				InteractionMode: interactionMode,
-			},
+			Name:   BindingName(req.Metadata.Uid, status, surfaceIndex),
+			Status: status,
 		}
 	}
 

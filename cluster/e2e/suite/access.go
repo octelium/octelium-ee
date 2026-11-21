@@ -186,8 +186,8 @@ func testAccessSingleStepReview(t *testing.T, ch *harness.H) {
 	})
 
 	t.Run("AnUnrelatedUserCannotReview", func(t *testing.T) {
-		_, err := h.AccessReviewerC(c.mallory.Conn).CreateReview(ctx,
-			eeharness.ReviewOf(req, accessv1.Review_Spec_DECISION_APPROVE))
+		_, err := h.AccessReviewerC(c.mallory.Conn).SetReviewDecision(ctx,
+			eeharness.ReviewOf(h.GetRequest(t, req), accessv1.Review_Spec_DECISION_APPROVE))
 		require.NotNil(t, err)
 		assert.True(t, grpcerr.IsUnauthorized(err))
 	})
@@ -269,8 +269,8 @@ func testAccessMultiStepQuorum(t *testing.T, ch *harness.H) {
 	})
 
 	t.Run("AStepZeroReviewerCannotCloseStepOne", func(t *testing.T) {
-		_, err := h.AccessReviewerC(c.rita.Conn).CreateReview(t.Context(),
-			eeharness.ReviewOf(req, accessv1.Review_Spec_DECISION_APPROVE))
+		_, err := h.AccessReviewerC(c.rita.Conn).SetReviewDecision(t.Context(),
+			eeharness.ReviewOf(h.GetRequest(t, req), accessv1.Review_Spec_DECISION_APPROVE))
 		require.NotNil(t, err)
 		assert.True(t, grpcerr.IsUnauthorized(err))
 	})

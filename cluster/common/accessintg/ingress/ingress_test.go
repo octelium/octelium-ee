@@ -206,6 +206,7 @@ func (i *ingressTest) createRequest(t *testing.T, reviewer *corev1.User) *access
 				CreatedAt: pbutils.Now(),
 				Status:    accessv1.Request_Status_State_PENDING,
 			},
+			SpecRevision: 1,
 			Rule: &accessv1.Policy_Spec_Rule{
 				Name:   utilrand.GetRandomStringCanonical(6),
 				Effect: accessv1.Policy_Spec_Rule_REVIEW,
@@ -249,6 +250,22 @@ func (i *ingressTest) createBinding(t *testing.T, req *accessv1.Request,
 func (i *ingressTest) createBindingOf(t *testing.T, integration *accessv1.Integration,
 	req *accessv1.Request,
 	interactionMode accessv1.Policy_Spec_Rule_Surface_InteractionMode) *accessv1.IntegrationBinding {
+	current, err := i.octeliumC.AccessC().GetRequest(i.ctx, &rmetav1.GetOptions{
+		Uid: req.Metadata.Uid,
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	step := current.Status.Rule.Action.GetReview().Steps[0]
+	step.Surfaces = append(step.Surfaces, &accessv1.Policy_Spec_Rule_Surface{
+		Destination: &accessv1.Policy_Spec_Rule_Surface_Destination{
+			IntegrationRef: umetav1.GetObjectReference(integration),
+			Audience:       accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
+		},
+		InteractionMode: interactionMode,
+	})
+	_, err = i.octeliumC.AccessC().UpdateRequest(i.ctx, current)
+	assert.Nil(t, err, "%+v", err)
+
 	item, err := i.octeliumC.AccessC().CreateIntegrationBinding(i.ctx, &accessv1.IntegrationBinding{
 		Metadata: &metav1.Metadata{
 			Name: fmt.Sprintf("b%s", utilrand.GetRandomStringCanonical(16)),
@@ -257,12 +274,14 @@ func (i *ingressTest) createBindingOf(t *testing.T, integration *accessv1.Integr
 		Status: &accessv1.IntegrationBinding_Status{
 			IntegrationRef:  umetav1.GetObjectReference(integration),
 			RequestRef:      umetav1.GetObjectReference(req),
+			Audience:        accessv1.Policy_Spec_Rule_Surface_Destination_SHARED,
 			StepIndex:       0,
 			StepName:        "first",
 			Purpose:         accessv1.IntegrationBinding_Status_REVIEW_SURFACE,
 			InteractionMode: interactionMode,
 			State:           accessv1.IntegrationBinding_Status_READY,
 			ExternalID:      utilrand.GetRandomStringCanonical(10),
+			SpecRevision:    current.Status.SpecRevision,
 		},
 	})
 	assert.Nil(t, err, "%+v", err)
@@ -342,6 +361,30 @@ func TestInboundReviewDecision(t *testing.T) {
 	assert.Equal(t, accessv1.Origin_INTEGRATION, reviews[0].Status.Origin.Type)
 	assert.Equal(t, tstSlackUserID, reviews[0].Status.Origin.ExternalActorID)
 	assert.Equal(t, i.integration.Metadata.Uid, reviews[0].Status.Origin.IntegrationRef.Uid)
+}
+
+func TestInboundDecisionOnAnOlderRevisionIsRefused(t *testing.T) {
+	i := newIngressTest(t)
+
+	reviewer := i.createUser(t)
+	i.createIdentity(t, reviewer, tstSlackUserID)
+
+	req := i.createRequest(t, reviewer)
+	binding := i.createBinding(t, req, accessv1.Policy_Spec_Rule_Surface_INTERACTIVE)
+
+	req, err := i.octeliumC.AccessC().GetRequest(i.ctx, &rmetav1.GetOptions{Uid: req.Metadata.Uid})
+	assert.Nil(t, err, "%+v", err)
+	req.Spec.Justification = "A different reason"
+	req.Status.SpecRevision = 2
+	_, err = i.octeliumC.AccessC().UpdateRequest(i.ctx, req)
+	assert.Nil(t, err, "%+v", err)
+
+	resp, err := i.srv.Handle(i.ctx, i.integration.Status.Id,
+		i.interaction(t, "octelium-access-approve", binding.Metadata.Name, "trig-stale"))
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Contains(t, tstResponseText(t, resp), "changed after this message was sent")
+	assert.Equal(t, 0, len(i.listReviews(t, req)))
 }
 
 func TestInboundDecisionThatRequiresAReasonIsHandedToThePortal(t *testing.T) {

@@ -955,20 +955,6 @@ export interface IReviewerServiceClient {
      */
     getReview(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Review>;
     /**
-     * CreateReview creates a Review for a pending Request. A reviewer can have
-     * at most one Review per Request.
-     *
-     * @generated from protobuf rpc: CreateReview
-     */
-    createReview(input: Review, options?: RpcOptions): UnaryCall<Review, Review>;
-    /**
-     * UpdateReview updates a Review that has not yet been applied to its
-     * Request
-     *
-     * @generated from protobuf rpc: UpdateReview
-     */
-    updateReview(input: Review, options?: RpcOptions): UnaryCall<Review, Review>;
-    /**
      * CancelReview resets the decision of a Review that has not yet been
      * applied to its Request
      *
@@ -1062,33 +1048,13 @@ export class ReviewerServiceClient implements IReviewerServiceClient, ServiceInf
         return stackIntercept<GetOptions, Review>("unary", this._transport, method, opt, input);
     }
     /**
-     * CreateReview creates a Review for a pending Request. A reviewer can have
-     * at most one Review per Request.
-     *
-     * @generated from protobuf rpc: CreateReview
-     */
-    createReview(input: Review, options?: RpcOptions): UnaryCall<Review, Review> {
-        const method = this.methods[6], opt = this._transport.mergeOptions(options);
-        return stackIntercept<Review, Review>("unary", this._transport, method, opt, input);
-    }
-    /**
-     * UpdateReview updates a Review that has not yet been applied to its
-     * Request
-     *
-     * @generated from protobuf rpc: UpdateReview
-     */
-    updateReview(input: Review, options?: RpcOptions): UnaryCall<Review, Review> {
-        const method = this.methods[7], opt = this._transport.mergeOptions(options);
-        return stackIntercept<Review, Review>("unary", this._transport, method, opt, input);
-    }
-    /**
      * CancelReview resets the decision of a Review that has not yet been
      * applied to its Request
      *
      * @generated from protobuf rpc: CancelReview
      */
     cancelReview(input: CancelReviewRequest, options?: RpcOptions): UnaryCall<CancelReviewRequest, OperationResult> {
-        const method = this.methods[8], opt = this._transport.mergeOptions(options);
+        const method = this.methods[6], opt = this._transport.mergeOptions(options);
         return stackIntercept<CancelReviewRequest, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
@@ -1102,7 +1068,7 @@ export class ReviewerServiceClient implements IReviewerServiceClient, ServiceInf
      * @generated from protobuf rpc: SetReviewDecision
      */
     setReviewDecision(input: SetReviewDecisionRequest, options?: RpcOptions): UnaryCall<SetReviewDecisionRequest, Review> {
-        const method = this.methods[9], opt = this._transport.mergeOptions(options);
+        const method = this.methods[7], opt = this._transport.mergeOptions(options);
         return stackIntercept<SetReviewDecisionRequest, Review>("unary", this._transport, method, opt, input);
     }
 }
