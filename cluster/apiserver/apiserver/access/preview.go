@@ -99,6 +99,12 @@ func buildPreview(ctx context.Context, octeliumC octeliumc.ClientInterface,
 	}
 	ret.eval = res
 
+	if res.BlockingRule() != nil {
+		preview.Outcome = accessv1.RequestPreview_NOT_REQUESTABLE
+		preview.Message = "The Request could not be evaluated against the access Policies"
+		return ret, nil
+	}
+
 	if res.Rule == nil {
 		preview.Outcome = accessv1.RequestPreview_NO_MATCH
 		preview.Message = prepared.ClusterConfig.GetSpec().GetRequest().GetNoMatchMessage()
@@ -160,7 +166,8 @@ func getExistingRequests(ctx context.Context, octeliumC octeliumc.ClientInterfac
 			continue
 		}
 
-		if !accesscmd.IsPending(itm) && !accesscmd.IsAccessActive(itm, now) {
+		if !accesscmd.IsPending(itm) && (!accesscmd.IsApproved(itm) ||
+			(itm.Status.AccessEndsAt != nil && !itm.Status.AccessEndsAt.AsTime().After(now))) {
 			continue
 		}
 

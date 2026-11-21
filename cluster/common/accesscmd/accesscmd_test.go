@@ -20,6 +20,7 @@ import (
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/celengine"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
@@ -218,7 +219,7 @@ func TestPrepareRequestServiceShorthand(t *testing.T) {
 	assert.Equal(t, svc.Metadata.Uid, resCatalog.ServiceRefs[0].Uid)
 	require.Len(t, prepared.Scope.Status.ServiceRefs, 1)
 
-	a.createCatalog(t, nil, svc)
+	whole := a.createCatalog(t, nil, svc)
 
 	prepared = a.prepare(t, requester, spec, false)
 	require.True(t, HasFatalProblem(prepared.Problems))
@@ -230,6 +231,32 @@ func TestPrepareRequestServiceShorthand(t *testing.T) {
 	}, svc)
 	prepared = a.prepare(t, requester, spec, false)
 	assert.Len(t, prepared.Candidates, 2)
+
+	first.Spec.AllowPartialRequests = false
+	_, err := a.octeliumC.AccessC().UpdateCatalog(a.ctx, first)
+	require.NoError(t, err)
+	_, err = a.octeliumC.AccessC().DeleteCatalog(a.ctx, &rmetav1.DeleteOptions{Uid: whole.Metadata.Uid})
+	require.NoError(t, err)
+
+	prepared = a.prepare(t, requester, spec, false)
+	require.True(t, HasFatalProblem(prepared.Problems))
+	assert.Contains(t, problemMessages(prepared.Problems), "Request the Catalog instead")
+	assert.Nil(t, prepared.Scope)
+
+	only := a.createService(t, nil)
+	whole = a.createCatalog(t, nil, only)
+
+	prepared = a.prepare(t, requester, &accessv1.Request_Spec{
+		Resource: &accessv1.Request_Spec_Resource{
+			Type: &accessv1.Request_Spec_Resource_ServiceRef{
+				ServiceRef: umetav1.GetObjectReference(only),
+			},
+		},
+	}, false)
+	require.Empty(t, prepared.Problems, problemMessages(prepared.Problems))
+	assert.Equal(t, whole.Metadata.Uid, prepared.Spec.Resource.GetCatalog().CatalogRef.Uid)
+	assert.Empty(t, prepared.Spec.Resource.GetCatalog().ServiceRefs)
+	require.Len(t, prepared.Scope.Status.ServiceRefs, 1)
 }
 
 func TestPrepareRequestExcludesHiddenServices(t *testing.T) {
@@ -510,7 +537,10 @@ func TestBuildPolicyTrigger(t *testing.T) {
 	assert.Equal(t, "uid-alice", all.Of[0].GetUserRef().Uid)
 	require.Len(t, all.Of[1].GetAny().Of, 3)
 	assert.Empty(t, all.Of[1].GetAny().Of[0].GetServiceRef().ResourceVersion)
-	assert.Equal(t, "uid-ns", all.Of[1].GetAny().Of[2].GetNamespaceRef().Uid)
+	nsBranch := all.Of[1].GetAny().Of[2].GetAll()
+	require.Len(t, nsBranch.Of, 2)
+	assert.Equal(t, "uid-ns", nsBranch.Of[0].GetNamespaceRef().Uid)
+	assert.Equal(t, nonSystemServiceMatch, nsBranch.Of[1].GetCondition().GetMatch())
 	assert.Equal(t, startsAt, all.Of[2].GetNotBefore().AsTime())
 	assert.Equal(t, endsAt, all.Of[3].GetNotAfter().AsTime())
 
@@ -540,6 +570,9 @@ func TestBuildPolicyTrigger(t *testing.T) {
 	require.Len(t, all.Of, 5)
 	assert.Equal(t, `ctx.session.status.authentication.info.aal in ["AAL3"]`, all.Of[4].GetCondition().GetMatch())
 
+	_, err = BuildPolicyTrigger(newRequest(&accessv1.Catalog_Spec_AccessLevel{Name: "untyped"}, 0))
+	assert.Error(t, err)
+
 	req.Status.ResolvedScope.ServiceRefs = nil
 	req.Status.ResolvedScope.NamespaceRefs = nil
 	_, err = BuildPolicyTrigger(req)
@@ -548,6 +581,41 @@ func TestBuildPolicyTrigger(t *testing.T) {
 	req.Status.ResolvedScope = nil
 	_, err = BuildPolicyTrigger(req)
 	assert.Error(t, err)
+}
+
+func TestPolicyTriggerNamespaceExcludesSystemServices(t *testing.T) {
+	ctx := context.Background()
+	celEngine, err := celengine.New(ctx, nil)
+	require.NoError(t, err)
+
+	cond := &corev1.Condition{
+		Type: &corev1.Condition_Match{
+			Match: nonSystemServiceMatch,
+		},
+	}
+
+	for _, tc := range []struct {
+		md   *metav1.Metadata
+		want bool
+	}{
+		{&metav1.Metadata{Name: "app.production"}, true},
+		{&metav1.Metadata{Name: "app.production", IsSystem: true}, false},
+		{&metav1.Metadata{Name: "app.production", IsSystemHidden: true}, false},
+		{&metav1.Metadata{Name: "app.production", IsUserHidden: true}, false},
+	} {
+		reqCtx, err := pbutils.ConvertToMap(&corev1.RequestContext{
+			Service: &corev1.Service{Metadata: tc.md},
+		})
+		require.NoError(t, err)
+
+		matched, err := celEngine.EvalCondition(ctx, cond, map[string]any{"ctx": reqCtx})
+		require.NoError(t, err)
+		assert.Equal(t, tc.want, matched, "%+v", tc.md)
+	}
+
+	matched, err := celEngine.EvalCondition(ctx, cond, map[string]any{"ctx": map[string]any{}})
+	require.NoError(t, err)
+	assert.False(t, matched)
 }
 
 func TestSetRequestState(t *testing.T) {
@@ -588,6 +656,122 @@ func TestSetRequestState(t *testing.T) {
 		SetRequestState(req, &StateChange{Status: accessv1.Request_Status_State_Status(1 + i%6), Reason: accessv1.Request_Status_State_Reason(i % 17)})
 	}
 	assert.Len(t, req.Status.LastStates, MaxRequestStates)
+}
+
+func TestIsAccessActive(t *testing.T) {
+	now := time.Now()
+
+	newReq := func(grant *accessv1.Request_Status_Grant, startsAt time.Time) *accessv1.Request {
+		return &accessv1.Request{
+			Status: &accessv1.Request_Status{
+				State:          &accessv1.Request_Status_State{Status: accessv1.Request_Status_State_APPROVED},
+				AccessStartsAt: pbutils.Timestamp(startsAt),
+				AccessEndsAt:   pbutils.Timestamp(now.Add(time.Hour)),
+				Grant:          grant,
+			},
+		}
+	}
+
+	assert.True(t, IsAccessActive(newReq(nil, now.Add(-time.Minute)), now))
+	assert.True(t, IsAccessActive(newReq(&accessv1.Request_Status_Grant{State: accessv1.Request_Status_Grant_ACTIVE}, now.Add(-time.Minute)), now))
+	assert.False(t, IsAccessActive(newReq(&accessv1.Request_Status_Grant{State: accessv1.Request_Status_Grant_SCHEDULED}, now.Add(time.Minute)), now))
+
+	for _, state := range []accessv1.Request_Status_Grant_State{
+		accessv1.Request_Status_Grant_PROVISIONING,
+		accessv1.Request_Status_Grant_FAILED,
+		accessv1.Request_Status_Grant_ENDED,
+	} {
+		assert.False(t, IsAccessActive(newReq(&accessv1.Request_Status_Grant{State: state}, now.Add(-time.Minute)), now), state.String())
+	}
+}
+
+func TestIsScopeMateriallyEqual(t *testing.T) {
+	newScope := func() *accessv1.Request_Status_ResolvedScope {
+		return &accessv1.Request_Status_ResolvedScope{
+			CatalogRef:             &metav1.ObjectReference{Name: "prod", Uid: "uid-prod"},
+			CatalogResourceVersion: "1",
+			CatalogDisplayName:     "Production",
+			AccessLevel:            fullLevel("full"),
+			Membership:             accessv1.Catalog_Spec_DYNAMIC,
+			ResolvedAt:             pbutils.Now(),
+			ServiceRefs: []*metav1.ObjectReference{
+				{Name: "api.default", Uid: "uid-api"},
+				{Name: "db.prod", Uid: "uid-db"},
+			},
+			NamespaceRefs: []*metav1.ObjectReference{{Name: "prod", Uid: "uid-ns"}},
+		}
+	}
+
+	a := newScope()
+	b := newScope()
+	b.CatalogResourceVersion = "2"
+	b.CatalogDisplayName = "Renamed"
+	b.ResolvedAt = pbutils.Timestamp(time.Now().Add(time.Hour))
+	b.ServiceRefs = append(b.ServiceRefs, &metav1.ObjectReference{Name: "cache.prod", Uid: "uid-cache"})
+	b.TotalExcludedService = 3
+	assert.True(t, IsScopeMateriallyEqual(a, b))
+	assert.False(t, IsScopeEqual(a, b))
+
+	b.ServiceRefs = append(b.ServiceRefs, &metav1.ObjectReference{Name: "web.default", Uid: "uid-web"})
+	assert.False(t, IsScopeMateriallyEqual(a, b))
+
+	c := newScope()
+	c.Priority = -1
+	assert.False(t, IsScopeMateriallyEqual(a, c))
+
+	d := newScope()
+	d.AccessLevel.MaxDuration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 9}}
+	assert.False(t, IsScopeMateriallyEqual(a, d))
+
+	fixed := newScope()
+	fixed.Membership = accessv1.Catalog_Spec_FIXED
+	fixed.NamespaceRefs = nil
+	fixedMore := newScope()
+	fixedMore.Membership = accessv1.Catalog_Spec_FIXED
+	fixedMore.NamespaceRefs = nil
+	fixedMore.ServiceRefs = append(fixedMore.ServiceRefs, &metav1.ObjectReference{Name: "cache.prod", Uid: "uid-cache"})
+	assert.False(t, IsScopeMateriallyEqual(fixed, fixedMore))
+
+	assert.True(t, IsScopeMateriallyEqual(nil, nil))
+	assert.False(t, IsScopeMateriallyEqual(a, nil))
+}
+
+func TestEvalResultBlockingRule(t *testing.T) {
+	pol := &accessv1.Policy{Metadata: &metav1.Metadata{Name: "pol"}}
+	ruleOf := func(effect accessv1.Policy_Spec_Rule_Effect) *accessv1.Policy_Spec_Rule {
+		return &accessv1.Policy_Spec_Rule{Name: effect.String(), Effect: effect}
+	}
+	failed := func(effect accessv1.Policy_Spec_Rule_Effect) *RuleEvaluation {
+		return &RuleEvaluation{
+			Policy: pol,
+			Rule:   ruleOf(effect),
+			Result: accessv1.SimulateRequestResponse_RuleEvaluation_ERROR,
+			Err:    fmt.Errorf("broken"),
+		}
+	}
+
+	for _, tc := range []struct {
+		failed  accessv1.Policy_Spec_Rule_Effect
+		matched accessv1.Policy_Spec_Rule_Effect
+		blocked bool
+	}{
+		{accessv1.Policy_Spec_Rule_DENY, accessv1.Policy_Spec_Rule_AUTO_APPROVE, true},
+		{accessv1.Policy_Spec_Rule_DENY, accessv1.Policy_Spec_Rule_REVIEW, true},
+		{accessv1.Policy_Spec_Rule_REVIEW, accessv1.Policy_Spec_Rule_AUTO_APPROVE, true},
+		{accessv1.Policy_Spec_Rule_REVIEW, accessv1.Policy_Spec_Rule_REVIEW, true},
+		{accessv1.Policy_Spec_Rule_AUTO_APPROVE, accessv1.Policy_Spec_Rule_REVIEW, false},
+		{accessv1.Policy_Spec_Rule_AUTO_APPROVE, accessv1.Policy_Spec_Rule_AUTO_APPROVE, false},
+		{accessv1.Policy_Spec_Rule_DENY, accessv1.Policy_Spec_Rule_DENY, false},
+	} {
+		res := &EvalResult{
+			Policy: pol,
+			Rule:   ruleOf(tc.matched),
+			Rules:  []*RuleEvaluation{failed(tc.failed)},
+		}
+		assert.Equal(t, tc.blocked, res.BlockingRule() != nil, "%s then %s", tc.failed, tc.matched)
+	}
+
+	assert.Nil(t, (&EvalResult{Rules: []*RuleEvaluation{failed(accessv1.Policy_Spec_Rule_DENY)}}).BlockingRule())
 }
 
 func TestRedactRequest(t *testing.T) {
@@ -810,7 +994,7 @@ func TestSetReviewDecisionChecks(t *testing.T) {
 	assert.ErrorContains(t, err, "deadline")
 }
 
-func TestCanReviewUsesTheStepSnapshot(t *testing.T) {
+func TestCanReviewFollowsTheReviewerMembership(t *testing.T) {
 	a := newAccessTest(t)
 
 	grp, err := a.octeliumC.CoreC().CreateGroup(a.ctx, &corev1.Group{
@@ -875,15 +1059,65 @@ func TestCanReviewUsesTheStepSnapshot(t *testing.T) {
 
 	ok, err := CanReview(a.ctx, a.octeliumC, joinedLater, req)
 	require.NoError(t, err)
+	assert.True(t, ok)
+
+	for i := 0; i < MaxStepEligibleReviewers; i++ {
+		stepState.EligibleReviewers = append(stepState.EligibleReviewers,
+			&metav1.ObjectReference{Uid: utilrand.GetRandomStringCanonical(16)})
+	}
+	stepState.TotalEligibleReviewer = MaxStepEligibleReviewers + 2
+
+	ok, err = CanReview(a.ctx, a.octeliumC, joinedLater, req)
+	require.NoError(t, err)
+	assert.True(t, ok)
+
+	inSnapshot.Spec.Groups = nil
+	inSnapshot, err = a.octeliumC.CoreC().UpdateUser(a.ctx, inSnapshot)
+	require.NoError(t, err)
+
+	ok, err = CanReview(a.ctx, a.octeliumC, inSnapshot, req)
+	require.NoError(t, err)
 	assert.False(t, ok)
 
 	ok, err = IsParticipant(a.ctx, a.octeliumC, inSnapshot, req)
 	require.NoError(t, err)
 	assert.True(t, ok)
 
-	ok, err = IsParticipant(a.ctx, a.octeliumC, joinedLater, req)
+	ok, err = IsParticipant(a.ctx, a.octeliumC, a.createUser(t), req)
 	require.NoError(t, err)
 	assert.False(t, ok)
+
+	fallback := a.createUser(t)
+	cc, err := a.octeliumC.AccessV1Utils().GetClusterConfig(a.ctx)
+	require.NoError(t, err)
+	if cc.Spec == nil {
+		cc.Spec = &accessv1.ClusterConfig_Spec{}
+	}
+	cc.Spec.Review = &accessv1.ClusterConfig_Spec_Review{
+		FallbackReviewers: []*Reviewer{
+			{Type: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_{User: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User{UserRef: umetav1.GetObjectReference(fallback)}}},
+		},
+	}
+	_, err = a.octeliumC.AccessC().UpdateClusterConfig(a.ctx, cc)
+	require.NoError(t, err)
+
+	ok, err = CanReview(a.ctx, a.octeliumC, fallback, req)
+	require.NoError(t, err)
+	assert.False(t, ok)
+
+	joinedLater.Spec.IsDisabled = true
+	_, err = a.octeliumC.CoreC().UpdateUser(a.ctx, joinedLater)
+	require.NoError(t, err)
+
+	ok, err = CanReview(a.ctx, a.octeliumC, fallback, req)
+	require.NoError(t, err)
+	assert.True(t, ok)
+
+	usrs, err := GetStepReviewerUsers(a.ctx, a.octeliumC,
+		req.Status.Rule.GetAction().GetReview().Steps[0], req)
+	require.NoError(t, err)
+	require.Len(t, usrs, 1)
+	assert.Equal(t, fallback.Metadata.Uid, usrs[0].Metadata.Uid)
 
 	EndCurrentStep(req, accessv1.Request_Status_Review_StepState_SATISFIED)
 	assert.Nil(t, CurrentStepState(req))

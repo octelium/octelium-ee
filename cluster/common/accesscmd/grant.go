@@ -27,6 +27,10 @@ const PolicyTriggerNamePrefix = "access-request-"
 
 const DefaultGrantInlinePolicyName = "access-request-default"
 
+const nonSystemServiceMatch = `!(has(ctx.service.metadata.isSystem) && ctx.service.metadata.isSystem) && ` +
+	`!(has(ctx.service.metadata.isSystemHidden) && ctx.service.metadata.isSystemHidden) && ` +
+	`!(has(ctx.service.metadata.isUserHidden) && ctx.service.metadata.isUserHidden)`
+
 func PolicyTriggerName(req *accessv1.Request) string {
 	if req.Metadata.Uid != "" {
 		return fmt.Sprintf("%s%s", PolicyTriggerNamePrefix, req.Metadata.Uid)
@@ -58,8 +62,25 @@ func BuildPolicyTrigger(req *accessv1.Request) (*corev1.PolicyTrigger, error) {
 
 	for _, ref := range scope.NamespaceRefs {
 		targets = append(targets, &corev1.PolicyTrigger_Status_PreCondition{
-			Type: &corev1.PolicyTrigger_Status_PreCondition_NamespaceRef{
-				NamespaceRef: cloneRef(ref),
+			Type: &corev1.PolicyTrigger_Status_PreCondition_All_{
+				All: &corev1.PolicyTrigger_Status_PreCondition_All{
+					Of: []*corev1.PolicyTrigger_Status_PreCondition{
+						{
+							Type: &corev1.PolicyTrigger_Status_PreCondition_NamespaceRef{
+								NamespaceRef: cloneRef(ref),
+							},
+						},
+						{
+							Type: &corev1.PolicyTrigger_Status_PreCondition_Condition{
+								Condition: &corev1.Condition{
+									Type: &corev1.Condition_Match{
+										Match: nonSystemServiceMatch,
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		})
 	}
@@ -108,7 +129,10 @@ func BuildPolicyTrigger(req *accessv1.Request) (*corev1.PolicyTrigger, error) {
 		preConditions = append(preConditions, cond)
 	}
 
-	policies, inlinePolicies := buildGrantPolicies(scope)
+	policies, inlinePolicies, err := buildGrantPolicies(scope)
+	if err != nil {
+		return nil, err
+	}
 
 	return &corev1.PolicyTrigger{
 		Metadata: &metav1.Metadata{
@@ -132,7 +156,7 @@ func BuildPolicyTrigger(req *accessv1.Request) (*corev1.PolicyTrigger, error) {
 	}, nil
 }
 
-func buildGrantPolicies(scope *accessv1.Request_Status_ResolvedScope) ([]string, []*corev1.InlinePolicy) {
+func buildGrantPolicies(scope *accessv1.Request_Status_ResolvedScope) ([]string, []*corev1.InlinePolicy, error) {
 	level := scope.AccessLevel
 
 	switch level.Type.(type) {
@@ -153,9 +177,9 @@ func buildGrantPolicies(scope *accessv1.Request_Status_ResolvedScope) ([]string,
 			}
 		}
 
-		return policies, inlinePolicies
+		return policies, inlinePolicies, nil
 
-	default:
+	case *accessv1.Catalog_Spec_AccessLevel_Full_:
 		return nil, []*corev1.InlinePolicy{
 			{
 				Name: DefaultGrantInlinePolicyName,
@@ -173,7 +197,10 @@ func buildGrantPolicies(scope *accessv1.Request_Status_ResolvedScope) ([]string,
 					},
 				},
 			},
-		}
+		}, nil
+
+	default:
+		return nil, nil, errors.Errorf("access level %q has an unsupported type", level.Name)
 	}
 }
 

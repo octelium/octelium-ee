@@ -410,6 +410,28 @@ func TestPresentationRevision(t *testing.T) {
 	assert.Nil(t, err, "%+v", err)
 	assert.Equal(t, first.Revision(), second.Revision())
 
+	for _, revision := range []uint32{req.Status.SpecRevision + 1, req.Status.SpecRevision} {
+		_, err = octeliumC.AccessC().CreateReview(ctx, &accessv1.Review{
+			Metadata: &metav1.Metadata{
+				Name: utilrand.GetRandomStringCanonical(8),
+			},
+			Spec: &accessv1.Review_Spec{
+				Decision: accessv1.Review_Spec_DECISION_APPROVE,
+			},
+			Status: &accessv1.Review_Status{
+				RequestRef:   umetav1.GetObjectReference(req),
+				UserRef:      umetav1.GetObjectReference(reviewer),
+				SpecRevision: revision,
+			},
+		})
+		assert.Nil(t, err, "%+v", err)
+	}
+
+	decided, err := BuildPresentation(ctx, opts)
+	assert.Nil(t, err, "%+v", err)
+	assert.Len(t, decided.Decisions, 1)
+	assert.Equal(t, "1 of 1 approval", decided.ApprovalSummary)
+
 	req.Status.State.Status = accessv1.Request_Status_State_APPROVED
 	req, err = octeliumC.AccessC().UpdateRequest(ctx, req)
 	assert.Nil(t, err, "%+v", err)

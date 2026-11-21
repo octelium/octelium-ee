@@ -158,3 +158,44 @@ func testAccessGuardrailsWinByDefault(t *testing.T, ch *harness.H) {
 		probe.MustBeDenied(t)
 	})
 }
+
+func testAccessQuestionsBlockApproval(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	c := newAccessCast(t, h)
+
+	h.CreateAccessPolicy(t, c.reviewRule("questions-block-approval",
+		userReviewStep(eeharness.UserReviewer(c.rita.User))))
+
+	probe := h.Probe(t, c.alice.User, c.alpha)
+	req := h.CreateRequest(t, c.alice,
+		eeharness.CatalogRequest(c.alphaCatalog, eeharness.Minutes(5)))
+	h.WaitRequestState(t, req, accessv1.Request_Status_State_PENDING,
+		eeharness.RequestBudget)
+
+	_, err := h.AccessReviewerC(c.rita.Conn).RequestInformation(t.Context(), &accessv1.RequestInformationRequest{
+		RequestRef: umetav1.GetObjectReference(req),
+		Message:    "Which tables do you need?",
+	})
+	require.Nil(t, err)
+
+	t.Run("AnUnansweredQuestionBlocksTheApproval", func(t *testing.T) {
+		_, err := h.AccessReviewerC(c.rita.Conn).CreateReview(t.Context(),
+			eeharness.ReviewOf(req, accessv1.Review_Spec_DECISION_APPROVE))
+		require.NotNil(t, err)
+		assert.True(t, grpcerr.IsInvalidArg(err))
+		probe.MustStayDenied(t, settleWindow)
+	})
+
+	_, err = h.AccessUserC(c.alice.Conn).RespondToRequest(t.Context(), &accessv1.RespondToRequestRequest{
+		RequestRef: umetav1.GetObjectReference(req),
+		Response:   "Only the invoices table",
+	})
+	require.Nil(t, err)
+
+	t.Run("TheAnswerUnblocksTheApproval", func(t *testing.T) {
+		h.Review(t, c.rita, req, accessv1.Review_Spec_DECISION_APPROVE)
+		h.WaitRequestState(t, req, accessv1.Request_Status_State_APPROVED,
+			eeharness.RequestBudget)
+		probe.MustBeAllowed(t)
+	})
+}

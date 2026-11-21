@@ -596,6 +596,49 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
       assert.equal(create.request.spec.ticket, "CHG-1234");
     });
 
+    it("starts from the default duration of the chosen access level", async () => {
+      await load();
+      await page.getByText("Catalogs", { exact: true }).click();
+      await page.getByRole("button", { name: /^Primary storage/ }).click();
+      await page.getByRole("radiogroup", { name: "Access level", exact: true }).waitFor();
+      await page.getByText("Read only", { exact: true }).click();
+      await page.getByText("only works from sessions signed in at AAL2 or higher", { exact: false }).waitFor();
+      await page.waitForFunction(() =>
+        window.calls.some((call) => call.method === "previewRequest" &&
+          call.request.spec?.resource?.type?.catalog?.accessLevel === "read-only" &&
+          call.request.spec?.duration?.type?.minutes === 15));
+      assert.equal(await warnsBeforeUnload(), true);
+    });
+
+    it("extends an access granted to another user with the same recipient and Services", async () => {
+      await load("/user/requests/behalf-active");
+      await page.locator("section", { hasText: "Granted access" })
+        .getByText("AAL2 or higher", { exact: true }).waitFor();
+      const extend = page.getByRole("link", { name: "Extend", exact: true });
+      const params = new URL(await extend.getAttribute("href"), origin).searchParams;
+      assert.equal(params.get("extends"), "behalf-active");
+      assert.equal(params.get("subject"), "bob");
+      assert.deepEqual(params.getAll("serviceRefs.name"), ["default.database"]);
+      await extend.click();
+      await page.getByRole("heading", { name: "Extend Access", exact: true }).waitFor();
+      await page.getByText("Current recipient", { exact: true }).waitFor();
+      await page.waitForFunction(() =>
+        window.calls.some((call) => call.method === "previewRequest" &&
+          call.request.spec?.subject?.type?.userRef?.name === "bob" &&
+          call.request.spec?.extendsRef?.name === "behalf-active" &&
+          call.request.spec?.resource?.type?.catalog?.serviceRefs?.[0]?.name === "default.database"));
+    });
+
+    it("searches every request on the server", async () => {
+      await load("/user/requests");
+      await page.getByPlaceholder("Search by resource, request ID, recipient or reason").fill("CHG-1234");
+      await page.waitForFunction(() =>
+        window.calls.some((call) => call.method === "listRequest" && call.request.query === "CHG-1234"));
+      const call = (await page.evaluate(() => window.calls))
+        .find((value) => value.method === "listRequest" && value.request.query === "CHG-1234");
+      assert.equal(call.request.common?.page ?? 0, 0);
+    });
+
     it("ends an active access and offers to extend it", async () => {
       await load("/user/requests/capped");
       const extend = page.getByRole("link", { name: "Extend", exact: true });
@@ -634,6 +677,47 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
       const decision = (await page.evaluate(() => window.calls)).find((call) => call.method === "setReviewDecision");
       assert.equal(decision.request.expectedSpecRevision, 1);
       assert.equal(decision.request.duration.type.hours, 1);
+    });
+
+    it("keeps the confirmation bound to the revision the reviewer decided on", async () => {
+      await load("/reviewer/requests/queue-second");
+      await page.getByRole("textbox", { name: /^Reason/ }).filter({ visible: true }).fill("Looks fine");
+      await page.getByRole("button", { name: "Approve", exact: true }).filter({ visible: true }).click();
+      const dialog = page.getByRole("dialog", { name: "Approve this request?", exact: true });
+      await dialog.waitFor();
+      await page.evaluate(async () => {
+        const { queryClient } = await import("/src/utils/index.ts");
+        const key = ["reviewer", "getReviewCase", "queue-second"];
+        const value = structuredClone(queryClient.getQueryData(key));
+        value.request.status.specRevision = 2;
+        queryClient.setQueryData(key, value);
+      });
+      await dialog.getByText("The requester changed this request while you were deciding.", { exact: false }).waitFor();
+      assert.equal(await dialog.getByRole("button", { name: "Approve request", exact: true }).isDisabled(), true);
+      assert.equal((await page.evaluate(() => window.calls)).some((call) => call.method === "setReviewDecision"), false);
+    });
+
+    it("shows the current decision of the reviewer and withdraws it", async () => {
+      await load("/reviewer/requests/queue-voted");
+      const vote = page.getByLabel("Your current decision", { exact: true }).filter({ visible: true });
+      await vote.getByText("You approved for 1 hour", { exact: true }).waitFor();
+      await vote.getByText("Approved for the migration window", { exact: true }).waitFor();
+      const shorten = page.getByRole("checkbox", { name: "Approve a shorter duration", exact: true }).filter({ visible: true });
+      assert.equal(await shorten.isChecked(), true);
+      await vote.getByRole("button", { name: "Withdraw", exact: true }).click();
+      await page.getByText("Your decision was withdrawn", { exact: true }).waitFor();
+      const decision = (await page.evaluate(() => window.calls)).find((call) => call.method === "setReviewDecision");
+      assert.equal(decision.request.decision ?? 0, 0);
+      assert.equal(decision.request.expectedSpecRevision, 1);
+      assert.equal(decision.request.expectedStepName, "team-lead");
+    });
+
+    it("does not offer approval while the requester owes an answer", async () => {
+      await load("/reviewer/requests/queue-asked");
+      await page.getByText("This request is waiting for the requester to answer a question.", { exact: false })
+        .filter({ visible: true }).waitFor();
+      assert.equal(await page.getByRole("button", { name: "Approve", exact: true }).filter({ visible: true }).isDisabled(), true);
+      assert.equal(await page.getByRole("button", { name: "Reject", exact: true }).filter({ visible: true }).isDisabled(), false);
     });
 
     it("asks the requester a question from the review page", async () => {

@@ -121,8 +121,11 @@ func (s *ServerReviewer) GetReviewCase(ctx context.Context, req *accessv1.GetRev
 	}
 
 	if canReview {
+		if !ret.Flags.IsAwaitingRequester {
+			ret.AllowedActions = append(ret.AllowedActions, accessv1.ReviewCase_APPROVE)
+		}
+
 		ret.AllowedActions = append(ret.AllowedActions,
-			accessv1.ReviewCase_APPROVE,
 			accessv1.ReviewCase_REJECT,
 			accessv1.ReviewCase_REQUEST_INFORMATION)
 
@@ -161,11 +164,11 @@ func (s *ServerReviewer) GetReviewCase(ctx context.Context, req *accessv1.GetRev
 			}
 
 			if accesscmd.IsAccessActive(itm, now) {
-				ret.ActiveRequests = append(ret.ActiveRequests, accesscmd.RedactRequest(itm))
+				ret.ActiveRequests = append(ret.ActiveRequests, summarizeHistoryRequest(itm))
 			}
 
 			if len(ret.RecentRequests) < maxReviewCaseRecentRequests {
-				ret.RecentRequests = append(ret.RecentRequests, accesscmd.RedactRequest(itm))
+				ret.RecentRequests = append(ret.RecentRequests, summarizeHistoryRequest(itm))
 			}
 		}
 
@@ -176,6 +179,25 @@ func (s *ServerReviewer) GetReviewCase(ctx context.Context, req *accessv1.GetRev
 }
 
 const maxReviewCaseRecentRequests = 10
+
+func summarizeHistoryRequest(req *accessv1.Request) *accessv1.Request {
+	ret := accesscmd.RedactRequest(req)
+
+	if ret.Spec != nil {
+		ret.Spec.Justification = ""
+		ret.Spec.Ticket = ""
+	}
+
+	if ret.Status != nil {
+		ret.Status.Review = nil
+		ret.Status.LastStates = nil
+		if ret.Status.State != nil {
+			ret.Status.State.Message = ""
+		}
+	}
+
+	return ret
+}
 
 func (s *ServerReviewer) ListRequest(ctx context.Context,
 	req *accessv1.ListReviewerRequestOptions) (*accessv1.RequestList, error) {

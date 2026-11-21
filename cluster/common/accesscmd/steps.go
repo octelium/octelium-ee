@@ -354,6 +354,22 @@ func getRequestCatalog(ctx context.Context, octeliumC octeliumc.ClientInterface,
 	return GetCatalog(ctx, octeliumC, req.Spec.GetResource().GetCatalog().GetCatalogRef())
 }
 
+func HasStaleAppliedSteps(req *accessv1.Request) bool {
+	if req.Status.Review == nil || req.Status.Review.CurrentStep == 0 {
+		return false
+	}
+
+	for _, itm := range req.Status.Review.LastSteps {
+		if itm.StepIndex < req.Status.Review.CurrentStep &&
+			itm.Decision == accessv1.Review_Spec_DECISION_APPROVE &&
+			itm.SpecRevision != req.Status.SpecRevision {
+			return true
+		}
+	}
+
+	return false
+}
+
 func IsStepTimedOut(req *accessv1.Request, now time.Time) bool {
 	review := GetReviewAction(req)
 	if review == nil || req.Status.Review == nil {

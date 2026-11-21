@@ -91,6 +91,10 @@ func SetReviewDecision(ctx context.Context, opts *SetReviewDecisionOpts) (*acces
 		return nil, grpcutils.InvalidArg("The %s review Step has timed out", StepName(step, stepIndex))
 	}
 
+	if opts.Decision == accessv1.Review_Spec_DECISION_APPROVE && IsAwaitingRequester(req) {
+		return nil, grpcutils.InvalidArg("This Request is waiting for information from its requester")
+	}
+
 	if err := checkReasonRequirement(step, opts.Decision, opts.Justification); err != nil {
 		return nil, err
 	}
@@ -268,22 +272,45 @@ func CanReview(ctx context.Context, octeliumC octeliumc.ClientInterface,
 	}
 
 	stepState := CurrentStepState(req)
-	if stepState != nil && stepState.TotalEligibleReviewer <= uint32(len(stepState.EligibleReviewers)) {
-		for _, ref := range stepState.EligibleReviewers {
-			if ref.Uid == usr.Metadata.Uid {
-				return true, nil
-			}
-		}
-
-		return false, nil
-	}
 
 	catalog, err := getRequestCatalog(ctx, octeliumC, req)
 	if err != nil {
 		return false, err
 	}
 
-	return UserMatchesAnyReviewer(ctx, octeliumC, usr, GetStepReviewers(step, stepState), catalog)
+	ok, err := UserMatchesAnyReviewer(ctx, octeliumC, usr, GetStepReviewers(step, stepState), catalog)
+	if err != nil || ok {
+		return ok, err
+	}
+
+	return isStepFallbackReviewer(ctx, octeliumC, usr, req, step, stepState)
+}
+
+func isStepFallbackReviewer(ctx context.Context, octeliumC octeliumc.ClientInterface,
+	usr *corev1.User, req *accessv1.Request,
+	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
+	stepState *accessv1.Request_Status_Review_StepState) (bool, error) {
+	cc, err := GetClusterConfig(ctx, octeliumC)
+	if err != nil {
+		return false, grpcutils.InternalWithErr(err)
+	}
+
+	fallback := cc.GetSpec().GetReview().GetFallbackReviewers()
+	if len(fallback) == 0 {
+		return false, nil
+	}
+
+	ok, err := UserMatchesAnyReviewer(ctx, octeliumC, usr, fallback, nil)
+	if err != nil || !ok {
+		return false, err
+	}
+
+	usrs, err := GetStepEligibleUsers(ctx, octeliumC, req, step, stepState, nil)
+	if err != nil {
+		return false, err
+	}
+
+	return len(usrs) == 0, nil
 }
 
 func IsParticipant(ctx context.Context, octeliumC octeliumc.ClientInterface,
@@ -445,7 +472,24 @@ func userMatchesReviewer(ctx context.Context, octeliumC octeliumc.ClientInterfac
 func GetStepReviewerUsers(ctx context.Context, octeliumC octeliumc.ClientInterface,
 	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
 	req *accessv1.Request) ([]*corev1.User, error) {
-	return GetStepEligibleUsers(ctx, octeliumC, req, step, CurrentStepState(req), nil)
+	stepState := CurrentStepState(req)
+
+	usrs, err := GetStepEligibleUsers(ctx, octeliumC, req, step, stepState, nil)
+	if err != nil || len(usrs) > 0 {
+		return usrs, err
+	}
+
+	cc, err := GetClusterConfig(ctx, octeliumC)
+	if err != nil {
+		return nil, err
+	}
+
+	fallback := cc.GetSpec().GetReview().GetFallbackReviewers()
+	if len(fallback) == 0 {
+		return nil, nil
+	}
+
+	return GetStepEligibleUsers(ctx, octeliumC, req, step, stepState, fallback)
 }
 
 func HasReviewBeenApplied(req *accessv1.Request, review *accessv1.Review) bool {

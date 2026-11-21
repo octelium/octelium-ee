@@ -376,7 +376,11 @@ func (w *Watcher) doCheckPendingRequest(ctx context.Context, req *accessv1.Reque
 		return w.updateRequestIfChanged(ctx, req, next)
 	}
 
-	return nil
+	if err := accesscmd.RefreshStepReviewers(ctx, w.octeliumC, next, cc); err != nil {
+		return err
+	}
+
+	return w.updateRequestIfChanged(ctx, req, next)
 }
 
 func (w *Watcher) onStepTimeout(ctx context.Context, req *accessv1.Request,

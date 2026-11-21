@@ -787,6 +787,74 @@ func TestWatcherEscalatesAfterTheEscalationDelay(t *testing.T) {
 		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Metadata.ResourceVersion)
 }
 
+func TestWatcherReroutesAStepWhoseReviewersLeft(t *testing.T) {
+	ctx, w, octeliumC := newWatcherTest(t)
+
+	newUser := func() *corev1.User {
+		usr, err := octeliumC.CoreC().CreateUser(ctx, &corev1.User{
+			Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
+			Spec:     &corev1.User_Spec{Type: corev1.User_Spec_HUMAN},
+			Status:   &corev1.User_Status{},
+		})
+		require.NoError(t, err)
+		return usr
+	}
+
+	reviewer := newUser()
+	fallback := newUser()
+
+	cc := &accessv1.ClusterConfig{
+		Spec: &accessv1.ClusterConfig_Spec{
+			Review: &accessv1.ClusterConfig_Spec_Review{
+				FallbackReviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
+					userReviewer(umetav1.GetObjectReference(fallback)),
+				},
+			},
+		},
+	}
+
+	step := timeoutStep(nil, accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_UNSET)
+	step.Reviewers = []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
+		userReviewer(umetav1.GetObjectReference(reviewer)),
+	}
+
+	req := createPendingRequest(t, ctx, octeliumC, reviewRule(step), time.Now().Add(-time.Hour))
+	req.Status.Review.Steps = []*accessv1.Request_Status_Review_StepState{
+		{
+			Name:                  "step-1",
+			Index:                 0,
+			StartedAt:             pbutils.Timestamp(time.Now().Add(-time.Hour)),
+			EligibleReviewers:     []*metav1.ObjectReference{umetav1.GetObjectReference(reviewer)},
+			TotalEligibleReviewer: 1,
+			RequiredApprovals:     1,
+		},
+	}
+	req, err := octeliumC.AccessC().UpdateRequest(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, w.doCheckRequest(ctx, req, cc))
+	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	require.NoError(t, w.doCheckRequest(ctx, reqG, cc))
+	assert.Equal(t, reqG.Metadata.ResourceVersion,
+		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Metadata.ResourceVersion)
+	assert.Equal(t, reviewer.Metadata.Uid, reqG.Status.Review.Steps[0].EligibleReviewers[0].Uid)
+
+	reviewer.Spec.IsDisabled = true
+	_, err = octeliumC.CoreC().UpdateUser(ctx, reviewer)
+	require.NoError(t, err)
+
+	require.NoError(t, w.doCheckRequest(ctx, reqG, cc))
+
+	reqG = getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	stepState := reqG.Status.Review.Steps[0]
+	assert.False(t, stepState.IsUnroutable)
+	require.Len(t, stepState.EligibleReviewers, 1)
+	assert.Equal(t, fallback.Metadata.Uid, stepState.EligibleReviewers[0].Uid)
+
+	require.NoError(t, w.doCheckRequest(ctx, reqG, nil))
+	assert.True(t, getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.Review.Steps[0].IsUnroutable)
+}
+
 func TestWatcherHandsRetriesToTheRequestController(t *testing.T) {
 	ctx, w, octeliumC := newWatcherTest(t)
 

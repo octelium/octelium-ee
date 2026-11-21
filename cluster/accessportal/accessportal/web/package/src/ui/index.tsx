@@ -832,6 +832,7 @@ export const ConfirmDialog = (props: {
   loading?: boolean;
   danger?: boolean;
   details?: React.ReactNode;
+  confirmDisabled?: boolean;
 }) => (
   <Modal
     opened={props.opened}
@@ -866,6 +867,7 @@ export const ConfirmDialog = (props: {
         variant="filled"
         color={props.danger ? "red" : "ink"}
         loading={props.loading}
+        disabled={props.confirmDisabled}
         onClick={props.onConfirm}
       >
         {props.confirmLabel}

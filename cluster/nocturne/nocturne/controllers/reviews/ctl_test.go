@@ -11,6 +11,7 @@ package reviews
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/tests"
@@ -693,6 +694,96 @@ func TestReviewWithdrawnDecisionIsNotApplied(t *testing.T) {
 	assert.Equal(t, accessv1.Request_Status_State_PENDING, reqG.Status.State.Status)
 }
 
+func TestReviewDurationOnlyEditTakesEffect(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	userA := newUserRef(t, ctx, octeliumC)
+	userB := newUserRef(t, ctx, octeliumC)
+	req := createPendingRequest(t, ctx, octeliumC, reviewRule(countStep(2, userReviewer(userA), userReviewer(userB))), 0)
+	req.Status.EffectiveDuration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 4}}
+	req, err := octeliumC.AccessC().UpdateRequest(ctx, req)
+	assert.Nil(t, err, "%+v", err)
+
+	revA := createReview(t, ctx, octeliumC, umetav1.GetObjectReference(req), userA, 0, accessv1.Review_Spec_DECISION_APPROVE)
+	revA.Spec.Duration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 3}}
+	revA, err = octeliumC.AccessC().UpdateReview(ctx, revA)
+	assert.Nil(t, err, "%+v", err)
+	assert.Nil(t, ctrl.OnAdd(ctx, revA))
+
+	old := pbutils.Clone(revA).(*accessv1.Review)
+	revA.Spec.Duration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 1}}
+	revA, err = octeliumC.AccessC().UpdateReview(ctx, revA)
+	assert.Nil(t, err, "%+v", err)
+	assert.Nil(t, ctrl.OnUpdate(ctx, revA, old))
+
+	revB := createReview(t, ctx, octeliumC, umetav1.GetObjectReference(req), userB, 0, accessv1.Review_Spec_DECISION_APPROVE)
+	assert.Nil(t, ctrl.OnAdd(ctx, revB))
+
+	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
+	assert.Equal(t, time.Hour, umetav1.ToDuration(reqG.Status.EffectiveDuration).ToGo())
+}
+
+func TestReviewWithdrawalUpdatesTheStep(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	userA := newUserRef(t, ctx, octeliumC)
+	userB := newUserRef(t, ctx, octeliumC)
+	req := createPendingRequest(t, ctx, octeliumC, reviewRule(countStep(2, userReviewer(userA), userReviewer(userB))), 0)
+	req = withStepState(t, ctx, octeliumC, req, userA, userB)
+
+	revA := createReview(t, ctx, octeliumC, umetav1.GetObjectReference(req), userA, 0, accessv1.Review_Spec_DECISION_APPROVE)
+	assert.Nil(t, ctrl.OnAdd(ctx, revA))
+
+	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Len(t, reqG.Status.Review.LastSteps, 1)
+	assert.Equal(t, uint32(1), reqG.Status.Review.Steps[0].Approvals)
+
+	old := pbutils.Clone(revA).(*accessv1.Review)
+	revA.Spec.Decision = accessv1.Review_Spec_DECISION_UNSET
+	revA.Spec.Justification = ""
+	revA, err := octeliumC.AccessC().UpdateReview(ctx, revA)
+	assert.Nil(t, err, "%+v", err)
+	assert.Nil(t, ctrl.OnUpdate(ctx, revA, old))
+
+	reqG = getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Empty(t, reqG.Status.Review.LastSteps)
+	assert.Equal(t, uint32(0), reqG.Status.Review.Steps[0].Approvals)
+
+	revB := createReview(t, ctx, octeliumC, umetav1.GetObjectReference(req), userB, 0, accessv1.Review_Spec_DECISION_APPROVE)
+	assert.Nil(t, ctrl.OnAdd(ctx, revB))
+	assert.Equal(t, accessv1.Request_Status_State_PENDING, getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
+}
+
+func TestReviewStaleEarlierStepIsNotFinalized(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	userA := newUserRef(t, ctx, octeliumC)
+	userB := newUserRef(t, ctx, octeliumC)
+	req := createPendingRequest(t, ctx, octeliumC, reviewRule(anyStep(userReviewer(userA)), anyStep(userReviewer(userB))), 1)
+	req.Status.SpecRevision = 2
+	req.Status.Review.LastSteps = []*accessv1.Request_Status_Review_Step{
+		{
+			StepIndex:    0,
+			Decision:     accessv1.Review_Spec_DECISION_APPROVE,
+			UserRef:      userA,
+			SpecRevision: 1,
+		},
+	}
+	req, err := octeliumC.AccessC().UpdateRequest(ctx, req)
+	assert.Nil(t, err, "%+v", err)
+
+	revB := createReview(t, ctx, octeliumC, umetav1.GetObjectReference(req), userB, 1, accessv1.Review_Spec_DECISION_APPROVE)
+	revB.Status.SpecRevision = 2
+	revB, err = octeliumC.AccessC().UpdateReview(ctx, revB)
+	assert.Nil(t, err, "%+v", err)
+	assert.Nil(t, ctrl.OnAdd(ctx, revB))
+
+	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_PENDING, reqG.Status.State.Status)
+	assert.Len(t, reqG.Status.Review.LastSteps, 1)
+}
+
 func TestReviewDeletedReviewIsNotApplied(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
@@ -806,28 +897,43 @@ func TestReviewRejectRecordsReasonAndStepOutcome(t *testing.T) {
 	assert.NotNil(t, reqG.Status.Review.Steps[0].EndedAt)
 }
 
-func TestReviewUsesTheEligibleReviewerSnapshot(t *testing.T) {
+func TestReviewFollowsTheReviewerMembership(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
 	grp := createGroup(t, ctx, octeliumC)
 	userA := umetav1.GetObjectReference(createUser(t, ctx, octeliumC, grp.Metadata.Name))
-	userB := umetav1.GetObjectReference(createUser(t, ctx, octeliumC, grp.Metadata.Name))
+	usrB := createUser(t, ctx, octeliumC, grp.Metadata.Name)
+	userB := umetav1.GetObjectReference(usrB)
 
 	req := createPendingRequest(t, ctx, octeliumC, reviewRule(allStep(groupReviewer(umetav1.GetObjectReference(grp)))), 0)
-	req = withStepState(t, ctx, octeliumC, req, userA)
+	req = withStepState(t, ctx, octeliumC, req, userA, userB)
+
+	usrB.Spec.Groups = nil
+	_, err := octeliumC.CoreC().UpdateUser(ctx, usrB)
+	assert.Nil(t, err, "%+v", err)
 
 	revB := createReview(t, ctx, octeliumC, umetav1.GetObjectReference(req), userB, 0, accessv1.Review_Spec_DECISION_REJECT)
 	assert.Nil(t, ctrl.OnAdd(ctx, revB))
 	assert.Equal(t, accessv1.Request_Status_State_PENDING, getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
 
+	userC := umetav1.GetObjectReference(createUser(t, ctx, octeliumC, grp.Metadata.Name))
+
 	revA := createReview(t, ctx, octeliumC, umetav1.GetObjectReference(req), userA, 0, accessv1.Review_Spec_DECISION_APPROVE)
 	assert.Nil(t, ctrl.OnAdd(ctx, revA))
 
 	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_PENDING, reqG.Status.State.Status)
+	assert.Equal(t, uint32(1), reqG.Status.Review.Steps[0].Approvals)
+	assert.Equal(t, uint32(2), reqG.Status.Review.Steps[0].RequiredApprovals)
+
+	revC := createReview(t, ctx, octeliumC, umetav1.GetObjectReference(req), userC, 0, accessv1.Review_Spec_DECISION_APPROVE)
+	assert.Nil(t, ctrl.OnAdd(ctx, revC))
+
+	reqG = getRequest(t, ctx, octeliumC, req.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
 	assert.Equal(t, accessv1.Request_Status_State_APPROVED_BY_REVIEWERS, reqG.Status.State.Reason)
 	assert.Equal(t, accessv1.Request_Status_Review_StepState_SATISFIED, reqG.Status.Review.Steps[0].Outcome)
-	assert.Equal(t, uint32(1), reqG.Status.Review.Steps[0].Approvals)
+	assert.Equal(t, uint32(2), reqG.Status.Review.Steps[0].Approvals)
 }
 
 func TestReviewNextStepGetsItsOwnSnapshot(t *testing.T) {

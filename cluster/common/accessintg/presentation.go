@@ -223,6 +223,7 @@ func stepDecisions(ctx context.Context, octeliumC octeliumc.ClientInterface,
 
 	for _, item := range itemList.Items {
 		if item.Status.StepIndex != stepIndex ||
+			item.Status.SpecRevision != req.Status.SpecRevision ||
 			item.Spec.Decision == accessv1.Review_Spec_DECISION_UNSET {
 			continue
 		}

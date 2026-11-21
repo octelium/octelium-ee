@@ -139,10 +139,58 @@ const RequesterHistoryCard = (props: { reviewCase: AccessP.ReviewCase }) => {
   );
 };
 
+const MyDecision = (props: {
+  review: AccessP.Review;
+  isCurrent: boolean;
+  canWithdraw: boolean;
+  busy: boolean;
+  onWithdraw: () => void;
+}) => {
+  const approved =
+    props.review.spec?.decision === AccessP.Review_Spec_Decision.APPROVE;
+  const duration = props.review.spec?.duration;
+
+  return (
+    <div
+      aria-label="Your current decision"
+      className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-normal leading-5 text-slate-600"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-semibold text-slate-800">
+          {approved ? "You approved" : "You rejected"}
+          {approved && duration && ` for ${formatDuration(duration)}`}
+        </span>
+        {props.canWithdraw && (
+          <Button
+            variant="subtle"
+            color="gray"
+            size="compact-xs"
+            disabled={props.busy}
+            onClick={props.onWithdraw}
+          >
+            Withdraw
+          </Button>
+        )}
+      </div>
+      {props.review.spec?.justification && (
+        <p className="[overflow-wrap:anywhere]">{props.review.spec.justification}</p>
+      )}
+      <p className="text-slate-500">
+        {props.isCurrent
+          ? "Deciding again replaces this decision."
+          : "The request changed after this decision, so it no longer counts. Decide again."}
+      </p>
+    </div>
+  );
+};
+
 const DecisionPanel = (props: {
   className?: string;
   pending: boolean;
   actions: AccessP.ReviewCase_Action[];
+  myReview?: AccessP.Review;
+  isMyReviewCurrent: boolean;
+  onWithdraw: () => void;
   requirement: string;
   reasonHint: string;
   justification: string;
@@ -161,7 +209,11 @@ const DecisionPanel = (props: {
   const canApprove = props.actions.includes(A.APPROVE);
   const canReject = props.actions.includes(A.REJECT);
   const canAsk = props.actions.includes(A.REQUEST_INFORMATION);
+  const canWithdraw = props.actions.includes(A.WITHDRAW);
   const canDecide = canApprove || canReject;
+  const hasDecided =
+    !!props.myReview &&
+    props.myReview.spec?.decision !== AccessP.Review_Spec_Decision.UNSET;
 
   return (
     <SectionCard
@@ -174,6 +226,15 @@ const DecisionPanel = (props: {
     >
       {props.pending && canDecide ? (
         <div className="flex flex-col gap-4">
+          {hasDecided && (
+            <MyDecision
+              review={props.myReview!}
+              isCurrent={props.isMyReviewCurrent}
+              canWithdraw={canWithdraw}
+              busy={props.busy}
+              onWithdraw={props.onWithdraw}
+            />
+          )}
           <Textarea
             label={
               <span className="flex w-full items-baseline justify-between gap-3">
@@ -244,6 +305,13 @@ const DecisionPanel = (props: {
             </Button>
           )}
 
+          {!canApprove && (
+            <Note tone="blue" icon={<Info size={13} strokeWidth={2.25} />}>
+              This request is waiting for the requester to answer a question.
+              You can approve it once they answer.
+            </Note>
+          )}
+
           <Note icon={<Info size={13} strokeWidth={2.25} />}>
             A single rejection ends the request immediately. An approval counts
             towards the current step of the workflow.
@@ -267,9 +335,12 @@ const ReviewRequest = () => {
   const queryClient = useQueryClient();
   const [justification, setJustification] = React.useState("");
   const [justificationError, setJustificationError] = React.useState<string>();
-  const [decisionToSubmit, setDecisionToSubmit] =
-    React.useState<AccessP.Review_Spec_Decision>();
-  const [shorten, setShorten] = React.useState(false);
+  const [decisionToSubmit, setDecisionToSubmit] = React.useState<{
+    decision: AccessP.Review_Spec_Decision;
+    specRevision: number;
+    stepName: string;
+  }>();
+  const [shortenChoice, setShorten] = React.useState<boolean>();
   const [approvedDuration, setApprovedDuration] =
     React.useState<MetaP.Duration>();
   const [askOpen, setAskOpen] = React.useState(false);
@@ -299,26 +370,51 @@ const ReviewRequest = () => {
   const steps = reviewSteps(item);
   const currentIndex = currentReviewStepIndex(item);
   const currentStep = steps[currentIndex];
-  const duration = approvedDuration ?? normalizeDuration(grantedDuration(item));
+  const myReview = reviewCase?.myReview;
+  const isMyReviewCurrent =
+    !!myReview && myReview.status?.specRevision === item?.status?.specRevision;
+  const myApprovedDuration =
+    isMyReviewCurrent &&
+    myReview?.spec?.decision === AccessP.Review_Spec_Decision.APPROVE
+      ? myReview.spec.duration
+      : undefined;
+  const shorten = shortenChoice ?? !!myApprovedDuration;
+  const duration =
+    approvedDuration ??
+    (myApprovedDuration
+      ? normalizeDuration(myApprovedDuration)
+      : normalizeDuration(grantedDuration(item)));
 
   const decideMutation = useMutation({
-    mutationFn: async (decision: AccessP.Review_Spec_Decision) => {
+    mutationFn: async (target: {
+      decision: AccessP.Review_Spec_Decision;
+      specRevision: number;
+      stepName: string;
+    }) => {
       const { response } = await getReviewerClient().setReviewDecision(
         AccessP.SetReviewDecisionRequest.create({
           requestRef: MetaP.ObjectReference.create({ name: name! }),
-          decision,
-          justification,
-          expectedStepName: reviewStepName(currentStep, currentIndex),
-          expectedSpecRevision: item?.status?.specRevision ?? 0,
+          decision: target.decision,
+          justification:
+            target.decision === AccessP.Review_Spec_Decision.UNSET
+              ? ""
+              : justification,
+          expectedStepName: target.stepName,
+          expectedSpecRevision: target.specRevision,
           duration:
-            shorten && decision === AccessP.Review_Spec_Decision.APPROVE
+            shorten && target.decision === AccessP.Review_Spec_Decision.APPROVE
               ? duration
               : undefined,
         }),
       );
       return response;
     },
-    onSuccess: () => {
+    onSuccess: (_, target) => {
+      if (target.decision === AccessP.Review_Spec_Decision.UNSET) {
+        notifications.show({ color: "green", message: "Your decision was withdrawn" });
+        queryClient.invalidateQueries({ queryKey: ["reviewer"] });
+        return;
+      }
       notifications.show({ color: "green", message: "Review submitted" });
       setDecisionToSubmit(undefined);
       queryClient.invalidateQueries({ queryKey: ["reviewer"] });
@@ -429,12 +525,24 @@ const ReviewRequest = () => {
       return;
     }
     setJustificationError(undefined);
-    setDecisionToSubmit(decision);
+    setDecisionToSubmit({
+      decision,
+      specRevision: item.status?.specRevision ?? 0,
+      stepName: reviewStepName(currentStep, currentIndex),
+    });
   };
 
   const panelProps = {
     pending,
     actions: reviewCase.allowedActions,
+    myReview,
+    isMyReviewCurrent,
+    onWithdraw: () =>
+      decideMutation.mutate({
+        decision: AccessP.Review_Spec_Decision.UNSET,
+        specRevision: item.status?.specRevision ?? 0,
+        stepName: reviewStepName(currentStep, currentIndex),
+      }),
     requirement: [stepLabel, approvalRequirementLabel(currentStep)]
       .filter(Boolean)
       .join(" · "),
@@ -457,7 +565,11 @@ const ReviewRequest = () => {
     onReject: () => requestDecision(AccessP.Review_Spec_Decision.REJECT),
   };
 
-  const rejecting = decisionToSubmit === AccessP.Review_Spec_Decision.REJECT;
+  const rejecting =
+    decisionToSubmit?.decision === AccessP.Review_Spec_Decision.REJECT;
+  const changedWhileDeciding =
+    decisionToSubmit !== undefined &&
+    decisionToSubmit.specRevision !== (item.status?.specRevision ?? 0);
 
   return (
     <div className="w-full">
@@ -522,10 +634,18 @@ const ReviewRequest = () => {
         }}
         title={rejecting ? "Reject this request?" : "Approve this request?"}
         description={
-          rejecting
-            ? "The request is rejected immediately and no access is granted."
-            : "Your approval is recorded for the current step. Access is granted once every step of the workflow is satisfied."
+          changedWhileDeciding ? (
+            <Note tone="amber" icon={<Info size={13} strokeWidth={2.25} />}>
+              The requester changed this request while you were deciding.
+              Cancel and review the changes before deciding again.
+            </Note>
+          ) : rejecting ? (
+            "The request is rejected immediately and no access is granted."
+          ) : (
+            "Your approval is recorded for the current step. Access is granted once every step of the workflow is satisfied."
+          )
         }
+        confirmDisabled={changedWhileDeciding}
         details={
           <div className="flex flex-col">
             <SummaryRow label={resource.kind}>
@@ -572,8 +692,9 @@ const ReviewRequest = () => {
           }}
         >
           <p className="text-xs font-normal leading-5 text-slate-500">
-            The requester is notified and the request stays pending. Their
-            answer appears on this page.
+            The requester sees the question in their inbox and the request
+            cannot be approved until they answer. Their answer appears on this
+            page.
           </p>
           <Textarea
             label={

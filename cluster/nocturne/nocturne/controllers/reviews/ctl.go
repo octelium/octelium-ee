@@ -45,6 +45,7 @@ func (c *Controller) OnAdd(ctx context.Context, itm *accessv1.Review) error {
 func (c *Controller) OnUpdate(ctx context.Context, new, old *accessv1.Review) error {
 	force := new.Spec.Decision != old.Spec.Decision ||
 		new.Spec.Justification != old.Spec.Justification ||
+		!pbutils.IsEqual(new.Spec.Duration, old.Spec.Duration) ||
 		new.Status.SpecRevision != old.Status.SpecRevision
 
 	return c.reconcile(ctx, new, force)
@@ -63,7 +64,7 @@ func (c *Controller) reconcile(ctx context.Context, rev *accessv1.Review, force 
 		return errors.Errorf("review %q has no userRef", rev.Metadata.Name)
 	}
 
-	if rev.Spec.Decision == accessv1.Review_Spec_DECISION_UNSET {
+	if rev.Spec.Decision == accessv1.Review_Spec_DECISION_UNSET && !force {
 		return nil
 	}
 
@@ -71,8 +72,12 @@ func (c *Controller) reconcile(ctx context.Context, rev *accessv1.Review, force 
 	if err != nil {
 		return err
 	}
-	if rev == nil || rev.Spec.Decision == accessv1.Review_Spec_DECISION_UNSET {
+	if rev == nil {
 		return nil
+	}
+
+	if rev.Spec.Decision == accessv1.Review_Spec_DECISION_UNSET {
+		return c.withdraw(ctx, rev)
 	}
 
 	req, err := c.getRequest(ctx, rev.Status.RequestRef)
@@ -111,6 +116,10 @@ func (c *Controller) reconcile(ctx context.Context, rev *accessv1.Review, force 
 	}
 
 	if rev.Status.SpecRevision != next.Status.SpecRevision {
+		return nil
+	}
+
+	if accesscmd.HasStaleAppliedSteps(next) {
 		return nil
 	}
 
@@ -263,6 +272,50 @@ func (c *Controller) gotoNextStepOrApprove(
 		Index:         req.Status.Review.CurrentStep + 1,
 		ClusterConfig: cc,
 	})
+}
+
+func (c *Controller) withdraw(ctx context.Context, rev *accessv1.Review) error {
+	req, err := c.getRequest(ctx, rev.Status.RequestRef)
+	if err != nil {
+		return err
+	}
+	if req == nil || !accesscmd.IsPending(req) || req.Status.Review == nil ||
+		rev.Status.StepIndex != req.Status.Review.CurrentStep {
+		return nil
+	}
+
+	next := pbutils.Clone(req).(*accessv1.Request)
+
+	var lastSteps []*accessv1.Request_Status_Review_Step
+	for _, itm := range next.Status.Review.LastSteps {
+		if itm.StepIndex == rev.Status.StepIndex && itm.ReviewRef != nil &&
+			itm.ReviewRef.Uid == rev.Metadata.Uid {
+			continue
+		}
+		lastSteps = append(lastSteps, itm)
+	}
+	next.Status.Review.LastSteps = lastSteps
+
+	if stepState := accesscmd.CurrentStepState(next); stepState != nil {
+		reviews, err := c.getCurrentStepReviews(ctx, next, rev)
+		if err != nil {
+			return err
+		}
+
+		approvals, err := c.getStepApprovals(ctx, next, reviews)
+		if err != nil {
+			return err
+		}
+
+		stepState.Approvals = uint32(len(approvals))
+	}
+
+	if pbutils.IsEqual(req, next) {
+		return nil
+	}
+
+	_, err = c.octeliumC.AccessC().UpdateRequest(ctx, next)
+	return err
 }
 
 func applyApprovedDuration(req *accessv1.Request) {
@@ -423,22 +476,13 @@ func (c *Controller) isStepApprovedAll(
 		return false, nil
 	}
 
-	stepState := accesscmd.CurrentStepState(req)
-
-	if stepState != nil && stepState.TotalEligibleReviewer > 0 &&
-		stepState.TotalEligibleReviewer <= uint32(len(stepState.EligibleReviewers)) {
-		for _, ref := range stepState.EligibleReviewers {
-			if _, ok := approvals[ref.Uid]; !ok {
-				return false, nil
-			}
-		}
-
-		return true, nil
-	}
-
 	usrs, err := accesscmd.GetStepReviewerUsers(ctx, c.octeliumC, step, req)
 	if err != nil {
 		return false, err
+	}
+
+	if stepState := accesscmd.CurrentStepState(req); stepState != nil {
+		stepState.RequiredApprovals = accesscmd.GetRequiredApprovals(step, uint32(len(usrs)))
 	}
 
 	if len(usrs) == 0 {

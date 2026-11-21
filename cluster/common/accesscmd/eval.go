@@ -73,6 +73,21 @@ func (r *EvalResult) SkippedRules() []*accessv1.Request_Status_Evaluation_Skippe
 	return ret
 }
 
+func (r *EvalResult) BlockingRule() *RuleEvaluation {
+	if r.Rule == nil || r.Rule.Effect == accessv1.Policy_Spec_Rule_DENY {
+		return nil
+	}
+
+	for _, itm := range r.Rules {
+		if itm.Result == accessv1.SimulateRequestResponse_RuleEvaluation_ERROR &&
+			itm.Rule.Effect != accessv1.Policy_Spec_Rule_AUTO_APPROVE {
+			return itm
+		}
+	}
+
+	return nil
+}
+
 type PolicyRule struct {
 	Policy *accessv1.Policy
 	Rule   *accessv1.Policy_Spec_Rule

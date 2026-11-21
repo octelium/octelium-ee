@@ -11,6 +11,7 @@ package accesscmd
 import (
 	"context"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -252,6 +253,45 @@ func IsScopeEqual(a, b *accessv1.Request_Status_ResolvedScope) bool {
 	return pbutils.IsEqual(ac, bc)
 }
 
+func IsScopeMateriallyEqual(a, b *accessv1.Request_Status_ResolvedScope) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+
+	return pbutils.IsEqual(getMaterialScope(a), getMaterialScope(b))
+}
+
+func getMaterialScope(scope *accessv1.Request_Status_ResolvedScope) *accessv1.Request_Status_ResolvedScope {
+	ret := &accessv1.Request_Status_ResolvedScope{
+		CatalogRef:          scope.CatalogRef,
+		AccessLevel:         scope.AccessLevel,
+		Membership:          scope.Membership,
+		Priority:            scope.Priority,
+		OverridesGuardrails: scope.OverridesGuardrails,
+		NamespaceRefs:       scope.NamespaceRefs,
+	}
+
+	for _, ref := range scope.ServiceRefs {
+		if isServiceRefInNamespaces(ref, scope.NamespaceRefs) {
+			continue
+		}
+
+		ret.ServiceRefs = append(ret.ServiceRefs, ref)
+	}
+
+	return ret
+}
+
+func isServiceRefInNamespaces(ref *metav1.ObjectReference, namespaces []*metav1.ObjectReference) bool {
+	for _, ns := range namespaces {
+		if ns.Name != "" && strings.HasSuffix(ref.Name, "."+ns.Name) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func ScopeIncludesService(scope *accessv1.Request_Status_ResolvedScope, svc *corev1.Service) bool {
 	if scope == nil || svc == nil {
 		return false
@@ -263,7 +303,7 @@ func ScopeIncludesService(scope *accessv1.Request_Status_ResolvedScope, svc *cor
 		}
 	}
 
-	if svc.Status != nil && svc.Status.NamespaceRef != nil {
+	if svc.Status != nil && svc.Status.NamespaceRef != nil && !IsSystemService(svc) {
 		for _, ref := range scope.NamespaceRefs {
 			if ref.Uid == svc.Status.NamespaceRef.Uid {
 				return true

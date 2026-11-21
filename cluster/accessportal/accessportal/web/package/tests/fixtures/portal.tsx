@@ -220,6 +220,31 @@ const queue = [
   request("queue-second", S.PENDING, { requester: "dave", steps: ["team-lead"] }),
 ];
 
+const reviewCases = [
+  request("queue-voted", S.PENDING, { requester: "dave", steps: ["team-lead"] }),
+  request("queue-asked", S.PENDING, {
+    requester: "dave",
+    steps: ["team-lead"],
+    askedInfo: "Which incident is this for?",
+  }),
+];
+
+const behalfActive = request("behalf-active", S.APPROVED, {
+  subject: "bob",
+  approvalEndAgo: 30,
+  accessEndsIn: 90,
+});
+if (behalfActive.spec?.resource?.type.oneofKind === "catalog") {
+  behalfActive.spec.resource.type.catalog.serviceRefs = [{ name: "default.database" }];
+}
+behalfActive.status!.grant = { state: AccessP.Request_Status_Grant_State.ACTIVE, attempts: 0, lastError: "" };
+behalfActive.status!.resolvedScope!.accessLevel = AccessP.Catalog_Spec_AccessLevel.create({
+  name: "full",
+  displayName: "Full access",
+  type: { oneofKind: "full", full: {} },
+  verification: { minAAL: 2 },
+});
+
 const reviews = [
   AccessP.Review.create({
     metadata: { name: "rv1.queue-second", uid: "review-unset" },
@@ -251,6 +276,8 @@ const catalogs = [
         displayName: "Read only",
         description: "Read the data without changing it",
         type: AccessP.UserCatalog_AccessLevel_Type.RESTRICTED,
+        defaultDuration: { type: { oneofKind: "minutes", minutes: 15 } },
+        minAAL: 2,
       },
     ],
     totalService: 1,
@@ -315,7 +342,8 @@ stub(getUserClient(), "listRequest", (options: AccessP.ListUserRequestOptions) =
   });
 });
 stub(getUserClient(), "getRequest", (options: MetaP.GetOptions) =>
-  myRequests.find((item) => item.metadata?.name === options.name) ?? notFound(),
+  [...myRequests, behalfActive].find((item) => item.metadata?.name === options.name) ??
+  notFound(),
 );
 stub(getUserClient(), "getSubjectUser", () => notFound());
 stub(getUserMainClient(), "getService", (options: MetaP.GetOptions) =>
@@ -332,15 +360,31 @@ stub(getReviewerClient(), "getRequest", (options: MetaP.GetOptions) =>
 );
 stub(getReviewerClient(), "getReviewCase", (options: AccessP.GetReviewCaseRequest) => {
   const item =
-    queue.find((value) => value.metadata?.name === options.requestRef?.name) ?? notFound();
+    [...queue, ...reviewCases].find((value) => value.metadata?.name === options.requestRef?.name) ??
+    notFound();
+  const name = item.metadata?.name;
+  const asked = name === "queue-asked";
+  const voted = name === "queue-voted";
   return AccessP.ReviewCase.create({
     request: item,
     allowedActions: [
-      AccessP.ReviewCase_Action.APPROVE,
+      ...(asked ? [] : [AccessP.ReviewCase_Action.APPROVE]),
       AccessP.ReviewCase_Action.REJECT,
       AccessP.ReviewCase_Action.REQUEST_INFORMATION,
+      ...(voted ? [AccessP.ReviewCase_Action.WITHDRAW] : []),
     ],
-    flags: { isFullAccess: true },
+    myReview: voted
+      ? AccessP.Review.create({
+          metadata: { name: "rv.queue-voted" },
+          spec: {
+            decision: AccessP.Review_Spec_Decision.APPROVE,
+            justification: "Approved for the migration window",
+            duration: hours(1),
+          },
+          status: { requestRef: { name }, stepIndex: 0, specRevision: 1 },
+        })
+      : undefined,
+    flags: { isFullAccess: true, isAwaitingRequester: asked },
   });
 });
 stub(getReviewerClient(), "listReview", () =>

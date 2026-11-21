@@ -181,10 +181,20 @@ func requestIncludesService(req *accessv1.Request, ref *metav1.ObjectReference) 
 		return true
 	}
 
+	name := vutils.GetServiceFullNameFromName(ref.Name)
+
 	for _, itm := range req.GetStatus().GetResolvedScope().GetServiceRefs() {
 		if (ref.Uid != "" && itm.Uid == ref.Uid) ||
-			(ref.Uid == "" && itm.Name == vutils.GetServiceFullNameFromName(ref.Name)) {
+			(ref.Uid == "" && itm.Name == name) {
 			return true
+		}
+	}
+
+	if _, ns, ok := strings.Cut(name, "."); ok {
+		for _, itm := range req.GetStatus().GetResolvedScope().GetNamespaceRefs() {
+			if itm.Name == ns {
+				return true
+			}
 		}
 	}
 

@@ -215,6 +215,26 @@ describe("Access pages", () => {
     await page.getByText("Individual Services", { exact: true }).waitFor();
   });
 
+  it("keeps an explicit zero priority apart from the Cluster default", async () => {
+    await load("/access/catalogs/create");
+    const toggle = page.getByRole("button", { name: /^Access levels/ });
+    if (await toggle.getAttribute("aria-expanded") !== "true") await toggle.click();
+    await page.getByRole("button", { name: "Add full access", exact: true }).click();
+    const priority = page.getByRole("textbox", { name: "Priority", exact: true });
+    await priority.waitFor();
+    assert.equal(await priority.inputValue(), "");
+    assert.equal(await priority.getAttribute("placeholder"), "Cluster default");
+    await priority.fill("0");
+    await priority.blur();
+    assert.equal(await priority.inputValue(), "0");
+    await priority.fill("-2");
+    await priority.blur();
+    await page.getByText("This access level takes precedence over Policies that deny the access", { exact: false }).waitFor();
+    await priority.fill("");
+    await priority.blur();
+    assert.equal(await priority.inputValue(), "");
+  });
+
   it("keeps the selected requester visible when reopening a Catalog simulation", async () => {
     await load("/access/catalogs/production-support");
     await page.getByRole("button", { name: "Simulate", exact: true }).click();

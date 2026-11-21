@@ -337,6 +337,11 @@ export const serviceModeLabel = (mode?: UserP.Service_Spec_Type): string =>
 export const isWorkloadUser = (type?: CoreP.User_Spec_Type): boolean =>
   type === CoreP.User_Spec_Type.WORKLOAD;
 
+export const minAALLabel = (
+  aal?: CoreP.Session_Status_Authentication_Info_AAL,
+): string =>
+  aal ? `${CoreP.Session_Status_Authentication_Info_AAL[aal]} or higher` : "";
+
 export const requestSubjectName = (item: AccessP.Request): string => {
   const subject = item.spec?.subject?.type;
   return subject?.oneofKind === "userRef"
@@ -372,9 +377,19 @@ export const newRequestHref = (item: AccessP.Request): string => {
   return `/user/new?${params}`;
 };
 
-export const extendRequestHref = (item: AccessP.Request): string => {
+export const extendRequestHref = (
+  item: AccessP.Request,
+  viewerName?: string,
+): string => {
   const params = new URLSearchParams(newRequestHref(item).split("?")[1] ?? "");
   if (item.metadata?.name) params.set("extends", item.metadata.name);
+  const subject = requestSubjectName(item);
+  if (subject && subject !== viewerName) params.set("subject", subject);
+  if (item.spec?.resource?.type.oneofKind === "catalog") {
+    for (const ref of item.spec.resource.type.catalog.serviceRefs) {
+      if (ref.name) params.append("serviceRefs.name", ref.name);
+    }
+  }
   return `/user/new?${params}`;
 };
 
@@ -661,11 +676,21 @@ export const isScheduledRequest = (
   isApprovedRequest(item) &&
   (tsToMillis(item?.status?.accessStartsAt) ?? 0) > now;
 
+export const isGrantInactive = (item?: AccessP.Request): boolean => {
+  const state = item?.status?.grant?.state;
+  return (
+    state === AccessP.Request_Status_Grant_State.PROVISIONING ||
+    state === AccessP.Request_Status_Grant_State.FAILED ||
+    state === AccessP.Request_Status_Grant_State.ENDED
+  );
+};
+
 export const isAccessActive = (
   item?: AccessP.Request,
   now = Date.now(),
 ): boolean =>
   isApprovedRequest(item) &&
+  !isGrantInactive(item) &&
   (tsToMillis(item?.status?.accessStartsAt) ?? 0) <= now &&
   (tsToMillis(item?.status?.accessEndsAt) ?? 0) > now;
 

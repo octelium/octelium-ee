@@ -23,7 +23,6 @@ import (
 	"github.com/octelium/octelium/cluster/common/userctx"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
-	"go.uber.org/zap"
 )
 
 func (s *ServerMain) GetRequest(ctx context.Context, req *metav1.GetOptions) (*accessv1.Request, error) {
@@ -88,6 +87,10 @@ func (s *ServerMain) RevokeRequest(ctx context.Context, req *accessv1.RevokeRequ
 
 	if item.Status.State != nil &&
 		item.Status.State.Status == accessv1.Request_Status_State_REVOKED {
+		if err := accesscmd.DeletePolicyTriggerOf(ctx, s.octeliumC, item); err != nil {
+			return nil, serr.InternalWithErr(err)
+		}
+
 		return &metav1.OperationResult{}, nil
 	}
 
@@ -113,8 +116,7 @@ func (s *ServerMain) RevokeRequest(ctx context.Context, req *accessv1.RevokeRequ
 	}
 
 	if err := accesscmd.DeletePolicyTriggerOf(ctx, s.octeliumC, item); err != nil {
-		zap.L().Warn("Could not delete the PolicyTrigger of a revoked Request",
-			zap.String("request", item.Metadata.Name), zap.Error(err))
+		return nil, serr.InternalWithErr(err)
 	}
 
 	return &metav1.OperationResult{}, nil
@@ -219,7 +221,7 @@ func (s *ServerMain) SimulateRequest(ctx context.Context,
 		ret.Rules = append(ret.Rules, evaluation)
 	}
 
-	if res.eval.Rule == nil {
+	if res.eval.Rule == nil || res.eval.BlockingRule() != nil {
 		return ret, nil
 	}
 

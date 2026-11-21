@@ -31,12 +31,21 @@ const AccessWindowCard = (props: {
 
   const grant = accessWindow(props.request, now);
   const active = endsAt.getTime() > now;
+  const provisioning =
+    props.request.status?.grant?.state ===
+    AccessP.Request_Status_Grant_State.PROVISIONING;
   const endingSoon = active && grant.progress > 0.8;
 
   return (
     <SectionCard
       title="Access window"
-      description={active ? "The granted access is live" : "The granted access has ended"}
+      description={
+        !active
+          ? "The granted access has ended"
+          : provisioning
+            ? "The access is being activated and cannot be used yet"
+            : "The granted access is live"
+      }
       icon={<KeyRound size={14} strokeWidth={2.25} />}
     >
       <div className="flex flex-col gap-3">

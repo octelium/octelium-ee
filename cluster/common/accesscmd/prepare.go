@@ -143,6 +143,8 @@ func PrepareRequest(ctx context.Context, o *PrepareRequestOpts) (*PreparedReques
 		return ret, nil
 	}
 
+	var shorthandSvc *corev1.Service
+
 	switch spec.Resource.Type.(type) {
 	case *accessv1.Request_Spec_Resource_ServiceRef:
 		catalog, svc, candidates, problem, err := resolveServiceShorthand(ctx, o, ret.Subject,
@@ -173,6 +175,7 @@ func PrepareRequest(ctx context.Context, o *PrepareRequestOpts) (*PreparedReques
 		}
 
 		ret.Catalog = catalog
+		shorthandSvc = svc
 
 	case *accessv1.Request_Spec_Resource_Catalog_:
 		ref := spec.Resource.GetCatalog().GetCatalogRef()
@@ -230,6 +233,13 @@ func PrepareRequest(ctx context.Context, o *PrepareRequestOpts) (*PreparedReques
 	}
 	if len(problems) > 0 {
 		ret.Problems = append(ret.Problems, problems...)
+		return ret, nil
+	}
+
+	if shorthandSvc != nil && !isScopeOnlyService(scope.Status, shorthandSvc) {
+		addProblem(newFatalProblem("spec.resource.serviceRef",
+			"The Service %s can only be requested as a part of the Catalog %s which grants more than this Service. Request the Catalog instead",
+			shorthandSvc.Metadata.Name, ret.Catalog.Metadata.Name))
 		return ret, nil
 	}
 
@@ -508,6 +518,11 @@ func checkExtendsRef(ctx context.Context, octeliumC octeliumc.ClientInterface,
 	spec.ExtendsRef = objectRef(extended)
 
 	return nil, nil
+}
+
+func isScopeOnlyService(scope *accessv1.Request_Status_ResolvedScope, svc *corev1.Service) bool {
+	return len(scope.NamespaceRefs) == 0 && len(scope.ServiceRefs) == 1 &&
+		scope.ServiceRefs[0].Uid == svc.Metadata.Uid
 }
 
 func cloneRefs(refs []*metav1.ObjectReference) []*metav1.ObjectReference {

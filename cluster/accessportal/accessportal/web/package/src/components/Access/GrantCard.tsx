@@ -9,6 +9,7 @@ import {
   durationToSeconds,
   formatDuration,
   isFullAccessLevel,
+  minAALLabel,
   wasApproved,
 } from "@/utils";
 
@@ -103,6 +104,11 @@ const GrantCard = (props: { request: AccessP.Request }) => {
           {props.request.spec?.ticket && (
             <KeyValue label="Ticket" mono>
               {props.request.spec.ticket}
+            </KeyValue>
+          )}
+          {!!level.verification?.minAAL && (
+            <KeyValue label="Sign-in assurance">
+              {minAALLabel(level.verification.minAAL)}
             </KeyValue>
           )}
         </InfoGrid>

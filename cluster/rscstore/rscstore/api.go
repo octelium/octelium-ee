@@ -1315,9 +1315,11 @@ func (s *srvAccess) ListRequest(ctx context.Context, req *vaccessv1.ListRequestO
 	}
 
 	if req.IsActive {
+		now := time.Now().UTC()
 		doListReq.filters = append(doListReq.filters,
-			goqu.L(fmt.Sprintf(`(%s = ?) AND ((%s IS NULL) OR (%s > ?))`, colStatusStateStatus, colStatusAccessEndsAt, colStatusAccessEndsAt),
-				accessv1.Request_Status_State_APPROVED.String(), time.Now().UTC()))
+			goqu.L(fmt.Sprintf(`(%s = ?) AND ((%s IS NULL) OR (%s <= ?)) AND ((%s IS NULL) OR (%s > ?))`,
+				colStatusStateStatus, colStatusAccessStartsAt, colStatusAccessStartsAt, colStatusAccessEndsAt, colStatusAccessEndsAt),
+				accessv1.Request_Status_State_APPROVED.String(), now, now))
 	}
 
 	if req.HasDeadline {

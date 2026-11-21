@@ -400,6 +400,10 @@ func (h *H) WaitRequestState(t *testing.T, req *accessv1.Request,
 				return errors.Errorf("the Request is %s, want %s",
 					cur.Status.State.Status, want)
 			}
+			if want == accessv1.Request_Status_State_PENDING &&
+				cur.Status.State.Reason == accessv1.Request_Status_State_SUBMITTED {
+				return errors.Errorf("the Request has not been evaluated yet")
+			}
 
 			ret = cur
 			return nil

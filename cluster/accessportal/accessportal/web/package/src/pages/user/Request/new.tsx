@@ -23,6 +23,7 @@ import {
   Send,
   ServerCog,
   ShieldAlert,
+  ShieldCheck,
   UserRound,
   Workflow,
 } from "lucide-react";
@@ -65,6 +66,9 @@ import {
   Tone,
   durationToSeconds,
   formatDuration,
+  minAALLabel,
+  normalizeDuration,
+  shortName,
   textLength,
   tsToMillis,
   urgencyMeta,
@@ -332,6 +336,13 @@ const NewRequest = () => {
     return undefined;
   });
   const [extendsName] = React.useState(() => searchParams.get("extends") ?? "");
+  const [extendsSubject] = React.useState(() =>
+    extendsName ? (searchParams.get("subject") ?? "") : "",
+  );
+  const [extendsServiceRefs] = React.useState(() =>
+    extendsName ? searchParams.getAll("serviceRefs.name") : [],
+  );
+  const initialRequestFor = extendsSubject ? "subject" : "self";
   const [accessLevel, setAccessLevel] = React.useState(
     () => searchParams.get("accessLevel") ?? "",
   );
@@ -345,28 +356,24 @@ const NewRequest = () => {
   const [detailsCatalog, setDetailsCatalog] =
     React.useState<AccessP.UserCatalog>();
   const [selection, setSelection] = React.useState(initialSelection);
-  const [requestFor, setRequestFor] = React.useState<"self" | "subject">("self");
-  const [subject, setSubject] = React.useState<AccessP.SubjectUser | undefined>();
+  const [requestFor, setRequestFor] = React.useState<"self" | "subject">(
+    initialRequestFor,
+  );
+  const [subject, setSubject] = React.useState<AccessP.SubjectUser | undefined>(
+    () =>
+      extendsSubject
+        ? AccessP.SubjectUser.create({
+            userRef: MetaP.ObjectReference.create({ name: extendsSubject }),
+          })
+        : undefined,
+  );
   const [deadline, setDeadline] = React.useState<Timestamp>();
   const [submitOpen, setSubmitOpen] = React.useState(false);
   const [urgency, setUrgency] = React.useState<AccessP.Request_Spec_Urgency>(
     AccessP.Request_Spec_Urgency.NORMAL,
   );
   const [justification, setJustification] = React.useState("");
-  const [duration, setDuration] = React.useState<MetaP.Duration>(
-    MetaP.Duration.create({ type: { oneofKind: "hours", hours: 1 } }),
-  );
-  const unsavedChanges = useUnsavedChanges(
-    selection?.kind !== initialSelection?.kind ||
-      selection?.name !== initialSelection?.name ||
-      requestFor !== "self" ||
-      !!deadline ||
-      !!startAt ||
-      ticket !== "" ||
-      urgency !== AccessP.Request_Spec_Urgency.NORMAL ||
-      justification !== "" ||
-      durationToSeconds(duration) !== 3600,
-  );
+  const [durationChoice, setDuration] = React.useState<MetaP.Duration>();
 
   const catalogsQry = useCatalogs();
   const catalogs = catalogsQry.data ?? [];
@@ -391,6 +398,21 @@ const NewRequest = () => {
   const levels = selectedCatalog?.accessLevels ?? [];
   const selectedLevel =
     levels.find((level) => level.name === accessLevel) ?? levels.at(0);
+  const defaultDuration = selectedLevel?.defaultDuration
+    ? normalizeDuration(selectedLevel.defaultDuration)
+    : MetaP.Duration.create({ type: { oneofKind: "hours", hours: 1 } });
+  const duration = durationChoice ?? defaultDuration;
+  const unsavedChanges = useUnsavedChanges(
+    selection?.kind !== initialSelection?.kind ||
+      selection?.name !== initialSelection?.name ||
+      requestFor !== initialRequestFor ||
+      !!deadline ||
+      !!startAt ||
+      ticket !== "" ||
+      urgency !== AccessP.Request_Spec_Urgency.NORMAL ||
+      justification !== "" ||
+      durationToSeconds(duration) !== durationToSeconds(defaultDuration),
+  );
 
   const selectionError =
     selection?.kind === "service" && serviceQry.isError
@@ -422,6 +444,9 @@ const NewRequest = () => {
                   name: selection.name,
                 }),
                 accessLevel: selectedLevel?.name ?? "",
+                serviceRefs: extendsServiceRefs.map((name) =>
+                  MetaP.ObjectReference.create({ name }),
+                ),
               }),
             },
           });
@@ -552,7 +577,9 @@ const NewRequest = () => {
                         ? preview?.problems.at(0)?.message ||
                           preview?.message ||
                           "This access cannot be requested"
-                        : undefined;
+                        : previewJson !== draftJson || previewQry.isFetching
+                          ? "Checking the request…"
+                          : undefined;
 
   return (
     <div className="w-full min-w-0">
@@ -569,14 +596,14 @@ const NewRequest = () => {
           icon={<CalendarPlus size={13} strokeWidth={2.25} />}
           className="mb-4"
         >
-          Once approved, this request replaces{" "}
+          Once approved, this request takes over from{" "}
           <Link
             to={`/user/requests/${extendsName}`}
             className="font-medium underline underline-offset-2"
           >
-            your current access
+            the current access
           </Link>{" "}
-          without a gap.
+          without a gap. The current access is kept if it lasts longer.
         </Note>
       )}
 
@@ -592,6 +619,7 @@ const NewRequest = () => {
               <SegmentedControl
                 fullWidth
                 aria-label="Request access for"
+                disabled={!!extendsName}
                 value={requestFor}
                 onChange={(value) => {
                   if (value === "self") {
@@ -606,7 +634,7 @@ const NewRequest = () => {
                   {
                     value: "subject",
                     label: "Another user",
-                    disabled: !canRequestOnBehalf || !!extendsName,
+                    disabled: !canRequestOnBehalf && !extendsSubject,
                   },
                 ]}
               />
@@ -633,6 +661,14 @@ const NewRequest = () => {
                     </p>
                   </div>
                   <Badge className="ml-auto">You</Badge>
+                </div>
+              ) : extendsSubject ? (
+                <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                  <Avatar name={shortName(extendsSubject)} size="sm" />
+                  <p className="min-w-0 truncate text-body font-semibold text-slate-800">
+                    {shortName(extendsSubject)}
+                  </p>
+                  <Badge className="ml-auto">Current recipient</Badge>
                 </div>
               ) : (
                 <SubjectPicker value={subject} onChange={setSubject} />
@@ -765,6 +801,18 @@ const NewRequest = () => {
                       {selectedLevel.displayName || selectedLevel.name} takes
                       precedence over the policies that would otherwise deny
                       this access.
+                    </Note>
+                  )}
+
+                  {!!selectedLevel?.minAAL && (
+                    <Note
+                      tone="blue"
+                      icon={<ShieldCheck size={13} strokeWidth={2.25} />}
+                    >
+                      {selectedLevel.displayName || selectedLevel.name} only
+                      works from sessions signed in at{" "}
+                      {minAALLabel(selectedLevel.minAAL)}. You may need to sign
+                      in again with a stronger method, including from the CLI.
                     </Note>
                   )}
                 </div>

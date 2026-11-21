@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
@@ -253,8 +254,9 @@ func (s *Server) doSummaryAccessRequest(ctx context.Context, common *vmetav1.Com
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'REVOKED') AS count_revoked`, colStatusStateStatus)),
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'EXPIRED') AS count_expired`, colStatusStateStatus)),
 			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'CANCELLED') AS count_cancelled`, colStatusStateStatus)),
-			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE (%s = 'APPROVED') AND ((%s IS NULL) OR (%s > ?))) AS count_active`, colStatusStateStatus, colStatusAccessEndsAt, colStatusAccessEndsAt),
-				now),
+			goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE (%s = 'APPROVED') AND ((%s IS NULL) OR (%s <= ?)) AND ((%s IS NULL) OR (%s > ?))) AS count_active`,
+				colStatusStateStatus, colStatusAccessStartsAt, colStatusAccessStartsAt, colStatusAccessEndsAt, colStatusAccessEndsAt),
+				now, now),
 			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_user`, colUserUID)),
 			goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_subject_user`, colSpecSubjectUserUID)),
 			goqu.L(fmt.Sprintf(`COALESCE(len(list_distinct(flatten(list(COALESCE(%s, []))))), 0) AS count_service`,
@@ -852,17 +854,35 @@ func appendRequestScopeServiceFilter(filters []exp.Expression, ref *metav1.Objec
 	}
 
 	if ref.Uid != "" {
-		filters = append(filters, goqu.L(fmt.Sprintf(`(list_contains(COALESCE(%s, []), ?) OR %s = ?)`,
-			colStatusScopeServiceUIDs, colSpecServiceUID), ref.Uid, ref.Uid))
+		nsSQL, _, err := goqu.From("resources").Where(
+			goqu.L(`kind`).Eq(ucorev1.KindService),
+			goqu.L(`api`).Eq(ucorev1.API),
+			goqu.L(`uid`).Eq(ref.Uid),
+		).Select(goqu.L(colNamespaceUID)).Limit(1).ToSQL()
+		if err != nil {
+			return nil, grpcutils.InternalWithErr(err)
+		}
+
+		filters = append(filters, goqu.L(fmt.Sprintf(`(list_contains(COALESCE(%s, []), ?) OR %s = ? OR list_contains(COALESCE(%s, []), (%s)))`,
+			colStatusScopeServiceUIDs, colSpecServiceUID, colStatusScopeNamespaceUIDs, nsSQL), ref.Uid, ref.Uid))
 	}
 
 	if ref.Name != "" {
 		name := vutils.GetServiceFullNameFromName(ref.Name)
-		filters = append(filters, goqu.L(fmt.Sprintf(`(list_contains(COALESCE(%s, []), ?) OR %s = ?)`,
-			colStatusScopeServiceNames, colSpecServiceName), name, name))
+		filters = append(filters, goqu.L(fmt.Sprintf(`(list_contains(COALESCE(%s, []), ?) OR %s = ? OR list_contains(COALESCE(%s, []), ?))`,
+			colStatusScopeServiceNames, colSpecServiceName, colStatusScopeNamespaceNames),
+			name, name, getServiceNamespaceName(name)))
 	}
 
 	return filters, nil
+}
+
+func getServiceNamespaceName(name string) string {
+	if _, ns, ok := strings.Cut(name, "."); ok {
+		return ns
+	}
+
+	return ""
 }
 
 func appendRequestScopeNamespaceFilter(filters []exp.Expression, ref *metav1.ObjectReference) ([]exp.Expression, error) {
@@ -879,8 +899,17 @@ func appendRequestScopeNamespaceFilter(filters []exp.Expression, ref *metav1.Obj
 			colStatusScopeNamespaceNames, colStatusScopeServiceNames), ref.Name, "."+ref.Name)), nil
 	}
 
-	return append(filters, goqu.L(fmt.Sprintf(`list_contains(COALESCE(%s, []), ?)`,
-		colStatusScopeNamespaceUIDs), ref.Uid)), nil
+	nameSQL, _, err := goqu.From("resources").Where(
+		goqu.L(`kind`).Eq(ucorev1.KindNamespace),
+		goqu.L(`api`).Eq(ucorev1.API),
+		goqu.L(`uid`).Eq(ref.Uid),
+	).Select(goqu.L(colName)).Limit(1).ToSQL()
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	return append(filters, goqu.L(fmt.Sprintf(`(list_contains(COALESCE(%s, []), ?) OR list_contains(list_transform(COALESCE(%s, []), lambda x : split_part(x, '.', 2)), (%s)))`,
+		colStatusScopeNamespaceUIDs, colStatusScopeServiceNames, nameSQL), ref.Uid)), nil
 }
 
 func getCatalogOwnerFilter(ref *metav1.ObjectReference) (exp.Expression, error) {

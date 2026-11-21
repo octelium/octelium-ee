@@ -50,6 +50,7 @@ import {
   normalizeDuration,
   requestRefetchInterval,
   requestResourceLabel,
+  requestSubjectName,
   requesterName,
   textLength,
   tsToMillis,
@@ -372,6 +373,7 @@ const RequestDetail = () => {
   const isCreator =
     !status?.user?.metadata?.name ||
     requesterName(item) === status.user.metadata.name;
+  const isSubject = requestSubjectName(item) === status?.user?.metadata?.name;
   const approved = isApprovedRequest(item);
   const active = isAccessActive(item, now);
   const supersededBy = item.status?.supersededByRef?.name;
@@ -417,10 +419,10 @@ const RequestDetail = () => {
             </>
           ) : approved ? (
             <>
-              {active && isCreator && (
+              {active && (isCreator || isSubject) && (
                 <Button
                   component={Link}
-                  to={extendRequestHref(item)}
+                  to={extendRequestHref(item, status?.user?.metadata?.name)}
                   variant="default"
                   leftSection={<CalendarPlus size={13} strokeWidth={2.25} />}
                 >

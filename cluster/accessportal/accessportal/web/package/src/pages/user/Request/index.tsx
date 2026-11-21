@@ -1,5 +1,6 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import { Button, Pagination, SegmentedControl } from "@mantine/core";
+import { useDebouncedValue } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import {
   keepPreviousData,
@@ -194,6 +195,7 @@ const Requests = () => {
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
   const search = searchParams.get("q") ?? "";
   const group = searchParams.get("group") ?? "all";
+  const [query] = useDebouncedValue(search.trim(), 300);
   const [cancelName, setCancelName] = React.useState<string>();
 
   const serverState =
@@ -204,12 +206,13 @@ const Requests = () => {
         : undefined;
 
   const qry = useQuery({
-    queryKey: ["user", "listRequest", page, group],
+    queryKey: ["user", "listRequest", page, group, query],
     placeholderData: keepPreviousData,
     queryFn: async ({ signal }) => {
       const { response } = await getUserClient().listRequest(
         AccessP.ListUserRequestOptions.create({
           common: { page: page - 1, itemsPerPage: ITEMS_PER_PAGE },
+          query,
           ...(group === "pending"
             ? { state: AccessP.Request_Status_State_Status.PENDING }
             : {}),
@@ -260,22 +263,13 @@ const Requests = () => {
       : items.filter((item) => statusMeta(item.status?.state?.status).group === value)
           .length;
 
-  const q = search.trim().toLowerCase();
-  const visibleItems = items.filter((item) => {
-    const resource = requestResourceLabel(item);
-    const matchesQuery =
-      !q ||
-      resource.name.toLowerCase().includes(q) ||
-      resource.displayName.toLowerCase().includes(q) ||
-      item.metadata!.name.toLowerCase().includes(q) ||
-      requestSubjectName(item).toLowerCase().includes(q) ||
-      (item.spec?.justification ?? "").toLowerCase().includes(q);
-    const matchesGroup =
+  const searching = search.trim() !== "";
+  const visibleItems = items.filter(
+    (item) =>
       group === "all" ||
       serverState !== undefined ||
-      statusMeta(item.status?.state?.status).group === group;
-    return matchesQuery && matchesGroup;
-  });
+      statusMeta(item.status?.state?.status).group === group,
+  );
 
   const setParam = (key: string, value: string, fallback: string) =>
     setSearchParams(
@@ -289,7 +283,7 @@ const Requests = () => {
     );
 
   const cancelTarget = items.find((item) => item.metadata!.name === cancelName);
-  const filtered = !!q || group === "closed";
+  const filtered = group === "closed";
 
   return (
     <div className="w-full">
@@ -344,7 +338,7 @@ const Requests = () => {
 
       {!singlePage && filtered && (
         <Note className="mb-3">
-          Search and filters apply to the {items.length} requests on this page.
+          The Closed filter applies to the {items.length} requests on this page.
         </Note>
       )}
 
@@ -360,20 +354,20 @@ const Requests = () => {
         <Card>
           <EmptyState
             icon={
-              items.length ? (
+              items.length || searching ? (
                 <SearchX size={18} strokeWidth={2} />
               ) : (
                 <Inbox size={18} strokeWidth={2} />
               )
             }
-            title={items.length ? "No matching requests" : "No requests yet"}
+            title={items.length || searching ? "No matching requests" : "No requests yet"}
             description={
-              items.length
+              items.length || searching
                 ? "Try a different search term or switch the status filter."
                 : "Request access to a Service or a Catalog and it will show up here."
             }
             action={
-              items.length ? (
+              items.length || searching ? (
                 <Button
                   variant="default"
                   onClick={() =>

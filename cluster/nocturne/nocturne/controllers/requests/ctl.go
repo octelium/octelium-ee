@@ -92,11 +92,17 @@ func (c *Controller) doReconcile(ctx context.Context, itm *accessv1.Request) err
 		return err
 	}
 
-	if needsEvaluation(next) {
+	switch {
+	case (needsEvaluation(next) || accesscmd.IsPending(next)) && accesscmd.IsDeadlinePassed(next, time.Now()):
+		accesscmd.SetRequestState(next, &accesscmd.StateChange{
+			Status: accessv1.Request_Status_State_EXPIRED,
+			Reason: accessv1.Request_Status_State_DEADLINE_PASSED,
+		})
+	case needsEvaluation(next):
 		if err := c.evaluate(ctx, next, cc); err != nil {
 			return err
 		}
-	} else if accesscmd.IsPending(next) {
+	case accesscmd.IsPending(next):
 		if err := c.reconcilePending(ctx, next, cc); err != nil {
 			return err
 		}
@@ -247,6 +253,13 @@ func (c *Controller) evaluate(ctx context.Context, req *accessv1.Request, cc *ac
 		return nil
 	}
 
+	if blocking := res.BlockingRule(); blocking != nil {
+		req.Status.Evaluation.SkippedRules = res.SkippedRules()
+		c.setEvaluationFailure(req, errors.Errorf("the Rule %s of the access Policy %s could not be evaluated: %s",
+			blocking.Rule.Name, blocking.Policy.Metadata.Name, blocking.Err))
+		return nil
+	}
+
 	req.Status.Evaluation.State = accessv1.Request_Status_Evaluation_EVALUATED
 	req.Status.Evaluation.LastError = ""
 	req.Status.Evaluation.Attempts = 0
@@ -389,6 +402,11 @@ func (c *Controller) reconcilePending(ctx context.Context, req *accessv1.Request
 		return nil
 	}
 
+	if req.Status.ResolvedScope != nil &&
+		!accesscmd.IsScopeMateriallyEqual(req.Status.ResolvedScope, rctx.scope.Status) {
+		return c.reevaluate(ctx, req, cc)
+	}
+
 	if !accesscmd.IsScopeEqual(req.Status.ResolvedScope, rctx.scope.Status) {
 		req.Status.ResolvedScope = rctx.scope.Status
 	}
@@ -399,7 +417,7 @@ func (c *Controller) reconcilePending(ctx context.Context, req *accessv1.Request
 		return nil
 	}
 
-	if hasStaleAppliedSteps(req) {
+	if accesscmd.HasStaleAppliedSteps(req) {
 		accesscmd.EndCurrentStep(req, accessv1.Request_Status_Review_StepState_INTERRUPTED)
 		return accesscmd.StartReviewStep(ctx, &accesscmd.StartReviewStepOpts{
 			OcteliumC:     c.octeliumC,
@@ -426,20 +444,16 @@ func (c *Controller) reconcilePending(ctx context.Context, req *accessv1.Request
 	return nil
 }
 
-func hasStaleAppliedSteps(req *accessv1.Request) bool {
-	if req.Status.Review == nil || req.Status.Review.CurrentStep == 0 {
-		return false
-	}
+func (c *Controller) reevaluate(ctx context.Context, req *accessv1.Request, cc *accessv1.ClusterConfig) error {
+	accesscmd.EndCurrentStep(req, accessv1.Request_Status_Review_StepState_INTERRUPTED)
 
-	for _, itm := range req.Status.Review.LastSteps {
-		if itm.StepIndex < req.Status.Review.CurrentStep &&
-			itm.Decision == accessv1.Review_Spec_DECISION_APPROVE &&
-			itm.SpecRevision != req.Status.SpecRevision {
-			return true
-		}
-	}
+	req.Status.SpecRevision++
+	req.Status.Rule = nil
+	req.Status.PolicyRef = nil
+	req.Status.Workflow = nil
+	req.Status.Evaluation = nil
 
-	return false
+	return c.evaluate(ctx, req, cc)
 }
 
 func (c *Controller) ensureAccessWindow(req *accessv1.Request) {
@@ -557,11 +571,11 @@ func (c *Controller) applyPolicyTrigger(ctx context.Context,
 			return nil, err
 		}
 
-		exists, err := c.requestExists(ctx, req)
+		approved, err := c.isRequestApproved(ctx, req)
 		if err != nil {
 			return nil, err
 		}
-		if !exists {
+		if !approved {
 			return nil, c.deletePolicyTrigger(ctx, objectRef(pt))
 		}
 
@@ -641,6 +655,11 @@ func (c *Controller) supersedeExtendedRequest(ctx context.Context, req *accessv1
 		return nil
 	}
 
+	if extended.Status.AccessEndsAt != nil && req.Status.AccessEndsAt != nil &&
+		!req.Status.AccessEndsAt.AsTime().After(extended.Status.AccessEndsAt.AsTime()) {
+		return nil
+	}
+
 	extended.Status.SupersededByRef = objectRef(req)
 	accesscmd.SetRequestState(extended, &accesscmd.StateChange{
 		Status:   accessv1.Request_Status_State_EXPIRED,
@@ -665,21 +684,22 @@ func (c *Controller) ensureNoPolicyTrigger(ctx context.Context, req *accessv1.Re
 	return nil
 }
 
-func (c *Controller) requestExists(ctx context.Context, req *accessv1.Request) (bool, error) {
+func (c *Controller) isRequestApproved(ctx context.Context, req *accessv1.Request) (bool, error) {
 	if req.Metadata.Uid == "" {
 		return true, nil
 	}
 
-	if _, err := c.octeliumC.AccessC().GetRequest(ctx, &rmetav1.GetOptions{
+	current, err := c.octeliumC.AccessC().GetRequest(ctx, &rmetav1.GetOptions{
 		Uid: req.Metadata.Uid,
-	}); err != nil {
+	})
+	if err != nil {
 		if grpcerr.IsNotFound(err) {
 			return false, nil
 		}
 		return false, err
 	}
 
-	return true, nil
+	return accesscmd.IsApproved(current), nil
 }
 
 func (c *Controller) deletePolicyTrigger(ctx context.Context, ref *metav1.ObjectReference) error {

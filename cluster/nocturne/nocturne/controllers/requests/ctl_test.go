@@ -1082,6 +1082,58 @@ func TestRequestCELMatchErrorSkipsTheRule(t *testing.T) {
 	assert.NotEmpty(t, reqG.Status.Evaluation.SkippedRules[0].Error)
 }
 
+func TestRequestFailedGuardrailBlocksApproval(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	guardrail := createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      "guardrail",
+		Effect:    accessv1.Policy_Spec_Rule_DENY,
+		Priority:  -1,
+		Condition: celMatch("1 / 0 == 1"),
+	})
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      "fallback",
+		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition: matchAny(),
+	})
+
+	req := createRequest(t, ctx, octeliumC,
+		baseRequest(createUserRef(t, ctx, octeliumC), createCatalog(t, ctx, octeliumC, nil)))
+
+	reqG := req
+	for i := 0; i < maxEvaluationAttempts+1; i++ {
+		reqG = converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
+	}
+
+	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqG.Status.State.Status)
+	assert.Equal(t, accessv1.Request_Status_State_EVALUATION_FAILED, reqG.Status.State.Reason)
+	assert.Nil(t, reqG.Status.Rule)
+	assert.Contains(t, reqG.Status.Evaluation.LastError, "guardrail")
+	require.Len(t, reqG.Status.Evaluation.SkippedRules, 1)
+	assert.Equal(t, guardrail.Metadata.Uid, reqG.Status.Evaluation.SkippedRules[0].PolicyRef.Uid)
+	assert.False(t, policyTriggerExists(t, ctx, octeliumC, reqG))
+}
+
+func TestRequestExpiredDeadlineIsNeverApproved(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition: matchAny(),
+	})
+
+	in := baseRequest(createUserRef(t, ctx, octeliumC), createCatalog(t, ctx, octeliumC, nil))
+	in.Spec.Deadline = pbutils.Timestamp(time.Now().Add(-time.Second))
+
+	reqG := converge(t, ctx, ctrl, octeliumC, createRequest(t, ctx, octeliumC, in).Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_EXPIRED, reqG.Status.State.Status)
+	assert.Equal(t, accessv1.Request_Status_State_DEADLINE_PASSED, reqG.Status.State.Reason)
+	assert.Nil(t, reqG.Status.Rule)
+	assert.False(t, policyTriggerExists(t, ctx, octeliumC, reqG))
+}
+
 func TestRequestEvaluationFailureRetries(t *testing.T) {
 	ctrl := &Controller{}
 
@@ -1185,6 +1237,27 @@ func TestRequestRevoke(t *testing.T) {
 
 	_, err = octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{Uid: ptUid})
 	assert.True(t, grpcerr.IsNotFound(err))
+}
+
+func TestRequestLateReconcileDoesNotRecreateARevokedGrant(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	reqApproved := autoApprovedRequest(t, ctx, ctrl, octeliumC)
+	stale := pbutils.Clone(reqApproved).(*accessv1.Request)
+
+	accesscmd.SetRequestState(reqApproved, &accesscmd.StateChange{
+		Status: accessv1.Request_Status_State_REVOKED,
+		Reason: accessv1.Request_Status_State_ACCESS_REVOKED,
+	})
+	_, err := octeliumC.AccessC().UpdateRequest(ctx, reqApproved)
+	assert.Nil(t, err, "%+v", err)
+	assert.Nil(t, accesscmd.DeletePolicyTriggerOf(ctx, octeliumC, reqApproved))
+	require.False(t, policyTriggerExists(t, ctx, octeliumC, reqApproved))
+
+	_ = ctrl.OnAdd(ctx, stale)
+	assert.False(t, policyTriggerExists(t, ctx, octeliumC, reqApproved))
+	assert.Equal(t, accessv1.Request_Status_State_REVOKED,
+		getRequest(t, ctx, octeliumC, reqApproved.Metadata.Uid).Status.State.Status)
 }
 
 func TestRequestOnDelete(t *testing.T) {
@@ -1563,7 +1636,10 @@ func TestCatalogRequestScopeServicesAndNamespaces(t *testing.T) {
 
 	target = getPolicyTrigger(t, ctx, client, dynamic).Status.PreCondition.GetAll().Of[1]
 	require.Len(t, target.GetAny().Of, 3)
-	assert.Equal(t, ns.Metadata.Uid, target.GetAny().Of[2].GetNamespaceRef().Uid)
+	nsTarget := target.GetAny().Of[2].GetAll()
+	require.Len(t, nsTarget.Of, 2)
+	assert.Equal(t, ns.Metadata.Uid, nsTarget.Of[0].GetNamespaceRef().Uid)
+	assert.NotEmpty(t, nsTarget.Of[1].GetCondition().GetMatch())
 }
 
 func TestCatalogRequestPartialServices(t *testing.T) {
@@ -1694,6 +1770,20 @@ func TestRequestPendingScopeFollowsTheCatalog(t *testing.T) {
 	reqG = converge(t, ctx, ctrl, octeliumC, reqG.Metadata.Uid)
 	assert.Len(t, reqG.Status.ResolvedScope.ServiceRefs, 2)
 	assert.Equal(t, catalog.Metadata.ResourceVersion, reqG.Status.ResolvedScope.CatalogResourceVersion)
+	assert.Equal(t, uint32(2), reqG.Status.SpecRevision)
+	require.Len(t, reqG.Status.Review.Steps, 2)
+	assert.Equal(t, accessv1.Request_Status_Review_StepState_INTERRUPTED, reqG.Status.Review.Steps[0].Outcome)
+	assert.Equal(t, accessv1.Request_Status_Review_StepState_OUTCOME_UNSET, reqG.Status.Review.Steps[1].Outcome)
+	assert.NotNil(t, reqG.Status.Rule)
+
+	catalog.Metadata.DisplayName = "Renamed"
+	catalog, err = octeliumC.AccessC().UpdateCatalog(ctx, catalog)
+	require.NoError(t, err)
+
+	reqG = converge(t, ctx, ctrl, octeliumC, reqG.Metadata.Uid)
+	assert.Equal(t, "Renamed", reqG.Status.ResolvedScope.CatalogDisplayName)
+	assert.Equal(t, uint32(2), reqG.Status.SpecRevision)
+	assert.Len(t, reqG.Status.Review.Steps, 2)
 
 	_, err = octeliumC.AccessC().DeleteCatalog(ctx, &rmetav1.DeleteOptions{Uid: catalog.Metadata.Uid})
 	require.NoError(t, err)
@@ -1701,7 +1791,7 @@ func TestRequestPendingScopeFollowsTheCatalog(t *testing.T) {
 	reqG = converge(t, ctx, ctrl, octeliumC, reqG.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqG.Status.State.Status)
 	assert.Equal(t, accessv1.Request_Status_State_NOT_REQUESTABLE, reqG.Status.State.Reason)
-	assert.Equal(t, accessv1.Request_Status_Review_StepState_INTERRUPTED, reqG.Status.Review.Steps[0].Outcome)
+	assert.Equal(t, accessv1.Request_Status_Review_StepState_INTERRUPTED, reqG.Status.Review.Steps[1].Outcome)
 }
 
 func TestRequestScheduledStart(t *testing.T) {
@@ -1774,6 +1864,27 @@ func TestRequestExtensionSupersedesTheExtendedRequest(t *testing.T) {
 	assert.Equal(t, accessv1.Request_Status_State_SUPERSEDED, original.Status.State.Reason)
 	assert.Equal(t, extension.Metadata.Uid, original.Status.SupersededByRef.Uid)
 	assert.False(t, policyTriggerExists(t, ctx, octeliumC, original))
+	assert.True(t, policyTriggerExists(t, ctx, octeliumC, extension))
+}
+
+func TestRequestExtensionNeverShortensTheExtendedRequest(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	original := autoApprovedRequest(t, ctx, ctrl, octeliumC)
+
+	in := baseRequest(original.Status.UserRef, nil)
+	in.Spec.Resource = pbutils.Clone(original.Spec.Resource).(*accessv1.Request_Spec_Resource)
+	in.Spec.ExtendsRef = umetav1.GetObjectReference(original)
+	in.Spec.Duration = &metav1.Duration{Type: &metav1.Duration_Minutes{Minutes: 10}}
+
+	extension := converge(t, ctx, ctrl, octeliumC, createRequest(t, ctx, octeliumC, in).Metadata.Uid)
+	require.Equal(t, accessv1.Request_Status_State_APPROVED, extension.Status.State.Status)
+	require.Equal(t, accessv1.Request_Status_Grant_ACTIVE, extension.Status.Grant.State)
+
+	original = converge(t, ctx, ctrl, octeliumC, original.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, original.Status.State.Status)
+	assert.Nil(t, original.Status.SupersededByRef)
+	assert.True(t, policyTriggerExists(t, ctx, octeliumC, original))
 	assert.True(t, policyTriggerExists(t, ctx, octeliumC, extension))
 }
 

@@ -152,13 +152,13 @@ const AccessLevelEdit = (props: {
           <NumberInput
             className="max-w-[220px]"
             label="Priority"
-            description="0 lets deny guardrails win. A negative priority overrides them."
+            description="Leave empty to use the Cluster default. 0 lets deny guardrails win. A negative priority overrides them."
+            placeholder="Cluster default"
             min={-4}
             max={0}
-            value={full.priority ?? 0}
+            value={full.priority ?? ""}
             onChange={(value) => {
-              const next = Math.trunc(Number(value) || 0);
-              full.priority = next === 0 ? undefined : next;
+              full.priority = value === "" ? undefined : Math.trunc(Number(value) || 0);
               onUpdate();
             }}
           />

@@ -49,6 +49,24 @@ func TestAccessScopeFiltersAndCounters(t *testing.T) {
 	grafana := &metav1.ObjectReference{Name: "grafana.monitoring", Uid: vutils.UUIDv4()}
 	dynamicNs := &metav1.ObjectReference{Name: "dynamic", Uid: vutils.UUIDv4()}
 
+	laterMD := newRscStoreMetadata("later.dynamic", now)
+	insertRscStoreObject(t, env, &corev1.Service{
+		ApiVersion: ucorev1.APIVersion,
+		Kind:       ucorev1.KindService,
+		Metadata:   laterMD,
+		Spec:       &corev1.Service_Spec{},
+		Status:     &corev1.Service_Status{NamespaceRef: dynamicNs},
+	})
+
+	monitoringMD := newRscStoreMetadata("monitoring", now)
+	insertRscStoreObject(t, env, &corev1.Namespace{
+		ApiVersion: ucorev1.APIVersion,
+		Kind:       ucorev1.KindNamespace,
+		Metadata:   monitoringMD,
+		Spec:       &corev1.Namespace_Spec{},
+		Status:     &corev1.Namespace_Status{},
+	})
+
 	insertRscStoreObject(t, env, &accessv1.Catalog{
 		ApiVersion: uaccessv1.APIVersion,
 		Kind:       uaccessv1.KindCatalog,
@@ -218,6 +236,14 @@ func TestAccessScopeFiltersAndCounters(t *testing.T) {
 		list(&vaccessv1.ListRequestOptions{NamespaceRef: &metav1.ObjectReference{Name: "monitoring"}}))
 	assert.ElementsMatch(t, []string{"unroutable"},
 		list(&vaccessv1.ListRequestOptions{NamespaceRef: &metav1.ObjectReference{Uid: dynamicNs.Uid}}))
+	assert.ElementsMatch(t, []string{"active", "ended"},
+		list(&vaccessv1.ListRequestOptions{NamespaceRef: &metav1.ObjectReference{Uid: monitoringMD.Uid}}))
+	assert.ElementsMatch(t, []string{"unroutable"},
+		list(&vaccessv1.ListRequestOptions{ServiceRef: &metav1.ObjectReference{Uid: laterMD.Uid}}))
+	assert.ElementsMatch(t, []string{"unroutable"},
+		list(&vaccessv1.ListRequestOptions{ServiceRef: &metav1.ObjectReference{Name: laterMD.Name}}))
+	assert.ElementsMatch(t, []string{"active"},
+		list(&vaccessv1.ListRequestOptions{IsActive: true}))
 	assert.ElementsMatch(t, []string{"failed"},
 		list(&vaccessv1.ListRequestOptions{Reason: accessv1.Request_Status_State_PROVISIONING_FAILED}))
 	assert.ElementsMatch(t, []string{"scheduled"},
@@ -259,6 +285,7 @@ func TestAccessScopeFiltersAndCounters(t *testing.T) {
 		resp, err := env.srv.getSummaryAccessRequest(env.ctx, &vaccessv1.GetRequestSummaryRequest{})
 		require.NoError(t, err)
 		assert.EqualValues(t, 6, resp.TotalNumber)
+		assert.EqualValues(t, 1, resp.TotalActive)
 		assert.EqualValues(t, 2, resp.TotalService)
 		assert.EqualValues(t, 1, resp.TotalProvisioningFailed)
 		assert.EqualValues(t, 1, resp.TotalUnroutable)

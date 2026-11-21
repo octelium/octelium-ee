@@ -25,6 +25,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/userctx"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/grpcerr"
 )
 
 const expiringSoonWithin = time.Hour
@@ -162,11 +163,22 @@ func (s *ServerUser) ListRequest(ctx context.Context, req *accessv1.ListUserRequ
 		return nil, err
 	}
 
-	if req.ServiceRef != nil {
-		if err := apivalidation.CheckObjectRef(req.ServiceRef, &apivalidation.CheckGetOptionsOpts{
+	serviceRef := req.ServiceRef
+	if serviceRef != nil {
+		if err := apivalidation.CheckObjectRef(serviceRef, &apivalidation.CheckGetOptionsOpts{
 			ParentsMax: 1,
-		}); err != nil && (req.ServiceRef.Uid != "" || req.ServiceRef.Name != "") {
+		}); err != nil && (serviceRef.Uid != "" || serviceRef.Name != "") {
 			return nil, err
+		}
+
+		if serviceRef.Uid != "" && serviceRef.Name == "" {
+			svc, err := s.octeliumC.CoreC().GetService(ctx, &rmetav1.GetOptions{Uid: serviceRef.Uid})
+			if err != nil && !grpcerr.IsNotFound(err) {
+				return nil, serr.InternalWithErr(err)
+			}
+			if svc != nil {
+				serviceRef = umetav1.GetObjectReference(svc)
+			}
 		}
 	}
 
@@ -203,7 +215,7 @@ func (s *ServerUser) ListRequest(ctx context.Context, req *accessv1.ListUserRequ
 			continue
 		}
 
-		if !requestIncludesService(itm, req.ServiceRef) {
+		if !requestIncludesService(itm, serviceRef) {
 			continue
 		}
 
@@ -292,6 +304,23 @@ func (s *ServerUser) UpdateRequest(ctx context.Context, req *accessv1.Request) (
 
 	if isMaterialSpecChange(item, next) {
 		next.Status.SpecRevision++
+	}
+
+	if next.Status.Rule != nil {
+		next.Status.EffectiveDuration = accesscmd.DurationFromGo(accesscmd.GetEffectiveDuration(next.Spec,
+			next.Status.GetResolvedScope().GetAccessLevel(), next.Status.Rule))
+	}
+
+	if accesscmd.HasStaleAppliedSteps(next) {
+		accesscmd.EndCurrentStep(next, accessv1.Request_Status_Review_StepState_INTERRUPTED)
+		if err := accesscmd.StartReviewStep(ctx, &accesscmd.StartReviewStepOpts{
+			OcteliumC:     s.octeliumC,
+			Request:       next,
+			Index:         0,
+			ClusterConfig: cc,
+		}); err != nil {
+			return nil, serr.InternalWithErr(err)
+		}
 	}
 
 	item, err = s.octeliumC.AccessC().UpdateRequest(ctx, next)
@@ -390,6 +419,15 @@ func (s *ServerUser) EndAccess(ctx context.Context, req *accessv1.EndAccessReque
 
 	if err := checkUserCanReadRequest(i.User.Metadata.Uid, item); err != nil {
 		return nil, err
+	}
+
+	if item.Status.State != nil &&
+		item.Status.State.Reason == accessv1.Request_Status_State_ENDED_EARLY {
+		if err := accesscmd.DeletePolicyTriggerOf(ctx, s.octeliumC, item); err != nil {
+			return nil, serr.InternalWithErr(err)
+		}
+
+		return accesscmd.RedactRequest(item), nil
 	}
 
 	if !accesscmd.IsApproved(item) {

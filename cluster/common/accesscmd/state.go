@@ -108,6 +108,15 @@ func IsAccessActive(req *accessv1.Request, now time.Time) bool {
 		return false
 	}
 
+	if req.Status.Grant != nil {
+		switch req.Status.Grant.State {
+		case accessv1.Request_Status_Grant_PROVISIONING,
+			accessv1.Request_Status_Grant_FAILED,
+			accessv1.Request_Status_Grant_ENDED:
+			return false
+		}
+	}
+
 	return true
 }
 

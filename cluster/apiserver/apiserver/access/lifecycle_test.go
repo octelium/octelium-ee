@@ -10,6 +10,7 @@ package access
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -418,6 +419,21 @@ func TestUserRequestLifecycle(t *testing.T) {
 	})
 	assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
 
+	reviewCase, err := l.reviewerSrv.GetReviewCase(reviewer.Ctx(), &accessv1.GetReviewCaseRequest{
+		RequestRef: umetav1.GetObjectReference(req),
+	})
+	require.NoError(t, err)
+	assert.True(t, reviewCase.Flags.IsAwaitingRequester)
+	assert.ElementsMatch(t, []accessv1.ReviewCase_Action{
+		accessv1.ReviewCase_REJECT, accessv1.ReviewCase_REQUEST_INFORMATION,
+	}, reviewCase.AllowedActions)
+
+	_, err = l.reviewerSrv.SetReviewDecision(reviewer.Ctx(), &accessv1.SetReviewDecisionRequest{
+		RequestRef: umetav1.GetObjectReference(req),
+		Decision:   accessv1.Review_Spec_DECISION_APPROVE,
+	})
+	assert.ErrorContains(t, err, "waiting for information")
+
 	inbox, err = l.userSrv.GetInbox(requester.Ctx(), &accessv1.GetInboxRequest{})
 	require.NoError(t, err)
 	assert.Equal(t, uint32(1), inbox.TotalMyPending)
@@ -437,6 +453,12 @@ func TestUserRequestLifecycle(t *testing.T) {
 		Response:   "again",
 	})
 	assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+
+	reviewCase, err = l.reviewerSrv.GetReviewCase(reviewer.Ctx(), &accessv1.GetReviewCaseRequest{
+		RequestRef: umetav1.GetObjectReference(req),
+	})
+	require.NoError(t, err)
+	assert.Contains(t, reviewCase.AllowedActions, accessv1.ReviewCase_APPROVE)
 
 	_, err = l.userSrv.EndAccess(requester.Ctx(), &accessv1.EndAccessRequest{RequestRef: umetav1.GetObjectReference(req)})
 	assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
@@ -468,6 +490,19 @@ func TestUserRequestLifecycle(t *testing.T) {
 	assert.Equal(t, accessv1.Request_Status_Grant_ENDED, ended.Status.Grant.State)
 	assert.False(t, l.policyTriggerExists(t, req))
 
+	pt, err := accesscmd.BuildPolicyTrigger(req)
+	require.NoError(t, err)
+	_, err = l.octeliumC.CoreC().CreatePolicyTrigger(l.ctx, pt)
+	require.NoError(t, err)
+
+	endedAgain, err := l.userSrv.EndAccess(requester.Ctx(), &accessv1.EndAccessRequest{
+		RequestRef: umetav1.GetObjectReference(req),
+	})
+	require.NoError(t, err)
+	assert.Equal(t, accessv1.Request_Status_State_ENDED_EARLY, endedAgain.Status.State.Reason)
+	assert.Equal(t, "done early", endedAgain.Status.State.Message)
+	assert.False(t, l.policyTriggerExists(t, req))
+
 	found, err := l.userSrv.ListRequest(requester.Ctx(), &accessv1.ListUserRequestOptions{Query: "invoices"})
 	require.NoError(t, err)
 	assert.Len(t, found.Items, 0)
@@ -481,6 +516,130 @@ func TestUserRequestLifecycle(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Len(t, found.Items, 1)
+}
+
+func TestUserUpdateRequestRecomputesTheWorkflow(t *testing.T) {
+	l := newLifecycleTest(t)
+
+	requester := l.newUser(t)
+	lead := l.newUser(t)
+	security := l.newUser(t)
+	catalog := l.newCatalog(t, nil)
+
+	spec := catalogRequestSpec(umetav1.GetObjectReference(catalog))
+	spec.Duration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 8}}
+
+	req, err := l.userSrv.CreateRequest(requester.Ctx(), &accessv1.Request{
+		Metadata: &metav1.Metadata{},
+		Spec:     spec,
+	})
+	require.NoError(t, err)
+	req = l.setPendingReview(t, req, userReviewerStep("lead", lead))
+
+	req.Status.Rule.Action = reviewAction(userReviewerStep("lead", lead), userReviewerStep("security", security))
+	req.Status.EffectiveDuration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 8}}
+	accesscmd.EndCurrentStep(req, accessv1.Request_Status_Review_StepState_SATISFIED)
+	req.Status.Review.LastSteps = append(req.Status.Review.LastSteps, &accessv1.Request_Status_Review_Step{
+		StepIndex:    0,
+		StepName:     "lead",
+		Decision:     accessv1.Review_Spec_DECISION_APPROVE,
+		UserRef:      umetav1.GetObjectReference(lead.Usr),
+		SpecRevision: 1,
+	})
+	require.NoError(t, accesscmd.StartReviewStep(l.ctx, &accesscmd.StartReviewStepOpts{
+		OcteliumC: l.octeliumC,
+		Request:   req,
+		Index:     1,
+	}))
+	req, err = l.octeliumC.AccessC().UpdateRequest(l.ctx, req)
+	require.NoError(t, err)
+
+	update := func(fn func(spec *accessv1.Request_Spec)) *accessv1.Request {
+		cur, err := l.userSrv.GetRequest(requester.Ctx(), &metav1.GetOptions{Uid: req.Metadata.Uid})
+		require.NoError(t, err)
+		fn(cur.Spec)
+		ret, err := l.userSrv.UpdateRequest(requester.Ctx(), cur)
+		require.NoError(t, err)
+		return ret
+	}
+
+	shorter := update(func(spec *accessv1.Request_Spec) {
+		spec.Duration = &metav1.Duration{Type: &metav1.Duration_Hours{Hours: 1}}
+	})
+	assert.Equal(t, uint32(1), shorter.Status.SpecRevision)
+	assert.Equal(t, time.Hour, umetav1.ToDuration(shorter.Status.EffectiveDuration).ToGo())
+	assert.Equal(t, int32(1), shorter.Status.Review.CurrentStep)
+
+	changed := update(func(spec *accessv1.Request_Spec) {
+		spec.Justification = "changed after the first approval"
+	})
+	assert.Equal(t, uint32(2), changed.Status.SpecRevision)
+	assert.Equal(t, int32(0), changed.Status.Review.CurrentStep)
+	require.Len(t, changed.Status.Review.Steps, 3)
+	assert.Equal(t, accessv1.Request_Status_Review_StepState_INTERRUPTED, changed.Status.Review.Steps[1].Outcome)
+	assert.Equal(t, "lead", changed.Status.Review.Steps[2].Name)
+
+	_, err = l.reviewerSrv.SetReviewDecision(security.Ctx(), &accessv1.SetReviewDecisionRequest{
+		RequestRef:           umetav1.GetObjectReference(req),
+		Decision:             accessv1.Review_Spec_DECISION_APPROVE,
+		ExpectedStepName:     "security",
+		ExpectedSpecRevision: 2,
+	})
+	assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+}
+
+func TestUserListRequestFindsDynamicGrants(t *testing.T) {
+	l := newLifecycleTest(t)
+
+	requester := l.newUser(t)
+
+	ns, err := l.octeliumC.CoreC().CreateNamespace(l.ctx, &corev1.Namespace{
+		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
+		Spec:     &corev1.Namespace_Spec{},
+		Status:   &corev1.Namespace_Status{},
+	})
+	require.NoError(t, err)
+
+	newNsService := func() *corev1.Service {
+		svc, err := l.octeliumC.CoreC().CreateService(l.ctx, &corev1.Service{
+			Metadata: &metav1.Metadata{Name: fmt.Sprintf("%s.%s", utilrand.GetRandomStringCanonical(8), ns.Metadata.Name)},
+			Spec:     &corev1.Service_Spec{},
+			Status:   &corev1.Service_Status{NamespaceRef: umetav1.GetObjectReference(ns)},
+		})
+		require.NoError(t, err)
+		return svc
+	}
+
+	newNsService()
+	catalog := l.newCatalog(t, func(spec *accessv1.Catalog_Spec) {
+		spec.ResourceCollection.Service.Services = nil
+		spec.ResourceCollection.Service.Namespaces = []string{ns.Metadata.Name}
+		spec.Membership = accessv1.Catalog_Spec_DYNAMIC
+	})
+
+	req, err := l.userSrv.CreateRequest(requester.Ctx(), &accessv1.Request{
+		Metadata: &metav1.Metadata{},
+		Spec:     catalogRequestSpec(umetav1.GetObjectReference(catalog)),
+	})
+	require.NoError(t, err)
+	l.setApproved(t, req)
+
+	later := newNsService()
+
+	for _, ref := range []*metav1.ObjectReference{
+		{Name: later.Metadata.Name},
+		{Uid: later.Metadata.Uid},
+	} {
+		found, err := l.userSrv.ListRequest(requester.Ctx(), &accessv1.ListUserRequestOptions{ServiceRef: ref})
+		require.NoError(t, err)
+		assert.Len(t, found.Items, 1, "%+v", ref)
+	}
+
+	found, err := l.userSrv.ListRequest(requester.Ctx(), &accessv1.ListUserRequestOptions{
+		ServiceRef: &metav1.ObjectReference{Name: newTestServiceName(t, l.octeliumC)},
+	})
+	require.NoError(t, err)
+	assert.Empty(t, found.Items)
 }
 
 func TestReviewerCaseAndQueues(t *testing.T) {
@@ -523,10 +682,24 @@ func TestReviewerCaseAndQueues(t *testing.T) {
 	assert.Empty(t, list(reviewerA, accessv1.ListReviewerRequestOptions_WAITING_ON_OTHERS))
 	assert.Empty(t, list(other, accessv1.ListReviewerRequestOptions_NEEDS_MY_DECISION))
 
+	laterSpec := catalogRequestSpec(umetav1.GetObjectReference(catalog))
+	laterSpec.Justification = "a reason that only its own reviewers should read"
+	laterSpec.Ticket = "INC-42"
+	_, err = l.userSrv.CreateRequest(requester.Ctx(), &accessv1.Request{
+		Metadata: &metav1.Metadata{},
+		Spec:     laterSpec,
+	})
+	require.NoError(t, err)
+
 	reviewCase, err := l.reviewerSrv.GetReviewCase(reviewerA.Ctx(), &accessv1.GetReviewCaseRequest{
 		RequestRef: umetav1.GetObjectReference(req),
 	})
 	require.NoError(t, err)
+	require.Len(t, reviewCase.RecentRequests, 1)
+	assert.Empty(t, reviewCase.RecentRequests[0].Spec.Justification)
+	assert.Empty(t, reviewCase.RecentRequests[0].Spec.Ticket)
+	assert.Nil(t, reviewCase.RecentRequests[0].Status.Review)
+	assert.Equal(t, accessv1.Request_Status_State_PENDING, reviewCase.RecentRequests[0].Status.State.Status)
 	assert.ElementsMatch(t, []accessv1.ReviewCase_Action{
 		accessv1.ReviewCase_APPROVE, accessv1.ReviewCase_REJECT, accessv1.ReviewCase_REQUEST_INFORMATION,
 	}, reviewCase.AllowedActions)
@@ -650,6 +823,42 @@ func TestMainRevokeSimulateAndCatalogRules(t *testing.T) {
 	require.NotNil(t, sim.PolicyTrigger)
 	assert.Equal(t, requester.Usr.Metadata.Uid, sim.PolicyTrigger.Status.PreCondition.GetAll().Of[0].GetUserRef().Uid)
 
+	brokenDeny, err := l.octeliumC.AccessC().CreatePolicy(l.ctx, &accessv1.Policy{
+		Metadata: &metav1.Metadata{Name: "a-broken-deny"},
+		Spec: &accessv1.Policy_Spec{
+			Rules: []*accessv1.Policy_Spec_Rule{
+				{
+					Name:     "broken-deny",
+					Priority: -2,
+					Effect:   accessv1.Policy_Spec_Rule_DENY,
+					Condition: &accessv1.Policy_Spec_Rule_Condition{
+						Type: &accessv1.Policy_Spec_Rule_Condition_Match{Match: "1 / 0 == 1"},
+					},
+				},
+			},
+		},
+		Status: &accessv1.Policy_Status{},
+	})
+	require.NoError(t, err)
+
+	blocked, err := l.mainSrv.SimulateRequest(l.ctx, &accessv1.SimulateRequestRequest{
+		Spec: &accessv1.Request_Spec{
+			Subject: &accessv1.Request_Spec_Subject{
+				Type: &accessv1.Request_Spec_Subject_UserRef{UserRef: umetav1.GetObjectReference(requester.Usr)},
+			},
+			Resource: catalogRequestSpec(umetav1.GetObjectReference(catalog)).Resource,
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, accessv1.RequestPreview_NOT_REQUESTABLE, blocked.Preview.Outcome)
+	assert.Nil(t, blocked.Rule)
+	assert.Nil(t, blocked.PolicyTrigger)
+	require.Len(t, blocked.Rules, 3)
+	assert.Equal(t, accessv1.SimulateRequestResponse_RuleEvaluation_ERROR, blocked.Rules[0].Result)
+
+	_, err = l.octeliumC.AccessC().DeletePolicy(l.ctx, &rmetav1.DeleteOptions{Uid: brokenDeny.Metadata.Uid})
+	require.NoError(t, err)
+
 	req, err := l.userSrv.CreateRequest(requester.Ctx(), &accessv1.Request{
 		Metadata: &metav1.Metadata{},
 		Spec:     catalogRequestSpec(umetav1.GetObjectReference(catalog)),
@@ -674,6 +883,17 @@ func TestMainRevokeSimulateAndCatalogRules(t *testing.T) {
 	assert.Equal(t, accessv1.Request_Status_State_REVOKED, revoked.Status.State.Status)
 	assert.Equal(t, accessv1.Request_Status_State_ACCESS_REVOKED, revoked.Status.State.Reason)
 	assert.Equal(t, "incident closed", revoked.Status.State.Message)
+	assert.False(t, l.policyTriggerExists(t, req))
+
+	pt, err := accesscmd.BuildPolicyTrigger(req)
+	require.NoError(t, err)
+	_, err = l.octeliumC.CoreC().CreatePolicyTrigger(l.ctx, pt)
+	require.NoError(t, err)
+
+	_, err = l.mainSrv.RevokeRequest(l.ctx, &accessv1.RevokeRequestRequest{
+		RequestRef: umetav1.GetObjectReference(req),
+	})
+	require.NoError(t, err)
 	assert.False(t, l.policyTriggerExists(t, req))
 
 	_, err = l.mainSrv.DeleteCatalog(l.ctx, &metav1.DeleteOptions{Uid: catalog.Metadata.Uid})
