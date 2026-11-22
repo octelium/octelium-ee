@@ -3,7 +3,7 @@
 import Logo from "@/assets/l03.svg?react";
 import { Avatar } from "@/ui";
 import { useAppSelector } from "@/utils/hooks";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 const TopBar = () => {
   const status = useAppSelector((state) => state.settings.status);

@@ -2,7 +2,7 @@ import UserLayout from "./layout";
 import Requests from "./Request/index";
 
 import * as React from "react";
-import { Navigate, RouteObject } from "react-router-dom";
+import { Navigate, RouteObject } from "react-router";
 
 const RequestDetail = React.lazy(() => import("./Request/detail"));
 const NewRequest = React.lazy(() => import("./Request/new"));

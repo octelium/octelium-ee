@@ -5,7 +5,7 @@ import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Gavel, History, Lock, Pencil, RotateCcw, X } from "lucide-react";
 import * as React from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router";
 
 import JustificationCard from "@/components/Access/JustificationCard";
 import RequestFacts from "@/components/Access/RequestFacts";

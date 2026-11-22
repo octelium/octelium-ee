@@ -1,9 +1,8 @@
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import path from "path";
-import { defineConfig } from "vite";
+import { defineConfig, type RollupCommonJSOptions } from "vite";
 import svgr from "vite-plugin-svgr";
 
-import type { RollupCommonJSOptions } from "@rollup/plugin-commonjs";
 import { createRequire } from "module";
 import { readFile } from "fs/promises";
 

@@ -7,7 +7,7 @@ import {
   Loader2,
   RotateCcw,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { twMerge } from "@/lib/utils";
 
 import TimeAgo, { Countdown, Elapsed } from "@/components/TimeAgo";

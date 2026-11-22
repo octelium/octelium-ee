@@ -2,7 +2,7 @@ import { AppShell, Drawer } from "@mantine/core";
 import { useMediaQuery, useReducedMotion } from "@mantine/hooks";
 import { Menu } from "lucide-react";
 import * as React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 
 import Sidebar from ".";
 

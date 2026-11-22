@@ -1,7 +1,7 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import { Button } from "@mantine/core";
 import { KeyRound, RotateCcw } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 import { AbsoluteTime, Countdown } from "@/components/TimeAgo";
 import {

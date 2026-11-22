@@ -8,7 +8,7 @@ import ReactDOM from "react-dom/client";
 import { MantineProvider } from "@mantine/core";
 
 import { Provider } from "react-redux";
-import { RouterProvider } from "react-router-dom";
+import { RouterProvider } from "react-router/dom";
 
 import store from "@/store";
 

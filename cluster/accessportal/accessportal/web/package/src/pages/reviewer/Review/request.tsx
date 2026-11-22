@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import * as React from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router";
 import { twMerge } from "@/lib/utils";
 
 import GrantCard from "@/components/Access/GrantCard";

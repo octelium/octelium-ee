@@ -923,6 +923,32 @@ for (const [name, browserType] of Object.entries({ chromium, firefox })) {
       assert.equal(await discardDialog().count(), 0);
     });
 
+    it("preserves nested routes and search parameters through browser history", async () => {
+      const path = "/user/requests?group=pending&q=CHG-1234";
+      await load(path, { browserHistory: "1" });
+      const search = page.getByPlaceholder("Search by resource, request ID, recipient or reason");
+      await search.waitFor();
+      assert.equal(await search.inputValue(), "CHG-1234");
+      await page.locator('a[href="/user/requests/own-pending"]').click();
+      await page.waitForURL(`${origin}user/requests/own-pending`);
+      await page.getByRole("heading", { name: "Primary storage", exact: true }).waitFor();
+      await page.goBack();
+      await page.waitForURL(new URL(path, origin).href);
+      await page.getByRole("radio", { name: "Pending (2)", exact: true }).waitFor({ state: "attached" });
+      assert.equal(await search.inputValue(), "CHG-1234");
+      await page.goForward();
+      await page.waitForURL(`${origin}user/requests/own-pending`);
+      await page.getByRole("heading", { name: "Primary storage", exact: true }).waitFor();
+    });
+
+    it("preserves redirects into nested request routes", async () => {
+      const path = "/user/requests/own-pending?group=pending";
+      await load(`/?${new URLSearchParams({ redirect: path })}`, { browserHistory: "1" });
+      await page.waitForURL(new URL(path, origin).href);
+      await page.getByRole("heading", { name: "Primary storage", exact: true }).waitFor();
+      assert.equal(await page.getByRole("alert").count(), 0);
+    });
+
     it("protects new request drafts when going back", async () => {
       await load("/settings", { browserHistory: "1" });
       await page.getByRole("link", { name: "New Request", exact: true }).click();

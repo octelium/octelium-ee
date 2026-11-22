@@ -1,7 +1,7 @@
 import { Button } from "@mantine/core";
 import { House, RefreshCw, Sparkles, TriangleAlert } from "lucide-react";
 import * as React from "react";
-import { Link, useRouteError } from "react-router-dom";
+import { Link, useRouteError } from "react-router";
 
 import { Card, DocumentTitle, NotFoundState } from "@/ui";
 import { isChunkLoadError, reloadForNewVersion } from "@/utils/chunkError";

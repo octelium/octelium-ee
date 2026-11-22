@@ -8,7 +8,7 @@ import {
   X,
 } from "lucide-react";
 import * as React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router";
 import { twMerge } from "@/lib/utils";
 
 import * as AccessP from "@/apis/accessv1/accessv1";

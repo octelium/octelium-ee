@@ -2,7 +2,7 @@ import * as AccessP from "@/apis/accessv1/accessv1";
 import { Button, SegmentedControl } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { ClipboardCheck, Flame, Hourglass, SearchX } from "lucide-react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router";
 import { twMerge } from "@/lib/utils";
 
 import { ResourceIcon } from "@/components/Access/icons";

@@ -28,7 +28,7 @@ import {
   Workflow,
 } from "lucide-react";
 import * as React from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { twMerge } from "@/lib/utils";
 
 import {

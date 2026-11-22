@@ -3,7 +3,7 @@ import { Button, Pagination, SegmentedControl } from "@mantine/core";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ChevronRight, Gavel, ListChecks, SearchX } from "lucide-react";
 import * as React from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router";
 
 import TimeAgo from "@/components/TimeAgo";
 import {

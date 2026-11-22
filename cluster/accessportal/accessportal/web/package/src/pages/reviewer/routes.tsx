@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Navigate, RouteObject } from "react-router-dom";
+import { Navigate, RouteObject } from "react-router";
 
 import ReviewerLayout from "./layout";
 

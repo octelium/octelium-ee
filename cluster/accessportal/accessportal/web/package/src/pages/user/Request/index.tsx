@@ -10,7 +10,7 @@ import {
 } from "@tanstack/react-query";
 import { ChevronRight, Inbox, Plus, SearchX } from "lucide-react";
 import * as React from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 
 import { ResourceIcon } from "@/components/Access/icons";
 import TimeAgo, { Countdown, Elapsed } from "@/components/TimeAgo";

@@ -7,7 +7,8 @@ import ReactDOM from "react-dom/client";
 import { MantineProvider } from "@mantine/core";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
-import { createBrowserRouter, createMemoryRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, createMemoryRouter } from "react-router";
+import { RouterProvider } from "react-router/dom";
 
 import * as AccessP from "@/apis/accessv1/accessv1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";

@@ -9,7 +9,7 @@ import { getRedirectPath } from "@/utils/redirect";
 import { Notifications } from "@mantine/notifications";
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
-import { Navigate, Outlet, ScrollRestoration } from "react-router-dom";
+import { Navigate, Outlet, ScrollRestoration, useLocation } from "react-router";
 
 import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/plus-jakarta-sans/500.css";
@@ -18,6 +18,7 @@ import "@fontsource/plus-jakarta-sans/700.css";
 
 const Root = () => {
   const dispatch = useAppDispatch();
+  const { search } = useLocation();
 
   const statusQry = useQuery({
     queryKey: ["user", "getStatus"],
@@ -35,7 +36,7 @@ const Root = () => {
     }
   }, [dispatch, statusQry.data]);
 
-  const urlSearchParams = new URLSearchParams(window.location.search);
+  const urlSearchParams = new URLSearchParams(search);
   const redirect = getRedirectPath(
     urlSearchParams.get("redirect"),
     window.location.origin,

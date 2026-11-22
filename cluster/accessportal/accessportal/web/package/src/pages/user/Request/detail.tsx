@@ -6,7 +6,7 @@ import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarPlus, CircleStop, Pencil, Save, X } from "lucide-react";
 import * as React from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router";
 
 import GrantCard from "@/components/Access/GrantCard";
 import InformationRequestCard from "@/components/Access/InformationRequestCard";
