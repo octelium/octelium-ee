@@ -7,6 +7,10 @@ import {
 import Meta from "@/components/Meta";
 import { PageTitleAddon } from "@/components/PageHeader/context";
 import RpcError from "@/components/RpcError";
+import {
+  clearSupportReport,
+  getSupportReport,
+} from "@/components/Support/context";
 import { twMerge } from "@/lib/utils";
 import { onError } from "@/utils";
 import { getClientSupport } from "@/utils/client";
@@ -45,7 +49,9 @@ import {
   ToneBadge,
 } from "./components";
 import Diagnostics, { DiagnosticsPreset } from "./Diagnostics";
+import { countRedactions, newRedactionStats, redactText } from "./diagnostics";
 import {
+  admitFiles,
   PendingFile,
   supportKeys,
   toPendingFile,
@@ -53,7 +59,6 @@ import {
   useSupportInfo,
 } from "./queries";
 import {
-  checkFile,
   DESCRIPTION_TEMPLATE,
   newIdempotencyKey,
   PRIORITIES,
@@ -151,8 +156,21 @@ const getPreset = (params: URLSearchParams): DiagnosticsPreset | undefined => {
   };
 };
 
-const getInitialDescription = (params: URLSearchParams) => {
-  const message = params.get("message");
+const getReport = (params: URLSearchParams) => {
+  const report = getSupportReport(params.get("report"));
+  if (!report) return undefined;
+  const options = { keepEmails: false };
+  const stats = newRedactionStats();
+  return {
+    subject: report.subject
+      ? redactText(report.subject, options, stats).slice(0, 120).trim()
+      : "",
+    message: report.message ? redactText(report.message, options, stats) : "",
+    redacted: countRedactions(stats) > 0,
+  };
+};
+
+const getInitialDescription = (params: URLSearchParams, message?: string) => {
   if (!message) return DESCRIPTION_TEMPLATE;
   const lines = [
     "What happened?",
@@ -172,13 +190,12 @@ const New = () => {
   const info = useSupportInfo();
   const settings = useAppSelector((state) => state.settings);
   const preset = React.useMemo(() => getPreset(searchParams), [searchParams]);
+  const [report] = React.useState(() => getReport(searchParams));
 
   const [priority, setPriority] = React.useState(SupportRequest_Priority.P3);
-  const [subject, setSubject] = React.useState(
-    () => searchParams.get("subject") ?? "",
-  );
+  const [subject, setSubject] = React.useState(() => report?.subject ?? "");
   const [description, setDescription] = React.useState(() =>
-    getInitialDescription(searchParams),
+    getInitialDescription(searchParams, report?.message),
   );
   const [files, setFiles] = React.useState<PendingFile[]>([]);
   const [progress, setProgress] = React.useState<
@@ -187,7 +204,11 @@ const New = () => {
   const [diagnosticsOpened, setDiagnosticsOpened] = React.useState(false);
   const [environmentOpened, setEnvironmentOpened] = React.useState(false);
   const [idempotencyKey, setIdempotencyKey] = React.useState(newIdempotencyKey);
-  const created = React.useRef<string | null>(null);
+  const [opened, setOpened] = React.useState<{
+    id: string;
+    number: number;
+  } | null>(null);
+  const created = React.useRef<{ id: string; number: number } | null>(null);
   const uploaded = React.useRef(new Map<string, string>());
 
   const limits = info.data?.limits;
@@ -204,32 +225,13 @@ const New = () => {
     setIdempotencyKey(newIdempotencyKey());
   }, [draftKey]);
 
-  const addFiles = (items: PendingFile[]) => {
-    const errors: string[] = [];
-    const next = [...files];
-    for (const item of items) {
-      const error = checkFile(limits, item.file);
-      if (error) {
-        errors.push(error);
-        continue;
-      }
-      if (next.some((existing) => existing.key === item.key)) continue;
-      if (next.length >= maxAttachments) {
-        errors.push(`A request can include at most ${maxAttachments} files`);
-        break;
-      }
-      next.push(item);
-    }
-    setFiles(next);
-    for (const error of new Set(errors)) {
-      notifications.show({ color: "red", message: error });
-    }
-  };
+  const addFiles = (items: PendingFile[]) =>
+    setFiles(admitFiles(files, items, limits, "A request"));
 
   const mutation = useMutation({
     mutationFn: async () => {
-      let id = created.current;
-      if (!id) {
+      let request = created.current;
+      if (!request) {
         const { response } = await getClientSupport().createSupportRequest(
           CreateSupportRequestRequest.create({
             subject: subject.trim(),
@@ -238,8 +240,8 @@ const New = () => {
             idempotencyKey,
           }),
         );
-        id = response.id;
-        created.current = id;
+        request = { id: response.id, number: response.number };
+        created.current = request;
       }
 
       setProgress(
@@ -249,38 +251,48 @@ const New = () => {
             .map((item) => [item.key, "uploading" as const]),
         ),
       );
-      const result = await uploadFiles(id, files, uploaded.current, () => {
-        setProgress((current) =>
-          Object.fromEntries(
-            Object.entries(current).map(([key, value]) => [
-              key,
-              uploaded.current.has(key) ? "done" : value,
-            ]),
-          ),
-        );
-      });
+      const result = await uploadFiles(
+        request.id,
+        files,
+        uploaded.current,
+        () => {
+          setProgress((current) =>
+            Object.fromEntries(
+              Object.entries(current).map(([key, value]) => [
+                key,
+                uploaded.current.has(key) ? "done" : value,
+              ]),
+            ),
+          );
+        },
+      );
       setProgress(
         Object.fromEntries(
           result.failed.map(({ item }) => [item.key, "failed" as const]),
         ),
       );
-      return { id, failed: result.failed };
+      return { request, failed: result.failed };
     },
-    onSuccess: ({ id, failed }) => {
+    onSuccess: ({ request, failed }) => {
       queryClient.invalidateQueries({ queryKey: supportKeys.requests });
       if (failed.length > 0) {
+        setOpened(request);
+        setFiles(failed.map(({ item }) => item));
         notifications.show({
           color: "red",
-          title: "The request was opened, but some files were not attached",
+          title: `Request #${request.number} was opened, but some files were not attached`,
           message: failed.map(({ item }) => item.file.name).join(", "),
         });
-      } else {
-        notifications.show({
-          color: "green",
-          message: "Your request was sent to Octelium Support",
-        });
+        return;
       }
-      navigate(supportRequestPath(id));
+      clearSupportReport(searchParams.get("report"));
+      notifications.show({
+        color: "green",
+        message: opened
+          ? "The files were attached to your request"
+          : "Your request was sent to Octelium Support",
+      });
+      navigate(supportRequestPath(request.id));
     },
     onError,
   });
@@ -333,6 +345,25 @@ const New = () => {
         info.data && <StateNotice info={info.data} />
       )}
 
+      {opened && (
+        <Alert color="yellow" title={`Request #${opened.number} was opened`}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span>
+              Some files could not be attached. Retry or remove them, or
+              continue to the request and attach them there.
+            </span>
+            <Button
+              component={Link}
+              to={supportRequestPath(opened.id)}
+              size="compact-xs"
+              variant="outline"
+            >
+              Continue to the request
+            </Button>
+          </div>
+        </Alert>
+      )}
+
       {info.isLoading ? (
         <div className="flex flex-col gap-4">
           <Skeleton height={150} radius="lg" />
@@ -356,7 +387,7 @@ const New = () => {
               >
                 <PriorityPicker
                   value={priority}
-                  disabled={!available || pending}
+                  disabled={!available || pending || !!opened}
                   onChange={setPriority}
                 />
                 {priority === SupportRequest_Priority.P1 && (
@@ -385,7 +416,7 @@ const New = () => {
                   placeholder="e.g. Gateways restart after the upgrade to 0.48"
                   value={subject}
                   maxLength={maxSubject}
-                  disabled={!available || pending}
+                  disabled={!available || pending || !!opened}
                   error={subjectError}
                   onChange={(event) =>
                     setSubject(
@@ -406,11 +437,15 @@ const New = () => {
                   maxRows={24}
                   value={description}
                   maxLength={maxBody}
-                  disabled={!available || pending}
+                  disabled={!available || pending || !!opened}
                   onChange={(event) =>
                     setDescription(event.currentTarget.value)
                   }
-                  description="Do not include passwords, tokens or other secrets."
+                  description={
+                    report?.redacted
+                      ? "Secrets found in the reported entry were replaced with [REDACTED]. Do not include passwords, tokens or other secrets."
+                      : "Do not include passwords, tokens or other secrets."
+                  }
                   styles={{ input: { lineHeight: 1.55 } }}
                 />
               </Card>
@@ -454,7 +489,9 @@ const New = () => {
 
                 <div className="flex flex-wrap items-center gap-2">
                   <DiagnosticsButton
-                    disabled={!available || pending}
+                    disabled={
+                      !available || pending || files.length >= maxAttachments
+                    }
                     onClick={() => setDiagnosticsOpened(true)}
                   />
                   <FileButton
@@ -593,7 +630,11 @@ const New = () => {
                 disabled={!valid}
                 loading={pending}
               >
-                Send request
+                {!opened
+                  ? "Send request"
+                  : files.length > 0
+                    ? "Retry the files"
+                    : "Continue to the request"}
               </Button>
             </div>
           </div>

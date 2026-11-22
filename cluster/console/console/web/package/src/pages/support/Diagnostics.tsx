@@ -54,6 +54,8 @@ export interface DiagnosticsPreset {
 
 const PAGE_SIZE = 500;
 
+const PREVIEW_SIZE = 100;
+
 const LEVEL_LABEL: Record<string, string> = {
   WARN: "Warn",
   ERROR: "Error",
@@ -184,6 +186,14 @@ const Preview = (props: { bundle: DiagnosticsBundle }) => {
         </p>
       )}
 
+      {bundle.entries.length > PREVIEW_SIZE && (
+        <p className="text-micro font-normal leading-5 text-slate-500">
+          The preview shows the latest {PREVIEW_SIZE} of{" "}
+          {formatCount(bundle.entries.length)} entries. Save a copy to review
+          all of them before you agree to send them.
+        </p>
+      )}
+
       {bundle.entries.length === 0 ? (
         <div className="flex min-h-24 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white px-4 text-center">
           <p className="text-xs font-normal text-slate-500">
@@ -199,7 +209,7 @@ const Preview = (props: { bundle: DiagnosticsBundle }) => {
         >
           <ol className="divide-y divide-slate-100">
             {bundle.entries
-              .slice(-100)
+              .slice(-PREVIEW_SIZE)
               .reverse()
               .map((entry, index) => (
                 <li key={index} className="flex flex-col gap-1 px-3 py-2">
@@ -271,10 +281,13 @@ const Diagnostics = (props: {
   const [consent, setConsent] = React.useState(false);
   const abort = React.useRef<AbortController | null>(null);
   const [wasOpened, setWasOpened] = React.useState(props.opened);
+  const [period, setPeriod] = React.useState(() => getWindow(range, anchor));
 
   if (wasOpened !== props.opened) {
     setWasOpened(props.opened);
-    if (!props.opened) {
+    if (props.opened) {
+      setPeriod(getWindow(range, anchor));
+    } else {
       setProgress(null);
       setError(null);
       setBundle(null);
@@ -282,7 +295,9 @@ const Diagnostics = (props: {
     }
   }
 
-  const period = React.useMemo(() => getWindow(range, anchor), [range, anchor]);
+  const presetComponent = props.preset?.component;
+  const presetSelected =
+    !!componentType && componentType === presetComponent?.type;
 
   const components = useQuery({
     queryKey: ["support", "diagnostics", "components", period.from, period.to],
@@ -321,20 +336,20 @@ const Diagnostics = (props: {
     setProgress(0);
 
     const max = Number(maxEntries);
+    const bounds = getWindow(range, anchor);
+    setPeriod(bounds);
     const component = ComponentSelector.create({
       ...(componentType ? { type: componentType } : {}),
-      ...(componentType &&
-      componentType === props.preset?.component?.type &&
-      props.preset.component.namespace
-        ? { namespace: props.preset.component.namespace }
+      ...(presetSelected && presetComponent?.namespace
+        ? { namespace: presetComponent.namespace }
         : {}),
-      ...(onlyInstance && props.preset?.component?.uid
-        ? { uid: props.preset.component.uid }
+      ...(presetSelected && onlyInstance && presetComponent?.uid
+        ? { uid: presetComponent.uid }
         : {}),
     });
     const selection = {
-      from: period.from,
-      to: period.to,
+      from: bounds.from,
+      to: bounds.to,
       levels,
       component: {
         ...(component.namespace ? { namespace: component.namespace } : {}),
@@ -356,8 +371,8 @@ const Diagnostics = (props: {
                 page,
                 itemsPerPage: Math.min(PAGE_SIZE, max - entries.length),
               },
-              from: Timestamp.fromDate(new Date(period.from)),
-              to: Timestamp.fromDate(new Date(period.to)),
+              from: Timestamp.fromDate(new Date(bounds.from)),
+              to: Timestamp.fromDate(new Date(bounds.to)),
               levels: levels.map(toLevel),
               component,
             }),
@@ -450,9 +465,11 @@ const Diagnostics = (props: {
           />
           <p className="text-xs font-normal leading-5 text-slate-600">
             The component logs are read with your own permissions and processed
-            in this browser. Tokens, passwords, private keys, URL query strings
-            and email addresses are removed before you review them. Nothing is
-            sent until you attach the result and submit.
+            in this browser. Tokens, passwords, cookies, private keys, URL query
+            strings and email addresses are detected and removed automatically,
+            but the detection cannot recognize every secret: review the entries
+            before you agree to send them. Nothing is sent until you attach the
+            result and submit.
           </p>
         </div>
 
@@ -468,7 +485,10 @@ const Diagnostics = (props: {
                 size="xs"
                 fullWidth
                 value={range}
-                onChange={setRange}
+                onChange={(value) => {
+                  setRange(value);
+                  setPeriod(getWindow(value, anchor));
+                }}
                 disabled={collecting}
                 data={[
                   ...(anchor
@@ -531,22 +551,21 @@ const Diagnostics = (props: {
                 />
               </div>
 
-              {props.preset?.component?.uid &&
-                componentType === props.preset.component.type && (
-                  <Switch
-                    size="sm"
-                    checked={onlyInstance}
-                    disabled={collecting}
-                    onChange={(event) =>
-                      setOnlyInstance(event.currentTarget.checked)
-                    }
-                    label={
-                      <span className="text-body font-normal text-slate-600">
-                        Only the instance that logged the entry
-                      </span>
-                    }
-                  />
-                )}
+              {presetSelected && presetComponent?.uid && (
+                <Switch
+                  size="sm"
+                  checked={onlyInstance}
+                  disabled={collecting}
+                  onChange={(event) =>
+                    setOnlyInstance(event.currentTarget.checked)
+                  }
+                  label={
+                    <span className="text-body font-normal text-slate-600">
+                      Only the instance that logged the entry
+                    </span>
+                  }
+                />
+              )}
 
               <Switch
                 size="sm"

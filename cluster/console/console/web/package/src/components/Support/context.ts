@@ -15,10 +15,29 @@ export interface SupportReport {
   component?: { namespace?: string; type?: string; uid?: string };
 }
 
+let pendingReport: { id: string; subject?: string; message?: string } | null =
+  null;
+
+export const getSupportReport = (id: string | null) =>
+  id && pendingReport?.id === id
+    ? { subject: pendingReport.subject, message: pendingReport.message }
+    : undefined;
+
+export const clearSupportReport = (id: string | null) => {
+  if (id && pendingReport?.id === id) pendingReport = null;
+};
+
 export const getSupportReportPath = (report: SupportReport) => {
   const params = new URLSearchParams();
-  if (report.subject) params.set("subject", report.subject.slice(0, 200));
-  if (report.message) params.set("message", report.message.slice(0, 2000));
+  if (report.subject || report.message) {
+    const id = crypto.randomUUID();
+    pendingReport = {
+      id,
+      ...(report.subject ? { subject: report.subject.slice(0, 1000) } : {}),
+      ...(report.message ? { message: report.message.slice(0, 4000) } : {}),
+    };
+    params.set("report", id);
+  }
   if (report.time) params.set("time", report.time);
   if (report.level) params.set("level", report.level);
   if (report.component?.namespace)

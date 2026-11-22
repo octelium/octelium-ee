@@ -1,4 +1,4 @@
-export const REDACTION_VERSION = 1;
+export const REDACTION_VERSION = 2;
 
 export const DIAGNOSTIC_LEVELS = ["WARN", "ERROR", "PANIC", "FATAL"] as const;
 
@@ -23,6 +23,7 @@ export type RedactionRule =
   | "field"
   | "privateKey"
   | "jwt"
+  | "header"
   | "authorization"
   | "urlCredentials"
   | "urlQuery"
@@ -35,6 +36,7 @@ export const REDACTION_LABELS: Record<RedactionRule, string> = {
   field: "Secret fields",
   privateKey: "Private keys",
   jwt: "JWTs",
+  header: "Authorization and cookie headers",
   authorization: "Authorization values",
   urlCredentials: "Credentials in URLs",
   urlQuery: "URL query strings",
@@ -97,7 +99,11 @@ const SECRET_KEY_PARTS = [
 
 const SECRET_KEYS = new Set(["key", "token", "auth", "pwd"]);
 
-const PATTERNS: { rule: RedactionRule; regex: RegExp; replace: string }[] = [
+const PATTERNS: {
+  rule: Exclude<RedactionRule, "field" | "assignment">;
+  regex: RegExp;
+  replace: string;
+}[] = [
   {
     rule: "privateKey",
     regex:
@@ -110,8 +116,14 @@ const PATTERNS: { rule: RedactionRule; regex: RegExp; replace: string }[] = [
     replace: "[REDACTED JWT]",
   },
   {
+    rule: "header",
+    regex:
+      /\b((?:proxy-)?authorization|(?:set-)?cookie)([ \t]*:[ \t]*)[^\r\n]+/gi,
+    replace: "$1$2[REDACTED]",
+  },
+  {
     rule: "authorization",
-    regex: /\b(Bearer|Basic|Token)\s+[A-Za-z0-9._~+/=-]{8,}/gi,
+    regex: /\b(Bearer|Basic|Token|Digest|Negotiate)\s+[A-Za-z0-9._~+/=-]{8,}/gi,
     replace: "$1 [REDACTED]",
   },
   {
@@ -125,12 +137,6 @@ const PATTERNS: { rule: RedactionRule; regex: RegExp; replace: string }[] = [
     replace: "$1?[REDACTED]",
   },
   {
-    rule: "assignment",
-    regex:
-      /\b(password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|client[_-]?secret|private[_-]?key)(\s*[=:]\s*)("[^"]*"|'[^']*'|[^\s,;&)}\]]+)/gi,
-    replace: "$1$2[REDACTED]",
-  },
-  {
     rule: "email",
     regex:
       /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b/g,
@@ -138,10 +144,14 @@ const PATTERNS: { rule: RedactionRule; regex: RegExp; replace: string }[] = [
   },
 ];
 
+const ASSIGNMENT =
+  /(\\?["']?)([A-Za-z_][A-Za-z0-9_.-]{0,63})\1(\s*[=:]\s*)(\\"(?:(?!\\").)*\\"|"(?:[^"\\]|\\.)*"|'[^']*'|[^\s,;&)}\]"'{[]+)/g;
+
 export const newRedactionStats = (): RedactionStats => ({
   field: 0,
   privateKey: 0,
   jwt: 0,
+  header: 0,
   authorization: 0,
   urlCredentials: 0,
   urlQuery: 0,
@@ -168,7 +178,10 @@ export const redactText = (
 ) => {
   let ret = text;
   for (const pattern of PATTERNS) {
-    if (pattern.rule === "email" && options.keepEmails) continue;
+    if (pattern.rule === "email") {
+      ret = redactAssignments(ret, stats);
+      if (options.keepEmails) continue;
+    }
     ret = ret.replace(pattern.regex, (...args) => {
       stats[pattern.rule] += 1;
       return pattern.replace.replace(/\$(\d)/g, (_, group: string) =>
@@ -177,6 +190,28 @@ export const redactText = (
     });
   }
   return ret;
+};
+
+const redactAssignments = (text: string, stats: RedactionStats) => {
+  const regex = new RegExp(ASSIGNMENT);
+  let ret = "";
+  let last = 0;
+  for (let match = regex.exec(text); match; match = regex.exec(text)) {
+    const [all, quote, key, separator, value] = match;
+    if (!isSecretKey(key)) {
+      regex.lastIndex = match.index + quote.length + key.length;
+      continue;
+    }
+    const wrapper = /^(\\"|"|')/.exec(value)?.[1] ?? "";
+    const inner = wrapper
+      ? value.slice(wrapper.length, value.length - wrapper.length)
+      : value;
+    if (!inner || inner.includes("[REDACTED")) continue;
+    stats.assignment += 1;
+    ret += `${text.slice(last, match.index)}${quote}${key}${quote}${separator}${wrapper}[REDACTED]${wrapper}`;
+    last = match.index + all.length;
+  }
+  return ret + text.slice(last);
 };
 
 export const redactValue = (

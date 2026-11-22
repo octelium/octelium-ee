@@ -1,7 +1,10 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
+import { create, createFileRegistry } from "@bufbuild/protobuf";
+import { FileDescriptorSetSchema } from "@bufbuild/protobuf/wkt";
 import { getCatalog } from "../testutil/app.ts";
 import {
+  APICatalog,
   classifyRisk,
   describeWellKnown,
   firstSentences,
@@ -64,6 +67,66 @@ describe("catalog", () => {
     assert.equal(
       catalog.resolveMethod("enterprise.v1.SupportService/CreateSupportRequest"),
       undefined,
+    );
+  });
+
+  it("leaves every support request method out of the catalog", () => {
+    const pkg = "octelium.api.main.enterprise.v1";
+    const method = (name: string) => ({
+      name,
+      inputType: `.${pkg}.Request`,
+      outputType: `.${pkg}.Response`,
+    });
+    const registry = createFileRegistry(
+      create(FileDescriptorSetSchema, {
+        file: [
+          {
+            name: "enterprisev1/support.proto",
+            package: pkg,
+            syntax: "proto3",
+            messageType: [{ name: "Request" }, { name: "Response" }],
+            service: [
+              {
+                name: "SupportService",
+                method: [
+                  "GetSupportInfo",
+                  "ListSupportRequest",
+                  "GetSupportRequest",
+                  "ListSupportRequestEvent",
+                  "CreateSupportRequest",
+                  "AddSupportRequestMessage",
+                  "AddSupportRequestAttachment",
+                  "ResolveSupportRequest",
+                  "EscalateSupportRequest",
+                  "DownloadSupportRequestAttachment",
+                ].map(method),
+              },
+              { name: "ClusterService", method: [method("GetCluster")] },
+            ],
+          },
+        ],
+      }),
+    );
+    const support = registry.getService(`${pkg}.SupportService`);
+    assert.equal(support?.methods.length, 10);
+
+    const synthetic = new APICatalog(registry);
+    assert.ok(synthetic.resolveMethod("enterprise.v1.ClusterService/GetCluster"));
+    for (const item of support!.methods) {
+      assert.equal(
+        synthetic.resolveMethod(`enterprise.v1.SupportService/${item.name}`),
+        undefined,
+        item.name,
+      );
+    }
+    assert.deepEqual(
+      synthetic.methods.map((item) => item.id),
+      ["enterprise.v1.ClusterService/GetCluster"],
+    );
+    assert.ok(
+      !synthetic
+        .search("create support request")
+        .some((hit) => hit.item.id.includes("SupportService")),
     );
   });
 

@@ -9,7 +9,10 @@ import * as VisibilityP from "@/apis/visibilityv1/visibilityv1";
 import Notifications from "@/components/Notifications";
 import PageHeader from "@/components/PageHeader";
 import { PageHeaderProvider } from "@/components/PageHeader/context";
-import { SupportAvailabilityContext } from "@/components/Support/context";
+import {
+  getSupportReportPath,
+  SupportAvailabilityContext,
+} from "@/components/Support/context";
 import { setStatus } from "@/features/settings/slice";
 import routerSupport from "@/pages/support/router";
 import store from "@/store";
@@ -30,7 +33,12 @@ declare global {
   interface Window {
     support: {
       calls: { method: string; request: any }[];
-      uploads: { name: string; purpose: number; data: number[] }[];
+      uploads: {
+        name: string;
+        purpose: number;
+        data: number[];
+        idempotencyKey: string;
+      }[];
       location: string;
     };
   }
@@ -39,7 +47,8 @@ declare global {
 const params = new URLSearchParams(window.location.search);
 const scenario = params.get("state") ?? "available";
 const calls: { method: string; request: any }[] = [];
-const uploads: { name: string; purpose: number; data: number[] }[] = [];
+const uploads: Window["support"]["uploads"] = [];
+const failUpload = new Set(params.getAll("failUpload"));
 window.support = { calls, uploads, location: "" };
 
 const ago = (minutes: number) =>
@@ -212,7 +221,9 @@ requests.set(
         id: LOGS,
         name: "component-logs.ndjson.gz",
         contentType: "application/gzip",
-        size: 48213,
+        size: 4,
+        sha256:
+          "98f38f12db221a8cf8ca7aadfdcd759b01d52eb4ebb3eedbb2d97e92805c6960",
         purpose: Purpose.DIAGNOSTIC,
         uploadedBy: actor(Actor.CLUSTER, "Jordan Lee"),
         channel: Channel.CLUSTER,
@@ -329,6 +340,9 @@ const handlers: Record<string, (request: any) => unknown> = {
             : true,
       )
       .map(summary);
+    if (params.get("list") === "paged" && !request.cursor) {
+      return EnterpriseP.SupportRequestList.create({ nextCursor: "page-2" });
+    }
     return EnterpriseP.SupportRequestList.create({ items });
   },
   getSupportRequest: (request: EnterpriseP.GetSupportRequestRequest) =>
@@ -385,10 +399,14 @@ const handlers: Record<string, (request: any) => unknown> = {
   addSupportRequestAttachment: (
     request: EnterpriseP.AddSupportRequestAttachmentRequest,
   ) => {
+    if (failUpload.delete(request.name)) {
+      throw new RpcError("The upload was interrupted", "UNAVAILABLE");
+    }
     uploads.push({
       name: request.name,
       purpose: request.purpose,
       data: Array.from(request.data),
+      idempotencyKey: request.idempotencyKey,
     });
     const attachment = EnterpriseP.SupportRequest_Attachment.create({
       id: `4f5a6b7c-8d9e-4f0a-9b1c-${String(uploads.length).padStart(12, "0")}`,
@@ -428,6 +446,7 @@ const handlers: Record<string, (request: any) => unknown> = {
     const ret = requests.get(request.id)!;
     ret.isEscalated = true;
     ret.actions = { ...ret.actions!, canEscalate: false };
+    if (params.get("detail") === "unavailable") return summary(ret);
     return EnterpriseP.SupportRequest.clone(ret);
   },
   resolveSupportRequest: (request: EnterpriseP.ResolveSupportRequestRequest) => {
@@ -477,7 +496,9 @@ for (const client of [
             yield EnterpriseP.DownloadSupportRequestAttachmentResponse.create({
               type: {
                 oneofKind: "chunk",
-                chunk: new TextEncoder().encode("logs"),
+                chunk: new TextEncoder().encode(
+                  params.get("download") === "truncated" ? "lo" : "logs",
+                ),
               },
             });
           })(),
@@ -521,7 +542,12 @@ const router = createMemoryRouter(
       element: (
         <div
           className="mx-auto p-4"
-          style={{ maxWidth: Number(params.get("width") ?? 1280) }}
+          style={
+            {
+              maxWidth: Number(params.get("width") ?? 1280),
+              "--app-shell-header-offset": "0px",
+            } as React.CSSProperties
+          }
         >
           <Location />
           <PageHeader />
@@ -531,7 +557,13 @@ const router = createMemoryRouter(
       children: [route],
     },
   ],
-  { initialEntries: [params.get("path") ?? "/support"] },
+  {
+    initialEntries: [
+      params.get("report")
+        ? getSupportReportPath(JSON.parse(params.get("report")!))
+        : (params.get("path") ?? "/support"),
+    ],
+  },
 );
 
 createRoot(document.getElementById("root")!).render(

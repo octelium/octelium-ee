@@ -213,17 +213,17 @@ func (s *Server) ListSupportRequest(ctx context.Context, req *enterprisev1.ListS
 		return nil, grpcutils.InvalidArg("Invalid cursor")
 	}
 
-	query := url.Values{}
+	body := map[string]string{
+		"status": "all",
+	}
 	switch req.Filter {
 	case enterprisev1.ListSupportRequestOptions_OPEN:
-		query.Set("status", "open")
+		body["status"] = "open"
 	case enterprisev1.ListSupportRequestOptions_CLOSED:
-		query.Set("status", "closed")
-	default:
-		query.Set("status", "all")
+		body["status"] = "closed"
 	}
 	if req.Cursor != "" {
-		query.Set("cursor", req.Cursor)
+		body["cursor"] = req.Cursor
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
@@ -236,9 +236,9 @@ func (s *Server) ListSupportRequest(ctx context.Context, req *enterprisev1.ListS
 
 	out := &portalTicketList{}
 	if err := s.portal.do(ctx, cred, &portalRequest{
-		method: http.MethodGet,
-		path:   pathTickets,
-		query:  query,
+		method: http.MethodPost,
+		path:   pathTicketsList,
+		body:   body,
 	}, out); err != nil {
 		return nil, toGRPCError(err)
 	}
@@ -299,10 +299,10 @@ func (s *Server) ListSupportRequestEvent(ctx context.Context, req *enterprisev1.
 
 	out := &portalEventList{}
 	if err := s.portal.do(ctx, cred, &portalRequest{
-		method: http.MethodGet,
-		path:   getTicketPath(req.Id, "events"),
-		query: url.Values{
-			"cursor": []string{req.Cursor},
+		method: http.MethodPost,
+		path:   getTicketPath(req.Id, "events", "list"),
+		body: map[string]string{
+			"cursor": req.Cursor,
 		},
 	}, out); err != nil {
 		return nil, toGRPCError(err)
@@ -387,7 +387,7 @@ func (s *Server) CreateSupportRequest(ctx context.Context, req *enterprisev1.Cre
 		zap.String("priority", out.Ticket.Priority),
 		zap.String("userUID", getUserUID(i)))
 
-	return s.getDetail(ctx, cred, out.Ticket.ID)
+	return s.getDetailAfterUpdate(ctx, cred, out.Ticket.ID, &out.Ticket)
 }
 
 func (s *Server) AddSupportRequestMessage(ctx context.Context, req *enterprisev1.AddSupportRequestMessageRequest) (*enterprisev1.SupportRequest, error) {
@@ -443,12 +443,13 @@ func (s *Server) AddSupportRequestMessage(ctx context.Context, req *enterprisev1
 		body["reporter"] = reporter
 	}
 
+	out := &portalTicketResponse{}
 	if err := s.portal.do(ctx, cred, &portalRequest{
 		method:         http.MethodPost,
 		path:           getTicketPath(req.Id, "messages"),
 		body:           body,
 		idempotencyKey: idempotencyKey,
-	}, nil); err != nil {
+	}, out); err != nil {
 		return nil, toGRPCError(err)
 	}
 
@@ -457,7 +458,7 @@ func (s *Server) AddSupportRequestMessage(ctx context.Context, req *enterprisev1
 		zap.Int("attachments", len(req.AttachmentIDs)),
 		zap.String("userUID", getUserUID(i)))
 
-	return s.getDetail(ctx, cred, req.Id)
+	return s.getDetailAfterUpdate(ctx, cred, req.Id, &out.Ticket)
 }
 
 func (s *Server) AddSupportRequestAttachment(ctx context.Context, req *enterprisev1.AddSupportRequestAttachmentRequest) (*enterprisev1.SupportRequest_Attachment, error) {
@@ -481,6 +482,11 @@ func (s *Server) AddSupportRequestAttachment(ctx context.Context, req *enterpris
 	}
 	if len(req.Data) > maxAttachmentSize {
 		return nil, grpcutils.InvalidArg("Files are limited to %d MB", maxAttachmentSize>>20)
+	}
+
+	idempotencyKey, err := getIdempotencyKey(req.IdempotencyKey)
+	if err != nil {
+		return nil, err
 	}
 
 	headers := map[string]string{
@@ -511,10 +517,11 @@ func (s *Server) AddSupportRequestAttachment(ctx context.Context, req *enterpris
 
 	out := &portalAttachmentResponse{}
 	if err := s.portal.do(ctx, cred, &portalRequest{
-		method:  http.MethodPost,
-		path:    getTicketPath(req.Id, "attachments"),
-		raw:     req.Data,
-		headers: headers,
+		method:         http.MethodPost,
+		path:           getTicketPath(req.Id, "attachments"),
+		raw:            req.Data,
+		headers:        headers,
+		idempotencyKey: idempotencyKey,
 	}, out); err != nil {
 		return nil, toGRPCError(err)
 	}
@@ -547,14 +554,15 @@ func (s *Server) ResolveSupportRequest(ctx context.Context, req *enterprisev1.Re
 		return nil, err
 	}
 
+	out := &portalTicketResponse{}
 	if err := s.portal.do(ctx, cred, &portalRequest{
 		method: http.MethodPost,
 		path:   getTicketPath(req.Id, "resolve"),
-	}, nil); err != nil {
+	}, out); err != nil {
 		return nil, toGRPCError(err)
 	}
 
-	return s.getDetail(ctx, cred, req.Id)
+	return s.getDetailAfterUpdate(ctx, cred, req.Id, &out.Ticket)
 }
 
 func (s *Server) EscalateSupportRequest(ctx context.Context, req *enterprisev1.EscalateSupportRequestRequest) (*enterprisev1.SupportRequest, error) {
@@ -581,17 +589,18 @@ func (s *Server) EscalateSupportRequest(ctx context.Context, req *enterprisev1.E
 		return nil, err
 	}
 
+	out := &portalTicketResponse{}
 	if err := s.portal.do(ctx, cred, &portalRequest{
 		method: http.MethodPost,
 		path:   getTicketPath(req.Id, "escalate"),
 		body: map[string]string{
 			"reason": reason,
 		},
-	}, nil); err != nil {
+	}, out); err != nil {
 		return nil, toGRPCError(err)
 	}
 
-	return s.getDetail(ctx, cred, req.Id)
+	return s.getDetailAfterUpdate(ctx, cred, req.Id, &out.Ticket)
 }
 
 func (s *Server) DownloadSupportRequestAttachment(req *enterprisev1.DownloadSupportRequestAttachmentRequest, stream enterprisev1.SupportService_DownloadSupportRequestAttachmentServer) error {
@@ -666,6 +675,13 @@ func (s *Server) DownloadSupportRequestAttachment(req *enterprisev1.DownloadSupp
 		}
 
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			if resp.ContentLength >= 0 && int64(total) != resp.ContentLength {
+				zap.L().Warn("The support attachment download ended prematurely",
+					zap.String("id", req.Id),
+					zap.Int64("expected", resp.ContentLength),
+					zap.Int("received", total))
+				return status.Error(codes.Unavailable, "The file download was interrupted. Please try again")
+			}
 			return nil
 		}
 		if err != nil {
@@ -684,6 +700,19 @@ func (s *Server) getDetail(ctx context.Context, cred *credential, id string) (*e
 	}
 
 	return s.toSupportRequestDetail(out), nil
+}
+
+func (s *Server) getDetailAfterUpdate(ctx context.Context, cred *credential, id string, updated *portalTicket) (*enterprisev1.SupportRequest, error) {
+	ret, err := s.getDetail(ctx, cred, id)
+	if err == nil {
+		return ret, nil
+	}
+	if updated == nil || updated.ID == "" {
+		return nil, err
+	}
+
+	zap.L().Warn("Could not get the support request after updating it", zap.String("id", id), zap.Error(err))
+	return s.toSupportRequest(updated), nil
 }
 
 func (s *Server) describe(ctx context.Context, cred *credential) (*portalDescription, error) {

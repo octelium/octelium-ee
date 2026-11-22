@@ -23,6 +23,7 @@ import {
   LifeBuoy,
   MessagesSquare,
   Paperclip,
+  Search,
   Send,
   Stethoscope,
   UserRound,
@@ -274,6 +275,29 @@ const Requests = (props: { info?: SupportInfo }) => {
             </div>
           </Alert>
         </div>
+      ) : items.length === 0 && query.hasNextPage ? (
+        <div className="flex min-h-48 flex-col items-center justify-center gap-2.5 px-6 py-8 text-center">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500">
+            <Search size={17} strokeWidth={2.2} />
+          </span>
+          <span className="text-body font-semibold text-slate-800">
+            No requests of this Cluster in the latest activity
+          </span>
+          <span className="max-w-sm text-micro font-normal text-slate-500">
+            The latest requests of your organization come from elsewhere. Older
+            requests have not been searched yet.
+          </span>
+          <div className="mt-1">
+            <Button
+              variant="default"
+              size="xs"
+              loading={query.isFetchingNextPage}
+              onClick={() => query.fetchNextPage()}
+            >
+              Search older requests
+            </Button>
+          </div>
+        </div>
       ) : items.length === 0 ? (
         <div className="flex min-h-48 flex-col items-center justify-center gap-2.5 px-6 py-8 text-center">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500">
@@ -362,7 +386,8 @@ const HowItWorks = (props: { info?: SupportInfo }) => (
       </Step>
       <Step icon={Stethoscope} title="Attach diagnostics when you want">
         Component logs are only sent when you collect, review and confirm them.
-        Tokens, passwords and other secrets are removed in your browser first.
+        Common secrets such as tokens and passwords are removed in your browser
+        before you review them.
       </Step>
       <Step icon={MessagesSquare} title="Follow the conversation" last>
         Answers appear here and in the customer portal, where the members of

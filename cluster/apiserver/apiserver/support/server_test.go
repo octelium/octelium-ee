@@ -56,7 +56,10 @@ type tstPortal struct {
 	exchanges      int
 	tokens         map[string]bool
 	tokenStatus    int
+	tokenDelay     chan struct{}
 	describeStatus int
+	detailStatus   int
+	truncate       bool
 	entitled       bool
 	requests       []tstPortalRequest
 	tickets        map[string]map[string]any
@@ -114,6 +117,15 @@ func (p *tstPortal) getRequests(path string) []tstPortalRequest {
 
 func (p *tstPortal) serve(w http.ResponseWriter, r *http.Request) {
 	body, _ := io.ReadAll(r.Body)
+
+	if r.URL.Path == pathSupportToken {
+		p.mu.Lock()
+		delay := p.tokenDelay
+		p.mu.Unlock()
+		if delay != nil {
+			<-delay
+		}
+	}
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -177,7 +189,7 @@ func (p *tstPortal) serve(w http.ResponseWriter, r *http.Request) {
 			"maxBodyLength": 16000,
 			"autoCloseDays": 5,
 		})
-	case r.URL.Path == pathTickets && r.Method == http.MethodGet:
+	case r.URL.Path == pathTicketsList && r.Method == http.MethodPost:
 		var items []map[string]any
 		for _, id := range p.order {
 			items = append(items, p.tickets[id])
@@ -241,6 +253,10 @@ func (p *tstPortal) serve(w http.ResponseWriter, r *http.Request) {
 
 		switch {
 		case action == "" && r.Method == http.MethodGet:
+			if p.detailStatus != 0 {
+				p.writeError(w, p.detailStatus, "unavailable", "the service is temporarily unavailable")
+				return
+			}
 			attachments := []map[string]any{}
 			for aid, data := range p.attachments {
 				if strings.HasPrefix(aid, id+"/") {
@@ -270,7 +286,7 @@ func (p *tstPortal) serve(w http.ResponseWriter, r *http.Request) {
 					"followUp": ticket["status"] == "CLOSED",
 				},
 			})
-		case action == "events":
+		case action == "events" && r.Method == http.MethodPost && len(segments) == 4 && segments[3] == "list":
 			p.writeJSON(w, http.StatusOK, map[string]any{
 				"events": []map[string]any{{
 					"id":       uuid.NewString(),
@@ -318,6 +334,15 @@ func (p *tstPortal) serve(w http.ResponseWriter, r *http.Request) {
 			data, ok := p.attachments[id+"/"+segments[3]]
 			if !ok {
 				p.writeError(w, http.StatusNotFound, "not_found", "attachment not found")
+				return
+			}
+			if p.truncate {
+				conn, buf, err := w.(http.Hijacker).Hijack()
+				require.Nil(p.t, err)
+				fmt.Fprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n", len(data))
+				buf.Write(data[:len(data)/2])
+				buf.Flush()
+				conn.Close()
 				return
 			}
 			w.Header().Set("Content-Type", "application/octet-stream")
@@ -681,6 +706,84 @@ func TestPortalClientToken(t *testing.T) {
 	}
 }
 
+func TestPortalClientTokenWait(t *testing.T) {
+	portal := newTstPortal(t)
+	c := newPortalClient(portal.srv.URL)
+	cred := &credential{
+		license:         "jwt",
+		clusterDomain:   "cluster.acme.example",
+		installationKey: strings.Repeat("k", 43),
+	}
+
+	release := make(chan struct{})
+	portal.set(func(p *tstPortal) { p.tokenDelay = release })
+
+	waited := make(chan *accessToken)
+	go func() {
+		tkn, err := c.getToken(context.Background(), cred)
+		assert.Nil(t, err)
+		waited <- tkn
+	}()
+
+	{
+		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		defer cancel()
+		start := time.Now()
+		_, err := c.getToken(ctx, cred)
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+		assert.Less(t, time.Since(start), time.Second)
+	}
+
+	{
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		_, err := c.getToken(ctx, cred)
+		assert.ErrorIs(t, err, context.Canceled)
+	}
+
+	close(release)
+	tkn := <-waited
+	assert.Equal(t, "tkn-1", tkn.value)
+	assert.Equal(t, 1, portal.exchanges)
+}
+
+func TestPortalClientInvalidateToken(t *testing.T) {
+	portal := newTstPortal(t)
+	c := newPortalClient(portal.srv.URL)
+	cred := &credential{
+		license:         "jwt",
+		clusterDomain:   "cluster.acme.example",
+		installationKey: strings.Repeat("k", 43),
+	}
+	ctx := context.Background()
+
+	stale, err := c.getToken(ctx, cred)
+	require.Nil(t, err)
+	c.invalidateToken(stale)
+
+	fresh, err := c.getToken(ctx, cred)
+	require.Nil(t, err)
+	assert.Equal(t, "tkn-2", fresh.value)
+
+	c.invalidateToken(stale)
+	cur, err := c.getToken(ctx, cred)
+	require.Nil(t, err)
+	assert.Same(t, fresh, cur)
+	assert.Equal(t, 2, portal.exchanges)
+
+	portal.set(func(p *tstPortal) { delete(p.tokens, "tkn-2") })
+	var wg sync.WaitGroup
+	for range 8 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			assert.Nil(t, c.do(ctx, cred, &portalRequest{method: http.MethodGet, path: pathSupport}, &portalDescription{}))
+		}()
+	}
+	wg.Wait()
+	assert.Equal(t, 3, portal.exchanges)
+}
+
 func TestServer(t *testing.T) {
 	ctx := context.Background()
 	tst, err := tests.Initialize(nil)
@@ -765,7 +868,7 @@ func TestServer(t *testing.T) {
 		portal.set(func(p *tstPortal) { p.describeStatus = 0 })
 
 		srv.info = nil
-		srv.portal.invalidateToken(srv.portal.token.key)
+		srv.portal.invalidateToken(srv.portal.token)
 		portal.set(func(p *tstPortal) { p.tokenStatus = http.StatusForbidden })
 		res, err = srv.GetSupportInfo(ctx, &enterprisev1.GetSupportInfoRequest{})
 		require.Nil(t, err, "%+v", err)
@@ -861,8 +964,16 @@ func TestServer(t *testing.T) {
 		assert.Equal(t, "next-page", res.NextCursor)
 		assert.Empty(t, res.Items[0].Events)
 
-		reqs := portal.getRequests(pathTickets)
-		assert.Equal(t, "cursor=page-2&status=open", reqs[len(reqs)-1].query)
+		reqs := portal.getRequests(pathTicketsList)
+		require.Len(t, reqs, 1)
+		assert.Equal(t, http.MethodPost, reqs[0].method)
+		assert.Empty(t, reqs[0].query)
+		assert.JSONEq(t, `{"status":"open","cursor":"page-2"}`, string(reqs[0].body))
+
+		_, err = srv.ListSupportRequest(ctx, &enterprisev1.ListSupportRequestOptions{})
+		require.Nil(t, err, "%+v", err)
+		reqs = portal.getRequests(pathTicketsList)
+		assert.JSONEq(t, `{"status":"all"}`, string(reqs[len(reqs)-1].body))
 	}
 
 	{
@@ -880,10 +991,16 @@ func TestServer(t *testing.T) {
 		require.Len(t, res.Items, 1)
 		assert.Equal(t, enterprisev1.SupportRequest_Actor_AGENT, res.Items[0].Actor.Type)
 		assert.Equal(t, "Sam Rivera", res.Items[0].Actor.Name)
+
+		reqs := portal.getRequests(getTicketPath(ticket.Id, "events", "list"))
+		require.Len(t, reqs, 1)
+		assert.Equal(t, http.MethodPost, reqs[0].method)
+		assert.Empty(t, reqs[0].query)
+		assert.JSONEq(t, `{"cursor":"earlier"}`, string(reqs[0].body))
 	}
 
 	var attachment *enterprisev1.SupportRequest_Attachment
-	data := bytes.Repeat([]byte("diagnostics "), downloadChunkSize/4)
+	data := append(bytes.Repeat([]byte("diagnostics "), downloadChunkSize/4), []byte("last chunk")...)
 	{
 		_, err := srv.AddSupportRequestAttachment(usrCtx, &enterprisev1.AddSupportRequestAttachmentRequest{
 			Id:   ticket.Id,
@@ -899,11 +1016,20 @@ func TestServer(t *testing.T) {
 		})
 		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
 
+		_, err = srv.AddSupportRequestAttachment(usrCtx, &enterprisev1.AddSupportRequestAttachmentRequest{
+			Id:             ticket.Id,
+			Name:           "trace.log",
+			Data:           []byte("x"),
+			IdempotencyKey: "not valid",
+		})
+		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+
 		res, err := srv.AddSupportRequestAttachment(usrCtx, &enterprisev1.AddSupportRequestAttachmentRequest{
-			Id:      ticket.Id,
-			Name:    "component logs é.ndjson.gz",
-			Data:    data,
-			Purpose: enterprisev1.SupportRequest_Attachment_DIAGNOSTIC,
+			Id:             ticket.Id,
+			Name:           "component logs é.ndjson.gz",
+			Data:           data,
+			Purpose:        enterprisev1.SupportRequest_Attachment_DIAGNOSTIC,
+			IdempotencyKey: "support-upload-0001",
 		})
 		require.Nil(t, err, "%+v", err)
 		attachment = res
@@ -916,6 +1042,7 @@ func TestServer(t *testing.T) {
 		assert.Equal(t, "component%20logs%20%C3%A9.ndjson.gz", reqs[0].header.Get("X-Filename"))
 		assert.Equal(t, "application/octet-stream", reqs[0].header.Get("Content-Type"))
 		assert.Equal(t, fmt.Sprintf("%d", len(data)), reqs[0].header.Get("Content-Length"))
+		assert.Equal(t, "support-upload-0001", reqs[0].header.Get("Idempotency-Key"))
 	}
 
 	{
@@ -965,6 +1092,14 @@ func TestServer(t *testing.T) {
 		}
 		assert.Equal(t, data, got)
 
+		portal.set(func(p *tstPortal) { p.truncate = true })
+		err = srv.DownloadSupportRequestAttachment(&enterprisev1.DownloadSupportRequestAttachmentRequest{
+			Id:           ticket.Id,
+			AttachmentID: attachment.Id,
+		}, &tstDownloadStream{ctx: ctx})
+		assert.True(t, grpcerr.IsUnavailable(err), "%+v", err)
+		portal.set(func(p *tstPortal) { p.truncate = false })
+
 		err = srv.DownloadSupportRequestAttachment(&enterprisev1.DownloadSupportRequestAttachmentRequest{
 			Id:           ticket.Id,
 			AttachmentID: uuid.NewString(),
@@ -979,10 +1114,22 @@ func TestServer(t *testing.T) {
 		})
 		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
 
+		portal.set(func(p *tstPortal) { p.detailStatus = http.StatusServiceUnavailable })
 		res, err := srv.EscalateSupportRequest(ctx, &enterprisev1.EscalateSupportRequestRequest{
 			Id:     ticket.Id,
 			Reason: "Production traffic is down for every user.",
 		})
+		require.Nil(t, err, "%+v", err)
+		assert.True(t, res.IsEscalated)
+		assert.Equal(t, ticket.Id, res.Id)
+		assert.Nil(t, res.Actions)
+		assert.Empty(t, res.Events)
+		portal.set(func(p *tstPortal) { p.detailStatus = 0 })
+
+		_, err = srv.GetSupportRequest(ctx, &enterprisev1.GetSupportRequestRequest{Id: uuid.NewString()})
+		assert.True(t, grpcerr.IsNotFound(err), "%+v", err)
+
+		res, err = srv.GetSupportRequest(ctx, &enterprisev1.GetSupportRequestRequest{Id: ticket.Id})
 		require.Nil(t, err, "%+v", err)
 		assert.True(t, res.IsEscalated)
 		assert.False(t, res.Actions.CanEscalate)

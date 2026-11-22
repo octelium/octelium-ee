@@ -12687,6 +12687,13 @@ export interface AddSupportRequestAttachmentRequest {
      * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose purpose = 4
      */
     purpose: SupportRequest_Attachment_Purpose;
+    /**
+     * IdempotencyKey is a unique key of the upload that is reused when an upload
+     * is retried so that it does not add a duplicate file.
+     *
+     * @generated from protobuf field: string idempotencyKey = 5
+     */
+    idempotencyKey: string;
 }
 /**
  * ResolveSupportRequestRequest is the request of the ResolveSupportRequest
@@ -36662,7 +36669,8 @@ class AddSupportRequestAttachmentRequest$Type extends MessageType<AddSupportRequ
             { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 3, name: "data", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
-            { no: 4, name: "purpose", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose", SupportRequest_Attachment_Purpose] }
+            { no: 4, name: "purpose", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose", SupportRequest_Attachment_Purpose] },
+            { no: 5, name: "idempotencyKey", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<AddSupportRequestAttachmentRequest>): AddSupportRequestAttachmentRequest {
@@ -36671,6 +36679,7 @@ class AddSupportRequestAttachmentRequest$Type extends MessageType<AddSupportRequ
         message.name = "";
         message.data = new Uint8Array(0);
         message.purpose = 0;
+        message.idempotencyKey = "";
         if (value !== undefined)
             reflectionMergePartial<AddSupportRequestAttachmentRequest>(this, message, value);
         return message;
@@ -36691,6 +36700,9 @@ class AddSupportRequestAttachmentRequest$Type extends MessageType<AddSupportRequ
                     break;
                 case /* octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose purpose */ 4:
                     message.purpose = reader.int32();
+                    break;
+                case /* string idempotencyKey */ 5:
+                    message.idempotencyKey = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -36716,6 +36728,9 @@ class AddSupportRequestAttachmentRequest$Type extends MessageType<AddSupportRequ
         /* octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose purpose = 4; */
         if (message.purpose !== 0)
             writer.tag(4, WireType.Varint).int32(message.purpose);
+        /* string idempotencyKey = 5; */
+        if (message.idempotencyKey !== "")
+            writer.tag(5, WireType.LengthDelimited).string(message.idempotencyKey);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

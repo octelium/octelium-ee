@@ -5,6 +5,7 @@ import {
   GetSupportRequestRequest,
   ListSupportRequestOptions,
   ListSupportRequestOptions_Filter,
+  SupportInfo_Limits,
   SupportRequest,
   SupportRequest_Attachment,
   SupportRequest_Attachment_Purpose,
@@ -12,8 +13,9 @@ import {
 import { saveBlob } from "@/pages/Agent/files";
 import { getClientSupport } from "@/utils/client";
 import { retryQuery } from "@/utils/queryPolicy";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { fileKey } from "./utils";
+import { notifications } from "@mantine/notifications";
+import { QueryClient, useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { checkFile, fileKey, newIdempotencyKey } from "./utils";
 
 export const supportKeys = {
   all: ["support"],
@@ -31,6 +33,7 @@ export interface PendingFile {
   key: string;
   file: File;
   purpose: SupportRequest_Attachment_Purpose;
+  idempotencyKey: string;
 }
 
 export const toPendingFile = (
@@ -40,7 +43,49 @@ export const toPendingFile = (
   key: `${purpose}:${fileKey(file)}`,
   file,
   purpose,
+  idempotencyKey: newIdempotencyKey(),
 });
+
+export const admitFiles = (
+  current: PendingFile[],
+  items: PendingFile[],
+  limits: SupportInfo_Limits | undefined,
+  label: string,
+) => {
+  const max = limits?.maxAttachmentsPerMessage ?? 10;
+  const errors: string[] = [];
+  const next = [...current];
+  for (const item of items) {
+    const error = checkFile(limits, item.file);
+    if (error) {
+      errors.push(error);
+      continue;
+    }
+    if (next.some((existing) => existing.key === item.key)) continue;
+    if (next.length >= max) {
+      errors.push(`${label} can include at most ${max} files`);
+      break;
+    }
+    next.push(item);
+  }
+  for (const error of new Set(errors)) {
+    notifications.show({ color: "red", message: error });
+  }
+  return next;
+};
+
+export const updateSupportRequest = (
+  queryClient: QueryClient,
+  id: string,
+  response: SupportRequest,
+) => {
+  if (response.actions) {
+    queryClient.setQueryData(supportKeys.request(id), response);
+  } else {
+    queryClient.invalidateQueries({ queryKey: supportKeys.request(id) });
+  }
+  queryClient.invalidateQueries({ queryKey: supportKeys.requests });
+};
 
 export const useSupportInfo = () =>
   useQuery({
@@ -100,6 +145,7 @@ export const uploadFile = async (
       name: item.file.name,
       data,
       purpose: item.purpose,
+      idempotencyKey: item.idempotencyKey,
     }),
   );
   return response;
@@ -150,5 +196,20 @@ export const downloadAttachment = async (
       chunks.push(new Uint8Array(message.type.chunk));
     }
   }
-  saveBlob(new Blob(chunks, { type: "application/octet-stream" }), name);
+  const blob = new Blob(chunks, { type: "application/octet-stream" });
+  if (attachment.size > 0 && blob.size !== Number(attachment.size)) {
+    throw new Error("The file download was incomplete. Please try again");
+  }
+  if (attachment.sha256 && crypto.subtle) {
+    const digest = new Uint8Array(
+      await crypto.subtle.digest("SHA-256", await blob.arrayBuffer()),
+    );
+    const hex = Array.from(digest, (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("");
+    if (hex !== attachment.sha256.toLowerCase()) {
+      throw new Error("The downloaded file is corrupted. Please try again");
+    }
+  }
+  saveBlob(blob, name);
 };

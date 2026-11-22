@@ -27,6 +27,10 @@
                     "type": "string",
                     "title": "Purpose",
                     "description": "Purpose is the purpose of the file."
+                },
+                "idempotencyKey": {
+                    "type": "string",
+                    "description": "IdempotencyKey is a unique key of the upload that is reused when an upload is retried so that it does not add a duplicate file."
                 }
             },
             "additionalProperties": false,

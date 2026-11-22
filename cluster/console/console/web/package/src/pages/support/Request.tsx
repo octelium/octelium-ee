@@ -66,16 +66,16 @@ import {
 } from "./components";
 import Diagnostics from "./Diagnostics";
 import {
+  admitFiles,
   PendingFile,
-  supportKeys,
   toPendingFile,
+  updateSupportRequest,
   uploadFiles,
   useSupportInfo,
   useSupportRequest,
 } from "./queries";
 import {
   ACTOR_LABEL,
-  checkFile,
   getPriority,
   initials,
   isOpenStatus,
@@ -368,8 +368,7 @@ const Escalate = (props: {
       return response;
     },
     onSuccess: (response) => {
-      queryClient.setQueryData(supportKeys.request(props.request.id), response);
-      queryClient.invalidateQueries({ queryKey: supportKeys.requests });
+      updateSupportRequest(queryClient, props.request.id, response);
       notifications.show({
         color: "green",
         message: "The support management was notified",
@@ -479,6 +478,9 @@ const Composer = (props: {
 
   const mutation = useMutation({
     mutationFn: async () => {
+      if (props.files.length > maxAttachments) {
+        throw new Error(`A reply can include at most ${maxAttachments} files`);
+      }
       setProgress(
         Object.fromEntries(
           props.files
@@ -514,33 +516,13 @@ const Composer = (props: {
       uploaded.current.clear();
       setBody("");
       props.setFiles([]);
-      queryClient.setQueryData(supportKeys.request(props.request.id), response);
-      queryClient.invalidateQueries({ queryKey: supportKeys.requests });
+      updateSupportRequest(queryClient, props.request.id, response);
     },
     onError,
   });
 
-  const addFiles = (items: PendingFile[]) => {
-    const next = [...props.files];
-    const errors: string[] = [];
-    for (const item of items) {
-      const error = checkFile(limits, item.file);
-      if (error) {
-        errors.push(error);
-        continue;
-      }
-      if (next.some((existing) => existing.key === item.key)) continue;
-      if (next.length >= maxAttachments) {
-        errors.push(`A reply can include at most ${maxAttachments} files`);
-        break;
-      }
-      next.push(item);
-    }
-    props.setFiles(next);
-    for (const error of new Set(errors)) {
-      notifications.show({ color: "red", message: error });
-    }
-  };
+  const addFiles = (items: PendingFile[]) =>
+    props.setFiles(admitFiles(props.files, items, limits, "A reply"));
 
   const pending = mutation.isPending;
   const canSend = !!body.trim() && !pending && !props.disabled;
@@ -608,7 +590,9 @@ const Composer = (props: {
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 bg-slate-50/60 px-3 py-2.5">
         <div className="flex flex-wrap items-center gap-2">
           <DiagnosticsButton
-            disabled={pending || props.disabled}
+            disabled={
+              pending || props.disabled || props.files.length >= maxAttachments
+            }
             onClick={props.onDiagnostics}
           />
           <FileButton
@@ -672,8 +656,7 @@ const RequestView = (props: { id: string }) => {
       return response;
     },
     onSuccess: (response) => {
-      queryClient.setQueryData(supportKeys.request(props.id), response);
-      queryClient.invalidateQueries({ queryKey: supportKeys.requests });
+      updateSupportRequest(queryClient, props.id, response);
       resolveModal.close();
       notifications.show({
         color: "green",
@@ -1071,16 +1054,18 @@ const RequestView = (props: { id: string }) => {
         opened={diagnosticsOpened}
         onClose={() => setDiagnosticsOpened(false)}
         onAttach={(file) =>
-          setFiles((current) =>
-            current.some((item) => item.file.name === file.name)
-              ? current
-              : [
-                  ...current,
-                  toPendingFile(
-                    file,
-                    SupportRequest_Attachment_Purpose.DIAGNOSTIC,
-                  ),
-                ],
+          setFiles(
+            admitFiles(
+              files,
+              [
+                toPendingFile(
+                  file,
+                  SupportRequest_Attachment_Purpose.DIAGNOSTIC,
+                ),
+              ],
+              info.data?.limits,
+              "A reply",
+            ),
           )
         }
         maxBytes={Number(info.data?.limits?.maxAttachmentSize ?? 3 * 1048576)}

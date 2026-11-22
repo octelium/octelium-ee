@@ -127,8 +127,7 @@ const ComponentLogDetails = ({ log }: { log: ComponentLog }) => {
               subject: [entry?.component?.type, entry?.message]
                 .filter(Boolean)
                 .join(": ")
-                .replace(/\s+/g, " ")
-                .slice(0, 120),
+                .replace(/\s+/g, " "),
               message: entry?.message,
               time: entry?.time
                 ? Timestamp.toDate(entry.time).toISOString()

@@ -30,6 +30,7 @@ const (
 	pathSupport      = "/api/cluster/v1/support"
 	pathSupportToken = "/api/cluster/v1/support/token"
 	pathTickets      = "/api/cluster/v1/support/tickets"
+	pathTicketsList  = "/api/cluster/v1/support/tickets/list"
 
 	tokenRefreshMargin = 2 * time.Minute
 	maxResponseBytes   = 16 << 20
@@ -71,7 +72,6 @@ func (e *portalError) Error() string {
 type portalRequest struct {
 	method         string
 	path           string
-	query          url.Values
 	body           any
 	raw            []byte
 	headers        map[string]string
@@ -112,7 +112,7 @@ func (c *portalClient) getToken(ctx context.Context, cred *credential) (*accessT
 		return cur, nil
 	}
 
-	ret, err, _ := c.group.Do(key, func() (any, error) {
+	ch := c.group.DoChan(key, func() (any, error) {
 		c.mu.Lock()
 		cur := c.token
 		c.mu.Unlock()
@@ -130,17 +130,22 @@ func (c *portalClient) getToken(ctx context.Context, cred *credential) (*accessT
 		c.mu.Unlock()
 		return tkn, nil
 	})
-	if err != nil {
-		return nil, err
-	}
 
-	return ret.(*accessToken), nil
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case res := <-ch:
+		if res.Err != nil {
+			return nil, res.Err
+		}
+		return res.Val.(*accessToken), nil
+	}
 }
 
-func (c *portalClient) invalidateToken(key string) {
+func (c *portalClient) invalidateToken(tkn *accessToken) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.token != nil && c.token.key == key {
+	if c.token == tkn {
 		c.token = nil
 	}
 }
@@ -207,7 +212,7 @@ func (c *portalClient) open(ctx context.Context, cred *credential, req *portalRe
 
 		if resp.StatusCode == http.StatusUnauthorized && attempt == 0 {
 			drain(resp)
-			c.invalidateToken(tkn.key)
+			c.invalidateToken(tkn)
 			continue
 		}
 
@@ -224,9 +229,6 @@ func (c *portalClient) send(ctx context.Context, req *portalRequest, token strin
 	u, err := url.Parse(c.baseURL + req.path)
 	if err != nil {
 		return nil, err
-	}
-	if len(req.query) > 0 {
-		u.RawQuery = req.query.Encode()
 	}
 
 	var body io.Reader

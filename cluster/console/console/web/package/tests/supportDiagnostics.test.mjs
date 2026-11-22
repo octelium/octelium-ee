@@ -99,15 +99,16 @@ describe("Support diagnostics and navigation helpers", () => {
     ]) {
       assert.ok(!ret.includes(secret), secret);
     }
-    assert.match(ret, /Authorization: Bearer \[REDACTED\]/);
+    assert.match(ret, /Authorization: \[REDACTED\]\n/);
     assert.match(ret, /postgres:\/\/\[REDACTED\]@db\.internal:5432\/octelium/);
     assert.match(ret, /https:\/\/api\.acme\.example\/v1\/items\?\[REDACTED\] failed/);
-    assert.match(ret, /token=\[REDACTED\] password: \[REDACTED\] secret=\[REDACTED\]/);
+    assert.match(ret, /token=\[REDACTED\] password: '\[REDACTED\]' secret="\[REDACTED\]"/);
     assert.deepEqual(stats, {
       field: 0,
       privateKey: 1,
       jwt: 1,
-      authorization: 1,
+      header: 1,
+      authorization: 0,
       urlCredentials: 1,
       urlQuery: 1,
       assignment: 3,
@@ -120,6 +121,46 @@ describe("Support diagnostics and navigation helpers", () => {
       "owner alice@acme.example",
     );
     assert.equal(diagnostics.countRedactions(kept), 0);
+  });
+
+  it("redacts quoted keys, serialized JSON, cookies and authorization headers without a scheme", () => {
+    const redact = (text) => diagnostics.redactText(text, options, diagnostics.newRedactionStats());
+    assert.equal(
+      redact('{"password":"hunter2","api_key":"sk_live_123","user":"bob"}'),
+      '{"password":"[REDACTED]","api_key":"[REDACTED]","user":"bob"}',
+    );
+    assert.equal(
+      redact('body={\\"password\\":\\"hunter2\\",\\"user\\":\\"bob\\"}'),
+      'body={\\"password\\":\\"[REDACTED]\\",\\"user\\":\\"bob\\"}',
+    );
+    assert.equal(redact("Authorization: abcdefghijklmnop"), "Authorization: [REDACTED]");
+    assert.equal(redact("Cookie: session=abcdefghijk; theme=dark"), "Cookie: [REDACTED]");
+    assert.equal(redact("Set-Cookie: sid=abc123; Path=/; HttpOnly\nnext line"), "Set-Cookie: [REDACTED]\nnext line");
+    assert.equal(
+      redact('headers={"Authorization":"Bearer abcdefghijklmnop0123","Accept":"application/json"}'),
+      'headers={"Authorization":"Bearer [REDACTED]","Accept":"application/json"}',
+    );
+    assert.equal(
+      redact("db_password=s3cr3t x-api-key: k-123 refresh_token='rt-1' promptTokens: 12 tokenID=5 level: error"),
+      "db_password=[REDACTED] x-api-key: [REDACTED] refresh_token='[REDACTED]' promptTokens: 12 tokenID=5 level: error",
+    );
+    assert.equal(redact('password=""'), 'password=""');
+    assert.equal(
+      redact("gateway: password=hunter2 status: failed token: abc"),
+      "gateway: password=[REDACTED] status: failed token: [REDACTED]",
+    );
+
+    const stats = diagnostics.newRedactionStats();
+    assert.deepEqual(
+      diagnostics.redactValue(
+        { error: '{"credentials":{"token":"t-1"}}', request: "Cookie: a=1; b=2" },
+        options,
+        stats,
+      ),
+      { error: '{"credentials":{"token":"[REDACTED]"}}', request: "Cookie: [REDACTED]" },
+    );
+    assert.equal(stats.assignment, 1);
+    assert.equal(stats.header, 1);
   });
 
   it("redacts nested fields recursively", () => {
@@ -186,12 +227,13 @@ describe("Support diagnostics and navigation helpers", () => {
       included: 3,
       truncated: false,
       redaction: {
-        version: 1,
+        version: 2,
         keepEmails: false,
         counts: {
           field: 1,
           privateKey: 0,
           jwt: 0,
+          header: 0,
           authorization: 0,
           urlCredentials: 0,
           urlQuery: 0,
@@ -261,17 +303,24 @@ describe("Support diagnostics and navigation helpers", () => {
 
   it("links component log entries to a prefilled request and names the Support pages", () => {
     const path = context.getSupportReportPath({
-      subject: "gateway: panic",
-      message: "x".repeat(3000),
+      subject: "gateway: password=hunter2",
+      message: `password=hunter2 ${"x".repeat(5000)}`,
       time: "2026-11-22T09:00:00.000Z",
       level: "PANIC",
       component: { namespace: "octelium", type: "gateway", uid: "gw-1" },
     });
+    assert.ok(!path.includes("hunter2"), path);
     const url = new URL(path, "https://console.example");
     assert.equal(url.pathname, "/support/new");
-    assert.equal(url.searchParams.get("subject"), "gateway: panic");
-    assert.equal(url.searchParams.get("message").length, 2000);
+    assert.deepEqual([...url.searchParams.keys()], ["report", "time", "level", "component.namespace", "component.type", "component.uid"]);
     assert.equal(url.searchParams.get("component.uid"), "gw-1");
+    const id = url.searchParams.get("report");
+    const report = context.getSupportReport(id);
+    assert.equal(report.subject, "gateway: password=hunter2");
+    assert.equal(report.message.length, 4000);
+    assert.equal(context.getSupportReport("another-report"), undefined);
+    context.clearSupportReport(id);
+    assert.equal(context.getSupportReport(id), undefined);
     assert.equal(context.getSupportReportPath({}), "/support/new");
 
     const labels = (pathname) => catalog.resolveTrail(pathname).map((crumb) => crumb.label);
