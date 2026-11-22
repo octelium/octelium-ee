@@ -11521,6 +11521,1282 @@ export enum Agent_State {
      */
     OUTDATED = 3
 }
+/**
+ * GetSupportInfoRequest is the request of the GetSupportInfo method.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.GetSupportInfoRequest
+ */
+export interface GetSupportInfoRequest {
+    /**
+     * SkipPortal only returns the local information of the Cluster (i.e. the
+     * License state, the Cluster domain and the Cluster details) without
+     * contacting the customer portal. The state is then STATE_UNKNOWN unless the
+     * Cluster has no valid License.
+     *
+     * @generated from protobuf field: bool skipPortal = 1
+     */
+    skipPortal: boolean;
+}
+/**
+ * SupportInfo describes whether and how support requests can be opened from
+ * the Cluster.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SupportInfo
+ */
+export interface SupportInfo {
+    /**
+     * State is whether support requests can currently be opened from the
+     * Cluster.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportInfo.State state = 1
+     */
+    state: SupportInfo_State;
+    /**
+     * Message is a human-readable explanation of the state when it is not
+     * AVAILABLE.
+     *
+     * @generated from protobuf field: string message = 2
+     */
+    message: string;
+    /**
+     * Organization is the organization that the Cluster's License was issued
+     * to. It is only set once the License was accepted by Octelium.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportInfo.Organization organization = 3
+     */
+    organization?: SupportInfo_Organization;
+    /**
+     * ClusterDomain is the domain of the Cluster.
+     *
+     * @generated from protobuf field: string clusterDomain = 4
+     */
+    clusterDomain: string;
+    /**
+     * SupportLevel is the support level of the subscription of the Cluster's
+     * License.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.SupportLevel supportLevel = 5
+     */
+    supportLevel: SupportRequest_SupportLevel;
+    /**
+     * Limits are the limits of the support requests.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportInfo.Limits limits = 6
+     */
+    limits?: SupportInfo_Limits;
+    /**
+     * Environment is the set of the Cluster details (e.g. the installed
+     * versions and the Regions) that are sent along with every new request.
+     *
+     * @generated from protobuf field: map<string, string> environment = 7
+     */
+    environment: {
+        [key: string]: string;
+    };
+    /**
+     * PortalURL is the URL of the Octelium customer portal.
+     *
+     * @generated from protobuf field: string portalURL = 8
+     */
+    portalURL: string;
+    /**
+     * SupportEmail is the email address of Octelium Support.
+     *
+     * @generated from protobuf field: string supportEmail = 9
+     */
+    supportEmail: string;
+    /**
+     * InstallationID is a short identifier of the Cluster installation that
+     * Octelium Support can use to recognize the requests of the Cluster.
+     *
+     * @generated from protobuf field: string installationID = 10
+     */
+    installationID: string;
+}
+/**
+ * Organization is the organization that the Cluster's License was issued
+ * to.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SupportInfo.Organization
+ */
+export interface SupportInfo_Organization {
+    /**
+     * UID is the unique identifier of the organization.
+     *
+     * @generated from protobuf field: string uid = 1
+     */
+    uid: string;
+    /**
+     * DisplayName is the human-readable name of the organization.
+     *
+     * @generated from protobuf field: string displayName = 2
+     */
+    displayName: string;
+}
+/**
+ * Limits are the limits of the support requests.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SupportInfo.Limits
+ */
+export interface SupportInfo_Limits {
+    /**
+     * MaxSubjectLength is the maximum length of the subject of a request.
+     *
+     * @generated from protobuf field: uint32 maxSubjectLength = 1
+     */
+    maxSubjectLength: number;
+    /**
+     * MaxBodyLength is the maximum length of a description or a reply.
+     *
+     * @generated from protobuf field: uint32 maxBodyLength = 2
+     */
+    maxBodyLength: number;
+    /**
+     * MaxAttachmentSize is the maximum size in bytes of a file.
+     *
+     * @generated from protobuf field: uint64 maxAttachmentSize = 3
+     */
+    maxAttachmentSize: number;
+    /**
+     * MaxAttachmentsPerRequest is the maximum number of files of a request.
+     *
+     * @generated from protobuf field: uint32 maxAttachmentsPerRequest = 4
+     */
+    maxAttachmentsPerRequest: number;
+    /**
+     * MaxAttachmentsPerMessage is the maximum number of files that a reply
+     * can reference.
+     *
+     * @generated from protobuf field: uint32 maxAttachmentsPerMessage = 5
+     */
+    maxAttachmentsPerMessage: number;
+    /**
+     * AttachmentExtensions is the list of the accepted file extensions.
+     *
+     * @generated from protobuf field: repeated string attachmentExtensions = 6
+     */
+    attachmentExtensions: string[];
+    /**
+     * AutoCloseDays is the number of days after which a resolved request is
+     * closed.
+     *
+     * @generated from protobuf field: uint32 autoCloseDays = 7
+     */
+    autoCloseDays: number;
+}
+/**
+ * State is whether support requests can currently be opened from the
+ * Cluster.
+ *
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.SupportInfo.State
+ */
+export enum SupportInfo_State {
+    /**
+     * STATE_UNKNOWN is the default unset value.
+     *
+     * @generated from protobuf enum value: STATE_UNKNOWN = 0;
+     */
+    STATE_UNKNOWN = 0,
+    /**
+     * AVAILABLE means that support requests can be opened from the Cluster.
+     *
+     * @generated from protobuf enum value: AVAILABLE = 1;
+     */
+    AVAILABLE = 1,
+    /**
+     * NO_LICENSE means that the Cluster does not have a valid License set.
+     *
+     * @generated from protobuf enum value: NO_LICENSE = 2;
+     */
+    NO_LICENSE = 2,
+    /**
+     * NOT_ENTITLED means that the subscription of the Cluster's License does
+     * not include technical support. Licensing and billing requests can still
+     * be opened from the customer portal.
+     *
+     * @generated from protobuf enum value: NOT_ENTITLED = 3;
+     */
+    NOT_ENTITLED = 3,
+    /**
+     * UNAUTHORIZED means that Octelium rejected the Cluster's License (e.g.
+     * the License was revoked, the subscription is suspended or the License
+     * is not valid for the Cluster domain).
+     *
+     * @generated from protobuf enum value: UNAUTHORIZED = 4;
+     */
+    UNAUTHORIZED = 4,
+    /**
+     * UNREACHABLE means that the customer portal could not be reached from
+     * the Cluster (e.g. the outbound traffic is blocked).
+     *
+     * @generated from protobuf enum value: UNREACHABLE = 5;
+     */
+    UNREACHABLE = 5,
+    /**
+     * DISABLED means that Octelium does not currently accept support requests
+     * from Clusters.
+     *
+     * @generated from protobuf enum value: DISABLED = 6;
+     */
+    DISABLED = 6
+}
+/**
+ * SupportRequest is a technical support request with Octelium Support.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SupportRequest
+ */
+export interface SupportRequest {
+    /**
+     * ID is the unique identifier of the request.
+     *
+     * @generated from protobuf field: string id = 1
+     */
+    id: string;
+    /**
+     * Number is the human-readable number of the request (e.g. 1042).
+     *
+     * @generated from protobuf field: uint32 number = 2
+     */
+    number: number;
+    /**
+     * Subject is the subject of the request.
+     *
+     * @generated from protobuf field: string subject = 3
+     */
+    subject: string;
+    /**
+     * Status is the status of the request.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Status status = 4
+     */
+    status: SupportRequest_Status;
+    /**
+     * Priority is the priority of the request as assigned by Octelium Support.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Priority priority = 5
+     */
+    priority: SupportRequest_Priority;
+    /**
+     * RequestedPriority is the priority that was requested at the creation of
+     * the request.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Priority requestedPriority = 6
+     */
+    requestedPriority: SupportRequest_Priority;
+    /**
+     * SupportLevel is the support level under which the request was opened.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.SupportLevel supportLevel = 7
+     */
+    supportLevel: SupportRequest_SupportLevel;
+    /**
+     * Channel is the channel through which the request was opened.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Channel channel = 8
+     */
+    channel: SupportRequest_Channel;
+    /**
+     * Reporter is the person who opened the request.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Reporter reporter = 9
+     */
+    reporter?: SupportRequest_Reporter;
+    /**
+     * Assignee is the name of the engineer assigned to the request, if any.
+     *
+     * @generated from protobuf field: string assignee = 10
+     */
+    assignee: string;
+    /**
+     * SLA is the state of the service level agreement of the request.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.SLA sla = 11
+     */
+    sla?: SupportRequest_SLA;
+    /**
+     * IsEscalated is whether the request was escalated.
+     *
+     * @generated from protobuf field: bool isEscalated = 12
+     */
+    isEscalated: boolean;
+    /**
+     * ClusterDomain is the domain of the Cluster from which the request was
+     * opened.
+     *
+     * @generated from protobuf field: string clusterDomain = 13
+     */
+    clusterDomain: string;
+    /**
+     * Environment is the set of the Cluster details that were sent along with
+     * the request.
+     *
+     * @generated from protobuf field: map<string, string> environment = 14
+     */
+    environment: {
+        [key: string]: string;
+    };
+    /**
+     * CreatedAt is the creation date of the request.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp createdAt = 15
+     */
+    createdAt?: Timestamp;
+    /**
+     * UpdatedAt is the date of the last change of the request.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp updatedAt = 16
+     */
+    updatedAt?: Timestamp;
+    /**
+     * LastActivityAt is the date of the last activity on the request.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp lastActivityAt = 17
+     */
+    lastActivityAt?: Timestamp;
+    /**
+     * ResolvedAt is the date at which the request was resolved.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp resolvedAt = 18
+     */
+    resolvedAt?: Timestamp;
+    /**
+     * ClosedAt is the date at which the request was closed.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp closedAt = 19
+     */
+    closedAt?: Timestamp;
+    /**
+     * MessageCount is the number of the messages of the request.
+     *
+     * @generated from protobuf field: uint32 messageCount = 20
+     */
+    messageCount: number;
+    /**
+     * AttachmentCount is the number of the files of the request.
+     *
+     * @generated from protobuf field: uint32 attachmentCount = 21
+     */
+    attachmentCount: number;
+    /**
+     * Events is the list of the latest public timeline events of the request,
+     * the oldest first. It is not set when listing requests.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.SupportRequest.Event events = 22
+     */
+    events: SupportRequest_Event[];
+    /**
+     * EventsCursor is set when the request has earlier events. They are listed
+     * via the ListSupportRequestEvent method.
+     *
+     * @generated from protobuf field: string eventsCursor = 23
+     */
+    eventsCursor: string;
+    /**
+     * Attachments is the list of the files of the request. It is not set when
+     * listing requests.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.SupportRequest.Attachment attachments = 24
+     */
+    attachments: SupportRequest_Attachment[];
+    /**
+     * Actions are the actions that are currently allowed on the request. It is
+     * not set when listing requests.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Actions actions = 25
+     */
+    actions?: SupportRequest_Actions;
+    /**
+     * PortalURL is the URL of the request in the customer portal.
+     *
+     * @generated from protobuf field: string portalURL = 26
+     */
+    portalURL: string;
+}
+/**
+ * Actor is the author of a change.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SupportRequest.Actor
+ */
+export interface SupportRequest_Actor {
+    /**
+     * Type is the type of the author.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Actor.Type type = 1
+     */
+    type: SupportRequest_Actor_Type;
+    /**
+     * Name is the name of the author, if known.
+     *
+     * @generated from protobuf field: string name = 2
+     */
+    name: string;
+}
+/**
+ * Type is the type of the author.
+ *
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.SupportRequest.Actor.Type
+ */
+export enum SupportRequest_Actor_Type {
+    /**
+     * TYPE_UNKNOWN is the default unset value.
+     *
+     * @generated from protobuf enum value: TYPE_UNKNOWN = 0;
+     */
+    TYPE_UNKNOWN = 0,
+    /**
+     * CUSTOMER is a member of the organization in the customer portal.
+     *
+     * @generated from protobuf enum value: CUSTOMER = 1;
+     */
+    CUSTOMER = 1,
+    /**
+     * CLUSTER is a Cluster of the organization.
+     *
+     * @generated from protobuf enum value: CLUSTER = 2;
+     */
+    CLUSTER = 2,
+    /**
+     * EMAIL is a sender of an email.
+     *
+     * @generated from protobuf enum value: EMAIL = 3;
+     */
+    EMAIL = 3,
+    /**
+     * AGENT is an engineer of Octelium Support.
+     *
+     * @generated from protobuf enum value: AGENT = 4;
+     */
+    AGENT = 4,
+    /**
+     * SYSTEM is Octelium itself.
+     *
+     * @generated from protobuf enum value: SYSTEM = 5;
+     */
+    SYSTEM = 5
+}
+/**
+ * Reporter is the person who opened the request.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SupportRequest.Reporter
+ */
+export interface SupportRequest_Reporter {
+    /**
+     * Name is the name of the reporter, if known.
+     *
+     * @generated from protobuf field: string name = 1
+     */
+    name: string;
+    /**
+     * IsVerified is whether the reporter is a verified member of the
+     * organization in the customer portal. The reporters of the requests that
+     * are opened from a Cluster are never verified.
+     *
+     * @generated from protobuf field: bool isVerified = 2
+     */
+    isVerified: boolean;
+}
+/**
+ * SLA is the state of the service level agreement of the request. It is
+ * only set for the requests that are covered by the Octelium Support SLA.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SupportRequest.SLA
+ */
+export interface SupportRequest_SLA {
+    /**
+     * Coverage is the coverage of the response time (i.e. "BUSINESS" for
+     * business hours or "CONTINUOUS" for 24/7).
+     *
+     * @generated from protobuf field: string coverage = 1
+     */
+    coverage: string;
+    /**
+     * FirstResponseDueAt is the deadline of the first response.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp firstResponseDueAt = 2
+     */
+    firstResponseDueAt?: Timestamp;
+    /**
+     * FirstRespondedAt is the date of the first response.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp firstRespondedAt = 3
+     */
+    firstRespondedAt?: Timestamp;
+    /**
+     * IsPaused is whether the response time is paused because Octelium is
+     * waiting on the customer.
+     *
+     * @generated from protobuf field: bool isPaused = 4
+     */
+    isPaused: boolean;
+    /**
+     * NextUpdateDueAt is the deadline of the next update of Octelium Support.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp nextUpdateDueAt = 5
+     */
+    nextUpdateDueAt?: Timestamp;
+}
+/**
+ * Event is a public entry of the timeline of the request.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SupportRequest.Event
+ */
+export interface SupportRequest_Event {
+    /**
+     * ID is the unique identifier of the event.
+     *
+     * @generated from protobuf field: string id = 1
+     */
+    id: string;
+    /**
+     * Sequence is the revision of the request that recorded the event.
+     *
+     * @generated from protobuf field: uint64 sequence = 2
+     */
+    sequence: number;
+    /**
+     * Type is the type of the event.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Event.Type type = 3
+     */
+    type: SupportRequest_Event_Type;
+    /**
+     * Actor is the author of the event.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Actor actor = 4
+     */
+    actor?: SupportRequest_Actor;
+    /**
+     * Channel is the channel through which the event was recorded.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Channel channel = 5
+     */
+    channel: SupportRequest_Channel;
+    /**
+     * CreatedAt is the date of the event.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp createdAt = 6
+     */
+    createdAt?: Timestamp;
+    /**
+     * Body is the text of a description, a reply or the name of a new file.
+     *
+     * @generated from protobuf field: string body = 7
+     */
+    body: string;
+    /**
+     * AttachmentIDs is the list of the files that the event references.
+     *
+     * @generated from protobuf field: repeated string attachmentIDs = 8
+     */
+    attachmentIDs: string[];
+    /**
+     * From is the previous value of a change.
+     *
+     * @generated from protobuf field: string from = 9
+     */
+    from: string;
+    /**
+     * To is the new value of a change.
+     *
+     * @generated from protobuf field: string to = 10
+     */
+    to: string;
+    /**
+     * Reason is the written reason of a change.
+     *
+     * @generated from protobuf field: string reason = 11
+     */
+    reason: string;
+    /**
+     * SkippedAttachments is the list of the names of the files that were not
+     * accepted.
+     *
+     * @generated from protobuf field: repeated string skippedAttachments = 12
+     */
+    skippedAttachments: string[];
+}
+/**
+ * Type is the type of the event.
+ *
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.SupportRequest.Event.Type
+ */
+export enum SupportRequest_Event_Type {
+    /**
+     * TYPE_UNKNOWN is the default unset value.
+     *
+     * @generated from protobuf enum value: TYPE_UNKNOWN = 0;
+     */
+    TYPE_UNKNOWN = 0,
+    /**
+     * CREATED is the creation of the request with its description.
+     *
+     * @generated from protobuf enum value: CREATED = 1;
+     */
+    CREATED = 1,
+    /**
+     * MESSAGE is a reply.
+     *
+     * @generated from protobuf enum value: MESSAGE = 2;
+     */
+    MESSAGE = 2,
+    /**
+     * STATUS is a change of the status.
+     *
+     * @generated from protobuf enum value: STATUS = 3;
+     */
+    STATUS = 3,
+    /**
+     * PRIORITY is a change of the priority with its reason.
+     *
+     * @generated from protobuf enum value: PRIORITY = 4;
+     */
+    PRIORITY = 4,
+    /**
+     * CATEGORY is a change of the category.
+     *
+     * @generated from protobuf enum value: CATEGORY = 5;
+     */
+    CATEGORY = 5,
+    /**
+     * ASSIGNMENT is an assignment to an engineer.
+     *
+     * @generated from protobuf enum value: ASSIGNMENT = 6;
+     */
+    ASSIGNMENT = 6,
+    /**
+     * ESCALATION is an escalation with its reason.
+     *
+     * @generated from protobuf enum value: ESCALATION = 7;
+     */
+    ESCALATION = 7,
+    /**
+     * ATTACHMENT is a new file.
+     *
+     * @generated from protobuf enum value: ATTACHMENT = 8;
+     */
+    ATTACHMENT = 8,
+    /**
+     * ORGANIZATION is the linking of the request to the organization.
+     *
+     * @generated from protobuf enum value: ORGANIZATION = 9;
+     */
+    ORGANIZATION = 9
+}
+/**
+ * Attachment is a file of the request.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SupportRequest.Attachment
+ */
+export interface SupportRequest_Attachment {
+    /**
+     * ID is the unique identifier of the file.
+     *
+     * @generated from protobuf field: string id = 1
+     */
+    id: string;
+    /**
+     * Name is the name of the file.
+     *
+     * @generated from protobuf field: string name = 2
+     */
+    name: string;
+    /**
+     * ContentType is the media type of the file.
+     *
+     * @generated from protobuf field: string contentType = 3
+     */
+    contentType: string;
+    /**
+     * Size is the size of the file in bytes.
+     *
+     * @generated from protobuf field: uint64 size = 4
+     */
+    size: number;
+    /**
+     * SHA256 is the hex-encoded SHA-256 digest of the file, if known.
+     *
+     * @generated from protobuf field: string sha256 = 5
+     */
+    sha256: string;
+    /**
+     * Purpose is the purpose of the file.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose purpose = 6
+     */
+    purpose: SupportRequest_Attachment_Purpose;
+    /**
+     * UploadedBy is the author of the file.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Actor uploadedBy = 7
+     */
+    uploadedBy?: SupportRequest_Actor;
+    /**
+     * Channel is the channel through which the file was added.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Channel channel = 8
+     */
+    channel: SupportRequest_Channel;
+    /**
+     * CreatedAt is the date at which the file was added.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp createdAt = 9
+     */
+    createdAt?: Timestamp;
+    /**
+     * IsAvailable is whether the file can still be downloaded. Files are
+     * deleted some time after the request is closed.
+     *
+     * @generated from protobuf field: bool isAvailable = 10
+     */
+    isAvailable: boolean;
+}
+/**
+ * Purpose is the purpose of the file.
+ *
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose
+ */
+export enum SupportRequest_Attachment_Purpose {
+    /**
+     * PURPOSE_UNKNOWN is the default unset value.
+     *
+     * @generated from protobuf enum value: PURPOSE_UNKNOWN = 0;
+     */
+    PURPOSE_UNKNOWN = 0,
+    /**
+     * FILE is a file added by a person (e.g. a log file or a screenshot).
+     *
+     * @generated from protobuf enum value: FILE = 1;
+     */
+    FILE = 1,
+    /**
+     * DIAGNOSTIC is a diagnostics bundle collected from the Cluster.
+     *
+     * @generated from protobuf enum value: DIAGNOSTIC = 2;
+     */
+    DIAGNOSTIC = 2
+}
+/**
+ * Actions are the actions that are currently allowed on the request.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SupportRequest.Actions
+ */
+export interface SupportRequest_Actions {
+    /**
+     * CanReply is whether a reply can be added.
+     *
+     * @generated from protobuf field: bool canReply = 1
+     */
+    canReply: boolean;
+    /**
+     * CanResolve is whether the request can be marked as resolved.
+     *
+     * @generated from protobuf field: bool canResolve = 2
+     */
+    canResolve: boolean;
+    /**
+     * CanEscalate is whether the request can be escalated.
+     *
+     * @generated from protobuf field: bool canEscalate = 3
+     */
+    canEscalate: boolean;
+}
+/**
+ * Priority is the priority of a request as defined by the Octelium Support
+ * SLA.
+ *
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.SupportRequest.Priority
+ */
+export enum SupportRequest_Priority {
+    /**
+     * PRIORITY_UNKNOWN is the default unset value.
+     *
+     * @generated from protobuf enum value: PRIORITY_UNKNOWN = 0;
+     */
+    PRIORITY_UNKNOWN = 0,
+    /**
+     * P1 means that Octelium is inoperative or that a core function is
+     * unavailable with no workaround.
+     *
+     * @generated from protobuf enum value: P1 = 1;
+     */
+    P1 = 1,
+    /**
+     * P2 means that a significant function is impaired or degraded.
+     *
+     * @generated from protobuf enum value: P2 = 2;
+     */
+    P2 = 2,
+    /**
+     * P3 means a partial, non-critical loss of functionality.
+     *
+     * @generated from protobuf enum value: P3 = 3;
+     */
+    P3 = 3,
+    /**
+     * P4 means a question, a minor issue or a feature request.
+     *
+     * @generated from protobuf enum value: P4 = 4;
+     */
+    P4 = 4
+}
+/**
+ * Status is the status of a request.
+ *
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.SupportRequest.Status
+ */
+export enum SupportRequest_Status {
+    /**
+     * STATUS_UNKNOWN is the default unset value.
+     *
+     * @generated from protobuf enum value: STATUS_UNKNOWN = 0;
+     */
+    STATUS_UNKNOWN = 0,
+    /**
+     * NEW means that Octelium did not answer the request yet.
+     *
+     * @generated from protobuf enum value: NEW = 1;
+     */
+    NEW = 1,
+    /**
+     * OPEN means that Octelium is working on the request.
+     *
+     * @generated from protobuf enum value: OPEN = 2;
+     */
+    OPEN = 2,
+    /**
+     * WAITING_ON_CUSTOMER means that Octelium needs a reply to continue.
+     *
+     * @generated from protobuf enum value: WAITING_ON_CUSTOMER = 3;
+     */
+    WAITING_ON_CUSTOMER = 3,
+    /**
+     * ON_HOLD means that the request waits on an Octelium release or on
+     * engineering.
+     *
+     * @generated from protobuf enum value: ON_HOLD = 4;
+     */
+    ON_HOLD = 4,
+    /**
+     * RESOLVED means that a solution was given. A reply reopens the request.
+     *
+     * @generated from protobuf enum value: RESOLVED = 5;
+     */
+    RESOLVED = 5,
+    /**
+     * CLOSED means that the request is closed and can no longer be replied
+     * to.
+     *
+     * @generated from protobuf enum value: CLOSED = 6;
+     */
+    CLOSED = 6
+}
+/**
+ * SupportLevel is a support level as defined by the Octelium Support SLA.
+ *
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.SupportRequest.SupportLevel
+ */
+export enum SupportRequest_SupportLevel {
+    /**
+     * SUPPORT_LEVEL_UNKNOWN is the default unset value.
+     *
+     * @generated from protobuf enum value: SUPPORT_LEVEL_UNKNOWN = 0;
+     */
+    SUPPORT_LEVEL_UNKNOWN = 0,
+    /**
+     * NONE means that technical support is not included.
+     *
+     * @generated from protobuf enum value: NONE = 1;
+     */
+    NONE = 1,
+    /**
+     * STANDARD is the standard support level.
+     *
+     * @generated from protobuf enum value: STANDARD = 2;
+     */
+    STANDARD = 2,
+    /**
+     * PREMIUM is the premium support level.
+     *
+     * @generated from protobuf enum value: PREMIUM = 3;
+     */
+    PREMIUM = 3
+}
+/**
+ * Channel is the channel through which a change was made.
+ *
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.SupportRequest.Channel
+ */
+export enum SupportRequest_Channel {
+    /**
+     * CHANNEL_UNKNOWN is the default unset value.
+     *
+     * @generated from protobuf enum value: CHANNEL_UNKNOWN = 0;
+     */
+    CHANNEL_UNKNOWN = 0,
+    /**
+     * PORTAL is the customer portal.
+     *
+     * @generated from protobuf enum value: PORTAL = 1;
+     */
+    PORTAL = 1,
+    /**
+     * EMAIL is email.
+     *
+     * @generated from protobuf enum value: EMAIL = 2;
+     */
+    EMAIL = 2,
+    /**
+     * CLUSTER is a Cluster.
+     *
+     * @generated from protobuf enum value: CLUSTER = 3;
+     */
+    CLUSTER = 3,
+    /**
+     * AGENT is the Octelium Support team.
+     *
+     * @generated from protobuf enum value: AGENT = 4;
+     */
+    AGENT = 4,
+    /**
+     * SLACK is Slack.
+     *
+     * @generated from protobuf enum value: SLACK = 5;
+     */
+    SLACK = 5,
+    /**
+     * SYSTEM is an automatic change (e.g. an automatic closure).
+     *
+     * @generated from protobuf enum value: SYSTEM = 6;
+     */
+    SYSTEM = 6
+}
+/**
+ * ListSupportRequestOptions is the list options of the ListSupportRequest
+ * method.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.ListSupportRequestOptions
+ */
+export interface ListSupportRequestOptions {
+    /**
+     * Filter selects the requests by their status.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.ListSupportRequestOptions.Filter filter = 1
+     */
+    filter: ListSupportRequestOptions_Filter;
+    /**
+     * Cursor is the `nextCursor` of the previous page.
+     *
+     * @generated from protobuf field: string cursor = 2
+     */
+    cursor: string;
+}
+/**
+ * Filter selects the requests by their status.
+ *
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.ListSupportRequestOptions.Filter
+ */
+export enum ListSupportRequestOptions_Filter {
+    /**
+     * ALL lists every request.
+     *
+     * @generated from protobuf enum value: ALL = 0;
+     */
+    ALL = 0,
+    /**
+     * OPEN lists the requests that are neither resolved nor closed.
+     *
+     * @generated from protobuf enum value: OPEN = 1;
+     */
+    OPEN = 1,
+    /**
+     * CLOSED lists the resolved and closed requests.
+     *
+     * @generated from protobuf enum value: CLOSED = 2;
+     */
+    CLOSED = 2
+}
+/**
+ * SupportRequestList is the response of the ListSupportRequest method.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SupportRequestList
+ */
+export interface SupportRequestList {
+    /**
+     * Items is the list of the requests.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.SupportRequest items = 1
+     */
+    items: SupportRequest[];
+    /**
+     * NextCursor is set when more requests are available.
+     *
+     * @generated from protobuf field: string nextCursor = 2
+     */
+    nextCursor: string;
+}
+/**
+ * GetSupportRequestRequest is the request of the GetSupportRequest method.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.GetSupportRequestRequest
+ */
+export interface GetSupportRequestRequest {
+    /**
+     * ID is the unique identifier of the request.
+     *
+     * @generated from protobuf field: string id = 1
+     */
+    id: string;
+}
+/**
+ * ListSupportRequestEventOptions is the list options of the
+ * ListSupportRequestEvent method.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.ListSupportRequestEventOptions
+ */
+export interface ListSupportRequestEventOptions {
+    /**
+     * ID is the unique identifier of the request.
+     *
+     * @generated from protobuf field: string id = 1
+     */
+    id: string;
+    /**
+     * Cursor is the `eventsCursor` of the request or the `nextCursor` of the
+     * previous page.
+     *
+     * @generated from protobuf field: string cursor = 2
+     */
+    cursor: string;
+}
+/**
+ * SupportRequestEventList is the response of the ListSupportRequestEvent
+ * method.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SupportRequestEventList
+ */
+export interface SupportRequestEventList {
+    /**
+     * Items is the list of the events, the oldest first.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.SupportRequest.Event items = 1
+     */
+    items: SupportRequest_Event[];
+    /**
+     * NextCursor is set when earlier events are available.
+     *
+     * @generated from protobuf field: string nextCursor = 2
+     */
+    nextCursor: string;
+}
+/**
+ * CreateSupportRequestRequest is the request of the CreateSupportRequest
+ * method.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CreateSupportRequestRequest
+ */
+export interface CreateSupportRequestRequest {
+    /**
+     * Subject is a single-line summary of the issue.
+     *
+     * @generated from protobuf field: string subject = 1
+     */
+    subject: string;
+    /**
+     * Description is the detailed description of the issue.
+     *
+     * @generated from protobuf field: string description = 2
+     */
+    description: string;
+    /**
+     * Priority is the requested priority. It defaults to P3.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Priority priority = 3
+     */
+    priority: SupportRequest_Priority;
+    /**
+     * IdempotencyKey is a unique key of the submission (e.g. a random UUID)
+     * that is reused when a submission is retried so that it does not open a
+     * duplicate request.
+     *
+     * @generated from protobuf field: string idempotencyKey = 4
+     */
+    idempotencyKey: string;
+}
+/**
+ * AddSupportRequestMessageRequest is the request of the
+ * AddSupportRequestMessage method.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.AddSupportRequestMessageRequest
+ */
+export interface AddSupportRequestMessageRequest {
+    /**
+     * ID is the unique identifier of the request.
+     *
+     * @generated from protobuf field: string id = 1
+     */
+    id: string;
+    /**
+     * Body is the text of the reply.
+     *
+     * @generated from protobuf field: string body = 2
+     */
+    body: string;
+    /**
+     * AttachmentIDs is the list of the files of the request that the reply
+     * references.
+     *
+     * @generated from protobuf field: repeated string attachmentIDs = 3
+     */
+    attachmentIDs: string[];
+    /**
+     * IdempotencyKey is a unique key of the submission that is reused when a
+     * submission is retried so that it does not add a duplicate reply.
+     *
+     * @generated from protobuf field: string idempotencyKey = 4
+     */
+    idempotencyKey: string;
+}
+/**
+ * AddSupportRequestAttachmentRequest is the request of the
+ * AddSupportRequestAttachment method.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.AddSupportRequestAttachmentRequest
+ */
+export interface AddSupportRequestAttachmentRequest {
+    /**
+     * ID is the unique identifier of the request.
+     *
+     * @generated from protobuf field: string id = 1
+     */
+    id: string;
+    /**
+     * Name is the name of the file including its extension.
+     *
+     * @generated from protobuf field: string name = 2
+     */
+    name: string;
+    /**
+     * Data is the content of the file.
+     *
+     * @generated from protobuf field: bytes data = 3
+     */
+    data: Uint8Array;
+    /**
+     * Purpose is the purpose of the file. It defaults to FILE.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose purpose = 4
+     */
+    purpose: SupportRequest_Attachment_Purpose;
+}
+/**
+ * ResolveSupportRequestRequest is the request of the ResolveSupportRequest
+ * method.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.ResolveSupportRequestRequest
+ */
+export interface ResolveSupportRequestRequest {
+    /**
+     * ID is the unique identifier of the request.
+     *
+     * @generated from protobuf field: string id = 1
+     */
+    id: string;
+}
+/**
+ * EscalateSupportRequestRequest is the request of the EscalateSupportRequest
+ * method.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.EscalateSupportRequestRequest
+ */
+export interface EscalateSupportRequestRequest {
+    /**
+     * ID is the unique identifier of the request.
+     *
+     * @generated from protobuf field: string id = 1
+     */
+    id: string;
+    /**
+     * Reason is why the request needs more urgency.
+     *
+     * @generated from protobuf field: string reason = 2
+     */
+    reason: string;
+}
+/**
+ * DownloadSupportRequestAttachmentRequest is the request of the
+ * DownloadSupportRequestAttachment method.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentRequest
+ */
+export interface DownloadSupportRequestAttachmentRequest {
+    /**
+     * ID is the unique identifier of the request.
+     *
+     * @generated from protobuf field: string id = 1
+     */
+    id: string;
+    /**
+     * AttachmentID is the unique identifier of the file.
+     *
+     * @generated from protobuf field: string attachmentID = 2
+     */
+    attachmentID: string;
+}
+/**
+ * DownloadSupportRequestAttachmentResponse is a message of the stream of the
+ * DownloadSupportRequestAttachment method.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse
+ */
+export interface DownloadSupportRequestAttachmentResponse {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "header";
+        /**
+         * Header is the header of the file. It is only set in the first message.
+         *
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse.Header header = 1
+         */
+        header: DownloadSupportRequestAttachmentResponse_Header;
+    } | {
+        oneofKind: "chunk";
+        /**
+         * Chunk is the next chunk of the content of the file.
+         *
+         * @generated from protobuf field: bytes chunk = 2
+         */
+        chunk: Uint8Array;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * Header is the header of the downloaded file.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse.Header
+ */
+export interface DownloadSupportRequestAttachmentResponse_Header {
+    /**
+     * Name is the name of the file.
+     *
+     * @generated from protobuf field: string name = 1
+     */
+    name: string;
+    /**
+     * ContentType is the media type of the file.
+     *
+     * @generated from protobuf field: string contentType = 2
+     */
+    contentType: string;
+    /**
+     * Size is the size of the file in bytes.
+     *
+     * @generated from protobuf field: uint64 size = 3
+     */
+    size: number;
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class GetClusterConfigRequest$Type extends MessageType<GetClusterConfigRequest> {
     constructor() {
@@ -33886,6 +35162,1850 @@ class Agent_Workspace$Type extends MessageType<Agent_Workspace> {
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Agent.Workspace
  */
 export const Agent_Workspace = new Agent_Workspace$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetSupportInfoRequest$Type extends MessageType<GetSupportInfoRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.GetSupportInfoRequest", [
+            { no: 1, name: "skipPortal", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<GetSupportInfoRequest>): GetSupportInfoRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.skipPortal = false;
+        if (value !== undefined)
+            reflectionMergePartial<GetSupportInfoRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetSupportInfoRequest): GetSupportInfoRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool skipPortal */ 1:
+                    message.skipPortal = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetSupportInfoRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool skipPortal = 1; */
+        if (message.skipPortal !== false)
+            writer.tag(1, WireType.Varint).bool(message.skipPortal);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.GetSupportInfoRequest
+ */
+export const GetSupportInfoRequest = new GetSupportInfoRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SupportInfo$Type extends MessageType<SupportInfo> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SupportInfo", [
+            { no: 1, name: "state", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportInfo.State", SupportInfo_State] },
+            { no: 2, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "organization", kind: "message", T: () => SupportInfo_Organization },
+            { no: 4, name: "clusterDomain", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "supportLevel", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportRequest.SupportLevel", SupportRequest_SupportLevel] },
+            { no: 6, name: "limits", kind: "message", T: () => SupportInfo_Limits },
+            { no: 7, name: "environment", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 9 /*ScalarType.STRING*/ } },
+            { no: 8, name: "portalURL", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 9, name: "supportEmail", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 10, name: "installationID", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SupportInfo>): SupportInfo {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.state = 0;
+        message.message = "";
+        message.clusterDomain = "";
+        message.supportLevel = 0;
+        message.environment = {};
+        message.portalURL = "";
+        message.supportEmail = "";
+        message.installationID = "";
+        if (value !== undefined)
+            reflectionMergePartial<SupportInfo>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SupportInfo): SupportInfo {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.SupportInfo.State state */ 1:
+                    message.state = reader.int32();
+                    break;
+                case /* string message */ 2:
+                    message.message = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportInfo.Organization organization */ 3:
+                    message.organization = SupportInfo_Organization.internalBinaryRead(reader, reader.uint32(), options, message.organization);
+                    break;
+                case /* string clusterDomain */ 4:
+                    message.clusterDomain = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.SupportLevel supportLevel */ 5:
+                    message.supportLevel = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportInfo.Limits limits */ 6:
+                    message.limits = SupportInfo_Limits.internalBinaryRead(reader, reader.uint32(), options, message.limits);
+                    break;
+                case /* map<string, string> environment */ 7:
+                    this.binaryReadMap7(message.environment, reader, options);
+                    break;
+                case /* string portalURL */ 8:
+                    message.portalURL = reader.string();
+                    break;
+                case /* string supportEmail */ 9:
+                    message.supportEmail = reader.string();
+                    break;
+                case /* string installationID */ 10:
+                    message.installationID = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    private binaryReadMap7(map: SupportInfo["environment"], reader: IBinaryReader, options: BinaryReadOptions): void {
+        let len = reader.uint32(), end = reader.pos + len, key: keyof SupportInfo["environment"] | undefined, val: SupportInfo["environment"][any] | undefined;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case 1:
+                    key = reader.string();
+                    break;
+                case 2:
+                    val = reader.string();
+                    break;
+                default: throw new globalThis.Error("unknown map entry field for octelium.api.main.enterprise.v1.SupportInfo.environment");
+            }
+        }
+        map[key ?? ""] = val ?? "";
+    }
+    internalBinaryWrite(message: SupportInfo, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.SupportInfo.State state = 1; */
+        if (message.state !== 0)
+            writer.tag(1, WireType.Varint).int32(message.state);
+        /* string message = 2; */
+        if (message.message !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.message);
+        /* octelium.api.main.enterprise.v1.SupportInfo.Organization organization = 3; */
+        if (message.organization)
+            SupportInfo_Organization.internalBinaryWrite(message.organization, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* string clusterDomain = 4; */
+        if (message.clusterDomain !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.clusterDomain);
+        /* octelium.api.main.enterprise.v1.SupportRequest.SupportLevel supportLevel = 5; */
+        if (message.supportLevel !== 0)
+            writer.tag(5, WireType.Varint).int32(message.supportLevel);
+        /* octelium.api.main.enterprise.v1.SupportInfo.Limits limits = 6; */
+        if (message.limits)
+            SupportInfo_Limits.internalBinaryWrite(message.limits, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* map<string, string> environment = 7; */
+        for (let k of globalThis.Object.keys(message.environment))
+            writer.tag(7, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.LengthDelimited).string(message.environment[k]).join();
+        /* string portalURL = 8; */
+        if (message.portalURL !== "")
+            writer.tag(8, WireType.LengthDelimited).string(message.portalURL);
+        /* string supportEmail = 9; */
+        if (message.supportEmail !== "")
+            writer.tag(9, WireType.LengthDelimited).string(message.supportEmail);
+        /* string installationID = 10; */
+        if (message.installationID !== "")
+            writer.tag(10, WireType.LengthDelimited).string(message.installationID);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SupportInfo
+ */
+export const SupportInfo = new SupportInfo$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SupportInfo_Organization$Type extends MessageType<SupportInfo_Organization> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SupportInfo.Organization", [
+            { no: 1, name: "uid", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "displayName", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SupportInfo_Organization>): SupportInfo_Organization {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.uid = "";
+        message.displayName = "";
+        if (value !== undefined)
+            reflectionMergePartial<SupportInfo_Organization>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SupportInfo_Organization): SupportInfo_Organization {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string uid */ 1:
+                    message.uid = reader.string();
+                    break;
+                case /* string displayName */ 2:
+                    message.displayName = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SupportInfo_Organization, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string uid = 1; */
+        if (message.uid !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.uid);
+        /* string displayName = 2; */
+        if (message.displayName !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.displayName);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SupportInfo.Organization
+ */
+export const SupportInfo_Organization = new SupportInfo_Organization$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SupportInfo_Limits$Type extends MessageType<SupportInfo_Limits> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SupportInfo.Limits", [
+            { no: 1, name: "maxSubjectLength", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 2, name: "maxBodyLength", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 3, name: "maxAttachmentSize", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "maxAttachmentsPerRequest", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 5, name: "maxAttachmentsPerMessage", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 6, name: "attachmentExtensions", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 7, name: "autoCloseDays", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SupportInfo_Limits>): SupportInfo_Limits {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.maxSubjectLength = 0;
+        message.maxBodyLength = 0;
+        message.maxAttachmentSize = 0;
+        message.maxAttachmentsPerRequest = 0;
+        message.maxAttachmentsPerMessage = 0;
+        message.attachmentExtensions = [];
+        message.autoCloseDays = 0;
+        if (value !== undefined)
+            reflectionMergePartial<SupportInfo_Limits>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SupportInfo_Limits): SupportInfo_Limits {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint32 maxSubjectLength */ 1:
+                    message.maxSubjectLength = reader.uint32();
+                    break;
+                case /* uint32 maxBodyLength */ 2:
+                    message.maxBodyLength = reader.uint32();
+                    break;
+                case /* uint64 maxAttachmentSize */ 3:
+                    message.maxAttachmentSize = reader.uint64().toNumber();
+                    break;
+                case /* uint32 maxAttachmentsPerRequest */ 4:
+                    message.maxAttachmentsPerRequest = reader.uint32();
+                    break;
+                case /* uint32 maxAttachmentsPerMessage */ 5:
+                    message.maxAttachmentsPerMessage = reader.uint32();
+                    break;
+                case /* repeated string attachmentExtensions */ 6:
+                    message.attachmentExtensions.push(reader.string());
+                    break;
+                case /* uint32 autoCloseDays */ 7:
+                    message.autoCloseDays = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SupportInfo_Limits, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint32 maxSubjectLength = 1; */
+        if (message.maxSubjectLength !== 0)
+            writer.tag(1, WireType.Varint).uint32(message.maxSubjectLength);
+        /* uint32 maxBodyLength = 2; */
+        if (message.maxBodyLength !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.maxBodyLength);
+        /* uint64 maxAttachmentSize = 3; */
+        if (message.maxAttachmentSize !== 0)
+            writer.tag(3, WireType.Varint).uint64(message.maxAttachmentSize);
+        /* uint32 maxAttachmentsPerRequest = 4; */
+        if (message.maxAttachmentsPerRequest !== 0)
+            writer.tag(4, WireType.Varint).uint32(message.maxAttachmentsPerRequest);
+        /* uint32 maxAttachmentsPerMessage = 5; */
+        if (message.maxAttachmentsPerMessage !== 0)
+            writer.tag(5, WireType.Varint).uint32(message.maxAttachmentsPerMessage);
+        /* repeated string attachmentExtensions = 6; */
+        for (let i = 0; i < message.attachmentExtensions.length; i++)
+            writer.tag(6, WireType.LengthDelimited).string(message.attachmentExtensions[i]);
+        /* uint32 autoCloseDays = 7; */
+        if (message.autoCloseDays !== 0)
+            writer.tag(7, WireType.Varint).uint32(message.autoCloseDays);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SupportInfo.Limits
+ */
+export const SupportInfo_Limits = new SupportInfo_Limits$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SupportRequest$Type extends MessageType<SupportRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SupportRequest", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "number", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 3, name: "subject", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "status", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportRequest.Status", SupportRequest_Status] },
+            { no: 5, name: "priority", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportRequest.Priority", SupportRequest_Priority] },
+            { no: 6, name: "requestedPriority", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportRequest.Priority", SupportRequest_Priority] },
+            { no: 7, name: "supportLevel", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportRequest.SupportLevel", SupportRequest_SupportLevel] },
+            { no: 8, name: "channel", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportRequest.Channel", SupportRequest_Channel] },
+            { no: 9, name: "reporter", kind: "message", T: () => SupportRequest_Reporter },
+            { no: 10, name: "assignee", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 11, name: "sla", kind: "message", T: () => SupportRequest_SLA },
+            { no: 12, name: "isEscalated", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 13, name: "clusterDomain", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 14, name: "environment", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 9 /*ScalarType.STRING*/ } },
+            { no: 15, name: "createdAt", kind: "message", T: () => Timestamp },
+            { no: 16, name: "updatedAt", kind: "message", T: () => Timestamp },
+            { no: 17, name: "lastActivityAt", kind: "message", T: () => Timestamp },
+            { no: 18, name: "resolvedAt", kind: "message", T: () => Timestamp },
+            { no: 19, name: "closedAt", kind: "message", T: () => Timestamp },
+            { no: 20, name: "messageCount", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 21, name: "attachmentCount", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 22, name: "events", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => SupportRequest_Event },
+            { no: 23, name: "eventsCursor", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 24, name: "attachments", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => SupportRequest_Attachment },
+            { no: 25, name: "actions", kind: "message", T: () => SupportRequest_Actions },
+            { no: 26, name: "portalURL", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SupportRequest>): SupportRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.id = "";
+        message.number = 0;
+        message.subject = "";
+        message.status = 0;
+        message.priority = 0;
+        message.requestedPriority = 0;
+        message.supportLevel = 0;
+        message.channel = 0;
+        message.assignee = "";
+        message.isEscalated = false;
+        message.clusterDomain = "";
+        message.environment = {};
+        message.messageCount = 0;
+        message.attachmentCount = 0;
+        message.events = [];
+        message.eventsCursor = "";
+        message.attachments = [];
+        message.portalURL = "";
+        if (value !== undefined)
+            reflectionMergePartial<SupportRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SupportRequest): SupportRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                case /* uint32 number */ 2:
+                    message.number = reader.uint32();
+                    break;
+                case /* string subject */ 3:
+                    message.subject = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.Status status */ 4:
+                    message.status = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.Priority priority */ 5:
+                    message.priority = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.Priority requestedPriority */ 6:
+                    message.requestedPriority = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.SupportLevel supportLevel */ 7:
+                    message.supportLevel = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.Channel channel */ 8:
+                    message.channel = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.Reporter reporter */ 9:
+                    message.reporter = SupportRequest_Reporter.internalBinaryRead(reader, reader.uint32(), options, message.reporter);
+                    break;
+                case /* string assignee */ 10:
+                    message.assignee = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.SLA sla */ 11:
+                    message.sla = SupportRequest_SLA.internalBinaryRead(reader, reader.uint32(), options, message.sla);
+                    break;
+                case /* bool isEscalated */ 12:
+                    message.isEscalated = reader.bool();
+                    break;
+                case /* string clusterDomain */ 13:
+                    message.clusterDomain = reader.string();
+                    break;
+                case /* map<string, string> environment */ 14:
+                    this.binaryReadMap14(message.environment, reader, options);
+                    break;
+                case /* google.protobuf.Timestamp createdAt */ 15:
+                    message.createdAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.createdAt);
+                    break;
+                case /* google.protobuf.Timestamp updatedAt */ 16:
+                    message.updatedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.updatedAt);
+                    break;
+                case /* google.protobuf.Timestamp lastActivityAt */ 17:
+                    message.lastActivityAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastActivityAt);
+                    break;
+                case /* google.protobuf.Timestamp resolvedAt */ 18:
+                    message.resolvedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.resolvedAt);
+                    break;
+                case /* google.protobuf.Timestamp closedAt */ 19:
+                    message.closedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.closedAt);
+                    break;
+                case /* uint32 messageCount */ 20:
+                    message.messageCount = reader.uint32();
+                    break;
+                case /* uint32 attachmentCount */ 21:
+                    message.attachmentCount = reader.uint32();
+                    break;
+                case /* repeated octelium.api.main.enterprise.v1.SupportRequest.Event events */ 22:
+                    message.events.push(SupportRequest_Event.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* string eventsCursor */ 23:
+                    message.eventsCursor = reader.string();
+                    break;
+                case /* repeated octelium.api.main.enterprise.v1.SupportRequest.Attachment attachments */ 24:
+                    message.attachments.push(SupportRequest_Attachment.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.Actions actions */ 25:
+                    message.actions = SupportRequest_Actions.internalBinaryRead(reader, reader.uint32(), options, message.actions);
+                    break;
+                case /* string portalURL */ 26:
+                    message.portalURL = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    private binaryReadMap14(map: SupportRequest["environment"], reader: IBinaryReader, options: BinaryReadOptions): void {
+        let len = reader.uint32(), end = reader.pos + len, key: keyof SupportRequest["environment"] | undefined, val: SupportRequest["environment"][any] | undefined;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case 1:
+                    key = reader.string();
+                    break;
+                case 2:
+                    val = reader.string();
+                    break;
+                default: throw new globalThis.Error("unknown map entry field for octelium.api.main.enterprise.v1.SupportRequest.environment");
+            }
+        }
+        map[key ?? ""] = val ?? "";
+    }
+    internalBinaryWrite(message: SupportRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        /* uint32 number = 2; */
+        if (message.number !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.number);
+        /* string subject = 3; */
+        if (message.subject !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.subject);
+        /* octelium.api.main.enterprise.v1.SupportRequest.Status status = 4; */
+        if (message.status !== 0)
+            writer.tag(4, WireType.Varint).int32(message.status);
+        /* octelium.api.main.enterprise.v1.SupportRequest.Priority priority = 5; */
+        if (message.priority !== 0)
+            writer.tag(5, WireType.Varint).int32(message.priority);
+        /* octelium.api.main.enterprise.v1.SupportRequest.Priority requestedPriority = 6; */
+        if (message.requestedPriority !== 0)
+            writer.tag(6, WireType.Varint).int32(message.requestedPriority);
+        /* octelium.api.main.enterprise.v1.SupportRequest.SupportLevel supportLevel = 7; */
+        if (message.supportLevel !== 0)
+            writer.tag(7, WireType.Varint).int32(message.supportLevel);
+        /* octelium.api.main.enterprise.v1.SupportRequest.Channel channel = 8; */
+        if (message.channel !== 0)
+            writer.tag(8, WireType.Varint).int32(message.channel);
+        /* octelium.api.main.enterprise.v1.SupportRequest.Reporter reporter = 9; */
+        if (message.reporter)
+            SupportRequest_Reporter.internalBinaryWrite(message.reporter, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* string assignee = 10; */
+        if (message.assignee !== "")
+            writer.tag(10, WireType.LengthDelimited).string(message.assignee);
+        /* octelium.api.main.enterprise.v1.SupportRequest.SLA sla = 11; */
+        if (message.sla)
+            SupportRequest_SLA.internalBinaryWrite(message.sla, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* bool isEscalated = 12; */
+        if (message.isEscalated !== false)
+            writer.tag(12, WireType.Varint).bool(message.isEscalated);
+        /* string clusterDomain = 13; */
+        if (message.clusterDomain !== "")
+            writer.tag(13, WireType.LengthDelimited).string(message.clusterDomain);
+        /* map<string, string> environment = 14; */
+        for (let k of globalThis.Object.keys(message.environment))
+            writer.tag(14, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.LengthDelimited).string(message.environment[k]).join();
+        /* google.protobuf.Timestamp createdAt = 15; */
+        if (message.createdAt)
+            Timestamp.internalBinaryWrite(message.createdAt, writer.tag(15, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp updatedAt = 16; */
+        if (message.updatedAt)
+            Timestamp.internalBinaryWrite(message.updatedAt, writer.tag(16, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp lastActivityAt = 17; */
+        if (message.lastActivityAt)
+            Timestamp.internalBinaryWrite(message.lastActivityAt, writer.tag(17, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp resolvedAt = 18; */
+        if (message.resolvedAt)
+            Timestamp.internalBinaryWrite(message.resolvedAt, writer.tag(18, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp closedAt = 19; */
+        if (message.closedAt)
+            Timestamp.internalBinaryWrite(message.closedAt, writer.tag(19, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 messageCount = 20; */
+        if (message.messageCount !== 0)
+            writer.tag(20, WireType.Varint).uint32(message.messageCount);
+        /* uint32 attachmentCount = 21; */
+        if (message.attachmentCount !== 0)
+            writer.tag(21, WireType.Varint).uint32(message.attachmentCount);
+        /* repeated octelium.api.main.enterprise.v1.SupportRequest.Event events = 22; */
+        for (let i = 0; i < message.events.length; i++)
+            SupportRequest_Event.internalBinaryWrite(message.events[i], writer.tag(22, WireType.LengthDelimited).fork(), options).join();
+        /* string eventsCursor = 23; */
+        if (message.eventsCursor !== "")
+            writer.tag(23, WireType.LengthDelimited).string(message.eventsCursor);
+        /* repeated octelium.api.main.enterprise.v1.SupportRequest.Attachment attachments = 24; */
+        for (let i = 0; i < message.attachments.length; i++)
+            SupportRequest_Attachment.internalBinaryWrite(message.attachments[i], writer.tag(24, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.SupportRequest.Actions actions = 25; */
+        if (message.actions)
+            SupportRequest_Actions.internalBinaryWrite(message.actions, writer.tag(25, WireType.LengthDelimited).fork(), options).join();
+        /* string portalURL = 26; */
+        if (message.portalURL !== "")
+            writer.tag(26, WireType.LengthDelimited).string(message.portalURL);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SupportRequest
+ */
+export const SupportRequest = new SupportRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SupportRequest_Actor$Type extends MessageType<SupportRequest_Actor> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SupportRequest.Actor", [
+            { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportRequest.Actor.Type", SupportRequest_Actor_Type] },
+            { no: 2, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SupportRequest_Actor>): SupportRequest_Actor {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.name = "";
+        if (value !== undefined)
+            reflectionMergePartial<SupportRequest_Actor>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SupportRequest_Actor): SupportRequest_Actor {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.SupportRequest.Actor.Type type */ 1:
+                    message.type = reader.int32();
+                    break;
+                case /* string name */ 2:
+                    message.name = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SupportRequest_Actor, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.SupportRequest.Actor.Type type = 1; */
+        if (message.type !== 0)
+            writer.tag(1, WireType.Varint).int32(message.type);
+        /* string name = 2; */
+        if (message.name !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.name);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SupportRequest.Actor
+ */
+export const SupportRequest_Actor = new SupportRequest_Actor$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SupportRequest_Reporter$Type extends MessageType<SupportRequest_Reporter> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SupportRequest.Reporter", [
+            { no: 1, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "isVerified", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SupportRequest_Reporter>): SupportRequest_Reporter {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.name = "";
+        message.isVerified = false;
+        if (value !== undefined)
+            reflectionMergePartial<SupportRequest_Reporter>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SupportRequest_Reporter): SupportRequest_Reporter {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string name */ 1:
+                    message.name = reader.string();
+                    break;
+                case /* bool isVerified */ 2:
+                    message.isVerified = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SupportRequest_Reporter, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string name = 1; */
+        if (message.name !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.name);
+        /* bool isVerified = 2; */
+        if (message.isVerified !== false)
+            writer.tag(2, WireType.Varint).bool(message.isVerified);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SupportRequest.Reporter
+ */
+export const SupportRequest_Reporter = new SupportRequest_Reporter$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SupportRequest_SLA$Type extends MessageType<SupportRequest_SLA> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SupportRequest.SLA", [
+            { no: 1, name: "coverage", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "firstResponseDueAt", kind: "message", T: () => Timestamp },
+            { no: 3, name: "firstRespondedAt", kind: "message", T: () => Timestamp },
+            { no: 4, name: "isPaused", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 5, name: "nextUpdateDueAt", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<SupportRequest_SLA>): SupportRequest_SLA {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.coverage = "";
+        message.isPaused = false;
+        if (value !== undefined)
+            reflectionMergePartial<SupportRequest_SLA>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SupportRequest_SLA): SupportRequest_SLA {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string coverage */ 1:
+                    message.coverage = reader.string();
+                    break;
+                case /* google.protobuf.Timestamp firstResponseDueAt */ 2:
+                    message.firstResponseDueAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.firstResponseDueAt);
+                    break;
+                case /* google.protobuf.Timestamp firstRespondedAt */ 3:
+                    message.firstRespondedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.firstRespondedAt);
+                    break;
+                case /* bool isPaused */ 4:
+                    message.isPaused = reader.bool();
+                    break;
+                case /* google.protobuf.Timestamp nextUpdateDueAt */ 5:
+                    message.nextUpdateDueAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.nextUpdateDueAt);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SupportRequest_SLA, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string coverage = 1; */
+        if (message.coverage !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.coverage);
+        /* google.protobuf.Timestamp firstResponseDueAt = 2; */
+        if (message.firstResponseDueAt)
+            Timestamp.internalBinaryWrite(message.firstResponseDueAt, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp firstRespondedAt = 3; */
+        if (message.firstRespondedAt)
+            Timestamp.internalBinaryWrite(message.firstRespondedAt, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* bool isPaused = 4; */
+        if (message.isPaused !== false)
+            writer.tag(4, WireType.Varint).bool(message.isPaused);
+        /* google.protobuf.Timestamp nextUpdateDueAt = 5; */
+        if (message.nextUpdateDueAt)
+            Timestamp.internalBinaryWrite(message.nextUpdateDueAt, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SupportRequest.SLA
+ */
+export const SupportRequest_SLA = new SupportRequest_SLA$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SupportRequest_Event$Type extends MessageType<SupportRequest_Event> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SupportRequest.Event", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "sequence", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "type", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportRequest.Event.Type", SupportRequest_Event_Type] },
+            { no: 4, name: "actor", kind: "message", T: () => SupportRequest_Actor },
+            { no: 5, name: "channel", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportRequest.Channel", SupportRequest_Channel] },
+            { no: 6, name: "createdAt", kind: "message", T: () => Timestamp },
+            { no: 7, name: "body", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 8, name: "attachmentIDs", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 9, name: "from", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 10, name: "to", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 11, name: "reason", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 12, name: "skippedAttachments", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SupportRequest_Event>): SupportRequest_Event {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.id = "";
+        message.sequence = 0;
+        message.type = 0;
+        message.channel = 0;
+        message.body = "";
+        message.attachmentIDs = [];
+        message.from = "";
+        message.to = "";
+        message.reason = "";
+        message.skippedAttachments = [];
+        if (value !== undefined)
+            reflectionMergePartial<SupportRequest_Event>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SupportRequest_Event): SupportRequest_Event {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                case /* uint64 sequence */ 2:
+                    message.sequence = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.Event.Type type */ 3:
+                    message.type = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.Actor actor */ 4:
+                    message.actor = SupportRequest_Actor.internalBinaryRead(reader, reader.uint32(), options, message.actor);
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.Channel channel */ 5:
+                    message.channel = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp createdAt */ 6:
+                    message.createdAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.createdAt);
+                    break;
+                case /* string body */ 7:
+                    message.body = reader.string();
+                    break;
+                case /* repeated string attachmentIDs */ 8:
+                    message.attachmentIDs.push(reader.string());
+                    break;
+                case /* string from */ 9:
+                    message.from = reader.string();
+                    break;
+                case /* string to */ 10:
+                    message.to = reader.string();
+                    break;
+                case /* string reason */ 11:
+                    message.reason = reader.string();
+                    break;
+                case /* repeated string skippedAttachments */ 12:
+                    message.skippedAttachments.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SupportRequest_Event, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        /* uint64 sequence = 2; */
+        if (message.sequence !== 0)
+            writer.tag(2, WireType.Varint).uint64(message.sequence);
+        /* octelium.api.main.enterprise.v1.SupportRequest.Event.Type type = 3; */
+        if (message.type !== 0)
+            writer.tag(3, WireType.Varint).int32(message.type);
+        /* octelium.api.main.enterprise.v1.SupportRequest.Actor actor = 4; */
+        if (message.actor)
+            SupportRequest_Actor.internalBinaryWrite(message.actor, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.SupportRequest.Channel channel = 5; */
+        if (message.channel !== 0)
+            writer.tag(5, WireType.Varint).int32(message.channel);
+        /* google.protobuf.Timestamp createdAt = 6; */
+        if (message.createdAt)
+            Timestamp.internalBinaryWrite(message.createdAt, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* string body = 7; */
+        if (message.body !== "")
+            writer.tag(7, WireType.LengthDelimited).string(message.body);
+        /* repeated string attachmentIDs = 8; */
+        for (let i = 0; i < message.attachmentIDs.length; i++)
+            writer.tag(8, WireType.LengthDelimited).string(message.attachmentIDs[i]);
+        /* string from = 9; */
+        if (message.from !== "")
+            writer.tag(9, WireType.LengthDelimited).string(message.from);
+        /* string to = 10; */
+        if (message.to !== "")
+            writer.tag(10, WireType.LengthDelimited).string(message.to);
+        /* string reason = 11; */
+        if (message.reason !== "")
+            writer.tag(11, WireType.LengthDelimited).string(message.reason);
+        /* repeated string skippedAttachments = 12; */
+        for (let i = 0; i < message.skippedAttachments.length; i++)
+            writer.tag(12, WireType.LengthDelimited).string(message.skippedAttachments[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SupportRequest.Event
+ */
+export const SupportRequest_Event = new SupportRequest_Event$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SupportRequest_Attachment$Type extends MessageType<SupportRequest_Attachment> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SupportRequest.Attachment", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "contentType", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "size", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "sha256", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "purpose", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose", SupportRequest_Attachment_Purpose] },
+            { no: 7, name: "uploadedBy", kind: "message", T: () => SupportRequest_Actor },
+            { no: 8, name: "channel", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportRequest.Channel", SupportRequest_Channel] },
+            { no: 9, name: "createdAt", kind: "message", T: () => Timestamp },
+            { no: 10, name: "isAvailable", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SupportRequest_Attachment>): SupportRequest_Attachment {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.id = "";
+        message.name = "";
+        message.contentType = "";
+        message.size = 0;
+        message.sha256 = "";
+        message.purpose = 0;
+        message.channel = 0;
+        message.isAvailable = false;
+        if (value !== undefined)
+            reflectionMergePartial<SupportRequest_Attachment>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SupportRequest_Attachment): SupportRequest_Attachment {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                case /* string name */ 2:
+                    message.name = reader.string();
+                    break;
+                case /* string contentType */ 3:
+                    message.contentType = reader.string();
+                    break;
+                case /* uint64 size */ 4:
+                    message.size = reader.uint64().toNumber();
+                    break;
+                case /* string sha256 */ 5:
+                    message.sha256 = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose purpose */ 6:
+                    message.purpose = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.Actor uploadedBy */ 7:
+                    message.uploadedBy = SupportRequest_Actor.internalBinaryRead(reader, reader.uint32(), options, message.uploadedBy);
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.Channel channel */ 8:
+                    message.channel = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp createdAt */ 9:
+                    message.createdAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.createdAt);
+                    break;
+                case /* bool isAvailable */ 10:
+                    message.isAvailable = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SupportRequest_Attachment, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        /* string name = 2; */
+        if (message.name !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.name);
+        /* string contentType = 3; */
+        if (message.contentType !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.contentType);
+        /* uint64 size = 4; */
+        if (message.size !== 0)
+            writer.tag(4, WireType.Varint).uint64(message.size);
+        /* string sha256 = 5; */
+        if (message.sha256 !== "")
+            writer.tag(5, WireType.LengthDelimited).string(message.sha256);
+        /* octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose purpose = 6; */
+        if (message.purpose !== 0)
+            writer.tag(6, WireType.Varint).int32(message.purpose);
+        /* octelium.api.main.enterprise.v1.SupportRequest.Actor uploadedBy = 7; */
+        if (message.uploadedBy)
+            SupportRequest_Actor.internalBinaryWrite(message.uploadedBy, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.SupportRequest.Channel channel = 8; */
+        if (message.channel !== 0)
+            writer.tag(8, WireType.Varint).int32(message.channel);
+        /* google.protobuf.Timestamp createdAt = 9; */
+        if (message.createdAt)
+            Timestamp.internalBinaryWrite(message.createdAt, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* bool isAvailable = 10; */
+        if (message.isAvailable !== false)
+            writer.tag(10, WireType.Varint).bool(message.isAvailable);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SupportRequest.Attachment
+ */
+export const SupportRequest_Attachment = new SupportRequest_Attachment$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SupportRequest_Actions$Type extends MessageType<SupportRequest_Actions> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SupportRequest.Actions", [
+            { no: 1, name: "canReply", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "canResolve", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 3, name: "canEscalate", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SupportRequest_Actions>): SupportRequest_Actions {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.canReply = false;
+        message.canResolve = false;
+        message.canEscalate = false;
+        if (value !== undefined)
+            reflectionMergePartial<SupportRequest_Actions>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SupportRequest_Actions): SupportRequest_Actions {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool canReply */ 1:
+                    message.canReply = reader.bool();
+                    break;
+                case /* bool canResolve */ 2:
+                    message.canResolve = reader.bool();
+                    break;
+                case /* bool canEscalate */ 3:
+                    message.canEscalate = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SupportRequest_Actions, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool canReply = 1; */
+        if (message.canReply !== false)
+            writer.tag(1, WireType.Varint).bool(message.canReply);
+        /* bool canResolve = 2; */
+        if (message.canResolve !== false)
+            writer.tag(2, WireType.Varint).bool(message.canResolve);
+        /* bool canEscalate = 3; */
+        if (message.canEscalate !== false)
+            writer.tag(3, WireType.Varint).bool(message.canEscalate);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SupportRequest.Actions
+ */
+export const SupportRequest_Actions = new SupportRequest_Actions$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListSupportRequestOptions$Type extends MessageType<ListSupportRequestOptions> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.ListSupportRequestOptions", [
+            { no: 1, name: "filter", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.ListSupportRequestOptions.Filter", ListSupportRequestOptions_Filter] },
+            { no: 2, name: "cursor", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListSupportRequestOptions>): ListSupportRequestOptions {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.filter = 0;
+        message.cursor = "";
+        if (value !== undefined)
+            reflectionMergePartial<ListSupportRequestOptions>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListSupportRequestOptions): ListSupportRequestOptions {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.ListSupportRequestOptions.Filter filter */ 1:
+                    message.filter = reader.int32();
+                    break;
+                case /* string cursor */ 2:
+                    message.cursor = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListSupportRequestOptions, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.ListSupportRequestOptions.Filter filter = 1; */
+        if (message.filter !== 0)
+            writer.tag(1, WireType.Varint).int32(message.filter);
+        /* string cursor = 2; */
+        if (message.cursor !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.cursor);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.ListSupportRequestOptions
+ */
+export const ListSupportRequestOptions = new ListSupportRequestOptions$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SupportRequestList$Type extends MessageType<SupportRequestList> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SupportRequestList", [
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => SupportRequest },
+            { no: 2, name: "nextCursor", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SupportRequestList>): SupportRequestList {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.items = [];
+        message.nextCursor = "";
+        if (value !== undefined)
+            reflectionMergePartial<SupportRequestList>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SupportRequestList): SupportRequestList {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated octelium.api.main.enterprise.v1.SupportRequest items */ 1:
+                    message.items.push(SupportRequest.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* string nextCursor */ 2:
+                    message.nextCursor = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SupportRequestList, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated octelium.api.main.enterprise.v1.SupportRequest items = 1; */
+        for (let i = 0; i < message.items.length; i++)
+            SupportRequest.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string nextCursor = 2; */
+        if (message.nextCursor !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.nextCursor);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SupportRequestList
+ */
+export const SupportRequestList = new SupportRequestList$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetSupportRequestRequest$Type extends MessageType<GetSupportRequestRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.GetSupportRequestRequest", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<GetSupportRequestRequest>): GetSupportRequestRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.id = "";
+        if (value !== undefined)
+            reflectionMergePartial<GetSupportRequestRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetSupportRequestRequest): GetSupportRequestRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetSupportRequestRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.GetSupportRequestRequest
+ */
+export const GetSupportRequestRequest = new GetSupportRequestRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListSupportRequestEventOptions$Type extends MessageType<ListSupportRequestEventOptions> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.ListSupportRequestEventOptions", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "cursor", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ListSupportRequestEventOptions>): ListSupportRequestEventOptions {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.id = "";
+        message.cursor = "";
+        if (value !== undefined)
+            reflectionMergePartial<ListSupportRequestEventOptions>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListSupportRequestEventOptions): ListSupportRequestEventOptions {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                case /* string cursor */ 2:
+                    message.cursor = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListSupportRequestEventOptions, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        /* string cursor = 2; */
+        if (message.cursor !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.cursor);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.ListSupportRequestEventOptions
+ */
+export const ListSupportRequestEventOptions = new ListSupportRequestEventOptions$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SupportRequestEventList$Type extends MessageType<SupportRequestEventList> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SupportRequestEventList", [
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => SupportRequest_Event },
+            { no: 2, name: "nextCursor", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SupportRequestEventList>): SupportRequestEventList {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.items = [];
+        message.nextCursor = "";
+        if (value !== undefined)
+            reflectionMergePartial<SupportRequestEventList>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SupportRequestEventList): SupportRequestEventList {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated octelium.api.main.enterprise.v1.SupportRequest.Event items */ 1:
+                    message.items.push(SupportRequest_Event.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* string nextCursor */ 2:
+                    message.nextCursor = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SupportRequestEventList, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated octelium.api.main.enterprise.v1.SupportRequest.Event items = 1; */
+        for (let i = 0; i < message.items.length; i++)
+            SupportRequest_Event.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string nextCursor = 2; */
+        if (message.nextCursor !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.nextCursor);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SupportRequestEventList
+ */
+export const SupportRequestEventList = new SupportRequestEventList$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CreateSupportRequestRequest$Type extends MessageType<CreateSupportRequestRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CreateSupportRequestRequest", [
+            { no: 1, name: "subject", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "description", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "priority", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportRequest.Priority", SupportRequest_Priority] },
+            { no: 4, name: "idempotencyKey", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CreateSupportRequestRequest>): CreateSupportRequestRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.subject = "";
+        message.description = "";
+        message.priority = 0;
+        message.idempotencyKey = "";
+        if (value !== undefined)
+            reflectionMergePartial<CreateSupportRequestRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CreateSupportRequestRequest): CreateSupportRequestRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string subject */ 1:
+                    message.subject = reader.string();
+                    break;
+                case /* string description */ 2:
+                    message.description = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.Priority priority */ 3:
+                    message.priority = reader.int32();
+                    break;
+                case /* string idempotencyKey */ 4:
+                    message.idempotencyKey = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CreateSupportRequestRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string subject = 1; */
+        if (message.subject !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.subject);
+        /* string description = 2; */
+        if (message.description !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.description);
+        /* octelium.api.main.enterprise.v1.SupportRequest.Priority priority = 3; */
+        if (message.priority !== 0)
+            writer.tag(3, WireType.Varint).int32(message.priority);
+        /* string idempotencyKey = 4; */
+        if (message.idempotencyKey !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.idempotencyKey);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CreateSupportRequestRequest
+ */
+export const CreateSupportRequestRequest = new CreateSupportRequestRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class AddSupportRequestMessageRequest$Type extends MessageType<AddSupportRequestMessageRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.AddSupportRequestMessageRequest", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "body", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "attachmentIDs", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "idempotencyKey", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<AddSupportRequestMessageRequest>): AddSupportRequestMessageRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.id = "";
+        message.body = "";
+        message.attachmentIDs = [];
+        message.idempotencyKey = "";
+        if (value !== undefined)
+            reflectionMergePartial<AddSupportRequestMessageRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: AddSupportRequestMessageRequest): AddSupportRequestMessageRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                case /* string body */ 2:
+                    message.body = reader.string();
+                    break;
+                case /* repeated string attachmentIDs */ 3:
+                    message.attachmentIDs.push(reader.string());
+                    break;
+                case /* string idempotencyKey */ 4:
+                    message.idempotencyKey = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: AddSupportRequestMessageRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        /* string body = 2; */
+        if (message.body !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.body);
+        /* repeated string attachmentIDs = 3; */
+        for (let i = 0; i < message.attachmentIDs.length; i++)
+            writer.tag(3, WireType.LengthDelimited).string(message.attachmentIDs[i]);
+        /* string idempotencyKey = 4; */
+        if (message.idempotencyKey !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.idempotencyKey);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.AddSupportRequestMessageRequest
+ */
+export const AddSupportRequestMessageRequest = new AddSupportRequestMessageRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class AddSupportRequestAttachmentRequest$Type extends MessageType<AddSupportRequestAttachmentRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.AddSupportRequestAttachmentRequest", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "data", kind: "scalar", T: 12 /*ScalarType.BYTES*/ },
+            { no: 4, name: "purpose", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose", SupportRequest_Attachment_Purpose] }
+        ]);
+    }
+    create(value?: PartialMessage<AddSupportRequestAttachmentRequest>): AddSupportRequestAttachmentRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.id = "";
+        message.name = "";
+        message.data = new Uint8Array(0);
+        message.purpose = 0;
+        if (value !== undefined)
+            reflectionMergePartial<AddSupportRequestAttachmentRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: AddSupportRequestAttachmentRequest): AddSupportRequestAttachmentRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                case /* string name */ 2:
+                    message.name = reader.string();
+                    break;
+                case /* bytes data */ 3:
+                    message.data = reader.bytes();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose purpose */ 4:
+                    message.purpose = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: AddSupportRequestAttachmentRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        /* string name = 2; */
+        if (message.name !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.name);
+        /* bytes data = 3; */
+        if (message.data.length)
+            writer.tag(3, WireType.LengthDelimited).bytes(message.data);
+        /* octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose purpose = 4; */
+        if (message.purpose !== 0)
+            writer.tag(4, WireType.Varint).int32(message.purpose);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.AddSupportRequestAttachmentRequest
+ */
+export const AddSupportRequestAttachmentRequest = new AddSupportRequestAttachmentRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ResolveSupportRequestRequest$Type extends MessageType<ResolveSupportRequestRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.ResolveSupportRequestRequest", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ResolveSupportRequestRequest>): ResolveSupportRequestRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.id = "";
+        if (value !== undefined)
+            reflectionMergePartial<ResolveSupportRequestRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ResolveSupportRequestRequest): ResolveSupportRequestRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ResolveSupportRequestRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.ResolveSupportRequestRequest
+ */
+export const ResolveSupportRequestRequest = new ResolveSupportRequestRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class EscalateSupportRequestRequest$Type extends MessageType<EscalateSupportRequestRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.EscalateSupportRequestRequest", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "reason", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<EscalateSupportRequestRequest>): EscalateSupportRequestRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.id = "";
+        message.reason = "";
+        if (value !== undefined)
+            reflectionMergePartial<EscalateSupportRequestRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: EscalateSupportRequestRequest): EscalateSupportRequestRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                case /* string reason */ 2:
+                    message.reason = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: EscalateSupportRequestRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        /* string reason = 2; */
+        if (message.reason !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.reason);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.EscalateSupportRequestRequest
+ */
+export const EscalateSupportRequestRequest = new EscalateSupportRequestRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DownloadSupportRequestAttachmentRequest$Type extends MessageType<DownloadSupportRequestAttachmentRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentRequest", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "attachmentID", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<DownloadSupportRequestAttachmentRequest>): DownloadSupportRequestAttachmentRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.id = "";
+        message.attachmentID = "";
+        if (value !== undefined)
+            reflectionMergePartial<DownloadSupportRequestAttachmentRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DownloadSupportRequestAttachmentRequest): DownloadSupportRequestAttachmentRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                case /* string attachmentID */ 2:
+                    message.attachmentID = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DownloadSupportRequestAttachmentRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        /* string attachmentID = 2; */
+        if (message.attachmentID !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.attachmentID);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentRequest
+ */
+export const DownloadSupportRequestAttachmentRequest = new DownloadSupportRequestAttachmentRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DownloadSupportRequestAttachmentResponse$Type extends MessageType<DownloadSupportRequestAttachmentResponse> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse", [
+            { no: 1, name: "header", kind: "message", oneof: "type", T: () => DownloadSupportRequestAttachmentResponse_Header },
+            { no: 2, name: "chunk", kind: "scalar", oneof: "type", T: 12 /*ScalarType.BYTES*/ }
+        ]);
+    }
+    create(value?: PartialMessage<DownloadSupportRequestAttachmentResponse>): DownloadSupportRequestAttachmentResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<DownloadSupportRequestAttachmentResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DownloadSupportRequestAttachmentResponse): DownloadSupportRequestAttachmentResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse.Header header */ 1:
+                    message.type = {
+                        oneofKind: "header",
+                        header: DownloadSupportRequestAttachmentResponse_Header.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).header)
+                    };
+                    break;
+                case /* bytes chunk */ 2:
+                    message.type = {
+                        oneofKind: "chunk",
+                        chunk: reader.bytes()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DownloadSupportRequestAttachmentResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse.Header header = 1; */
+        if (message.type.oneofKind === "header")
+            DownloadSupportRequestAttachmentResponse_Header.internalBinaryWrite(message.type.header, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* bytes chunk = 2; */
+        if (message.type.oneofKind === "chunk")
+            writer.tag(2, WireType.LengthDelimited).bytes(message.type.chunk);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse
+ */
+export const DownloadSupportRequestAttachmentResponse = new DownloadSupportRequestAttachmentResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DownloadSupportRequestAttachmentResponse_Header$Type extends MessageType<DownloadSupportRequestAttachmentResponse_Header> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse.Header", [
+            { no: 1, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "contentType", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "size", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<DownloadSupportRequestAttachmentResponse_Header>): DownloadSupportRequestAttachmentResponse_Header {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.name = "";
+        message.contentType = "";
+        message.size = 0;
+        if (value !== undefined)
+            reflectionMergePartial<DownloadSupportRequestAttachmentResponse_Header>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DownloadSupportRequestAttachmentResponse_Header): DownloadSupportRequestAttachmentResponse_Header {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string name */ 1:
+                    message.name = reader.string();
+                    break;
+                case /* string contentType */ 2:
+                    message.contentType = reader.string();
+                    break;
+                case /* uint64 size */ 3:
+                    message.size = reader.uint64().toNumber();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DownloadSupportRequestAttachmentResponse_Header, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string name = 1; */
+        if (message.name !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.name);
+        /* string contentType = 2; */
+        if (message.contentType !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.contentType);
+        /* uint64 size = 3; */
+        if (message.size !== 0)
+            writer.tag(3, WireType.Varint).uint64(message.size);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse.Header
+ */
+export const DownloadSupportRequestAttachmentResponse_Header = new DownloadSupportRequestAttachmentResponse_Header$Type();
 /**
  * @generated ServiceType for protobuf service octelium.api.main.enterprise.v1.MainService
  */
@@ -33958,4 +37078,19 @@ export const AgentService = new ServiceType("octelium.api.main.enterprise.v1.Age
     { name: "GetAgent", options: {}, I: GetAgentRequest, O: Agent },
     { name: "InitializeAgent", options: {}, I: InitializeAgentRequest, O: Agent },
     { name: "CreateAgentWorkspace", options: {}, I: CreateAgentWorkspaceRequest, O: Agent_Workspace }
+]);
+/**
+ * @generated ServiceType for protobuf service octelium.api.main.enterprise.v1.SupportService
+ */
+export const SupportService = new ServiceType("octelium.api.main.enterprise.v1.SupportService", [
+    { name: "GetSupportInfo", options: {}, I: GetSupportInfoRequest, O: SupportInfo },
+    { name: "ListSupportRequest", options: {}, I: ListSupportRequestOptions, O: SupportRequestList },
+    { name: "GetSupportRequest", options: {}, I: GetSupportRequestRequest, O: SupportRequest },
+    { name: "ListSupportRequestEvent", options: {}, I: ListSupportRequestEventOptions, O: SupportRequestEventList },
+    { name: "CreateSupportRequest", options: {}, I: CreateSupportRequestRequest, O: SupportRequest },
+    { name: "AddSupportRequestMessage", options: {}, I: AddSupportRequestMessageRequest, O: SupportRequest },
+    { name: "AddSupportRequestAttachment", options: {}, I: AddSupportRequestAttachmentRequest, O: SupportRequest_Attachment },
+    { name: "ResolveSupportRequest", options: {}, I: ResolveSupportRequestRequest, O: SupportRequest },
+    { name: "EscalateSupportRequest", options: {}, I: EscalateSupportRequestRequest, O: SupportRequest },
+    { name: "DownloadSupportRequestAttachment", serverStreaming: true, options: {}, I: DownloadSupportRequestAttachmentRequest, O: DownloadSupportRequestAttachmentResponse }
 ]);

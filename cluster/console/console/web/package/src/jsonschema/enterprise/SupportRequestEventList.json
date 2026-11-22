@@ -1,0 +1,138 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/SupportRequestEventList",
+    "definitions": {
+        "SupportRequestEventList": {
+            "properties": {
+                "items": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.enterprise.v1.SupportRequest.Event"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Items is the list of the events, the oldest first."
+                },
+                "nextCursor": {
+                    "type": "string",
+                    "description": "NextCursor is set when earlier events are available."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Support Request Event List",
+            "description": "SupportRequestEventList is the response of the ListSupportRequestEvent method."
+        },
+        "octelium.api.main.enterprise.v1.SupportRequest.Actor": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "CUSTOMER",
+                        "CLUSTER",
+                        "EMAIL",
+                        "AGENT",
+                        "SYSTEM"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the type of the author."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the author, if known."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Actor",
+            "description": "Actor is the author of a change."
+        },
+        "octelium.api.main.enterprise.v1.SupportRequest.Event": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the unique identifier of the event."
+                },
+                "sequence": {
+                    "type": "integer",
+                    "description": "Sequence is the revision of the request that recorded the event."
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "CREATED",
+                        "MESSAGE",
+                        "STATUS",
+                        "PRIORITY",
+                        "CATEGORY",
+                        "ASSIGNMENT",
+                        "ESCALATION",
+                        "ATTACHMENT",
+                        "ORGANIZATION"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the type of the event."
+                },
+                "actor": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.SupportRequest.Actor",
+                    "additionalProperties": false,
+                    "description": "Actor is the author of the event."
+                },
+                "channel": {
+                    "enum": [
+                        "CHANNEL_UNKNOWN",
+                        "PORTAL",
+                        "EMAIL",
+                        "CLUSTER",
+                        "AGENT",
+                        "SLACK",
+                        "SYSTEM"
+                    ],
+                    "type": "string",
+                    "title": "Channel",
+                    "description": "Channel is the channel through which a change was made."
+                },
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the date of the event.",
+                    "format": "date-time"
+                },
+                "body": {
+                    "type": "string",
+                    "description": "Body is the text of a description, a reply or the name of a new file."
+                },
+                "attachmentIDs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "AttachmentIDs is the list of the files that the event references."
+                },
+                "from": {
+                    "type": "string",
+                    "description": "From is the previous value of a change."
+                },
+                "to": {
+                    "type": "string",
+                    "description": "To is the new value of a change."
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "Reason is the written reason of a change."
+                },
+                "skippedAttachments": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "SkippedAttachments is the list of the names of the files that were not accepted."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Event",
+            "description": "Event is a public entry of the timeline of the request."
+        }
+    }
+}

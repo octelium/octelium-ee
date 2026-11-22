@@ -4,8 +4,10 @@ import {
   pageAgent,
   pageOverview,
   pageSettings,
+  pageSupport,
   type NavItem,
 } from "@/components/Navigation/catalog";
+import { useSupportAvailable } from "@/components/Support/context";
 import { twMerge } from "@/lib/utils";
 import { Menu, SegmentedControl, Tooltip } from "@mantine/core";
 import { useLocalStorage, useReducedMotion } from "@mantine/hooks";
@@ -290,6 +292,7 @@ export default function Sidebar(props: {
   });
   const mode = storedMode === "functions" ? "functions" : "api";
   const reducedMotion = useReducedMotion();
+  const supportAvailable = useSupportAvailable();
   const navRef = React.useRef<HTMLElement>(null);
 
   React.useEffect(() => {
@@ -476,7 +479,10 @@ export default function Sidebar(props: {
         )}
       </nav>
 
-      <div className="shrink-0 border-t border-slate-200/80 p-2">
+      <div className="shrink-0 space-y-1 border-t border-slate-200/80 p-2">
+        {supportAvailable && (
+          <NavigationLink item={pageSupport} collapsed={collapsed} />
+        )}
         <NavigationLink item={pageSettings} collapsed={collapsed} />
       </div>
     </div>

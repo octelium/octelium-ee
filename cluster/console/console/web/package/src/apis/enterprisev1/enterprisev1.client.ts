@@ -10,6 +10,24 @@
 //
 // See the LICENSE file in the repository root for full license text.
 //
+import { SupportService } from "./enterprisev1";
+import type { DownloadSupportRequestAttachmentResponse } from "./enterprisev1";
+import type { DownloadSupportRequestAttachmentRequest } from "./enterprisev1";
+import type { ServerStreamingCall } from "@protobuf-ts/runtime-rpc";
+import type { EscalateSupportRequestRequest } from "./enterprisev1";
+import type { ResolveSupportRequestRequest } from "./enterprisev1";
+import type { SupportRequest_Attachment } from "./enterprisev1";
+import type { AddSupportRequestAttachmentRequest } from "./enterprisev1";
+import type { AddSupportRequestMessageRequest } from "./enterprisev1";
+import type { CreateSupportRequestRequest } from "./enterprisev1";
+import type { SupportRequestEventList } from "./enterprisev1";
+import type { ListSupportRequestEventOptions } from "./enterprisev1";
+import type { SupportRequest } from "./enterprisev1";
+import type { GetSupportRequestRequest } from "./enterprisev1";
+import type { SupportRequestList } from "./enterprisev1";
+import type { ListSupportRequestOptions } from "./enterprisev1";
+import type { SupportInfo } from "./enterprisev1";
+import type { GetSupportInfoRequest } from "./enterprisev1";
 import { AgentService } from "./enterprisev1";
 import type { Agent_Workspace } from "./enterprisev1";
 import type { CreateAgentWorkspaceRequest } from "./enterprisev1";
@@ -1033,5 +1051,220 @@ export class AgentServiceClient implements IAgentServiceClient, ServiceInfo {
     createAgentWorkspace(input: CreateAgentWorkspaceRequest, options?: RpcOptions): UnaryCall<CreateAgentWorkspaceRequest, Agent_Workspace> {
         const method = this.methods[2], opt = this._transport.mergeOptions(options);
         return stackIntercept<CreateAgentWorkspaceRequest, Agent_Workspace>("unary", this._transport, method, opt, input);
+    }
+}
+/**
+ * SupportService lets the Cluster administrators open and follow technical
+ * support requests with Octelium Support and send them diagnostics directly
+ * from the Cluster. The Cluster authenticates to the Octelium customer portal
+ * with its License and its installation key, which never leave the Cluster
+ * except to the customer portal. The calling User is recorded as the
+ * unverified reporter of the requests that it opens. Only the requests that
+ * were opened from this Cluster installation are visible via this service.
+ * All the support requests of the organization, including the billing and
+ * licensing ones, are available in the customer portal.
+ *
+ * @generated from protobuf service octelium.api.main.enterprise.v1.SupportService
+ */
+export interface ISupportServiceClient {
+    /**
+     * GetSupportInfo retrieves whether support requests can currently be opened
+     * from the Cluster, the support level of the Cluster's subscription, the
+     * limits of the requests and the Cluster details that are sent along with
+     * every new request.
+     *
+     * @generated from protobuf rpc: GetSupportInfo
+     */
+    getSupportInfo(input: GetSupportInfoRequest, options?: RpcOptions): UnaryCall<GetSupportInfoRequest, SupportInfo>;
+    /**
+     * ListSupportRequest lists the support requests that were opened from the
+     * Cluster, the most recently active first.
+     *
+     * @generated from protobuf rpc: ListSupportRequest
+     */
+    listSupportRequest(input: ListSupportRequestOptions, options?: RpcOptions): UnaryCall<ListSupportRequestOptions, SupportRequestList>;
+    /**
+     * GetSupportRequest retrieves a support request with its latest public
+     * timeline events and its files.
+     *
+     * @generated from protobuf rpc: GetSupportRequest
+     */
+    getSupportRequest(input: GetSupportRequestRequest, options?: RpcOptions): UnaryCall<GetSupportRequestRequest, SupportRequest>;
+    /**
+     * ListSupportRequestEvent lists the earlier public timeline events of a
+     * support request.
+     *
+     * @generated from protobuf rpc: ListSupportRequestEvent
+     */
+    listSupportRequestEvent(input: ListSupportRequestEventOptions, options?: RpcOptions): UnaryCall<ListSupportRequestEventOptions, SupportRequestEventList>;
+    /**
+     * CreateSupportRequest opens a new technical support request. The details
+     * of the Cluster (i.e. the `environment` field of SupportInfo) are sent
+     * along with the request.
+     *
+     * @generated from protobuf rpc: CreateSupportRequest
+     */
+    createSupportRequest(input: CreateSupportRequestRequest, options?: RpcOptions): UnaryCall<CreateSupportRequestRequest, SupportRequest>;
+    /**
+     * AddSupportRequestMessage adds a reply to a support request. Replying to a
+     * resolved request or to a request that waits on the customer reopens it.
+     *
+     * @generated from protobuf rpc: AddSupportRequestMessage
+     */
+    addSupportRequestMessage(input: AddSupportRequestMessageRequest, options?: RpcOptions): UnaryCall<AddSupportRequestMessageRequest, SupportRequest>;
+    /**
+     * AddSupportRequestAttachment adds a file (e.g. diagnostics, a log file or a
+     * screenshot) to a support request. The file can then be referenced by a
+     * reply.
+     *
+     * @generated from protobuf rpc: AddSupportRequestAttachment
+     */
+    addSupportRequestAttachment(input: AddSupportRequestAttachmentRequest, options?: RpcOptions): UnaryCall<AddSupportRequestAttachmentRequest, SupportRequest_Attachment>;
+    /**
+     * ResolveSupportRequest marks a support request as resolved.
+     *
+     * @generated from protobuf rpc: ResolveSupportRequest
+     */
+    resolveSupportRequest(input: ResolveSupportRequestRequest, options?: RpcOptions): UnaryCall<ResolveSupportRequestRequest, SupportRequest>;
+    /**
+     * EscalateSupportRequest escalates a support request to the Octelium
+     * support management with a written reason. A request can only be
+     * escalated once.
+     *
+     * @generated from protobuf rpc: EscalateSupportRequest
+     */
+    escalateSupportRequest(input: EscalateSupportRequestRequest, options?: RpcOptions): UnaryCall<EscalateSupportRequestRequest, SupportRequest>;
+    /**
+     * DownloadSupportRequestAttachment downloads a file of a support request.
+     * The first message carries the header of the file and the following ones
+     * its content.
+     *
+     * @generated from protobuf rpc: DownloadSupportRequestAttachment
+     */
+    downloadSupportRequestAttachment(input: DownloadSupportRequestAttachmentRequest, options?: RpcOptions): ServerStreamingCall<DownloadSupportRequestAttachmentRequest, DownloadSupportRequestAttachmentResponse>;
+}
+/**
+ * SupportService lets the Cluster administrators open and follow technical
+ * support requests with Octelium Support and send them diagnostics directly
+ * from the Cluster. The Cluster authenticates to the Octelium customer portal
+ * with its License and its installation key, which never leave the Cluster
+ * except to the customer portal. The calling User is recorded as the
+ * unverified reporter of the requests that it opens. Only the requests that
+ * were opened from this Cluster installation are visible via this service.
+ * All the support requests of the organization, including the billing and
+ * licensing ones, are available in the customer portal.
+ *
+ * @generated from protobuf service octelium.api.main.enterprise.v1.SupportService
+ */
+export class SupportServiceClient implements ISupportServiceClient, ServiceInfo {
+    typeName = SupportService.typeName;
+    methods = SupportService.methods;
+    options = SupportService.options;
+    constructor(private readonly _transport: RpcTransport) {
+    }
+    /**
+     * GetSupportInfo retrieves whether support requests can currently be opened
+     * from the Cluster, the support level of the Cluster's subscription, the
+     * limits of the requests and the Cluster details that are sent along with
+     * every new request.
+     *
+     * @generated from protobuf rpc: GetSupportInfo
+     */
+    getSupportInfo(input: GetSupportInfoRequest, options?: RpcOptions): UnaryCall<GetSupportInfoRequest, SupportInfo> {
+        const method = this.methods[0], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetSupportInfoRequest, SupportInfo>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * ListSupportRequest lists the support requests that were opened from the
+     * Cluster, the most recently active first.
+     *
+     * @generated from protobuf rpc: ListSupportRequest
+     */
+    listSupportRequest(input: ListSupportRequestOptions, options?: RpcOptions): UnaryCall<ListSupportRequestOptions, SupportRequestList> {
+        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListSupportRequestOptions, SupportRequestList>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * GetSupportRequest retrieves a support request with its latest public
+     * timeline events and its files.
+     *
+     * @generated from protobuf rpc: GetSupportRequest
+     */
+    getSupportRequest(input: GetSupportRequestRequest, options?: RpcOptions): UnaryCall<GetSupportRequestRequest, SupportRequest> {
+        const method = this.methods[2], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetSupportRequestRequest, SupportRequest>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * ListSupportRequestEvent lists the earlier public timeline events of a
+     * support request.
+     *
+     * @generated from protobuf rpc: ListSupportRequestEvent
+     */
+    listSupportRequestEvent(input: ListSupportRequestEventOptions, options?: RpcOptions): UnaryCall<ListSupportRequestEventOptions, SupportRequestEventList> {
+        const method = this.methods[3], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListSupportRequestEventOptions, SupportRequestEventList>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * CreateSupportRequest opens a new technical support request. The details
+     * of the Cluster (i.e. the `environment` field of SupportInfo) are sent
+     * along with the request.
+     *
+     * @generated from protobuf rpc: CreateSupportRequest
+     */
+    createSupportRequest(input: CreateSupportRequestRequest, options?: RpcOptions): UnaryCall<CreateSupportRequestRequest, SupportRequest> {
+        const method = this.methods[4], opt = this._transport.mergeOptions(options);
+        return stackIntercept<CreateSupportRequestRequest, SupportRequest>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * AddSupportRequestMessage adds a reply to a support request. Replying to a
+     * resolved request or to a request that waits on the customer reopens it.
+     *
+     * @generated from protobuf rpc: AddSupportRequestMessage
+     */
+    addSupportRequestMessage(input: AddSupportRequestMessageRequest, options?: RpcOptions): UnaryCall<AddSupportRequestMessageRequest, SupportRequest> {
+        const method = this.methods[5], opt = this._transport.mergeOptions(options);
+        return stackIntercept<AddSupportRequestMessageRequest, SupportRequest>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * AddSupportRequestAttachment adds a file (e.g. diagnostics, a log file or a
+     * screenshot) to a support request. The file can then be referenced by a
+     * reply.
+     *
+     * @generated from protobuf rpc: AddSupportRequestAttachment
+     */
+    addSupportRequestAttachment(input: AddSupportRequestAttachmentRequest, options?: RpcOptions): UnaryCall<AddSupportRequestAttachmentRequest, SupportRequest_Attachment> {
+        const method = this.methods[6], opt = this._transport.mergeOptions(options);
+        return stackIntercept<AddSupportRequestAttachmentRequest, SupportRequest_Attachment>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * ResolveSupportRequest marks a support request as resolved.
+     *
+     * @generated from protobuf rpc: ResolveSupportRequest
+     */
+    resolveSupportRequest(input: ResolveSupportRequestRequest, options?: RpcOptions): UnaryCall<ResolveSupportRequestRequest, SupportRequest> {
+        const method = this.methods[7], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ResolveSupportRequestRequest, SupportRequest>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * EscalateSupportRequest escalates a support request to the Octelium
+     * support management with a written reason. A request can only be
+     * escalated once.
+     *
+     * @generated from protobuf rpc: EscalateSupportRequest
+     */
+    escalateSupportRequest(input: EscalateSupportRequestRequest, options?: RpcOptions): UnaryCall<EscalateSupportRequestRequest, SupportRequest> {
+        const method = this.methods[8], opt = this._transport.mergeOptions(options);
+        return stackIntercept<EscalateSupportRequestRequest, SupportRequest>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * DownloadSupportRequestAttachment downloads a file of a support request.
+     * The first message carries the header of the file and the following ones
+     * its content.
+     *
+     * @generated from protobuf rpc: DownloadSupportRequestAttachment
+     */
+    downloadSupportRequestAttachment(input: DownloadSupportRequestAttachmentRequest, options?: RpcOptions): ServerStreamingCall<DownloadSupportRequestAttachmentRequest, DownloadSupportRequestAttachmentResponse> {
+        const method = this.methods[9], opt = this._transport.mergeOptions(options);
+        return stackIntercept<DownloadSupportRequestAttachmentRequest, DownloadSupportRequestAttachmentResponse>("serverStreaming", this._transport, method, opt, input);
     }
 }

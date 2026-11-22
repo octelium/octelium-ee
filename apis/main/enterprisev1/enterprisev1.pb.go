@@ -2486,6 +2486,594 @@ func (Agent_Workspace_Type) EnumDescriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{67, 0, 0}
 }
 
+// State is whether support requests can currently be opened from the
+// Cluster.
+type SupportInfo_State int32
+
+const (
+	// STATE_UNKNOWN is the default unset value.
+	SupportInfo_STATE_UNKNOWN SupportInfo_State = 0
+	// AVAILABLE means that support requests can be opened from the Cluster.
+	SupportInfo_AVAILABLE SupportInfo_State = 1
+	// NO_LICENSE means that the Cluster does not have a valid License set.
+	SupportInfo_NO_LICENSE SupportInfo_State = 2
+	// NOT_ENTITLED means that the subscription of the Cluster's License does
+	// not include technical support. Licensing and billing requests can still
+	// be opened from the customer portal.
+	SupportInfo_NOT_ENTITLED SupportInfo_State = 3
+	// UNAUTHORIZED means that Octelium rejected the Cluster's License (e.g.
+	// the License was revoked, the subscription is suspended or the License
+	// is not valid for the Cluster domain).
+	SupportInfo_UNAUTHORIZED SupportInfo_State = 4
+	// UNREACHABLE means that the customer portal could not be reached from
+	// the Cluster (e.g. the outbound traffic is blocked).
+	SupportInfo_UNREACHABLE SupportInfo_State = 5
+	// DISABLED means that Octelium does not currently accept support requests
+	// from Clusters.
+	SupportInfo_DISABLED SupportInfo_State = 6
+)
+
+// Enum value maps for SupportInfo_State.
+var (
+	SupportInfo_State_name = map[int32]string{
+		0: "STATE_UNKNOWN",
+		1: "AVAILABLE",
+		2: "NO_LICENSE",
+		3: "NOT_ENTITLED",
+		4: "UNAUTHORIZED",
+		5: "UNREACHABLE",
+		6: "DISABLED",
+	}
+	SupportInfo_State_value = map[string]int32{
+		"STATE_UNKNOWN": 0,
+		"AVAILABLE":     1,
+		"NO_LICENSE":    2,
+		"NOT_ENTITLED":  3,
+		"UNAUTHORIZED":  4,
+		"UNREACHABLE":   5,
+		"DISABLED":      6,
+	}
+)
+
+func (x SupportInfo_State) Enum() *SupportInfo_State {
+	p := new(SupportInfo_State)
+	*p = x
+	return p
+}
+
+func (x SupportInfo_State) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SupportInfo_State) Descriptor() protoreflect.EnumDescriptor {
+	return file_enterprisev1_proto_enumTypes[40].Descriptor()
+}
+
+func (SupportInfo_State) Type() protoreflect.EnumType {
+	return &file_enterprisev1_proto_enumTypes[40]
+}
+
+func (x SupportInfo_State) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SupportInfo_State.Descriptor instead.
+func (SupportInfo_State) EnumDescriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{69, 0}
+}
+
+// Priority is the priority of a request as defined by the Octelium Support
+// SLA.
+type SupportRequest_Priority int32
+
+const (
+	// PRIORITY_UNKNOWN is the default unset value.
+	SupportRequest_PRIORITY_UNKNOWN SupportRequest_Priority = 0
+	// P1 means that Octelium is inoperative or that a core function is
+	// unavailable with no workaround.
+	SupportRequest_P1 SupportRequest_Priority = 1
+	// P2 means that a significant function is impaired or degraded.
+	SupportRequest_P2 SupportRequest_Priority = 2
+	// P3 means a partial, non-critical loss of functionality.
+	SupportRequest_P3 SupportRequest_Priority = 3
+	// P4 means a question, a minor issue or a feature request.
+	SupportRequest_P4 SupportRequest_Priority = 4
+)
+
+// Enum value maps for SupportRequest_Priority.
+var (
+	SupportRequest_Priority_name = map[int32]string{
+		0: "PRIORITY_UNKNOWN",
+		1: "P1",
+		2: "P2",
+		3: "P3",
+		4: "P4",
+	}
+	SupportRequest_Priority_value = map[string]int32{
+		"PRIORITY_UNKNOWN": 0,
+		"P1":               1,
+		"P2":               2,
+		"P3":               3,
+		"P4":               4,
+	}
+)
+
+func (x SupportRequest_Priority) Enum() *SupportRequest_Priority {
+	p := new(SupportRequest_Priority)
+	*p = x
+	return p
+}
+
+func (x SupportRequest_Priority) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SupportRequest_Priority) Descriptor() protoreflect.EnumDescriptor {
+	return file_enterprisev1_proto_enumTypes[41].Descriptor()
+}
+
+func (SupportRequest_Priority) Type() protoreflect.EnumType {
+	return &file_enterprisev1_proto_enumTypes[41]
+}
+
+func (x SupportRequest_Priority) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SupportRequest_Priority.Descriptor instead.
+func (SupportRequest_Priority) EnumDescriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{70, 0}
+}
+
+// Status is the status of a request.
+type SupportRequest_Status int32
+
+const (
+	// STATUS_UNKNOWN is the default unset value.
+	SupportRequest_STATUS_UNKNOWN SupportRequest_Status = 0
+	// NEW means that Octelium did not answer the request yet.
+	SupportRequest_NEW SupportRequest_Status = 1
+	// OPEN means that Octelium is working on the request.
+	SupportRequest_OPEN SupportRequest_Status = 2
+	// WAITING_ON_CUSTOMER means that Octelium needs a reply to continue.
+	SupportRequest_WAITING_ON_CUSTOMER SupportRequest_Status = 3
+	// ON_HOLD means that the request waits on an Octelium release or on
+	// engineering.
+	SupportRequest_ON_HOLD SupportRequest_Status = 4
+	// RESOLVED means that a solution was given. A reply reopens the request.
+	SupportRequest_RESOLVED SupportRequest_Status = 5
+	// CLOSED means that the request is closed and can no longer be replied
+	// to.
+	SupportRequest_CLOSED SupportRequest_Status = 6
+)
+
+// Enum value maps for SupportRequest_Status.
+var (
+	SupportRequest_Status_name = map[int32]string{
+		0: "STATUS_UNKNOWN",
+		1: "NEW",
+		2: "OPEN",
+		3: "WAITING_ON_CUSTOMER",
+		4: "ON_HOLD",
+		5: "RESOLVED",
+		6: "CLOSED",
+	}
+	SupportRequest_Status_value = map[string]int32{
+		"STATUS_UNKNOWN":      0,
+		"NEW":                 1,
+		"OPEN":                2,
+		"WAITING_ON_CUSTOMER": 3,
+		"ON_HOLD":             4,
+		"RESOLVED":            5,
+		"CLOSED":              6,
+	}
+)
+
+func (x SupportRequest_Status) Enum() *SupportRequest_Status {
+	p := new(SupportRequest_Status)
+	*p = x
+	return p
+}
+
+func (x SupportRequest_Status) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SupportRequest_Status) Descriptor() protoreflect.EnumDescriptor {
+	return file_enterprisev1_proto_enumTypes[42].Descriptor()
+}
+
+func (SupportRequest_Status) Type() protoreflect.EnumType {
+	return &file_enterprisev1_proto_enumTypes[42]
+}
+
+func (x SupportRequest_Status) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SupportRequest_Status.Descriptor instead.
+func (SupportRequest_Status) EnumDescriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{70, 1}
+}
+
+// SupportLevel is a support level as defined by the Octelium Support SLA.
+type SupportRequest_SupportLevel int32
+
+const (
+	// SUPPORT_LEVEL_UNKNOWN is the default unset value.
+	SupportRequest_SUPPORT_LEVEL_UNKNOWN SupportRequest_SupportLevel = 0
+	// NONE means that technical support is not included.
+	SupportRequest_NONE SupportRequest_SupportLevel = 1
+	// STANDARD is the standard support level.
+	SupportRequest_STANDARD SupportRequest_SupportLevel = 2
+	// PREMIUM is the premium support level.
+	SupportRequest_PREMIUM SupportRequest_SupportLevel = 3
+)
+
+// Enum value maps for SupportRequest_SupportLevel.
+var (
+	SupportRequest_SupportLevel_name = map[int32]string{
+		0: "SUPPORT_LEVEL_UNKNOWN",
+		1: "NONE",
+		2: "STANDARD",
+		3: "PREMIUM",
+	}
+	SupportRequest_SupportLevel_value = map[string]int32{
+		"SUPPORT_LEVEL_UNKNOWN": 0,
+		"NONE":                  1,
+		"STANDARD":              2,
+		"PREMIUM":               3,
+	}
+)
+
+func (x SupportRequest_SupportLevel) Enum() *SupportRequest_SupportLevel {
+	p := new(SupportRequest_SupportLevel)
+	*p = x
+	return p
+}
+
+func (x SupportRequest_SupportLevel) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SupportRequest_SupportLevel) Descriptor() protoreflect.EnumDescriptor {
+	return file_enterprisev1_proto_enumTypes[43].Descriptor()
+}
+
+func (SupportRequest_SupportLevel) Type() protoreflect.EnumType {
+	return &file_enterprisev1_proto_enumTypes[43]
+}
+
+func (x SupportRequest_SupportLevel) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SupportRequest_SupportLevel.Descriptor instead.
+func (SupportRequest_SupportLevel) EnumDescriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{70, 2}
+}
+
+// Channel is the channel through which a change was made.
+type SupportRequest_Channel int32
+
+const (
+	// CHANNEL_UNKNOWN is the default unset value.
+	SupportRequest_CHANNEL_UNKNOWN SupportRequest_Channel = 0
+	// PORTAL is the customer portal.
+	SupportRequest_PORTAL SupportRequest_Channel = 1
+	// EMAIL is email.
+	SupportRequest_EMAIL SupportRequest_Channel = 2
+	// CLUSTER is a Cluster.
+	SupportRequest_CLUSTER SupportRequest_Channel = 3
+	// AGENT is the Octelium Support team.
+	SupportRequest_AGENT SupportRequest_Channel = 4
+	// SLACK is Slack.
+	SupportRequest_SLACK SupportRequest_Channel = 5
+	// SYSTEM is an automatic change (e.g. an automatic closure).
+	SupportRequest_SYSTEM SupportRequest_Channel = 6
+)
+
+// Enum value maps for SupportRequest_Channel.
+var (
+	SupportRequest_Channel_name = map[int32]string{
+		0: "CHANNEL_UNKNOWN",
+		1: "PORTAL",
+		2: "EMAIL",
+		3: "CLUSTER",
+		4: "AGENT",
+		5: "SLACK",
+		6: "SYSTEM",
+	}
+	SupportRequest_Channel_value = map[string]int32{
+		"CHANNEL_UNKNOWN": 0,
+		"PORTAL":          1,
+		"EMAIL":           2,
+		"CLUSTER":         3,
+		"AGENT":           4,
+		"SLACK":           5,
+		"SYSTEM":          6,
+	}
+)
+
+func (x SupportRequest_Channel) Enum() *SupportRequest_Channel {
+	p := new(SupportRequest_Channel)
+	*p = x
+	return p
+}
+
+func (x SupportRequest_Channel) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SupportRequest_Channel) Descriptor() protoreflect.EnumDescriptor {
+	return file_enterprisev1_proto_enumTypes[44].Descriptor()
+}
+
+func (SupportRequest_Channel) Type() protoreflect.EnumType {
+	return &file_enterprisev1_proto_enumTypes[44]
+}
+
+func (x SupportRequest_Channel) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SupportRequest_Channel.Descriptor instead.
+func (SupportRequest_Channel) EnumDescriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{70, 3}
+}
+
+// Type is the type of the author.
+type SupportRequest_Actor_Type int32
+
+const (
+	// TYPE_UNKNOWN is the default unset value.
+	SupportRequest_Actor_TYPE_UNKNOWN SupportRequest_Actor_Type = 0
+	// CUSTOMER is a member of the organization in the customer portal.
+	SupportRequest_Actor_CUSTOMER SupportRequest_Actor_Type = 1
+	// CLUSTER is a Cluster of the organization.
+	SupportRequest_Actor_CLUSTER SupportRequest_Actor_Type = 2
+	// EMAIL is a sender of an email.
+	SupportRequest_Actor_EMAIL SupportRequest_Actor_Type = 3
+	// AGENT is an engineer of Octelium Support.
+	SupportRequest_Actor_AGENT SupportRequest_Actor_Type = 4
+	// SYSTEM is Octelium itself.
+	SupportRequest_Actor_SYSTEM SupportRequest_Actor_Type = 5
+)
+
+// Enum value maps for SupportRequest_Actor_Type.
+var (
+	SupportRequest_Actor_Type_name = map[int32]string{
+		0: "TYPE_UNKNOWN",
+		1: "CUSTOMER",
+		2: "CLUSTER",
+		3: "EMAIL",
+		4: "AGENT",
+		5: "SYSTEM",
+	}
+	SupportRequest_Actor_Type_value = map[string]int32{
+		"TYPE_UNKNOWN": 0,
+		"CUSTOMER":     1,
+		"CLUSTER":      2,
+		"EMAIL":        3,
+		"AGENT":        4,
+		"SYSTEM":       5,
+	}
+)
+
+func (x SupportRequest_Actor_Type) Enum() *SupportRequest_Actor_Type {
+	p := new(SupportRequest_Actor_Type)
+	*p = x
+	return p
+}
+
+func (x SupportRequest_Actor_Type) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SupportRequest_Actor_Type) Descriptor() protoreflect.EnumDescriptor {
+	return file_enterprisev1_proto_enumTypes[45].Descriptor()
+}
+
+func (SupportRequest_Actor_Type) Type() protoreflect.EnumType {
+	return &file_enterprisev1_proto_enumTypes[45]
+}
+
+func (x SupportRequest_Actor_Type) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SupportRequest_Actor_Type.Descriptor instead.
+func (SupportRequest_Actor_Type) EnumDescriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{70, 0, 0}
+}
+
+// Type is the type of the event.
+type SupportRequest_Event_Type int32
+
+const (
+	// TYPE_UNKNOWN is the default unset value.
+	SupportRequest_Event_TYPE_UNKNOWN SupportRequest_Event_Type = 0
+	// CREATED is the creation of the request with its description.
+	SupportRequest_Event_CREATED SupportRequest_Event_Type = 1
+	// MESSAGE is a reply.
+	SupportRequest_Event_MESSAGE SupportRequest_Event_Type = 2
+	// STATUS is a change of the status.
+	SupportRequest_Event_STATUS SupportRequest_Event_Type = 3
+	// PRIORITY is a change of the priority with its reason.
+	SupportRequest_Event_PRIORITY SupportRequest_Event_Type = 4
+	// CATEGORY is a change of the category.
+	SupportRequest_Event_CATEGORY SupportRequest_Event_Type = 5
+	// ASSIGNMENT is an assignment to an engineer.
+	SupportRequest_Event_ASSIGNMENT SupportRequest_Event_Type = 6
+	// ESCALATION is an escalation with its reason.
+	SupportRequest_Event_ESCALATION SupportRequest_Event_Type = 7
+	// ATTACHMENT is a new file.
+	SupportRequest_Event_ATTACHMENT SupportRequest_Event_Type = 8
+	// ORGANIZATION is the linking of the request to the organization.
+	SupportRequest_Event_ORGANIZATION SupportRequest_Event_Type = 9
+)
+
+// Enum value maps for SupportRequest_Event_Type.
+var (
+	SupportRequest_Event_Type_name = map[int32]string{
+		0: "TYPE_UNKNOWN",
+		1: "CREATED",
+		2: "MESSAGE",
+		3: "STATUS",
+		4: "PRIORITY",
+		5: "CATEGORY",
+		6: "ASSIGNMENT",
+		7: "ESCALATION",
+		8: "ATTACHMENT",
+		9: "ORGANIZATION",
+	}
+	SupportRequest_Event_Type_value = map[string]int32{
+		"TYPE_UNKNOWN": 0,
+		"CREATED":      1,
+		"MESSAGE":      2,
+		"STATUS":       3,
+		"PRIORITY":     4,
+		"CATEGORY":     5,
+		"ASSIGNMENT":   6,
+		"ESCALATION":   7,
+		"ATTACHMENT":   8,
+		"ORGANIZATION": 9,
+	}
+)
+
+func (x SupportRequest_Event_Type) Enum() *SupportRequest_Event_Type {
+	p := new(SupportRequest_Event_Type)
+	*p = x
+	return p
+}
+
+func (x SupportRequest_Event_Type) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SupportRequest_Event_Type) Descriptor() protoreflect.EnumDescriptor {
+	return file_enterprisev1_proto_enumTypes[46].Descriptor()
+}
+
+func (SupportRequest_Event_Type) Type() protoreflect.EnumType {
+	return &file_enterprisev1_proto_enumTypes[46]
+}
+
+func (x SupportRequest_Event_Type) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SupportRequest_Event_Type.Descriptor instead.
+func (SupportRequest_Event_Type) EnumDescriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{70, 3, 0}
+}
+
+// Purpose is the purpose of the file.
+type SupportRequest_Attachment_Purpose int32
+
+const (
+	// PURPOSE_UNKNOWN is the default unset value.
+	SupportRequest_Attachment_PURPOSE_UNKNOWN SupportRequest_Attachment_Purpose = 0
+	// FILE is a file added by a person (e.g. a log file or a screenshot).
+	SupportRequest_Attachment_FILE SupportRequest_Attachment_Purpose = 1
+	// DIAGNOSTIC is a diagnostics bundle collected from the Cluster.
+	SupportRequest_Attachment_DIAGNOSTIC SupportRequest_Attachment_Purpose = 2
+)
+
+// Enum value maps for SupportRequest_Attachment_Purpose.
+var (
+	SupportRequest_Attachment_Purpose_name = map[int32]string{
+		0: "PURPOSE_UNKNOWN",
+		1: "FILE",
+		2: "DIAGNOSTIC",
+	}
+	SupportRequest_Attachment_Purpose_value = map[string]int32{
+		"PURPOSE_UNKNOWN": 0,
+		"FILE":            1,
+		"DIAGNOSTIC":      2,
+	}
+)
+
+func (x SupportRequest_Attachment_Purpose) Enum() *SupportRequest_Attachment_Purpose {
+	p := new(SupportRequest_Attachment_Purpose)
+	*p = x
+	return p
+}
+
+func (x SupportRequest_Attachment_Purpose) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SupportRequest_Attachment_Purpose) Descriptor() protoreflect.EnumDescriptor {
+	return file_enterprisev1_proto_enumTypes[47].Descriptor()
+}
+
+func (SupportRequest_Attachment_Purpose) Type() protoreflect.EnumType {
+	return &file_enterprisev1_proto_enumTypes[47]
+}
+
+func (x SupportRequest_Attachment_Purpose) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SupportRequest_Attachment_Purpose.Descriptor instead.
+func (SupportRequest_Attachment_Purpose) EnumDescriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{70, 4, 0}
+}
+
+// Filter selects the requests by their status.
+type ListSupportRequestOptions_Filter int32
+
+const (
+	// ALL lists every request.
+	ListSupportRequestOptions_ALL ListSupportRequestOptions_Filter = 0
+	// OPEN lists the requests that are neither resolved nor closed.
+	ListSupportRequestOptions_OPEN ListSupportRequestOptions_Filter = 1
+	// CLOSED lists the resolved and closed requests.
+	ListSupportRequestOptions_CLOSED ListSupportRequestOptions_Filter = 2
+)
+
+// Enum value maps for ListSupportRequestOptions_Filter.
+var (
+	ListSupportRequestOptions_Filter_name = map[int32]string{
+		0: "ALL",
+		1: "OPEN",
+		2: "CLOSED",
+	}
+	ListSupportRequestOptions_Filter_value = map[string]int32{
+		"ALL":    0,
+		"OPEN":   1,
+		"CLOSED": 2,
+	}
+)
+
+func (x ListSupportRequestOptions_Filter) Enum() *ListSupportRequestOptions_Filter {
+	p := new(ListSupportRequestOptions_Filter)
+	*p = x
+	return p
+}
+
+func (x ListSupportRequestOptions_Filter) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ListSupportRequestOptions_Filter) Descriptor() protoreflect.EnumDescriptor {
+	return file_enterprisev1_proto_enumTypes[48].Descriptor()
+}
+
+func (ListSupportRequestOptions_Filter) Type() protoreflect.EnumType {
+	return &file_enterprisev1_proto_enumTypes[48]
+}
+
+func (x ListSupportRequestOptions_Filter) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ListSupportRequestOptions_Filter.Descriptor instead.
+func (ListSupportRequestOptions_Filter) EnumDescriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{71, 0}
+}
+
 // GetClusterConfigRequest is the request of the GetClusterConfig method.
 type GetClusterConfigRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -6845,6 +7433,1210 @@ func (x *Agent) GetWorkspaces() []*Agent_Workspace {
 	return nil
 }
 
+// GetSupportInfoRequest is the request of the GetSupportInfo method.
+type GetSupportInfoRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// SkipPortal only returns the local information of the Cluster (i.e. the
+	// License state, the Cluster domain and the Cluster details) without
+	// contacting the customer portal. The state is then STATE_UNKNOWN unless the
+	// Cluster has no valid License.
+	SkipPortal    bool `protobuf:"varint,1,opt,name=skipPortal,proto3" json:"skipPortal,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSupportInfoRequest) Reset() {
+	*x = GetSupportInfoRequest{}
+	mi := &file_enterprisev1_proto_msgTypes[68]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSupportInfoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSupportInfoRequest) ProtoMessage() {}
+
+func (x *GetSupportInfoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[68]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSupportInfoRequest.ProtoReflect.Descriptor instead.
+func (*GetSupportInfoRequest) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{68}
+}
+
+func (x *GetSupportInfoRequest) GetSkipPortal() bool {
+	if x != nil {
+		return x.SkipPortal
+	}
+	return false
+}
+
+// SupportInfo describes whether and how support requests can be opened from
+// the Cluster.
+type SupportInfo struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// State is whether support requests can currently be opened from the
+	// Cluster.
+	State SupportInfo_State `protobuf:"varint,1,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.SupportInfo_State" json:"state,omitempty"`
+	// Message is a human-readable explanation of the state when it is not
+	// AVAILABLE.
+	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	// Organization is the organization that the Cluster's License was issued
+	// to. It is only set once the License was accepted by Octelium.
+	Organization *SupportInfo_Organization `protobuf:"bytes,3,opt,name=organization,proto3" json:"organization,omitempty"`
+	// ClusterDomain is the domain of the Cluster.
+	ClusterDomain string `protobuf:"bytes,4,opt,name=clusterDomain,proto3" json:"clusterDomain,omitempty"`
+	// SupportLevel is the support level of the subscription of the Cluster's
+	// License.
+	SupportLevel SupportRequest_SupportLevel `protobuf:"varint,5,opt,name=supportLevel,proto3,enum=octelium.api.main.enterprise.v1.SupportRequest_SupportLevel" json:"supportLevel,omitempty"`
+	// Limits are the limits of the support requests.
+	Limits *SupportInfo_Limits `protobuf:"bytes,6,opt,name=limits,proto3" json:"limits,omitempty"`
+	// Environment is the set of the Cluster details (e.g. the installed
+	// versions and the Regions) that are sent along with every new request.
+	Environment map[string]string `protobuf:"bytes,7,rep,name=environment,proto3" json:"environment,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// PortalURL is the URL of the Octelium customer portal.
+	PortalURL string `protobuf:"bytes,8,opt,name=portalURL,proto3" json:"portalURL,omitempty"`
+	// SupportEmail is the email address of Octelium Support.
+	SupportEmail string `protobuf:"bytes,9,opt,name=supportEmail,proto3" json:"supportEmail,omitempty"`
+	// InstallationID is a short identifier of the Cluster installation that
+	// Octelium Support can use to recognize the requests of the Cluster.
+	InstallationID string `protobuf:"bytes,10,opt,name=installationID,proto3" json:"installationID,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *SupportInfo) Reset() {
+	*x = SupportInfo{}
+	mi := &file_enterprisev1_proto_msgTypes[69]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupportInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupportInfo) ProtoMessage() {}
+
+func (x *SupportInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[69]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupportInfo.ProtoReflect.Descriptor instead.
+func (*SupportInfo) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{69}
+}
+
+func (x *SupportInfo) GetState() SupportInfo_State {
+	if x != nil {
+		return x.State
+	}
+	return SupportInfo_STATE_UNKNOWN
+}
+
+func (x *SupportInfo) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *SupportInfo) GetOrganization() *SupportInfo_Organization {
+	if x != nil {
+		return x.Organization
+	}
+	return nil
+}
+
+func (x *SupportInfo) GetClusterDomain() string {
+	if x != nil {
+		return x.ClusterDomain
+	}
+	return ""
+}
+
+func (x *SupportInfo) GetSupportLevel() SupportRequest_SupportLevel {
+	if x != nil {
+		return x.SupportLevel
+	}
+	return SupportRequest_SUPPORT_LEVEL_UNKNOWN
+}
+
+func (x *SupportInfo) GetLimits() *SupportInfo_Limits {
+	if x != nil {
+		return x.Limits
+	}
+	return nil
+}
+
+func (x *SupportInfo) GetEnvironment() map[string]string {
+	if x != nil {
+		return x.Environment
+	}
+	return nil
+}
+
+func (x *SupportInfo) GetPortalURL() string {
+	if x != nil {
+		return x.PortalURL
+	}
+	return ""
+}
+
+func (x *SupportInfo) GetSupportEmail() string {
+	if x != nil {
+		return x.SupportEmail
+	}
+	return ""
+}
+
+func (x *SupportInfo) GetInstallationID() string {
+	if x != nil {
+		return x.InstallationID
+	}
+	return ""
+}
+
+// SupportRequest is a technical support request with Octelium Support.
+type SupportRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID is the unique identifier of the request.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Number is the human-readable number of the request (e.g. 1042).
+	Number uint32 `protobuf:"varint,2,opt,name=number,proto3" json:"number,omitempty"`
+	// Subject is the subject of the request.
+	Subject string `protobuf:"bytes,3,opt,name=subject,proto3" json:"subject,omitempty"`
+	// Status is the status of the request.
+	Status SupportRequest_Status `protobuf:"varint,4,opt,name=status,proto3,enum=octelium.api.main.enterprise.v1.SupportRequest_Status" json:"status,omitempty"`
+	// Priority is the priority of the request as assigned by Octelium Support.
+	Priority SupportRequest_Priority `protobuf:"varint,5,opt,name=priority,proto3,enum=octelium.api.main.enterprise.v1.SupportRequest_Priority" json:"priority,omitempty"`
+	// RequestedPriority is the priority that was requested at the creation of
+	// the request.
+	RequestedPriority SupportRequest_Priority `protobuf:"varint,6,opt,name=requestedPriority,proto3,enum=octelium.api.main.enterprise.v1.SupportRequest_Priority" json:"requestedPriority,omitempty"`
+	// SupportLevel is the support level under which the request was opened.
+	SupportLevel SupportRequest_SupportLevel `protobuf:"varint,7,opt,name=supportLevel,proto3,enum=octelium.api.main.enterprise.v1.SupportRequest_SupportLevel" json:"supportLevel,omitempty"`
+	// Channel is the channel through which the request was opened.
+	Channel SupportRequest_Channel `protobuf:"varint,8,opt,name=channel,proto3,enum=octelium.api.main.enterprise.v1.SupportRequest_Channel" json:"channel,omitempty"`
+	// Reporter is the person who opened the request.
+	Reporter *SupportRequest_Reporter `protobuf:"bytes,9,opt,name=reporter,proto3" json:"reporter,omitempty"`
+	// Assignee is the name of the engineer assigned to the request, if any.
+	Assignee string `protobuf:"bytes,10,opt,name=assignee,proto3" json:"assignee,omitempty"`
+	// SLA is the state of the service level agreement of the request.
+	Sla *SupportRequest_SLA `protobuf:"bytes,11,opt,name=sla,proto3" json:"sla,omitempty"`
+	// IsEscalated is whether the request was escalated.
+	IsEscalated bool `protobuf:"varint,12,opt,name=isEscalated,proto3" json:"isEscalated,omitempty"`
+	// ClusterDomain is the domain of the Cluster from which the request was
+	// opened.
+	ClusterDomain string `protobuf:"bytes,13,opt,name=clusterDomain,proto3" json:"clusterDomain,omitempty"`
+	// Environment is the set of the Cluster details that were sent along with
+	// the request.
+	Environment map[string]string `protobuf:"bytes,14,rep,name=environment,proto3" json:"environment,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// CreatedAt is the creation date of the request.
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	// UpdatedAt is the date of the last change of the request.
+	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
+	// LastActivityAt is the date of the last activity on the request.
+	LastActivityAt *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=lastActivityAt,proto3" json:"lastActivityAt,omitempty"`
+	// ResolvedAt is the date at which the request was resolved.
+	ResolvedAt *timestamppb.Timestamp `protobuf:"bytes,18,opt,name=resolvedAt,proto3" json:"resolvedAt,omitempty"`
+	// ClosedAt is the date at which the request was closed.
+	ClosedAt *timestamppb.Timestamp `protobuf:"bytes,19,opt,name=closedAt,proto3" json:"closedAt,omitempty"`
+	// MessageCount is the number of the messages of the request.
+	MessageCount uint32 `protobuf:"varint,20,opt,name=messageCount,proto3" json:"messageCount,omitempty"`
+	// AttachmentCount is the number of the files of the request.
+	AttachmentCount uint32 `protobuf:"varint,21,opt,name=attachmentCount,proto3" json:"attachmentCount,omitempty"`
+	// Events is the list of the latest public timeline events of the request,
+	// the oldest first. It is not set when listing requests.
+	Events []*SupportRequest_Event `protobuf:"bytes,22,rep,name=events,proto3" json:"events,omitempty"`
+	// EventsCursor is set when the request has earlier events. They are listed
+	// via the ListSupportRequestEvent method.
+	EventsCursor string `protobuf:"bytes,23,opt,name=eventsCursor,proto3" json:"eventsCursor,omitempty"`
+	// Attachments is the list of the files of the request. It is not set when
+	// listing requests.
+	Attachments []*SupportRequest_Attachment `protobuf:"bytes,24,rep,name=attachments,proto3" json:"attachments,omitempty"`
+	// Actions are the actions that are currently allowed on the request. It is
+	// not set when listing requests.
+	Actions *SupportRequest_Actions `protobuf:"bytes,25,opt,name=actions,proto3" json:"actions,omitempty"`
+	// PortalURL is the URL of the request in the customer portal.
+	PortalURL     string `protobuf:"bytes,26,opt,name=portalURL,proto3" json:"portalURL,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupportRequest) Reset() {
+	*x = SupportRequest{}
+	mi := &file_enterprisev1_proto_msgTypes[70]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupportRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupportRequest) ProtoMessage() {}
+
+func (x *SupportRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[70]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupportRequest.ProtoReflect.Descriptor instead.
+func (*SupportRequest) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{70}
+}
+
+func (x *SupportRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SupportRequest) GetNumber() uint32 {
+	if x != nil {
+		return x.Number
+	}
+	return 0
+}
+
+func (x *SupportRequest) GetSubject() string {
+	if x != nil {
+		return x.Subject
+	}
+	return ""
+}
+
+func (x *SupportRequest) GetStatus() SupportRequest_Status {
+	if x != nil {
+		return x.Status
+	}
+	return SupportRequest_STATUS_UNKNOWN
+}
+
+func (x *SupportRequest) GetPriority() SupportRequest_Priority {
+	if x != nil {
+		return x.Priority
+	}
+	return SupportRequest_PRIORITY_UNKNOWN
+}
+
+func (x *SupportRequest) GetRequestedPriority() SupportRequest_Priority {
+	if x != nil {
+		return x.RequestedPriority
+	}
+	return SupportRequest_PRIORITY_UNKNOWN
+}
+
+func (x *SupportRequest) GetSupportLevel() SupportRequest_SupportLevel {
+	if x != nil {
+		return x.SupportLevel
+	}
+	return SupportRequest_SUPPORT_LEVEL_UNKNOWN
+}
+
+func (x *SupportRequest) GetChannel() SupportRequest_Channel {
+	if x != nil {
+		return x.Channel
+	}
+	return SupportRequest_CHANNEL_UNKNOWN
+}
+
+func (x *SupportRequest) GetReporter() *SupportRequest_Reporter {
+	if x != nil {
+		return x.Reporter
+	}
+	return nil
+}
+
+func (x *SupportRequest) GetAssignee() string {
+	if x != nil {
+		return x.Assignee
+	}
+	return ""
+}
+
+func (x *SupportRequest) GetSla() *SupportRequest_SLA {
+	if x != nil {
+		return x.Sla
+	}
+	return nil
+}
+
+func (x *SupportRequest) GetIsEscalated() bool {
+	if x != nil {
+		return x.IsEscalated
+	}
+	return false
+}
+
+func (x *SupportRequest) GetClusterDomain() string {
+	if x != nil {
+		return x.ClusterDomain
+	}
+	return ""
+}
+
+func (x *SupportRequest) GetEnvironment() map[string]string {
+	if x != nil {
+		return x.Environment
+	}
+	return nil
+}
+
+func (x *SupportRequest) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *SupportRequest) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+func (x *SupportRequest) GetLastActivityAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastActivityAt
+	}
+	return nil
+}
+
+func (x *SupportRequest) GetResolvedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ResolvedAt
+	}
+	return nil
+}
+
+func (x *SupportRequest) GetClosedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ClosedAt
+	}
+	return nil
+}
+
+func (x *SupportRequest) GetMessageCount() uint32 {
+	if x != nil {
+		return x.MessageCount
+	}
+	return 0
+}
+
+func (x *SupportRequest) GetAttachmentCount() uint32 {
+	if x != nil {
+		return x.AttachmentCount
+	}
+	return 0
+}
+
+func (x *SupportRequest) GetEvents() []*SupportRequest_Event {
+	if x != nil {
+		return x.Events
+	}
+	return nil
+}
+
+func (x *SupportRequest) GetEventsCursor() string {
+	if x != nil {
+		return x.EventsCursor
+	}
+	return ""
+}
+
+func (x *SupportRequest) GetAttachments() []*SupportRequest_Attachment {
+	if x != nil {
+		return x.Attachments
+	}
+	return nil
+}
+
+func (x *SupportRequest) GetActions() *SupportRequest_Actions {
+	if x != nil {
+		return x.Actions
+	}
+	return nil
+}
+
+func (x *SupportRequest) GetPortalURL() string {
+	if x != nil {
+		return x.PortalURL
+	}
+	return ""
+}
+
+// ListSupportRequestOptions is the list options of the ListSupportRequest
+// method.
+type ListSupportRequestOptions struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Filter selects the requests by their status.
+	Filter ListSupportRequestOptions_Filter `protobuf:"varint,1,opt,name=filter,proto3,enum=octelium.api.main.enterprise.v1.ListSupportRequestOptions_Filter" json:"filter,omitempty"`
+	// Cursor is the `nextCursor` of the previous page.
+	Cursor        string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSupportRequestOptions) Reset() {
+	*x = ListSupportRequestOptions{}
+	mi := &file_enterprisev1_proto_msgTypes[71]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSupportRequestOptions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSupportRequestOptions) ProtoMessage() {}
+
+func (x *ListSupportRequestOptions) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[71]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSupportRequestOptions.ProtoReflect.Descriptor instead.
+func (*ListSupportRequestOptions) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{71}
+}
+
+func (x *ListSupportRequestOptions) GetFilter() ListSupportRequestOptions_Filter {
+	if x != nil {
+		return x.Filter
+	}
+	return ListSupportRequestOptions_ALL
+}
+
+func (x *ListSupportRequestOptions) GetCursor() string {
+	if x != nil {
+		return x.Cursor
+	}
+	return ""
+}
+
+// SupportRequestList is the response of the ListSupportRequest method.
+type SupportRequestList struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Items is the list of the requests.
+	Items []*SupportRequest `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	// NextCursor is set when more requests are available.
+	NextCursor    string `protobuf:"bytes,2,opt,name=nextCursor,proto3" json:"nextCursor,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupportRequestList) Reset() {
+	*x = SupportRequestList{}
+	mi := &file_enterprisev1_proto_msgTypes[72]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupportRequestList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupportRequestList) ProtoMessage() {}
+
+func (x *SupportRequestList) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[72]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupportRequestList.ProtoReflect.Descriptor instead.
+func (*SupportRequestList) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{72}
+}
+
+func (x *SupportRequestList) GetItems() []*SupportRequest {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *SupportRequestList) GetNextCursor() string {
+	if x != nil {
+		return x.NextCursor
+	}
+	return ""
+}
+
+// GetSupportRequestRequest is the request of the GetSupportRequest method.
+type GetSupportRequestRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID is the unique identifier of the request.
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSupportRequestRequest) Reset() {
+	*x = GetSupportRequestRequest{}
+	mi := &file_enterprisev1_proto_msgTypes[73]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSupportRequestRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSupportRequestRequest) ProtoMessage() {}
+
+func (x *GetSupportRequestRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[73]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSupportRequestRequest.ProtoReflect.Descriptor instead.
+func (*GetSupportRequestRequest) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{73}
+}
+
+func (x *GetSupportRequestRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+// ListSupportRequestEventOptions is the list options of the
+// ListSupportRequestEvent method.
+type ListSupportRequestEventOptions struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID is the unique identifier of the request.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Cursor is the `eventsCursor` of the request or the `nextCursor` of the
+	// previous page.
+	Cursor        string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSupportRequestEventOptions) Reset() {
+	*x = ListSupportRequestEventOptions{}
+	mi := &file_enterprisev1_proto_msgTypes[74]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSupportRequestEventOptions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSupportRequestEventOptions) ProtoMessage() {}
+
+func (x *ListSupportRequestEventOptions) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[74]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSupportRequestEventOptions.ProtoReflect.Descriptor instead.
+func (*ListSupportRequestEventOptions) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{74}
+}
+
+func (x *ListSupportRequestEventOptions) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ListSupportRequestEventOptions) GetCursor() string {
+	if x != nil {
+		return x.Cursor
+	}
+	return ""
+}
+
+// SupportRequestEventList is the response of the ListSupportRequestEvent
+// method.
+type SupportRequestEventList struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Items is the list of the events, the oldest first.
+	Items []*SupportRequest_Event `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	// NextCursor is set when earlier events are available.
+	NextCursor    string `protobuf:"bytes,2,opt,name=nextCursor,proto3" json:"nextCursor,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupportRequestEventList) Reset() {
+	*x = SupportRequestEventList{}
+	mi := &file_enterprisev1_proto_msgTypes[75]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupportRequestEventList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupportRequestEventList) ProtoMessage() {}
+
+func (x *SupportRequestEventList) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[75]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupportRequestEventList.ProtoReflect.Descriptor instead.
+func (*SupportRequestEventList) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{75}
+}
+
+func (x *SupportRequestEventList) GetItems() []*SupportRequest_Event {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *SupportRequestEventList) GetNextCursor() string {
+	if x != nil {
+		return x.NextCursor
+	}
+	return ""
+}
+
+// CreateSupportRequestRequest is the request of the CreateSupportRequest
+// method.
+type CreateSupportRequestRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Subject is a single-line summary of the issue.
+	Subject string `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`
+	// Description is the detailed description of the issue.
+	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	// Priority is the requested priority. It defaults to P3.
+	Priority SupportRequest_Priority `protobuf:"varint,3,opt,name=priority,proto3,enum=octelium.api.main.enterprise.v1.SupportRequest_Priority" json:"priority,omitempty"`
+	// IdempotencyKey is a unique key of the submission (e.g. a random UUID)
+	// that is reused when a submission is retried so that it does not open a
+	// duplicate request.
+	IdempotencyKey string `protobuf:"bytes,4,opt,name=idempotencyKey,proto3" json:"idempotencyKey,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *CreateSupportRequestRequest) Reset() {
+	*x = CreateSupportRequestRequest{}
+	mi := &file_enterprisev1_proto_msgTypes[76]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateSupportRequestRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateSupportRequestRequest) ProtoMessage() {}
+
+func (x *CreateSupportRequestRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[76]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateSupportRequestRequest.ProtoReflect.Descriptor instead.
+func (*CreateSupportRequestRequest) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{76}
+}
+
+func (x *CreateSupportRequestRequest) GetSubject() string {
+	if x != nil {
+		return x.Subject
+	}
+	return ""
+}
+
+func (x *CreateSupportRequestRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *CreateSupportRequestRequest) GetPriority() SupportRequest_Priority {
+	if x != nil {
+		return x.Priority
+	}
+	return SupportRequest_PRIORITY_UNKNOWN
+}
+
+func (x *CreateSupportRequestRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+// AddSupportRequestMessageRequest is the request of the
+// AddSupportRequestMessage method.
+type AddSupportRequestMessageRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID is the unique identifier of the request.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Body is the text of the reply.
+	Body string `protobuf:"bytes,2,opt,name=body,proto3" json:"body,omitempty"`
+	// AttachmentIDs is the list of the files of the request that the reply
+	// references.
+	AttachmentIDs []string `protobuf:"bytes,3,rep,name=attachmentIDs,proto3" json:"attachmentIDs,omitempty"`
+	// IdempotencyKey is a unique key of the submission that is reused when a
+	// submission is retried so that it does not add a duplicate reply.
+	IdempotencyKey string `protobuf:"bytes,4,opt,name=idempotencyKey,proto3" json:"idempotencyKey,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *AddSupportRequestMessageRequest) Reset() {
+	*x = AddSupportRequestMessageRequest{}
+	mi := &file_enterprisev1_proto_msgTypes[77]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddSupportRequestMessageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddSupportRequestMessageRequest) ProtoMessage() {}
+
+func (x *AddSupportRequestMessageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[77]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddSupportRequestMessageRequest.ProtoReflect.Descriptor instead.
+func (*AddSupportRequestMessageRequest) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{77}
+}
+
+func (x *AddSupportRequestMessageRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *AddSupportRequestMessageRequest) GetBody() string {
+	if x != nil {
+		return x.Body
+	}
+	return ""
+}
+
+func (x *AddSupportRequestMessageRequest) GetAttachmentIDs() []string {
+	if x != nil {
+		return x.AttachmentIDs
+	}
+	return nil
+}
+
+func (x *AddSupportRequestMessageRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+// AddSupportRequestAttachmentRequest is the request of the
+// AddSupportRequestAttachment method.
+type AddSupportRequestAttachmentRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID is the unique identifier of the request.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Name is the name of the file including its extension.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// Data is the content of the file.
+	Data []byte `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	// Purpose is the purpose of the file. It defaults to FILE.
+	Purpose       SupportRequest_Attachment_Purpose `protobuf:"varint,4,opt,name=purpose,proto3,enum=octelium.api.main.enterprise.v1.SupportRequest_Attachment_Purpose" json:"purpose,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddSupportRequestAttachmentRequest) Reset() {
+	*x = AddSupportRequestAttachmentRequest{}
+	mi := &file_enterprisev1_proto_msgTypes[78]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddSupportRequestAttachmentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddSupportRequestAttachmentRequest) ProtoMessage() {}
+
+func (x *AddSupportRequestAttachmentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[78]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddSupportRequestAttachmentRequest.ProtoReflect.Descriptor instead.
+func (*AddSupportRequestAttachmentRequest) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{78}
+}
+
+func (x *AddSupportRequestAttachmentRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *AddSupportRequestAttachmentRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *AddSupportRequestAttachmentRequest) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *AddSupportRequestAttachmentRequest) GetPurpose() SupportRequest_Attachment_Purpose {
+	if x != nil {
+		return x.Purpose
+	}
+	return SupportRequest_Attachment_PURPOSE_UNKNOWN
+}
+
+// ResolveSupportRequestRequest is the request of the ResolveSupportRequest
+// method.
+type ResolveSupportRequestRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID is the unique identifier of the request.
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResolveSupportRequestRequest) Reset() {
+	*x = ResolveSupportRequestRequest{}
+	mi := &file_enterprisev1_proto_msgTypes[79]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResolveSupportRequestRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResolveSupportRequestRequest) ProtoMessage() {}
+
+func (x *ResolveSupportRequestRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[79]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResolveSupportRequestRequest.ProtoReflect.Descriptor instead.
+func (*ResolveSupportRequestRequest) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{79}
+}
+
+func (x *ResolveSupportRequestRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+// EscalateSupportRequestRequest is the request of the EscalateSupportRequest
+// method.
+type EscalateSupportRequestRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID is the unique identifier of the request.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Reason is why the request needs more urgency.
+	Reason        string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EscalateSupportRequestRequest) Reset() {
+	*x = EscalateSupportRequestRequest{}
+	mi := &file_enterprisev1_proto_msgTypes[80]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EscalateSupportRequestRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EscalateSupportRequestRequest) ProtoMessage() {}
+
+func (x *EscalateSupportRequestRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[80]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EscalateSupportRequestRequest.ProtoReflect.Descriptor instead.
+func (*EscalateSupportRequestRequest) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{80}
+}
+
+func (x *EscalateSupportRequestRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *EscalateSupportRequestRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+// DownloadSupportRequestAttachmentRequest is the request of the
+// DownloadSupportRequestAttachment method.
+type DownloadSupportRequestAttachmentRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID is the unique identifier of the request.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// AttachmentID is the unique identifier of the file.
+	AttachmentID  string `protobuf:"bytes,2,opt,name=attachmentID,proto3" json:"attachmentID,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DownloadSupportRequestAttachmentRequest) Reset() {
+	*x = DownloadSupportRequestAttachmentRequest{}
+	mi := &file_enterprisev1_proto_msgTypes[81]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DownloadSupportRequestAttachmentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DownloadSupportRequestAttachmentRequest) ProtoMessage() {}
+
+func (x *DownloadSupportRequestAttachmentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[81]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DownloadSupportRequestAttachmentRequest.ProtoReflect.Descriptor instead.
+func (*DownloadSupportRequestAttachmentRequest) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{81}
+}
+
+func (x *DownloadSupportRequestAttachmentRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *DownloadSupportRequestAttachmentRequest) GetAttachmentID() string {
+	if x != nil {
+		return x.AttachmentID
+	}
+	return ""
+}
+
+// DownloadSupportRequestAttachmentResponse is a message of the stream of the
+// DownloadSupportRequestAttachment method.
+type DownloadSupportRequestAttachmentResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Type:
+	//
+	//	*DownloadSupportRequestAttachmentResponse_Header_
+	//	*DownloadSupportRequestAttachmentResponse_Chunk
+	Type          isDownloadSupportRequestAttachmentResponse_Type `protobuf_oneof:"type"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DownloadSupportRequestAttachmentResponse) Reset() {
+	*x = DownloadSupportRequestAttachmentResponse{}
+	mi := &file_enterprisev1_proto_msgTypes[82]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DownloadSupportRequestAttachmentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DownloadSupportRequestAttachmentResponse) ProtoMessage() {}
+
+func (x *DownloadSupportRequestAttachmentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[82]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DownloadSupportRequestAttachmentResponse.ProtoReflect.Descriptor instead.
+func (*DownloadSupportRequestAttachmentResponse) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{82}
+}
+
+func (x *DownloadSupportRequestAttachmentResponse) GetType() isDownloadSupportRequestAttachmentResponse_Type {
+	if x != nil {
+		return x.Type
+	}
+	return nil
+}
+
+func (x *DownloadSupportRequestAttachmentResponse) GetHeader() *DownloadSupportRequestAttachmentResponse_Header {
+	if x != nil {
+		if x, ok := x.Type.(*DownloadSupportRequestAttachmentResponse_Header_); ok {
+			return x.Header
+		}
+	}
+	return nil
+}
+
+func (x *DownloadSupportRequestAttachmentResponse) GetChunk() []byte {
+	if x != nil {
+		if x, ok := x.Type.(*DownloadSupportRequestAttachmentResponse_Chunk); ok {
+			return x.Chunk
+		}
+	}
+	return nil
+}
+
+type isDownloadSupportRequestAttachmentResponse_Type interface {
+	isDownloadSupportRequestAttachmentResponse_Type()
+}
+
+type DownloadSupportRequestAttachmentResponse_Header_ struct {
+	// Header is the header of the file. It is only set in the first message.
+	Header *DownloadSupportRequestAttachmentResponse_Header `protobuf:"bytes,1,opt,name=header,proto3,oneof"`
+}
+
+type DownloadSupportRequestAttachmentResponse_Chunk struct {
+	// Chunk is the next chunk of the content of the file.
+	Chunk []byte `protobuf:"bytes,2,opt,name=chunk,proto3,oneof"`
+}
+
+func (*DownloadSupportRequestAttachmentResponse_Header_) isDownloadSupportRequestAttachmentResponse_Type() {
+}
+
+func (*DownloadSupportRequestAttachmentResponse_Chunk) isDownloadSupportRequestAttachmentResponse_Type() {
+}
+
 // Spec is the CollectorExporter specification
 type CollectorExporter_Spec struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -6873,7 +8665,7 @@ type CollectorExporter_Spec struct {
 
 func (x *CollectorExporter_Spec) Reset() {
 	*x = CollectorExporter_Spec{}
-	mi := &file_enterprisev1_proto_msgTypes[68]
+	mi := &file_enterprisev1_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6885,7 +8677,7 @@ func (x *CollectorExporter_Spec) String() string {
 func (*CollectorExporter_Spec) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[68]
+	mi := &file_enterprisev1_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7122,7 +8914,7 @@ type CollectorExporter_Status struct {
 
 func (x *CollectorExporter_Status) Reset() {
 	*x = CollectorExporter_Status{}
-	mi := &file_enterprisev1_proto_msgTypes[69]
+	mi := &file_enterprisev1_proto_msgTypes[84]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7134,7 +8926,7 @@ func (x *CollectorExporter_Status) String() string {
 func (*CollectorExporter_Status) ProtoMessage() {}
 
 func (x *CollectorExporter_Status) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[69]
+	mi := &file_enterprisev1_proto_msgTypes[84]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7193,7 +8985,7 @@ type CollectorExporter_Spec_OTLP struct {
 
 func (x *CollectorExporter_Spec_OTLP) Reset() {
 	*x = CollectorExporter_Spec_OTLP{}
-	mi := &file_enterprisev1_proto_msgTypes[70]
+	mi := &file_enterprisev1_proto_msgTypes[85]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7205,7 +8997,7 @@ func (x *CollectorExporter_Spec_OTLP) String() string {
 func (*CollectorExporter_Spec_OTLP) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLP) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[70]
+	mi := &file_enterprisev1_proto_msgTypes[85]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7351,7 +9143,7 @@ type CollectorExporter_Spec_OTLPHTTP struct {
 
 func (x *CollectorExporter_Spec_OTLPHTTP) Reset() {
 	*x = CollectorExporter_Spec_OTLPHTTP{}
-	mi := &file_enterprisev1_proto_msgTypes[71]
+	mi := &file_enterprisev1_proto_msgTypes[86]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7363,7 +9155,7 @@ func (x *CollectorExporter_Spec_OTLPHTTP) String() string {
 func (*CollectorExporter_Spec_OTLPHTTP) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLPHTTP) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[71]
+	mi := &file_enterprisev1_proto_msgTypes[86]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7506,7 +9298,7 @@ type CollectorExporter_Spec_PrometheusRemoteWrite struct {
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite) Reset() {
 	*x = CollectorExporter_Spec_PrometheusRemoteWrite{}
-	mi := &file_enterprisev1_proto_msgTypes[72]
+	mi := &file_enterprisev1_proto_msgTypes[87]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7518,7 +9310,7 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite) String() string {
 func (*CollectorExporter_Spec_PrometheusRemoteWrite) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[72]
+	mi := &file_enterprisev1_proto_msgTypes[87]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7691,7 +9483,7 @@ type CollectorExporter_Spec_Clickhouse struct {
 
 func (x *CollectorExporter_Spec_Clickhouse) Reset() {
 	*x = CollectorExporter_Spec_Clickhouse{}
-	mi := &file_enterprisev1_proto_msgTypes[73]
+	mi := &file_enterprisev1_proto_msgTypes[88]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7703,7 +9495,7 @@ func (x *CollectorExporter_Spec_Clickhouse) String() string {
 func (*CollectorExporter_Spec_Clickhouse) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Clickhouse) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[73]
+	mi := &file_enterprisev1_proto_msgTypes[88]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7870,7 +9662,7 @@ type CollectorExporter_Spec_Elasticsearch struct {
 
 func (x *CollectorExporter_Spec_Elasticsearch) Reset() {
 	*x = CollectorExporter_Spec_Elasticsearch{}
-	mi := &file_enterprisev1_proto_msgTypes[74]
+	mi := &file_enterprisev1_proto_msgTypes[89]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7882,7 +9674,7 @@ func (x *CollectorExporter_Spec_Elasticsearch) String() string {
 func (*CollectorExporter_Spec_Elasticsearch) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Elasticsearch) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[74]
+	mi := &file_enterprisev1_proto_msgTypes[89]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7994,7 +9786,7 @@ type CollectorExporter_Spec_Logzio struct {
 
 func (x *CollectorExporter_Spec_Logzio) Reset() {
 	*x = CollectorExporter_Spec_Logzio{}
-	mi := &file_enterprisev1_proto_msgTypes[75]
+	mi := &file_enterprisev1_proto_msgTypes[90]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8006,7 +9798,7 @@ func (x *CollectorExporter_Spec_Logzio) String() string {
 func (*CollectorExporter_Spec_Logzio) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Logzio) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[75]
+	mi := &file_enterprisev1_proto_msgTypes[90]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8091,7 +9883,7 @@ type CollectorExporter_Spec_InfluxDB struct {
 
 func (x *CollectorExporter_Spec_InfluxDB) Reset() {
 	*x = CollectorExporter_Spec_InfluxDB{}
-	mi := &file_enterprisev1_proto_msgTypes[76]
+	mi := &file_enterprisev1_proto_msgTypes[91]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8103,7 +9895,7 @@ func (x *CollectorExporter_Spec_InfluxDB) String() string {
 func (*CollectorExporter_Spec_InfluxDB) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_InfluxDB) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[76]
+	mi := &file_enterprisev1_proto_msgTypes[91]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8248,7 +10040,7 @@ type CollectorExporter_Spec_Kafka struct {
 
 func (x *CollectorExporter_Spec_Kafka) Reset() {
 	*x = CollectorExporter_Spec_Kafka{}
-	mi := &file_enterprisev1_proto_msgTypes[77]
+	mi := &file_enterprisev1_proto_msgTypes[92]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8260,7 +10052,7 @@ func (x *CollectorExporter_Spec_Kafka) String() string {
 func (*CollectorExporter_Spec_Kafka) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Kafka) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[77]
+	mi := &file_enterprisev1_proto_msgTypes[92]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8390,7 +10182,7 @@ type CollectorExporter_Spec_Datadog struct {
 
 func (x *CollectorExporter_Spec_Datadog) Reset() {
 	*x = CollectorExporter_Spec_Datadog{}
-	mi := &file_enterprisev1_proto_msgTypes[78]
+	mi := &file_enterprisev1_proto_msgTypes[93]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8402,7 +10194,7 @@ func (x *CollectorExporter_Spec_Datadog) String() string {
 func (*CollectorExporter_Spec_Datadog) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Datadog) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[78]
+	mi := &file_enterprisev1_proto_msgTypes[93]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8505,7 +10297,7 @@ type CollectorExporter_Spec_Splunk struct {
 
 func (x *CollectorExporter_Spec_Splunk) Reset() {
 	*x = CollectorExporter_Spec_Splunk{}
-	mi := &file_enterprisev1_proto_msgTypes[79]
+	mi := &file_enterprisev1_proto_msgTypes[94]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8517,7 +10309,7 @@ func (x *CollectorExporter_Spec_Splunk) String() string {
 func (*CollectorExporter_Spec_Splunk) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Splunk) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[79]
+	mi := &file_enterprisev1_proto_msgTypes[94]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8667,7 +10459,7 @@ type CollectorExporter_Spec_AzureMonitor struct {
 
 func (x *CollectorExporter_Spec_AzureMonitor) Reset() {
 	*x = CollectorExporter_Spec_AzureMonitor{}
-	mi := &file_enterprisev1_proto_msgTypes[80]
+	mi := &file_enterprisev1_proto_msgTypes[95]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8679,7 +10471,7 @@ func (x *CollectorExporter_Spec_AzureMonitor) String() string {
 func (*CollectorExporter_Spec_AzureMonitor) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_AzureMonitor) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[80]
+	mi := &file_enterprisev1_proto_msgTypes[95]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8783,7 +10575,7 @@ type CollectorExporter_Spec_AzureDataExplorer struct {
 
 func (x *CollectorExporter_Spec_AzureDataExplorer) Reset() {
 	*x = CollectorExporter_Spec_AzureDataExplorer{}
-	mi := &file_enterprisev1_proto_msgTypes[81]
+	mi := &file_enterprisev1_proto_msgTypes[96]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8795,7 +10587,7 @@ func (x *CollectorExporter_Spec_AzureDataExplorer) String() string {
 func (*CollectorExporter_Spec_AzureDataExplorer) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_AzureDataExplorer) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[81]
+	mi := &file_enterprisev1_proto_msgTypes[96]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8888,7 +10680,7 @@ type CollectorExporter_Spec_OTLP_Header struct {
 
 func (x *CollectorExporter_Spec_OTLP_Header) Reset() {
 	*x = CollectorExporter_Spec_OTLP_Header{}
-	mi := &file_enterprisev1_proto_msgTypes[82]
+	mi := &file_enterprisev1_proto_msgTypes[97]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8900,7 +10692,7 @@ func (x *CollectorExporter_Spec_OTLP_Header) String() string {
 func (*CollectorExporter_Spec_OTLP_Header) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLP_Header) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[82]
+	mi := &file_enterprisev1_proto_msgTypes[97]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8946,7 +10738,7 @@ type CollectorExporter_Spec_OTLP_Auth struct {
 
 func (x *CollectorExporter_Spec_OTLP_Auth) Reset() {
 	*x = CollectorExporter_Spec_OTLP_Auth{}
-	mi := &file_enterprisev1_proto_msgTypes[83]
+	mi := &file_enterprisev1_proto_msgTypes[98]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8958,7 +10750,7 @@ func (x *CollectorExporter_Spec_OTLP_Auth) String() string {
 func (*CollectorExporter_Spec_OTLP_Auth) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLP_Auth) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[83]
+	mi := &file_enterprisev1_proto_msgTypes[98]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9058,7 +10850,7 @@ type CollectorExporter_Spec_OTLP_TLS struct {
 
 func (x *CollectorExporter_Spec_OTLP_TLS) Reset() {
 	*x = CollectorExporter_Spec_OTLP_TLS{}
-	mi := &file_enterprisev1_proto_msgTypes[84]
+	mi := &file_enterprisev1_proto_msgTypes[99]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9070,7 +10862,7 @@ func (x *CollectorExporter_Spec_OTLP_TLS) String() string {
 func (*CollectorExporter_Spec_OTLP_TLS) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLP_TLS) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[84]
+	mi := &file_enterprisev1_proto_msgTypes[99]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9133,7 +10925,7 @@ type CollectorExporter_Spec_OTLP_Keepalive struct {
 
 func (x *CollectorExporter_Spec_OTLP_Keepalive) Reset() {
 	*x = CollectorExporter_Spec_OTLP_Keepalive{}
-	mi := &file_enterprisev1_proto_msgTypes[85]
+	mi := &file_enterprisev1_proto_msgTypes[100]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9145,7 +10937,7 @@ func (x *CollectorExporter_Spec_OTLP_Keepalive) String() string {
 func (*CollectorExporter_Spec_OTLP_Keepalive) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLP_Keepalive) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[85]
+	mi := &file_enterprisev1_proto_msgTypes[100]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9196,7 +10988,7 @@ type CollectorExporter_Spec_OTLP_Auth_Bearer struct {
 
 func (x *CollectorExporter_Spec_OTLP_Auth_Bearer) Reset() {
 	*x = CollectorExporter_Spec_OTLP_Auth_Bearer{}
-	mi := &file_enterprisev1_proto_msgTypes[86]
+	mi := &file_enterprisev1_proto_msgTypes[101]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9208,7 +11000,7 @@ func (x *CollectorExporter_Spec_OTLP_Auth_Bearer) String() string {
 func (*CollectorExporter_Spec_OTLP_Auth_Bearer) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLP_Auth_Bearer) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[86]
+	mi := &file_enterprisev1_proto_msgTypes[101]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9266,7 +11058,7 @@ type CollectorExporter_Spec_OTLP_Auth_Basic struct {
 
 func (x *CollectorExporter_Spec_OTLP_Auth_Basic) Reset() {
 	*x = CollectorExporter_Spec_OTLP_Auth_Basic{}
-	mi := &file_enterprisev1_proto_msgTypes[87]
+	mi := &file_enterprisev1_proto_msgTypes[102]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9278,7 +11070,7 @@ func (x *CollectorExporter_Spec_OTLP_Auth_Basic) String() string {
 func (*CollectorExporter_Spec_OTLP_Auth_Basic) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLP_Auth_Basic) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[87]
+	mi := &file_enterprisev1_proto_msgTypes[102]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9321,7 +11113,7 @@ type CollectorExporter_Spec_OTLP_Auth_Custom struct {
 
 func (x *CollectorExporter_Spec_OTLP_Auth_Custom) Reset() {
 	*x = CollectorExporter_Spec_OTLP_Auth_Custom{}
-	mi := &file_enterprisev1_proto_msgTypes[88]
+	mi := &file_enterprisev1_proto_msgTypes[103]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9333,7 +11125,7 @@ func (x *CollectorExporter_Spec_OTLP_Auth_Custom) String() string {
 func (*CollectorExporter_Spec_OTLP_Auth_Custom) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLP_Auth_Custom) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[88]
+	mi := &file_enterprisev1_proto_msgTypes[103]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9376,7 +11168,7 @@ type CollectorExporter_Spec_OTLP_Auth_Basic_Password struct {
 
 func (x *CollectorExporter_Spec_OTLP_Auth_Basic_Password) Reset() {
 	*x = CollectorExporter_Spec_OTLP_Auth_Basic_Password{}
-	mi := &file_enterprisev1_proto_msgTypes[89]
+	mi := &file_enterprisev1_proto_msgTypes[104]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9388,7 +11180,7 @@ func (x *CollectorExporter_Spec_OTLP_Auth_Basic_Password) String() string {
 func (*CollectorExporter_Spec_OTLP_Auth_Basic_Password) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLP_Auth_Basic_Password) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[89]
+	mi := &file_enterprisev1_proto_msgTypes[104]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9446,7 +11238,7 @@ type CollectorExporter_Spec_OTLP_Auth_Custom_Value struct {
 
 func (x *CollectorExporter_Spec_OTLP_Auth_Custom_Value) Reset() {
 	*x = CollectorExporter_Spec_OTLP_Auth_Custom_Value{}
-	mi := &file_enterprisev1_proto_msgTypes[90]
+	mi := &file_enterprisev1_proto_msgTypes[105]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9458,7 +11250,7 @@ func (x *CollectorExporter_Spec_OTLP_Auth_Custom_Value) String() string {
 func (*CollectorExporter_Spec_OTLP_Auth_Custom_Value) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLP_Auth_Custom_Value) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[90]
+	mi := &file_enterprisev1_proto_msgTypes[105]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9517,7 +11309,7 @@ type CollectorExporter_Spec_OTLPHTTP_Header struct {
 
 func (x *CollectorExporter_Spec_OTLPHTTP_Header) Reset() {
 	*x = CollectorExporter_Spec_OTLPHTTP_Header{}
-	mi := &file_enterprisev1_proto_msgTypes[91]
+	mi := &file_enterprisev1_proto_msgTypes[106]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9529,7 +11321,7 @@ func (x *CollectorExporter_Spec_OTLPHTTP_Header) String() string {
 func (*CollectorExporter_Spec_OTLPHTTP_Header) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLPHTTP_Header) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[91]
+	mi := &file_enterprisev1_proto_msgTypes[106]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9575,7 +11367,7 @@ type CollectorExporter_Spec_OTLPHTTP_Auth struct {
 
 func (x *CollectorExporter_Spec_OTLPHTTP_Auth) Reset() {
 	*x = CollectorExporter_Spec_OTLPHTTP_Auth{}
-	mi := &file_enterprisev1_proto_msgTypes[92]
+	mi := &file_enterprisev1_proto_msgTypes[107]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9587,7 +11379,7 @@ func (x *CollectorExporter_Spec_OTLPHTTP_Auth) String() string {
 func (*CollectorExporter_Spec_OTLPHTTP_Auth) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLPHTTP_Auth) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[92]
+	mi := &file_enterprisev1_proto_msgTypes[107]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9687,7 +11479,7 @@ type CollectorExporter_Spec_OTLPHTTP_TLS struct {
 
 func (x *CollectorExporter_Spec_OTLPHTTP_TLS) Reset() {
 	*x = CollectorExporter_Spec_OTLPHTTP_TLS{}
-	mi := &file_enterprisev1_proto_msgTypes[93]
+	mi := &file_enterprisev1_proto_msgTypes[108]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9699,7 +11491,7 @@ func (x *CollectorExporter_Spec_OTLPHTTP_TLS) String() string {
 func (*CollectorExporter_Spec_OTLPHTTP_TLS) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLPHTTP_TLS) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[93]
+	mi := &file_enterprisev1_proto_msgTypes[108]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9757,7 +11549,7 @@ type CollectorExporter_Spec_OTLPHTTP_Auth_Bearer struct {
 
 func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Bearer) Reset() {
 	*x = CollectorExporter_Spec_OTLPHTTP_Auth_Bearer{}
-	mi := &file_enterprisev1_proto_msgTypes[94]
+	mi := &file_enterprisev1_proto_msgTypes[109]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9769,7 +11561,7 @@ func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Bearer) String() string {
 func (*CollectorExporter_Spec_OTLPHTTP_Auth_Bearer) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Bearer) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[94]
+	mi := &file_enterprisev1_proto_msgTypes[109]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9827,7 +11619,7 @@ type CollectorExporter_Spec_OTLPHTTP_Auth_Basic struct {
 
 func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Basic) Reset() {
 	*x = CollectorExporter_Spec_OTLPHTTP_Auth_Basic{}
-	mi := &file_enterprisev1_proto_msgTypes[95]
+	mi := &file_enterprisev1_proto_msgTypes[110]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9839,7 +11631,7 @@ func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Basic) String() string {
 func (*CollectorExporter_Spec_OTLPHTTP_Auth_Basic) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Basic) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[95]
+	mi := &file_enterprisev1_proto_msgTypes[110]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9882,7 +11674,7 @@ type CollectorExporter_Spec_OTLPHTTP_Auth_Custom struct {
 
 func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Custom) Reset() {
 	*x = CollectorExporter_Spec_OTLPHTTP_Auth_Custom{}
-	mi := &file_enterprisev1_proto_msgTypes[96]
+	mi := &file_enterprisev1_proto_msgTypes[111]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9894,7 +11686,7 @@ func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Custom) String() string {
 func (*CollectorExporter_Spec_OTLPHTTP_Auth_Custom) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Custom) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[96]
+	mi := &file_enterprisev1_proto_msgTypes[111]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9937,7 +11729,7 @@ type CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password struct {
 
 func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password) Reset() {
 	*x = CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password{}
-	mi := &file_enterprisev1_proto_msgTypes[97]
+	mi := &file_enterprisev1_proto_msgTypes[112]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9949,7 +11741,7 @@ func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password) String() string {
 func (*CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[97]
+	mi := &file_enterprisev1_proto_msgTypes[112]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10007,7 +11799,7 @@ type CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value struct {
 
 func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value) Reset() {
 	*x = CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value{}
-	mi := &file_enterprisev1_proto_msgTypes[98]
+	mi := &file_enterprisev1_proto_msgTypes[113]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10019,7 +11811,7 @@ func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value) String() string {
 func (*CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[98]
+	mi := &file_enterprisev1_proto_msgTypes[113]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10078,7 +11870,7 @@ type CollectorExporter_Spec_PrometheusRemoteWrite_Header struct {
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Header) Reset() {
 	*x = CollectorExporter_Spec_PrometheusRemoteWrite_Header{}
-	mi := &file_enterprisev1_proto_msgTypes[99]
+	mi := &file_enterprisev1_proto_msgTypes[114]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10090,7 +11882,7 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Header) String() string {
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_Header) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Header) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[99]
+	mi := &file_enterprisev1_proto_msgTypes[114]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10133,7 +11925,7 @@ type CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel struct {
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel) Reset() {
 	*x = CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel{}
-	mi := &file_enterprisev1_proto_msgTypes[100]
+	mi := &file_enterprisev1_proto_msgTypes[115]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10145,7 +11937,7 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel) String() st
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[100]
+	mi := &file_enterprisev1_proto_msgTypes[115]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10191,7 +11983,7 @@ type CollectorExporter_Spec_PrometheusRemoteWrite_Auth struct {
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth) Reset() {
 	*x = CollectorExporter_Spec_PrometheusRemoteWrite_Auth{}
-	mi := &file_enterprisev1_proto_msgTypes[101]
+	mi := &file_enterprisev1_proto_msgTypes[116]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10203,7 +11995,7 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth) String() string {
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_Auth) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[101]
+	mi := &file_enterprisev1_proto_msgTypes[116]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10306,7 +12098,7 @@ type CollectorExporter_Spec_PrometheusRemoteWrite_TLS struct {
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_TLS) Reset() {
 	*x = CollectorExporter_Spec_PrometheusRemoteWrite_TLS{}
-	mi := &file_enterprisev1_proto_msgTypes[102]
+	mi := &file_enterprisev1_proto_msgTypes[117]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10318,7 +12110,7 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_TLS) String() string {
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_TLS) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_TLS) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[102]
+	mi := &file_enterprisev1_proto_msgTypes[117]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10381,7 +12173,7 @@ type CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue struct {
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue) Reset() {
 	*x = CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue{}
-	mi := &file_enterprisev1_proto_msgTypes[103]
+	mi := &file_enterprisev1_proto_msgTypes[118]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10393,7 +12185,7 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue) String()
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[103]
+	mi := &file_enterprisev1_proto_msgTypes[118]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10446,7 +12238,7 @@ type CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion 
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion) Reset() {
 	*x = CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion{}
-	mi := &file_enterprisev1_proto_msgTypes[104]
+	mi := &file_enterprisev1_proto_msgTypes[119]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10458,7 +12250,7 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConvers
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[104]
+	mi := &file_enterprisev1_proto_msgTypes[119]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10500,7 +12292,7 @@ type CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo struct {
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo) Reset() {
 	*x = CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo{}
-	mi := &file_enterprisev1_proto_msgTypes[105]
+	mi := &file_enterprisev1_proto_msgTypes[120]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10512,7 +12304,7 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo) String() strin
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[105]
+	mi := &file_enterprisev1_proto_msgTypes[120]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10549,7 +12341,7 @@ type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer struct {
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer) Reset() {
 	*x = CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer{}
-	mi := &file_enterprisev1_proto_msgTypes[106]
+	mi := &file_enterprisev1_proto_msgTypes[121]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10561,7 +12353,7 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer) String() stri
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[106]
+	mi := &file_enterprisev1_proto_msgTypes[121]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10619,7 +12411,7 @@ type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic struct {
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic) Reset() {
 	*x = CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic{}
-	mi := &file_enterprisev1_proto_msgTypes[107]
+	mi := &file_enterprisev1_proto_msgTypes[122]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10631,7 +12423,7 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic) String() strin
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[107]
+	mi := &file_enterprisev1_proto_msgTypes[122]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10674,7 +12466,7 @@ type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom struct {
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom) Reset() {
 	*x = CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom{}
-	mi := &file_enterprisev1_proto_msgTypes[108]
+	mi := &file_enterprisev1_proto_msgTypes[123]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10686,7 +12478,7 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom) String() stri
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[108]
+	mi := &file_enterprisev1_proto_msgTypes[123]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10729,7 +12521,7 @@ type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password struct {
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password) Reset() {
 	*x = CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password{}
-	mi := &file_enterprisev1_proto_msgTypes[109]
+	mi := &file_enterprisev1_proto_msgTypes[124]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10741,7 +12533,7 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password) Strin
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[109]
+	mi := &file_enterprisev1_proto_msgTypes[124]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10799,7 +12591,7 @@ type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value struct {
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value) Reset() {
 	*x = CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value{}
-	mi := &file_enterprisev1_proto_msgTypes[110]
+	mi := &file_enterprisev1_proto_msgTypes[125]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10811,7 +12603,7 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value) String(
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[110]
+	mi := &file_enterprisev1_proto_msgTypes[125]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10869,7 +12661,7 @@ type CollectorExporter_Spec_Clickhouse_Password struct {
 
 func (x *CollectorExporter_Spec_Clickhouse_Password) Reset() {
 	*x = CollectorExporter_Spec_Clickhouse_Password{}
-	mi := &file_enterprisev1_proto_msgTypes[111]
+	mi := &file_enterprisev1_proto_msgTypes[126]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10881,7 +12673,7 @@ func (x *CollectorExporter_Spec_Clickhouse_Password) String() string {
 func (*CollectorExporter_Spec_Clickhouse_Password) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Clickhouse_Password) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[111]
+	mi := &file_enterprisev1_proto_msgTypes[126]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10951,7 +12743,7 @@ type CollectorExporter_Spec_Clickhouse_TLS struct {
 
 func (x *CollectorExporter_Spec_Clickhouse_TLS) Reset() {
 	*x = CollectorExporter_Spec_Clickhouse_TLS{}
-	mi := &file_enterprisev1_proto_msgTypes[112]
+	mi := &file_enterprisev1_proto_msgTypes[127]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10963,7 +12755,7 @@ func (x *CollectorExporter_Spec_Clickhouse_TLS) String() string {
 func (*CollectorExporter_Spec_Clickhouse_TLS) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Clickhouse_TLS) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[112]
+	mi := &file_enterprisev1_proto_msgTypes[127]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11021,7 +12813,7 @@ type CollectorExporter_Spec_Clickhouse_ConnectionParam struct {
 
 func (x *CollectorExporter_Spec_Clickhouse_ConnectionParam) Reset() {
 	*x = CollectorExporter_Spec_Clickhouse_ConnectionParam{}
-	mi := &file_enterprisev1_proto_msgTypes[113]
+	mi := &file_enterprisev1_proto_msgTypes[128]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11033,7 +12825,7 @@ func (x *CollectorExporter_Spec_Clickhouse_ConnectionParam) String() string {
 func (*CollectorExporter_Spec_Clickhouse_ConnectionParam) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Clickhouse_ConnectionParam) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[113]
+	mi := &file_enterprisev1_proto_msgTypes[128]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11077,7 +12869,7 @@ type CollectorExporter_Spec_Clickhouse_TableEngine struct {
 
 func (x *CollectorExporter_Spec_Clickhouse_TableEngine) Reset() {
 	*x = CollectorExporter_Spec_Clickhouse_TableEngine{}
-	mi := &file_enterprisev1_proto_msgTypes[114]
+	mi := &file_enterprisev1_proto_msgTypes[129]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11089,7 +12881,7 @@ func (x *CollectorExporter_Spec_Clickhouse_TableEngine) String() string {
 func (*CollectorExporter_Spec_Clickhouse_TableEngine) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Clickhouse_TableEngine) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[114]
+	mi := &file_enterprisev1_proto_msgTypes[129]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11140,7 +12932,7 @@ type CollectorExporter_Spec_Clickhouse_MetricsTables struct {
 
 func (x *CollectorExporter_Spec_Clickhouse_MetricsTables) Reset() {
 	*x = CollectorExporter_Spec_Clickhouse_MetricsTables{}
-	mi := &file_enterprisev1_proto_msgTypes[115]
+	mi := &file_enterprisev1_proto_msgTypes[130]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11152,7 +12944,7 @@ func (x *CollectorExporter_Spec_Clickhouse_MetricsTables) String() string {
 func (*CollectorExporter_Spec_Clickhouse_MetricsTables) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Clickhouse_MetricsTables) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[115]
+	mi := &file_enterprisev1_proto_msgTypes[130]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11217,7 +13009,7 @@ type CollectorExporter_Spec_Elasticsearch_Header struct {
 
 func (x *CollectorExporter_Spec_Elasticsearch_Header) Reset() {
 	*x = CollectorExporter_Spec_Elasticsearch_Header{}
-	mi := &file_enterprisev1_proto_msgTypes[116]
+	mi := &file_enterprisev1_proto_msgTypes[131]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11229,7 +13021,7 @@ func (x *CollectorExporter_Spec_Elasticsearch_Header) String() string {
 func (*CollectorExporter_Spec_Elasticsearch_Header) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Elasticsearch_Header) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[116]
+	mi := &file_enterprisev1_proto_msgTypes[131]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11274,7 +13066,7 @@ type CollectorExporter_Spec_Elasticsearch_Auth struct {
 
 func (x *CollectorExporter_Spec_Elasticsearch_Auth) Reset() {
 	*x = CollectorExporter_Spec_Elasticsearch_Auth{}
-	mi := &file_enterprisev1_proto_msgTypes[117]
+	mi := &file_enterprisev1_proto_msgTypes[132]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11286,7 +13078,7 @@ func (x *CollectorExporter_Spec_Elasticsearch_Auth) String() string {
 func (*CollectorExporter_Spec_Elasticsearch_Auth) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Elasticsearch_Auth) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[117]
+	mi := &file_enterprisev1_proto_msgTypes[132]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11361,7 +13153,7 @@ type CollectorExporter_Spec_Elasticsearch_TLS struct {
 
 func (x *CollectorExporter_Spec_Elasticsearch_TLS) Reset() {
 	*x = CollectorExporter_Spec_Elasticsearch_TLS{}
-	mi := &file_enterprisev1_proto_msgTypes[118]
+	mi := &file_enterprisev1_proto_msgTypes[133]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11373,7 +13165,7 @@ func (x *CollectorExporter_Spec_Elasticsearch_TLS) String() string {
 func (*CollectorExporter_Spec_Elasticsearch_TLS) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Elasticsearch_TLS) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[118]
+	mi := &file_enterprisev1_proto_msgTypes[133]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11409,7 +13201,7 @@ type CollectorExporter_Spec_Elasticsearch_Auth_APIKey struct {
 
 func (x *CollectorExporter_Spec_Elasticsearch_Auth_APIKey) Reset() {
 	*x = CollectorExporter_Spec_Elasticsearch_Auth_APIKey{}
-	mi := &file_enterprisev1_proto_msgTypes[119]
+	mi := &file_enterprisev1_proto_msgTypes[134]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11421,7 +13213,7 @@ func (x *CollectorExporter_Spec_Elasticsearch_Auth_APIKey) String() string {
 func (*CollectorExporter_Spec_Elasticsearch_Auth_APIKey) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Elasticsearch_Auth_APIKey) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[119]
+	mi := &file_enterprisev1_proto_msgTypes[134]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11479,7 +13271,7 @@ type CollectorExporter_Spec_Elasticsearch_Auth_Basic struct {
 
 func (x *CollectorExporter_Spec_Elasticsearch_Auth_Basic) Reset() {
 	*x = CollectorExporter_Spec_Elasticsearch_Auth_Basic{}
-	mi := &file_enterprisev1_proto_msgTypes[120]
+	mi := &file_enterprisev1_proto_msgTypes[135]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11491,7 +13283,7 @@ func (x *CollectorExporter_Spec_Elasticsearch_Auth_Basic) String() string {
 func (*CollectorExporter_Spec_Elasticsearch_Auth_Basic) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Elasticsearch_Auth_Basic) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[120]
+	mi := &file_enterprisev1_proto_msgTypes[135]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11534,7 +13326,7 @@ type CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password struct {
 
 func (x *CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password) Reset() {
 	*x = CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password{}
-	mi := &file_enterprisev1_proto_msgTypes[121]
+	mi := &file_enterprisev1_proto_msgTypes[136]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11546,7 +13338,7 @@ func (x *CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password) String() stri
 func (*CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[121]
+	mi := &file_enterprisev1_proto_msgTypes[136]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11604,7 +13396,7 @@ type CollectorExporter_Spec_Logzio_Token struct {
 
 func (x *CollectorExporter_Spec_Logzio_Token) Reset() {
 	*x = CollectorExporter_Spec_Logzio_Token{}
-	mi := &file_enterprisev1_proto_msgTypes[122]
+	mi := &file_enterprisev1_proto_msgTypes[137]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11616,7 +13408,7 @@ func (x *CollectorExporter_Spec_Logzio_Token) String() string {
 func (*CollectorExporter_Spec_Logzio_Token) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Logzio_Token) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[122]
+	mi := &file_enterprisev1_proto_msgTypes[137]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11674,7 +13466,7 @@ type CollectorExporter_Spec_InfluxDB_Header struct {
 
 func (x *CollectorExporter_Spec_InfluxDB_Header) Reset() {
 	*x = CollectorExporter_Spec_InfluxDB_Header{}
-	mi := &file_enterprisev1_proto_msgTypes[123]
+	mi := &file_enterprisev1_proto_msgTypes[138]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11686,7 +13478,7 @@ func (x *CollectorExporter_Spec_InfluxDB_Header) String() string {
 func (*CollectorExporter_Spec_InfluxDB_Header) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_InfluxDB_Header) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[123]
+	mi := &file_enterprisev1_proto_msgTypes[138]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11729,7 +13521,7 @@ type CollectorExporter_Spec_InfluxDB_Token struct {
 
 func (x *CollectorExporter_Spec_InfluxDB_Token) Reset() {
 	*x = CollectorExporter_Spec_InfluxDB_Token{}
-	mi := &file_enterprisev1_proto_msgTypes[124]
+	mi := &file_enterprisev1_proto_msgTypes[139]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11741,7 +13533,7 @@ func (x *CollectorExporter_Spec_InfluxDB_Token) String() string {
 func (*CollectorExporter_Spec_InfluxDB_Token) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_InfluxDB_Token) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[124]
+	mi := &file_enterprisev1_proto_msgTypes[139]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11805,7 +13597,7 @@ type CollectorExporter_Spec_InfluxDB_V1Compatibility struct {
 
 func (x *CollectorExporter_Spec_InfluxDB_V1Compatibility) Reset() {
 	*x = CollectorExporter_Spec_InfluxDB_V1Compatibility{}
-	mi := &file_enterprisev1_proto_msgTypes[125]
+	mi := &file_enterprisev1_proto_msgTypes[140]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11817,7 +13609,7 @@ func (x *CollectorExporter_Spec_InfluxDB_V1Compatibility) String() string {
 func (*CollectorExporter_Spec_InfluxDB_V1Compatibility) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_InfluxDB_V1Compatibility) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[125]
+	mi := &file_enterprisev1_proto_msgTypes[140]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11874,7 +13666,7 @@ type CollectorExporter_Spec_InfluxDB_V1Compatibility_Password struct {
 
 func (x *CollectorExporter_Spec_InfluxDB_V1Compatibility_Password) Reset() {
 	*x = CollectorExporter_Spec_InfluxDB_V1Compatibility_Password{}
-	mi := &file_enterprisev1_proto_msgTypes[126]
+	mi := &file_enterprisev1_proto_msgTypes[141]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11886,7 +13678,7 @@ func (x *CollectorExporter_Spec_InfluxDB_V1Compatibility_Password) String() stri
 func (*CollectorExporter_Spec_InfluxDB_V1Compatibility_Password) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_InfluxDB_V1Compatibility_Password) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[126]
+	mi := &file_enterprisev1_proto_msgTypes[141]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11945,7 +13737,7 @@ type CollectorExporter_Spec_Kafka_Header struct {
 
 func (x *CollectorExporter_Spec_Kafka_Header) Reset() {
 	*x = CollectorExporter_Spec_Kafka_Header{}
-	mi := &file_enterprisev1_proto_msgTypes[127]
+	mi := &file_enterprisev1_proto_msgTypes[142]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11957,7 +13749,7 @@ func (x *CollectorExporter_Spec_Kafka_Header) String() string {
 func (*CollectorExporter_Spec_Kafka_Header) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Kafka_Header) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[127]
+	mi := &file_enterprisev1_proto_msgTypes[142]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12001,7 +13793,7 @@ type CollectorExporter_Spec_Kafka_Auth struct {
 
 func (x *CollectorExporter_Spec_Kafka_Auth) Reset() {
 	*x = CollectorExporter_Spec_Kafka_Auth{}
-	mi := &file_enterprisev1_proto_msgTypes[128]
+	mi := &file_enterprisev1_proto_msgTypes[143]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12013,7 +13805,7 @@ func (x *CollectorExporter_Spec_Kafka_Auth) String() string {
 func (*CollectorExporter_Spec_Kafka_Auth) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Kafka_Auth) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[128]
+	mi := &file_enterprisev1_proto_msgTypes[143]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12073,7 +13865,7 @@ type CollectorExporter_Spec_Kafka_TLS struct {
 
 func (x *CollectorExporter_Spec_Kafka_TLS) Reset() {
 	*x = CollectorExporter_Spec_Kafka_TLS{}
-	mi := &file_enterprisev1_proto_msgTypes[129]
+	mi := &file_enterprisev1_proto_msgTypes[144]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12085,7 +13877,7 @@ func (x *CollectorExporter_Spec_Kafka_TLS) String() string {
 func (*CollectorExporter_Spec_Kafka_TLS) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Kafka_TLS) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[129]
+	mi := &file_enterprisev1_proto_msgTypes[144]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12129,7 +13921,7 @@ type CollectorExporter_Spec_Kafka_Signal struct {
 
 func (x *CollectorExporter_Spec_Kafka_Signal) Reset() {
 	*x = CollectorExporter_Spec_Kafka_Signal{}
-	mi := &file_enterprisev1_proto_msgTypes[130]
+	mi := &file_enterprisev1_proto_msgTypes[145]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12141,7 +13933,7 @@ func (x *CollectorExporter_Spec_Kafka_Signal) String() string {
 func (*CollectorExporter_Spec_Kafka_Signal) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Kafka_Signal) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[130]
+	mi := &file_enterprisev1_proto_msgTypes[145]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12199,7 +13991,7 @@ type CollectorExporter_Spec_Kafka_Producer struct {
 
 func (x *CollectorExporter_Spec_Kafka_Producer) Reset() {
 	*x = CollectorExporter_Spec_Kafka_Producer{}
-	mi := &file_enterprisev1_proto_msgTypes[131]
+	mi := &file_enterprisev1_proto_msgTypes[146]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12211,7 +14003,7 @@ func (x *CollectorExporter_Spec_Kafka_Producer) String() string {
 func (*CollectorExporter_Spec_Kafka_Producer) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Kafka_Producer) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[131]
+	mi := &file_enterprisev1_proto_msgTypes[146]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12284,7 +14076,7 @@ type CollectorExporter_Spec_Kafka_Auth_SASL struct {
 
 func (x *CollectorExporter_Spec_Kafka_Auth_SASL) Reset() {
 	*x = CollectorExporter_Spec_Kafka_Auth_SASL{}
-	mi := &file_enterprisev1_proto_msgTypes[132]
+	mi := &file_enterprisev1_proto_msgTypes[147]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12296,7 +14088,7 @@ func (x *CollectorExporter_Spec_Kafka_Auth_SASL) String() string {
 func (*CollectorExporter_Spec_Kafka_Auth_SASL) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Kafka_Auth_SASL) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[132]
+	mi := &file_enterprisev1_proto_msgTypes[147]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12346,7 +14138,7 @@ type CollectorExporter_Spec_Kafka_Auth_SASL_Password struct {
 
 func (x *CollectorExporter_Spec_Kafka_Auth_SASL_Password) Reset() {
 	*x = CollectorExporter_Spec_Kafka_Auth_SASL_Password{}
-	mi := &file_enterprisev1_proto_msgTypes[133]
+	mi := &file_enterprisev1_proto_msgTypes[148]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12358,7 +14150,7 @@ func (x *CollectorExporter_Spec_Kafka_Auth_SASL_Password) String() string {
 func (*CollectorExporter_Spec_Kafka_Auth_SASL_Password) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Kafka_Auth_SASL_Password) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[133]
+	mi := &file_enterprisev1_proto_msgTypes[148]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12416,7 +14208,7 @@ type CollectorExporter_Spec_Datadog_APIKey struct {
 
 func (x *CollectorExporter_Spec_Datadog_APIKey) Reset() {
 	*x = CollectorExporter_Spec_Datadog_APIKey{}
-	mi := &file_enterprisev1_proto_msgTypes[134]
+	mi := &file_enterprisev1_proto_msgTypes[149]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12428,7 +14220,7 @@ func (x *CollectorExporter_Spec_Datadog_APIKey) String() string {
 func (*CollectorExporter_Spec_Datadog_APIKey) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Datadog_APIKey) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[134]
+	mi := &file_enterprisev1_proto_msgTypes[149]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12490,7 +14282,7 @@ type CollectorExporter_Spec_Datadog_API struct {
 
 func (x *CollectorExporter_Spec_Datadog_API) Reset() {
 	*x = CollectorExporter_Spec_Datadog_API{}
-	mi := &file_enterprisev1_proto_msgTypes[135]
+	mi := &file_enterprisev1_proto_msgTypes[150]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12502,7 +14294,7 @@ func (x *CollectorExporter_Spec_Datadog_API) String() string {
 func (*CollectorExporter_Spec_Datadog_API) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Datadog_API) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[135]
+	mi := &file_enterprisev1_proto_msgTypes[150]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12557,7 +14349,7 @@ type CollectorExporter_Spec_Datadog_Metrics struct {
 
 func (x *CollectorExporter_Spec_Datadog_Metrics) Reset() {
 	*x = CollectorExporter_Spec_Datadog_Metrics{}
-	mi := &file_enterprisev1_proto_msgTypes[136]
+	mi := &file_enterprisev1_proto_msgTypes[151]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12569,7 +14361,7 @@ func (x *CollectorExporter_Spec_Datadog_Metrics) String() string {
 func (*CollectorExporter_Spec_Datadog_Metrics) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Datadog_Metrics) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[136]
+	mi := &file_enterprisev1_proto_msgTypes[151]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12626,7 +14418,7 @@ type CollectorExporter_Spec_Datadog_Logs struct {
 
 func (x *CollectorExporter_Spec_Datadog_Logs) Reset() {
 	*x = CollectorExporter_Spec_Datadog_Logs{}
-	mi := &file_enterprisev1_proto_msgTypes[137]
+	mi := &file_enterprisev1_proto_msgTypes[152]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12638,7 +14430,7 @@ func (x *CollectorExporter_Spec_Datadog_Logs) String() string {
 func (*CollectorExporter_Spec_Datadog_Logs) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Datadog_Logs) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[137]
+	mi := &file_enterprisev1_proto_msgTypes[152]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12696,7 +14488,7 @@ type CollectorExporter_Spec_Datadog_HostMetadata struct {
 
 func (x *CollectorExporter_Spec_Datadog_HostMetadata) Reset() {
 	*x = CollectorExporter_Spec_Datadog_HostMetadata{}
-	mi := &file_enterprisev1_proto_msgTypes[138]
+	mi := &file_enterprisev1_proto_msgTypes[153]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12708,7 +14500,7 @@ func (x *CollectorExporter_Spec_Datadog_HostMetadata) String() string {
 func (*CollectorExporter_Spec_Datadog_HostMetadata) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Datadog_HostMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[138]
+	mi := &file_enterprisev1_proto_msgTypes[153]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12751,7 +14543,7 @@ type CollectorExporter_Spec_Splunk_Token struct {
 
 func (x *CollectorExporter_Spec_Splunk_Token) Reset() {
 	*x = CollectorExporter_Spec_Splunk_Token{}
-	mi := &file_enterprisev1_proto_msgTypes[139]
+	mi := &file_enterprisev1_proto_msgTypes[154]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12763,7 +14555,7 @@ func (x *CollectorExporter_Spec_Splunk_Token) String() string {
 func (*CollectorExporter_Spec_Splunk_Token) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Splunk_Token) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[139]
+	mi := &file_enterprisev1_proto_msgTypes[154]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12821,7 +14613,7 @@ type CollectorExporter_Spec_Splunk_TLS struct {
 
 func (x *CollectorExporter_Spec_Splunk_TLS) Reset() {
 	*x = CollectorExporter_Spec_Splunk_TLS{}
-	mi := &file_enterprisev1_proto_msgTypes[140]
+	mi := &file_enterprisev1_proto_msgTypes[155]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12833,7 +14625,7 @@ func (x *CollectorExporter_Spec_Splunk_TLS) String() string {
 func (*CollectorExporter_Spec_Splunk_TLS) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_Splunk_TLS) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[140]
+	mi := &file_enterprisev1_proto_msgTypes[155]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12869,7 +14661,7 @@ type CollectorExporter_Spec_AzureMonitor_ConnectionString struct {
 
 func (x *CollectorExporter_Spec_AzureMonitor_ConnectionString) Reset() {
 	*x = CollectorExporter_Spec_AzureMonitor_ConnectionString{}
-	mi := &file_enterprisev1_proto_msgTypes[141]
+	mi := &file_enterprisev1_proto_msgTypes[156]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12881,7 +14673,7 @@ func (x *CollectorExporter_Spec_AzureMonitor_ConnectionString) String() string {
 func (*CollectorExporter_Spec_AzureMonitor_ConnectionString) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_AzureMonitor_ConnectionString) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[141]
+	mi := &file_enterprisev1_proto_msgTypes[156]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12939,7 +14731,7 @@ type CollectorExporter_Spec_AzureMonitor_InstrumentationKey struct {
 
 func (x *CollectorExporter_Spec_AzureMonitor_InstrumentationKey) Reset() {
 	*x = CollectorExporter_Spec_AzureMonitor_InstrumentationKey{}
-	mi := &file_enterprisev1_proto_msgTypes[142]
+	mi := &file_enterprisev1_proto_msgTypes[157]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12951,7 +14743,7 @@ func (x *CollectorExporter_Spec_AzureMonitor_InstrumentationKey) String() string
 func (*CollectorExporter_Spec_AzureMonitor_InstrumentationKey) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_AzureMonitor_InstrumentationKey) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[142]
+	mi := &file_enterprisev1_proto_msgTypes[157]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13009,7 +14801,7 @@ type CollectorExporter_Spec_AzureDataExplorer_ApplicationKey struct {
 
 func (x *CollectorExporter_Spec_AzureDataExplorer_ApplicationKey) Reset() {
 	*x = CollectorExporter_Spec_AzureDataExplorer_ApplicationKey{}
-	mi := &file_enterprisev1_proto_msgTypes[143]
+	mi := &file_enterprisev1_proto_msgTypes[158]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13021,7 +14813,7 @@ func (x *CollectorExporter_Spec_AzureDataExplorer_ApplicationKey) String() strin
 func (*CollectorExporter_Spec_AzureDataExplorer_ApplicationKey) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_AzureDataExplorer_ApplicationKey) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[143]
+	mi := &file_enterprisev1_proto_msgTypes[158]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13082,7 +14874,7 @@ type CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal struct {
 
 func (x *CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal) Reset() {
 	*x = CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal{}
-	mi := &file_enterprisev1_proto_msgTypes[144]
+	mi := &file_enterprisev1_proto_msgTypes[159]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13094,7 +14886,7 @@ func (x *CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal) String() str
 func (*CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[144]
+	mi := &file_enterprisev1_proto_msgTypes[159]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13144,7 +14936,7 @@ type CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity struct {
 
 func (x *CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity) Reset() {
 	*x = CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity{}
-	mi := &file_enterprisev1_proto_msgTypes[145]
+	mi := &file_enterprisev1_proto_msgTypes[160]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13156,7 +14948,7 @@ func (x *CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity) String() stri
 func (*CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[145]
+	mi := &file_enterprisev1_proto_msgTypes[160]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13190,7 +14982,7 @@ type CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth struct {
 
 func (x *CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth) Reset() {
 	*x = CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth{}
-	mi := &file_enterprisev1_proto_msgTypes[146]
+	mi := &file_enterprisev1_proto_msgTypes[161]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13202,7 +14994,7 @@ func (x *CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth) String() str
 func (*CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[146]
+	mi := &file_enterprisev1_proto_msgTypes[161]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13234,7 +15026,7 @@ type CollectorExporter_Spec_AzureDataExplorer_Auth struct {
 
 func (x *CollectorExporter_Spec_AzureDataExplorer_Auth) Reset() {
 	*x = CollectorExporter_Spec_AzureDataExplorer_Auth{}
-	mi := &file_enterprisev1_proto_msgTypes[147]
+	mi := &file_enterprisev1_proto_msgTypes[162]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13246,7 +15038,7 @@ func (x *CollectorExporter_Spec_AzureDataExplorer_Auth) String() string {
 func (*CollectorExporter_Spec_AzureDataExplorer_Auth) ProtoMessage() {}
 
 func (x *CollectorExporter_Spec_AzureDataExplorer_Auth) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[147]
+	mi := &file_enterprisev1_proto_msgTypes[162]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13357,7 +15149,7 @@ type ClusterConfig_Spec struct {
 
 func (x *ClusterConfig_Spec) Reset() {
 	*x = ClusterConfig_Spec{}
-	mi := &file_enterprisev1_proto_msgTypes[148]
+	mi := &file_enterprisev1_proto_msgTypes[163]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13369,7 +15161,7 @@ func (x *ClusterConfig_Spec) String() string {
 func (*ClusterConfig_Spec) ProtoMessage() {}
 
 func (x *ClusterConfig_Spec) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[148]
+	mi := &file_enterprisev1_proto_msgTypes[163]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13447,7 +15239,7 @@ type ClusterConfig_Status struct {
 
 func (x *ClusterConfig_Status) Reset() {
 	*x = ClusterConfig_Status{}
-	mi := &file_enterprisev1_proto_msgTypes[149]
+	mi := &file_enterprisev1_proto_msgTypes[164]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13459,7 +15251,7 @@ func (x *ClusterConfig_Status) String() string {
 func (*ClusterConfig_Status) ProtoMessage() {}
 
 func (x *ClusterConfig_Status) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[149]
+	mi := &file_enterprisev1_proto_msgTypes[164]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13540,7 +15332,7 @@ type ClusterConfig_Spec_Collector struct {
 
 func (x *ClusterConfig_Spec_Collector) Reset() {
 	*x = ClusterConfig_Spec_Collector{}
-	mi := &file_enterprisev1_proto_msgTypes[150]
+	mi := &file_enterprisev1_proto_msgTypes[165]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13552,7 +15344,7 @@ func (x *ClusterConfig_Spec_Collector) String() string {
 func (*ClusterConfig_Spec_Collector) ProtoMessage() {}
 
 func (x *ClusterConfig_Spec_Collector) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[150]
+	mi := &file_enterprisev1_proto_msgTypes[165]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13598,7 +15390,7 @@ type ClusterConfig_Spec_Scaler struct {
 
 func (x *ClusterConfig_Spec_Scaler) Reset() {
 	*x = ClusterConfig_Spec_Scaler{}
-	mi := &file_enterprisev1_proto_msgTypes[151]
+	mi := &file_enterprisev1_proto_msgTypes[166]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13610,7 +15402,7 @@ func (x *ClusterConfig_Spec_Scaler) String() string {
 func (*ClusterConfig_Spec_Scaler) ProtoMessage() {}
 
 func (x *ClusterConfig_Spec_Scaler) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[151]
+	mi := &file_enterprisev1_proto_msgTypes[166]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13660,7 +15452,7 @@ type ClusterConfig_Spec_Certificate struct {
 
 func (x *ClusterConfig_Spec_Certificate) Reset() {
 	*x = ClusterConfig_Spec_Certificate{}
-	mi := &file_enterprisev1_proto_msgTypes[152]
+	mi := &file_enterprisev1_proto_msgTypes[167]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13672,7 +15464,7 @@ func (x *ClusterConfig_Spec_Certificate) String() string {
 func (*ClusterConfig_Spec_Certificate) ProtoMessage() {}
 
 func (x *ClusterConfig_Spec_Certificate) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[152]
+	mi := &file_enterprisev1_proto_msgTypes[167]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13724,7 +15516,7 @@ type ClusterConfig_Spec_Agent struct {
 
 func (x *ClusterConfig_Spec_Agent) Reset() {
 	*x = ClusterConfig_Spec_Agent{}
-	mi := &file_enterprisev1_proto_msgTypes[153]
+	mi := &file_enterprisev1_proto_msgTypes[168]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13736,7 +15528,7 @@ func (x *ClusterConfig_Spec_Agent) String() string {
 func (*ClusterConfig_Spec_Agent) ProtoMessage() {}
 
 func (x *ClusterConfig_Spec_Agent) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[153]
+	mi := &file_enterprisev1_proto_msgTypes[168]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13816,7 +15608,7 @@ type ClusterConfig_Spec_Collector_Pipeline struct {
 
 func (x *ClusterConfig_Spec_Collector_Pipeline) Reset() {
 	*x = ClusterConfig_Spec_Collector_Pipeline{}
-	mi := &file_enterprisev1_proto_msgTypes[154]
+	mi := &file_enterprisev1_proto_msgTypes[169]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13828,7 +15620,7 @@ func (x *ClusterConfig_Spec_Collector_Pipeline) String() string {
 func (*ClusterConfig_Spec_Collector_Pipeline) ProtoMessage() {}
 
 func (x *ClusterConfig_Spec_Collector_Pipeline) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[154]
+	mi := &file_enterprisev1_proto_msgTypes[169]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13883,7 +15675,7 @@ type ClusterConfig_Spec_Scaler_Octovigil struct {
 
 func (x *ClusterConfig_Spec_Scaler_Octovigil) Reset() {
 	*x = ClusterConfig_Spec_Scaler_Octovigil{}
-	mi := &file_enterprisev1_proto_msgTypes[155]
+	mi := &file_enterprisev1_proto_msgTypes[170]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13895,7 +15687,7 @@ func (x *ClusterConfig_Spec_Scaler_Octovigil) String() string {
 func (*ClusterConfig_Spec_Scaler_Octovigil) ProtoMessage() {}
 
 func (x *ClusterConfig_Spec_Scaler_Octovigil) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[155]
+	mi := &file_enterprisev1_proto_msgTypes[170]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13929,7 +15721,7 @@ type ClusterConfig_Spec_Scaler_Ingress struct {
 
 func (x *ClusterConfig_Spec_Scaler_Ingress) Reset() {
 	*x = ClusterConfig_Spec_Scaler_Ingress{}
-	mi := &file_enterprisev1_proto_msgTypes[156]
+	mi := &file_enterprisev1_proto_msgTypes[171]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13941,7 +15733,7 @@ func (x *ClusterConfig_Spec_Scaler_Ingress) String() string {
 func (*ClusterConfig_Spec_Scaler_Ingress) ProtoMessage() {}
 
 func (x *ClusterConfig_Spec_Scaler_Ingress) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[156]
+	mi := &file_enterprisev1_proto_msgTypes[171]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13975,7 +15767,7 @@ type ClusterConfig_Spec_Scaler_Collector struct {
 
 func (x *ClusterConfig_Spec_Scaler_Collector) Reset() {
 	*x = ClusterConfig_Spec_Scaler_Collector{}
-	mi := &file_enterprisev1_proto_msgTypes[157]
+	mi := &file_enterprisev1_proto_msgTypes[172]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13987,7 +15779,7 @@ func (x *ClusterConfig_Spec_Scaler_Collector) String() string {
 func (*ClusterConfig_Spec_Scaler_Collector) ProtoMessage() {}
 
 func (x *ClusterConfig_Spec_Scaler_Collector) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[157]
+	mi := &file_enterprisev1_proto_msgTypes[172]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14026,7 +15818,7 @@ type ClusterConfig_Spec_Agent_LLM struct {
 
 func (x *ClusterConfig_Spec_Agent_LLM) Reset() {
 	*x = ClusterConfig_Spec_Agent_LLM{}
-	mi := &file_enterprisev1_proto_msgTypes[158]
+	mi := &file_enterprisev1_proto_msgTypes[173]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14038,7 +15830,7 @@ func (x *ClusterConfig_Spec_Agent_LLM) String() string {
 func (*ClusterConfig_Spec_Agent_LLM) ProtoMessage() {}
 
 func (x *ClusterConfig_Spec_Agent_LLM) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[158]
+	mi := &file_enterprisev1_proto_msgTypes[173]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14091,7 +15883,7 @@ type ClusterConfig_Status_UpgradeRequest struct {
 
 func (x *ClusterConfig_Status_UpgradeRequest) Reset() {
 	*x = ClusterConfig_Status_UpgradeRequest{}
-	mi := &file_enterprisev1_proto_msgTypes[159]
+	mi := &file_enterprisev1_proto_msgTypes[174]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14103,7 +15895,7 @@ func (x *ClusterConfig_Status_UpgradeRequest) String() string {
 func (*ClusterConfig_Status_UpgradeRequest) ProtoMessage() {}
 
 func (x *ClusterConfig_Status_UpgradeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[159]
+	mi := &file_enterprisev1_proto_msgTypes[174]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14179,7 +15971,7 @@ type ClusterConfig_Status_JoinRequest struct {
 
 func (x *ClusterConfig_Status_JoinRequest) Reset() {
 	*x = ClusterConfig_Status_JoinRequest{}
-	mi := &file_enterprisev1_proto_msgTypes[160]
+	mi := &file_enterprisev1_proto_msgTypes[175]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14191,7 +15983,7 @@ func (x *ClusterConfig_Status_JoinRequest) String() string {
 func (*ClusterConfig_Status_JoinRequest) ProtoMessage() {}
 
 func (x *ClusterConfig_Status_JoinRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[160]
+	mi := &file_enterprisev1_proto_msgTypes[175]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14267,7 +16059,7 @@ type ClusterConfig_Status_LicenseInfo struct {
 
 func (x *ClusterConfig_Status_LicenseInfo) Reset() {
 	*x = ClusterConfig_Status_LicenseInfo{}
-	mi := &file_enterprisev1_proto_msgTypes[161]
+	mi := &file_enterprisev1_proto_msgTypes[176]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14279,7 +16071,7 @@ func (x *ClusterConfig_Status_LicenseInfo) String() string {
 func (*ClusterConfig_Status_LicenseInfo) ProtoMessage() {}
 
 func (x *ClusterConfig_Status_LicenseInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[161]
+	mi := &file_enterprisev1_proto_msgTypes[176]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14342,7 +16134,7 @@ type ClusterConfig_Status_UpgradeRequest_Region struct {
 
 func (x *ClusterConfig_Status_UpgradeRequest_Region) Reset() {
 	*x = ClusterConfig_Status_UpgradeRequest_Region{}
-	mi := &file_enterprisev1_proto_msgTypes[162]
+	mi := &file_enterprisev1_proto_msgTypes[177]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14354,7 +16146,7 @@ func (x *ClusterConfig_Status_UpgradeRequest_Region) String() string {
 func (*ClusterConfig_Status_UpgradeRequest_Region) ProtoMessage() {}
 
 func (x *ClusterConfig_Status_UpgradeRequest_Region) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[162]
+	mi := &file_enterprisev1_proto_msgTypes[177]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14409,7 +16201,7 @@ type Secret_Spec struct {
 
 func (x *Secret_Spec) Reset() {
 	*x = Secret_Spec{}
-	mi := &file_enterprisev1_proto_msgTypes[163]
+	mi := &file_enterprisev1_proto_msgTypes[178]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14421,7 +16213,7 @@ func (x *Secret_Spec) String() string {
 func (*Secret_Spec) ProtoMessage() {}
 
 func (x *Secret_Spec) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[163]
+	mi := &file_enterprisev1_proto_msgTypes[178]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14455,7 +16247,7 @@ type Secret_Status struct {
 
 func (x *Secret_Status) Reset() {
 	*x = Secret_Status{}
-	mi := &file_enterprisev1_proto_msgTypes[164]
+	mi := &file_enterprisev1_proto_msgTypes[179]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14467,7 +16259,7 @@ func (x *Secret_Status) String() string {
 func (*Secret_Status) ProtoMessage() {}
 
 func (x *Secret_Status) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[164]
+	mi := &file_enterprisev1_proto_msgTypes[179]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14508,7 +16300,7 @@ type Secret_Data struct {
 
 func (x *Secret_Data) Reset() {
 	*x = Secret_Data{}
-	mi := &file_enterprisev1_proto_msgTypes[165]
+	mi := &file_enterprisev1_proto_msgTypes[180]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14520,7 +16312,7 @@ func (x *Secret_Data) String() string {
 func (*Secret_Data) ProtoMessage() {}
 
 func (x *Secret_Data) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[165]
+	mi := &file_enterprisev1_proto_msgTypes[180]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14628,7 +16420,7 @@ type Secret_Spec_Data struct {
 
 func (x *Secret_Spec_Data) Reset() {
 	*x = Secret_Spec_Data{}
-	mi := &file_enterprisev1_proto_msgTypes[166]
+	mi := &file_enterprisev1_proto_msgTypes[181]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14640,7 +16432,7 @@ func (x *Secret_Spec_Data) String() string {
 func (*Secret_Spec_Data) ProtoMessage() {}
 
 func (x *Secret_Spec_Data) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[166]
+	mi := &file_enterprisev1_proto_msgTypes[181]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14728,7 +16520,7 @@ type Secret_Data_DataMap struct {
 
 func (x *Secret_Data_DataMap) Reset() {
 	*x = Secret_Data_DataMap{}
-	mi := &file_enterprisev1_proto_msgTypes[168]
+	mi := &file_enterprisev1_proto_msgTypes[183]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14740,7 +16532,7 @@ func (x *Secret_Data_DataMap) String() string {
 func (*Secret_Data_DataMap) ProtoMessage() {}
 
 func (x *Secret_Data_DataMap) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[168]
+	mi := &file_enterprisev1_proto_msgTypes[183]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14774,7 +16566,7 @@ type Certificate_Spec struct {
 
 func (x *Certificate_Spec) Reset() {
 	*x = Certificate_Spec{}
-	mi := &file_enterprisev1_proto_msgTypes[170]
+	mi := &file_enterprisev1_proto_msgTypes[185]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14786,7 +16578,7 @@ func (x *Certificate_Spec) String() string {
 func (*Certificate_Spec) ProtoMessage() {}
 
 func (x *Certificate_Spec) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[170]
+	mi := &file_enterprisev1_proto_msgTypes[185]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14842,7 +16634,7 @@ type Certificate_Status struct {
 
 func (x *Certificate_Status) Reset() {
 	*x = Certificate_Status{}
-	mi := &file_enterprisev1_proto_msgTypes[171]
+	mi := &file_enterprisev1_proto_msgTypes[186]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14854,7 +16646,7 @@ func (x *Certificate_Status) String() string {
 func (*Certificate_Status) ProtoMessage() {}
 
 func (x *Certificate_Status) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[171]
+	mi := &file_enterprisev1_proto_msgTypes[186]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14954,7 +16746,7 @@ type Certificate_Status_Issuance struct {
 
 func (x *Certificate_Status_Issuance) Reset() {
 	*x = Certificate_Status_Issuance{}
-	mi := &file_enterprisev1_proto_msgTypes[172]
+	mi := &file_enterprisev1_proto_msgTypes[187]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14966,7 +16758,7 @@ func (x *Certificate_Status_Issuance) String() string {
 func (*Certificate_Status_Issuance) ProtoMessage() {}
 
 func (x *Certificate_Status_Issuance) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[172]
+	mi := &file_enterprisev1_proto_msgTypes[187]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15039,7 +16831,7 @@ type Certificate_Status_Info struct {
 
 func (x *Certificate_Status_Info) Reset() {
 	*x = Certificate_Status_Info{}
-	mi := &file_enterprisev1_proto_msgTypes[173]
+	mi := &file_enterprisev1_proto_msgTypes[188]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15051,7 +16843,7 @@ func (x *Certificate_Status_Info) String() string {
 func (*Certificate_Status_Info) ProtoMessage() {}
 
 func (x *Certificate_Status_Info) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[173]
+	mi := &file_enterprisev1_proto_msgTypes[188]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15122,7 +16914,7 @@ type CertificateIssuer_Spec struct {
 
 func (x *CertificateIssuer_Spec) Reset() {
 	*x = CertificateIssuer_Spec{}
-	mi := &file_enterprisev1_proto_msgTypes[174]
+	mi := &file_enterprisev1_proto_msgTypes[189]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15134,7 +16926,7 @@ func (x *CertificateIssuer_Spec) String() string {
 func (*CertificateIssuer_Spec) ProtoMessage() {}
 
 func (x *CertificateIssuer_Spec) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[174]
+	mi := &file_enterprisev1_proto_msgTypes[189]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15192,7 +16984,7 @@ type CertificateIssuer_Status struct {
 
 func (x *CertificateIssuer_Status) Reset() {
 	*x = CertificateIssuer_Status{}
-	mi := &file_enterprisev1_proto_msgTypes[175]
+	mi := &file_enterprisev1_proto_msgTypes[190]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15204,7 +16996,7 @@ func (x *CertificateIssuer_Status) String() string {
 func (*CertificateIssuer_Status) ProtoMessage() {}
 
 func (x *CertificateIssuer_Status) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[175]
+	mi := &file_enterprisev1_proto_msgTypes[190]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15271,7 +17063,7 @@ type CertificateIssuer_Spec_ACME struct {
 
 func (x *CertificateIssuer_Spec_ACME) Reset() {
 	*x = CertificateIssuer_Spec_ACME{}
-	mi := &file_enterprisev1_proto_msgTypes[176]
+	mi := &file_enterprisev1_proto_msgTypes[191]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15283,7 +17075,7 @@ func (x *CertificateIssuer_Spec_ACME) String() string {
 func (*CertificateIssuer_Spec_ACME) ProtoMessage() {}
 
 func (x *CertificateIssuer_Spec_ACME) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[176]
+	mi := &file_enterprisev1_proto_msgTypes[191]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15333,7 +17125,7 @@ type CertificateIssuer_Spec_ACME_Solver struct {
 
 func (x *CertificateIssuer_Spec_ACME_Solver) Reset() {
 	*x = CertificateIssuer_Spec_ACME_Solver{}
-	mi := &file_enterprisev1_proto_msgTypes[177]
+	mi := &file_enterprisev1_proto_msgTypes[192]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15345,7 +17137,7 @@ func (x *CertificateIssuer_Spec_ACME_Solver) String() string {
 func (*CertificateIssuer_Spec_ACME_Solver) ProtoMessage() {}
 
 func (x *CertificateIssuer_Spec_ACME_Solver) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[177]
+	mi := &file_enterprisev1_proto_msgTypes[192]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15398,7 +17190,7 @@ type CertificateIssuer_Spec_ACME_Solver_DNS struct {
 
 func (x *CertificateIssuer_Spec_ACME_Solver_DNS) Reset() {
 	*x = CertificateIssuer_Spec_ACME_Solver_DNS{}
-	mi := &file_enterprisev1_proto_msgTypes[178]
+	mi := &file_enterprisev1_proto_msgTypes[193]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15410,7 +17202,7 @@ func (x *CertificateIssuer_Spec_ACME_Solver_DNS) String() string {
 func (*CertificateIssuer_Spec_ACME_Solver_DNS) ProtoMessage() {}
 
 func (x *CertificateIssuer_Spec_ACME_Solver_DNS) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[178]
+	mi := &file_enterprisev1_proto_msgTypes[193]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15438,7 +17230,7 @@ type CertificateIssuer_Status_ACME struct {
 
 func (x *CertificateIssuer_Status_ACME) Reset() {
 	*x = CertificateIssuer_Status_ACME{}
-	mi := &file_enterprisev1_proto_msgTypes[179]
+	mi := &file_enterprisev1_proto_msgTypes[194]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15450,7 +17242,7 @@ func (x *CertificateIssuer_Status_ACME) String() string {
 func (*CertificateIssuer_Status_ACME) ProtoMessage() {}
 
 func (x *CertificateIssuer_Status_ACME) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[179]
+	mi := &file_enterprisev1_proto_msgTypes[194]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15491,7 +17283,7 @@ type DirectoryProvider_Spec struct {
 
 func (x *DirectoryProvider_Spec) Reset() {
 	*x = DirectoryProvider_Spec{}
-	mi := &file_enterprisev1_proto_msgTypes[180]
+	mi := &file_enterprisev1_proto_msgTypes[195]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15503,7 +17295,7 @@ func (x *DirectoryProvider_Spec) String() string {
 func (*DirectoryProvider_Spec) ProtoMessage() {}
 
 func (x *DirectoryProvider_Spec) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[180]
+	mi := &file_enterprisev1_proto_msgTypes[195]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15610,7 +17402,7 @@ type DirectoryProvider_Status struct {
 
 func (x *DirectoryProvider_Status) Reset() {
 	*x = DirectoryProvider_Status{}
-	mi := &file_enterprisev1_proto_msgTypes[181]
+	mi := &file_enterprisev1_proto_msgTypes[196]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15622,7 +17414,7 @@ func (x *DirectoryProvider_Status) String() string {
 func (*DirectoryProvider_Status) ProtoMessage() {}
 
 func (x *DirectoryProvider_Status) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[181]
+	mi := &file_enterprisev1_proto_msgTypes[196]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15685,7 +17477,7 @@ type DirectoryProvider_Spec_SCIM struct {
 
 func (x *DirectoryProvider_Spec_SCIM) Reset() {
 	*x = DirectoryProvider_Spec_SCIM{}
-	mi := &file_enterprisev1_proto_msgTypes[182]
+	mi := &file_enterprisev1_proto_msgTypes[197]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15697,7 +17489,7 @@ func (x *DirectoryProvider_Spec_SCIM) String() string {
 func (*DirectoryProvider_Spec_SCIM) ProtoMessage() {}
 
 func (x *DirectoryProvider_Spec_SCIM) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[182]
+	mi := &file_enterprisev1_proto_msgTypes[197]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15735,7 +17527,7 @@ type DirectoryProvider_Spec_GoogleWorkspace struct {
 
 func (x *DirectoryProvider_Spec_GoogleWorkspace) Reset() {
 	*x = DirectoryProvider_Spec_GoogleWorkspace{}
-	mi := &file_enterprisev1_proto_msgTypes[183]
+	mi := &file_enterprisev1_proto_msgTypes[198]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15747,7 +17539,7 @@ func (x *DirectoryProvider_Spec_GoogleWorkspace) String() string {
 func (*DirectoryProvider_Spec_GoogleWorkspace) ProtoMessage() {}
 
 func (x *DirectoryProvider_Spec_GoogleWorkspace) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[183]
+	mi := &file_enterprisev1_proto_msgTypes[198]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15817,7 +17609,7 @@ type DirectoryProvider_Spec_Keycloak struct {
 
 func (x *DirectoryProvider_Spec_Keycloak) Reset() {
 	*x = DirectoryProvider_Spec_Keycloak{}
-	mi := &file_enterprisev1_proto_msgTypes[184]
+	mi := &file_enterprisev1_proto_msgTypes[199]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15829,7 +17621,7 @@ func (x *DirectoryProvider_Spec_Keycloak) String() string {
 func (*DirectoryProvider_Spec_Keycloak) ProtoMessage() {}
 
 func (x *DirectoryProvider_Spec_Keycloak) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[184]
+	mi := &file_enterprisev1_proto_msgTypes[199]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15901,7 +17693,7 @@ type DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount struct {
 
 func (x *DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount) Reset() {
 	*x = DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount{}
-	mi := &file_enterprisev1_proto_msgTypes[185]
+	mi := &file_enterprisev1_proto_msgTypes[200]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15913,7 +17705,7 @@ func (x *DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount) String() string 
 func (*DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount) ProtoMessage() {}
 
 func (x *DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[185]
+	mi := &file_enterprisev1_proto_msgTypes[200]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15970,7 +17762,7 @@ type DirectoryProvider_Spec_GoogleWorkspace_Polling struct {
 
 func (x *DirectoryProvider_Spec_GoogleWorkspace_Polling) Reset() {
 	*x = DirectoryProvider_Spec_GoogleWorkspace_Polling{}
-	mi := &file_enterprisev1_proto_msgTypes[186]
+	mi := &file_enterprisev1_proto_msgTypes[201]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15982,7 +17774,7 @@ func (x *DirectoryProvider_Spec_GoogleWorkspace_Polling) String() string {
 func (*DirectoryProvider_Spec_GoogleWorkspace_Polling) ProtoMessage() {}
 
 func (x *DirectoryProvider_Spec_GoogleWorkspace_Polling) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[186]
+	mi := &file_enterprisev1_proto_msgTypes[201]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16018,7 +17810,7 @@ type DirectoryProvider_Spec_Keycloak_ClientSecret struct {
 
 func (x *DirectoryProvider_Spec_Keycloak_ClientSecret) Reset() {
 	*x = DirectoryProvider_Spec_Keycloak_ClientSecret{}
-	mi := &file_enterprisev1_proto_msgTypes[187]
+	mi := &file_enterprisev1_proto_msgTypes[202]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16030,7 +17822,7 @@ func (x *DirectoryProvider_Spec_Keycloak_ClientSecret) String() string {
 func (*DirectoryProvider_Spec_Keycloak_ClientSecret) ProtoMessage() {}
 
 func (x *DirectoryProvider_Spec_Keycloak_ClientSecret) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[187]
+	mi := &file_enterprisev1_proto_msgTypes[202]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16087,7 +17879,7 @@ type DirectoryProvider_Spec_Keycloak_Polling struct {
 
 func (x *DirectoryProvider_Spec_Keycloak_Polling) Reset() {
 	*x = DirectoryProvider_Spec_Keycloak_Polling{}
-	mi := &file_enterprisev1_proto_msgTypes[188]
+	mi := &file_enterprisev1_proto_msgTypes[203]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16099,7 +17891,7 @@ func (x *DirectoryProvider_Spec_Keycloak_Polling) String() string {
 func (*DirectoryProvider_Spec_Keycloak_Polling) ProtoMessage() {}
 
 func (x *DirectoryProvider_Spec_Keycloak_Polling) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[188]
+	mi := &file_enterprisev1_proto_msgTypes[203]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16139,7 +17931,7 @@ type DirectoryProvider_Status_Synchronization struct {
 
 func (x *DirectoryProvider_Status_Synchronization) Reset() {
 	*x = DirectoryProvider_Status_Synchronization{}
-	mi := &file_enterprisev1_proto_msgTypes[189]
+	mi := &file_enterprisev1_proto_msgTypes[204]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16151,7 +17943,7 @@ func (x *DirectoryProvider_Status_Synchronization) String() string {
 func (*DirectoryProvider_Status_Synchronization) ProtoMessage() {}
 
 func (x *DirectoryProvider_Status_Synchronization) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[189]
+	mi := &file_enterprisev1_proto_msgTypes[204]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16197,7 +17989,7 @@ type DirectoryProviderUser_Spec struct {
 
 func (x *DirectoryProviderUser_Spec) Reset() {
 	*x = DirectoryProviderUser_Spec{}
-	mi := &file_enterprisev1_proto_msgTypes[190]
+	mi := &file_enterprisev1_proto_msgTypes[205]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16209,7 +18001,7 @@ func (x *DirectoryProviderUser_Spec) String() string {
 func (*DirectoryProviderUser_Spec) ProtoMessage() {}
 
 func (x *DirectoryProviderUser_Spec) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[190]
+	mi := &file_enterprisev1_proto_msgTypes[205]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16243,7 +18035,7 @@ type DirectoryProviderUser_Status struct {
 
 func (x *DirectoryProviderUser_Status) Reset() {
 	*x = DirectoryProviderUser_Status{}
-	mi := &file_enterprisev1_proto_msgTypes[191]
+	mi := &file_enterprisev1_proto_msgTypes[206]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16255,7 +18047,7 @@ func (x *DirectoryProviderUser_Status) String() string {
 func (*DirectoryProviderUser_Status) ProtoMessage() {}
 
 func (x *DirectoryProviderUser_Status) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[191]
+	mi := &file_enterprisev1_proto_msgTypes[206]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16301,7 +18093,7 @@ type DirectoryProviderGroup_Spec struct {
 
 func (x *DirectoryProviderGroup_Spec) Reset() {
 	*x = DirectoryProviderGroup_Spec{}
-	mi := &file_enterprisev1_proto_msgTypes[192]
+	mi := &file_enterprisev1_proto_msgTypes[207]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16313,7 +18105,7 @@ func (x *DirectoryProviderGroup_Spec) String() string {
 func (*DirectoryProviderGroup_Spec) ProtoMessage() {}
 
 func (x *DirectoryProviderGroup_Spec) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[192]
+	mi := &file_enterprisev1_proto_msgTypes[207]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16347,7 +18139,7 @@ type DirectoryProviderGroup_Status struct {
 
 func (x *DirectoryProviderGroup_Status) Reset() {
 	*x = DirectoryProviderGroup_Status{}
-	mi := &file_enterprisev1_proto_msgTypes[193]
+	mi := &file_enterprisev1_proto_msgTypes[208]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16359,7 +18151,7 @@ func (x *DirectoryProviderGroup_Status) String() string {
 func (*DirectoryProviderGroup_Status) ProtoMessage() {}
 
 func (x *DirectoryProviderGroup_Status) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[193]
+	mi := &file_enterprisev1_proto_msgTypes[208]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16415,7 +18207,7 @@ type DNSProvider_Spec struct {
 
 func (x *DNSProvider_Spec) Reset() {
 	*x = DNSProvider_Spec{}
-	mi := &file_enterprisev1_proto_msgTypes[194]
+	mi := &file_enterprisev1_proto_msgTypes[209]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16427,7 +18219,7 @@ func (x *DNSProvider_Spec) String() string {
 func (*DNSProvider_Spec) ProtoMessage() {}
 
 func (x *DNSProvider_Spec) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[194]
+	mi := &file_enterprisev1_proto_msgTypes[209]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16575,7 +18367,7 @@ type DNSProvider_Status struct {
 
 func (x *DNSProvider_Status) Reset() {
 	*x = DNSProvider_Status{}
-	mi := &file_enterprisev1_proto_msgTypes[195]
+	mi := &file_enterprisev1_proto_msgTypes[210]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16587,7 +18379,7 @@ func (x *DNSProvider_Status) String() string {
 func (*DNSProvider_Status) ProtoMessage() {}
 
 func (x *DNSProvider_Status) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[195]
+	mi := &file_enterprisev1_proto_msgTypes[210]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16618,7 +18410,7 @@ type DNSProvider_Spec_Cloudflare struct {
 
 func (x *DNSProvider_Spec_Cloudflare) Reset() {
 	*x = DNSProvider_Spec_Cloudflare{}
-	mi := &file_enterprisev1_proto_msgTypes[196]
+	mi := &file_enterprisev1_proto_msgTypes[211]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16630,7 +18422,7 @@ func (x *DNSProvider_Spec_Cloudflare) String() string {
 func (*DNSProvider_Spec_Cloudflare) ProtoMessage() {}
 
 func (x *DNSProvider_Spec_Cloudflare) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[196]
+	mi := &file_enterprisev1_proto_msgTypes[211]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16686,7 +18478,7 @@ type DNSProvider_Spec_AWS struct {
 
 func (x *DNSProvider_Spec_AWS) Reset() {
 	*x = DNSProvider_Spec_AWS{}
-	mi := &file_enterprisev1_proto_msgTypes[197]
+	mi := &file_enterprisev1_proto_msgTypes[212]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16698,7 +18490,7 @@ func (x *DNSProvider_Spec_AWS) String() string {
 func (*DNSProvider_Spec_AWS) ProtoMessage() {}
 
 func (x *DNSProvider_Spec_AWS) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[197]
+	mi := &file_enterprisev1_proto_msgTypes[212]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16753,7 +18545,7 @@ type DNSProvider_Spec_DigitalOcean struct {
 
 func (x *DNSProvider_Spec_DigitalOcean) Reset() {
 	*x = DNSProvider_Spec_DigitalOcean{}
-	mi := &file_enterprisev1_proto_msgTypes[198]
+	mi := &file_enterprisev1_proto_msgTypes[213]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16765,7 +18557,7 @@ func (x *DNSProvider_Spec_DigitalOcean) String() string {
 func (*DNSProvider_Spec_DigitalOcean) ProtoMessage() {}
 
 func (x *DNSProvider_Spec_DigitalOcean) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[198]
+	mi := &file_enterprisev1_proto_msgTypes[213]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16802,7 +18594,7 @@ type DNSProvider_Spec_Google struct {
 
 func (x *DNSProvider_Spec_Google) Reset() {
 	*x = DNSProvider_Spec_Google{}
-	mi := &file_enterprisev1_proto_msgTypes[199]
+	mi := &file_enterprisev1_proto_msgTypes[214]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16814,7 +18606,7 @@ func (x *DNSProvider_Spec_Google) String() string {
 func (*DNSProvider_Spec_Google) ProtoMessage() {}
 
 func (x *DNSProvider_Spec_Google) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[199]
+	mi := &file_enterprisev1_proto_msgTypes[214]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16870,7 +18662,7 @@ type DNSProvider_Spec_Azure struct {
 
 func (x *DNSProvider_Spec_Azure) Reset() {
 	*x = DNSProvider_Spec_Azure{}
-	mi := &file_enterprisev1_proto_msgTypes[200]
+	mi := &file_enterprisev1_proto_msgTypes[215]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16882,7 +18674,7 @@ func (x *DNSProvider_Spec_Azure) String() string {
 func (*DNSProvider_Spec_Azure) ProtoMessage() {}
 
 func (x *DNSProvider_Spec_Azure) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[200]
+	mi := &file_enterprisev1_proto_msgTypes[215]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16951,7 +18743,7 @@ type DNSProvider_Spec_Linode struct {
 
 func (x *DNSProvider_Spec_Linode) Reset() {
 	*x = DNSProvider_Spec_Linode{}
-	mi := &file_enterprisev1_proto_msgTypes[201]
+	mi := &file_enterprisev1_proto_msgTypes[216]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16963,7 +18755,7 @@ func (x *DNSProvider_Spec_Linode) String() string {
 func (*DNSProvider_Spec_Linode) ProtoMessage() {}
 
 func (x *DNSProvider_Spec_Linode) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[201]
+	mi := &file_enterprisev1_proto_msgTypes[216]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17004,7 +18796,7 @@ type DNSProvider_Spec_OVH struct {
 
 func (x *DNSProvider_Spec_OVH) Reset() {
 	*x = DNSProvider_Spec_OVH{}
-	mi := &file_enterprisev1_proto_msgTypes[202]
+	mi := &file_enterprisev1_proto_msgTypes[217]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17016,7 +18808,7 @@ func (x *DNSProvider_Spec_OVH) String() string {
 func (*DNSProvider_Spec_OVH) ProtoMessage() {}
 
 func (x *DNSProvider_Spec_OVH) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[202]
+	mi := &file_enterprisev1_proto_msgTypes[217]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17073,7 +18865,7 @@ type DNSProvider_Spec_Cloudflare_APIToken struct {
 
 func (x *DNSProvider_Spec_Cloudflare_APIToken) Reset() {
 	*x = DNSProvider_Spec_Cloudflare_APIToken{}
-	mi := &file_enterprisev1_proto_msgTypes[203]
+	mi := &file_enterprisev1_proto_msgTypes[218]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17085,7 +18877,7 @@ func (x *DNSProvider_Spec_Cloudflare_APIToken) String() string {
 func (*DNSProvider_Spec_Cloudflare_APIToken) ProtoMessage() {}
 
 func (x *DNSProvider_Spec_Cloudflare_APIToken) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[203]
+	mi := &file_enterprisev1_proto_msgTypes[218]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17142,7 +18934,7 @@ type DNSProvider_Spec_AWS_SecretAccessKey struct {
 
 func (x *DNSProvider_Spec_AWS_SecretAccessKey) Reset() {
 	*x = DNSProvider_Spec_AWS_SecretAccessKey{}
-	mi := &file_enterprisev1_proto_msgTypes[204]
+	mi := &file_enterprisev1_proto_msgTypes[219]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17154,7 +18946,7 @@ func (x *DNSProvider_Spec_AWS_SecretAccessKey) String() string {
 func (*DNSProvider_Spec_AWS_SecretAccessKey) ProtoMessage() {}
 
 func (x *DNSProvider_Spec_AWS_SecretAccessKey) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[204]
+	mi := &file_enterprisev1_proto_msgTypes[219]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17212,7 +19004,7 @@ type DNSProvider_Spec_DigitalOcean_APIToken struct {
 
 func (x *DNSProvider_Spec_DigitalOcean_APIToken) Reset() {
 	*x = DNSProvider_Spec_DigitalOcean_APIToken{}
-	mi := &file_enterprisev1_proto_msgTypes[205]
+	mi := &file_enterprisev1_proto_msgTypes[220]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17224,7 +19016,7 @@ func (x *DNSProvider_Spec_DigitalOcean_APIToken) String() string {
 func (*DNSProvider_Spec_DigitalOcean_APIToken) ProtoMessage() {}
 
 func (x *DNSProvider_Spec_DigitalOcean_APIToken) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[205]
+	mi := &file_enterprisev1_proto_msgTypes[220]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17282,7 +19074,7 @@ type DNSProvider_Spec_Google_ServiceAccount struct {
 
 func (x *DNSProvider_Spec_Google_ServiceAccount) Reset() {
 	*x = DNSProvider_Spec_Google_ServiceAccount{}
-	mi := &file_enterprisev1_proto_msgTypes[206]
+	mi := &file_enterprisev1_proto_msgTypes[221]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17294,7 +19086,7 @@ func (x *DNSProvider_Spec_Google_ServiceAccount) String() string {
 func (*DNSProvider_Spec_Google_ServiceAccount) ProtoMessage() {}
 
 func (x *DNSProvider_Spec_Google_ServiceAccount) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[206]
+	mi := &file_enterprisev1_proto_msgTypes[221]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17352,7 +19144,7 @@ type DNSProvider_Spec_Azure_ClientSecret struct {
 
 func (x *DNSProvider_Spec_Azure_ClientSecret) Reset() {
 	*x = DNSProvider_Spec_Azure_ClientSecret{}
-	mi := &file_enterprisev1_proto_msgTypes[207]
+	mi := &file_enterprisev1_proto_msgTypes[222]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17364,7 +19156,7 @@ func (x *DNSProvider_Spec_Azure_ClientSecret) String() string {
 func (*DNSProvider_Spec_Azure_ClientSecret) ProtoMessage() {}
 
 func (x *DNSProvider_Spec_Azure_ClientSecret) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[207]
+	mi := &file_enterprisev1_proto_msgTypes[222]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17421,7 +19213,7 @@ type DNSProvider_Spec_Linode_APIToken struct {
 
 func (x *DNSProvider_Spec_Linode_APIToken) Reset() {
 	*x = DNSProvider_Spec_Linode_APIToken{}
-	mi := &file_enterprisev1_proto_msgTypes[208]
+	mi := &file_enterprisev1_proto_msgTypes[223]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17433,7 +19225,7 @@ func (x *DNSProvider_Spec_Linode_APIToken) String() string {
 func (*DNSProvider_Spec_Linode_APIToken) ProtoMessage() {}
 
 func (x *DNSProvider_Spec_Linode_APIToken) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[208]
+	mi := &file_enterprisev1_proto_msgTypes[223]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17490,7 +19282,7 @@ type DNSProvider_Spec_OVH_ApplicationSecret struct {
 
 func (x *DNSProvider_Spec_OVH_ApplicationSecret) Reset() {
 	*x = DNSProvider_Spec_OVH_ApplicationSecret{}
-	mi := &file_enterprisev1_proto_msgTypes[209]
+	mi := &file_enterprisev1_proto_msgTypes[224]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17502,7 +19294,7 @@ func (x *DNSProvider_Spec_OVH_ApplicationSecret) String() string {
 func (*DNSProvider_Spec_OVH_ApplicationSecret) ProtoMessage() {}
 
 func (x *DNSProvider_Spec_OVH_ApplicationSecret) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[209]
+	mi := &file_enterprisev1_proto_msgTypes[224]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17564,7 +19356,7 @@ type SecretStore_Spec struct {
 
 func (x *SecretStore_Spec) Reset() {
 	*x = SecretStore_Spec{}
-	mi := &file_enterprisev1_proto_msgTypes[210]
+	mi := &file_enterprisev1_proto_msgTypes[225]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17576,7 +19368,7 @@ func (x *SecretStore_Spec) String() string {
 func (*SecretStore_Spec) ProtoMessage() {}
 
 func (x *SecretStore_Spec) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[210]
+	mi := &file_enterprisev1_proto_msgTypes[225]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17702,7 +19494,7 @@ type SecretStore_Status struct {
 
 func (x *SecretStore_Status) Reset() {
 	*x = SecretStore_Status{}
-	mi := &file_enterprisev1_proto_msgTypes[211]
+	mi := &file_enterprisev1_proto_msgTypes[226]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17714,7 +19506,7 @@ func (x *SecretStore_Status) String() string {
 func (*SecretStore_Status) ProtoMessage() {}
 
 func (x *SecretStore_Status) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[211]
+	mi := &file_enterprisev1_proto_msgTypes[226]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17776,7 +19568,7 @@ type SecretStore_Spec_HashicorpVault struct {
 
 func (x *SecretStore_Spec_HashicorpVault) Reset() {
 	*x = SecretStore_Spec_HashicorpVault{}
-	mi := &file_enterprisev1_proto_msgTypes[212]
+	mi := &file_enterprisev1_proto_msgTypes[227]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17788,7 +19580,7 @@ func (x *SecretStore_Spec_HashicorpVault) String() string {
 func (*SecretStore_Spec_HashicorpVault) ProtoMessage() {}
 
 func (x *SecretStore_Spec_HashicorpVault) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[212]
+	mi := &file_enterprisev1_proto_msgTypes[227]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17845,7 +19637,7 @@ type SecretStore_Spec_GoogleCloudKeyManagementService struct {
 
 func (x *SecretStore_Spec_GoogleCloudKeyManagementService) Reset() {
 	*x = SecretStore_Spec_GoogleCloudKeyManagementService{}
-	mi := &file_enterprisev1_proto_msgTypes[213]
+	mi := &file_enterprisev1_proto_msgTypes[228]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17857,7 +19649,7 @@ func (x *SecretStore_Spec_GoogleCloudKeyManagementService) String() string {
 func (*SecretStore_Spec_GoogleCloudKeyManagementService) ProtoMessage() {}
 
 func (x *SecretStore_Spec_GoogleCloudKeyManagementService) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[213]
+	mi := &file_enterprisev1_proto_msgTypes[228]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17917,7 +19709,7 @@ type SecretStore_Spec_AWSKeyManagementService struct {
 
 func (x *SecretStore_Spec_AWSKeyManagementService) Reset() {
 	*x = SecretStore_Spec_AWSKeyManagementService{}
-	mi := &file_enterprisev1_proto_msgTypes[214]
+	mi := &file_enterprisev1_proto_msgTypes[229]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17929,7 +19721,7 @@ func (x *SecretStore_Spec_AWSKeyManagementService) String() string {
 func (*SecretStore_Spec_AWSKeyManagementService) ProtoMessage() {}
 
 func (x *SecretStore_Spec_AWSKeyManagementService) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[214]
+	mi := &file_enterprisev1_proto_msgTypes[229]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17987,7 +19779,7 @@ type SecretStore_Spec_AzureKeyVault struct {
 
 func (x *SecretStore_Spec_AzureKeyVault) Reset() {
 	*x = SecretStore_Spec_AzureKeyVault{}
-	mi := &file_enterprisev1_proto_msgTypes[215]
+	mi := &file_enterprisev1_proto_msgTypes[230]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17999,7 +19791,7 @@ func (x *SecretStore_Spec_AzureKeyVault) String() string {
 func (*SecretStore_Spec_AzureKeyVault) ProtoMessage() {}
 
 func (x *SecretStore_Spec_AzureKeyVault) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[215]
+	mi := &file_enterprisev1_proto_msgTypes[230]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18054,7 +19846,7 @@ type SecretStore_Spec_Kubernetes struct {
 
 func (x *SecretStore_Spec_Kubernetes) Reset() {
 	*x = SecretStore_Spec_Kubernetes{}
-	mi := &file_enterprisev1_proto_msgTypes[216]
+	mi := &file_enterprisev1_proto_msgTypes[231]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18066,7 +19858,7 @@ func (x *SecretStore_Spec_Kubernetes) String() string {
 func (*SecretStore_Spec_Kubernetes) ProtoMessage() {}
 
 func (x *SecretStore_Spec_Kubernetes) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[216]
+	mi := &file_enterprisev1_proto_msgTypes[231]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18099,7 +19891,7 @@ type SecretStore_Status_Synchronization struct {
 
 func (x *SecretStore_Status_Synchronization) Reset() {
 	*x = SecretStore_Status_Synchronization{}
-	mi := &file_enterprisev1_proto_msgTypes[217]
+	mi := &file_enterprisev1_proto_msgTypes[232]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18111,7 +19903,7 @@ func (x *SecretStore_Status_Synchronization) String() string {
 func (*SecretStore_Status_Synchronization) ProtoMessage() {}
 
 func (x *SecretStore_Status_Synchronization) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[217]
+	mi := &file_enterprisev1_proto_msgTypes[232]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18161,7 +19953,7 @@ type GenerateDirectoryProviderCredentialResponse_Bearer struct {
 
 func (x *GenerateDirectoryProviderCredentialResponse_Bearer) Reset() {
 	*x = GenerateDirectoryProviderCredentialResponse_Bearer{}
-	mi := &file_enterprisev1_proto_msgTypes[218]
+	mi := &file_enterprisev1_proto_msgTypes[233]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18173,7 +19965,7 @@ func (x *GenerateDirectoryProviderCredentialResponse_Bearer) String() string {
 func (*GenerateDirectoryProviderCredentialResponse_Bearer) ProtoMessage() {}
 
 func (x *GenerateDirectoryProviderCredentialResponse_Bearer) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[218]
+	mi := &file_enterprisev1_proto_msgTypes[233]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18223,7 +20015,7 @@ type AuditLog_Entry struct {
 
 func (x *AuditLog_Entry) Reset() {
 	*x = AuditLog_Entry{}
-	mi := &file_enterprisev1_proto_msgTypes[219]
+	mi := &file_enterprisev1_proto_msgTypes[234]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18235,7 +20027,7 @@ func (x *AuditLog_Entry) String() string {
 func (*AuditLog_Entry) ProtoMessage() {}
 
 func (x *AuditLog_Entry) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[219]
+	mi := &file_enterprisev1_proto_msgTypes[234]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18335,7 +20127,7 @@ type DeviceManager_Spec struct {
 
 func (x *DeviceManager_Spec) Reset() {
 	*x = DeviceManager_Spec{}
-	mi := &file_enterprisev1_proto_msgTypes[220]
+	mi := &file_enterprisev1_proto_msgTypes[235]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18347,7 +20139,7 @@ func (x *DeviceManager_Spec) String() string {
 func (*DeviceManager_Spec) ProtoMessage() {}
 
 func (x *DeviceManager_Spec) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[220]
+	mi := &file_enterprisev1_proto_msgTypes[235]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18540,7 +20332,7 @@ type DeviceManager_Status struct {
 
 func (x *DeviceManager_Status) Reset() {
 	*x = DeviceManager_Status{}
-	mi := &file_enterprisev1_proto_msgTypes[221]
+	mi := &file_enterprisev1_proto_msgTypes[236]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18552,7 +20344,7 @@ func (x *DeviceManager_Status) String() string {
 func (*DeviceManager_Status) ProtoMessage() {}
 
 func (x *DeviceManager_Status) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[221]
+	mi := &file_enterprisev1_proto_msgTypes[236]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18610,7 +20402,7 @@ type DeviceManager_Spec_SecretRef struct {
 
 func (x *DeviceManager_Spec_SecretRef) Reset() {
 	*x = DeviceManager_Spec_SecretRef{}
-	mi := &file_enterprisev1_proto_msgTypes[222]
+	mi := &file_enterprisev1_proto_msgTypes[237]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18622,7 +20414,7 @@ func (x *DeviceManager_Spec_SecretRef) String() string {
 func (*DeviceManager_Spec_SecretRef) ProtoMessage() {}
 
 func (x *DeviceManager_Spec_SecretRef) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[222]
+	mi := &file_enterprisev1_proto_msgTypes[237]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18696,7 +20488,7 @@ type DeviceManager_Spec_CrowdStrike struct {
 
 func (x *DeviceManager_Spec_CrowdStrike) Reset() {
 	*x = DeviceManager_Spec_CrowdStrike{}
-	mi := &file_enterprisev1_proto_msgTypes[223]
+	mi := &file_enterprisev1_proto_msgTypes[238]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18708,7 +20500,7 @@ func (x *DeviceManager_Spec_CrowdStrike) String() string {
 func (*DeviceManager_Spec_CrowdStrike) ProtoMessage() {}
 
 func (x *DeviceManager_Spec_CrowdStrike) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[223]
+	mi := &file_enterprisev1_proto_msgTypes[238]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18790,7 +20582,7 @@ type DeviceManager_Spec_SentinelOne struct {
 
 func (x *DeviceManager_Spec_SentinelOne) Reset() {
 	*x = DeviceManager_Spec_SentinelOne{}
-	mi := &file_enterprisev1_proto_msgTypes[224]
+	mi := &file_enterprisev1_proto_msgTypes[239]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18802,7 +20594,7 @@ func (x *DeviceManager_Spec_SentinelOne) String() string {
 func (*DeviceManager_Spec_SentinelOne) ProtoMessage() {}
 
 func (x *DeviceManager_Spec_SentinelOne) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[224]
+	mi := &file_enterprisev1_proto_msgTypes[239]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18882,7 +20674,7 @@ type DeviceManager_Spec_MicrosoftIntune struct {
 
 func (x *DeviceManager_Spec_MicrosoftIntune) Reset() {
 	*x = DeviceManager_Spec_MicrosoftIntune{}
-	mi := &file_enterprisev1_proto_msgTypes[225]
+	mi := &file_enterprisev1_proto_msgTypes[240]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18894,7 +20686,7 @@ func (x *DeviceManager_Spec_MicrosoftIntune) String() string {
 func (*DeviceManager_Spec_MicrosoftIntune) ProtoMessage() {}
 
 func (x *DeviceManager_Spec_MicrosoftIntune) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[225]
+	mi := &file_enterprisev1_proto_msgTypes[240]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -18985,7 +20777,7 @@ type DeviceManager_Spec_Jamf struct {
 
 func (x *DeviceManager_Spec_Jamf) Reset() {
 	*x = DeviceManager_Spec_Jamf{}
-	mi := &file_enterprisev1_proto_msgTypes[226]
+	mi := &file_enterprisev1_proto_msgTypes[241]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -18997,7 +20789,7 @@ func (x *DeviceManager_Spec_Jamf) String() string {
 func (*DeviceManager_Spec_Jamf) ProtoMessage() {}
 
 func (x *DeviceManager_Spec_Jamf) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[226]
+	mi := &file_enterprisev1_proto_msgTypes[241]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19063,7 +20855,7 @@ type DeviceManager_Spec_OnePassword struct {
 
 func (x *DeviceManager_Spec_OnePassword) Reset() {
 	*x = DeviceManager_Spec_OnePassword{}
-	mi := &file_enterprisev1_proto_msgTypes[227]
+	mi := &file_enterprisev1_proto_msgTypes[242]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19075,7 +20867,7 @@ func (x *DeviceManager_Spec_OnePassword) String() string {
 func (*DeviceManager_Spec_OnePassword) ProtoMessage() {}
 
 func (x *DeviceManager_Spec_OnePassword) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[227]
+	mi := &file_enterprisev1_proto_msgTypes[242]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19123,7 +20915,7 @@ type DeviceManager_Spec_FleetDM struct {
 
 func (x *DeviceManager_Spec_FleetDM) Reset() {
 	*x = DeviceManager_Spec_FleetDM{}
-	mi := &file_enterprisev1_proto_msgTypes[228]
+	mi := &file_enterprisev1_proto_msgTypes[243]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19135,7 +20927,7 @@ func (x *DeviceManager_Spec_FleetDM) String() string {
 func (*DeviceManager_Spec_FleetDM) ProtoMessage() {}
 
 func (x *DeviceManager_Spec_FleetDM) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[228]
+	mi := &file_enterprisev1_proto_msgTypes[243]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19194,7 +20986,7 @@ type DeviceManager_Spec_Huntress struct {
 
 func (x *DeviceManager_Spec_Huntress) Reset() {
 	*x = DeviceManager_Spec_Huntress{}
-	mi := &file_enterprisev1_proto_msgTypes[229]
+	mi := &file_enterprisev1_proto_msgTypes[244]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19206,7 +20998,7 @@ func (x *DeviceManager_Spec_Huntress) String() string {
 func (*DeviceManager_Spec_Huntress) ProtoMessage() {}
 
 func (x *DeviceManager_Spec_Huntress) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[229]
+	mi := &file_enterprisev1_proto_msgTypes[244]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19263,7 +21055,7 @@ type DeviceManager_Spec_Iru struct {
 
 func (x *DeviceManager_Spec_Iru) Reset() {
 	*x = DeviceManager_Spec_Iru{}
-	mi := &file_enterprisev1_proto_msgTypes[230]
+	mi := &file_enterprisev1_proto_msgTypes[245]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19275,7 +21067,7 @@ func (x *DeviceManager_Spec_Iru) String() string {
 func (*DeviceManager_Spec_Iru) ProtoMessage() {}
 
 func (x *DeviceManager_Spec_Iru) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[230]
+	mi := &file_enterprisev1_proto_msgTypes[245]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19334,7 +21126,7 @@ type DeviceManager_Spec_Polling struct {
 
 func (x *DeviceManager_Spec_Polling) Reset() {
 	*x = DeviceManager_Spec_Polling{}
-	mi := &file_enterprisev1_proto_msgTypes[231]
+	mi := &file_enterprisev1_proto_msgTypes[246]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19346,7 +21138,7 @@ func (x *DeviceManager_Spec_Polling) String() string {
 func (*DeviceManager_Spec_Polling) ProtoMessage() {}
 
 func (x *DeviceManager_Spec_Polling) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[231]
+	mi := &file_enterprisev1_proto_msgTypes[246]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19460,7 +21252,7 @@ type DeviceManager_Spec_Linking struct {
 
 func (x *DeviceManager_Spec_Linking) Reset() {
 	*x = DeviceManager_Spec_Linking{}
-	mi := &file_enterprisev1_proto_msgTypes[232]
+	mi := &file_enterprisev1_proto_msgTypes[247]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19472,7 +21264,7 @@ func (x *DeviceManager_Spec_Linking) String() string {
 func (*DeviceManager_Spec_Linking) ProtoMessage() {}
 
 func (x *DeviceManager_Spec_Linking) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[232]
+	mi := &file_enterprisev1_proto_msgTypes[247]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19522,7 +21314,7 @@ type DeviceManager_Status_Collection struct {
 
 func (x *DeviceManager_Status_Collection) Reset() {
 	*x = DeviceManager_Status_Collection{}
-	mi := &file_enterprisev1_proto_msgTypes[234]
+	mi := &file_enterprisev1_proto_msgTypes[249]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19534,7 +21326,7 @@ func (x *DeviceManager_Status_Collection) String() string {
 func (*DeviceManager_Status_Collection) ProtoMessage() {}
 
 func (x *DeviceManager_Status_Collection) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[234]
+	mi := &file_enterprisev1_proto_msgTypes[249]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19607,7 +21399,7 @@ type DeviceManager_Status_Linking struct {
 
 func (x *DeviceManager_Status_Linking) Reset() {
 	*x = DeviceManager_Status_Linking{}
-	mi := &file_enterprisev1_proto_msgTypes[235]
+	mi := &file_enterprisev1_proto_msgTypes[250]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19619,7 +21411,7 @@ func (x *DeviceManager_Status_Linking) String() string {
 func (*DeviceManager_Status_Linking) ProtoMessage() {}
 
 func (x *DeviceManager_Status_Linking) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[235]
+	mi := &file_enterprisev1_proto_msgTypes[250]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19698,7 +21490,7 @@ type IsAuthorizedRequest_Additional struct {
 
 func (x *IsAuthorizedRequest_Additional) Reset() {
 	*x = IsAuthorizedRequest_Additional{}
-	mi := &file_enterprisev1_proto_msgTypes[236]
+	mi := &file_enterprisev1_proto_msgTypes[251]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19710,7 +21502,7 @@ func (x *IsAuthorizedRequest_Additional) String() string {
 func (*IsAuthorizedRequest_Additional) ProtoMessage() {}
 
 func (x *IsAuthorizedRequest_Additional) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[236]
+	mi := &file_enterprisev1_proto_msgTypes[251]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19751,7 +21543,7 @@ type Condition_All struct {
 
 func (x *Condition_All) Reset() {
 	*x = Condition_All{}
-	mi := &file_enterprisev1_proto_msgTypes[237]
+	mi := &file_enterprisev1_proto_msgTypes[252]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19763,7 +21555,7 @@ func (x *Condition_All) String() string {
 func (*Condition_All) ProtoMessage() {}
 
 func (x *Condition_All) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[237]
+	mi := &file_enterprisev1_proto_msgTypes[252]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19797,7 +21589,7 @@ type Condition_Any struct {
 
 func (x *Condition_Any) Reset() {
 	*x = Condition_Any{}
-	mi := &file_enterprisev1_proto_msgTypes[238]
+	mi := &file_enterprisev1_proto_msgTypes[253]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19809,7 +21601,7 @@ func (x *Condition_Any) String() string {
 func (*Condition_Any) ProtoMessage() {}
 
 func (x *Condition_Any) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[238]
+	mi := &file_enterprisev1_proto_msgTypes[253]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19843,7 +21635,7 @@ type Condition_None struct {
 
 func (x *Condition_None) Reset() {
 	*x = Condition_None{}
-	mi := &file_enterprisev1_proto_msgTypes[239]
+	mi := &file_enterprisev1_proto_msgTypes[254]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19855,7 +21647,7 @@ func (x *Condition_None) String() string {
 func (*Condition_None) ProtoMessage() {}
 
 func (x *Condition_None) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[239]
+	mi := &file_enterprisev1_proto_msgTypes[254]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19889,7 +21681,7 @@ type Condition_Not struct {
 
 func (x *Condition_Not) Reset() {
 	*x = Condition_Not{}
-	mi := &file_enterprisev1_proto_msgTypes[240]
+	mi := &file_enterprisev1_proto_msgTypes[255]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -19901,7 +21693,7 @@ func (x *Condition_Not) String() string {
 func (*Condition_Not) ProtoMessage() {}
 
 func (x *Condition_Not) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[240]
+	mi := &file_enterprisev1_proto_msgTypes[255]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20039,7 +21831,7 @@ type Condition_Expression struct {
 
 func (x *Condition_Expression) Reset() {
 	*x = Condition_Expression{}
-	mi := &file_enterprisev1_proto_msgTypes[241]
+	mi := &file_enterprisev1_proto_msgTypes[256]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -20051,7 +21843,7 @@ func (x *Condition_Expression) String() string {
 func (*Condition_Expression) ProtoMessage() {}
 
 func (x *Condition_Expression) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[241]
+	mi := &file_enterprisev1_proto_msgTypes[256]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21767,7 +23559,7 @@ type Condition_Expression_User struct {
 
 func (x *Condition_Expression_User) Reset() {
 	*x = Condition_Expression_User{}
-	mi := &file_enterprisev1_proto_msgTypes[242]
+	mi := &file_enterprisev1_proto_msgTypes[257]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21779,7 +23571,7 @@ func (x *Condition_Expression_User) String() string {
 func (*Condition_Expression_User) ProtoMessage() {}
 
 func (x *Condition_Expression_User) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[242]
+	mi := &file_enterprisev1_proto_msgTypes[257]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21813,7 +23605,7 @@ type Condition_Expression_UserType struct {
 
 func (x *Condition_Expression_UserType) Reset() {
 	*x = Condition_Expression_UserType{}
-	mi := &file_enterprisev1_proto_msgTypes[243]
+	mi := &file_enterprisev1_proto_msgTypes[258]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21825,7 +23617,7 @@ func (x *Condition_Expression_UserType) String() string {
 func (*Condition_Expression_UserType) ProtoMessage() {}
 
 func (x *Condition_Expression_UserType) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[243]
+	mi := &file_enterprisev1_proto_msgTypes[258]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21859,7 +23651,7 @@ type Condition_Expression_Group struct {
 
 func (x *Condition_Expression_Group) Reset() {
 	*x = Condition_Expression_Group{}
-	mi := &file_enterprisev1_proto_msgTypes[244]
+	mi := &file_enterprisev1_proto_msgTypes[259]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21871,7 +23663,7 @@ func (x *Condition_Expression_Group) String() string {
 func (*Condition_Expression_Group) ProtoMessage() {}
 
 func (x *Condition_Expression_Group) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[244]
+	mi := &file_enterprisev1_proto_msgTypes[259]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21905,7 +23697,7 @@ type Condition_Expression_Session struct {
 
 func (x *Condition_Expression_Session) Reset() {
 	*x = Condition_Expression_Session{}
-	mi := &file_enterprisev1_proto_msgTypes[245]
+	mi := &file_enterprisev1_proto_msgTypes[260]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21917,7 +23709,7 @@ func (x *Condition_Expression_Session) String() string {
 func (*Condition_Expression_Session) ProtoMessage() {}
 
 func (x *Condition_Expression_Session) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[245]
+	mi := &file_enterprisev1_proto_msgTypes[260]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21951,7 +23743,7 @@ type Condition_Expression_Device struct {
 
 func (x *Condition_Expression_Device) Reset() {
 	*x = Condition_Expression_Device{}
-	mi := &file_enterprisev1_proto_msgTypes[246]
+	mi := &file_enterprisev1_proto_msgTypes[261]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -21963,7 +23755,7 @@ func (x *Condition_Expression_Device) String() string {
 func (*Condition_Expression_Device) ProtoMessage() {}
 
 func (x *Condition_Expression_Device) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[246]
+	mi := &file_enterprisev1_proto_msgTypes[261]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21997,7 +23789,7 @@ type Condition_Expression_DeviceOSType struct {
 
 func (x *Condition_Expression_DeviceOSType) Reset() {
 	*x = Condition_Expression_DeviceOSType{}
-	mi := &file_enterprisev1_proto_msgTypes[247]
+	mi := &file_enterprisev1_proto_msgTypes[262]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22009,7 +23801,7 @@ func (x *Condition_Expression_DeviceOSType) String() string {
 func (*Condition_Expression_DeviceOSType) ProtoMessage() {}
 
 func (x *Condition_Expression_DeviceOSType) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[247]
+	mi := &file_enterprisev1_proto_msgTypes[262]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22043,7 +23835,7 @@ type Condition_Expression_Service struct {
 
 func (x *Condition_Expression_Service) Reset() {
 	*x = Condition_Expression_Service{}
-	mi := &file_enterprisev1_proto_msgTypes[248]
+	mi := &file_enterprisev1_proto_msgTypes[263]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22055,7 +23847,7 @@ func (x *Condition_Expression_Service) String() string {
 func (*Condition_Expression_Service) ProtoMessage() {}
 
 func (x *Condition_Expression_Service) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[248]
+	mi := &file_enterprisev1_proto_msgTypes[263]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22089,7 +23881,7 @@ type Condition_Expression_Namespace struct {
 
 func (x *Condition_Expression_Namespace) Reset() {
 	*x = Condition_Expression_Namespace{}
-	mi := &file_enterprisev1_proto_msgTypes[249]
+	mi := &file_enterprisev1_proto_msgTypes[264]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22101,7 +23893,7 @@ func (x *Condition_Expression_Namespace) String() string {
 func (*Condition_Expression_Namespace) ProtoMessage() {}
 
 func (x *Condition_Expression_Namespace) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[249]
+	mi := &file_enterprisev1_proto_msgTypes[264]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22135,7 +23927,7 @@ type Condition_Expression_ServiceMode struct {
 
 func (x *Condition_Expression_ServiceMode) Reset() {
 	*x = Condition_Expression_ServiceMode{}
-	mi := &file_enterprisev1_proto_msgTypes[250]
+	mi := &file_enterprisev1_proto_msgTypes[265]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22147,7 +23939,7 @@ func (x *Condition_Expression_ServiceMode) String() string {
 func (*Condition_Expression_ServiceMode) ProtoMessage() {}
 
 func (x *Condition_Expression_ServiceMode) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[250]
+	mi := &file_enterprisev1_proto_msgTypes[265]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22180,7 +23972,7 @@ type Condition_Expression_ServicePublic struct {
 
 func (x *Condition_Expression_ServicePublic) Reset() {
 	*x = Condition_Expression_ServicePublic{}
-	mi := &file_enterprisev1_proto_msgTypes[251]
+	mi := &file_enterprisev1_proto_msgTypes[266]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22192,7 +23984,7 @@ func (x *Condition_Expression_ServicePublic) String() string {
 func (*Condition_Expression_ServicePublic) ProtoMessage() {}
 
 func (x *Condition_Expression_ServicePublic) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[251]
+	mi := &file_enterprisev1_proto_msgTypes[266]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22219,7 +24011,7 @@ type Condition_Expression_SessionType struct {
 
 func (x *Condition_Expression_SessionType) Reset() {
 	*x = Condition_Expression_SessionType{}
-	mi := &file_enterprisev1_proto_msgTypes[252]
+	mi := &file_enterprisev1_proto_msgTypes[267]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22231,7 +24023,7 @@ func (x *Condition_Expression_SessionType) String() string {
 func (*Condition_Expression_SessionType) ProtoMessage() {}
 
 func (x *Condition_Expression_SessionType) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[252]
+	mi := &file_enterprisev1_proto_msgTypes[267]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22266,7 +24058,7 @@ type Condition_Expression_SessionAuthenticationType struct {
 
 func (x *Condition_Expression_SessionAuthenticationType) Reset() {
 	*x = Condition_Expression_SessionAuthenticationType{}
-	mi := &file_enterprisev1_proto_msgTypes[253]
+	mi := &file_enterprisev1_proto_msgTypes[268]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22278,7 +24070,7 @@ func (x *Condition_Expression_SessionAuthenticationType) String() string {
 func (*Condition_Expression_SessionAuthenticationType) ProtoMessage() {}
 
 func (x *Condition_Expression_SessionAuthenticationType) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[253]
+	mi := &file_enterprisev1_proto_msgTypes[268]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22313,7 +24105,7 @@ type Condition_Expression_SessionAuthenticationAAL struct {
 
 func (x *Condition_Expression_SessionAuthenticationAAL) Reset() {
 	*x = Condition_Expression_SessionAuthenticationAAL{}
-	mi := &file_enterprisev1_proto_msgTypes[254]
+	mi := &file_enterprisev1_proto_msgTypes[269]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22325,7 +24117,7 @@ func (x *Condition_Expression_SessionAuthenticationAAL) String() string {
 func (*Condition_Expression_SessionAuthenticationAAL) ProtoMessage() {}
 
 func (x *Condition_Expression_SessionAuthenticationAAL) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[254]
+	mi := &file_enterprisev1_proto_msgTypes[269]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22361,7 +24153,7 @@ type Condition_Expression_SessionAuthenticationIdentityProvider struct {
 
 func (x *Condition_Expression_SessionAuthenticationIdentityProvider) Reset() {
 	*x = Condition_Expression_SessionAuthenticationIdentityProvider{}
-	mi := &file_enterprisev1_proto_msgTypes[255]
+	mi := &file_enterprisev1_proto_msgTypes[270]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22373,7 +24165,7 @@ func (x *Condition_Expression_SessionAuthenticationIdentityProvider) String() st
 func (*Condition_Expression_SessionAuthenticationIdentityProvider) ProtoMessage() {}
 
 func (x *Condition_Expression_SessionAuthenticationIdentityProvider) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[255]
+	mi := &file_enterprisev1_proto_msgTypes[270]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22408,7 +24200,7 @@ type Condition_Expression_SessionAuthenticationCredential struct {
 
 func (x *Condition_Expression_SessionAuthenticationCredential) Reset() {
 	*x = Condition_Expression_SessionAuthenticationCredential{}
-	mi := &file_enterprisev1_proto_msgTypes[256]
+	mi := &file_enterprisev1_proto_msgTypes[271]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22420,7 +24212,7 @@ func (x *Condition_Expression_SessionAuthenticationCredential) String() string {
 func (*Condition_Expression_SessionAuthenticationCredential) ProtoMessage() {}
 
 func (x *Condition_Expression_SessionAuthenticationCredential) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[256]
+	mi := &file_enterprisev1_proto_msgTypes[271]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22453,7 +24245,7 @@ type Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey stru
 
 func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey) Reset() {
 	*x = Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey{}
-	mi := &file_enterprisev1_proto_msgTypes[257]
+	mi := &file_enterprisev1_proto_msgTypes[272]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22465,7 +24257,7 @@ func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey)
 func (*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey) ProtoMessage() {}
 
 func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[257]
+	mi := &file_enterprisev1_proto_msgTypes[272]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22492,7 +24284,7 @@ type Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware str
 
 func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware) Reset() {
 	*x = Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware{}
-	mi := &file_enterprisev1_proto_msgTypes[258]
+	mi := &file_enterprisev1_proto_msgTypes[273]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22504,7 +24296,7 @@ func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware
 func (*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware) ProtoMessage() {}
 
 func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[258]
+	mi := &file_enterprisev1_proto_msgTypes[273]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22531,7 +24323,7 @@ type Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified
 
 func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified) Reset() {
 	*x = Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified{}
-	mi := &file_enterprisev1_proto_msgTypes[259]
+	mi := &file_enterprisev1_proto_msgTypes[274]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22543,7 +24335,7 @@ func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVeri
 func (*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified) ProtoMessage() {}
 
 func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[259]
+	mi := &file_enterprisev1_proto_msgTypes[274]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22570,7 +24362,7 @@ type Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent 
 
 func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent) Reset() {
 	*x = Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent{}
-	mi := &file_enterprisev1_proto_msgTypes[260]
+	mi := &file_enterprisev1_proto_msgTypes[275]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22582,7 +24374,7 @@ func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPres
 func (*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent) ProtoMessage() {}
 
 func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[260]
+	mi := &file_enterprisev1_proto_msgTypes[275]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22609,7 +24401,7 @@ type Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationV
 
 func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified) Reset() {
 	*x = Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified{}
-	mi := &file_enterprisev1_proto_msgTypes[261]
+	mi := &file_enterprisev1_proto_msgTypes[276]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22622,7 +24414,7 @@ func (*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestatio
 }
 
 func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[261]
+	mi := &file_enterprisev1_proto_msgTypes[276]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22650,7 +24442,7 @@ type Condition_Expression_SessionAuthenticationCredAuthenticatorAAGUID struct {
 
 func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorAAGUID) Reset() {
 	*x = Condition_Expression_SessionAuthenticationCredAuthenticatorAAGUID{}
-	mi := &file_enterprisev1_proto_msgTypes[262]
+	mi := &file_enterprisev1_proto_msgTypes[277]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22662,7 +24454,7 @@ func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorAAGUID) Stri
 func (*Condition_Expression_SessionAuthenticationCredAuthenticatorAAGUID) ProtoMessage() {}
 
 func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorAAGUID) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[262]
+	mi := &file_enterprisev1_proto_msgTypes[277]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22695,7 +24487,7 @@ type Condition_Expression_SessionBrowser struct {
 
 func (x *Condition_Expression_SessionBrowser) Reset() {
 	*x = Condition_Expression_SessionBrowser{}
-	mi := &file_enterprisev1_proto_msgTypes[263]
+	mi := &file_enterprisev1_proto_msgTypes[278]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22707,7 +24499,7 @@ func (x *Condition_Expression_SessionBrowser) String() string {
 func (*Condition_Expression_SessionBrowser) ProtoMessage() {}
 
 func (x *Condition_Expression_SessionBrowser) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[263]
+	mi := &file_enterprisev1_proto_msgTypes[278]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22734,7 +24526,7 @@ type Condition_Expression_TimeBefore struct {
 
 func (x *Condition_Expression_TimeBefore) Reset() {
 	*x = Condition_Expression_TimeBefore{}
-	mi := &file_enterprisev1_proto_msgTypes[264]
+	mi := &file_enterprisev1_proto_msgTypes[279]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22746,7 +24538,7 @@ func (x *Condition_Expression_TimeBefore) String() string {
 func (*Condition_Expression_TimeBefore) ProtoMessage() {}
 
 func (x *Condition_Expression_TimeBefore) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[264]
+	mi := &file_enterprisev1_proto_msgTypes[279]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22780,7 +24572,7 @@ type Condition_Expression_TimeAfter struct {
 
 func (x *Condition_Expression_TimeAfter) Reset() {
 	*x = Condition_Expression_TimeAfter{}
-	mi := &file_enterprisev1_proto_msgTypes[265]
+	mi := &file_enterprisev1_proto_msgTypes[280]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22792,7 +24584,7 @@ func (x *Condition_Expression_TimeAfter) String() string {
 func (*Condition_Expression_TimeAfter) ProtoMessage() {}
 
 func (x *Condition_Expression_TimeAfter) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[265]
+	mi := &file_enterprisev1_proto_msgTypes[280]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22827,7 +24619,7 @@ type Condition_Expression_SessionAuthenticationCredentialType struct {
 
 func (x *Condition_Expression_SessionAuthenticationCredentialType) Reset() {
 	*x = Condition_Expression_SessionAuthenticationCredentialType{}
-	mi := &file_enterprisev1_proto_msgTypes[266]
+	mi := &file_enterprisev1_proto_msgTypes[281]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22839,7 +24631,7 @@ func (x *Condition_Expression_SessionAuthenticationCredentialType) String() stri
 func (*Condition_Expression_SessionAuthenticationCredentialType) ProtoMessage() {}
 
 func (x *Condition_Expression_SessionAuthenticationCredentialType) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[266]
+	mi := &file_enterprisev1_proto_msgTypes[281]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22874,7 +24666,7 @@ type Condition_Expression_SessionAuthenticationGeoipCountryCode struct {
 
 func (x *Condition_Expression_SessionAuthenticationGeoipCountryCode) Reset() {
 	*x = Condition_Expression_SessionAuthenticationGeoipCountryCode{}
-	mi := &file_enterprisev1_proto_msgTypes[267]
+	mi := &file_enterprisev1_proto_msgTypes[282]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22886,7 +24678,7 @@ func (x *Condition_Expression_SessionAuthenticationGeoipCountryCode) String() st
 func (*Condition_Expression_SessionAuthenticationGeoipCountryCode) ProtoMessage() {}
 
 func (x *Condition_Expression_SessionAuthenticationGeoipCountryCode) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[267]
+	mi := &file_enterprisev1_proto_msgTypes[282]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22921,7 +24713,7 @@ type Condition_Expression_SessionAuthenticationGeoipContinentCode struct {
 
 func (x *Condition_Expression_SessionAuthenticationGeoipContinentCode) Reset() {
 	*x = Condition_Expression_SessionAuthenticationGeoipContinentCode{}
-	mi := &file_enterprisev1_proto_msgTypes[268]
+	mi := &file_enterprisev1_proto_msgTypes[283]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22933,7 +24725,7 @@ func (x *Condition_Expression_SessionAuthenticationGeoipContinentCode) String() 
 func (*Condition_Expression_SessionAuthenticationGeoipContinentCode) ProtoMessage() {}
 
 func (x *Condition_Expression_SessionAuthenticationGeoipContinentCode) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[268]
+	mi := &file_enterprisev1_proto_msgTypes[283]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22967,7 +24759,7 @@ type Condition_Expression_RequestHTTPPath struct {
 
 func (x *Condition_Expression_RequestHTTPPath) Reset() {
 	*x = Condition_Expression_RequestHTTPPath{}
-	mi := &file_enterprisev1_proto_msgTypes[269]
+	mi := &file_enterprisev1_proto_msgTypes[284]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -22979,7 +24771,7 @@ func (x *Condition_Expression_RequestHTTPPath) String() string {
 func (*Condition_Expression_RequestHTTPPath) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestHTTPPath) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[269]
+	mi := &file_enterprisev1_proto_msgTypes[284]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23014,7 +24806,7 @@ type Condition_Expression_RequestHTTPMethod struct {
 
 func (x *Condition_Expression_RequestHTTPMethod) Reset() {
 	*x = Condition_Expression_RequestHTTPMethod{}
-	mi := &file_enterprisev1_proto_msgTypes[270]
+	mi := &file_enterprisev1_proto_msgTypes[285]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23026,7 +24818,7 @@ func (x *Condition_Expression_RequestHTTPMethod) String() string {
 func (*Condition_Expression_RequestHTTPMethod) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestHTTPMethod) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[270]
+	mi := &file_enterprisev1_proto_msgTypes[285]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23062,7 +24854,7 @@ type Condition_Expression_RequestHTTPHasHeader struct {
 
 func (x *Condition_Expression_RequestHTTPHasHeader) Reset() {
 	*x = Condition_Expression_RequestHTTPHasHeader{}
-	mi := &file_enterprisev1_proto_msgTypes[271]
+	mi := &file_enterprisev1_proto_msgTypes[286]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23074,7 +24866,7 @@ func (x *Condition_Expression_RequestHTTPHasHeader) String() string {
 func (*Condition_Expression_RequestHTTPHasHeader) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestHTTPHasHeader) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[271]
+	mi := &file_enterprisev1_proto_msgTypes[286]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23112,7 +24904,7 @@ type Condition_Expression_RequestHTTPHeaderValue struct {
 
 func (x *Condition_Expression_RequestHTTPHeaderValue) Reset() {
 	*x = Condition_Expression_RequestHTTPHeaderValue{}
-	mi := &file_enterprisev1_proto_msgTypes[272]
+	mi := &file_enterprisev1_proto_msgTypes[287]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23124,7 +24916,7 @@ func (x *Condition_Expression_RequestHTTPHeaderValue) String() string {
 func (*Condition_Expression_RequestHTTPHeaderValue) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestHTTPHeaderValue) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[272]
+	mi := &file_enterprisev1_proto_msgTypes[287]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23165,7 +24957,7 @@ type Condition_Expression_RequestIP struct {
 
 func (x *Condition_Expression_RequestIP) Reset() {
 	*x = Condition_Expression_RequestIP{}
-	mi := &file_enterprisev1_proto_msgTypes[273]
+	mi := &file_enterprisev1_proto_msgTypes[288]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23177,7 +24969,7 @@ func (x *Condition_Expression_RequestIP) String() string {
 func (*Condition_Expression_RequestIP) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestIP) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[273]
+	mi := &file_enterprisev1_proto_msgTypes[288]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23213,7 +25005,7 @@ type Condition_Expression_RequestIPInRange struct {
 
 func (x *Condition_Expression_RequestIPInRange) Reset() {
 	*x = Condition_Expression_RequestIPInRange{}
-	mi := &file_enterprisev1_proto_msgTypes[274]
+	mi := &file_enterprisev1_proto_msgTypes[289]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23225,7 +25017,7 @@ func (x *Condition_Expression_RequestIPInRange) String() string {
 func (*Condition_Expression_RequestIPInRange) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestIPInRange) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[274]
+	mi := &file_enterprisev1_proto_msgTypes[289]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23267,7 +25059,7 @@ type Condition_Expression_StringMatch struct {
 
 func (x *Condition_Expression_StringMatch) Reset() {
 	*x = Condition_Expression_StringMatch{}
-	mi := &file_enterprisev1_proto_msgTypes[275]
+	mi := &file_enterprisev1_proto_msgTypes[290]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23279,7 +25071,7 @@ func (x *Condition_Expression_StringMatch) String() string {
 func (*Condition_Expression_StringMatch) ProtoMessage() {}
 
 func (x *Condition_Expression_StringMatch) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[275]
+	mi := &file_enterprisev1_proto_msgTypes[290]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23401,7 +25193,7 @@ type Condition_Expression_StringSetMatch struct {
 
 func (x *Condition_Expression_StringSetMatch) Reset() {
 	*x = Condition_Expression_StringSetMatch{}
-	mi := &file_enterprisev1_proto_msgTypes[276]
+	mi := &file_enterprisev1_proto_msgTypes[291]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23413,7 +25205,7 @@ func (x *Condition_Expression_StringSetMatch) String() string {
 func (*Condition_Expression_StringSetMatch) ProtoMessage() {}
 
 func (x *Condition_Expression_StringSetMatch) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[276]
+	mi := &file_enterprisev1_proto_msgTypes[291]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23488,7 +25280,7 @@ type Condition_Expression_UIntMatch struct {
 
 func (x *Condition_Expression_UIntMatch) Reset() {
 	*x = Condition_Expression_UIntMatch{}
-	mi := &file_enterprisev1_proto_msgTypes[277]
+	mi := &file_enterprisev1_proto_msgTypes[292]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23500,7 +25292,7 @@ func (x *Condition_Expression_UIntMatch) String() string {
 func (*Condition_Expression_UIntMatch) ProtoMessage() {}
 
 func (x *Condition_Expression_UIntMatch) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[277]
+	mi := &file_enterprisev1_proto_msgTypes[292]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23628,7 +25420,7 @@ type Condition_Expression_IntMatch struct {
 
 func (x *Condition_Expression_IntMatch) Reset() {
 	*x = Condition_Expression_IntMatch{}
-	mi := &file_enterprisev1_proto_msgTypes[278]
+	mi := &file_enterprisev1_proto_msgTypes[293]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23640,7 +25432,7 @@ func (x *Condition_Expression_IntMatch) String() string {
 func (*Condition_Expression_IntMatch) ProtoMessage() {}
 
 func (x *Condition_Expression_IntMatch) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[278]
+	mi := &file_enterprisev1_proto_msgTypes[293]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23768,7 +25560,7 @@ type Condition_Expression_DoubleMatch struct {
 
 func (x *Condition_Expression_DoubleMatch) Reset() {
 	*x = Condition_Expression_DoubleMatch{}
-	mi := &file_enterprisev1_proto_msgTypes[279]
+	mi := &file_enterprisev1_proto_msgTypes[294]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23780,7 +25572,7 @@ func (x *Condition_Expression_DoubleMatch) String() string {
 func (*Condition_Expression_DoubleMatch) ProtoMessage() {}
 
 func (x *Condition_Expression_DoubleMatch) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[279]
+	mi := &file_enterprisev1_proto_msgTypes[294]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23879,7 +25671,7 @@ type Condition_Expression_RequestHTTPHost struct {
 
 func (x *Condition_Expression_RequestHTTPHost) Reset() {
 	*x = Condition_Expression_RequestHTTPHost{}
-	mi := &file_enterprisev1_proto_msgTypes[280]
+	mi := &file_enterprisev1_proto_msgTypes[295]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23891,7 +25683,7 @@ func (x *Condition_Expression_RequestHTTPHost) String() string {
 func (*Condition_Expression_RequestHTTPHost) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestHTTPHost) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[280]
+	mi := &file_enterprisev1_proto_msgTypes[295]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23926,7 +25718,7 @@ type Condition_Expression_RequestHTTPProtocol struct {
 
 func (x *Condition_Expression_RequestHTTPProtocol) Reset() {
 	*x = Condition_Expression_RequestHTTPProtocol{}
-	mi := &file_enterprisev1_proto_msgTypes[281]
+	mi := &file_enterprisev1_proto_msgTypes[296]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23938,7 +25730,7 @@ func (x *Condition_Expression_RequestHTTPProtocol) String() string {
 func (*Condition_Expression_RequestHTTPProtocol) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestHTTPProtocol) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[281]
+	mi := &file_enterprisev1_proto_msgTypes[296]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23974,7 +25766,7 @@ type Condition_Expression_RequestHTTPScheme struct {
 
 func (x *Condition_Expression_RequestHTTPScheme) Reset() {
 	*x = Condition_Expression_RequestHTTPScheme{}
-	mi := &file_enterprisev1_proto_msgTypes[282]
+	mi := &file_enterprisev1_proto_msgTypes[297]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -23986,7 +25778,7 @@ func (x *Condition_Expression_RequestHTTPScheme) String() string {
 func (*Condition_Expression_RequestHTTPScheme) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestHTTPScheme) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[282]
+	mi := &file_enterprisev1_proto_msgTypes[297]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24020,7 +25812,7 @@ type Condition_Expression_RequestHTTPURI struct {
 
 func (x *Condition_Expression_RequestHTTPURI) Reset() {
 	*x = Condition_Expression_RequestHTTPURI{}
-	mi := &file_enterprisev1_proto_msgTypes[283]
+	mi := &file_enterprisev1_proto_msgTypes[298]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24032,7 +25824,7 @@ func (x *Condition_Expression_RequestHTTPURI) String() string {
 func (*Condition_Expression_RequestHTTPURI) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestHTTPURI) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[283]
+	mi := &file_enterprisev1_proto_msgTypes[298]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24066,7 +25858,7 @@ type Condition_Expression_RequestHTTPSize struct {
 
 func (x *Condition_Expression_RequestHTTPSize) Reset() {
 	*x = Condition_Expression_RequestHTTPSize{}
-	mi := &file_enterprisev1_proto_msgTypes[284]
+	mi := &file_enterprisev1_proto_msgTypes[299]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24078,7 +25870,7 @@ func (x *Condition_Expression_RequestHTTPSize) String() string {
 func (*Condition_Expression_RequestHTTPSize) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestHTTPSize) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[284]
+	mi := &file_enterprisev1_proto_msgTypes[299]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24113,7 +25905,7 @@ type Condition_Expression_RequestHTTPHasQueryParam struct {
 
 func (x *Condition_Expression_RequestHTTPHasQueryParam) Reset() {
 	*x = Condition_Expression_RequestHTTPHasQueryParam{}
-	mi := &file_enterprisev1_proto_msgTypes[285]
+	mi := &file_enterprisev1_proto_msgTypes[300]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24125,7 +25917,7 @@ func (x *Condition_Expression_RequestHTTPHasQueryParam) String() string {
 func (*Condition_Expression_RequestHTTPHasQueryParam) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestHTTPHasQueryParam) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[285]
+	mi := &file_enterprisev1_proto_msgTypes[300]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24162,7 +25954,7 @@ type Condition_Expression_RequestHTTPQueryParamValue struct {
 
 func (x *Condition_Expression_RequestHTTPQueryParamValue) Reset() {
 	*x = Condition_Expression_RequestHTTPQueryParamValue{}
-	mi := &file_enterprisev1_proto_msgTypes[286]
+	mi := &file_enterprisev1_proto_msgTypes[301]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24174,7 +25966,7 @@ func (x *Condition_Expression_RequestHTTPQueryParamValue) String() string {
 func (*Condition_Expression_RequestHTTPQueryParamValue) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestHTTPQueryParamValue) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[286]
+	mi := &file_enterprisev1_proto_msgTypes[301]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24213,7 +26005,7 @@ type Condition_Expression_RequestSSH struct {
 
 func (x *Condition_Expression_RequestSSH) Reset() {
 	*x = Condition_Expression_RequestSSH{}
-	mi := &file_enterprisev1_proto_msgTypes[287]
+	mi := &file_enterprisev1_proto_msgTypes[302]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24225,7 +26017,7 @@ func (x *Condition_Expression_RequestSSH) String() string {
 func (*Condition_Expression_RequestSSH) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestSSH) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[287]
+	mi := &file_enterprisev1_proto_msgTypes[302]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24252,7 +26044,7 @@ type Condition_Expression_RequestSSHUser struct {
 
 func (x *Condition_Expression_RequestSSHUser) Reset() {
 	*x = Condition_Expression_RequestSSHUser{}
-	mi := &file_enterprisev1_proto_msgTypes[288]
+	mi := &file_enterprisev1_proto_msgTypes[303]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24264,7 +26056,7 @@ func (x *Condition_Expression_RequestSSHUser) String() string {
 func (*Condition_Expression_RequestSSHUser) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestSSHUser) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[288]
+	mi := &file_enterprisev1_proto_msgTypes[303]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24296,7 +26088,7 @@ type Condition_Expression_RequestKubernetes struct {
 
 func (x *Condition_Expression_RequestKubernetes) Reset() {
 	*x = Condition_Expression_RequestKubernetes{}
-	mi := &file_enterprisev1_proto_msgTypes[289]
+	mi := &file_enterprisev1_proto_msgTypes[304]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24308,7 +26100,7 @@ func (x *Condition_Expression_RequestKubernetes) String() string {
 func (*Condition_Expression_RequestKubernetes) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestKubernetes) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[289]
+	mi := &file_enterprisev1_proto_msgTypes[304]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24336,7 +26128,7 @@ type Condition_Expression_RequestKubernetesVerb struct {
 
 func (x *Condition_Expression_RequestKubernetesVerb) Reset() {
 	*x = Condition_Expression_RequestKubernetesVerb{}
-	mi := &file_enterprisev1_proto_msgTypes[290]
+	mi := &file_enterprisev1_proto_msgTypes[305]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24348,7 +26140,7 @@ func (x *Condition_Expression_RequestKubernetesVerb) String() string {
 func (*Condition_Expression_RequestKubernetesVerb) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestKubernetesVerb) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[290]
+	mi := &file_enterprisev1_proto_msgTypes[305]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24383,7 +26175,7 @@ type Condition_Expression_RequestKubernetesAPIPrefix struct {
 
 func (x *Condition_Expression_RequestKubernetesAPIPrefix) Reset() {
 	*x = Condition_Expression_RequestKubernetesAPIPrefix{}
-	mi := &file_enterprisev1_proto_msgTypes[291]
+	mi := &file_enterprisev1_proto_msgTypes[306]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24395,7 +26187,7 @@ func (x *Condition_Expression_RequestKubernetesAPIPrefix) String() string {
 func (*Condition_Expression_RequestKubernetesAPIPrefix) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestKubernetesAPIPrefix) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[291]
+	mi := &file_enterprisev1_proto_msgTypes[306]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24430,7 +26222,7 @@ type Condition_Expression_RequestKubernetesAPIGroup struct {
 
 func (x *Condition_Expression_RequestKubernetesAPIGroup) Reset() {
 	*x = Condition_Expression_RequestKubernetesAPIGroup{}
-	mi := &file_enterprisev1_proto_msgTypes[292]
+	mi := &file_enterprisev1_proto_msgTypes[307]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24442,7 +26234,7 @@ func (x *Condition_Expression_RequestKubernetesAPIGroup) String() string {
 func (*Condition_Expression_RequestKubernetesAPIGroup) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestKubernetesAPIGroup) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[292]
+	mi := &file_enterprisev1_proto_msgTypes[307]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24477,7 +26269,7 @@ type Condition_Expression_RequestKubernetesAPIVersion struct {
 
 func (x *Condition_Expression_RequestKubernetesAPIVersion) Reset() {
 	*x = Condition_Expression_RequestKubernetesAPIVersion{}
-	mi := &file_enterprisev1_proto_msgTypes[293]
+	mi := &file_enterprisev1_proto_msgTypes[308]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24489,7 +26281,7 @@ func (x *Condition_Expression_RequestKubernetesAPIVersion) String() string {
 func (*Condition_Expression_RequestKubernetesAPIVersion) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestKubernetesAPIVersion) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[293]
+	mi := &file_enterprisev1_proto_msgTypes[308]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24524,7 +26316,7 @@ type Condition_Expression_RequestKubernetesNamespace struct {
 
 func (x *Condition_Expression_RequestKubernetesNamespace) Reset() {
 	*x = Condition_Expression_RequestKubernetesNamespace{}
-	mi := &file_enterprisev1_proto_msgTypes[294]
+	mi := &file_enterprisev1_proto_msgTypes[309]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24536,7 +26328,7 @@ func (x *Condition_Expression_RequestKubernetesNamespace) String() string {
 func (*Condition_Expression_RequestKubernetesNamespace) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestKubernetesNamespace) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[294]
+	mi := &file_enterprisev1_proto_msgTypes[309]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24571,7 +26363,7 @@ type Condition_Expression_RequestKubernetesResource struct {
 
 func (x *Condition_Expression_RequestKubernetesResource) Reset() {
 	*x = Condition_Expression_RequestKubernetesResource{}
-	mi := &file_enterprisev1_proto_msgTypes[295]
+	mi := &file_enterprisev1_proto_msgTypes[310]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24583,7 +26375,7 @@ func (x *Condition_Expression_RequestKubernetesResource) String() string {
 func (*Condition_Expression_RequestKubernetesResource) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestKubernetesResource) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[295]
+	mi := &file_enterprisev1_proto_msgTypes[310]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24618,7 +26410,7 @@ type Condition_Expression_RequestKubernetesSubresource struct {
 
 func (x *Condition_Expression_RequestKubernetesSubresource) Reset() {
 	*x = Condition_Expression_RequestKubernetesSubresource{}
-	mi := &file_enterprisev1_proto_msgTypes[296]
+	mi := &file_enterprisev1_proto_msgTypes[311]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24630,7 +26422,7 @@ func (x *Condition_Expression_RequestKubernetesSubresource) String() string {
 func (*Condition_Expression_RequestKubernetesSubresource) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestKubernetesSubresource) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[296]
+	mi := &file_enterprisev1_proto_msgTypes[311]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24665,7 +26457,7 @@ type Condition_Expression_RequestKubernetesName struct {
 
 func (x *Condition_Expression_RequestKubernetesName) Reset() {
 	*x = Condition_Expression_RequestKubernetesName{}
-	mi := &file_enterprisev1_proto_msgTypes[297]
+	mi := &file_enterprisev1_proto_msgTypes[312]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24677,7 +26469,7 @@ func (x *Condition_Expression_RequestKubernetesName) String() string {
 func (*Condition_Expression_RequestKubernetesName) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestKubernetesName) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[297]
+	mi := &file_enterprisev1_proto_msgTypes[312]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24709,7 +26501,7 @@ type Condition_Expression_RequestGRPC struct {
 
 func (x *Condition_Expression_RequestGRPC) Reset() {
 	*x = Condition_Expression_RequestGRPC{}
-	mi := &file_enterprisev1_proto_msgTypes[298]
+	mi := &file_enterprisev1_proto_msgTypes[313]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24721,7 +26513,7 @@ func (x *Condition_Expression_RequestGRPC) String() string {
 func (*Condition_Expression_RequestGRPC) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestGRPC) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[298]
+	mi := &file_enterprisev1_proto_msgTypes[313]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24749,7 +26541,7 @@ type Condition_Expression_RequestGRPCMethod struct {
 
 func (x *Condition_Expression_RequestGRPCMethod) Reset() {
 	*x = Condition_Expression_RequestGRPCMethod{}
-	mi := &file_enterprisev1_proto_msgTypes[299]
+	mi := &file_enterprisev1_proto_msgTypes[314]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24761,7 +26553,7 @@ func (x *Condition_Expression_RequestGRPCMethod) String() string {
 func (*Condition_Expression_RequestGRPCMethod) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestGRPCMethod) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[299]
+	mi := &file_enterprisev1_proto_msgTypes[314]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24796,7 +26588,7 @@ type Condition_Expression_RequestGRPCService struct {
 
 func (x *Condition_Expression_RequestGRPCService) Reset() {
 	*x = Condition_Expression_RequestGRPCService{}
-	mi := &file_enterprisev1_proto_msgTypes[300]
+	mi := &file_enterprisev1_proto_msgTypes[315]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24808,7 +26600,7 @@ func (x *Condition_Expression_RequestGRPCService) String() string {
 func (*Condition_Expression_RequestGRPCService) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestGRPCService) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[300]
+	mi := &file_enterprisev1_proto_msgTypes[315]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24843,7 +26635,7 @@ type Condition_Expression_RequestGRPCServiceFullName struct {
 
 func (x *Condition_Expression_RequestGRPCServiceFullName) Reset() {
 	*x = Condition_Expression_RequestGRPCServiceFullName{}
-	mi := &file_enterprisev1_proto_msgTypes[301]
+	mi := &file_enterprisev1_proto_msgTypes[316]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24855,7 +26647,7 @@ func (x *Condition_Expression_RequestGRPCServiceFullName) String() string {
 func (*Condition_Expression_RequestGRPCServiceFullName) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestGRPCServiceFullName) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[301]
+	mi := &file_enterprisev1_proto_msgTypes[316]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24890,7 +26682,7 @@ type Condition_Expression_RequestGRPCPackage struct {
 
 func (x *Condition_Expression_RequestGRPCPackage) Reset() {
 	*x = Condition_Expression_RequestGRPCPackage{}
-	mi := &file_enterprisev1_proto_msgTypes[302]
+	mi := &file_enterprisev1_proto_msgTypes[317]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24902,7 +26694,7 @@ func (x *Condition_Expression_RequestGRPCPackage) String() string {
 func (*Condition_Expression_RequestGRPCPackage) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestGRPCPackage) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[302]
+	mi := &file_enterprisev1_proto_msgTypes[317]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24934,7 +26726,7 @@ type Condition_Expression_RequestPostgresConnect struct {
 
 func (x *Condition_Expression_RequestPostgresConnect) Reset() {
 	*x = Condition_Expression_RequestPostgresConnect{}
-	mi := &file_enterprisev1_proto_msgTypes[303]
+	mi := &file_enterprisev1_proto_msgTypes[318]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24946,7 +26738,7 @@ func (x *Condition_Expression_RequestPostgresConnect) String() string {
 func (*Condition_Expression_RequestPostgresConnect) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestPostgresConnect) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[303]
+	mi := &file_enterprisev1_proto_msgTypes[318]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24974,7 +26766,7 @@ type Condition_Expression_RequestPostgresConnectUser struct {
 
 func (x *Condition_Expression_RequestPostgresConnectUser) Reset() {
 	*x = Condition_Expression_RequestPostgresConnectUser{}
-	mi := &file_enterprisev1_proto_msgTypes[304]
+	mi := &file_enterprisev1_proto_msgTypes[319]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -24986,7 +26778,7 @@ func (x *Condition_Expression_RequestPostgresConnectUser) String() string {
 func (*Condition_Expression_RequestPostgresConnectUser) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestPostgresConnectUser) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[304]
+	mi := &file_enterprisev1_proto_msgTypes[319]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25021,7 +26813,7 @@ type Condition_Expression_RequestPostgresConnectDatabase struct {
 
 func (x *Condition_Expression_RequestPostgresConnectDatabase) Reset() {
 	*x = Condition_Expression_RequestPostgresConnectDatabase{}
-	mi := &file_enterprisev1_proto_msgTypes[305]
+	mi := &file_enterprisev1_proto_msgTypes[320]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25033,7 +26825,7 @@ func (x *Condition_Expression_RequestPostgresConnectDatabase) String() string {
 func (*Condition_Expression_RequestPostgresConnectDatabase) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestPostgresConnectDatabase) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[305]
+	mi := &file_enterprisev1_proto_msgTypes[320]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25068,7 +26860,7 @@ type Condition_Expression_RequestPostgresConnectApplicationName struct {
 
 func (x *Condition_Expression_RequestPostgresConnectApplicationName) Reset() {
 	*x = Condition_Expression_RequestPostgresConnectApplicationName{}
-	mi := &file_enterprisev1_proto_msgTypes[306]
+	mi := &file_enterprisev1_proto_msgTypes[321]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25080,7 +26872,7 @@ func (x *Condition_Expression_RequestPostgresConnectApplicationName) String() st
 func (*Condition_Expression_RequestPostgresConnectApplicationName) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestPostgresConnectApplicationName) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[306]
+	mi := &file_enterprisev1_proto_msgTypes[321]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25112,7 +26904,7 @@ type Condition_Expression_RequestPostgresQuery struct {
 
 func (x *Condition_Expression_RequestPostgresQuery) Reset() {
 	*x = Condition_Expression_RequestPostgresQuery{}
-	mi := &file_enterprisev1_proto_msgTypes[307]
+	mi := &file_enterprisev1_proto_msgTypes[322]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25124,7 +26916,7 @@ func (x *Condition_Expression_RequestPostgresQuery) String() string {
 func (*Condition_Expression_RequestPostgresQuery) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestPostgresQuery) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[307]
+	mi := &file_enterprisev1_proto_msgTypes[322]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25152,7 +26944,7 @@ type Condition_Expression_RequestPostgresQueryText struct {
 
 func (x *Condition_Expression_RequestPostgresQueryText) Reset() {
 	*x = Condition_Expression_RequestPostgresQueryText{}
-	mi := &file_enterprisev1_proto_msgTypes[308]
+	mi := &file_enterprisev1_proto_msgTypes[323]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25164,7 +26956,7 @@ func (x *Condition_Expression_RequestPostgresQueryText) String() string {
 func (*Condition_Expression_RequestPostgresQueryText) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestPostgresQueryText) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[308]
+	mi := &file_enterprisev1_proto_msgTypes[323]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25197,7 +26989,7 @@ type Condition_Expression_RequestPostgresParse struct {
 
 func (x *Condition_Expression_RequestPostgresParse) Reset() {
 	*x = Condition_Expression_RequestPostgresParse{}
-	mi := &file_enterprisev1_proto_msgTypes[309]
+	mi := &file_enterprisev1_proto_msgTypes[324]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25209,7 +27001,7 @@ func (x *Condition_Expression_RequestPostgresParse) String() string {
 func (*Condition_Expression_RequestPostgresParse) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestPostgresParse) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[309]
+	mi := &file_enterprisev1_proto_msgTypes[324]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25237,7 +27029,7 @@ type Condition_Expression_RequestPostgresParseName struct {
 
 func (x *Condition_Expression_RequestPostgresParseName) Reset() {
 	*x = Condition_Expression_RequestPostgresParseName{}
-	mi := &file_enterprisev1_proto_msgTypes[310]
+	mi := &file_enterprisev1_proto_msgTypes[325]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25249,7 +27041,7 @@ func (x *Condition_Expression_RequestPostgresParseName) String() string {
 func (*Condition_Expression_RequestPostgresParseName) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestPostgresParseName) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[310]
+	mi := &file_enterprisev1_proto_msgTypes[325]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25284,7 +27076,7 @@ type Condition_Expression_RequestPostgresParseQuery struct {
 
 func (x *Condition_Expression_RequestPostgresParseQuery) Reset() {
 	*x = Condition_Expression_RequestPostgresParseQuery{}
-	mi := &file_enterprisev1_proto_msgTypes[311]
+	mi := &file_enterprisev1_proto_msgTypes[326]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25296,7 +27088,7 @@ func (x *Condition_Expression_RequestPostgresParseQuery) String() string {
 func (*Condition_Expression_RequestPostgresParseQuery) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestPostgresParseQuery) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[311]
+	mi := &file_enterprisev1_proto_msgTypes[326]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25328,7 +27120,7 @@ type Condition_Expression_RequestDNS struct {
 
 func (x *Condition_Expression_RequestDNS) Reset() {
 	*x = Condition_Expression_RequestDNS{}
-	mi := &file_enterprisev1_proto_msgTypes[312]
+	mi := &file_enterprisev1_proto_msgTypes[327]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25340,7 +27132,7 @@ func (x *Condition_Expression_RequestDNS) String() string {
 func (*Condition_Expression_RequestDNS) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestDNS) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[312]
+	mi := &file_enterprisev1_proto_msgTypes[327]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25368,7 +27160,7 @@ type Condition_Expression_RequestDNSName struct {
 
 func (x *Condition_Expression_RequestDNSName) Reset() {
 	*x = Condition_Expression_RequestDNSName{}
-	mi := &file_enterprisev1_proto_msgTypes[313]
+	mi := &file_enterprisev1_proto_msgTypes[328]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25380,7 +27172,7 @@ func (x *Condition_Expression_RequestDNSName) String() string {
 func (*Condition_Expression_RequestDNSName) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestDNSName) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[313]
+	mi := &file_enterprisev1_proto_msgTypes[328]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25415,7 +27207,7 @@ type Condition_Expression_RequestDNSTypeID struct {
 
 func (x *Condition_Expression_RequestDNSTypeID) Reset() {
 	*x = Condition_Expression_RequestDNSTypeID{}
-	mi := &file_enterprisev1_proto_msgTypes[314]
+	mi := &file_enterprisev1_proto_msgTypes[329]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25427,7 +27219,7 @@ func (x *Condition_Expression_RequestDNSTypeID) String() string {
 func (*Condition_Expression_RequestDNSTypeID) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestDNSTypeID) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[314]
+	mi := &file_enterprisev1_proto_msgTypes[329]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25459,7 +27251,7 @@ type Condition_Expression_RequestSOCKS5 struct {
 
 func (x *Condition_Expression_RequestSOCKS5) Reset() {
 	*x = Condition_Expression_RequestSOCKS5{}
-	mi := &file_enterprisev1_proto_msgTypes[315]
+	mi := &file_enterprisev1_proto_msgTypes[330]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25471,7 +27263,7 @@ func (x *Condition_Expression_RequestSOCKS5) String() string {
 func (*Condition_Expression_RequestSOCKS5) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestSOCKS5) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[315]
+	mi := &file_enterprisev1_proto_msgTypes[330]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25499,7 +27291,7 @@ type Condition_Expression_RequestSOCKS5Host struct {
 
 func (x *Condition_Expression_RequestSOCKS5Host) Reset() {
 	*x = Condition_Expression_RequestSOCKS5Host{}
-	mi := &file_enterprisev1_proto_msgTypes[316]
+	mi := &file_enterprisev1_proto_msgTypes[331]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25511,7 +27303,7 @@ func (x *Condition_Expression_RequestSOCKS5Host) String() string {
 func (*Condition_Expression_RequestSOCKS5Host) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestSOCKS5Host) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[316]
+	mi := &file_enterprisev1_proto_msgTypes[331]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25545,7 +27337,7 @@ type Condition_Expression_RequestSOCKS5Port struct {
 
 func (x *Condition_Expression_RequestSOCKS5Port) Reset() {
 	*x = Condition_Expression_RequestSOCKS5Port{}
-	mi := &file_enterprisev1_proto_msgTypes[317]
+	mi := &file_enterprisev1_proto_msgTypes[332]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25557,7 +27349,7 @@ func (x *Condition_Expression_RequestSOCKS5Port) String() string {
 func (*Condition_Expression_RequestSOCKS5Port) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestSOCKS5Port) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[317]
+	mi := &file_enterprisev1_proto_msgTypes[332]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25592,7 +27384,7 @@ type Condition_Expression_RequestSOCKS5AddressType struct {
 
 func (x *Condition_Expression_RequestSOCKS5AddressType) Reset() {
 	*x = Condition_Expression_RequestSOCKS5AddressType{}
-	mi := &file_enterprisev1_proto_msgTypes[318]
+	mi := &file_enterprisev1_proto_msgTypes[333]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25604,7 +27396,7 @@ func (x *Condition_Expression_RequestSOCKS5AddressType) String() string {
 func (*Condition_Expression_RequestSOCKS5AddressType) ProtoMessage() {}
 
 func (x *Condition_Expression_RequestSOCKS5AddressType) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[318]
+	mi := &file_enterprisev1_proto_msgTypes[333]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25638,7 +27430,7 @@ type Condition_Expression_MCPProtocolVersion struct {
 
 func (x *Condition_Expression_MCPProtocolVersion) Reset() {
 	*x = Condition_Expression_MCPProtocolVersion{}
-	mi := &file_enterprisev1_proto_msgTypes[319]
+	mi := &file_enterprisev1_proto_msgTypes[334]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25650,7 +27442,7 @@ func (x *Condition_Expression_MCPProtocolVersion) String() string {
 func (*Condition_Expression_MCPProtocolVersion) ProtoMessage() {}
 
 func (x *Condition_Expression_MCPProtocolVersion) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[319]
+	mi := &file_enterprisev1_proto_msgTypes[334]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25684,7 +27476,7 @@ type Condition_Expression_MCPMethod struct {
 
 func (x *Condition_Expression_MCPMethod) Reset() {
 	*x = Condition_Expression_MCPMethod{}
-	mi := &file_enterprisev1_proto_msgTypes[320]
+	mi := &file_enterprisev1_proto_msgTypes[335]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25696,7 +27488,7 @@ func (x *Condition_Expression_MCPMethod) String() string {
 func (*Condition_Expression_MCPMethod) ProtoMessage() {}
 
 func (x *Condition_Expression_MCPMethod) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[320]
+	mi := &file_enterprisev1_proto_msgTypes[335]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25730,7 +27522,7 @@ type Condition_Expression_MCPToolName struct {
 
 func (x *Condition_Expression_MCPToolName) Reset() {
 	*x = Condition_Expression_MCPToolName{}
-	mi := &file_enterprisev1_proto_msgTypes[321]
+	mi := &file_enterprisev1_proto_msgTypes[336]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25742,7 +27534,7 @@ func (x *Condition_Expression_MCPToolName) String() string {
 func (*Condition_Expression_MCPToolName) ProtoMessage() {}
 
 func (x *Condition_Expression_MCPToolName) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[321]
+	mi := &file_enterprisev1_proto_msgTypes[336]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25777,7 +27569,7 @@ type Condition_Expression_MCPPromptName struct {
 
 func (x *Condition_Expression_MCPPromptName) Reset() {
 	*x = Condition_Expression_MCPPromptName{}
-	mi := &file_enterprisev1_proto_msgTypes[322]
+	mi := &file_enterprisev1_proto_msgTypes[337]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25789,7 +27581,7 @@ func (x *Condition_Expression_MCPPromptName) String() string {
 func (*Condition_Expression_MCPPromptName) ProtoMessage() {}
 
 func (x *Condition_Expression_MCPPromptName) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[322]
+	mi := &file_enterprisev1_proto_msgTypes[337]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25824,7 +27616,7 @@ type Condition_Expression_MCPResourceURI struct {
 
 func (x *Condition_Expression_MCPResourceURI) Reset() {
 	*x = Condition_Expression_MCPResourceURI{}
-	mi := &file_enterprisev1_proto_msgTypes[323]
+	mi := &file_enterprisev1_proto_msgTypes[338]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25836,7 +27628,7 @@ func (x *Condition_Expression_MCPResourceURI) String() string {
 func (*Condition_Expression_MCPResourceURI) ProtoMessage() {}
 
 func (x *Condition_Expression_MCPResourceURI) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[323]
+	mi := &file_enterprisev1_proto_msgTypes[338]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25869,7 +27661,7 @@ type Condition_Expression_MCPIsNotification struct {
 
 func (x *Condition_Expression_MCPIsNotification) Reset() {
 	*x = Condition_Expression_MCPIsNotification{}
-	mi := &file_enterprisev1_proto_msgTypes[324]
+	mi := &file_enterprisev1_proto_msgTypes[339]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25881,7 +27673,7 @@ func (x *Condition_Expression_MCPIsNotification) String() string {
 func (*Condition_Expression_MCPIsNotification) ProtoMessage() {}
 
 func (x *Condition_Expression_MCPIsNotification) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[324]
+	mi := &file_enterprisev1_proto_msgTypes[339]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25918,7 +27710,7 @@ type Condition_Expression_MCPToolArgument struct {
 
 func (x *Condition_Expression_MCPToolArgument) Reset() {
 	*x = Condition_Expression_MCPToolArgument{}
-	mi := &file_enterprisev1_proto_msgTypes[325]
+	mi := &file_enterprisev1_proto_msgTypes[340]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -25930,7 +27722,7 @@ func (x *Condition_Expression_MCPToolArgument) String() string {
 func (*Condition_Expression_MCPToolArgument) ProtoMessage() {}
 
 func (x *Condition_Expression_MCPToolArgument) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[325]
+	mi := &file_enterprisev1_proto_msgTypes[340]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26059,7 +27851,7 @@ type Condition_Expression_LLMProtocol struct {
 
 func (x *Condition_Expression_LLMProtocol) Reset() {
 	*x = Condition_Expression_LLMProtocol{}
-	mi := &file_enterprisev1_proto_msgTypes[326]
+	mi := &file_enterprisev1_proto_msgTypes[341]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26071,7 +27863,7 @@ func (x *Condition_Expression_LLMProtocol) String() string {
 func (*Condition_Expression_LLMProtocol) ProtoMessage() {}
 
 func (x *Condition_Expression_LLMProtocol) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[326]
+	mi := &file_enterprisev1_proto_msgTypes[341]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26106,7 +27898,7 @@ type Condition_Expression_LLMOperation struct {
 
 func (x *Condition_Expression_LLMOperation) Reset() {
 	*x = Condition_Expression_LLMOperation{}
-	mi := &file_enterprisev1_proto_msgTypes[327]
+	mi := &file_enterprisev1_proto_msgTypes[342]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26118,7 +27910,7 @@ func (x *Condition_Expression_LLMOperation) String() string {
 func (*Condition_Expression_LLMOperation) ProtoMessage() {}
 
 func (x *Condition_Expression_LLMOperation) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[327]
+	mi := &file_enterprisev1_proto_msgTypes[342]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26152,7 +27944,7 @@ type Condition_Expression_LLMModel struct {
 
 func (x *Condition_Expression_LLMModel) Reset() {
 	*x = Condition_Expression_LLMModel{}
-	mi := &file_enterprisev1_proto_msgTypes[328]
+	mi := &file_enterprisev1_proto_msgTypes[343]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26164,7 +27956,7 @@ func (x *Condition_Expression_LLMModel) String() string {
 func (*Condition_Expression_LLMModel) ProtoMessage() {}
 
 func (x *Condition_Expression_LLMModel) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[328]
+	mi := &file_enterprisev1_proto_msgTypes[343]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26196,7 +27988,7 @@ type Condition_Expression_LLMStream struct {
 
 func (x *Condition_Expression_LLMStream) Reset() {
 	*x = Condition_Expression_LLMStream{}
-	mi := &file_enterprisev1_proto_msgTypes[329]
+	mi := &file_enterprisev1_proto_msgTypes[344]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26208,7 +28000,7 @@ func (x *Condition_Expression_LLMStream) String() string {
 func (*Condition_Expression_LLMStream) ProtoMessage() {}
 
 func (x *Condition_Expression_LLMStream) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[329]
+	mi := &file_enterprisev1_proto_msgTypes[344]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26240,7 +28032,7 @@ type Condition_Expression_LLMEstimatedInputTokens struct {
 
 func (x *Condition_Expression_LLMEstimatedInputTokens) Reset() {
 	*x = Condition_Expression_LLMEstimatedInputTokens{}
-	mi := &file_enterprisev1_proto_msgTypes[330]
+	mi := &file_enterprisev1_proto_msgTypes[345]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26252,7 +28044,7 @@ func (x *Condition_Expression_LLMEstimatedInputTokens) String() string {
 func (*Condition_Expression_LLMEstimatedInputTokens) ProtoMessage() {}
 
 func (x *Condition_Expression_LLMEstimatedInputTokens) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[330]
+	mi := &file_enterprisev1_proto_msgTypes[345]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26294,7 +28086,7 @@ type Condition_Expression_LLMEstimateQuality struct {
 
 func (x *Condition_Expression_LLMEstimateQuality) Reset() {
 	*x = Condition_Expression_LLMEstimateQuality{}
-	mi := &file_enterprisev1_proto_msgTypes[331]
+	mi := &file_enterprisev1_proto_msgTypes[346]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26306,7 +28098,7 @@ func (x *Condition_Expression_LLMEstimateQuality) String() string {
 func (*Condition_Expression_LLMEstimateQuality) ProtoMessage() {}
 
 func (x *Condition_Expression_LLMEstimateQuality) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[331]
+	mi := &file_enterprisev1_proto_msgTypes[346]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26341,7 +28133,7 @@ type Condition_Expression_LLMMaxOutputTokens struct {
 
 func (x *Condition_Expression_LLMMaxOutputTokens) Reset() {
 	*x = Condition_Expression_LLMMaxOutputTokens{}
-	mi := &file_enterprisev1_proto_msgTypes[332]
+	mi := &file_enterprisev1_proto_msgTypes[347]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26353,7 +28145,7 @@ func (x *Condition_Expression_LLMMaxOutputTokens) String() string {
 func (*Condition_Expression_LLMMaxOutputTokens) ProtoMessage() {}
 
 func (x *Condition_Expression_LLMMaxOutputTokens) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[332]
+	mi := &file_enterprisev1_proto_msgTypes[347]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26385,7 +28177,7 @@ type Condition_Expression_LLMHasTools struct {
 
 func (x *Condition_Expression_LLMHasTools) Reset() {
 	*x = Condition_Expression_LLMHasTools{}
-	mi := &file_enterprisev1_proto_msgTypes[333]
+	mi := &file_enterprisev1_proto_msgTypes[348]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26397,7 +28189,7 @@ func (x *Condition_Expression_LLMHasTools) String() string {
 func (*Condition_Expression_LLMHasTools) ProtoMessage() {}
 
 func (x *Condition_Expression_LLMHasTools) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[333]
+	mi := &file_enterprisev1_proto_msgTypes[348]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26425,7 +28217,7 @@ type Condition_Expression_LLMToolCount struct {
 
 func (x *Condition_Expression_LLMToolCount) Reset() {
 	*x = Condition_Expression_LLMToolCount{}
-	mi := &file_enterprisev1_proto_msgTypes[334]
+	mi := &file_enterprisev1_proto_msgTypes[349]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26437,7 +28229,7 @@ func (x *Condition_Expression_LLMToolCount) String() string {
 func (*Condition_Expression_LLMToolCount) ProtoMessage() {}
 
 func (x *Condition_Expression_LLMToolCount) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[334]
+	mi := &file_enterprisev1_proto_msgTypes[349]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26472,7 +28264,7 @@ type Condition_Expression_LLMToolName struct {
 
 func (x *Condition_Expression_LLMToolName) Reset() {
 	*x = Condition_Expression_LLMToolName{}
-	mi := &file_enterprisev1_proto_msgTypes[335]
+	mi := &file_enterprisev1_proto_msgTypes[350]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26484,7 +28276,7 @@ func (x *Condition_Expression_LLMToolName) String() string {
 func (*Condition_Expression_LLMToolName) ProtoMessage() {}
 
 func (x *Condition_Expression_LLMToolName) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[335]
+	mi := &file_enterprisev1_proto_msgTypes[350]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26519,7 +28311,7 @@ type Condition_Expression_LLMInputItemCount struct {
 
 func (x *Condition_Expression_LLMInputItemCount) Reset() {
 	*x = Condition_Expression_LLMInputItemCount{}
-	mi := &file_enterprisev1_proto_msgTypes[336]
+	mi := &file_enterprisev1_proto_msgTypes[351]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26531,7 +28323,7 @@ func (x *Condition_Expression_LLMInputItemCount) String() string {
 func (*Condition_Expression_LLMInputItemCount) ProtoMessage() {}
 
 func (x *Condition_Expression_LLMInputItemCount) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[336]
+	mi := &file_enterprisev1_proto_msgTypes[351]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26563,7 +28355,7 @@ type Condition_Expression_LLMHasImageInput struct {
 
 func (x *Condition_Expression_LLMHasImageInput) Reset() {
 	*x = Condition_Expression_LLMHasImageInput{}
-	mi := &file_enterprisev1_proto_msgTypes[337]
+	mi := &file_enterprisev1_proto_msgTypes[352]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26575,7 +28367,7 @@ func (x *Condition_Expression_LLMHasImageInput) String() string {
 func (*Condition_Expression_LLMHasImageInput) ProtoMessage() {}
 
 func (x *Condition_Expression_LLMHasImageInput) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[337]
+	mi := &file_enterprisev1_proto_msgTypes[352]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26600,7 +28392,7 @@ type Condition_Expression_LLMHasAudioInput struct {
 
 func (x *Condition_Expression_LLMHasAudioInput) Reset() {
 	*x = Condition_Expression_LLMHasAudioInput{}
-	mi := &file_enterprisev1_proto_msgTypes[338]
+	mi := &file_enterprisev1_proto_msgTypes[353]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26612,7 +28404,7 @@ func (x *Condition_Expression_LLMHasAudioInput) String() string {
 func (*Condition_Expression_LLMHasAudioInput) ProtoMessage() {}
 
 func (x *Condition_Expression_LLMHasAudioInput) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[338]
+	mi := &file_enterprisev1_proto_msgTypes[353]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26638,7 +28430,7 @@ type Condition_Expression_APIServerReadOnlyMethods struct {
 
 func (x *Condition_Expression_APIServerReadOnlyMethods) Reset() {
 	*x = Condition_Expression_APIServerReadOnlyMethods{}
-	mi := &file_enterprisev1_proto_msgTypes[339]
+	mi := &file_enterprisev1_proto_msgTypes[354]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26650,7 +28442,7 @@ func (x *Condition_Expression_APIServerReadOnlyMethods) String() string {
 func (*Condition_Expression_APIServerReadOnlyMethods) ProtoMessage() {}
 
 func (x *Condition_Expression_APIServerReadOnlyMethods) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[339]
+	mi := &file_enterprisev1_proto_msgTypes[354]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26679,7 +28471,7 @@ type Condition_Expression_APIServerMethods struct {
 
 func (x *Condition_Expression_APIServerMethods) Reset() {
 	*x = Condition_Expression_APIServerMethods{}
-	mi := &file_enterprisev1_proto_msgTypes[340]
+	mi := &file_enterprisev1_proto_msgTypes[355]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26691,7 +28483,7 @@ func (x *Condition_Expression_APIServerMethods) String() string {
 func (*Condition_Expression_APIServerMethods) ProtoMessage() {}
 
 func (x *Condition_Expression_APIServerMethods) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[340]
+	mi := &file_enterprisev1_proto_msgTypes[355]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26727,7 +28519,7 @@ type Condition_Expression_APIServerServices struct {
 
 func (x *Condition_Expression_APIServerServices) Reset() {
 	*x = Condition_Expression_APIServerServices{}
-	mi := &file_enterprisev1_proto_msgTypes[341]
+	mi := &file_enterprisev1_proto_msgTypes[356]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26739,7 +28531,7 @@ func (x *Condition_Expression_APIServerServices) String() string {
 func (*Condition_Expression_APIServerServices) ProtoMessage() {}
 
 func (x *Condition_Expression_APIServerServices) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[341]
+	mi := &file_enterprisev1_proto_msgTypes[356]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26774,7 +28566,7 @@ type Condition_Expression_APIServerCore struct {
 
 func (x *Condition_Expression_APIServerCore) Reset() {
 	*x = Condition_Expression_APIServerCore{}
-	mi := &file_enterprisev1_proto_msgTypes[342]
+	mi := &file_enterprisev1_proto_msgTypes[357]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26786,7 +28578,7 @@ func (x *Condition_Expression_APIServerCore) String() string {
 func (*Condition_Expression_APIServerCore) ProtoMessage() {}
 
 func (x *Condition_Expression_APIServerCore) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[342]
+	mi := &file_enterprisev1_proto_msgTypes[357]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26821,7 +28613,7 @@ type Condition_Expression_APIServerUser struct {
 
 func (x *Condition_Expression_APIServerUser) Reset() {
 	*x = Condition_Expression_APIServerUser{}
-	mi := &file_enterprisev1_proto_msgTypes[343]
+	mi := &file_enterprisev1_proto_msgTypes[358]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26833,7 +28625,7 @@ func (x *Condition_Expression_APIServerUser) String() string {
 func (*Condition_Expression_APIServerUser) ProtoMessage() {}
 
 func (x *Condition_Expression_APIServerUser) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[343]
+	mi := &file_enterprisev1_proto_msgTypes[358]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26867,7 +28659,7 @@ type Condition_Expression_APIServerEnterprise struct {
 
 func (x *Condition_Expression_APIServerEnterprise) Reset() {
 	*x = Condition_Expression_APIServerEnterprise{}
-	mi := &file_enterprisev1_proto_msgTypes[344]
+	mi := &file_enterprisev1_proto_msgTypes[359]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26879,7 +28671,7 @@ func (x *Condition_Expression_APIServerEnterprise) String() string {
 func (*Condition_Expression_APIServerEnterprise) ProtoMessage() {}
 
 func (x *Condition_Expression_APIServerEnterprise) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[344]
+	mi := &file_enterprisev1_proto_msgTypes[359]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26913,7 +28705,7 @@ type Condition_Expression_APIServerCordium struct {
 
 func (x *Condition_Expression_APIServerCordium) Reset() {
 	*x = Condition_Expression_APIServerCordium{}
-	mi := &file_enterprisev1_proto_msgTypes[345]
+	mi := &file_enterprisev1_proto_msgTypes[360]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26925,7 +28717,7 @@ func (x *Condition_Expression_APIServerCordium) String() string {
 func (*Condition_Expression_APIServerCordium) ProtoMessage() {}
 
 func (x *Condition_Expression_APIServerCordium) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[345]
+	mi := &file_enterprisev1_proto_msgTypes[360]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -26959,7 +28751,7 @@ type Condition_Expression_APIServerAccess struct {
 
 func (x *Condition_Expression_APIServerAccess) Reset() {
 	*x = Condition_Expression_APIServerAccess{}
-	mi := &file_enterprisev1_proto_msgTypes[346]
+	mi := &file_enterprisev1_proto_msgTypes[361]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -26971,7 +28763,7 @@ func (x *Condition_Expression_APIServerAccess) String() string {
 func (*Condition_Expression_APIServerAccess) ProtoMessage() {}
 
 func (x *Condition_Expression_APIServerAccess) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[346]
+	mi := &file_enterprisev1_proto_msgTypes[361]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27007,7 +28799,7 @@ type Condition_Expression_TimeDayType struct {
 
 func (x *Condition_Expression_TimeDayType) Reset() {
 	*x = Condition_Expression_TimeDayType{}
-	mi := &file_enterprisev1_proto_msgTypes[347]
+	mi := &file_enterprisev1_proto_msgTypes[362]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27019,7 +28811,7 @@ func (x *Condition_Expression_TimeDayType) String() string {
 func (*Condition_Expression_TimeDayType) ProtoMessage() {}
 
 func (x *Condition_Expression_TimeDayType) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[347]
+	mi := &file_enterprisev1_proto_msgTypes[362]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27060,7 +28852,7 @@ type Condition_Expression_StringMatch_In struct {
 
 func (x *Condition_Expression_StringMatch_In) Reset() {
 	*x = Condition_Expression_StringMatch_In{}
-	mi := &file_enterprisev1_proto_msgTypes[348]
+	mi := &file_enterprisev1_proto_msgTypes[363]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27072,7 +28864,7 @@ func (x *Condition_Expression_StringMatch_In) String() string {
 func (*Condition_Expression_StringMatch_In) ProtoMessage() {}
 
 func (x *Condition_Expression_StringMatch_In) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[348]
+	mi := &file_enterprisev1_proto_msgTypes[363]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27104,7 +28896,7 @@ type Condition_Expression_StringSetMatch_In struct {
 
 func (x *Condition_Expression_StringSetMatch_In) Reset() {
 	*x = Condition_Expression_StringSetMatch_In{}
-	mi := &file_enterprisev1_proto_msgTypes[349]
+	mi := &file_enterprisev1_proto_msgTypes[364]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27116,7 +28908,7 @@ func (x *Condition_Expression_StringSetMatch_In) String() string {
 func (*Condition_Expression_StringSetMatch_In) ProtoMessage() {}
 
 func (x *Condition_Expression_StringSetMatch_In) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[349]
+	mi := &file_enterprisev1_proto_msgTypes[364]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27149,7 +28941,7 @@ type Condition_Expression_MCPToolArgument_BoolMatch struct {
 
 func (x *Condition_Expression_MCPToolArgument_BoolMatch) Reset() {
 	*x = Condition_Expression_MCPToolArgument_BoolMatch{}
-	mi := &file_enterprisev1_proto_msgTypes[350]
+	mi := &file_enterprisev1_proto_msgTypes[365]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27161,7 +28953,7 @@ func (x *Condition_Expression_MCPToolArgument_BoolMatch) String() string {
 func (*Condition_Expression_MCPToolArgument_BoolMatch) ProtoMessage() {}
 
 func (x *Condition_Expression_MCPToolArgument_BoolMatch) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[350]
+	mi := &file_enterprisev1_proto_msgTypes[365]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27192,7 +28984,7 @@ type Condition_Expression_MCPToolArgument_IsNull struct {
 
 func (x *Condition_Expression_MCPToolArgument_IsNull) Reset() {
 	*x = Condition_Expression_MCPToolArgument_IsNull{}
-	mi := &file_enterprisev1_proto_msgTypes[351]
+	mi := &file_enterprisev1_proto_msgTypes[366]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27204,7 +28996,7 @@ func (x *Condition_Expression_MCPToolArgument_IsNull) String() string {
 func (*Condition_Expression_MCPToolArgument_IsNull) ProtoMessage() {}
 
 func (x *Condition_Expression_MCPToolArgument_IsNull) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[351]
+	mi := &file_enterprisev1_proto_msgTypes[366]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27228,7 +29020,7 @@ type Condition_Expression_MCPToolArgument_Exists struct {
 
 func (x *Condition_Expression_MCPToolArgument_Exists) Reset() {
 	*x = Condition_Expression_MCPToolArgument_Exists{}
-	mi := &file_enterprisev1_proto_msgTypes[352]
+	mi := &file_enterprisev1_proto_msgTypes[367]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27240,7 +29032,7 @@ func (x *Condition_Expression_MCPToolArgument_Exists) String() string {
 func (*Condition_Expression_MCPToolArgument_Exists) ProtoMessage() {}
 
 func (x *Condition_Expression_MCPToolArgument_Exists) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[352]
+	mi := &file_enterprisev1_proto_msgTypes[367]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27289,7 +29081,7 @@ type AuthenticationLog_Entry struct {
 
 func (x *AuthenticationLog_Entry) Reset() {
 	*x = AuthenticationLog_Entry{}
-	mi := &file_enterprisev1_proto_msgTypes[353]
+	mi := &file_enterprisev1_proto_msgTypes[368]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27301,7 +29093,7 @@ func (x *AuthenticationLog_Entry) String() string {
 func (*AuthenticationLog_Entry) ProtoMessage() {}
 
 func (x *AuthenticationLog_Entry) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[353]
+	mi := &file_enterprisev1_proto_msgTypes[368]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27378,7 +29170,7 @@ type AuthenticationLog_Entry_Failure struct {
 
 func (x *AuthenticationLog_Entry_Failure) Reset() {
 	*x = AuthenticationLog_Entry_Failure{}
-	mi := &file_enterprisev1_proto_msgTypes[354]
+	mi := &file_enterprisev1_proto_msgTypes[369]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27390,7 +29182,7 @@ func (x *AuthenticationLog_Entry_Failure) String() string {
 func (*AuthenticationLog_Entry_Failure) ProtoMessage() {}
 
 func (x *AuthenticationLog_Entry_Failure) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[354]
+	mi := &file_enterprisev1_proto_msgTypes[369]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27428,7 +29220,7 @@ type UpgradeClusterRequest_Request struct {
 
 func (x *UpgradeClusterRequest_Request) Reset() {
 	*x = UpgradeClusterRequest_Request{}
-	mi := &file_enterprisev1_proto_msgTypes[355]
+	mi := &file_enterprisev1_proto_msgTypes[370]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27440,7 +29232,7 @@ func (x *UpgradeClusterRequest_Request) String() string {
 func (*UpgradeClusterRequest_Request) ProtoMessage() {}
 
 func (x *UpgradeClusterRequest_Request) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[355]
+	mi := &file_enterprisev1_proto_msgTypes[370]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27488,7 +29280,7 @@ type UpgradeClusterRequest_Request_Core struct {
 
 func (x *UpgradeClusterRequest_Request_Core) Reset() {
 	*x = UpgradeClusterRequest_Request_Core{}
-	mi := &file_enterprisev1_proto_msgTypes[356]
+	mi := &file_enterprisev1_proto_msgTypes[371]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27500,7 +29292,7 @@ func (x *UpgradeClusterRequest_Request_Core) String() string {
 func (*UpgradeClusterRequest_Request_Core) ProtoMessage() {}
 
 func (x *UpgradeClusterRequest_Request_Core) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[356]
+	mi := &file_enterprisev1_proto_msgTypes[371]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27534,7 +29326,7 @@ type UpgradeClusterRequest_Request_PackageEnterprise struct {
 
 func (x *UpgradeClusterRequest_Request_PackageEnterprise) Reset() {
 	*x = UpgradeClusterRequest_Request_PackageEnterprise{}
-	mi := &file_enterprisev1_proto_msgTypes[357]
+	mi := &file_enterprisev1_proto_msgTypes[372]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27546,7 +29338,7 @@ func (x *UpgradeClusterRequest_Request_PackageEnterprise) String() string {
 func (*UpgradeClusterRequest_Request_PackageEnterprise) ProtoMessage() {}
 
 func (x *UpgradeClusterRequest_Request_PackageEnterprise) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[357]
+	mi := &file_enterprisev1_proto_msgTypes[372]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27580,7 +29372,7 @@ type UpgradeClusterRequest_Request_PackageCordium struct {
 
 func (x *UpgradeClusterRequest_Request_PackageCordium) Reset() {
 	*x = UpgradeClusterRequest_Request_PackageCordium{}
-	mi := &file_enterprisev1_proto_msgTypes[358]
+	mi := &file_enterprisev1_proto_msgTypes[373]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27592,7 +29384,7 @@ func (x *UpgradeClusterRequest_Request_PackageCordium) String() string {
 func (*UpgradeClusterRequest_Request_PackageCordium) ProtoMessage() {}
 
 func (x *UpgradeClusterRequest_Request_PackageCordium) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[358]
+	mi := &file_enterprisev1_proto_msgTypes[373]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27634,7 +29426,7 @@ type JoinClusterRequest_Kubernetes struct {
 
 func (x *JoinClusterRequest_Kubernetes) Reset() {
 	*x = JoinClusterRequest_Kubernetes{}
-	mi := &file_enterprisev1_proto_msgTypes[359]
+	mi := &file_enterprisev1_proto_msgTypes[374]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27646,7 +29438,7 @@ func (x *JoinClusterRequest_Kubernetes) String() string {
 func (*JoinClusterRequest_Kubernetes) ProtoMessage() {}
 
 func (x *JoinClusterRequest_Kubernetes) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[359]
+	mi := &file_enterprisev1_proto_msgTypes[374]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27722,7 +29514,7 @@ type JoinClusterRequest_Kubernetes_Kubeconfig struct {
 
 func (x *JoinClusterRequest_Kubernetes_Kubeconfig) Reset() {
 	*x = JoinClusterRequest_Kubernetes_Kubeconfig{}
-	mi := &file_enterprisev1_proto_msgTypes[360]
+	mi := &file_enterprisev1_proto_msgTypes[375]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27734,7 +29526,7 @@ func (x *JoinClusterRequest_Kubernetes_Kubeconfig) String() string {
 func (*JoinClusterRequest_Kubernetes_Kubeconfig) ProtoMessage() {}
 
 func (x *JoinClusterRequest_Kubernetes_Kubeconfig) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[360]
+	mi := &file_enterprisev1_proto_msgTypes[375]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27807,7 +29599,7 @@ type JoinClusterRequest_Kubernetes_BearerToken struct {
 
 func (x *JoinClusterRequest_Kubernetes_BearerToken) Reset() {
 	*x = JoinClusterRequest_Kubernetes_BearerToken{}
-	mi := &file_enterprisev1_proto_msgTypes[361]
+	mi := &file_enterprisev1_proto_msgTypes[376]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27819,7 +29611,7 @@ func (x *JoinClusterRequest_Kubernetes_BearerToken) String() string {
 func (*JoinClusterRequest_Kubernetes_BearerToken) ProtoMessage() {}
 
 func (x *JoinClusterRequest_Kubernetes_BearerToken) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[361]
+	mi := &file_enterprisev1_proto_msgTypes[376]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27895,7 +29687,7 @@ type GetClusterInfoResponse_Core struct {
 
 func (x *GetClusterInfoResponse_Core) Reset() {
 	*x = GetClusterInfoResponse_Core{}
-	mi := &file_enterprisev1_proto_msgTypes[362]
+	mi := &file_enterprisev1_proto_msgTypes[377]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27907,7 +29699,7 @@ func (x *GetClusterInfoResponse_Core) String() string {
 func (*GetClusterInfoResponse_Core) ProtoMessage() {}
 
 func (x *GetClusterInfoResponse_Core) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[362]
+	mi := &file_enterprisev1_proto_msgTypes[377]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -27968,7 +29760,7 @@ type GetClusterInfoResponse_PackageEnterprise struct {
 
 func (x *GetClusterInfoResponse_PackageEnterprise) Reset() {
 	*x = GetClusterInfoResponse_PackageEnterprise{}
-	mi := &file_enterprisev1_proto_msgTypes[363]
+	mi := &file_enterprisev1_proto_msgTypes[378]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -27980,7 +29772,7 @@ func (x *GetClusterInfoResponse_PackageEnterprise) String() string {
 func (*GetClusterInfoResponse_PackageEnterprise) ProtoMessage() {}
 
 func (x *GetClusterInfoResponse_PackageEnterprise) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[363]
+	mi := &file_enterprisev1_proto_msgTypes[378]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -28041,7 +29833,7 @@ type GetClusterInfoResponse_PackageCordium struct {
 
 func (x *GetClusterInfoResponse_PackageCordium) Reset() {
 	*x = GetClusterInfoResponse_PackageCordium{}
-	mi := &file_enterprisev1_proto_msgTypes[364]
+	mi := &file_enterprisev1_proto_msgTypes[379]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -28053,7 +29845,7 @@ func (x *GetClusterInfoResponse_PackageCordium) String() string {
 func (*GetClusterInfoResponse_PackageCordium) ProtoMessage() {}
 
 func (x *GetClusterInfoResponse_PackageCordium) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[364]
+	mi := &file_enterprisev1_proto_msgTypes[379]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -28110,7 +29902,7 @@ type License_Organization struct {
 
 func (x *License_Organization) Reset() {
 	*x = License_Organization{}
-	mi := &file_enterprisev1_proto_msgTypes[365]
+	mi := &file_enterprisev1_proto_msgTypes[380]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -28122,7 +29914,7 @@ func (x *License_Organization) String() string {
 func (*License_Organization) ProtoMessage() {}
 
 func (x *License_Organization) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[365]
+	mi := &file_enterprisev1_proto_msgTypes[380]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -28174,7 +29966,7 @@ type License_Plan struct {
 
 func (x *License_Plan) Reset() {
 	*x = License_Plan{}
-	mi := &file_enterprisev1_proto_msgTypes[366]
+	mi := &file_enterprisev1_proto_msgTypes[381]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -28186,7 +29978,7 @@ func (x *License_Plan) String() string {
 func (*License_Plan) ProtoMessage() {}
 
 func (x *License_Plan) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[366]
+	mi := &file_enterprisev1_proto_msgTypes[381]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -28248,7 +30040,7 @@ type License_Plan_Support struct {
 
 func (x *License_Plan_Support) Reset() {
 	*x = License_Plan_Support{}
-	mi := &file_enterprisev1_proto_msgTypes[367]
+	mi := &file_enterprisev1_proto_msgTypes[382]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -28260,7 +30052,7 @@ func (x *License_Plan_Support) String() string {
 func (*License_Plan_Support) ProtoMessage() {}
 
 func (x *License_Plan_Support) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[367]
+	mi := &file_enterprisev1_proto_msgTypes[382]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -28295,7 +30087,7 @@ type License_Plan_Limits struct {
 
 func (x *License_Plan_Limits) Reset() {
 	*x = License_Plan_Limits{}
-	mi := &file_enterprisev1_proto_msgTypes[368]
+	mi := &file_enterprisev1_proto_msgTypes[383]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -28307,7 +30099,7 @@ func (x *License_Plan_Limits) String() string {
 func (*License_Plan_Limits) ProtoMessage() {}
 
 func (x *License_Plan_Limits) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[368]
+	mi := &file_enterprisev1_proto_msgTypes[383]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -28347,7 +30139,7 @@ type Agent_Workspace struct {
 
 func (x *Agent_Workspace) Reset() {
 	*x = Agent_Workspace{}
-	mi := &file_enterprisev1_proto_msgTypes[369]
+	mi := &file_enterprisev1_proto_msgTypes[384]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -28359,7 +30151,7 @@ func (x *Agent_Workspace) String() string {
 func (*Agent_Workspace) ProtoMessage() {}
 
 func (x *Agent_Workspace) ProtoReflect() protoreflect.Message {
-	mi := &file_enterprisev1_proto_msgTypes[369]
+	mi := &file_enterprisev1_proto_msgTypes[384]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -28394,6 +30186,763 @@ func (x *Agent_Workspace) GetUrl() string {
 		return x.Url
 	}
 	return ""
+}
+
+// Organization is the organization that the Cluster's License was issued
+// to.
+type SupportInfo_Organization struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// UID is the unique identifier of the organization.
+	Uid string `protobuf:"bytes,1,opt,name=uid,proto3" json:"uid,omitempty"`
+	// DisplayName is the human-readable name of the organization.
+	DisplayName   string `protobuf:"bytes,2,opt,name=displayName,proto3" json:"displayName,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupportInfo_Organization) Reset() {
+	*x = SupportInfo_Organization{}
+	mi := &file_enterprisev1_proto_msgTypes[385]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupportInfo_Organization) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupportInfo_Organization) ProtoMessage() {}
+
+func (x *SupportInfo_Organization) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[385]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupportInfo_Organization.ProtoReflect.Descriptor instead.
+func (*SupportInfo_Organization) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{69, 0}
+}
+
+func (x *SupportInfo_Organization) GetUid() string {
+	if x != nil {
+		return x.Uid
+	}
+	return ""
+}
+
+func (x *SupportInfo_Organization) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+// Limits are the limits of the support requests.
+type SupportInfo_Limits struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// MaxSubjectLength is the maximum length of the subject of a request.
+	MaxSubjectLength uint32 `protobuf:"varint,1,opt,name=maxSubjectLength,proto3" json:"maxSubjectLength,omitempty"`
+	// MaxBodyLength is the maximum length of a description or a reply.
+	MaxBodyLength uint32 `protobuf:"varint,2,opt,name=maxBodyLength,proto3" json:"maxBodyLength,omitempty"`
+	// MaxAttachmentSize is the maximum size in bytes of a file.
+	MaxAttachmentSize uint64 `protobuf:"varint,3,opt,name=maxAttachmentSize,proto3" json:"maxAttachmentSize,omitempty"`
+	// MaxAttachmentsPerRequest is the maximum number of files of a request.
+	MaxAttachmentsPerRequest uint32 `protobuf:"varint,4,opt,name=maxAttachmentsPerRequest,proto3" json:"maxAttachmentsPerRequest,omitempty"`
+	// MaxAttachmentsPerMessage is the maximum number of files that a reply
+	// can reference.
+	MaxAttachmentsPerMessage uint32 `protobuf:"varint,5,opt,name=maxAttachmentsPerMessage,proto3" json:"maxAttachmentsPerMessage,omitempty"`
+	// AttachmentExtensions is the list of the accepted file extensions.
+	AttachmentExtensions []string `protobuf:"bytes,6,rep,name=attachmentExtensions,proto3" json:"attachmentExtensions,omitempty"`
+	// AutoCloseDays is the number of days after which a resolved request is
+	// closed.
+	AutoCloseDays uint32 `protobuf:"varint,7,opt,name=autoCloseDays,proto3" json:"autoCloseDays,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupportInfo_Limits) Reset() {
+	*x = SupportInfo_Limits{}
+	mi := &file_enterprisev1_proto_msgTypes[386]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupportInfo_Limits) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupportInfo_Limits) ProtoMessage() {}
+
+func (x *SupportInfo_Limits) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[386]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupportInfo_Limits.ProtoReflect.Descriptor instead.
+func (*SupportInfo_Limits) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{69, 1}
+}
+
+func (x *SupportInfo_Limits) GetMaxSubjectLength() uint32 {
+	if x != nil {
+		return x.MaxSubjectLength
+	}
+	return 0
+}
+
+func (x *SupportInfo_Limits) GetMaxBodyLength() uint32 {
+	if x != nil {
+		return x.MaxBodyLength
+	}
+	return 0
+}
+
+func (x *SupportInfo_Limits) GetMaxAttachmentSize() uint64 {
+	if x != nil {
+		return x.MaxAttachmentSize
+	}
+	return 0
+}
+
+func (x *SupportInfo_Limits) GetMaxAttachmentsPerRequest() uint32 {
+	if x != nil {
+		return x.MaxAttachmentsPerRequest
+	}
+	return 0
+}
+
+func (x *SupportInfo_Limits) GetMaxAttachmentsPerMessage() uint32 {
+	if x != nil {
+		return x.MaxAttachmentsPerMessage
+	}
+	return 0
+}
+
+func (x *SupportInfo_Limits) GetAttachmentExtensions() []string {
+	if x != nil {
+		return x.AttachmentExtensions
+	}
+	return nil
+}
+
+func (x *SupportInfo_Limits) GetAutoCloseDays() uint32 {
+	if x != nil {
+		return x.AutoCloseDays
+	}
+	return 0
+}
+
+// Actor is the author of a change.
+type SupportRequest_Actor struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Type is the type of the author.
+	Type SupportRequest_Actor_Type `protobuf:"varint,1,opt,name=type,proto3,enum=octelium.api.main.enterprise.v1.SupportRequest_Actor_Type" json:"type,omitempty"`
+	// Name is the name of the author, if known.
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupportRequest_Actor) Reset() {
+	*x = SupportRequest_Actor{}
+	mi := &file_enterprisev1_proto_msgTypes[388]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupportRequest_Actor) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupportRequest_Actor) ProtoMessage() {}
+
+func (x *SupportRequest_Actor) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[388]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupportRequest_Actor.ProtoReflect.Descriptor instead.
+func (*SupportRequest_Actor) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{70, 0}
+}
+
+func (x *SupportRequest_Actor) GetType() SupportRequest_Actor_Type {
+	if x != nil {
+		return x.Type
+	}
+	return SupportRequest_Actor_TYPE_UNKNOWN
+}
+
+func (x *SupportRequest_Actor) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+// Reporter is the person who opened the request.
+type SupportRequest_Reporter struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Name is the name of the reporter, if known.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// IsVerified is whether the reporter is a verified member of the
+	// organization in the customer portal. The reporters of the requests that
+	// are opened from a Cluster are never verified.
+	IsVerified    bool `protobuf:"varint,2,opt,name=isVerified,proto3" json:"isVerified,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupportRequest_Reporter) Reset() {
+	*x = SupportRequest_Reporter{}
+	mi := &file_enterprisev1_proto_msgTypes[389]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupportRequest_Reporter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupportRequest_Reporter) ProtoMessage() {}
+
+func (x *SupportRequest_Reporter) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[389]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupportRequest_Reporter.ProtoReflect.Descriptor instead.
+func (*SupportRequest_Reporter) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{70, 1}
+}
+
+func (x *SupportRequest_Reporter) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SupportRequest_Reporter) GetIsVerified() bool {
+	if x != nil {
+		return x.IsVerified
+	}
+	return false
+}
+
+// SLA is the state of the service level agreement of the request. It is
+// only set for the requests that are covered by the Octelium Support SLA.
+type SupportRequest_SLA struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Coverage is the coverage of the response time (i.e. "BUSINESS" for
+	// business hours or "CONTINUOUS" for 24/7).
+	Coverage string `protobuf:"bytes,1,opt,name=coverage,proto3" json:"coverage,omitempty"`
+	// FirstResponseDueAt is the deadline of the first response.
+	FirstResponseDueAt *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=firstResponseDueAt,proto3" json:"firstResponseDueAt,omitempty"`
+	// FirstRespondedAt is the date of the first response.
+	FirstRespondedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=firstRespondedAt,proto3" json:"firstRespondedAt,omitempty"`
+	// IsPaused is whether the response time is paused because Octelium is
+	// waiting on the customer.
+	IsPaused bool `protobuf:"varint,4,opt,name=isPaused,proto3" json:"isPaused,omitempty"`
+	// NextUpdateDueAt is the deadline of the next update of Octelium Support.
+	NextUpdateDueAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=nextUpdateDueAt,proto3" json:"nextUpdateDueAt,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *SupportRequest_SLA) Reset() {
+	*x = SupportRequest_SLA{}
+	mi := &file_enterprisev1_proto_msgTypes[390]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupportRequest_SLA) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupportRequest_SLA) ProtoMessage() {}
+
+func (x *SupportRequest_SLA) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[390]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupportRequest_SLA.ProtoReflect.Descriptor instead.
+func (*SupportRequest_SLA) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{70, 2}
+}
+
+func (x *SupportRequest_SLA) GetCoverage() string {
+	if x != nil {
+		return x.Coverage
+	}
+	return ""
+}
+
+func (x *SupportRequest_SLA) GetFirstResponseDueAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FirstResponseDueAt
+	}
+	return nil
+}
+
+func (x *SupportRequest_SLA) GetFirstRespondedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FirstRespondedAt
+	}
+	return nil
+}
+
+func (x *SupportRequest_SLA) GetIsPaused() bool {
+	if x != nil {
+		return x.IsPaused
+	}
+	return false
+}
+
+func (x *SupportRequest_SLA) GetNextUpdateDueAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.NextUpdateDueAt
+	}
+	return nil
+}
+
+// Event is a public entry of the timeline of the request.
+type SupportRequest_Event struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID is the unique identifier of the event.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Sequence is the revision of the request that recorded the event.
+	Sequence uint64 `protobuf:"varint,2,opt,name=sequence,proto3" json:"sequence,omitempty"`
+	// Type is the type of the event.
+	Type SupportRequest_Event_Type `protobuf:"varint,3,opt,name=type,proto3,enum=octelium.api.main.enterprise.v1.SupportRequest_Event_Type" json:"type,omitempty"`
+	// Actor is the author of the event.
+	Actor *SupportRequest_Actor `protobuf:"bytes,4,opt,name=actor,proto3" json:"actor,omitempty"`
+	// Channel is the channel through which the event was recorded.
+	Channel SupportRequest_Channel `protobuf:"varint,5,opt,name=channel,proto3,enum=octelium.api.main.enterprise.v1.SupportRequest_Channel" json:"channel,omitempty"`
+	// CreatedAt is the date of the event.
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	// Body is the text of a description, a reply or the name of a new file.
+	Body string `protobuf:"bytes,7,opt,name=body,proto3" json:"body,omitempty"`
+	// AttachmentIDs is the list of the files that the event references.
+	AttachmentIDs []string `protobuf:"bytes,8,rep,name=attachmentIDs,proto3" json:"attachmentIDs,omitempty"`
+	// From is the previous value of a change.
+	From string `protobuf:"bytes,9,opt,name=from,proto3" json:"from,omitempty"`
+	// To is the new value of a change.
+	To string `protobuf:"bytes,10,opt,name=to,proto3" json:"to,omitempty"`
+	// Reason is the written reason of a change.
+	Reason string `protobuf:"bytes,11,opt,name=reason,proto3" json:"reason,omitempty"`
+	// SkippedAttachments is the list of the names of the files that were not
+	// accepted.
+	SkippedAttachments []string `protobuf:"bytes,12,rep,name=skippedAttachments,proto3" json:"skippedAttachments,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *SupportRequest_Event) Reset() {
+	*x = SupportRequest_Event{}
+	mi := &file_enterprisev1_proto_msgTypes[391]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupportRequest_Event) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupportRequest_Event) ProtoMessage() {}
+
+func (x *SupportRequest_Event) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[391]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupportRequest_Event.ProtoReflect.Descriptor instead.
+func (*SupportRequest_Event) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{70, 3}
+}
+
+func (x *SupportRequest_Event) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SupportRequest_Event) GetSequence() uint64 {
+	if x != nil {
+		return x.Sequence
+	}
+	return 0
+}
+
+func (x *SupportRequest_Event) GetType() SupportRequest_Event_Type {
+	if x != nil {
+		return x.Type
+	}
+	return SupportRequest_Event_TYPE_UNKNOWN
+}
+
+func (x *SupportRequest_Event) GetActor() *SupportRequest_Actor {
+	if x != nil {
+		return x.Actor
+	}
+	return nil
+}
+
+func (x *SupportRequest_Event) GetChannel() SupportRequest_Channel {
+	if x != nil {
+		return x.Channel
+	}
+	return SupportRequest_CHANNEL_UNKNOWN
+}
+
+func (x *SupportRequest_Event) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *SupportRequest_Event) GetBody() string {
+	if x != nil {
+		return x.Body
+	}
+	return ""
+}
+
+func (x *SupportRequest_Event) GetAttachmentIDs() []string {
+	if x != nil {
+		return x.AttachmentIDs
+	}
+	return nil
+}
+
+func (x *SupportRequest_Event) GetFrom() string {
+	if x != nil {
+		return x.From
+	}
+	return ""
+}
+
+func (x *SupportRequest_Event) GetTo() string {
+	if x != nil {
+		return x.To
+	}
+	return ""
+}
+
+func (x *SupportRequest_Event) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *SupportRequest_Event) GetSkippedAttachments() []string {
+	if x != nil {
+		return x.SkippedAttachments
+	}
+	return nil
+}
+
+// Attachment is a file of the request.
+type SupportRequest_Attachment struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID is the unique identifier of the file.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Name is the name of the file.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// ContentType is the media type of the file.
+	ContentType string `protobuf:"bytes,3,opt,name=contentType,proto3" json:"contentType,omitempty"`
+	// Size is the size of the file in bytes.
+	Size uint64 `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
+	// SHA256 is the hex-encoded SHA-256 digest of the file, if known.
+	Sha256 string `protobuf:"bytes,5,opt,name=sha256,proto3" json:"sha256,omitempty"`
+	// Purpose is the purpose of the file.
+	Purpose SupportRequest_Attachment_Purpose `protobuf:"varint,6,opt,name=purpose,proto3,enum=octelium.api.main.enterprise.v1.SupportRequest_Attachment_Purpose" json:"purpose,omitempty"`
+	// UploadedBy is the author of the file.
+	UploadedBy *SupportRequest_Actor `protobuf:"bytes,7,opt,name=uploadedBy,proto3" json:"uploadedBy,omitempty"`
+	// Channel is the channel through which the file was added.
+	Channel SupportRequest_Channel `protobuf:"varint,8,opt,name=channel,proto3,enum=octelium.api.main.enterprise.v1.SupportRequest_Channel" json:"channel,omitempty"`
+	// CreatedAt is the date at which the file was added.
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	// IsAvailable is whether the file can still be downloaded. Files are
+	// deleted some time after the request is closed.
+	IsAvailable   bool `protobuf:"varint,10,opt,name=isAvailable,proto3" json:"isAvailable,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupportRequest_Attachment) Reset() {
+	*x = SupportRequest_Attachment{}
+	mi := &file_enterprisev1_proto_msgTypes[392]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupportRequest_Attachment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupportRequest_Attachment) ProtoMessage() {}
+
+func (x *SupportRequest_Attachment) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[392]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupportRequest_Attachment.ProtoReflect.Descriptor instead.
+func (*SupportRequest_Attachment) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{70, 4}
+}
+
+func (x *SupportRequest_Attachment) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SupportRequest_Attachment) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SupportRequest_Attachment) GetContentType() string {
+	if x != nil {
+		return x.ContentType
+	}
+	return ""
+}
+
+func (x *SupportRequest_Attachment) GetSize() uint64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *SupportRequest_Attachment) GetSha256() string {
+	if x != nil {
+		return x.Sha256
+	}
+	return ""
+}
+
+func (x *SupportRequest_Attachment) GetPurpose() SupportRequest_Attachment_Purpose {
+	if x != nil {
+		return x.Purpose
+	}
+	return SupportRequest_Attachment_PURPOSE_UNKNOWN
+}
+
+func (x *SupportRequest_Attachment) GetUploadedBy() *SupportRequest_Actor {
+	if x != nil {
+		return x.UploadedBy
+	}
+	return nil
+}
+
+func (x *SupportRequest_Attachment) GetChannel() SupportRequest_Channel {
+	if x != nil {
+		return x.Channel
+	}
+	return SupportRequest_CHANNEL_UNKNOWN
+}
+
+func (x *SupportRequest_Attachment) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *SupportRequest_Attachment) GetIsAvailable() bool {
+	if x != nil {
+		return x.IsAvailable
+	}
+	return false
+}
+
+// Actions are the actions that are currently allowed on the request.
+type SupportRequest_Actions struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CanReply is whether a reply can be added.
+	CanReply bool `protobuf:"varint,1,opt,name=canReply,proto3" json:"canReply,omitempty"`
+	// CanResolve is whether the request can be marked as resolved.
+	CanResolve bool `protobuf:"varint,2,opt,name=canResolve,proto3" json:"canResolve,omitempty"`
+	// CanEscalate is whether the request can be escalated.
+	CanEscalate   bool `protobuf:"varint,3,opt,name=canEscalate,proto3" json:"canEscalate,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupportRequest_Actions) Reset() {
+	*x = SupportRequest_Actions{}
+	mi := &file_enterprisev1_proto_msgTypes[393]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupportRequest_Actions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupportRequest_Actions) ProtoMessage() {}
+
+func (x *SupportRequest_Actions) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[393]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupportRequest_Actions.ProtoReflect.Descriptor instead.
+func (*SupportRequest_Actions) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{70, 5}
+}
+
+func (x *SupportRequest_Actions) GetCanReply() bool {
+	if x != nil {
+		return x.CanReply
+	}
+	return false
+}
+
+func (x *SupportRequest_Actions) GetCanResolve() bool {
+	if x != nil {
+		return x.CanResolve
+	}
+	return false
+}
+
+func (x *SupportRequest_Actions) GetCanEscalate() bool {
+	if x != nil {
+		return x.CanEscalate
+	}
+	return false
+}
+
+// Header is the header of the downloaded file.
+type DownloadSupportRequestAttachmentResponse_Header struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Name is the name of the file.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// ContentType is the media type of the file.
+	ContentType string `protobuf:"bytes,2,opt,name=contentType,proto3" json:"contentType,omitempty"`
+	// Size is the size of the file in bytes.
+	Size          uint64 `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DownloadSupportRequestAttachmentResponse_Header) Reset() {
+	*x = DownloadSupportRequestAttachmentResponse_Header{}
+	mi := &file_enterprisev1_proto_msgTypes[395]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DownloadSupportRequestAttachmentResponse_Header) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DownloadSupportRequestAttachmentResponse_Header) ProtoMessage() {}
+
+func (x *DownloadSupportRequestAttachmentResponse_Header) ProtoReflect() protoreflect.Message {
+	mi := &file_enterprisev1_proto_msgTypes[395]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DownloadSupportRequestAttachmentResponse_Header.ProtoReflect.Descriptor instead.
+func (*DownloadSupportRequestAttachmentResponse_Header) Descriptor() ([]byte, []int) {
+	return file_enterprisev1_proto_rawDescGZIP(), []int{82, 0}
+}
+
+func (x *DownloadSupportRequestAttachmentResponse_Header) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *DownloadSupportRequestAttachmentResponse_Header) GetContentType() string {
+	if x != nil {
+		return x.ContentType
+	}
+	return ""
+}
+
+func (x *DownloadSupportRequestAttachmentResponse_Header) GetSize() uint64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
 }
 
 var File_enterprisev1_proto protoreflect.FileDescriptor
@@ -33328,435 +35877,952 @@ var file_enterprisev1_proto_rawDesc = []byte{
 	0x53, 0x54, 0x41, 0x54, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x45, 0x54, 0x10, 0x00, 0x12, 0x13, 0x0a,
 	0x0f, 0x4e, 0x4f, 0x54, 0x5f, 0x49, 0x4e, 0x49, 0x54, 0x49, 0x41, 0x4c, 0x49, 0x5a, 0x45, 0x44,
 	0x10, 0x01, 0x12, 0x09, 0x0a, 0x05, 0x52, 0x45, 0x41, 0x44, 0x59, 0x10, 0x02, 0x12, 0x0c, 0x0a,
-	0x08, 0x4f, 0x55, 0x54, 0x44, 0x41, 0x54, 0x45, 0x44, 0x10, 0x03, 0x32, 0xd9, 0x2a, 0x0a, 0x0b,
-	0x4d, 0x61, 0x69, 0x6e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x7e, 0x0a, 0x10, 0x47,
-	0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12,
-	0x38, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x08, 0x4f, 0x55, 0x54, 0x44, 0x41, 0x54, 0x45, 0x44, 0x10, 0x03, 0x22, 0x37, 0x0a, 0x15, 0x47,
+	0x65, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x12, 0x1e, 0x0a, 0x0a, 0x73, 0x6b, 0x69, 0x70, 0x50, 0x6f, 0x72, 0x74,
+	0x61, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a, 0x73, 0x6b, 0x69, 0x70, 0x50, 0x6f,
+	0x72, 0x74, 0x61, 0x6c, 0x22, 0xcf, 0x09, 0x0a, 0x0b, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74,
+	0x49, 0x6e, 0x66, 0x6f, 0x12, 0x48, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0e, 0x32, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x6e, 0x66,
+	0x6f, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x12, 0x18,
+	0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x5d, 0x0a, 0x0c, 0x6f, 0x72, 0x67, 0x61,
+	0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x39,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x2e, 0x4f, 0x72, 0x67,
+	0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0c, 0x6f, 0x72, 0x67, 0x61, 0x6e,
+	0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x24, 0x0a, 0x0d, 0x63, 0x6c, 0x75, 0x73, 0x74,
+	0x65, 0x72, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d,
+	0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x12, 0x60, 0x0a,
+	0x0c, 0x73, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x18, 0x05, 0x20,
+	0x01, 0x28, 0x0e, 0x32, 0x3c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x4c, 0x65, 0x76, 0x65,
+	0x6c, 0x52, 0x0c, 0x73, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x12,
+	0x4b, 0x0a, 0x06, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x73, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x33, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
 	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66,
-	0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65,
+	0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x2e, 0x4c, 0x69,
+	0x6d, 0x69, 0x74, 0x73, 0x52, 0x06, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x73, 0x12, 0x5f, 0x0a, 0x0b,
+	0x65, 0x6e, 0x76, 0x69, 0x72, 0x6f, 0x6e, 0x6d, 0x65, 0x6e, 0x74, 0x18, 0x07, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x3d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x2e,
+	0x45, 0x6e, 0x76, 0x69, 0x72, 0x6f, 0x6e, 0x6d, 0x65, 0x6e, 0x74, 0x45, 0x6e, 0x74, 0x72, 0x79,
+	0x52, 0x0b, 0x65, 0x6e, 0x76, 0x69, 0x72, 0x6f, 0x6e, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x1c, 0x0a,
+	0x09, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x55, 0x52, 0x4c, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x09, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x55, 0x52, 0x4c, 0x12, 0x22, 0x0a, 0x0c, 0x73,
+	0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x45, 0x6d, 0x61, 0x69, 0x6c, 0x18, 0x09, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x0c, 0x73, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x45, 0x6d, 0x61, 0x69, 0x6c, 0x12,
+	0x26, 0x0a, 0x0e, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6c, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49,
+	0x44, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6c, 0x6c,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x44, 0x1a, 0x42, 0x0a, 0x0c, 0x4f, 0x72, 0x67, 0x61, 0x6e,
+	0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x69, 0x64, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x69, 0x73,
+	0x70, 0x6c, 0x61, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b,
+	0x64, 0x69, 0x73, 0x70, 0x6c, 0x61, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x1a, 0xda, 0x02, 0x0a, 0x06,
+	0x4c, 0x69, 0x6d, 0x69, 0x74, 0x73, 0x12, 0x2a, 0x0a, 0x10, 0x6d, 0x61, 0x78, 0x53, 0x75, 0x62,
+	0x6a, 0x65, 0x63, 0x74, 0x4c, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d,
+	0x52, 0x10, 0x6d, 0x61, 0x78, 0x53, 0x75, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x4c, 0x65, 0x6e, 0x67,
+	0x74, 0x68, 0x12, 0x24, 0x0a, 0x0d, 0x6d, 0x61, 0x78, 0x42, 0x6f, 0x64, 0x79, 0x4c, 0x65, 0x6e,
+	0x67, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0d, 0x6d, 0x61, 0x78, 0x42, 0x6f,
+	0x64, 0x79, 0x4c, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x12, 0x2c, 0x0a, 0x11, 0x6d, 0x61, 0x78, 0x41,
+	0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x53, 0x69, 0x7a, 0x65, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x04, 0x52, 0x11, 0x6d, 0x61, 0x78, 0x41, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65,
+	0x6e, 0x74, 0x53, 0x69, 0x7a, 0x65, 0x12, 0x3a, 0x0a, 0x18, 0x6d, 0x61, 0x78, 0x41, 0x74, 0x74,
+	0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x50, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x18, 0x6d, 0x61, 0x78, 0x41, 0x74, 0x74,
+	0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x50, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x12, 0x3a, 0x0a, 0x18, 0x6d, 0x61, 0x78, 0x41, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d,
+	0x65, 0x6e, 0x74, 0x73, 0x50, 0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x05,
+	0x20, 0x01, 0x28, 0x0d, 0x52, 0x18, 0x6d, 0x61, 0x78, 0x41, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d,
+	0x65, 0x6e, 0x74, 0x73, 0x50, 0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x32,
+	0x0a, 0x14, 0x61, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x45, 0x78, 0x74, 0x65,
+	0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x06, 0x20, 0x03, 0x28, 0x09, 0x52, 0x14, 0x61, 0x74,
+	0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x45, 0x78, 0x74, 0x65, 0x6e, 0x73, 0x69, 0x6f,
+	0x6e, 0x73, 0x12, 0x24, 0x0a, 0x0d, 0x61, 0x75, 0x74, 0x6f, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x44,
+	0x61, 0x79, 0x73, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0d, 0x61, 0x75, 0x74, 0x6f, 0x43,
+	0x6c, 0x6f, 0x73, 0x65, 0x44, 0x61, 0x79, 0x73, 0x1a, 0x3e, 0x0a, 0x10, 0x45, 0x6e, 0x76, 0x69,
+	0x72, 0x6f, 0x6e, 0x6d, 0x65, 0x6e, 0x74, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03,
+	0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14,
+	0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76,
+	0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0x7c, 0x0a, 0x05, 0x53, 0x74, 0x61, 0x74,
+	0x65, 0x12, 0x11, 0x0a, 0x0d, 0x53, 0x54, 0x41, 0x54, 0x45, 0x5f, 0x55, 0x4e, 0x4b, 0x4e, 0x4f,
+	0x57, 0x4e, 0x10, 0x00, 0x12, 0x0d, 0x0a, 0x09, 0x41, 0x56, 0x41, 0x49, 0x4c, 0x41, 0x42, 0x4c,
+	0x45, 0x10, 0x01, 0x12, 0x0e, 0x0a, 0x0a, 0x4e, 0x4f, 0x5f, 0x4c, 0x49, 0x43, 0x45, 0x4e, 0x53,
+	0x45, 0x10, 0x02, 0x12, 0x10, 0x0a, 0x0c, 0x4e, 0x4f, 0x54, 0x5f, 0x45, 0x4e, 0x54, 0x49, 0x54,
+	0x4c, 0x45, 0x44, 0x10, 0x03, 0x12, 0x10, 0x0a, 0x0c, 0x55, 0x4e, 0x41, 0x55, 0x54, 0x48, 0x4f,
+	0x52, 0x49, 0x5a, 0x45, 0x44, 0x10, 0x04, 0x12, 0x0f, 0x0a, 0x0b, 0x55, 0x4e, 0x52, 0x45, 0x41,
+	0x43, 0x48, 0x41, 0x42, 0x4c, 0x45, 0x10, 0x05, 0x12, 0x0c, 0x0a, 0x08, 0x44, 0x49, 0x53, 0x41,
+	0x42, 0x4c, 0x45, 0x44, 0x10, 0x06, 0x22, 0xab, 0x1e, 0x0a, 0x0e, 0x53, 0x75, 0x70, 0x70, 0x6f,
+	0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x6e, 0x75, 0x6d,
+	0x62, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x06, 0x6e, 0x75, 0x6d, 0x62, 0x65,
+	0x72, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x07, 0x73, 0x75, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x4e, 0x0a, 0x06, 0x73,
+	0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x36, 0x2e, 0x6f, 0x63,
+	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
+	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75,
+	0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x53, 0x74, 0x61,
+	0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x54, 0x0a, 0x08, 0x70,
+	0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x38, 0x2e,
+	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x50,
+	0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x52, 0x08, 0x70, 0x72, 0x69, 0x6f, 0x72, 0x69, 0x74,
+	0x79, 0x12, 0x66, 0x0a, 0x11, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x65, 0x64, 0x50, 0x72,
+	0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x38, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53,
+	0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x50, 0x72,
+	0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x52, 0x11, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x65,
+	0x64, 0x50, 0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x60, 0x0a, 0x0c, 0x73, 0x75, 0x70,
+	0x70, 0x6f, 0x72, 0x74, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0e, 0x32,
+	0x3c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x52, 0x0c, 0x73,
+	0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x12, 0x51, 0x0a, 0x07, 0x63,
+	0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x37, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53,
+	0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x43, 0x68,
+	0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x52, 0x07, 0x63, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x12, 0x54,
+	0x0a, 0x08, 0x72, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x38, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x2e, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x52, 0x08, 0x72, 0x65, 0x70, 0x6f,
+	0x72, 0x74, 0x65, 0x72, 0x12, 0x1a, 0x0a, 0x08, 0x61, 0x73, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x65,
+	0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x61, 0x73, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x65,
+	0x12, 0x45, 0x0a, 0x03, 0x73, 0x6c, 0x61, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x33, 0x2e,
+	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x53,
+	0x4c, 0x41, 0x52, 0x03, 0x73, 0x6c, 0x61, 0x12, 0x20, 0x0a, 0x0b, 0x69, 0x73, 0x45, 0x73, 0x63,
+	0x61, 0x6c, 0x61, 0x74, 0x65, 0x64, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0b, 0x69, 0x73,
+	0x45, 0x73, 0x63, 0x61, 0x6c, 0x61, 0x74, 0x65, 0x64, 0x12, 0x24, 0x0a, 0x0d, 0x63, 0x6c, 0x75,
+	0x73, 0x74, 0x65, 0x72, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x18, 0x0d, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0d, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x12,
+	0x62, 0x0a, 0x0b, 0x65, 0x6e, 0x76, 0x69, 0x72, 0x6f, 0x6e, 0x6d, 0x65, 0x6e, 0x74, 0x18, 0x0e,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x40, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
+	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x45, 0x6e, 0x76, 0x69, 0x72, 0x6f, 0x6e, 0x6d, 0x65, 0x6e,
+	0x74, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x0b, 0x65, 0x6e, 0x76, 0x69, 0x72, 0x6f, 0x6e, 0x6d,
+	0x65, 0x6e, 0x74, 0x12, 0x38, 0x0a, 0x09, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74,
+	0x18, 0x0f, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61,
+	0x6d, 0x70, 0x52, 0x09, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x12, 0x38, 0x0a,
+	0x09, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x18, 0x10, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
+	0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x09, 0x75, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x12, 0x42, 0x0a, 0x0e, 0x6c, 0x61, 0x73, 0x74, 0x41,
+	0x63, 0x74, 0x69, 0x76, 0x69, 0x74, 0x79, 0x41, 0x74, 0x18, 0x11, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0e, 0x6c, 0x61, 0x73,
+	0x74, 0x41, 0x63, 0x74, 0x69, 0x76, 0x69, 0x74, 0x79, 0x41, 0x74, 0x12, 0x3a, 0x0a, 0x0a, 0x72,
+	0x65, 0x73, 0x6f, 0x6c, 0x76, 0x65, 0x64, 0x41, 0x74, 0x18, 0x12, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0a, 0x72, 0x65, 0x73,
+	0x6f, 0x6c, 0x76, 0x65, 0x64, 0x41, 0x74, 0x12, 0x36, 0x0a, 0x08, 0x63, 0x6c, 0x6f, 0x73, 0x65,
+	0x64, 0x41, 0x74, 0x18, 0x13, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
+	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65,
+	0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x08, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x64, 0x41, 0x74, 0x12,
+	0x22, 0x0a, 0x0c, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x18,
+	0x14, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0c, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x43, 0x6f,
+	0x75, 0x6e, 0x74, 0x12, 0x28, 0x0a, 0x0f, 0x61, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e,
+	0x74, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x15, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0f, 0x61, 0x74,
+	0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x4d, 0x0a,
+	0x06, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x18, 0x16, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x35, 0x2e,
+	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x45,
+	0x76, 0x65, 0x6e, 0x74, 0x52, 0x06, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x12, 0x22, 0x0a, 0x0c,
+	0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x43, 0x75, 0x72, 0x73, 0x6f, 0x72, 0x18, 0x17, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x0c, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x43, 0x75, 0x72, 0x73, 0x6f, 0x72,
+	0x12, 0x5c, 0x0a, 0x0b, 0x61, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x18,
+	0x18, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x3a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x41, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e,
+	0x74, 0x52, 0x0b, 0x61, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x12, 0x51,
+	0x0a, 0x07, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x19, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x2e, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x07, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e,
+	0x73, 0x12, 0x1c, 0x0a, 0x09, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x55, 0x52, 0x4c, 0x18, 0x1a,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x70, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x55, 0x52, 0x4c, 0x1a,
+	0xc2, 0x01, 0x0a, 0x05, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x12, 0x4e, 0x0a, 0x04, 0x74, 0x79, 0x70,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x3a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72,
+	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x2e, 0x54,
+	0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d,
+	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0x55, 0x0a,
+	0x04, 0x54, 0x79, 0x70, 0x65, 0x12, 0x10, 0x0a, 0x0c, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e,
+	0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x0c, 0x0a, 0x08, 0x43, 0x55, 0x53, 0x54, 0x4f,
+	0x4d, 0x45, 0x52, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x43, 0x4c, 0x55, 0x53, 0x54, 0x45, 0x52,
+	0x10, 0x02, 0x12, 0x09, 0x0a, 0x05, 0x45, 0x4d, 0x41, 0x49, 0x4c, 0x10, 0x03, 0x12, 0x09, 0x0a,
+	0x05, 0x41, 0x47, 0x45, 0x4e, 0x54, 0x10, 0x04, 0x12, 0x0a, 0x0a, 0x06, 0x53, 0x59, 0x53, 0x54,
+	0x45, 0x4d, 0x10, 0x05, 0x1a, 0x3e, 0x0a, 0x08, 0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72,
+	0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04,
+	0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1e, 0x0a, 0x0a, 0x69, 0x73, 0x56, 0x65, 0x72, 0x69, 0x66, 0x69,
+	0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a, 0x69, 0x73, 0x56, 0x65, 0x72, 0x69,
+	0x66, 0x69, 0x65, 0x64, 0x1a, 0x97, 0x02, 0x0a, 0x03, 0x53, 0x4c, 0x41, 0x12, 0x1a, 0x0a, 0x08,
+	0x63, 0x6f, 0x76, 0x65, 0x72, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08,
+	0x63, 0x6f, 0x76, 0x65, 0x72, 0x61, 0x67, 0x65, 0x12, 0x4a, 0x0a, 0x12, 0x66, 0x69, 0x72, 0x73,
+	0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x44, 0x75, 0x65, 0x41, 0x74, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70,
+	0x52, 0x12, 0x66, 0x69, 0x72, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x44,
+	0x75, 0x65, 0x41, 0x74, 0x12, 0x46, 0x0a, 0x10, 0x66, 0x69, 0x72, 0x73, 0x74, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x64, 0x65, 0x64, 0x41, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a,
+	0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
+	0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x10, 0x66, 0x69, 0x72, 0x73,
+	0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x64, 0x65, 0x64, 0x41, 0x74, 0x12, 0x1a, 0x0a, 0x08,
+	0x69, 0x73, 0x50, 0x61, 0x75, 0x73, 0x65, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x08, 0x52, 0x08,
+	0x69, 0x73, 0x50, 0x61, 0x75, 0x73, 0x65, 0x64, 0x12, 0x44, 0x0a, 0x0f, 0x6e, 0x65, 0x78, 0x74,
+	0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x44, 0x75, 0x65, 0x41, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0f, 0x6e,
+	0x65, 0x78, 0x74, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x44, 0x75, 0x65, 0x41, 0x74, 0x1a, 0xa2,
+	0x05, 0x0a, 0x05, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x73, 0x65, 0x71, 0x75,
+	0x65, 0x6e, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x73, 0x65, 0x71, 0x75,
+	0x65, 0x6e, 0x63, 0x65, 0x12, 0x4e, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x0e, 0x32, 0x3a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x2e, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04,
+	0x74, 0x79, 0x70, 0x65, 0x12, 0x4b, 0x0a, 0x05, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x18, 0x04, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x35, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x2e, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x52, 0x05, 0x61, 0x63, 0x74, 0x6f,
+	0x72, 0x12, 0x51, 0x0a, 0x07, 0x63, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x18, 0x05, 0x20, 0x01,
+	0x28, 0x0e, 0x32, 0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x52, 0x07, 0x63, 0x68, 0x61,
+	0x6e, 0x6e, 0x65, 0x6c, 0x12, 0x38, 0x0a, 0x09, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x41,
+	0x74, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74,
+	0x61, 0x6d, 0x70, 0x52, 0x09, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x12, 0x12,
+	0x0a, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x62, 0x6f,
+	0x64, 0x79, 0x12, 0x24, 0x0a, 0x0d, 0x61, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74,
+	0x49, 0x44, 0x73, 0x18, 0x08, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0d, 0x61, 0x74, 0x74, 0x61, 0x63,
+	0x68, 0x6d, 0x65, 0x6e, 0x74, 0x49, 0x44, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x66, 0x72, 0x6f, 0x6d,
+	0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x66, 0x72, 0x6f, 0x6d, 0x12, 0x0e, 0x0a, 0x02,
+	0x74, 0x6f, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x74, 0x6f, 0x12, 0x16, 0x0a, 0x06,
+	0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x72, 0x65,
+	0x61, 0x73, 0x6f, 0x6e, 0x12, 0x2e, 0x0a, 0x12, 0x73, 0x6b, 0x69, 0x70, 0x70, 0x65, 0x64, 0x41,
+	0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x18, 0x0c, 0x20, 0x03, 0x28, 0x09,
+	0x52, 0x12, 0x73, 0x6b, 0x69, 0x70, 0x70, 0x65, 0x64, 0x41, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d,
+	0x65, 0x6e, 0x74, 0x73, 0x22, 0x9c, 0x01, 0x0a, 0x04, 0x54, 0x79, 0x70, 0x65, 0x12, 0x10, 0x0a,
+	0x0c, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12,
+	0x0b, 0x0a, 0x07, 0x43, 0x52, 0x45, 0x41, 0x54, 0x45, 0x44, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07,
+	0x4d, 0x45, 0x53, 0x53, 0x41, 0x47, 0x45, 0x10, 0x02, 0x12, 0x0a, 0x0a, 0x06, 0x53, 0x54, 0x41,
+	0x54, 0x55, 0x53, 0x10, 0x03, 0x12, 0x0c, 0x0a, 0x08, 0x50, 0x52, 0x49, 0x4f, 0x52, 0x49, 0x54,
+	0x59, 0x10, 0x04, 0x12, 0x0c, 0x0a, 0x08, 0x43, 0x41, 0x54, 0x45, 0x47, 0x4f, 0x52, 0x59, 0x10,
+	0x05, 0x12, 0x0e, 0x0a, 0x0a, 0x41, 0x53, 0x53, 0x49, 0x47, 0x4e, 0x4d, 0x45, 0x4e, 0x54, 0x10,
+	0x06, 0x12, 0x0e, 0x0a, 0x0a, 0x45, 0x53, 0x43, 0x41, 0x4c, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x10,
+	0x07, 0x12, 0x0e, 0x0a, 0x0a, 0x41, 0x54, 0x54, 0x41, 0x43, 0x48, 0x4d, 0x45, 0x4e, 0x54, 0x10,
+	0x08, 0x12, 0x10, 0x0a, 0x0c, 0x4f, 0x52, 0x47, 0x41, 0x4e, 0x49, 0x5a, 0x41, 0x54, 0x49, 0x4f,
+	0x4e, 0x10, 0x09, 0x1a, 0x9c, 0x04, 0x0a, 0x0a, 0x41, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65,
+	0x6e, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02,
+	0x69, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e,
+	0x74, 0x54, 0x79, 0x70, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x63, 0x6f, 0x6e,
+	0x74, 0x65, 0x6e, 0x74, 0x54, 0x79, 0x70, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x73, 0x69, 0x7a, 0x65,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x12, 0x16, 0x0a, 0x06,
+	0x73, 0x68, 0x61, 0x32, 0x35, 0x36, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x68,
+	0x61, 0x32, 0x35, 0x36, 0x12, 0x5c, 0x0a, 0x07, 0x70, 0x75, 0x72, 0x70, 0x6f, 0x73, 0x65, 0x18,
+	0x06, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x42, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x41, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e,
+	0x74, 0x2e, 0x50, 0x75, 0x72, 0x70, 0x6f, 0x73, 0x65, 0x52, 0x07, 0x70, 0x75, 0x72, 0x70, 0x6f,
+	0x73, 0x65, 0x12, 0x55, 0x0a, 0x0a, 0x75, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x65, 0x64, 0x42, 0x79,
+	0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x35, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x52, 0x0a, 0x75,
+	0x70, 0x6c, 0x6f, 0x61, 0x64, 0x65, 0x64, 0x42, 0x79, 0x12, 0x51, 0x0a, 0x07, 0x63, 0x68, 0x61,
+	0x6e, 0x6e, 0x65, 0x6c, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x37, 0x2e, 0x6f, 0x63, 0x74,
+	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
+	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70,
+	0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x43, 0x68, 0x61, 0x6e,
+	0x6e, 0x65, 0x6c, 0x52, 0x07, 0x63, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x12, 0x38, 0x0a, 0x09,
+	0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x09, 0x63, 0x72, 0x65,
+	0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x12, 0x20, 0x0a, 0x0b, 0x69, 0x73, 0x41, 0x76, 0x61, 0x69,
+	0x6c, 0x61, 0x62, 0x6c, 0x65, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0b, 0x69, 0x73, 0x41,
+	0x76, 0x61, 0x69, 0x6c, 0x61, 0x62, 0x6c, 0x65, 0x22, 0x38, 0x0a, 0x07, 0x50, 0x75, 0x72, 0x70,
+	0x6f, 0x73, 0x65, 0x12, 0x13, 0x0a, 0x0f, 0x50, 0x55, 0x52, 0x50, 0x4f, 0x53, 0x45, 0x5f, 0x55,
+	0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x46, 0x49, 0x4c, 0x45,
+	0x10, 0x01, 0x12, 0x0e, 0x0a, 0x0a, 0x44, 0x49, 0x41, 0x47, 0x4e, 0x4f, 0x53, 0x54, 0x49, 0x43,
+	0x10, 0x02, 0x1a, 0x67, 0x0a, 0x07, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x1a, 0x0a,
+	0x08, 0x63, 0x61, 0x6e, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52,
+	0x08, 0x63, 0x61, 0x6e, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x1e, 0x0a, 0x0a, 0x63, 0x61, 0x6e,
+	0x52, 0x65, 0x73, 0x6f, 0x6c, 0x76, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a, 0x63,
+	0x61, 0x6e, 0x52, 0x65, 0x73, 0x6f, 0x6c, 0x76, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x63, 0x61, 0x6e,
+	0x45, 0x73, 0x63, 0x61, 0x6c, 0x61, 0x74, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0b,
+	0x63, 0x61, 0x6e, 0x45, 0x73, 0x63, 0x61, 0x6c, 0x61, 0x74, 0x65, 0x1a, 0x3e, 0x0a, 0x10, 0x45,
+	0x6e, 0x76, 0x69, 0x72, 0x6f, 0x6e, 0x6d, 0x65, 0x6e, 0x74, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12,
+	0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65,
+	0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0x40, 0x0a, 0x08, 0x50,
+	0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x10, 0x50, 0x52, 0x49, 0x4f, 0x52,
+	0x49, 0x54, 0x59, 0x5f, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x06, 0x0a,
+	0x02, 0x50, 0x31, 0x10, 0x01, 0x12, 0x06, 0x0a, 0x02, 0x50, 0x32, 0x10, 0x02, 0x12, 0x06, 0x0a,
+	0x02, 0x50, 0x33, 0x10, 0x03, 0x12, 0x06, 0x0a, 0x02, 0x50, 0x34, 0x10, 0x04, 0x22, 0x6f, 0x0a,
+	0x06, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x12, 0x0a, 0x0e, 0x53, 0x54, 0x41, 0x54, 0x55,
+	0x53, 0x5f, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x07, 0x0a, 0x03, 0x4e,
+	0x45, 0x57, 0x10, 0x01, 0x12, 0x08, 0x0a, 0x04, 0x4f, 0x50, 0x45, 0x4e, 0x10, 0x02, 0x12, 0x17,
+	0x0a, 0x13, 0x57, 0x41, 0x49, 0x54, 0x49, 0x4e, 0x47, 0x5f, 0x4f, 0x4e, 0x5f, 0x43, 0x55, 0x53,
+	0x54, 0x4f, 0x4d, 0x45, 0x52, 0x10, 0x03, 0x12, 0x0b, 0x0a, 0x07, 0x4f, 0x4e, 0x5f, 0x48, 0x4f,
+	0x4c, 0x44, 0x10, 0x04, 0x12, 0x0c, 0x0a, 0x08, 0x52, 0x45, 0x53, 0x4f, 0x4c, 0x56, 0x45, 0x44,
+	0x10, 0x05, 0x12, 0x0a, 0x0a, 0x06, 0x43, 0x4c, 0x4f, 0x53, 0x45, 0x44, 0x10, 0x06, 0x22, 0x4e,
+	0x0a, 0x0c, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x12, 0x19,
+	0x0a, 0x15, 0x53, 0x55, 0x50, 0x50, 0x4f, 0x52, 0x54, 0x5f, 0x4c, 0x45, 0x56, 0x45, 0x4c, 0x5f,
+	0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x4e, 0x4f, 0x4e,
+	0x45, 0x10, 0x01, 0x12, 0x0c, 0x0a, 0x08, 0x53, 0x54, 0x41, 0x4e, 0x44, 0x41, 0x52, 0x44, 0x10,
+	0x02, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x52, 0x45, 0x4d, 0x49, 0x55, 0x4d, 0x10, 0x03, 0x22, 0x64,
+	0x0a, 0x07, 0x43, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x12, 0x13, 0x0a, 0x0f, 0x43, 0x48, 0x41,
+	0x4e, 0x4e, 0x45, 0x4c, 0x5f, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x0a,
+	0x0a, 0x06, 0x50, 0x4f, 0x52, 0x54, 0x41, 0x4c, 0x10, 0x01, 0x12, 0x09, 0x0a, 0x05, 0x45, 0x4d,
+	0x41, 0x49, 0x4c, 0x10, 0x02, 0x12, 0x0b, 0x0a, 0x07, 0x43, 0x4c, 0x55, 0x53, 0x54, 0x45, 0x52,
+	0x10, 0x03, 0x12, 0x09, 0x0a, 0x05, 0x41, 0x47, 0x45, 0x4e, 0x54, 0x10, 0x04, 0x12, 0x09, 0x0a,
+	0x05, 0x53, 0x4c, 0x41, 0x43, 0x4b, 0x10, 0x05, 0x12, 0x0a, 0x0a, 0x06, 0x53, 0x59, 0x53, 0x54,
+	0x45, 0x4d, 0x10, 0x06, 0x22, 0xb7, 0x01, 0x0a, 0x19, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x75, 0x70,
+	0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f,
+	0x6e, 0x73, 0x12, 0x59, 0x0a, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0e, 0x32, 0x41, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x46,
+	0x69, 0x6c, 0x74, 0x65, 0x72, 0x52, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x12, 0x16, 0x0a,
+	0x06, 0x63, 0x75, 0x72, 0x73, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x63,
+	0x75, 0x72, 0x73, 0x6f, 0x72, 0x22, 0x27, 0x0a, 0x06, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x12,
+	0x07, 0x0a, 0x03, 0x41, 0x4c, 0x4c, 0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x4f, 0x50, 0x45, 0x4e,
+	0x10, 0x01, 0x12, 0x0a, 0x0a, 0x06, 0x43, 0x4c, 0x4f, 0x53, 0x45, 0x44, 0x10, 0x02, 0x22, 0x7b,
+	0x0a, 0x12, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x4c, 0x69, 0x73, 0x74, 0x12, 0x45, 0x0a, 0x05, 0x69, 0x74, 0x65, 0x6d, 0x73, 0x18, 0x01, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x2f, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x52, 0x05, 0x69, 0x74, 0x65, 0x6d, 0x73, 0x12, 0x1e, 0x0a, 0x0a, 0x6e,
+	0x65, 0x78, 0x74, 0x43, 0x75, 0x72, 0x73, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0a, 0x6e, 0x65, 0x78, 0x74, 0x43, 0x75, 0x72, 0x73, 0x6f, 0x72, 0x22, 0x2a, 0x0a, 0x18, 0x47,
+	0x65, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x22, 0x48, 0x0a, 0x1e, 0x4c, 0x69, 0x73, 0x74, 0x53,
+	0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x45, 0x76, 0x65,
+	0x6e, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x63, 0x75, 0x72,
+	0x73, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x63, 0x75, 0x72, 0x73, 0x6f,
+	0x72, 0x22, 0x86, 0x01, 0x0a, 0x17, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x4b, 0x0a,
+	0x05, 0x69, 0x74, 0x65, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x35, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53,
+	0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x45, 0x76,
+	0x65, 0x6e, 0x74, 0x52, 0x05, 0x69, 0x74, 0x65, 0x6d, 0x73, 0x12, 0x1e, 0x0a, 0x0a, 0x6e, 0x65,
+	0x78, 0x74, 0x43, 0x75, 0x72, 0x73, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a,
+	0x6e, 0x65, 0x78, 0x74, 0x43, 0x75, 0x72, 0x73, 0x6f, 0x72, 0x22, 0xd7, 0x01, 0x0a, 0x1b, 0x43,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75,
+	0x62, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x73, 0x75, 0x62,
+	0x6a, 0x65, 0x63, 0x74, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74,
+	0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72,
+	0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x54, 0x0a, 0x08, 0x70, 0x72, 0x69, 0x6f, 0x72, 0x69,
+	0x74, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x38, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f,
+	0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x50, 0x72, 0x69, 0x6f, 0x72, 0x69,
+	0x74, 0x79, 0x52, 0x08, 0x70, 0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x26, 0x0a, 0x0e,
+	0x69, 0x64, 0x65, 0x6d, 0x70, 0x6f, 0x74, 0x65, 0x6e, 0x63, 0x79, 0x4b, 0x65, 0x79, 0x18, 0x04,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x69, 0x64, 0x65, 0x6d, 0x70, 0x6f, 0x74, 0x65, 0x6e, 0x63,
+	0x79, 0x4b, 0x65, 0x79, 0x22, 0x93, 0x01, 0x0a, 0x1f, 0x41, 0x64, 0x64, 0x53, 0x75, 0x70, 0x70,
+	0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x62, 0x6f, 0x64, 0x79,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x12, 0x24, 0x0a, 0x0d,
+	0x61, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x49, 0x44, 0x73, 0x18, 0x03, 0x20,
+	0x03, 0x28, 0x09, 0x52, 0x0d, 0x61, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x49,
+	0x44, 0x73, 0x12, 0x26, 0x0a, 0x0e, 0x69, 0x64, 0x65, 0x6d, 0x70, 0x6f, 0x74, 0x65, 0x6e, 0x63,
+	0x79, 0x4b, 0x65, 0x79, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x69, 0x64, 0x65, 0x6d,
+	0x70, 0x6f, 0x74, 0x65, 0x6e, 0x63, 0x79, 0x4b, 0x65, 0x79, 0x22, 0xba, 0x01, 0x0a, 0x22, 0x41,
+	0x64, 0x64, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x41, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69,
+	0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x0c, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x12, 0x5c, 0x0a, 0x07, 0x70, 0x75, 0x72,
+	0x70, 0x6f, 0x73, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x42, 0x2e, 0x6f, 0x63, 0x74,
+	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
+	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70,
+	0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x41, 0x74, 0x74, 0x61,
+	0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x50, 0x75, 0x72, 0x70, 0x6f, 0x73, 0x65, 0x52, 0x07,
+	0x70, 0x75, 0x72, 0x70, 0x6f, 0x73, 0x65, 0x22, 0x2e, 0x0a, 0x1c, 0x52, 0x65, 0x73, 0x6f, 0x6c,
+	0x76, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x22, 0x47, 0x0a, 0x1d, 0x45, 0x73, 0x63, 0x61, 0x6c,
+	0x61, 0x74, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x72, 0x65, 0x61, 0x73,
+	0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e,
+	0x22, 0x5d, 0x0a, 0x27, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x53, 0x75, 0x70, 0x70,
+	0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x41, 0x74, 0x74, 0x61, 0x63, 0x68,
+	0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x22, 0x0a, 0x0c, 0x61,
+	0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x49, 0x44, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x0c, 0x61, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x49, 0x44, 0x22,
+	0x8a, 0x02, 0x0a, 0x28, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x53, 0x75, 0x70, 0x70,
+	0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x41, 0x74, 0x74, 0x61, 0x63, 0x68,
+	0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x6a, 0x0a, 0x06,
+	0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x50, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44,
+	0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x41, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x48, 0x00,
+	0x52, 0x06, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x16, 0x0a, 0x05, 0x63, 0x68, 0x75, 0x6e,
+	0x6b, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x48, 0x00, 0x52, 0x05, 0x63, 0x68, 0x75, 0x6e, 0x6b,
+	0x1a, 0x52, 0x0a, 0x06, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61,
+	0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x20,
+	0x0a, 0x0b, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x54, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x0b, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x54, 0x79, 0x70, 0x65,
+	0x12, 0x12, 0x0a, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x04,
+	0x73, 0x69, 0x7a, 0x65, 0x42, 0x06, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x32, 0xd9, 0x2a, 0x0a,
+	0x0b, 0x4d, 0x61, 0x69, 0x6e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x7e, 0x0a, 0x10,
+	0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
+	0x12, 0x38, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2e, 0x2e, 0x6f, 0x63, 0x74,
+	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
+	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75,
+	0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x13,
+	0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x12, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x1a, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x22, 0x00, 0x12, 0x83, 0x01, 0x0a, 0x17, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
+	0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65,
+	0x72, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70,
+	0x6f, 0x72, 0x74, 0x65, 0x72, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f,
+	0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x22, 0x00, 0x12, 0x73, 0x0a, 0x14, 0x47,
+	0x65, 0x74, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72,
+	0x74, 0x65, 0x72, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e,
+	0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74,
+	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
+	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c,
+	0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x22, 0x00,
+	0x12, 0x90, 0x01, 0x0a, 0x15, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74,
+	0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x12, 0x3d, 0x2e, 0x6f, 0x63, 0x74,
+	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
+	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73,
+	0x74, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74,
+	0x65, 0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65,
 	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
-	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73,
-	0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x13, 0x55,
-	0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66,
-	0x69, 0x67, 0x12, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
-	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66,
-	0x69, 0x67, 0x1a, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
-	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x43, 0x6f, 0x6e, 0x66,
-	0x69, 0x67, 0x22, 0x00, 0x12, 0x83, 0x01, 0x0a, 0x17, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43,
-	0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72,
+	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c,
+	0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x4c, 0x69, 0x73,
+	0x74, 0x22, 0x00, 0x12, 0x83, 0x01, 0x0a, 0x17, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x6f,
+	0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x12,
+	0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72,
+	0x74, 0x65, 0x72, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45,
+	0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x17, 0x44, 0x65, 0x6c,
+	0x65, 0x74, 0x65, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f,
+	0x72, 0x74, 0x65, 0x72, 0x12, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31,
+	0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2a,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70, 0x65, 0x72, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0x67, 0x0a, 0x0e,
+	0x47, 0x65, 0x74, 0x44, 0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x25,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70,
+	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76, 0x69,
+	0x64, 0x65, 0x72, 0x22, 0x00, 0x12, 0x7e, 0x0a, 0x0f, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x4e, 0x53,
+	0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44,
+	0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e,
+	0x73, 0x1a, 0x30, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x44, 0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x4c,
+	0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x11, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x44,
+	0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x2c, 0x2e, 0x6f, 0x63, 0x74,
+	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
+	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x4e, 0x53,
+	0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x4e, 0x53, 0x50, 0x72,
+	0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x22, 0x00, 0x12, 0x67, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x43,
+	0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74,
+	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d,
+	0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e,
+	0x73, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x22,
+	0x00, 0x12, 0x71, 0x0a, 0x11, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x65, 0x72, 0x74, 0x69,
+	0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69,
+	0x63, 0x61, 0x74, 0x65, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
+	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61,
+	0x74, 0x65, 0x22, 0x00, 0x12, 0x7e, 0x0a, 0x0f, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x65, 0x72, 0x74,
+	0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x65,
+	0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73,
+	0x1a, 0x30, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x4c, 0x69,
+	0x73, 0x74, 0x22, 0x00, 0x12, 0x89, 0x01, 0x0a, 0x10, 0x49, 0x73, 0x73, 0x75, 0x65, 0x43, 0x65,
+	0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x38, 0x2e, 0x6f, 0x63, 0x74, 0x65,
+	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
+	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x73, 0x73, 0x75,
+	0x65, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x39, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x73, 0x73, 0x75, 0x65, 0x43, 0x65, 0x72, 0x74, 0x69,
+	0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
+	0x12, 0x83, 0x01, 0x0a, 0x0e, 0x53, 0x65, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63,
+	0x61, 0x74, 0x65, 0x12, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69,
+	0x63, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x37, 0x2e, 0x6f, 0x63,
+	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
+	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65,
+	0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x73, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x43, 0x65, 0x72,
+	0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x12, 0x25,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70,
+	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63,
+	0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x22, 0x00, 0x12, 0x90, 0x01, 0x0a, 0x15,
+	0x4c, 0x69, 0x73, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49,
+	0x73, 0x73, 0x75, 0x65, 0x72, 0x12, 0x3d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x65, 0x72, 0x74,
+	0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x4f, 0x70, 0x74,
+	0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
+	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61,
+	0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x83,
+	0x01, 0x0a, 0x17, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69,
+	0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74,
+	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
+	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72,
+	0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x1a, 0x32,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75,
+	0x65, 0x72, 0x22, 0x00, 0x12, 0x83, 0x01, 0x0a, 0x17, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x44,
+	0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72,
 	0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
 	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f,
-	0x72, 0x74, 0x65, 0x72, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76,
+	0x69, 0x64, 0x65, 0x72, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
 	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72,
-	0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x22, 0x00, 0x12, 0x73, 0x0a, 0x14, 0x47, 0x65,
-	0x74, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74,
+	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79,
+	0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x22, 0x00, 0x12, 0x73, 0x0a, 0x14, 0x47, 0x65,
+	0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64,
 	0x65, 0x72, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
 	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47,
 	0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65,
 	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
-	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c,
-	0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x22, 0x00, 0x12,
-	0x90, 0x01, 0x0a, 0x15, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f,
-	0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x12, 0x3d, 0x2e, 0x6f, 0x63, 0x74, 0x65,
+	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65,
+	0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x22, 0x00, 0x12,
+	0x90, 0x01, 0x0a, 0x15, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72,
+	0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x3d, 0x2e, 0x6f, 0x63, 0x74, 0x65,
 	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
 	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74,
-	0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65,
+	0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65,
 	0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
 	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
-	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65,
-	0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74,
-	0x22, 0x00, 0x12, 0x83, 0x01, 0x0a, 0x17, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6c,
-	0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x12, 0x32,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63,
+	0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74,
+	0x22, 0x00, 0x12, 0x83, 0x01, 0x0a, 0x17, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72,
+	0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x32,
 	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
 	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74,
+	0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64,
 	0x65, 0x72, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
 	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78,
-	0x70, 0x6f, 0x72, 0x74, 0x65, 0x72, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x17, 0x44, 0x65, 0x6c, 0x65,
-	0x74, 0x65, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x45, 0x78, 0x70, 0x6f, 0x72,
-	0x74, 0x65, 0x72, 0x12, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72,
+	0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x17, 0x44, 0x65, 0x6c, 0x65,
+	0x74, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69,
+	0x64, 0x65, 0x72, 0x12, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
 	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e,
 	0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2a, 0x2e,
 	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
 	0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0x67, 0x0a, 0x0e, 0x47,
-	0x65, 0x74, 0x44, 0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x25, 0x2e,
-	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
-	0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74,
-	0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64,
-	0x65, 0x72, 0x22, 0x00, 0x12, 0x7e, 0x0a, 0x0f, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x4e, 0x53, 0x50,
-	0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
-	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
-	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x4e,
-	0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73,
-	0x1a, 0x30, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0xc2, 0x01, 0x0a, 0x23,
+	0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72,
+	0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x43, 0x72, 0x65, 0x64, 0x65, 0x6e, 0x74,
+	0x69, 0x61, 0x6c, 0x12, 0x4b, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x44, 0x69,
+	0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x43,
+	0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x4c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
 	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x44, 0x4e, 0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x4c, 0x69,
-	0x73, 0x74, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x11, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x44, 0x4e,
-	0x53, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65,
-	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
-	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x4e, 0x53, 0x50,
-	0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
-	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
-	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x4e, 0x53, 0x50, 0x72, 0x6f,
-	0x76, 0x69, 0x64, 0x65, 0x72, 0x22, 0x00, 0x12, 0x67, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x43, 0x65,
-	0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65,
-	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65,
-	0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73,
-	0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
-	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x22, 0x00,
-	0x12, 0x71, 0x0a, 0x11, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66,
-	0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
-	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63,
-	0x61, 0x74, 0x65, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
-	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
-	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74,
-	0x65, 0x22, 0x00, 0x12, 0x7e, 0x0a, 0x0f, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69,
-	0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
-	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
-	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x65, 0x72,
-	0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a,
-	0x30, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x4c, 0x69, 0x73,
-	0x74, 0x22, 0x00, 0x12, 0x89, 0x01, 0x0a, 0x10, 0x49, 0x73, 0x73, 0x75, 0x65, 0x43, 0x65, 0x72,
-	0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x12, 0x38, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
-	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
-	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x73, 0x73, 0x75, 0x65,
-	0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x39, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
-	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x73, 0x73, 0x75, 0x65, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66,
-	0x69, 0x63, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12,
-	0x83, 0x01, 0x0a, 0x0e, 0x53, 0x65, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61,
-	0x74, 0x65, 0x12, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
-	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63,
-	0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x37, 0x2e, 0x6f, 0x63, 0x74,
-	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
-	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74,
-	0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x73, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x43, 0x65, 0x72, 0x74,
-	0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x12, 0x25, 0x2e,
-	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
-	0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74,
-	0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61,
-	0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x22, 0x00, 0x12, 0x90, 0x01, 0x0a, 0x15, 0x4c,
-	0x69, 0x73, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73,
-	0x73, 0x75, 0x65, 0x72, 0x12, 0x3d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x43, 0x65, 0x72, 0x74, 0x69,
-	0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x4f, 0x70, 0x74, 0x69,
-	0x6f, 0x6e, 0x73, 0x1a, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
-	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
-	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74,
-	0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x83, 0x01,
-	0x0a, 0x17, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63,
-	0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65,
-	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
-	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x65, 0x72, 0x74,
-	0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65, 0x72, 0x1a, 0x32, 0x2e,
-	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
-	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x43, 0x65, 0x72, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x65, 0x49, 0x73, 0x73, 0x75, 0x65,
-	0x72, 0x22, 0x00, 0x12, 0x83, 0x01, 0x0a, 0x17, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x44, 0x69,
-	0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12,
-	0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69,
-	0x64, 0x65, 0x72, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
-	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
-	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50,
-	0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x22, 0x00, 0x12, 0x73, 0x0a, 0x14, 0x47, 0x65, 0x74,
-	0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65,
-	0x72, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
-	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65,
-	0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
-	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
-	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63,
-	0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x22, 0x00, 0x12, 0x90,
-	0x01, 0x0a, 0x15, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79,
-	0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x3d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
-	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
-	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44,
-	0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72,
-	0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
-	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
-	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74,
-	0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22,
-	0x00, 0x12, 0x83, 0x01, 0x0a, 0x17, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72, 0x65,
-	0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x12, 0x32, 0x2e,
-	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
-	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65,
-	0x72, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x76, 0x31, 0x2e, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63,
+	0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x43, 0x72, 0x65, 0x64,
+	0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
+	0x12, 0x9c, 0x01, 0x0a, 0x19, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f,
+	0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x55, 0x73, 0x65, 0x72, 0x12, 0x41,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72,
+	0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e,
+	0x73, 0x1a, 0x3a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
 	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
 	0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f,
-	0x76, 0x69, 0x64, 0x65, 0x72, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x17, 0x44, 0x65, 0x6c, 0x65, 0x74,
+	0x76, 0x69, 0x64, 0x65, 0x72, 0x55, 0x73, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12,
+	0x9f, 0x01, 0x0a, 0x1a, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72,
+	0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x12, 0x42,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72,
+	0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x4f, 0x70, 0x74, 0x69, 0x6f,
+	0x6e, 0x73, 0x1a, 0x3b, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72,
+	0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x4c, 0x69, 0x73, 0x74, 0x22,
+	0x00, 0x12, 0xad, 0x01, 0x0a, 0x1c, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a,
 	0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64,
-	0x65, 0x72, 0x12, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
-	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x44,
-	0x65, 0x6c, 0x65, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2a, 0x2e, 0x6f,
-	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
-	0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0xc2, 0x01, 0x0a, 0x23, 0x47,
-	0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79,
-	0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x43, 0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69,
-	0x61, 0x6c, 0x12, 0x4b, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x65, 0x72, 0x12, 0x44, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
 	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72,
-	0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x43, 0x72,
-	0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x4c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74,
-	0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x43, 0x72, 0x65, 0x64, 0x65,
-	0x6e, 0x74, 0x69, 0x61, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12,
-	0x9c, 0x01, 0x0a, 0x19, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72,
-	0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x55, 0x73, 0x65, 0x72, 0x12, 0x41, 0x2e,
-	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
-	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f,
-	0x76, 0x69, 0x64, 0x65, 0x72, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73,
-	0x1a, 0x3a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
-	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76,
-	0x69, 0x64, 0x65, 0x72, 0x55, 0x73, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x9f,
-	0x01, 0x0a, 0x1a, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79,
-	0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x12, 0x42, 0x2e,
-	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
-	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x4c, 0x69, 0x73, 0x74, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f,
-	0x76, 0x69, 0x64, 0x65, 0x72, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e,
-	0x73, 0x1a, 0x3b, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
-	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
-	0x2e, 0x76, 0x31, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f,
-	0x76, 0x69, 0x64, 0x65, 0x72, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00,
-	0x12, 0xad, 0x01, 0x0a, 0x1c, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65,
 	0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65,
-	0x72, 0x12, 0x44, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x45, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68,
+	0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50,
+	0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
+	0x00, 0x12, 0x62, 0x0a, 0x0c, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65,
+	0x74, 0x12, 0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
 	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
-	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x44,
-	0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x72,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x45, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
-	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
-	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72,
-	0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x79, 0x50, 0x72,
-	0x6f, 0x76, 0x69, 0x64, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
-	0x12, 0x62, 0x0a, 0x0c, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74,
-	0x12, 0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
-	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x1a, 0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65,
-	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
-	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72,
-	0x65, 0x74, 0x22, 0x00, 0x12, 0x6f, 0x0a, 0x0a, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x65, 0x63, 0x72,
-	0x65, 0x74, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
-	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x4f,
-	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2b, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
-	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
-	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x4c,
-	0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x66, 0x0a, 0x0c, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x53,
-	0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76,
-	0x31, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a,
-	0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70, 0x65, 0x72,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0x5d, 0x0a,
-	0x09, 0x47, 0x65, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74,
-	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d,
-	0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e,
-	0x73, 0x1a, 0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
-	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
-	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x22, 0x00, 0x12, 0x62, 0x0a, 0x0c,
-	0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x27, 0x2e, 0x6f,
-	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
-	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53,
-	0x65, 0x63, 0x72, 0x65, 0x74, 0x1a, 0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
-	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x22, 0x00,
-	0x12, 0x67, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f,
-	0x72, 0x65, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
-	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47,
-	0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65,
-	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
-	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72,
-	0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x22, 0x00, 0x12, 0x7e, 0x0a, 0x0f, 0x4c, 0x69, 0x73,
-	0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x12, 0x37, 0x2e, 0x6f,
-	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
-	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c,
-	0x69, 0x73, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x4f, 0x70,
-	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x30, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
-	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74,
-	0x6f, 0x72, 0x65, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x11, 0x55, 0x70, 0x64,
-	0x61, 0x74, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x12, 0x2c,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x1a, 0x2c, 0x2e, 0x6f,
-	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
-	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53,
-	0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x22, 0x00, 0x12, 0x9b, 0x01, 0x0a,
-	0x16, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x53, 0x65, 0x63, 0x72,
-	0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x12, 0x3e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
-	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
-	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72,
-	0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x3f, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
-	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
-	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72,
-	0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x13, 0x43, 0x72,
-	0x65, 0x61, 0x74, 0x65, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65,
-	0x72, 0x12, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
-	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
-	0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65,
-	0x72, 0x1a, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
-	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
-	0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65,
-	0x72, 0x22, 0x00, 0x12, 0x6b, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65,
-	0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
-	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61,
-	0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2e,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x22, 0x00,
-	0x12, 0x84, 0x01, 0x0a, 0x11, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d,
-	0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x12, 0x39, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
-	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
-	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x65, 0x76,
-	0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e,
-	0x73, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
-	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
-	0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65,
-	0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x13, 0x55, 0x70, 0x64, 0x61, 0x74,
-	0x65, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x12, 0x2e,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x1a, 0x2e,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x22, 0x00,
-	0x12, 0x6d, 0x0a, 0x13, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65,
-	0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x12, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
-	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61,
-	0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e,
-	0x73, 0x1a, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
-	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70,
-	0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12,
-	0x7e, 0x0a, 0x12, 0x52, 0x65, 0x73, 0x65, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x42, 0x69,
-	0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x3a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
-	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x73, 0x65, 0x74, 0x44, 0x65, 0x76,
-	0x69, 0x63, 0x65, 0x42, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
-	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70,
-	0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12,
-	0x66, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x43, 0x6f, 0x72, 0x65, 0x43, 0x6f, 0x6e, 0x64, 0x69, 0x74,
-	0x69, 0x6f, 0x6e, 0x12, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
-	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
-	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x1a,
-	0x24, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x63, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e, 0x64,
-	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x00, 0x32, 0x94, 0x01, 0x0a, 0x13, 0x50, 0x6f, 0x6c, 0x69,
-	0x63, 0x79, 0x50, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12,
-	0x7d, 0x0a, 0x0c, 0x49, 0x73, 0x41, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x65, 0x64, 0x12,
-	0x34, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
-	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x2e, 0x49, 0x73, 0x41, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x65, 0x64, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x35, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
-	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x73, 0x41, 0x75, 0x74, 0x68, 0x6f, 0x72,
-	0x69, 0x7a, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x32, 0x8d,
-	0x06, 0x0a, 0x0e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63,
-	0x65, 0x12, 0x83, 0x01, 0x0a, 0x0e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75,
-	0x73, 0x74, 0x65, 0x72, 0x12, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c,
-	0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x37, 0x2e, 0x6f,
-	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
-	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x55,
-	0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x7a, 0x0a, 0x0b, 0x4a, 0x6f, 0x69, 0x6e, 0x43,
-	0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x12, 0x33, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
-	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
-	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4a, 0x6f, 0x69, 0x6e, 0x43, 0x6c, 0x75,
-	0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x34, 0x2e, 0x6f, 0x63,
-	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
-	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4a, 0x6f,
-	0x69, 0x6e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x12, 0x83, 0x01, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74,
-	0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
-	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
-	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73,
-	0x74, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x37,
-	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
-	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x0a, 0x53, 0x65, 0x74,
-	0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
-	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
-	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x4c, 0x69, 0x63,
-	0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x33, 0x2e, 0x6f, 0x63,
-	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
-	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65,
-	0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x22, 0x00, 0x12, 0x77, 0x0a, 0x0a, 0x47, 0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65,
-	0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
-	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
-	0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x33, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73,
-	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x80, 0x01, 0x0a, 0x0d,
-	0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x12, 0x35, 0x2e,
-	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
-	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4c, 0x69, 0x63,
-	0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x32, 0xf7,
-	0x02, 0x0a, 0x0c, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12,
-	0x66, 0x0a, 0x08, 0x47, 0x65, 0x74, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x12, 0x30, 0x2e, 0x6f, 0x63,
-	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
-	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65,
-	0x74, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e,
-	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
-	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
-	0x41, 0x67, 0x65, 0x6e, 0x74, 0x22, 0x00, 0x12, 0x74, 0x0a, 0x0f, 0x49, 0x6e, 0x69, 0x74, 0x69,
-	0x61, 0x6c, 0x69, 0x7a, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x12, 0x37, 0x2e, 0x6f, 0x63, 0x74,
+	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x1a, 0x27, 0x2e, 0x6f, 0x63, 0x74,
 	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
-	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6e, 0x69,
-	0x74, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63,
+	0x72, 0x65, 0x74, 0x22, 0x00, 0x12, 0x6f, 0x0a, 0x0a, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x65, 0x63,
+	0x72, 0x65, 0x74, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
 	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
-	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x22, 0x00, 0x12, 0x88, 0x01,
-	0x0a, 0x14, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x57, 0x6f, 0x72,
-	0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x3c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74,
+	0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2b, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74,
+	0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x66, 0x0a, 0x0c, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65,
+	0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e,
+	0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73,
+	0x1a, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x70, 0x65,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0x5d,
+	0x0a, 0x09, 0x47, 0x65, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x25, 0x2e, 0x6f, 0x63,
+	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
+	0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f,
+	0x6e, 0x73, 0x1a, 0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x22, 0x00, 0x12, 0x62, 0x0a,
+	0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x27, 0x2e,
+	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x1a, 0x27, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
 	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
-	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41,
-	0x67, 0x65, 0x6e, 0x74, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x30, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x22,
+	0x00, 0x12, 0x67, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74,
+	0x6f, 0x72, 0x65, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e,
+	0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74,
+	0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65,
+	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63,
+	0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x22, 0x00, 0x12, 0x7e, 0x0a, 0x0f, 0x4c, 0x69,
+	0x73, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x12, 0x37, 0x2e,
+	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x4c, 0x69, 0x73, 0x74, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x4f,
+	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x30, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53,
+	0x74, 0x6f, 0x72, 0x65, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x11, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x12,
+	0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x1a, 0x2c, 0x2e,
+	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x22, 0x00, 0x12, 0x9b, 0x01,
+	0x0a, 0x16, 0x53, 0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x53, 0x65, 0x63,
+	0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x12, 0x3e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68,
+	0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72,
+	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x3f, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x68,
+	0x72, 0x6f, 0x6e, 0x69, 0x7a, 0x65, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x53, 0x74, 0x6f, 0x72,
+	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x13, 0x43,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67,
+	0x65, 0x72, 0x12, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67,
+	0x65, 0x72, 0x1a, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67,
+	0x65, 0x72, 0x22, 0x00, 0x12, 0x6b, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63,
+	0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x12, 0x25, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74,
+	0x61, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a,
+	0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x22,
+	0x00, 0x12, 0x84, 0x01, 0x0a, 0x11, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65,
+	0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x12, 0x39, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x65,
+	0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x4f, 0x70, 0x74, 0x69, 0x6f,
+	0x6e, 0x73, 0x1a, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67,
+	0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x13, 0x55, 0x70, 0x64, 0x61,
+	0x74, 0x65, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x12,
+	0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x1a,
+	0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x22,
+	0x00, 0x12, 0x6d, 0x0a, 0x13, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x44, 0x65, 0x76, 0x69, 0x63,
+	0x65, 0x4d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x12, 0x28, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74,
+	0x61, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4f, 0x70, 0x74, 0x69, 0x6f,
+	0x6e, 0x73, 0x1a, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f,
+	0x70, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00,
+	0x12, 0x7e, 0x0a, 0x12, 0x52, 0x65, 0x73, 0x65, 0x74, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x42,
+	0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x3a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x73, 0x65, 0x74, 0x44, 0x65,
+	0x76, 0x69, 0x63, 0x65, 0x42, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4f,
+	0x70, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00,
+	0x12, 0x66, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x43, 0x6f, 0x72, 0x65, 0x43, 0x6f, 0x6e, 0x64, 0x69,
+	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
 	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
-	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x2e, 0x57, 0x6f, 0x72,
-	0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x22, 0x00, 0x42, 0x35, 0x5a, 0x33, 0x67, 0x69, 0x74, 0x68,
-	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2f,
-	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2f, 0x61, 0x70, 0x69, 0x73, 0x2f, 0x6d, 0x61,
-	0x69, 0x6e, 0x2f, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x76, 0x31, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e, 0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e,
+	0x1a, 0x24, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x63, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e,
+	0x64, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x00, 0x32, 0x94, 0x01, 0x0a, 0x13, 0x50, 0x6f, 0x6c,
+	0x69, 0x63, 0x79, 0x50, 0x6f, 0x72, 0x74, 0x61, 0x6c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x12, 0x7d, 0x0a, 0x0c, 0x49, 0x73, 0x41, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x65, 0x64,
+	0x12, 0x34, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x49, 0x73, 0x41, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x65, 0x64, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x35, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x73, 0x41, 0x75, 0x74, 0x68, 0x6f,
+	0x72, 0x69, 0x7a, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x32,
+	0x8d, 0x06, 0x0a, 0x0e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69,
+	0x63, 0x65, 0x12, 0x83, 0x01, 0x0a, 0x0e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c,
+	0x75, 0x73, 0x74, 0x65, 0x72, 0x12, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43,
+	0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x37, 0x2e,
+	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x7a, 0x0a, 0x0b, 0x4a, 0x6f, 0x69, 0x6e,
+	0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x12, 0x33, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4a, 0x6f, 0x69, 0x6e, 0x43, 0x6c,
+	0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x34, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x4a,
+	0x6f, 0x69, 0x6e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x22, 0x00, 0x12, 0x83, 0x01, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73,
+	0x74, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75,
+	0x73, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x37, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x0a, 0x53, 0x65,
+	0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c,
+	0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74,
+	0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x4c, 0x69,
+	0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x33, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53,
+	0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x0a, 0x47, 0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73,
+	0x65, 0x12, 0x32, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x33, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4c, 0x69, 0x63, 0x65, 0x6e,
+	0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x80, 0x01, 0x0a,
+	0x0d, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x12, 0x35,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x36, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x4c, 0x69,
+	0x63, 0x65, 0x6e, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x32,
+	0xf7, 0x02, 0x0a, 0x0c, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x12, 0x66, 0x0a, 0x08, 0x47, 0x65, 0x74, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x12, 0x30, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47,
+	0x65, 0x74, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x22, 0x00, 0x12, 0x74, 0x0a, 0x0f, 0x49, 0x6e, 0x69, 0x74,
+	0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x12, 0x37, 0x2e, 0x6f, 0x63,
+	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
+	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6e,
+	0x69, 0x74, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
+	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x22, 0x00, 0x12, 0x88,
+	0x01, 0x0a, 0x14, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x57, 0x6f,
+	0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x3c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65,
+	0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
+	0x41, 0x67, 0x65, 0x6e, 0x74, 0x57, 0x6f, 0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x30, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x2e, 0x57, 0x6f,
+	0x72, 0x6b, 0x73, 0x70, 0x61, 0x63, 0x65, 0x22, 0x00, 0x32, 0xc8, 0x0b, 0x0a, 0x0e, 0x53, 0x75,
+	0x70, 0x70, 0x6f, 0x72, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x78, 0x0a, 0x0e,
+	0x47, 0x65, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x36,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x47, 0x65, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74,
+	0x49, 0x6e, 0x66, 0x6f, 0x22, 0x00, 0x12, 0x87, 0x01, 0x0a, 0x12, 0x4c, 0x69, 0x73, 0x74, 0x53,
+	0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x3a, 0x2e,
+	0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69,
+	0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e,
+	0x4c, 0x69, 0x73, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x33, 0x2e, 0x6f, 0x63, 0x74, 0x65,
+	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
+	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70,
+	0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00,
+	0x12, 0x81, 0x01, 0x0a, 0x11, 0x47, 0x65, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x39, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x53, 0x75, 0x70, 0x70,
+	0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x2f, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x22, 0x00, 0x12, 0x96, 0x01, 0x0a, 0x17, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x75, 0x70,
+	0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74,
+	0x12, 0x3f, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e,
+	0x73, 0x1a, 0x38, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x87, 0x01,
+	0x0a, 0x14, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x3c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x53,
+	0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x2f, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
+	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x00, 0x12, 0x8f, 0x01, 0x0a, 0x18, 0x41, 0x64, 0x64, 0x53,
+	0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73,
+	0x73, 0x61, 0x67, 0x65, 0x12, 0x40, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72,
+	0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x64, 0x64, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72,
+	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2f, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x00, 0x12, 0xa0, 0x01, 0x0a, 0x1b, 0x41, 0x64,
+	0x64, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x41,
+	0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x43, 0x2e, 0x6f, 0x63, 0x74, 0x65,
+	0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e,
+	0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x64, 0x64, 0x53,
+	0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x41, 0x74, 0x74,
+	0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x3a,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e,
+	0x41, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x22, 0x00, 0x12, 0x89, 0x01, 0x0a,
+	0x15, 0x52, 0x65, 0x73, 0x6f, 0x6c, 0x76, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x3d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
+	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72,
+	0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x73, 0x6f, 0x6c, 0x76, 0x65,
+	0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2f, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x00, 0x12, 0x8b, 0x01, 0x0a, 0x16, 0x45, 0x73, 0x63,
+	0x61, 0x6c, 0x61, 0x74, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x12, 0x3e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x73, 0x63, 0x61, 0x6c, 0x61, 0x74, 0x65, 0x53, 0x75,
+	0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x2f, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x22, 0x00, 0x12, 0xbb, 0x01, 0x0a, 0x20, 0x44, 0x6f, 0x77, 0x6e, 0x6c,
+	0x6f, 0x61, 0x64, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x41, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x48, 0x2e, 0x6f, 0x63,
+	0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e,
+	0x65, 0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x6f,
+	0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x41, 0x74, 0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x49, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d,
+	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x70,
+	0x72, 0x69, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64,
+	0x53, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x41, 0x74,
+	0x74, 0x61, 0x63, 0x68, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x00, 0x30, 0x01, 0x42, 0x35, 0x5a, 0x33, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63,
+	0x6f, 0x6d, 0x2f, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2f, 0x6f, 0x63, 0x74, 0x65,
+	0x6c, 0x69, 0x75, 0x6d, 0x2f, 0x61, 0x70, 0x69, 0x73, 0x2f, 0x6d, 0x61, 0x69, 0x6e, 0x2f, 0x65,
+	0x6e, 0x74, 0x65, 0x72, 0x70, 0x72, 0x69, 0x73, 0x65, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -33771,8 +36837,8 @@ func file_enterprisev1_proto_rawDescGZIP() []byte {
 	return file_enterprisev1_proto_rawDescData
 }
 
-var file_enterprisev1_proto_enumTypes = make([]protoimpl.EnumInfo, 40)
-var file_enterprisev1_proto_msgTypes = make([]protoimpl.MessageInfo, 370)
+var file_enterprisev1_proto_enumTypes = make([]protoimpl.EnumInfo, 49)
+var file_enterprisev1_proto_msgTypes = make([]protoimpl.MessageInfo, 396)
 var file_enterprisev1_proto_goTypes = []any{
 	(CollectorExporter_Spec_OTLP_Compression)(0),                          // 0: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Compression
 	(CollectorExporter_Spec_OTLPHTTP_Encoding)(0),                         // 1: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Encoding
@@ -33814,1101 +36880,1195 @@ var file_enterprisev1_proto_goTypes = []any{
 	(License_Plan_Support_Type)(0),                                        // 37: octelium.api.main.enterprise.v1.License.Plan.Support.Type
 	(Agent_State)(0),                                                      // 38: octelium.api.main.enterprise.v1.Agent.State
 	(Agent_Workspace_Type)(0),                                             // 39: octelium.api.main.enterprise.v1.Agent.Workspace.Type
-	(*GetClusterConfigRequest)(nil),                                       // 40: octelium.api.main.enterprise.v1.GetClusterConfigRequest
-	(*ListCollectorExporterOptions)(nil),                                  // 41: octelium.api.main.enterprise.v1.ListCollectorExporterOptions
-	(*CollectorExporter)(nil),                                             // 42: octelium.api.main.enterprise.v1.CollectorExporter
-	(*CollectorExporterList)(nil),                                         // 43: octelium.api.main.enterprise.v1.CollectorExporterList
-	(*ClusterConfig)(nil),                                                 // 44: octelium.api.main.enterprise.v1.ClusterConfig
-	(*Secret)(nil),                                                        // 45: octelium.api.main.enterprise.v1.Secret
-	(*SecretList)(nil),                                                    // 46: octelium.api.main.enterprise.v1.SecretList
-	(*ListSecretOptions)(nil),                                             // 47: octelium.api.main.enterprise.v1.ListSecretOptions
-	(*Certificate)(nil),                                                   // 48: octelium.api.main.enterprise.v1.Certificate
-	(*CertificateList)(nil),                                               // 49: octelium.api.main.enterprise.v1.CertificateList
-	(*CertificateIssuer)(nil),                                             // 50: octelium.api.main.enterprise.v1.CertificateIssuer
-	(*CertificateIssuerList)(nil),                                         // 51: octelium.api.main.enterprise.v1.CertificateIssuerList
-	(*DirectoryProvider)(nil),                                             // 52: octelium.api.main.enterprise.v1.DirectoryProvider
-	(*DirectoryProviderList)(nil),                                         // 53: octelium.api.main.enterprise.v1.DirectoryProviderList
-	(*DirectoryProviderUser)(nil),                                         // 54: octelium.api.main.enterprise.v1.DirectoryProviderUser
-	(*DirectoryProviderUserList)(nil),                                     // 55: octelium.api.main.enterprise.v1.DirectoryProviderUserList
-	(*DirectoryProviderGroup)(nil),                                        // 56: octelium.api.main.enterprise.v1.DirectoryProviderGroup
-	(*DirectoryProviderGroupList)(nil),                                    // 57: octelium.api.main.enterprise.v1.DirectoryProviderGroupList
-	(*DNSProvider)(nil),                                                   // 58: octelium.api.main.enterprise.v1.DNSProvider
-	(*DNSProviderList)(nil),                                               // 59: octelium.api.main.enterprise.v1.DNSProviderList
-	(*ListDNSProviderOptions)(nil),                                        // 60: octelium.api.main.enterprise.v1.ListDNSProviderOptions
-	(*ListDirectoryProviderOptions)(nil),                                  // 61: octelium.api.main.enterprise.v1.ListDirectoryProviderOptions
-	(*ListCertificateOptions)(nil),                                        // 62: octelium.api.main.enterprise.v1.ListCertificateOptions
-	(*ListCertificateIssuerOptions)(nil),                                  // 63: octelium.api.main.enterprise.v1.ListCertificateIssuerOptions
-	(*SessionExtInfo)(nil),                                                // 64: octelium.api.main.enterprise.v1.SessionExtInfo
-	(*SecretStore)(nil),                                                   // 65: octelium.api.main.enterprise.v1.SecretStore
-	(*SecretStoreList)(nil),                                               // 66: octelium.api.main.enterprise.v1.SecretStoreList
-	(*GenerateDirectoryProviderCredentialRequest)(nil),                    // 67: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest
-	(*GenerateDirectoryProviderCredentialResponse)(nil),                   // 68: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse
-	(*IssueCertificateRequest)(nil),                                       // 69: octelium.api.main.enterprise.v1.IssueCertificateRequest
-	(*IssueCertificateResponse)(nil),                                      // 70: octelium.api.main.enterprise.v1.IssueCertificateResponse
-	(*SetCertificateRequest)(nil),                                         // 71: octelium.api.main.enterprise.v1.SetCertificateRequest
-	(*SetCertificateResponse)(nil),                                        // 72: octelium.api.main.enterprise.v1.SetCertificateResponse
-	(*AuditLog)(nil),                                                      // 73: octelium.api.main.enterprise.v1.AuditLog
-	(*ListSecretStoreOptions)(nil),                                        // 74: octelium.api.main.enterprise.v1.ListSecretStoreOptions
-	(*DeviceManager)(nil),                                                 // 75: octelium.api.main.enterprise.v1.DeviceManager
-	(*DeviceManagerList)(nil),                                             // 76: octelium.api.main.enterprise.v1.DeviceManagerList
-	(*ListDeviceManagerOptions)(nil),                                      // 77: octelium.api.main.enterprise.v1.ListDeviceManagerOptions
-	(*ResetDeviceBindingRequest)(nil),                                     // 78: octelium.api.main.enterprise.v1.ResetDeviceBindingRequest
-	(*UserExtInfo)(nil),                                                   // 79: octelium.api.main.enterprise.v1.UserExtInfo
-	(*ListDirectoryProviderUserOptions)(nil),                              // 80: octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions
-	(*ListDirectoryProviderGroupOptions)(nil),                             // 81: octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions
-	(*IsAuthorizedRequest)(nil),                                           // 82: octelium.api.main.enterprise.v1.IsAuthorizedRequest
-	(*IsAuthorizedResponse)(nil),                                          // 83: octelium.api.main.enterprise.v1.IsAuthorizedResponse
-	(*Condition)(nil),                                                     // 84: octelium.api.main.enterprise.v1.Condition
-	(*SynchronizeDirectoryProviderRequest)(nil),                           // 85: octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderRequest
-	(*SynchronizeDirectoryProviderResponse)(nil),                          // 86: octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderResponse
-	(*AuthenticationLog)(nil),                                             // 87: octelium.api.main.enterprise.v1.AuthenticationLog
-	(*UpgradeClusterRequest)(nil),                                         // 88: octelium.api.main.enterprise.v1.UpgradeClusterRequest
-	(*UpgradeClusterResponse)(nil),                                        // 89: octelium.api.main.enterprise.v1.UpgradeClusterResponse
-	(*JoinClusterRequest)(nil),                                            // 90: octelium.api.main.enterprise.v1.JoinClusterRequest
-	(*JoinClusterResponse)(nil),                                           // 91: octelium.api.main.enterprise.v1.JoinClusterResponse
-	(*RegionExtInfo)(nil),                                                 // 92: octelium.api.main.enterprise.v1.RegionExtInfo
-	(*SynchronizeSecretStoreRequest)(nil),                                 // 93: octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest
-	(*SynchronizeSecretStoreResponse)(nil),                                // 94: octelium.api.main.enterprise.v1.SynchronizeSecretStoreResponse
-	(*GetClusterInfoRequest)(nil),                                         // 95: octelium.api.main.enterprise.v1.GetClusterInfoRequest
-	(*GetClusterInfoResponse)(nil),                                        // 96: octelium.api.main.enterprise.v1.GetClusterInfoResponse
-	(*License)(nil),                                                       // 97: octelium.api.main.enterprise.v1.License
-	(*SetLicenseRequest)(nil),                                             // 98: octelium.api.main.enterprise.v1.SetLicenseRequest
-	(*SetLicenseResponse)(nil),                                            // 99: octelium.api.main.enterprise.v1.SetLicenseResponse
-	(*GetLicenseRequest)(nil),                                             // 100: octelium.api.main.enterprise.v1.GetLicenseRequest
-	(*GetLicenseResponse)(nil),                                            // 101: octelium.api.main.enterprise.v1.GetLicenseResponse
-	(*DeleteLicenseRequest)(nil),                                          // 102: octelium.api.main.enterprise.v1.DeleteLicenseRequest
-	(*DeleteLicenseResponse)(nil),                                         // 103: octelium.api.main.enterprise.v1.DeleteLicenseResponse
-	(*GetAgentRequest)(nil),                                               // 104: octelium.api.main.enterprise.v1.GetAgentRequest
-	(*InitializeAgentRequest)(nil),                                        // 105: octelium.api.main.enterprise.v1.InitializeAgentRequest
-	(*CreateAgentWorkspaceRequest)(nil),                                   // 106: octelium.api.main.enterprise.v1.CreateAgentWorkspaceRequest
-	(*Agent)(nil),                                                         // 107: octelium.api.main.enterprise.v1.Agent
-	(*CollectorExporter_Spec)(nil),                                        // 108: octelium.api.main.enterprise.v1.CollectorExporter.Spec
-	(*CollectorExporter_Status)(nil),                                      // 109: octelium.api.main.enterprise.v1.CollectorExporter.Status
-	(*CollectorExporter_Spec_OTLP)(nil),                                   // 110: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP
-	(*CollectorExporter_Spec_OTLPHTTP)(nil),                               // 111: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP
-	(*CollectorExporter_Spec_PrometheusRemoteWrite)(nil),                  // 112: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite
-	(*CollectorExporter_Spec_Clickhouse)(nil),                             // 113: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse
-	(*CollectorExporter_Spec_Elasticsearch)(nil),                          // 114: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch
-	(*CollectorExporter_Spec_Logzio)(nil),                                 // 115: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio
-	(*CollectorExporter_Spec_InfluxDB)(nil),                               // 116: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB
-	(*CollectorExporter_Spec_Kafka)(nil),                                  // 117: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka
-	(*CollectorExporter_Spec_Datadog)(nil),                                // 118: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog
-	(*CollectorExporter_Spec_Splunk)(nil),                                 // 119: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk
-	(*CollectorExporter_Spec_AzureMonitor)(nil),                           // 120: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor
-	(*CollectorExporter_Spec_AzureDataExplorer)(nil),                      // 121: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer
-	(*CollectorExporter_Spec_OTLP_Header)(nil),                            // 122: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Header
-	(*CollectorExporter_Spec_OTLP_Auth)(nil),                              // 123: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth
-	(*CollectorExporter_Spec_OTLP_TLS)(nil),                               // 124: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.TLS
-	(*CollectorExporter_Spec_OTLP_Keepalive)(nil),                         // 125: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive
-	(*CollectorExporter_Spec_OTLP_Auth_Bearer)(nil),                       // 126: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Bearer
-	(*CollectorExporter_Spec_OTLP_Auth_Basic)(nil),                        // 127: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic
-	(*CollectorExporter_Spec_OTLP_Auth_Custom)(nil),                       // 128: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom
-	(*CollectorExporter_Spec_OTLP_Auth_Basic_Password)(nil),               // 129: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic.Password
-	(*CollectorExporter_Spec_OTLP_Auth_Custom_Value)(nil),                 // 130: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom.Value
-	(*CollectorExporter_Spec_OTLPHTTP_Header)(nil),                        // 131: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header
-	(*CollectorExporter_Spec_OTLPHTTP_Auth)(nil),                          // 132: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth
-	(*CollectorExporter_Spec_OTLPHTTP_TLS)(nil),                           // 133: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS
-	(*CollectorExporter_Spec_OTLPHTTP_Auth_Bearer)(nil),                   // 134: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Bearer
-	(*CollectorExporter_Spec_OTLPHTTP_Auth_Basic)(nil),                    // 135: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic
-	(*CollectorExporter_Spec_OTLPHTTP_Auth_Custom)(nil),                   // 136: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom
-	(*CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password)(nil),           // 137: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic.Password
-	(*CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value)(nil),             // 138: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom.Value
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_Header)(nil),           // 139: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel)(nil),    // 140: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth)(nil),             // 141: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_TLS)(nil),              // 142: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue)(nil), // 143: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion)(nil), // 144: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo)(nil),                    // 145: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer)(nil),                   // 146: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Bearer
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic)(nil),                    // 147: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom)(nil),                   // 148: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password)(nil),           // 149: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.Password
-	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value)(nil),             // 150: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom.Value
-	(*CollectorExporter_Spec_Clickhouse_Password)(nil),                                 // 151: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Password
-	(*CollectorExporter_Spec_Clickhouse_TLS)(nil),                                      // 152: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS
-	(*CollectorExporter_Spec_Clickhouse_ConnectionParam)(nil),                          // 153: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam
-	(*CollectorExporter_Spec_Clickhouse_TableEngine)(nil),                              // 154: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine
-	(*CollectorExporter_Spec_Clickhouse_MetricsTables)(nil),                            // 155: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables
-	(*CollectorExporter_Spec_Elasticsearch_Header)(nil),                                // 156: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header
-	(*CollectorExporter_Spec_Elasticsearch_Auth)(nil),                                  // 157: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth
-	(*CollectorExporter_Spec_Elasticsearch_TLS)(nil),                                   // 158: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS
-	(*CollectorExporter_Spec_Elasticsearch_Auth_APIKey)(nil),                           // 159: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.APIKey
-	(*CollectorExporter_Spec_Elasticsearch_Auth_Basic)(nil),                            // 160: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic
-	(*CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password)(nil),                   // 161: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic.Password
-	(*CollectorExporter_Spec_Logzio_Token)(nil),                                        // 162: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.Token
-	(*CollectorExporter_Spec_InfluxDB_Header)(nil),                                     // 163: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header
-	(*CollectorExporter_Spec_InfluxDB_Token)(nil),                                      // 164: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Token
-	(*CollectorExporter_Spec_InfluxDB_V1Compatibility)(nil),                            // 165: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility
-	(*CollectorExporter_Spec_InfluxDB_V1Compatibility_Password)(nil),                   // 166: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password
-	(*CollectorExporter_Spec_Kafka_Header)(nil),                                        // 167: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header
-	(*CollectorExporter_Spec_Kafka_Auth)(nil),                                          // 168: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth
-	(*CollectorExporter_Spec_Kafka_TLS)(nil),                                           // 169: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS
-	(*CollectorExporter_Spec_Kafka_Signal)(nil),                                        // 170: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal
-	(*CollectorExporter_Spec_Kafka_Producer)(nil),                                      // 171: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer
-	(*CollectorExporter_Spec_Kafka_Auth_SASL)(nil),                                     // 172: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL
-	(*CollectorExporter_Spec_Kafka_Auth_SASL_Password)(nil),                            // 173: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password
-	(*CollectorExporter_Spec_Datadog_APIKey)(nil),                                      // 174: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey
-	(*CollectorExporter_Spec_Datadog_API)(nil),                                         // 175: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API
-	(*CollectorExporter_Spec_Datadog_Metrics)(nil),                                     // 176: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics
-	(*CollectorExporter_Spec_Datadog_Logs)(nil),                                        // 177: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs
-	(*CollectorExporter_Spec_Datadog_HostMetadata)(nil),                                // 178: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata
-	(*CollectorExporter_Spec_Splunk_Token)(nil),                                        // 179: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.Token
-	(*CollectorExporter_Spec_Splunk_TLS)(nil),                                          // 180: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.TLS
-	(*CollectorExporter_Spec_AzureMonitor_ConnectionString)(nil),                       // 181: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString
-	(*CollectorExporter_Spec_AzureMonitor_InstrumentationKey)(nil),                     // 182: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey
-	(*CollectorExporter_Spec_AzureDataExplorer_ApplicationKey)(nil),                    // 183: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey
-	(*CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal)(nil),                  // 184: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal
-	(*CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity)(nil),                   // 185: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity
-	(*CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth)(nil),                  // 186: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth
-	(*CollectorExporter_Spec_AzureDataExplorer_Auth)(nil),                              // 187: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth
-	(*ClusterConfig_Spec)(nil),                                                         // 188: octelium.api.main.enterprise.v1.ClusterConfig.Spec
-	(*ClusterConfig_Status)(nil),                                                       // 189: octelium.api.main.enterprise.v1.ClusterConfig.Status
-	(*ClusterConfig_Spec_Collector)(nil),                                               // 190: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector
-	(*ClusterConfig_Spec_Scaler)(nil),                                                  // 191: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler
-	(*ClusterConfig_Spec_Certificate)(nil),                                             // 192: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate
-	(*ClusterConfig_Spec_Agent)(nil),                                                   // 193: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent
-	(*ClusterConfig_Spec_Collector_Pipeline)(nil),                                      // 194: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.Pipeline
-	(*ClusterConfig_Spec_Scaler_Octovigil)(nil),                                        // 195: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Octovigil
-	(*ClusterConfig_Spec_Scaler_Ingress)(nil),                                          // 196: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Ingress
-	(*ClusterConfig_Spec_Scaler_Collector)(nil),                                        // 197: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Collector
-	(*ClusterConfig_Spec_Agent_LLM)(nil),                                               // 198: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.LLM
-	(*ClusterConfig_Status_UpgradeRequest)(nil),                                        // 199: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest
-	(*ClusterConfig_Status_JoinRequest)(nil),                                           // 200: octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest
-	(*ClusterConfig_Status_LicenseInfo)(nil),                                           // 201: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo
-	(*ClusterConfig_Status_UpgradeRequest_Region)(nil),                                 // 202: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region
-	(*Secret_Spec)(nil),                                                             // 203: octelium.api.main.enterprise.v1.Secret.Spec
-	(*Secret_Status)(nil),                                                           // 204: octelium.api.main.enterprise.v1.Secret.Status
-	(*Secret_Data)(nil),                                                             // 205: octelium.api.main.enterprise.v1.Secret.Data
-	(*Secret_Spec_Data)(nil),                                                        // 206: octelium.api.main.enterprise.v1.Secret.Spec.Data
-	nil,                                                                             // 207: octelium.api.main.enterprise.v1.Secret.Status.ExtEntry
-	(*Secret_Data_DataMap)(nil),                                                     // 208: octelium.api.main.enterprise.v1.Secret.Data.DataMap
-	nil,                                                                             // 209: octelium.api.main.enterprise.v1.Secret.Data.DataMap.MapEntry
-	(*Certificate_Spec)(nil),                                                        // 210: octelium.api.main.enterprise.v1.Certificate.Spec
-	(*Certificate_Status)(nil),                                                      // 211: octelium.api.main.enterprise.v1.Certificate.Status
-	(*Certificate_Status_Issuance)(nil),                                             // 212: octelium.api.main.enterprise.v1.Certificate.Status.Issuance
-	(*Certificate_Status_Info)(nil),                                                 // 213: octelium.api.main.enterprise.v1.Certificate.Status.Info
-	(*CertificateIssuer_Spec)(nil),                                                  // 214: octelium.api.main.enterprise.v1.CertificateIssuer.Spec
-	(*CertificateIssuer_Status)(nil),                                                // 215: octelium.api.main.enterprise.v1.CertificateIssuer.Status
-	(*CertificateIssuer_Spec_ACME)(nil),                                             // 216: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME
-	(*CertificateIssuer_Spec_ACME_Solver)(nil),                                      // 217: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver
-	(*CertificateIssuer_Spec_ACME_Solver_DNS)(nil),                                  // 218: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver.DNS
-	(*CertificateIssuer_Status_ACME)(nil),                                           // 219: octelium.api.main.enterprise.v1.CertificateIssuer.Status.ACME
-	(*DirectoryProvider_Spec)(nil),                                                  // 220: octelium.api.main.enterprise.v1.DirectoryProvider.Spec
-	(*DirectoryProvider_Status)(nil),                                                // 221: octelium.api.main.enterprise.v1.DirectoryProvider.Status
-	(*DirectoryProvider_Spec_SCIM)(nil),                                             // 222: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.SCIM
-	(*DirectoryProvider_Spec_GoogleWorkspace)(nil),                                  // 223: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace
-	(*DirectoryProvider_Spec_Keycloak)(nil),                                         // 224: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak
-	(*DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount)(nil),                   // 225: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount
-	(*DirectoryProvider_Spec_GoogleWorkspace_Polling)(nil),                          // 226: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling
-	(*DirectoryProvider_Spec_Keycloak_ClientSecret)(nil),                            // 227: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret
-	(*DirectoryProvider_Spec_Keycloak_Polling)(nil),                                 // 228: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling
-	(*DirectoryProvider_Status_Synchronization)(nil),                                // 229: octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization
-	(*DirectoryProviderUser_Spec)(nil),                                              // 230: octelium.api.main.enterprise.v1.DirectoryProviderUser.Spec
-	(*DirectoryProviderUser_Status)(nil),                                            // 231: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status
-	(*DirectoryProviderGroup_Spec)(nil),                                             // 232: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Spec
-	(*DirectoryProviderGroup_Status)(nil),                                           // 233: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status
-	(*DNSProvider_Spec)(nil),                                                        // 234: octelium.api.main.enterprise.v1.DNSProvider.Spec
-	(*DNSProvider_Status)(nil),                                                      // 235: octelium.api.main.enterprise.v1.DNSProvider.Status
-	(*DNSProvider_Spec_Cloudflare)(nil),                                             // 236: octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare
-	(*DNSProvider_Spec_AWS)(nil),                                                    // 237: octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS
-	(*DNSProvider_Spec_DigitalOcean)(nil),                                           // 238: octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean
-	(*DNSProvider_Spec_Google)(nil),                                                 // 239: octelium.api.main.enterprise.v1.DNSProvider.Spec.Google
-	(*DNSProvider_Spec_Azure)(nil),                                                  // 240: octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure
-	(*DNSProvider_Spec_Linode)(nil),                                                 // 241: octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode
-	(*DNSProvider_Spec_OVH)(nil),                                                    // 242: octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH
-	(*DNSProvider_Spec_Cloudflare_APIToken)(nil),                                    // 243: octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.APIToken
-	(*DNSProvider_Spec_AWS_SecretAccessKey)(nil),                                    // 244: octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.SecretAccessKey
-	(*DNSProvider_Spec_DigitalOcean_APIToken)(nil),                                  // 245: octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.APIToken
-	(*DNSProvider_Spec_Google_ServiceAccount)(nil),                                  // 246: octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.ServiceAccount
-	(*DNSProvider_Spec_Azure_ClientSecret)(nil),                                     // 247: octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.ClientSecret
-	(*DNSProvider_Spec_Linode_APIToken)(nil),                                        // 248: octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.APIToken
-	(*DNSProvider_Spec_OVH_ApplicationSecret)(nil),                                  // 249: octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.ApplicationSecret
-	(*SecretStore_Spec)(nil),                                                        // 250: octelium.api.main.enterprise.v1.SecretStore.Spec
-	(*SecretStore_Status)(nil),                                                      // 251: octelium.api.main.enterprise.v1.SecretStore.Status
-	(*SecretStore_Spec_HashicorpVault)(nil),                                         // 252: octelium.api.main.enterprise.v1.SecretStore.Spec.HashicorpVault
-	(*SecretStore_Spec_GoogleCloudKeyManagementService)(nil),                        // 253: octelium.api.main.enterprise.v1.SecretStore.Spec.GoogleCloudKeyManagementService
-	(*SecretStore_Spec_AWSKeyManagementService)(nil),                                // 254: octelium.api.main.enterprise.v1.SecretStore.Spec.AWSKeyManagementService
-	(*SecretStore_Spec_AzureKeyVault)(nil),                                          // 255: octelium.api.main.enterprise.v1.SecretStore.Spec.AzureKeyVault
-	(*SecretStore_Spec_Kubernetes)(nil),                                             // 256: octelium.api.main.enterprise.v1.SecretStore.Spec.Kubernetes
-	(*SecretStore_Status_Synchronization)(nil),                                      // 257: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization
-	(*GenerateDirectoryProviderCredentialResponse_Bearer)(nil),                      // 258: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse.Bearer
-	(*AuditLog_Entry)(nil),                                                          // 259: octelium.api.main.enterprise.v1.AuditLog.Entry
-	(*DeviceManager_Spec)(nil),                                                      // 260: octelium.api.main.enterprise.v1.DeviceManager.Spec
-	(*DeviceManager_Status)(nil),                                                    // 261: octelium.api.main.enterprise.v1.DeviceManager.Status
-	(*DeviceManager_Spec_SecretRef)(nil),                                            // 262: octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	(*DeviceManager_Spec_CrowdStrike)(nil),                                          // 263: octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike
-	(*DeviceManager_Spec_SentinelOne)(nil),                                          // 264: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne
-	(*DeviceManager_Spec_MicrosoftIntune)(nil),                                      // 265: octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune
-	(*DeviceManager_Spec_Jamf)(nil),                                                 // 266: octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf
-	(*DeviceManager_Spec_OnePassword)(nil),                                          // 267: octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword
-	(*DeviceManager_Spec_FleetDM)(nil),                                              // 268: octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM
-	(*DeviceManager_Spec_Huntress)(nil),                                             // 269: octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress
-	(*DeviceManager_Spec_Iru)(nil),                                                  // 270: octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru
-	(*DeviceManager_Spec_Polling)(nil),                                              // 271: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling
-	(*DeviceManager_Spec_Linking)(nil),                                              // 272: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking
-	nil,                                                                             // 273: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.AgentFiltersEntry
-	(*DeviceManager_Status_Collection)(nil),                                         // 274: octelium.api.main.enterprise.v1.DeviceManager.Status.Collection
-	(*DeviceManager_Status_Linking)(nil),                                            // 275: octelium.api.main.enterprise.v1.DeviceManager.Status.Linking
-	(*IsAuthorizedRequest_Additional)(nil),                                          // 276: octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional
-	(*Condition_All)(nil),                                                           // 277: octelium.api.main.enterprise.v1.Condition.All
-	(*Condition_Any)(nil),                                                           // 278: octelium.api.main.enterprise.v1.Condition.Any
-	(*Condition_None)(nil),                                                          // 279: octelium.api.main.enterprise.v1.Condition.None
-	(*Condition_Not)(nil),                                                           // 280: octelium.api.main.enterprise.v1.Condition.Not
-	(*Condition_Expression)(nil),                                                    // 281: octelium.api.main.enterprise.v1.Condition.Expression
-	(*Condition_Expression_User)(nil),                                               // 282: octelium.api.main.enterprise.v1.Condition.Expression.User
-	(*Condition_Expression_UserType)(nil),                                           // 283: octelium.api.main.enterprise.v1.Condition.Expression.UserType
-	(*Condition_Expression_Group)(nil),                                              // 284: octelium.api.main.enterprise.v1.Condition.Expression.Group
-	(*Condition_Expression_Session)(nil),                                            // 285: octelium.api.main.enterprise.v1.Condition.Expression.Session
-	(*Condition_Expression_Device)(nil),                                             // 286: octelium.api.main.enterprise.v1.Condition.Expression.Device
-	(*Condition_Expression_DeviceOSType)(nil),                                       // 287: octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType
-	(*Condition_Expression_Service)(nil),                                            // 288: octelium.api.main.enterprise.v1.Condition.Expression.Service
-	(*Condition_Expression_Namespace)(nil),                                          // 289: octelium.api.main.enterprise.v1.Condition.Expression.Namespace
-	(*Condition_Expression_ServiceMode)(nil),                                        // 290: octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode
-	(*Condition_Expression_ServicePublic)(nil),                                      // 291: octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic
-	(*Condition_Expression_SessionType)(nil),                                        // 292: octelium.api.main.enterprise.v1.Condition.Expression.SessionType
-	(*Condition_Expression_SessionAuthenticationType)(nil),                          // 293: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType
-	(*Condition_Expression_SessionAuthenticationAAL)(nil),                           // 294: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL
-	(*Condition_Expression_SessionAuthenticationIdentityProvider)(nil),              // 295: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider
-	(*Condition_Expression_SessionAuthenticationCredential)(nil),                    // 296: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential
-	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey)(nil),  // 297: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey
-	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware)(nil), // 298: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware
-	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified)(nil),        // 299: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified
-	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent)(nil),         // 300: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent
-	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified)(nil), // 301: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified
-	(*Condition_Expression_SessionAuthenticationCredAuthenticatorAAGUID)(nil),                  // 302: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorAAGUID
-	(*Condition_Expression_SessionBrowser)(nil),                                                // 303: octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser
-	(*Condition_Expression_TimeBefore)(nil),                                                    // 304: octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore
-	(*Condition_Expression_TimeAfter)(nil),                                                     // 305: octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter
-	(*Condition_Expression_SessionAuthenticationCredentialType)(nil),                           // 306: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType
-	(*Condition_Expression_SessionAuthenticationGeoipCountryCode)(nil),                         // 307: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode
-	(*Condition_Expression_SessionAuthenticationGeoipContinentCode)(nil),                       // 308: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode
-	(*Condition_Expression_RequestHTTPPath)(nil),                                               // 309: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath
-	(*Condition_Expression_RequestHTTPMethod)(nil),                                             // 310: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod
-	(*Condition_Expression_RequestHTTPHasHeader)(nil),                                          // 311: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader
-	(*Condition_Expression_RequestHTTPHeaderValue)(nil),                                        // 312: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue
-	(*Condition_Expression_RequestIP)(nil),                                                     // 313: octelium.api.main.enterprise.v1.Condition.Expression.RequestIP
-	(*Condition_Expression_RequestIPInRange)(nil),                                              // 314: octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange
-	(*Condition_Expression_StringMatch)(nil),                                                   // 315: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	(*Condition_Expression_StringSetMatch)(nil),                                                // 316: octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch
-	(*Condition_Expression_UIntMatch)(nil),                                                     // 317: octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
-	(*Condition_Expression_IntMatch)(nil),                                                      // 318: octelium.api.main.enterprise.v1.Condition.Expression.IntMatch
-	(*Condition_Expression_DoubleMatch)(nil),                                                   // 319: octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch
-	(*Condition_Expression_RequestHTTPHost)(nil),                                               // 320: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost
-	(*Condition_Expression_RequestHTTPProtocol)(nil),                                           // 321: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol
-	(*Condition_Expression_RequestHTTPScheme)(nil),                                             // 322: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme
-	(*Condition_Expression_RequestHTTPURI)(nil),                                                // 323: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI
-	(*Condition_Expression_RequestHTTPSize)(nil),                                               // 324: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize
-	(*Condition_Expression_RequestHTTPHasQueryParam)(nil),                                      // 325: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam
-	(*Condition_Expression_RequestHTTPQueryParamValue)(nil),                                    // 326: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue
-	(*Condition_Expression_RequestSSH)(nil),                                                    // 327: octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH
-	(*Condition_Expression_RequestSSHUser)(nil),                                                // 328: octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser
-	(*Condition_Expression_RequestKubernetes)(nil),                                             // 329: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes
-	(*Condition_Expression_RequestKubernetesVerb)(nil),                                         // 330: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb
-	(*Condition_Expression_RequestKubernetesAPIPrefix)(nil),                                    // 331: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix
-	(*Condition_Expression_RequestKubernetesAPIGroup)(nil),                                     // 332: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup
-	(*Condition_Expression_RequestKubernetesAPIVersion)(nil),                                   // 333: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion
-	(*Condition_Expression_RequestKubernetesNamespace)(nil),                                    // 334: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace
-	(*Condition_Expression_RequestKubernetesResource)(nil),                                     // 335: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource
-	(*Condition_Expression_RequestKubernetesSubresource)(nil),                                  // 336: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource
-	(*Condition_Expression_RequestKubernetesName)(nil),                                         // 337: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName
-	(*Condition_Expression_RequestGRPC)(nil),                                                   // 338: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC
-	(*Condition_Expression_RequestGRPCMethod)(nil),                                             // 339: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod
-	(*Condition_Expression_RequestGRPCService)(nil),                                            // 340: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService
-	(*Condition_Expression_RequestGRPCServiceFullName)(nil),                                    // 341: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName
-	(*Condition_Expression_RequestGRPCPackage)(nil),                                            // 342: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage
-	(*Condition_Expression_RequestPostgresConnect)(nil),                                        // 343: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect
-	(*Condition_Expression_RequestPostgresConnectUser)(nil),                                    // 344: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser
-	(*Condition_Expression_RequestPostgresConnectDatabase)(nil),                                // 345: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase
-	(*Condition_Expression_RequestPostgresConnectApplicationName)(nil),                         // 346: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName
-	(*Condition_Expression_RequestPostgresQuery)(nil),                                          // 347: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery
-	(*Condition_Expression_RequestPostgresQueryText)(nil),                                      // 348: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText
-	(*Condition_Expression_RequestPostgresParse)(nil),                                          // 349: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse
-	(*Condition_Expression_RequestPostgresParseName)(nil),                                      // 350: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName
-	(*Condition_Expression_RequestPostgresParseQuery)(nil),                                     // 351: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery
-	(*Condition_Expression_RequestDNS)(nil),                                                    // 352: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS
-	(*Condition_Expression_RequestDNSName)(nil),                                                // 353: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName
-	(*Condition_Expression_RequestDNSTypeID)(nil),                                              // 354: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID
-	(*Condition_Expression_RequestSOCKS5)(nil),                                                 // 355: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5
-	(*Condition_Expression_RequestSOCKS5Host)(nil),                                             // 356: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host
-	(*Condition_Expression_RequestSOCKS5Port)(nil),                                             // 357: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port
-	(*Condition_Expression_RequestSOCKS5AddressType)(nil),                                      // 358: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType
-	(*Condition_Expression_MCPProtocolVersion)(nil),                                            // 359: octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion
-	(*Condition_Expression_MCPMethod)(nil),                                                     // 360: octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod
-	(*Condition_Expression_MCPToolName)(nil),                                                   // 361: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName
-	(*Condition_Expression_MCPPromptName)(nil),                                                 // 362: octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName
-	(*Condition_Expression_MCPResourceURI)(nil),                                                // 363: octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI
-	(*Condition_Expression_MCPIsNotification)(nil),                                             // 364: octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification
-	(*Condition_Expression_MCPToolArgument)(nil),                                               // 365: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument
-	(*Condition_Expression_LLMProtocol)(nil),                                                   // 366: octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol
-	(*Condition_Expression_LLMOperation)(nil),                                                  // 367: octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation
-	(*Condition_Expression_LLMModel)(nil),                                                      // 368: octelium.api.main.enterprise.v1.Condition.Expression.LLMModel
-	(*Condition_Expression_LLMStream)(nil),                                                     // 369: octelium.api.main.enterprise.v1.Condition.Expression.LLMStream
-	(*Condition_Expression_LLMEstimatedInputTokens)(nil),                                       // 370: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens
-	(*Condition_Expression_LLMEstimateQuality)(nil),                                            // 371: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality
-	(*Condition_Expression_LLMMaxOutputTokens)(nil),                                            // 372: octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens
-	(*Condition_Expression_LLMHasTools)(nil),                                                   // 373: octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools
-	(*Condition_Expression_LLMToolCount)(nil),                                                  // 374: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount
-	(*Condition_Expression_LLMToolName)(nil),                                                   // 375: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName
-	(*Condition_Expression_LLMInputItemCount)(nil),                                             // 376: octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount
-	(*Condition_Expression_LLMHasImageInput)(nil),                                              // 377: octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput
-	(*Condition_Expression_LLMHasAudioInput)(nil),                                              // 378: octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput
-	(*Condition_Expression_APIServerReadOnlyMethods)(nil),                                      // 379: octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods
-	(*Condition_Expression_APIServerMethods)(nil),                                              // 380: octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods
-	(*Condition_Expression_APIServerServices)(nil),                                             // 381: octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices
-	(*Condition_Expression_APIServerCore)(nil),                                                 // 382: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore
-	(*Condition_Expression_APIServerUser)(nil),                                                 // 383: octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser
-	(*Condition_Expression_APIServerEnterprise)(nil),                                           // 384: octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise
-	(*Condition_Expression_APIServerCordium)(nil),                                              // 385: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium
-	(*Condition_Expression_APIServerAccess)(nil),                                               // 386: octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess
-	(*Condition_Expression_TimeDayType)(nil),                                                   // 387: octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType
-	(*Condition_Expression_StringMatch_In)(nil),                                                // 388: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In
-	(*Condition_Expression_StringSetMatch_In)(nil),                                             // 389: octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In
-	(*Condition_Expression_MCPToolArgument_BoolMatch)(nil),                                     // 390: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch
-	(*Condition_Expression_MCPToolArgument_IsNull)(nil),                                        // 391: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull
-	(*Condition_Expression_MCPToolArgument_Exists)(nil),                                        // 392: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists
-	(*AuthenticationLog_Entry)(nil),                                                            // 393: octelium.api.main.enterprise.v1.AuthenticationLog.Entry
-	(*AuthenticationLog_Entry_Failure)(nil),                                                    // 394: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure
-	(*UpgradeClusterRequest_Request)(nil),                                                      // 395: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request
-	(*UpgradeClusterRequest_Request_Core)(nil),                                                 // 396: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.Core
-	(*UpgradeClusterRequest_Request_PackageEnterprise)(nil),                                    // 397: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageEnterprise
-	(*UpgradeClusterRequest_Request_PackageCordium)(nil),                                       // 398: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageCordium
-	(*JoinClusterRequest_Kubernetes)(nil),                                                      // 399: octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes
-	(*JoinClusterRequest_Kubernetes_Kubeconfig)(nil),                                           // 400: octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.Kubeconfig
-	(*JoinClusterRequest_Kubernetes_BearerToken)(nil),                                          // 401: octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.BearerToken
-	(*GetClusterInfoResponse_Core)(nil),                                                        // 402: octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core
-	(*GetClusterInfoResponse_PackageEnterprise)(nil),                                           // 403: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise
-	(*GetClusterInfoResponse_PackageCordium)(nil),                                              // 404: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium
-	(*License_Organization)(nil),                                                               // 405: octelium.api.main.enterprise.v1.License.Organization
-	(*License_Plan)(nil),                                                                       // 406: octelium.api.main.enterprise.v1.License.Plan
-	(*License_Plan_Support)(nil),                                                               // 407: octelium.api.main.enterprise.v1.License.Plan.Support
-	(*License_Plan_Limits)(nil),                                                                // 408: octelium.api.main.enterprise.v1.License.Plan.Limits
-	(*Agent_Workspace)(nil),                                                                    // 409: octelium.api.main.enterprise.v1.Agent.Workspace
-	(*metav1.CommonListOptions)(nil),                                                           // 410: octelium.api.main.meta.v1.CommonListOptions
-	(*metav1.Metadata)(nil),                                                                    // 411: octelium.api.main.meta.v1.Metadata
-	(*metav1.ListResponseMeta)(nil),                                                            // 412: octelium.api.main.meta.v1.ListResponseMeta
-	(*metav1.ObjectReference)(nil),                                                             // 413: octelium.api.main.meta.v1.ObjectReference
-	(*metav1.LogMetadata)(nil),                                                                 // 414: octelium.api.main.meta.v1.LogMetadata
-	(*corev1.RequestContext_Request)(nil),                                                      // 415: octelium.api.main.core.v1.RequestContext.Request
-	(*corev1.AccessLog_Entry_Common_Reason)(nil),                                               // 416: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason
-	(*timestamppb.Timestamp)(nil),                                                              // 417: google.protobuf.Timestamp
-	(*metav1.Duration)(nil),                                                                    // 418: octelium.api.main.meta.v1.Duration
-	(*cordiumv1.Workspace_Spec_Image)(nil),                                                     // 419: octelium.api.main.cordium.v1.Workspace.Spec.Image
-	(*cordiumv1.Workspace_Spec_Limit)(nil),                                                     // 420: octelium.api.main.cordium.v1.Workspace.Spec.Limit
-	(*structpb.Struct)(nil),                                                                    // 421: google.protobuf.Struct
-	(*corev1.Condition)(nil),                                                                   // 422: octelium.api.main.core.v1.Condition
-	(*corev1.InlinePolicy)(nil),                                                                // 423: octelium.api.main.core.v1.InlinePolicy
-	(corev1.User_Spec_Type)(0),                                                                 // 424: octelium.api.main.core.v1.User.Spec.Type
-	(corev1.Device_Status_OSType)(0),                                                           // 425: octelium.api.main.core.v1.Device.Status.OSType
-	(corev1.Service_Spec_Mode)(0),                                                              // 426: octelium.api.main.core.v1.Service.Spec.Mode
-	(corev1.Session_Status_Type)(0),                                                            // 427: octelium.api.main.core.v1.Session.Status.Type
-	(corev1.Session_Status_Authentication_Info_Type)(0),                                        // 428: octelium.api.main.core.v1.Session.Status.Authentication.Info.Type
-	(corev1.Session_Status_Authentication_Info_AAL)(0),                                         // 429: octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL
-	(corev1.Credential_Spec_Type)(0),                                                           // 430: octelium.api.main.core.v1.Credential.Spec.Type
-	(corev1.RequestContext_Request_SOCKS5_Connect_AddressType)(0),                              // 431: octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType
-	(corev1.Service_Spec_Config_LLM_Protocol)(0),                                               // 432: octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol
-	(corev1.Service_Spec_Config_LLM_Operation)(0),                                              // 433: octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation
-	(corev1.RequestContext_Request_LLM_EstimateQuality)(0),                                     // 434: octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality
-	(*corev1.Session_Status_Authentication)(nil),                                               // 435: octelium.api.main.core.v1.Session.Status.Authentication
-	(*cordiumv1.Workspace)(nil),                                                                // 436: octelium.api.main.cordium.v1.Workspace
-	(*metav1.GetOptions)(nil),                                                                  // 437: octelium.api.main.meta.v1.GetOptions
-	(*metav1.DeleteOptions)(nil),                                                               // 438: octelium.api.main.meta.v1.DeleteOptions
-	(*metav1.OperationResult)(nil),                                                             // 439: octelium.api.main.meta.v1.OperationResult
+	(SupportInfo_State)(0),                                                // 40: octelium.api.main.enterprise.v1.SupportInfo.State
+	(SupportRequest_Priority)(0),                                          // 41: octelium.api.main.enterprise.v1.SupportRequest.Priority
+	(SupportRequest_Status)(0),                                            // 42: octelium.api.main.enterprise.v1.SupportRequest.Status
+	(SupportRequest_SupportLevel)(0),                                      // 43: octelium.api.main.enterprise.v1.SupportRequest.SupportLevel
+	(SupportRequest_Channel)(0),                                           // 44: octelium.api.main.enterprise.v1.SupportRequest.Channel
+	(SupportRequest_Actor_Type)(0),                                        // 45: octelium.api.main.enterprise.v1.SupportRequest.Actor.Type
+	(SupportRequest_Event_Type)(0),                                        // 46: octelium.api.main.enterprise.v1.SupportRequest.Event.Type
+	(SupportRequest_Attachment_Purpose)(0),                                // 47: octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose
+	(ListSupportRequestOptions_Filter)(0),                                 // 48: octelium.api.main.enterprise.v1.ListSupportRequestOptions.Filter
+	(*GetClusterConfigRequest)(nil),                                       // 49: octelium.api.main.enterprise.v1.GetClusterConfigRequest
+	(*ListCollectorExporterOptions)(nil),                                  // 50: octelium.api.main.enterprise.v1.ListCollectorExporterOptions
+	(*CollectorExporter)(nil),                                             // 51: octelium.api.main.enterprise.v1.CollectorExporter
+	(*CollectorExporterList)(nil),                                         // 52: octelium.api.main.enterprise.v1.CollectorExporterList
+	(*ClusterConfig)(nil),                                                 // 53: octelium.api.main.enterprise.v1.ClusterConfig
+	(*Secret)(nil),                                                        // 54: octelium.api.main.enterprise.v1.Secret
+	(*SecretList)(nil),                                                    // 55: octelium.api.main.enterprise.v1.SecretList
+	(*ListSecretOptions)(nil),                                             // 56: octelium.api.main.enterprise.v1.ListSecretOptions
+	(*Certificate)(nil),                                                   // 57: octelium.api.main.enterprise.v1.Certificate
+	(*CertificateList)(nil),                                               // 58: octelium.api.main.enterprise.v1.CertificateList
+	(*CertificateIssuer)(nil),                                             // 59: octelium.api.main.enterprise.v1.CertificateIssuer
+	(*CertificateIssuerList)(nil),                                         // 60: octelium.api.main.enterprise.v1.CertificateIssuerList
+	(*DirectoryProvider)(nil),                                             // 61: octelium.api.main.enterprise.v1.DirectoryProvider
+	(*DirectoryProviderList)(nil),                                         // 62: octelium.api.main.enterprise.v1.DirectoryProviderList
+	(*DirectoryProviderUser)(nil),                                         // 63: octelium.api.main.enterprise.v1.DirectoryProviderUser
+	(*DirectoryProviderUserList)(nil),                                     // 64: octelium.api.main.enterprise.v1.DirectoryProviderUserList
+	(*DirectoryProviderGroup)(nil),                                        // 65: octelium.api.main.enterprise.v1.DirectoryProviderGroup
+	(*DirectoryProviderGroupList)(nil),                                    // 66: octelium.api.main.enterprise.v1.DirectoryProviderGroupList
+	(*DNSProvider)(nil),                                                   // 67: octelium.api.main.enterprise.v1.DNSProvider
+	(*DNSProviderList)(nil),                                               // 68: octelium.api.main.enterprise.v1.DNSProviderList
+	(*ListDNSProviderOptions)(nil),                                        // 69: octelium.api.main.enterprise.v1.ListDNSProviderOptions
+	(*ListDirectoryProviderOptions)(nil),                                  // 70: octelium.api.main.enterprise.v1.ListDirectoryProviderOptions
+	(*ListCertificateOptions)(nil),                                        // 71: octelium.api.main.enterprise.v1.ListCertificateOptions
+	(*ListCertificateIssuerOptions)(nil),                                  // 72: octelium.api.main.enterprise.v1.ListCertificateIssuerOptions
+	(*SessionExtInfo)(nil),                                                // 73: octelium.api.main.enterprise.v1.SessionExtInfo
+	(*SecretStore)(nil),                                                   // 74: octelium.api.main.enterprise.v1.SecretStore
+	(*SecretStoreList)(nil),                                               // 75: octelium.api.main.enterprise.v1.SecretStoreList
+	(*GenerateDirectoryProviderCredentialRequest)(nil),                    // 76: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest
+	(*GenerateDirectoryProviderCredentialResponse)(nil),                   // 77: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse
+	(*IssueCertificateRequest)(nil),                                       // 78: octelium.api.main.enterprise.v1.IssueCertificateRequest
+	(*IssueCertificateResponse)(nil),                                      // 79: octelium.api.main.enterprise.v1.IssueCertificateResponse
+	(*SetCertificateRequest)(nil),                                         // 80: octelium.api.main.enterprise.v1.SetCertificateRequest
+	(*SetCertificateResponse)(nil),                                        // 81: octelium.api.main.enterprise.v1.SetCertificateResponse
+	(*AuditLog)(nil),                                                      // 82: octelium.api.main.enterprise.v1.AuditLog
+	(*ListSecretStoreOptions)(nil),                                        // 83: octelium.api.main.enterprise.v1.ListSecretStoreOptions
+	(*DeviceManager)(nil),                                                 // 84: octelium.api.main.enterprise.v1.DeviceManager
+	(*DeviceManagerList)(nil),                                             // 85: octelium.api.main.enterprise.v1.DeviceManagerList
+	(*ListDeviceManagerOptions)(nil),                                      // 86: octelium.api.main.enterprise.v1.ListDeviceManagerOptions
+	(*ResetDeviceBindingRequest)(nil),                                     // 87: octelium.api.main.enterprise.v1.ResetDeviceBindingRequest
+	(*UserExtInfo)(nil),                                                   // 88: octelium.api.main.enterprise.v1.UserExtInfo
+	(*ListDirectoryProviderUserOptions)(nil),                              // 89: octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions
+	(*ListDirectoryProviderGroupOptions)(nil),                             // 90: octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions
+	(*IsAuthorizedRequest)(nil),                                           // 91: octelium.api.main.enterprise.v1.IsAuthorizedRequest
+	(*IsAuthorizedResponse)(nil),                                          // 92: octelium.api.main.enterprise.v1.IsAuthorizedResponse
+	(*Condition)(nil),                                                     // 93: octelium.api.main.enterprise.v1.Condition
+	(*SynchronizeDirectoryProviderRequest)(nil),                           // 94: octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderRequest
+	(*SynchronizeDirectoryProviderResponse)(nil),                          // 95: octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderResponse
+	(*AuthenticationLog)(nil),                                             // 96: octelium.api.main.enterprise.v1.AuthenticationLog
+	(*UpgradeClusterRequest)(nil),                                         // 97: octelium.api.main.enterprise.v1.UpgradeClusterRequest
+	(*UpgradeClusterResponse)(nil),                                        // 98: octelium.api.main.enterprise.v1.UpgradeClusterResponse
+	(*JoinClusterRequest)(nil),                                            // 99: octelium.api.main.enterprise.v1.JoinClusterRequest
+	(*JoinClusterResponse)(nil),                                           // 100: octelium.api.main.enterprise.v1.JoinClusterResponse
+	(*RegionExtInfo)(nil),                                                 // 101: octelium.api.main.enterprise.v1.RegionExtInfo
+	(*SynchronizeSecretStoreRequest)(nil),                                 // 102: octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest
+	(*SynchronizeSecretStoreResponse)(nil),                                // 103: octelium.api.main.enterprise.v1.SynchronizeSecretStoreResponse
+	(*GetClusterInfoRequest)(nil),                                         // 104: octelium.api.main.enterprise.v1.GetClusterInfoRequest
+	(*GetClusterInfoResponse)(nil),                                        // 105: octelium.api.main.enterprise.v1.GetClusterInfoResponse
+	(*License)(nil),                                                       // 106: octelium.api.main.enterprise.v1.License
+	(*SetLicenseRequest)(nil),                                             // 107: octelium.api.main.enterprise.v1.SetLicenseRequest
+	(*SetLicenseResponse)(nil),                                            // 108: octelium.api.main.enterprise.v1.SetLicenseResponse
+	(*GetLicenseRequest)(nil),                                             // 109: octelium.api.main.enterprise.v1.GetLicenseRequest
+	(*GetLicenseResponse)(nil),                                            // 110: octelium.api.main.enterprise.v1.GetLicenseResponse
+	(*DeleteLicenseRequest)(nil),                                          // 111: octelium.api.main.enterprise.v1.DeleteLicenseRequest
+	(*DeleteLicenseResponse)(nil),                                         // 112: octelium.api.main.enterprise.v1.DeleteLicenseResponse
+	(*GetAgentRequest)(nil),                                               // 113: octelium.api.main.enterprise.v1.GetAgentRequest
+	(*InitializeAgentRequest)(nil),                                        // 114: octelium.api.main.enterprise.v1.InitializeAgentRequest
+	(*CreateAgentWorkspaceRequest)(nil),                                   // 115: octelium.api.main.enterprise.v1.CreateAgentWorkspaceRequest
+	(*Agent)(nil),                                                         // 116: octelium.api.main.enterprise.v1.Agent
+	(*GetSupportInfoRequest)(nil),                                         // 117: octelium.api.main.enterprise.v1.GetSupportInfoRequest
+	(*SupportInfo)(nil),                                                   // 118: octelium.api.main.enterprise.v1.SupportInfo
+	(*SupportRequest)(nil),                                                // 119: octelium.api.main.enterprise.v1.SupportRequest
+	(*ListSupportRequestOptions)(nil),                                     // 120: octelium.api.main.enterprise.v1.ListSupportRequestOptions
+	(*SupportRequestList)(nil),                                            // 121: octelium.api.main.enterprise.v1.SupportRequestList
+	(*GetSupportRequestRequest)(nil),                                      // 122: octelium.api.main.enterprise.v1.GetSupportRequestRequest
+	(*ListSupportRequestEventOptions)(nil),                                // 123: octelium.api.main.enterprise.v1.ListSupportRequestEventOptions
+	(*SupportRequestEventList)(nil),                                       // 124: octelium.api.main.enterprise.v1.SupportRequestEventList
+	(*CreateSupportRequestRequest)(nil),                                   // 125: octelium.api.main.enterprise.v1.CreateSupportRequestRequest
+	(*AddSupportRequestMessageRequest)(nil),                               // 126: octelium.api.main.enterprise.v1.AddSupportRequestMessageRequest
+	(*AddSupportRequestAttachmentRequest)(nil),                            // 127: octelium.api.main.enterprise.v1.AddSupportRequestAttachmentRequest
+	(*ResolveSupportRequestRequest)(nil),                                  // 128: octelium.api.main.enterprise.v1.ResolveSupportRequestRequest
+	(*EscalateSupportRequestRequest)(nil),                                 // 129: octelium.api.main.enterprise.v1.EscalateSupportRequestRequest
+	(*DownloadSupportRequestAttachmentRequest)(nil),                       // 130: octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentRequest
+	(*DownloadSupportRequestAttachmentResponse)(nil),                      // 131: octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse
+	(*CollectorExporter_Spec)(nil),                                        // 132: octelium.api.main.enterprise.v1.CollectorExporter.Spec
+	(*CollectorExporter_Status)(nil),                                      // 133: octelium.api.main.enterprise.v1.CollectorExporter.Status
+	(*CollectorExporter_Spec_OTLP)(nil),                                   // 134: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP
+	(*CollectorExporter_Spec_OTLPHTTP)(nil),                               // 135: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP
+	(*CollectorExporter_Spec_PrometheusRemoteWrite)(nil),                  // 136: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite
+	(*CollectorExporter_Spec_Clickhouse)(nil),                             // 137: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse
+	(*CollectorExporter_Spec_Elasticsearch)(nil),                          // 138: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch
+	(*CollectorExporter_Spec_Logzio)(nil),                                 // 139: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio
+	(*CollectorExporter_Spec_InfluxDB)(nil),                               // 140: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB
+	(*CollectorExporter_Spec_Kafka)(nil),                                  // 141: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka
+	(*CollectorExporter_Spec_Datadog)(nil),                                // 142: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog
+	(*CollectorExporter_Spec_Splunk)(nil),                                 // 143: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk
+	(*CollectorExporter_Spec_AzureMonitor)(nil),                           // 144: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor
+	(*CollectorExporter_Spec_AzureDataExplorer)(nil),                      // 145: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer
+	(*CollectorExporter_Spec_OTLP_Header)(nil),                            // 146: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Header
+	(*CollectorExporter_Spec_OTLP_Auth)(nil),                              // 147: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth
+	(*CollectorExporter_Spec_OTLP_TLS)(nil),                               // 148: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.TLS
+	(*CollectorExporter_Spec_OTLP_Keepalive)(nil),                         // 149: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive
+	(*CollectorExporter_Spec_OTLP_Auth_Bearer)(nil),                       // 150: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Bearer
+	(*CollectorExporter_Spec_OTLP_Auth_Basic)(nil),                        // 151: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic
+	(*CollectorExporter_Spec_OTLP_Auth_Custom)(nil),                       // 152: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom
+	(*CollectorExporter_Spec_OTLP_Auth_Basic_Password)(nil),               // 153: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic.Password
+	(*CollectorExporter_Spec_OTLP_Auth_Custom_Value)(nil),                 // 154: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom.Value
+	(*CollectorExporter_Spec_OTLPHTTP_Header)(nil),                        // 155: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header
+	(*CollectorExporter_Spec_OTLPHTTP_Auth)(nil),                          // 156: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth
+	(*CollectorExporter_Spec_OTLPHTTP_TLS)(nil),                           // 157: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS
+	(*CollectorExporter_Spec_OTLPHTTP_Auth_Bearer)(nil),                   // 158: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Bearer
+	(*CollectorExporter_Spec_OTLPHTTP_Auth_Basic)(nil),                    // 159: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic
+	(*CollectorExporter_Spec_OTLPHTTP_Auth_Custom)(nil),                   // 160: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom
+	(*CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password)(nil),           // 161: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic.Password
+	(*CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value)(nil),             // 162: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom.Value
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_Header)(nil),           // 163: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel)(nil),    // 164: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth)(nil),             // 165: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_TLS)(nil),              // 166: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue)(nil), // 167: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion)(nil), // 168: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo)(nil),                    // 169: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer)(nil),                   // 170: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Bearer
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic)(nil),                    // 171: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom)(nil),                   // 172: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password)(nil),           // 173: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.Password
+	(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value)(nil),             // 174: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom.Value
+	(*CollectorExporter_Spec_Clickhouse_Password)(nil),                                 // 175: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Password
+	(*CollectorExporter_Spec_Clickhouse_TLS)(nil),                                      // 176: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS
+	(*CollectorExporter_Spec_Clickhouse_ConnectionParam)(nil),                          // 177: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam
+	(*CollectorExporter_Spec_Clickhouse_TableEngine)(nil),                              // 178: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine
+	(*CollectorExporter_Spec_Clickhouse_MetricsTables)(nil),                            // 179: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables
+	(*CollectorExporter_Spec_Elasticsearch_Header)(nil),                                // 180: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header
+	(*CollectorExporter_Spec_Elasticsearch_Auth)(nil),                                  // 181: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth
+	(*CollectorExporter_Spec_Elasticsearch_TLS)(nil),                                   // 182: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS
+	(*CollectorExporter_Spec_Elasticsearch_Auth_APIKey)(nil),                           // 183: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.APIKey
+	(*CollectorExporter_Spec_Elasticsearch_Auth_Basic)(nil),                            // 184: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic
+	(*CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password)(nil),                   // 185: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic.Password
+	(*CollectorExporter_Spec_Logzio_Token)(nil),                                        // 186: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.Token
+	(*CollectorExporter_Spec_InfluxDB_Header)(nil),                                     // 187: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header
+	(*CollectorExporter_Spec_InfluxDB_Token)(nil),                                      // 188: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Token
+	(*CollectorExporter_Spec_InfluxDB_V1Compatibility)(nil),                            // 189: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility
+	(*CollectorExporter_Spec_InfluxDB_V1Compatibility_Password)(nil),                   // 190: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password
+	(*CollectorExporter_Spec_Kafka_Header)(nil),                                        // 191: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header
+	(*CollectorExporter_Spec_Kafka_Auth)(nil),                                          // 192: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth
+	(*CollectorExporter_Spec_Kafka_TLS)(nil),                                           // 193: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS
+	(*CollectorExporter_Spec_Kafka_Signal)(nil),                                        // 194: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal
+	(*CollectorExporter_Spec_Kafka_Producer)(nil),                                      // 195: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer
+	(*CollectorExporter_Spec_Kafka_Auth_SASL)(nil),                                     // 196: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL
+	(*CollectorExporter_Spec_Kafka_Auth_SASL_Password)(nil),                            // 197: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password
+	(*CollectorExporter_Spec_Datadog_APIKey)(nil),                                      // 198: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey
+	(*CollectorExporter_Spec_Datadog_API)(nil),                                         // 199: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API
+	(*CollectorExporter_Spec_Datadog_Metrics)(nil),                                     // 200: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics
+	(*CollectorExporter_Spec_Datadog_Logs)(nil),                                        // 201: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs
+	(*CollectorExporter_Spec_Datadog_HostMetadata)(nil),                                // 202: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata
+	(*CollectorExporter_Spec_Splunk_Token)(nil),                                        // 203: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.Token
+	(*CollectorExporter_Spec_Splunk_TLS)(nil),                                          // 204: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.TLS
+	(*CollectorExporter_Spec_AzureMonitor_ConnectionString)(nil),                       // 205: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString
+	(*CollectorExporter_Spec_AzureMonitor_InstrumentationKey)(nil),                     // 206: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey
+	(*CollectorExporter_Spec_AzureDataExplorer_ApplicationKey)(nil),                    // 207: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey
+	(*CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal)(nil),                  // 208: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal
+	(*CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity)(nil),                   // 209: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity
+	(*CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth)(nil),                  // 210: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth
+	(*CollectorExporter_Spec_AzureDataExplorer_Auth)(nil),                              // 211: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth
+	(*ClusterConfig_Spec)(nil),                                                         // 212: octelium.api.main.enterprise.v1.ClusterConfig.Spec
+	(*ClusterConfig_Status)(nil),                                                       // 213: octelium.api.main.enterprise.v1.ClusterConfig.Status
+	(*ClusterConfig_Spec_Collector)(nil),                                               // 214: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector
+	(*ClusterConfig_Spec_Scaler)(nil),                                                  // 215: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler
+	(*ClusterConfig_Spec_Certificate)(nil),                                             // 216: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate
+	(*ClusterConfig_Spec_Agent)(nil),                                                   // 217: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent
+	(*ClusterConfig_Spec_Collector_Pipeline)(nil),                                      // 218: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.Pipeline
+	(*ClusterConfig_Spec_Scaler_Octovigil)(nil),                                        // 219: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Octovigil
+	(*ClusterConfig_Spec_Scaler_Ingress)(nil),                                          // 220: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Ingress
+	(*ClusterConfig_Spec_Scaler_Collector)(nil),                                        // 221: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Collector
+	(*ClusterConfig_Spec_Agent_LLM)(nil),                                               // 222: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.LLM
+	(*ClusterConfig_Status_UpgradeRequest)(nil),                                        // 223: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest
+	(*ClusterConfig_Status_JoinRequest)(nil),                                           // 224: octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest
+	(*ClusterConfig_Status_LicenseInfo)(nil),                                           // 225: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo
+	(*ClusterConfig_Status_UpgradeRequest_Region)(nil),                                 // 226: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region
+	(*Secret_Spec)(nil),                                                             // 227: octelium.api.main.enterprise.v1.Secret.Spec
+	(*Secret_Status)(nil),                                                           // 228: octelium.api.main.enterprise.v1.Secret.Status
+	(*Secret_Data)(nil),                                                             // 229: octelium.api.main.enterprise.v1.Secret.Data
+	(*Secret_Spec_Data)(nil),                                                        // 230: octelium.api.main.enterprise.v1.Secret.Spec.Data
+	nil,                                                                             // 231: octelium.api.main.enterprise.v1.Secret.Status.ExtEntry
+	(*Secret_Data_DataMap)(nil),                                                     // 232: octelium.api.main.enterprise.v1.Secret.Data.DataMap
+	nil,                                                                             // 233: octelium.api.main.enterprise.v1.Secret.Data.DataMap.MapEntry
+	(*Certificate_Spec)(nil),                                                        // 234: octelium.api.main.enterprise.v1.Certificate.Spec
+	(*Certificate_Status)(nil),                                                      // 235: octelium.api.main.enterprise.v1.Certificate.Status
+	(*Certificate_Status_Issuance)(nil),                                             // 236: octelium.api.main.enterprise.v1.Certificate.Status.Issuance
+	(*Certificate_Status_Info)(nil),                                                 // 237: octelium.api.main.enterprise.v1.Certificate.Status.Info
+	(*CertificateIssuer_Spec)(nil),                                                  // 238: octelium.api.main.enterprise.v1.CertificateIssuer.Spec
+	(*CertificateIssuer_Status)(nil),                                                // 239: octelium.api.main.enterprise.v1.CertificateIssuer.Status
+	(*CertificateIssuer_Spec_ACME)(nil),                                             // 240: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME
+	(*CertificateIssuer_Spec_ACME_Solver)(nil),                                      // 241: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver
+	(*CertificateIssuer_Spec_ACME_Solver_DNS)(nil),                                  // 242: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver.DNS
+	(*CertificateIssuer_Status_ACME)(nil),                                           // 243: octelium.api.main.enterprise.v1.CertificateIssuer.Status.ACME
+	(*DirectoryProvider_Spec)(nil),                                                  // 244: octelium.api.main.enterprise.v1.DirectoryProvider.Spec
+	(*DirectoryProvider_Status)(nil),                                                // 245: octelium.api.main.enterprise.v1.DirectoryProvider.Status
+	(*DirectoryProvider_Spec_SCIM)(nil),                                             // 246: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.SCIM
+	(*DirectoryProvider_Spec_GoogleWorkspace)(nil),                                  // 247: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace
+	(*DirectoryProvider_Spec_Keycloak)(nil),                                         // 248: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak
+	(*DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount)(nil),                   // 249: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount
+	(*DirectoryProvider_Spec_GoogleWorkspace_Polling)(nil),                          // 250: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling
+	(*DirectoryProvider_Spec_Keycloak_ClientSecret)(nil),                            // 251: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret
+	(*DirectoryProvider_Spec_Keycloak_Polling)(nil),                                 // 252: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling
+	(*DirectoryProvider_Status_Synchronization)(nil),                                // 253: octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization
+	(*DirectoryProviderUser_Spec)(nil),                                              // 254: octelium.api.main.enterprise.v1.DirectoryProviderUser.Spec
+	(*DirectoryProviderUser_Status)(nil),                                            // 255: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status
+	(*DirectoryProviderGroup_Spec)(nil),                                             // 256: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Spec
+	(*DirectoryProviderGroup_Status)(nil),                                           // 257: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status
+	(*DNSProvider_Spec)(nil),                                                        // 258: octelium.api.main.enterprise.v1.DNSProvider.Spec
+	(*DNSProvider_Status)(nil),                                                      // 259: octelium.api.main.enterprise.v1.DNSProvider.Status
+	(*DNSProvider_Spec_Cloudflare)(nil),                                             // 260: octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare
+	(*DNSProvider_Spec_AWS)(nil),                                                    // 261: octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS
+	(*DNSProvider_Spec_DigitalOcean)(nil),                                           // 262: octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean
+	(*DNSProvider_Spec_Google)(nil),                                                 // 263: octelium.api.main.enterprise.v1.DNSProvider.Spec.Google
+	(*DNSProvider_Spec_Azure)(nil),                                                  // 264: octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure
+	(*DNSProvider_Spec_Linode)(nil),                                                 // 265: octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode
+	(*DNSProvider_Spec_OVH)(nil),                                                    // 266: octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH
+	(*DNSProvider_Spec_Cloudflare_APIToken)(nil),                                    // 267: octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.APIToken
+	(*DNSProvider_Spec_AWS_SecretAccessKey)(nil),                                    // 268: octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.SecretAccessKey
+	(*DNSProvider_Spec_DigitalOcean_APIToken)(nil),                                  // 269: octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.APIToken
+	(*DNSProvider_Spec_Google_ServiceAccount)(nil),                                  // 270: octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.ServiceAccount
+	(*DNSProvider_Spec_Azure_ClientSecret)(nil),                                     // 271: octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.ClientSecret
+	(*DNSProvider_Spec_Linode_APIToken)(nil),                                        // 272: octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.APIToken
+	(*DNSProvider_Spec_OVH_ApplicationSecret)(nil),                                  // 273: octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.ApplicationSecret
+	(*SecretStore_Spec)(nil),                                                        // 274: octelium.api.main.enterprise.v1.SecretStore.Spec
+	(*SecretStore_Status)(nil),                                                      // 275: octelium.api.main.enterprise.v1.SecretStore.Status
+	(*SecretStore_Spec_HashicorpVault)(nil),                                         // 276: octelium.api.main.enterprise.v1.SecretStore.Spec.HashicorpVault
+	(*SecretStore_Spec_GoogleCloudKeyManagementService)(nil),                        // 277: octelium.api.main.enterprise.v1.SecretStore.Spec.GoogleCloudKeyManagementService
+	(*SecretStore_Spec_AWSKeyManagementService)(nil),                                // 278: octelium.api.main.enterprise.v1.SecretStore.Spec.AWSKeyManagementService
+	(*SecretStore_Spec_AzureKeyVault)(nil),                                          // 279: octelium.api.main.enterprise.v1.SecretStore.Spec.AzureKeyVault
+	(*SecretStore_Spec_Kubernetes)(nil),                                             // 280: octelium.api.main.enterprise.v1.SecretStore.Spec.Kubernetes
+	(*SecretStore_Status_Synchronization)(nil),                                      // 281: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization
+	(*GenerateDirectoryProviderCredentialResponse_Bearer)(nil),                      // 282: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse.Bearer
+	(*AuditLog_Entry)(nil),                                                          // 283: octelium.api.main.enterprise.v1.AuditLog.Entry
+	(*DeviceManager_Spec)(nil),                                                      // 284: octelium.api.main.enterprise.v1.DeviceManager.Spec
+	(*DeviceManager_Status)(nil),                                                    // 285: octelium.api.main.enterprise.v1.DeviceManager.Status
+	(*DeviceManager_Spec_SecretRef)(nil),                                            // 286: octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	(*DeviceManager_Spec_CrowdStrike)(nil),                                          // 287: octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike
+	(*DeviceManager_Spec_SentinelOne)(nil),                                          // 288: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne
+	(*DeviceManager_Spec_MicrosoftIntune)(nil),                                      // 289: octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune
+	(*DeviceManager_Spec_Jamf)(nil),                                                 // 290: octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf
+	(*DeviceManager_Spec_OnePassword)(nil),                                          // 291: octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword
+	(*DeviceManager_Spec_FleetDM)(nil),                                              // 292: octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM
+	(*DeviceManager_Spec_Huntress)(nil),                                             // 293: octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress
+	(*DeviceManager_Spec_Iru)(nil),                                                  // 294: octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru
+	(*DeviceManager_Spec_Polling)(nil),                                              // 295: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling
+	(*DeviceManager_Spec_Linking)(nil),                                              // 296: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking
+	nil,                                                                             // 297: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.AgentFiltersEntry
+	(*DeviceManager_Status_Collection)(nil),                                         // 298: octelium.api.main.enterprise.v1.DeviceManager.Status.Collection
+	(*DeviceManager_Status_Linking)(nil),                                            // 299: octelium.api.main.enterprise.v1.DeviceManager.Status.Linking
+	(*IsAuthorizedRequest_Additional)(nil),                                          // 300: octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional
+	(*Condition_All)(nil),                                                           // 301: octelium.api.main.enterprise.v1.Condition.All
+	(*Condition_Any)(nil),                                                           // 302: octelium.api.main.enterprise.v1.Condition.Any
+	(*Condition_None)(nil),                                                          // 303: octelium.api.main.enterprise.v1.Condition.None
+	(*Condition_Not)(nil),                                                           // 304: octelium.api.main.enterprise.v1.Condition.Not
+	(*Condition_Expression)(nil),                                                    // 305: octelium.api.main.enterprise.v1.Condition.Expression
+	(*Condition_Expression_User)(nil),                                               // 306: octelium.api.main.enterprise.v1.Condition.Expression.User
+	(*Condition_Expression_UserType)(nil),                                           // 307: octelium.api.main.enterprise.v1.Condition.Expression.UserType
+	(*Condition_Expression_Group)(nil),                                              // 308: octelium.api.main.enterprise.v1.Condition.Expression.Group
+	(*Condition_Expression_Session)(nil),                                            // 309: octelium.api.main.enterprise.v1.Condition.Expression.Session
+	(*Condition_Expression_Device)(nil),                                             // 310: octelium.api.main.enterprise.v1.Condition.Expression.Device
+	(*Condition_Expression_DeviceOSType)(nil),                                       // 311: octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType
+	(*Condition_Expression_Service)(nil),                                            // 312: octelium.api.main.enterprise.v1.Condition.Expression.Service
+	(*Condition_Expression_Namespace)(nil),                                          // 313: octelium.api.main.enterprise.v1.Condition.Expression.Namespace
+	(*Condition_Expression_ServiceMode)(nil),                                        // 314: octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode
+	(*Condition_Expression_ServicePublic)(nil),                                      // 315: octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic
+	(*Condition_Expression_SessionType)(nil),                                        // 316: octelium.api.main.enterprise.v1.Condition.Expression.SessionType
+	(*Condition_Expression_SessionAuthenticationType)(nil),                          // 317: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType
+	(*Condition_Expression_SessionAuthenticationAAL)(nil),                           // 318: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL
+	(*Condition_Expression_SessionAuthenticationIdentityProvider)(nil),              // 319: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider
+	(*Condition_Expression_SessionAuthenticationCredential)(nil),                    // 320: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential
+	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey)(nil),  // 321: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey
+	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware)(nil), // 322: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware
+	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified)(nil),        // 323: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified
+	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent)(nil),         // 324: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent
+	(*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified)(nil), // 325: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified
+	(*Condition_Expression_SessionAuthenticationCredAuthenticatorAAGUID)(nil),                  // 326: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorAAGUID
+	(*Condition_Expression_SessionBrowser)(nil),                                                // 327: octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser
+	(*Condition_Expression_TimeBefore)(nil),                                                    // 328: octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore
+	(*Condition_Expression_TimeAfter)(nil),                                                     // 329: octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter
+	(*Condition_Expression_SessionAuthenticationCredentialType)(nil),                           // 330: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType
+	(*Condition_Expression_SessionAuthenticationGeoipCountryCode)(nil),                         // 331: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode
+	(*Condition_Expression_SessionAuthenticationGeoipContinentCode)(nil),                       // 332: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode
+	(*Condition_Expression_RequestHTTPPath)(nil),                                               // 333: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath
+	(*Condition_Expression_RequestHTTPMethod)(nil),                                             // 334: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod
+	(*Condition_Expression_RequestHTTPHasHeader)(nil),                                          // 335: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader
+	(*Condition_Expression_RequestHTTPHeaderValue)(nil),                                        // 336: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue
+	(*Condition_Expression_RequestIP)(nil),                                                     // 337: octelium.api.main.enterprise.v1.Condition.Expression.RequestIP
+	(*Condition_Expression_RequestIPInRange)(nil),                                              // 338: octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange
+	(*Condition_Expression_StringMatch)(nil),                                                   // 339: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	(*Condition_Expression_StringSetMatch)(nil),                                                // 340: octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch
+	(*Condition_Expression_UIntMatch)(nil),                                                     // 341: octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
+	(*Condition_Expression_IntMatch)(nil),                                                      // 342: octelium.api.main.enterprise.v1.Condition.Expression.IntMatch
+	(*Condition_Expression_DoubleMatch)(nil),                                                   // 343: octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch
+	(*Condition_Expression_RequestHTTPHost)(nil),                                               // 344: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost
+	(*Condition_Expression_RequestHTTPProtocol)(nil),                                           // 345: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol
+	(*Condition_Expression_RequestHTTPScheme)(nil),                                             // 346: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme
+	(*Condition_Expression_RequestHTTPURI)(nil),                                                // 347: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI
+	(*Condition_Expression_RequestHTTPSize)(nil),                                               // 348: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize
+	(*Condition_Expression_RequestHTTPHasQueryParam)(nil),                                      // 349: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam
+	(*Condition_Expression_RequestHTTPQueryParamValue)(nil),                                    // 350: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue
+	(*Condition_Expression_RequestSSH)(nil),                                                    // 351: octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH
+	(*Condition_Expression_RequestSSHUser)(nil),                                                // 352: octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser
+	(*Condition_Expression_RequestKubernetes)(nil),                                             // 353: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes
+	(*Condition_Expression_RequestKubernetesVerb)(nil),                                         // 354: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb
+	(*Condition_Expression_RequestKubernetesAPIPrefix)(nil),                                    // 355: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix
+	(*Condition_Expression_RequestKubernetesAPIGroup)(nil),                                     // 356: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup
+	(*Condition_Expression_RequestKubernetesAPIVersion)(nil),                                   // 357: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion
+	(*Condition_Expression_RequestKubernetesNamespace)(nil),                                    // 358: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace
+	(*Condition_Expression_RequestKubernetesResource)(nil),                                     // 359: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource
+	(*Condition_Expression_RequestKubernetesSubresource)(nil),                                  // 360: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource
+	(*Condition_Expression_RequestKubernetesName)(nil),                                         // 361: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName
+	(*Condition_Expression_RequestGRPC)(nil),                                                   // 362: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC
+	(*Condition_Expression_RequestGRPCMethod)(nil),                                             // 363: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod
+	(*Condition_Expression_RequestGRPCService)(nil),                                            // 364: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService
+	(*Condition_Expression_RequestGRPCServiceFullName)(nil),                                    // 365: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName
+	(*Condition_Expression_RequestGRPCPackage)(nil),                                            // 366: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage
+	(*Condition_Expression_RequestPostgresConnect)(nil),                                        // 367: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect
+	(*Condition_Expression_RequestPostgresConnectUser)(nil),                                    // 368: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser
+	(*Condition_Expression_RequestPostgresConnectDatabase)(nil),                                // 369: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase
+	(*Condition_Expression_RequestPostgresConnectApplicationName)(nil),                         // 370: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName
+	(*Condition_Expression_RequestPostgresQuery)(nil),                                          // 371: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery
+	(*Condition_Expression_RequestPostgresQueryText)(nil),                                      // 372: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText
+	(*Condition_Expression_RequestPostgresParse)(nil),                                          // 373: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse
+	(*Condition_Expression_RequestPostgresParseName)(nil),                                      // 374: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName
+	(*Condition_Expression_RequestPostgresParseQuery)(nil),                                     // 375: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery
+	(*Condition_Expression_RequestDNS)(nil),                                                    // 376: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS
+	(*Condition_Expression_RequestDNSName)(nil),                                                // 377: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName
+	(*Condition_Expression_RequestDNSTypeID)(nil),                                              // 378: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID
+	(*Condition_Expression_RequestSOCKS5)(nil),                                                 // 379: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5
+	(*Condition_Expression_RequestSOCKS5Host)(nil),                                             // 380: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host
+	(*Condition_Expression_RequestSOCKS5Port)(nil),                                             // 381: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port
+	(*Condition_Expression_RequestSOCKS5AddressType)(nil),                                      // 382: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType
+	(*Condition_Expression_MCPProtocolVersion)(nil),                                            // 383: octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion
+	(*Condition_Expression_MCPMethod)(nil),                                                     // 384: octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod
+	(*Condition_Expression_MCPToolName)(nil),                                                   // 385: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName
+	(*Condition_Expression_MCPPromptName)(nil),                                                 // 386: octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName
+	(*Condition_Expression_MCPResourceURI)(nil),                                                // 387: octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI
+	(*Condition_Expression_MCPIsNotification)(nil),                                             // 388: octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification
+	(*Condition_Expression_MCPToolArgument)(nil),                                               // 389: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument
+	(*Condition_Expression_LLMProtocol)(nil),                                                   // 390: octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol
+	(*Condition_Expression_LLMOperation)(nil),                                                  // 391: octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation
+	(*Condition_Expression_LLMModel)(nil),                                                      // 392: octelium.api.main.enterprise.v1.Condition.Expression.LLMModel
+	(*Condition_Expression_LLMStream)(nil),                                                     // 393: octelium.api.main.enterprise.v1.Condition.Expression.LLMStream
+	(*Condition_Expression_LLMEstimatedInputTokens)(nil),                                       // 394: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens
+	(*Condition_Expression_LLMEstimateQuality)(nil),                                            // 395: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality
+	(*Condition_Expression_LLMMaxOutputTokens)(nil),                                            // 396: octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens
+	(*Condition_Expression_LLMHasTools)(nil),                                                   // 397: octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools
+	(*Condition_Expression_LLMToolCount)(nil),                                                  // 398: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount
+	(*Condition_Expression_LLMToolName)(nil),                                                   // 399: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName
+	(*Condition_Expression_LLMInputItemCount)(nil),                                             // 400: octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount
+	(*Condition_Expression_LLMHasImageInput)(nil),                                              // 401: octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput
+	(*Condition_Expression_LLMHasAudioInput)(nil),                                              // 402: octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput
+	(*Condition_Expression_APIServerReadOnlyMethods)(nil),                                      // 403: octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods
+	(*Condition_Expression_APIServerMethods)(nil),                                              // 404: octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods
+	(*Condition_Expression_APIServerServices)(nil),                                             // 405: octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices
+	(*Condition_Expression_APIServerCore)(nil),                                                 // 406: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore
+	(*Condition_Expression_APIServerUser)(nil),                                                 // 407: octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser
+	(*Condition_Expression_APIServerEnterprise)(nil),                                           // 408: octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise
+	(*Condition_Expression_APIServerCordium)(nil),                                              // 409: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium
+	(*Condition_Expression_APIServerAccess)(nil),                                               // 410: octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess
+	(*Condition_Expression_TimeDayType)(nil),                                                   // 411: octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType
+	(*Condition_Expression_StringMatch_In)(nil),                                                // 412: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In
+	(*Condition_Expression_StringSetMatch_In)(nil),                                             // 413: octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In
+	(*Condition_Expression_MCPToolArgument_BoolMatch)(nil),                                     // 414: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch
+	(*Condition_Expression_MCPToolArgument_IsNull)(nil),                                        // 415: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull
+	(*Condition_Expression_MCPToolArgument_Exists)(nil),                                        // 416: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists
+	(*AuthenticationLog_Entry)(nil),                                                            // 417: octelium.api.main.enterprise.v1.AuthenticationLog.Entry
+	(*AuthenticationLog_Entry_Failure)(nil),                                                    // 418: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure
+	(*UpgradeClusterRequest_Request)(nil),                                                      // 419: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request
+	(*UpgradeClusterRequest_Request_Core)(nil),                                                 // 420: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.Core
+	(*UpgradeClusterRequest_Request_PackageEnterprise)(nil),                                    // 421: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageEnterprise
+	(*UpgradeClusterRequest_Request_PackageCordium)(nil),                                       // 422: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageCordium
+	(*JoinClusterRequest_Kubernetes)(nil),                                                      // 423: octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes
+	(*JoinClusterRequest_Kubernetes_Kubeconfig)(nil),                                           // 424: octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.Kubeconfig
+	(*JoinClusterRequest_Kubernetes_BearerToken)(nil),                                          // 425: octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.BearerToken
+	(*GetClusterInfoResponse_Core)(nil),                                                        // 426: octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core
+	(*GetClusterInfoResponse_PackageEnterprise)(nil),                                           // 427: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise
+	(*GetClusterInfoResponse_PackageCordium)(nil),                                              // 428: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium
+	(*License_Organization)(nil),                                                               // 429: octelium.api.main.enterprise.v1.License.Organization
+	(*License_Plan)(nil),                                                                       // 430: octelium.api.main.enterprise.v1.License.Plan
+	(*License_Plan_Support)(nil),                                                               // 431: octelium.api.main.enterprise.v1.License.Plan.Support
+	(*License_Plan_Limits)(nil),                                                                // 432: octelium.api.main.enterprise.v1.License.Plan.Limits
+	(*Agent_Workspace)(nil),                                                                    // 433: octelium.api.main.enterprise.v1.Agent.Workspace
+	(*SupportInfo_Organization)(nil),                                                           // 434: octelium.api.main.enterprise.v1.SupportInfo.Organization
+	(*SupportInfo_Limits)(nil),                                                                 // 435: octelium.api.main.enterprise.v1.SupportInfo.Limits
+	nil,                                                                                        // 436: octelium.api.main.enterprise.v1.SupportInfo.EnvironmentEntry
+	(*SupportRequest_Actor)(nil),                                                               // 437: octelium.api.main.enterprise.v1.SupportRequest.Actor
+	(*SupportRequest_Reporter)(nil),                                                            // 438: octelium.api.main.enterprise.v1.SupportRequest.Reporter
+	(*SupportRequest_SLA)(nil),                                                                 // 439: octelium.api.main.enterprise.v1.SupportRequest.SLA
+	(*SupportRequest_Event)(nil),                                                               // 440: octelium.api.main.enterprise.v1.SupportRequest.Event
+	(*SupportRequest_Attachment)(nil),                                                          // 441: octelium.api.main.enterprise.v1.SupportRequest.Attachment
+	(*SupportRequest_Actions)(nil),                                                             // 442: octelium.api.main.enterprise.v1.SupportRequest.Actions
+	nil,                                                                                        // 443: octelium.api.main.enterprise.v1.SupportRequest.EnvironmentEntry
+	(*DownloadSupportRequestAttachmentResponse_Header)(nil),                                    // 444: octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse.Header
+	(*metav1.CommonListOptions)(nil),                                                           // 445: octelium.api.main.meta.v1.CommonListOptions
+	(*metav1.Metadata)(nil),                                                                    // 446: octelium.api.main.meta.v1.Metadata
+	(*metav1.ListResponseMeta)(nil),                                                            // 447: octelium.api.main.meta.v1.ListResponseMeta
+	(*metav1.ObjectReference)(nil),                                                             // 448: octelium.api.main.meta.v1.ObjectReference
+	(*metav1.LogMetadata)(nil),                                                                 // 449: octelium.api.main.meta.v1.LogMetadata
+	(*corev1.RequestContext_Request)(nil),                                                      // 450: octelium.api.main.core.v1.RequestContext.Request
+	(*corev1.AccessLog_Entry_Common_Reason)(nil),                                               // 451: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason
+	(*timestamppb.Timestamp)(nil),                                                              // 452: google.protobuf.Timestamp
+	(*metav1.Duration)(nil),                                                                    // 453: octelium.api.main.meta.v1.Duration
+	(*cordiumv1.Workspace_Spec_Image)(nil),                                                     // 454: octelium.api.main.cordium.v1.Workspace.Spec.Image
+	(*cordiumv1.Workspace_Spec_Limit)(nil),                                                     // 455: octelium.api.main.cordium.v1.Workspace.Spec.Limit
+	(*structpb.Struct)(nil),                                                                    // 456: google.protobuf.Struct
+	(*corev1.Condition)(nil),                                                                   // 457: octelium.api.main.core.v1.Condition
+	(*corev1.InlinePolicy)(nil),                                                                // 458: octelium.api.main.core.v1.InlinePolicy
+	(corev1.User_Spec_Type)(0),                                                                 // 459: octelium.api.main.core.v1.User.Spec.Type
+	(corev1.Device_Status_OSType)(0),                                                           // 460: octelium.api.main.core.v1.Device.Status.OSType
+	(corev1.Service_Spec_Mode)(0),                                                              // 461: octelium.api.main.core.v1.Service.Spec.Mode
+	(corev1.Session_Status_Type)(0),                                                            // 462: octelium.api.main.core.v1.Session.Status.Type
+	(corev1.Session_Status_Authentication_Info_Type)(0),                                        // 463: octelium.api.main.core.v1.Session.Status.Authentication.Info.Type
+	(corev1.Session_Status_Authentication_Info_AAL)(0),                                         // 464: octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL
+	(corev1.Credential_Spec_Type)(0),                                                           // 465: octelium.api.main.core.v1.Credential.Spec.Type
+	(corev1.RequestContext_Request_SOCKS5_Connect_AddressType)(0),                              // 466: octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType
+	(corev1.Service_Spec_Config_LLM_Protocol)(0),                                               // 467: octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol
+	(corev1.Service_Spec_Config_LLM_Operation)(0),                                              // 468: octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation
+	(corev1.RequestContext_Request_LLM_EstimateQuality)(0),                                     // 469: octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality
+	(*corev1.Session_Status_Authentication)(nil),                                               // 470: octelium.api.main.core.v1.Session.Status.Authentication
+	(*cordiumv1.Workspace)(nil),                                                                // 471: octelium.api.main.cordium.v1.Workspace
+	(*metav1.GetOptions)(nil),                                                                  // 472: octelium.api.main.meta.v1.GetOptions
+	(*metav1.DeleteOptions)(nil),                                                               // 473: octelium.api.main.meta.v1.DeleteOptions
+	(*metav1.OperationResult)(nil),                                                             // 474: octelium.api.main.meta.v1.OperationResult
 }
 var file_enterprisev1_proto_depIdxs = []int32{
-	410, // 0: octelium.api.main.enterprise.v1.ListCollectorExporterOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	411, // 1: octelium.api.main.enterprise.v1.CollectorExporter.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	108, // 2: octelium.api.main.enterprise.v1.CollectorExporter.spec:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec
-	109, // 3: octelium.api.main.enterprise.v1.CollectorExporter.status:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Status
-	42,  // 4: octelium.api.main.enterprise.v1.CollectorExporterList.items:type_name -> octelium.api.main.enterprise.v1.CollectorExporter
-	412, // 5: octelium.api.main.enterprise.v1.CollectorExporterList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	411, // 6: octelium.api.main.enterprise.v1.ClusterConfig.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	188, // 7: octelium.api.main.enterprise.v1.ClusterConfig.spec:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec
-	189, // 8: octelium.api.main.enterprise.v1.ClusterConfig.status:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status
-	411, // 9: octelium.api.main.enterprise.v1.Secret.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	203, // 10: octelium.api.main.enterprise.v1.Secret.spec:type_name -> octelium.api.main.enterprise.v1.Secret.Spec
-	204, // 11: octelium.api.main.enterprise.v1.Secret.status:type_name -> octelium.api.main.enterprise.v1.Secret.Status
-	205, // 12: octelium.api.main.enterprise.v1.Secret.data:type_name -> octelium.api.main.enterprise.v1.Secret.Data
-	45,  // 13: octelium.api.main.enterprise.v1.SecretList.items:type_name -> octelium.api.main.enterprise.v1.Secret
-	412, // 14: octelium.api.main.enterprise.v1.SecretList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	410, // 15: octelium.api.main.enterprise.v1.ListSecretOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	411, // 16: octelium.api.main.enterprise.v1.Certificate.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	210, // 17: octelium.api.main.enterprise.v1.Certificate.spec:type_name -> octelium.api.main.enterprise.v1.Certificate.Spec
-	211, // 18: octelium.api.main.enterprise.v1.Certificate.status:type_name -> octelium.api.main.enterprise.v1.Certificate.Status
-	48,  // 19: octelium.api.main.enterprise.v1.CertificateList.items:type_name -> octelium.api.main.enterprise.v1.Certificate
-	412, // 20: octelium.api.main.enterprise.v1.CertificateList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	411, // 21: octelium.api.main.enterprise.v1.CertificateIssuer.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	214, // 22: octelium.api.main.enterprise.v1.CertificateIssuer.spec:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec
-	215, // 23: octelium.api.main.enterprise.v1.CertificateIssuer.status:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Status
-	50,  // 24: octelium.api.main.enterprise.v1.CertificateIssuerList.items:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer
-	412, // 25: octelium.api.main.enterprise.v1.CertificateIssuerList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	411, // 26: octelium.api.main.enterprise.v1.DirectoryProvider.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	220, // 27: octelium.api.main.enterprise.v1.DirectoryProvider.spec:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec
-	221, // 28: octelium.api.main.enterprise.v1.DirectoryProvider.status:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Status
-	52,  // 29: octelium.api.main.enterprise.v1.DirectoryProviderList.items:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider
-	412, // 30: octelium.api.main.enterprise.v1.DirectoryProviderList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	411, // 31: octelium.api.main.enterprise.v1.DirectoryProviderUser.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	230, // 32: octelium.api.main.enterprise.v1.DirectoryProviderUser.spec:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderUser.Spec
-	231, // 33: octelium.api.main.enterprise.v1.DirectoryProviderUser.status:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderUser.Status
-	54,  // 34: octelium.api.main.enterprise.v1.DirectoryProviderUserList.items:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderUser
-	412, // 35: octelium.api.main.enterprise.v1.DirectoryProviderUserList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	411, // 36: octelium.api.main.enterprise.v1.DirectoryProviderGroup.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	232, // 37: octelium.api.main.enterprise.v1.DirectoryProviderGroup.spec:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderGroup.Spec
-	233, // 38: octelium.api.main.enterprise.v1.DirectoryProviderGroup.status:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status
-	56,  // 39: octelium.api.main.enterprise.v1.DirectoryProviderGroupList.items:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderGroup
-	412, // 40: octelium.api.main.enterprise.v1.DirectoryProviderGroupList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	411, // 41: octelium.api.main.enterprise.v1.DNSProvider.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	234, // 42: octelium.api.main.enterprise.v1.DNSProvider.spec:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec
-	235, // 43: octelium.api.main.enterprise.v1.DNSProvider.status:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Status
-	58,  // 44: octelium.api.main.enterprise.v1.DNSProviderList.items:type_name -> octelium.api.main.enterprise.v1.DNSProvider
-	412, // 45: octelium.api.main.enterprise.v1.DNSProviderList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	410, // 46: octelium.api.main.enterprise.v1.ListDNSProviderOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	410, // 47: octelium.api.main.enterprise.v1.ListDirectoryProviderOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	410, // 48: octelium.api.main.enterprise.v1.ListCertificateOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	410, // 49: octelium.api.main.enterprise.v1.ListCertificateIssuerOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	413, // 50: octelium.api.main.enterprise.v1.SessionExtInfo.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	411, // 51: octelium.api.main.enterprise.v1.SecretStore.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	250, // 52: octelium.api.main.enterprise.v1.SecretStore.spec:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec
-	251, // 53: octelium.api.main.enterprise.v1.SecretStore.status:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status
-	65,  // 54: octelium.api.main.enterprise.v1.SecretStoreList.items:type_name -> octelium.api.main.enterprise.v1.SecretStore
-	412, // 55: octelium.api.main.enterprise.v1.SecretStoreList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	413, // 56: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	445, // 0: octelium.api.main.enterprise.v1.ListCollectorExporterOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	446, // 1: octelium.api.main.enterprise.v1.CollectorExporter.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	132, // 2: octelium.api.main.enterprise.v1.CollectorExporter.spec:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec
+	133, // 3: octelium.api.main.enterprise.v1.CollectorExporter.status:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Status
+	51,  // 4: octelium.api.main.enterprise.v1.CollectorExporterList.items:type_name -> octelium.api.main.enterprise.v1.CollectorExporter
+	447, // 5: octelium.api.main.enterprise.v1.CollectorExporterList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	446, // 6: octelium.api.main.enterprise.v1.ClusterConfig.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	212, // 7: octelium.api.main.enterprise.v1.ClusterConfig.spec:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec
+	213, // 8: octelium.api.main.enterprise.v1.ClusterConfig.status:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status
+	446, // 9: octelium.api.main.enterprise.v1.Secret.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	227, // 10: octelium.api.main.enterprise.v1.Secret.spec:type_name -> octelium.api.main.enterprise.v1.Secret.Spec
+	228, // 11: octelium.api.main.enterprise.v1.Secret.status:type_name -> octelium.api.main.enterprise.v1.Secret.Status
+	229, // 12: octelium.api.main.enterprise.v1.Secret.data:type_name -> octelium.api.main.enterprise.v1.Secret.Data
+	54,  // 13: octelium.api.main.enterprise.v1.SecretList.items:type_name -> octelium.api.main.enterprise.v1.Secret
+	447, // 14: octelium.api.main.enterprise.v1.SecretList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	445, // 15: octelium.api.main.enterprise.v1.ListSecretOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	446, // 16: octelium.api.main.enterprise.v1.Certificate.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	234, // 17: octelium.api.main.enterprise.v1.Certificate.spec:type_name -> octelium.api.main.enterprise.v1.Certificate.Spec
+	235, // 18: octelium.api.main.enterprise.v1.Certificate.status:type_name -> octelium.api.main.enterprise.v1.Certificate.Status
+	57,  // 19: octelium.api.main.enterprise.v1.CertificateList.items:type_name -> octelium.api.main.enterprise.v1.Certificate
+	447, // 20: octelium.api.main.enterprise.v1.CertificateList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	446, // 21: octelium.api.main.enterprise.v1.CertificateIssuer.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	238, // 22: octelium.api.main.enterprise.v1.CertificateIssuer.spec:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec
+	239, // 23: octelium.api.main.enterprise.v1.CertificateIssuer.status:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Status
+	59,  // 24: octelium.api.main.enterprise.v1.CertificateIssuerList.items:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer
+	447, // 25: octelium.api.main.enterprise.v1.CertificateIssuerList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	446, // 26: octelium.api.main.enterprise.v1.DirectoryProvider.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	244, // 27: octelium.api.main.enterprise.v1.DirectoryProvider.spec:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec
+	245, // 28: octelium.api.main.enterprise.v1.DirectoryProvider.status:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Status
+	61,  // 29: octelium.api.main.enterprise.v1.DirectoryProviderList.items:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider
+	447, // 30: octelium.api.main.enterprise.v1.DirectoryProviderList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	446, // 31: octelium.api.main.enterprise.v1.DirectoryProviderUser.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	254, // 32: octelium.api.main.enterprise.v1.DirectoryProviderUser.spec:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderUser.Spec
+	255, // 33: octelium.api.main.enterprise.v1.DirectoryProviderUser.status:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderUser.Status
+	63,  // 34: octelium.api.main.enterprise.v1.DirectoryProviderUserList.items:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderUser
+	447, // 35: octelium.api.main.enterprise.v1.DirectoryProviderUserList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	446, // 36: octelium.api.main.enterprise.v1.DirectoryProviderGroup.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	256, // 37: octelium.api.main.enterprise.v1.DirectoryProviderGroup.spec:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderGroup.Spec
+	257, // 38: octelium.api.main.enterprise.v1.DirectoryProviderGroup.status:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status
+	65,  // 39: octelium.api.main.enterprise.v1.DirectoryProviderGroupList.items:type_name -> octelium.api.main.enterprise.v1.DirectoryProviderGroup
+	447, // 40: octelium.api.main.enterprise.v1.DirectoryProviderGroupList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	446, // 41: octelium.api.main.enterprise.v1.DNSProvider.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	258, // 42: octelium.api.main.enterprise.v1.DNSProvider.spec:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec
+	259, // 43: octelium.api.main.enterprise.v1.DNSProvider.status:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Status
+	67,  // 44: octelium.api.main.enterprise.v1.DNSProviderList.items:type_name -> octelium.api.main.enterprise.v1.DNSProvider
+	447, // 45: octelium.api.main.enterprise.v1.DNSProviderList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	445, // 46: octelium.api.main.enterprise.v1.ListDNSProviderOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	445, // 47: octelium.api.main.enterprise.v1.ListDirectoryProviderOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	445, // 48: octelium.api.main.enterprise.v1.ListCertificateOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	445, // 49: octelium.api.main.enterprise.v1.ListCertificateIssuerOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	448, // 50: octelium.api.main.enterprise.v1.SessionExtInfo.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	446, // 51: octelium.api.main.enterprise.v1.SecretStore.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	274, // 52: octelium.api.main.enterprise.v1.SecretStore.spec:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec
+	275, // 53: octelium.api.main.enterprise.v1.SecretStore.status:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status
+	74,  // 54: octelium.api.main.enterprise.v1.SecretStoreList.items:type_name -> octelium.api.main.enterprise.v1.SecretStore
+	447, // 55: octelium.api.main.enterprise.v1.SecretStoreList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	448, // 56: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
 	23,  // 57: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest.mode:type_name -> octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest.Mode
-	258, // 58: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse.bearer:type_name -> octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse.Bearer
-	413, // 59: octelium.api.main.enterprise.v1.IssueCertificateRequest.certificateRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 60: octelium.api.main.enterprise.v1.SetCertificateRequest.certificateRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	414, // 61: octelium.api.main.enterprise.v1.AuditLog.metadata:type_name -> octelium.api.main.meta.v1.LogMetadata
-	259, // 62: octelium.api.main.enterprise.v1.AuditLog.entry:type_name -> octelium.api.main.enterprise.v1.AuditLog.Entry
-	410, // 63: octelium.api.main.enterprise.v1.ListSecretStoreOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	411, // 64: octelium.api.main.enterprise.v1.DeviceManager.metadata:type_name -> octelium.api.main.meta.v1.Metadata
-	260, // 65: octelium.api.main.enterprise.v1.DeviceManager.spec:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec
-	261, // 66: octelium.api.main.enterprise.v1.DeviceManager.status:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status
-	75,  // 67: octelium.api.main.enterprise.v1.DeviceManagerList.items:type_name -> octelium.api.main.enterprise.v1.DeviceManager
-	412, // 68: octelium.api.main.enterprise.v1.DeviceManagerList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
-	410, // 69: octelium.api.main.enterprise.v1.ListDeviceManagerOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	413, // 70: octelium.api.main.enterprise.v1.ResetDeviceBindingRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 71: octelium.api.main.enterprise.v1.UserExtInfo.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	410, // 72: octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	413, // 73: octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	410, // 74: octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
-	413, // 75: octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 76: octelium.api.main.enterprise.v1.IsAuthorizedRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 77: octelium.api.main.enterprise.v1.IsAuthorizedRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 78: octelium.api.main.enterprise.v1.IsAuthorizedRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 79: octelium.api.main.enterprise.v1.IsAuthorizedRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 80: octelium.api.main.enterprise.v1.IsAuthorizedRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	415, // 81: octelium.api.main.enterprise.v1.IsAuthorizedRequest.request:type_name -> octelium.api.main.core.v1.RequestContext.Request
-	276, // 82: octelium.api.main.enterprise.v1.IsAuthorizedRequest.additional:type_name -> octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional
-	416, // 83: octelium.api.main.enterprise.v1.IsAuthorizedResponse.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason
-	277, // 84: octelium.api.main.enterprise.v1.Condition.all:type_name -> octelium.api.main.enterprise.v1.Condition.All
-	278, // 85: octelium.api.main.enterprise.v1.Condition.any:type_name -> octelium.api.main.enterprise.v1.Condition.Any
-	279, // 86: octelium.api.main.enterprise.v1.Condition.none:type_name -> octelium.api.main.enterprise.v1.Condition.None
-	280, // 87: octelium.api.main.enterprise.v1.Condition.not:type_name -> octelium.api.main.enterprise.v1.Condition.Not
-	281, // 88: octelium.api.main.enterprise.v1.Condition.expression:type_name -> octelium.api.main.enterprise.v1.Condition.Expression
-	413, // 89: octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderRequest.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	414, // 90: octelium.api.main.enterprise.v1.AuthenticationLog.metadata:type_name -> octelium.api.main.meta.v1.LogMetadata
-	393, // 91: octelium.api.main.enterprise.v1.AuthenticationLog.entry:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry
-	395, // 92: octelium.api.main.enterprise.v1.UpgradeClusterRequest.request:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request
-	399, // 93: octelium.api.main.enterprise.v1.JoinClusterRequest.kubernetes:type_name -> octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes
-	399, // 94: octelium.api.main.enterprise.v1.RegionExtInfo.kubernetes:type_name -> octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes
-	413, // 95: octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest.secretStoreRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	402, // 96: octelium.api.main.enterprise.v1.GetClusterInfoResponse.core:type_name -> octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core
-	403, // 97: octelium.api.main.enterprise.v1.GetClusterInfoResponse.packageEnterprise:type_name -> octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise
-	404, // 98: octelium.api.main.enterprise.v1.GetClusterInfoResponse.packageCordium:type_name -> octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium
-	405, // 99: octelium.api.main.enterprise.v1.License.organization:type_name -> octelium.api.main.enterprise.v1.License.Organization
-	417, // 100: octelium.api.main.enterprise.v1.License.issuedAt:type_name -> google.protobuf.Timestamp
-	417, // 101: octelium.api.main.enterprise.v1.License.notBefore:type_name -> google.protobuf.Timestamp
-	417, // 102: octelium.api.main.enterprise.v1.License.notAfter:type_name -> google.protobuf.Timestamp
+	282, // 58: octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse.bearer:type_name -> octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse.Bearer
+	448, // 59: octelium.api.main.enterprise.v1.IssueCertificateRequest.certificateRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 60: octelium.api.main.enterprise.v1.SetCertificateRequest.certificateRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	449, // 61: octelium.api.main.enterprise.v1.AuditLog.metadata:type_name -> octelium.api.main.meta.v1.LogMetadata
+	283, // 62: octelium.api.main.enterprise.v1.AuditLog.entry:type_name -> octelium.api.main.enterprise.v1.AuditLog.Entry
+	445, // 63: octelium.api.main.enterprise.v1.ListSecretStoreOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	446, // 64: octelium.api.main.enterprise.v1.DeviceManager.metadata:type_name -> octelium.api.main.meta.v1.Metadata
+	284, // 65: octelium.api.main.enterprise.v1.DeviceManager.spec:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec
+	285, // 66: octelium.api.main.enterprise.v1.DeviceManager.status:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status
+	84,  // 67: octelium.api.main.enterprise.v1.DeviceManagerList.items:type_name -> octelium.api.main.enterprise.v1.DeviceManager
+	447, // 68: octelium.api.main.enterprise.v1.DeviceManagerList.listResponseMeta:type_name -> octelium.api.main.meta.v1.ListResponseMeta
+	445, // 69: octelium.api.main.enterprise.v1.ListDeviceManagerOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	448, // 70: octelium.api.main.enterprise.v1.ResetDeviceBindingRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 71: octelium.api.main.enterprise.v1.UserExtInfo.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	445, // 72: octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	448, // 73: octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	445, // 74: octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions.common:type_name -> octelium.api.main.meta.v1.CommonListOptions
+	448, // 75: octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 76: octelium.api.main.enterprise.v1.IsAuthorizedRequest.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 77: octelium.api.main.enterprise.v1.IsAuthorizedRequest.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 78: octelium.api.main.enterprise.v1.IsAuthorizedRequest.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 79: octelium.api.main.enterprise.v1.IsAuthorizedRequest.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 80: octelium.api.main.enterprise.v1.IsAuthorizedRequest.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	450, // 81: octelium.api.main.enterprise.v1.IsAuthorizedRequest.request:type_name -> octelium.api.main.core.v1.RequestContext.Request
+	300, // 82: octelium.api.main.enterprise.v1.IsAuthorizedRequest.additional:type_name -> octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional
+	451, // 83: octelium.api.main.enterprise.v1.IsAuthorizedResponse.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason
+	301, // 84: octelium.api.main.enterprise.v1.Condition.all:type_name -> octelium.api.main.enterprise.v1.Condition.All
+	302, // 85: octelium.api.main.enterprise.v1.Condition.any:type_name -> octelium.api.main.enterprise.v1.Condition.Any
+	303, // 86: octelium.api.main.enterprise.v1.Condition.none:type_name -> octelium.api.main.enterprise.v1.Condition.None
+	304, // 87: octelium.api.main.enterprise.v1.Condition.not:type_name -> octelium.api.main.enterprise.v1.Condition.Not
+	305, // 88: octelium.api.main.enterprise.v1.Condition.expression:type_name -> octelium.api.main.enterprise.v1.Condition.Expression
+	448, // 89: octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderRequest.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	449, // 90: octelium.api.main.enterprise.v1.AuthenticationLog.metadata:type_name -> octelium.api.main.meta.v1.LogMetadata
+	417, // 91: octelium.api.main.enterprise.v1.AuthenticationLog.entry:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry
+	419, // 92: octelium.api.main.enterprise.v1.UpgradeClusterRequest.request:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request
+	423, // 93: octelium.api.main.enterprise.v1.JoinClusterRequest.kubernetes:type_name -> octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes
+	423, // 94: octelium.api.main.enterprise.v1.RegionExtInfo.kubernetes:type_name -> octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes
+	448, // 95: octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest.secretStoreRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	426, // 96: octelium.api.main.enterprise.v1.GetClusterInfoResponse.core:type_name -> octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core
+	427, // 97: octelium.api.main.enterprise.v1.GetClusterInfoResponse.packageEnterprise:type_name -> octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise
+	428, // 98: octelium.api.main.enterprise.v1.GetClusterInfoResponse.packageCordium:type_name -> octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium
+	429, // 99: octelium.api.main.enterprise.v1.License.organization:type_name -> octelium.api.main.enterprise.v1.License.Organization
+	452, // 100: octelium.api.main.enterprise.v1.License.issuedAt:type_name -> google.protobuf.Timestamp
+	452, // 101: octelium.api.main.enterprise.v1.License.notBefore:type_name -> google.protobuf.Timestamp
+	452, // 102: octelium.api.main.enterprise.v1.License.notAfter:type_name -> google.protobuf.Timestamp
 	35,  // 103: octelium.api.main.enterprise.v1.License.type:type_name -> octelium.api.main.enterprise.v1.License.Type
-	406, // 104: octelium.api.main.enterprise.v1.License.plan:type_name -> octelium.api.main.enterprise.v1.License.Plan
-	97,  // 105: octelium.api.main.enterprise.v1.SetLicenseResponse.license:type_name -> octelium.api.main.enterprise.v1.License
+	430, // 104: octelium.api.main.enterprise.v1.License.plan:type_name -> octelium.api.main.enterprise.v1.License.Plan
+	106, // 105: octelium.api.main.enterprise.v1.SetLicenseResponse.license:type_name -> octelium.api.main.enterprise.v1.License
 	15,  // 106: octelium.api.main.enterprise.v1.SetLicenseResponse.state:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State
-	97,  // 107: octelium.api.main.enterprise.v1.GetLicenseResponse.license:type_name -> octelium.api.main.enterprise.v1.License
+	106, // 107: octelium.api.main.enterprise.v1.GetLicenseResponse.license:type_name -> octelium.api.main.enterprise.v1.License
 	15,  // 108: octelium.api.main.enterprise.v1.GetLicenseResponse.state:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State
-	417, // 109: octelium.api.main.enterprise.v1.GetLicenseResponse.setAt:type_name -> google.protobuf.Timestamp
+	452, // 109: octelium.api.main.enterprise.v1.GetLicenseResponse.setAt:type_name -> google.protobuf.Timestamp
 	38,  // 110: octelium.api.main.enterprise.v1.Agent.state:type_name -> octelium.api.main.enterprise.v1.Agent.State
-	413, // 111: octelium.api.main.enterprise.v1.Agent.spaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 112: octelium.api.main.enterprise.v1.Agent.templateRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	409, // 113: octelium.api.main.enterprise.v1.Agent.workspaces:type_name -> octelium.api.main.enterprise.v1.Agent.Workspace
-	110, // 114: octelium.api.main.enterprise.v1.CollectorExporter.Spec.otlp:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP
-	111, // 115: octelium.api.main.enterprise.v1.CollectorExporter.Spec.otlpHTTP:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP
-	113, // 116: octelium.api.main.enterprise.v1.CollectorExporter.Spec.clickhouse:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse
-	114, // 117: octelium.api.main.enterprise.v1.CollectorExporter.Spec.elasticsearch:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch
-	115, // 118: octelium.api.main.enterprise.v1.CollectorExporter.Spec.logzio:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio
-	116, // 119: octelium.api.main.enterprise.v1.CollectorExporter.Spec.influxDB:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB
-	117, // 120: octelium.api.main.enterprise.v1.CollectorExporter.Spec.kafka:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka
-	118, // 121: octelium.api.main.enterprise.v1.CollectorExporter.Spec.datadog:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog
-	119, // 122: octelium.api.main.enterprise.v1.CollectorExporter.Spec.splunk:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk
-	120, // 123: octelium.api.main.enterprise.v1.CollectorExporter.Spec.azureMonitor:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor
-	121, // 124: octelium.api.main.enterprise.v1.CollectorExporter.Spec.azureDataExplorer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer
-	112, // 125: octelium.api.main.enterprise.v1.CollectorExporter.Spec.prometheusRemoteWrite:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite
-	122, // 126: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Header
-	123, // 127: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth
-	124, // 128: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.TLS
-	0,   // 129: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.compression:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Compression
-	418, // 130: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	125, // 131: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.keepalive:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive
-	131, // 132: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header
-	132, // 133: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth
-	1,   // 134: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.encoding:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Encoding
-	2,   // 135: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.compression:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Compression
-	133, // 136: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS
-	418, // 137: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	139, // 138: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header
-	141, // 139: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth
-	142, // 140: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS
-	140, // 141: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.externalLabels:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel
-	418, // 142: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	143, // 143: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.remoteWriteQueue:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue
-	144, // 144: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.resourceToTelemetryConversion:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion
-	145, // 145: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.targetInfo:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo
-	3,   // 146: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.translationStrategy:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TranslationStrategy
-	151, // 147: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Password
-	152, // 148: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS
-	153, // 149: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.connectionParams:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam
-	155, // 150: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.metricsTables:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables
-	418, // 151: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ttl:type_name -> octelium.api.main.meta.v1.Duration
-	4,   // 152: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.compression:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Compression
-	154, // 153: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.tableEngine:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine
-	418, // 154: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	156, // 155: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header
-	157, // 156: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth
-	5,   // 157: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.compression:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Compression
-	418, // 158: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	158, // 159: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS
-	162, // 160: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.token:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.Token
-	418, // 161: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	164, // 162: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.token:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Token
-	163, // 163: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header
-	6,   // 164: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.metricsSchema:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.MetricsSchema
-	7,   // 165: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.precision:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Precision
-	418, // 166: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	165, // 167: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.v1Compatibility:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility
-	170, // 168: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.logs:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal
-	170, // 169: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.metrics:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal
-	167, // 170: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.recordHeaders:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header
-	168, // 171: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth
-	169, // 172: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS
-	418, // 173: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	418, // 174: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.connIdleTimeout:type_name -> octelium.api.main.meta.v1.Duration
-	171, // 175: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.producer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer
-	175, // 176: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.api:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API
-	176, // 177: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.metrics:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics
-	177, // 178: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.logs:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs
-	178, // 179: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.hostMetadata:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata
-	418, // 180: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.hostnameDetectionTimeout:type_name -> octelium.api.main.meta.v1.Duration
-	179, // 181: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.token:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.Token
-	418, // 182: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	180, // 183: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.TLS
-	181, // 184: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.connectionString:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString
-	182, // 185: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.instrumentationKey:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey
-	418, // 186: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.maxBatchInterval:type_name -> octelium.api.main.meta.v1.Duration
-	418, // 187: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.shutdownTimeout:type_name -> octelium.api.main.meta.v1.Duration
-	187, // 188: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth
-	11,  // 189: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ingestionType:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.IngestionType
-	418, // 190: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	126, // 191: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.bearer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Bearer
-	127, // 192: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic
-	128, // 193: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.custom:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom
-	418, // 194: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive.time:type_name -> octelium.api.main.meta.v1.Duration
-	418, // 195: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	129, // 196: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic.Password
-	130, // 197: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom.value:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom.Value
-	134, // 198: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.bearer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Bearer
-	135, // 199: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic
-	136, // 200: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.custom:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom
-	137, // 201: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic.Password
-	138, // 202: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom.value:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom.Value
-	146, // 203: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.bearer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Bearer
-	147, // 204: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic
-	148, // 205: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.custom:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom
-	149, // 206: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.Password
-	150, // 207: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom.value:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom.Value
-	159, // 208: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.apiKey:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.APIKey
-	160, // 209: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic
-	161, // 210: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic.Password
-	166, // 211: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password
-	172, // 212: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.sasl:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL
-	8,   // 213: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal.encoding:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Encoding
-	9,   // 214: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer.compression:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.ProducerCompression
-	418, // 215: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer.linger:type_name -> octelium.api.main.meta.v1.Duration
-	173, // 216: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password
-	10,  // 217: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.mechanism:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Mechanism
-	174, // 218: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API.key:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey
-	418, // 219: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs.batchWait:type_name -> octelium.api.main.meta.v1.Duration
-	418, // 220: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata.reporterPeriod:type_name -> octelium.api.main.meta.v1.Duration
-	183, // 221: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal.applicationKey:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey
-	184, // 222: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth.servicePrincipal:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal
-	185, // 223: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth.managedIdentity:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity
-	186, // 224: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth.azureDefault:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth
-	190, // 225: octelium.api.main.enterprise.v1.ClusterConfig.Spec.collector:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector
-	191, // 226: octelium.api.main.enterprise.v1.ClusterConfig.Spec.scaler:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler
-	192, // 227: octelium.api.main.enterprise.v1.ClusterConfig.Spec.certificate:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate
-	193, // 228: octelium.api.main.enterprise.v1.ClusterConfig.Spec.agent:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent
-	199, // 229: octelium.api.main.enterprise.v1.ClusterConfig.Status.upgradeRequest:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest
-	199, // 230: octelium.api.main.enterprise.v1.ClusterConfig.Status.lastUpgradeRequests:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest
-	201, // 231: octelium.api.main.enterprise.v1.ClusterConfig.Status.licenseInfo:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo
-	200, // 232: octelium.api.main.enterprise.v1.ClusterConfig.Status.joinRequest:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest
-	200, // 233: octelium.api.main.enterprise.v1.ClusterConfig.Status.lastJoinRequests:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest
-	194, // 234: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.pipelines:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.Pipeline
-	195, // 235: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.octovigil:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Octovigil
-	196, // 236: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.ingress:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Ingress
-	197, // 237: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.collector:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Collector
-	16,  // 238: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate.defaultMode:type_name -> octelium.api.main.enterprise.v1.Certificate.Spec.Mode
-	198, // 239: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.llm:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.LLM
-	419, // 240: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.image:type_name -> octelium.api.main.cordium.v1.Workspace.Spec.Image
-	420, // 241: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.limit:type_name -> octelium.api.main.cordium.v1.Workspace.Spec.Limit
-	421, // 242: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.config:type_name -> google.protobuf.Struct
-	12,  // 243: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.Pipeline.type:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.Pipeline.Type
-	417, // 244: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.createdAt:type_name -> google.protobuf.Timestamp
-	13,  // 245: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.state:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.State
-	417, // 246: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.doneAt:type_name -> google.protobuf.Timestamp
-	395, // 247: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.request:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request
-	202, // 248: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.regions:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region
-	417, // 249: octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.createdAt:type_name -> google.protobuf.Timestamp
-	14,  // 250: octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.state:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.State
-	417, // 251: octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.doneAt:type_name -> google.protobuf.Timestamp
-	90,  // 252: octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.request:type_name -> octelium.api.main.enterprise.v1.JoinClusterRequest
-	413, // 253: octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 254: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.licenseSecretRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	15,  // 255: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.state:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State
-	417, // 256: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.setAt:type_name -> google.protobuf.Timestamp
-	417, // 257: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.stateCheckedAt:type_name -> google.protobuf.Timestamp
-	413, // 258: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	13,  // 259: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region.state:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.State
-	417, // 260: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region.doneAt:type_name -> google.protobuf.Timestamp
-	206, // 261: octelium.api.main.enterprise.v1.Secret.Spec.data:type_name -> octelium.api.main.enterprise.v1.Secret.Spec.Data
-	207, // 262: octelium.api.main.enterprise.v1.Secret.Status.ext:type_name -> octelium.api.main.enterprise.v1.Secret.Status.ExtEntry
-	208, // 263: octelium.api.main.enterprise.v1.Secret.Data.dataMap:type_name -> octelium.api.main.enterprise.v1.Secret.Data.DataMap
-	421, // 264: octelium.api.main.enterprise.v1.Secret.Data.attrs:type_name -> google.protobuf.Struct
-	421, // 265: octelium.api.main.enterprise.v1.Secret.Spec.Data.attrs:type_name -> google.protobuf.Struct
-	421, // 266: octelium.api.main.enterprise.v1.Secret.Status.ExtEntry.value:type_name -> google.protobuf.Struct
-	209, // 267: octelium.api.main.enterprise.v1.Secret.Data.DataMap.map:type_name -> octelium.api.main.enterprise.v1.Secret.Data.DataMap.MapEntry
-	16,  // 268: octelium.api.main.enterprise.v1.Certificate.Spec.mode:type_name -> octelium.api.main.enterprise.v1.Certificate.Spec.Mode
-	413, // 269: octelium.api.main.enterprise.v1.Certificate.Status.secretRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	212, // 270: octelium.api.main.enterprise.v1.Certificate.Status.issuance:type_name -> octelium.api.main.enterprise.v1.Certificate.Status.Issuance
-	212, // 271: octelium.api.main.enterprise.v1.Certificate.Status.lastIssuances:type_name -> octelium.api.main.enterprise.v1.Certificate.Status.Issuance
-	413, // 272: octelium.api.main.enterprise.v1.Certificate.Status.certificateIssuerRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 273: octelium.api.main.enterprise.v1.Certificate.Status.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 274: octelium.api.main.enterprise.v1.Certificate.Status.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	213, // 275: octelium.api.main.enterprise.v1.Certificate.Status.info:type_name -> octelium.api.main.enterprise.v1.Certificate.Status.Info
-	417, // 276: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.createdAt:type_name -> google.protobuf.Timestamp
-	17,  // 277: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.state:type_name -> octelium.api.main.enterprise.v1.Certificate.Status.Issuance.State
-	417, // 278: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.issuanceStartedAt:type_name -> google.protobuf.Timestamp
-	417, // 279: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.issuanceCompletedAt:type_name -> google.protobuf.Timestamp
-	417, // 280: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.expiresAt:type_name -> google.protobuf.Timestamp
-	417, // 281: octelium.api.main.enterprise.v1.Certificate.Status.Info.notBefore:type_name -> google.protobuf.Timestamp
-	417, // 282: octelium.api.main.enterprise.v1.Certificate.Status.Info.notAfter:type_name -> google.protobuf.Timestamp
-	216, // 283: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.acme:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME
-	18,  // 284: octelium.api.main.enterprise.v1.CertificateIssuer.Status.state:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Status.State
-	219, // 285: octelium.api.main.enterprise.v1.CertificateIssuer.Status.acme:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Status.ACME
-	217, // 286: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.solver:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver
-	218, // 287: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver.dns:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver.DNS
-	413, // 288: octelium.api.main.enterprise.v1.CertificateIssuer.Status.ACME.secretRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	222, // 289: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.scim:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.SCIM
-	223, // 290: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.googleWorkspace:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace
-	224, // 291: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.keycloak:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak
-	413, // 292: octelium.api.main.enterprise.v1.DirectoryProvider.Status.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 293: octelium.api.main.enterprise.v1.DirectoryProvider.Status.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	229, // 294: octelium.api.main.enterprise.v1.DirectoryProvider.Status.synchronization:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization
-	229, // 295: octelium.api.main.enterprise.v1.DirectoryProvider.Status.lastSynchronizations:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization
-	225, // 296: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.serviceAccount:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount
-	226, // 297: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.polling:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling
-	227, // 298: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.clientSecret:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret
-	228, // 299: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.polling:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling
-	418, // 300: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling.interval:type_name -> octelium.api.main.meta.v1.Duration
-	418, // 301: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling.interval:type_name -> octelium.api.main.meta.v1.Duration
-	417, // 302: octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization.createdAt:type_name -> google.protobuf.Timestamp
-	19,  // 303: octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization.state:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization.State
-	417, // 304: octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization.completedAt:type_name -> google.protobuf.Timestamp
-	413, // 305: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 306: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	421, // 307: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status.attrs:type_name -> google.protobuf.Struct
-	413, // 308: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 309: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status.groupRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	421, // 310: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status.attrs:type_name -> google.protobuf.Struct
-	236, // 311: octelium.api.main.enterprise.v1.DNSProvider.Spec.cloudflare:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare
-	237, // 312: octelium.api.main.enterprise.v1.DNSProvider.Spec.aws:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS
-	238, // 313: octelium.api.main.enterprise.v1.DNSProvider.Spec.digitalocean:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean
-	239, // 314: octelium.api.main.enterprise.v1.DNSProvider.Spec.google:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Google
-	240, // 315: octelium.api.main.enterprise.v1.DNSProvider.Spec.azure:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure
-	241, // 316: octelium.api.main.enterprise.v1.DNSProvider.Spec.linode:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode
-	242, // 317: octelium.api.main.enterprise.v1.DNSProvider.Spec.ovh:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH
-	243, // 318: octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.apiToken:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.APIToken
-	244, // 319: octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.secretAccessKey:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.SecretAccessKey
-	245, // 320: octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.apiToken:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.APIToken
-	246, // 321: octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.serviceAccount:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.ServiceAccount
-	247, // 322: octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.clientSecret:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.ClientSecret
-	248, // 323: octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.apiToken:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.APIToken
-	249, // 324: octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.applicationSecret:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.ApplicationSecret
-	255, // 325: octelium.api.main.enterprise.v1.SecretStore.Spec.azureKeyVault:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.AzureKeyVault
-	252, // 326: octelium.api.main.enterprise.v1.SecretStore.Spec.hashicorpVault:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.HashicorpVault
-	253, // 327: octelium.api.main.enterprise.v1.SecretStore.Spec.googleCloudKeyManagementService:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.GoogleCloudKeyManagementService
-	254, // 328: octelium.api.main.enterprise.v1.SecretStore.Spec.awsKeyManagementService:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.AWSKeyManagementService
-	256, // 329: octelium.api.main.enterprise.v1.SecretStore.Spec.kubernetes:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.Kubernetes
-	20,  // 330: octelium.api.main.enterprise.v1.SecretStore.Status.type:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.Type
-	21,  // 331: octelium.api.main.enterprise.v1.SecretStore.Status.state:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.State
-	257, // 332: octelium.api.main.enterprise.v1.SecretStore.Status.synchronization:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization
-	257, // 333: octelium.api.main.enterprise.v1.SecretStore.Status.lastSynchronizations:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization
-	417, // 334: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.createdAt:type_name -> google.protobuf.Timestamp
-	22,  // 335: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.state:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.State
-	417, // 336: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.completedAt:type_name -> google.protobuf.Timestamp
-	413, // 337: octelium.api.main.enterprise.v1.AuditLog.Entry.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 338: octelium.api.main.enterprise.v1.AuditLog.Entry.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 339: octelium.api.main.enterprise.v1.AuditLog.Entry.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 340: octelium.api.main.enterprise.v1.AuditLog.Entry.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	422, // 341: octelium.api.main.enterprise.v1.DeviceManager.Spec.condition:type_name -> octelium.api.main.core.v1.Condition
-	271, // 342: octelium.api.main.enterprise.v1.DeviceManager.Spec.polling:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling
-	272, // 343: octelium.api.main.enterprise.v1.DeviceManager.Spec.linking:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking
-	263, // 344: octelium.api.main.enterprise.v1.DeviceManager.Spec.crowdStrike:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike
-	264, // 345: octelium.api.main.enterprise.v1.DeviceManager.Spec.sentinelOne:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne
-	265, // 346: octelium.api.main.enterprise.v1.DeviceManager.Spec.microsoftIntune:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune
-	266, // 347: octelium.api.main.enterprise.v1.DeviceManager.Spec.jamf:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf
-	267, // 348: octelium.api.main.enterprise.v1.DeviceManager.Spec.onePassword:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword
-	268, // 349: octelium.api.main.enterprise.v1.DeviceManager.Spec.fleetDM:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM
-	269, // 350: octelium.api.main.enterprise.v1.DeviceManager.Spec.huntress:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress
-	270, // 351: octelium.api.main.enterprise.v1.DeviceManager.Spec.iru:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru
-	26,  // 352: octelium.api.main.enterprise.v1.DeviceManager.Status.type:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status.Type
-	27,  // 353: octelium.api.main.enterprise.v1.DeviceManager.Status.state:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status.State
-	274, // 354: octelium.api.main.enterprise.v1.DeviceManager.Status.collection:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status.Collection
-	275, // 355: octelium.api.main.enterprise.v1.DeviceManager.Status.linking:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status.Linking
-	24,  // 356: octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.region:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.Region
-	262, // 357: octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.clientSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	262, // 358: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	273, // 359: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.agentFilters:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.AgentFiltersEntry
-	262, // 360: octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.clientSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	25,  // 361: octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.cloud:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.Cloud
-	262, // 362: octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf.clientSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	262, // 363: octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	262, // 364: octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	262, // 365: octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress.apiSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	262, // 366: octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
-	418, // 367: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.interval:type_name -> octelium.api.main.meta.v1.Duration
-	418, // 368: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.timeout:type_name -> octelium.api.main.meta.v1.Duration
-	418, // 369: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.staleAfter:type_name -> octelium.api.main.meta.v1.Duration
-	418, // 370: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.maxObservationAge:type_name -> octelium.api.main.meta.v1.Duration
-	418, // 371: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.verificationInterval:type_name -> octelium.api.main.meta.v1.Duration
-	417, // 372: octelium.api.main.enterprise.v1.DeviceManager.Status.Collection.lastAttemptAt:type_name -> google.protobuf.Timestamp
-	417, // 373: octelium.api.main.enterprise.v1.DeviceManager.Status.Collection.lastSuccessAt:type_name -> google.protobuf.Timestamp
-	417, // 374: octelium.api.main.enterprise.v1.DeviceManager.Status.Linking.lastSweepAt:type_name -> google.protobuf.Timestamp
-	423, // 375: octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional.inlinePolicies:type_name -> octelium.api.main.core.v1.InlinePolicy
-	84,  // 376: octelium.api.main.enterprise.v1.Condition.All.of:type_name -> octelium.api.main.enterprise.v1.Condition
-	84,  // 377: octelium.api.main.enterprise.v1.Condition.Any.of:type_name -> octelium.api.main.enterprise.v1.Condition
-	84,  // 378: octelium.api.main.enterprise.v1.Condition.None.of:type_name -> octelium.api.main.enterprise.v1.Condition
-	281, // 379: octelium.api.main.enterprise.v1.Condition.Not.expression:type_name -> octelium.api.main.enterprise.v1.Condition.Expression
-	282, // 380: octelium.api.main.enterprise.v1.Condition.Expression.user:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.User
-	286, // 381: octelium.api.main.enterprise.v1.Condition.Expression.device:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Device
-	285, // 382: octelium.api.main.enterprise.v1.Condition.Expression.session:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Session
-	288, // 383: octelium.api.main.enterprise.v1.Condition.Expression.service:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Service
-	289, // 384: octelium.api.main.enterprise.v1.Condition.Expression.namespace:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Namespace
-	284, // 385: octelium.api.main.enterprise.v1.Condition.Expression.group:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Group
-	292, // 386: octelium.api.main.enterprise.v1.Condition.Expression.sessionType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionType
-	283, // 387: octelium.api.main.enterprise.v1.Condition.Expression.userType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UserType
-	287, // 388: octelium.api.main.enterprise.v1.Condition.Expression.deviceOSType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType
-	290, // 389: octelium.api.main.enterprise.v1.Condition.Expression.serviceMode:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode
-	291, // 390: octelium.api.main.enterprise.v1.Condition.Expression.servicePublic:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic
-	293, // 391: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType
-	294, // 392: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationAAL:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL
-	295, // 393: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationIdentityProvider:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider
-	296, // 394: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredential:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential
-	303, // 395: octelium.api.main.enterprise.v1.Condition.Expression.sessionBrowser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser
-	297, // 396: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOPasskey:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey
-	302, // 397: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorAAGUID:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorAAGUID
-	304, // 398: octelium.api.main.enterprise.v1.Condition.Expression.timeBefore:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore
-	305, // 399: octelium.api.main.enterprise.v1.Condition.Expression.timeAfter:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter
-	298, // 400: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOHardware:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware
-	301, // 401: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOAttestationVerified:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified
-	306, // 402: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredentialType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType
-	299, // 403: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOUserVerified:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified
-	300, // 404: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOUserPresent:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent
-	307, // 405: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationGeoipCountryCode:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode
-	308, // 406: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationGeoipContinentCode:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode
-	309, // 407: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPPath:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath
-	310, // 408: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPMethod:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod
-	311, // 409: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHasHeader:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader
-	312, // 410: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHeaderValue:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue
-	313, // 411: octelium.api.main.enterprise.v1.Condition.Expression.requestIP:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestIP
-	314, // 412: octelium.api.main.enterprise.v1.Condition.Expression.requestIPInRange:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange
-	379, // 413: octelium.api.main.enterprise.v1.Condition.Expression.apiServerReadOnlyMethods:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods
-	380, // 414: octelium.api.main.enterprise.v1.Condition.Expression.apiServerMethods:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods
-	381, // 415: octelium.api.main.enterprise.v1.Condition.Expression.apiServerServices:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices
-	382, // 416: octelium.api.main.enterprise.v1.Condition.Expression.apiServerCore:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore
-	383, // 417: octelium.api.main.enterprise.v1.Condition.Expression.apiServerUser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser
-	384, // 418: octelium.api.main.enterprise.v1.Condition.Expression.apiServerEnterprise:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise
-	385, // 419: octelium.api.main.enterprise.v1.Condition.Expression.apiServerCordium:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium
-	386, // 420: octelium.api.main.enterprise.v1.Condition.Expression.apiServerAccess:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess
-	359, // 421: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPProtocolVersion:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion
-	360, // 422: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPMethod:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod
-	361, // 423: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPToolName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName
-	362, // 424: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPPromptName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName
-	363, // 425: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPResourceURI:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI
-	364, // 426: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPIsNotification:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification
-	366, // 427: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMProtocol:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol
-	367, // 428: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMOperation:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation
-	368, // 429: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMModel:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMModel
-	369, // 430: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMStream:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMStream
-	370, // 431: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMEstimatedInputTokens:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens
-	371, // 432: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMEstimateQuality:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality
-	372, // 433: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMMaxOutputTokens:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens
-	373, // 434: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMHasTools:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools
-	374, // 435: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMToolCount:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount
-	375, // 436: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMToolName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName
-	376, // 437: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMInputItemCount:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount
-	377, // 438: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMHasImageInput:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput
-	378, // 439: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMHasAudioInput:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput
-	320, // 440: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHost:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost
-	321, // 441: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPProtocol:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol
-	322, // 442: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPScheme:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme
-	323, // 443: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPURI:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI
-	324, // 444: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPSize:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize
-	325, // 445: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHasQueryParam:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam
-	326, // 446: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPQueryParamValue:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue
-	327, // 447: octelium.api.main.enterprise.v1.Condition.Expression.requestSSH:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH
-	328, // 448: octelium.api.main.enterprise.v1.Condition.Expression.requestSSHUser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser
-	329, // 449: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetes:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes
-	330, // 450: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesVerb:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb
-	331, // 451: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesAPIPrefix:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix
-	332, // 452: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesAPIGroup:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup
-	333, // 453: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesAPIVersion:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion
-	334, // 454: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesNamespace:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace
-	335, // 455: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesResource:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource
-	336, // 456: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesSubresource:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource
-	337, // 457: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName
-	338, // 458: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPC:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC
-	339, // 459: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCMethod:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod
-	340, // 460: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCService:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService
-	341, // 461: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCServiceFullName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName
-	342, // 462: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCPackage:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage
-	343, // 463: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnect:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect
-	344, // 464: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnectUser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser
-	345, // 465: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnectDatabase:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase
-	346, // 466: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnectApplicationName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName
-	347, // 467: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresQuery:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery
-	348, // 468: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresQueryText:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText
-	349, // 469: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresParse:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse
-	350, // 470: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresParseName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName
-	351, // 471: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresParseQuery:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery
-	352, // 472: octelium.api.main.enterprise.v1.Condition.Expression.requestDNS:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS
-	353, // 473: octelium.api.main.enterprise.v1.Condition.Expression.requestDNSName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName
-	354, // 474: octelium.api.main.enterprise.v1.Condition.Expression.requestDNSTypeID:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID
-	355, // 475: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5
-	356, // 476: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5Host:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host
-	357, // 477: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5Port:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port
-	358, // 478: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5AddressType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType
-	387, // 479: octelium.api.main.enterprise.v1.Condition.Expression.timeDayType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType
-	365, // 480: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPToolArgument:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument
-	413, // 481: octelium.api.main.enterprise.v1.Condition.Expression.User.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	424, // 482: octelium.api.main.enterprise.v1.Condition.Expression.UserType.type:type_name -> octelium.api.main.core.v1.User.Spec.Type
-	413, // 483: octelium.api.main.enterprise.v1.Condition.Expression.Group.groupRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 484: octelium.api.main.enterprise.v1.Condition.Expression.Session.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 485: octelium.api.main.enterprise.v1.Condition.Expression.Device.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	425, // 486: octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType.osType:type_name -> octelium.api.main.core.v1.Device.Status.OSType
-	413, // 487: octelium.api.main.enterprise.v1.Condition.Expression.Service.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 488: octelium.api.main.enterprise.v1.Condition.Expression.Namespace.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	426, // 489: octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
-	427, // 490: octelium.api.main.enterprise.v1.Condition.Expression.SessionType.type:type_name -> octelium.api.main.core.v1.Session.Status.Type
-	428, // 491: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType.type:type_name -> octelium.api.main.core.v1.Session.Status.Authentication.Info.Type
-	429, // 492: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL.aal:type_name -> octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL
-	413, // 493: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 494: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	417, // 495: octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore.timestamp:type_name -> google.protobuf.Timestamp
-	417, // 496: octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter.timestamp:type_name -> google.protobuf.Timestamp
-	430, // 497: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType.type:type_name -> octelium.api.main.core.v1.Credential.Spec.Type
-	316, // 498: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch
-	316, // 499: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch
-	315, // 500: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 501: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 502: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 503: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue.header:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 504: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue.value:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	388, // 505: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.in:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In
-	389, // 506: octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.in:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In
-	315, // 507: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 508: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 509: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 510: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	318, // 511: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.IntMatch
-	315, // 512: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 513: octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 514: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 515: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 516: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 517: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 518: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 519: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 520: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 521: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 522: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 523: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 524: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 525: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 526: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 527: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 528: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 529: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 530: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 531: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 532: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	318, // 533: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.IntMatch
-	315, // 534: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	317, // 535: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
-	431, // 536: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType.addressType:type_name -> octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType
-	315, // 537: octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 538: octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 539: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 540: octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 541: octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	315, // 542: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.stringMatch:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	319, // 543: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.doubleMatch:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch
-	390, // 544: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.boolMatch:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch
-	391, // 545: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.isNull:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull
-	392, // 546: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.exists:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists
-	432, // 547: octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol.protocol:type_name -> octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol
-	433, // 548: octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation.operation:type_name -> octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation
-	315, // 549: octelium.api.main.enterprise.v1.Condition.Expression.LLMModel.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	317, // 550: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
-	434, // 551: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality.quality:type_name -> octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality
-	317, // 552: octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
-	317, // 553: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
-	315, // 554: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
-	317, // 555: octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
-	29,  // 556: octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise.service:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise.Service
-	30,  // 557: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium.service:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium.Service
-	31,  // 558: octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess.service:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess.Service
-	32,  // 559: octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType.type:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType.Type
-	28,  // 560: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch.value:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch.Value
-	413, // 561: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 562: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	413, // 563: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	435, // 564: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.authentication:type_name -> octelium.api.main.core.v1.Session.Status.Authentication
-	33,  // 565: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
-	394, // 566: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.failure:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure
-	34,  // 567: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
-	396, // 568: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.core:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.Core
-	397, // 569: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.packageEnterprise:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageEnterprise
-	398, // 570: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.packageCordium:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageCordium
-	400, // 571: octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.kubeconfig:type_name -> octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.Kubeconfig
-	401, // 572: octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.bearerToken:type_name -> octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.BearerToken
-	417, // 573: octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core.setAt:type_name -> google.protobuf.Timestamp
-	417, // 574: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise.setAt:type_name -> google.protobuf.Timestamp
-	417, // 575: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium.setAt:type_name -> google.protobuf.Timestamp
-	36,  // 576: octelium.api.main.enterprise.v1.License.Plan.type:type_name -> octelium.api.main.enterprise.v1.License.Plan.Type
-	407, // 577: octelium.api.main.enterprise.v1.License.Plan.support:type_name -> octelium.api.main.enterprise.v1.License.Plan.Support
-	408, // 578: octelium.api.main.enterprise.v1.License.Plan.limits:type_name -> octelium.api.main.enterprise.v1.License.Plan.Limits
-	37,  // 579: octelium.api.main.enterprise.v1.License.Plan.Support.type:type_name -> octelium.api.main.enterprise.v1.License.Plan.Support.Type
-	39,  // 580: octelium.api.main.enterprise.v1.Agent.Workspace.type:type_name -> octelium.api.main.enterprise.v1.Agent.Workspace.Type
-	436, // 581: octelium.api.main.enterprise.v1.Agent.Workspace.workspace:type_name -> octelium.api.main.cordium.v1.Workspace
-	40,  // 582: octelium.api.main.enterprise.v1.MainService.GetClusterConfig:input_type -> octelium.api.main.enterprise.v1.GetClusterConfigRequest
-	44,  // 583: octelium.api.main.enterprise.v1.MainService.UpdateClusterConfig:input_type -> octelium.api.main.enterprise.v1.ClusterConfig
-	42,  // 584: octelium.api.main.enterprise.v1.MainService.CreateCollectorExporter:input_type -> octelium.api.main.enterprise.v1.CollectorExporter
-	437, // 585: octelium.api.main.enterprise.v1.MainService.GetCollectorExporter:input_type -> octelium.api.main.meta.v1.GetOptions
-	41,  // 586: octelium.api.main.enterprise.v1.MainService.ListCollectorExporter:input_type -> octelium.api.main.enterprise.v1.ListCollectorExporterOptions
-	42,  // 587: octelium.api.main.enterprise.v1.MainService.UpdateCollectorExporter:input_type -> octelium.api.main.enterprise.v1.CollectorExporter
-	438, // 588: octelium.api.main.enterprise.v1.MainService.DeleteCollectorExporter:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	437, // 589: octelium.api.main.enterprise.v1.MainService.GetDNSProvider:input_type -> octelium.api.main.meta.v1.GetOptions
-	60,  // 590: octelium.api.main.enterprise.v1.MainService.ListDNSProvider:input_type -> octelium.api.main.enterprise.v1.ListDNSProviderOptions
-	58,  // 591: octelium.api.main.enterprise.v1.MainService.UpdateDNSProvider:input_type -> octelium.api.main.enterprise.v1.DNSProvider
-	437, // 592: octelium.api.main.enterprise.v1.MainService.GetCertificate:input_type -> octelium.api.main.meta.v1.GetOptions
-	48,  // 593: octelium.api.main.enterprise.v1.MainService.UpdateCertificate:input_type -> octelium.api.main.enterprise.v1.Certificate
-	62,  // 594: octelium.api.main.enterprise.v1.MainService.ListCertificate:input_type -> octelium.api.main.enterprise.v1.ListCertificateOptions
-	69,  // 595: octelium.api.main.enterprise.v1.MainService.IssueCertificate:input_type -> octelium.api.main.enterprise.v1.IssueCertificateRequest
-	71,  // 596: octelium.api.main.enterprise.v1.MainService.SetCertificate:input_type -> octelium.api.main.enterprise.v1.SetCertificateRequest
-	437, // 597: octelium.api.main.enterprise.v1.MainService.GetCertificateIssuer:input_type -> octelium.api.main.meta.v1.GetOptions
-	63,  // 598: octelium.api.main.enterprise.v1.MainService.ListCertificateIssuer:input_type -> octelium.api.main.enterprise.v1.ListCertificateIssuerOptions
-	50,  // 599: octelium.api.main.enterprise.v1.MainService.UpdateCertificateIssuer:input_type -> octelium.api.main.enterprise.v1.CertificateIssuer
-	52,  // 600: octelium.api.main.enterprise.v1.MainService.CreateDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.DirectoryProvider
-	437, // 601: octelium.api.main.enterprise.v1.MainService.GetDirectoryProvider:input_type -> octelium.api.main.meta.v1.GetOptions
-	61,  // 602: octelium.api.main.enterprise.v1.MainService.ListDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.ListDirectoryProviderOptions
-	52,  // 603: octelium.api.main.enterprise.v1.MainService.UpdateDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.DirectoryProvider
-	438, // 604: octelium.api.main.enterprise.v1.MainService.DeleteDirectoryProvider:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	67,  // 605: octelium.api.main.enterprise.v1.MainService.GenerateDirectoryProviderCredential:input_type -> octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest
-	80,  // 606: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderUser:input_type -> octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions
-	81,  // 607: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderGroup:input_type -> octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions
-	85,  // 608: octelium.api.main.enterprise.v1.MainService.SynchronizeDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderRequest
-	45,  // 609: octelium.api.main.enterprise.v1.MainService.CreateSecret:input_type -> octelium.api.main.enterprise.v1.Secret
-	47,  // 610: octelium.api.main.enterprise.v1.MainService.ListSecret:input_type -> octelium.api.main.enterprise.v1.ListSecretOptions
-	438, // 611: octelium.api.main.enterprise.v1.MainService.DeleteSecret:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	437, // 612: octelium.api.main.enterprise.v1.MainService.GetSecret:input_type -> octelium.api.main.meta.v1.GetOptions
-	45,  // 613: octelium.api.main.enterprise.v1.MainService.UpdateSecret:input_type -> octelium.api.main.enterprise.v1.Secret
-	437, // 614: octelium.api.main.enterprise.v1.MainService.GetSecretStore:input_type -> octelium.api.main.meta.v1.GetOptions
-	74,  // 615: octelium.api.main.enterprise.v1.MainService.ListSecretStore:input_type -> octelium.api.main.enterprise.v1.ListSecretStoreOptions
-	65,  // 616: octelium.api.main.enterprise.v1.MainService.UpdateSecretStore:input_type -> octelium.api.main.enterprise.v1.SecretStore
-	93,  // 617: octelium.api.main.enterprise.v1.MainService.SynchronizeSecretStore:input_type -> octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest
-	75,  // 618: octelium.api.main.enterprise.v1.MainService.CreateDeviceManager:input_type -> octelium.api.main.enterprise.v1.DeviceManager
-	437, // 619: octelium.api.main.enterprise.v1.MainService.GetDeviceManager:input_type -> octelium.api.main.meta.v1.GetOptions
-	77,  // 620: octelium.api.main.enterprise.v1.MainService.ListDeviceManager:input_type -> octelium.api.main.enterprise.v1.ListDeviceManagerOptions
-	75,  // 621: octelium.api.main.enterprise.v1.MainService.UpdateDeviceManager:input_type -> octelium.api.main.enterprise.v1.DeviceManager
-	438, // 622: octelium.api.main.enterprise.v1.MainService.DeleteDeviceManager:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	78,  // 623: octelium.api.main.enterprise.v1.MainService.ResetDeviceBinding:input_type -> octelium.api.main.enterprise.v1.ResetDeviceBindingRequest
-	84,  // 624: octelium.api.main.enterprise.v1.MainService.GetCoreCondition:input_type -> octelium.api.main.enterprise.v1.Condition
-	82,  // 625: octelium.api.main.enterprise.v1.PolicyPortalService.IsAuthorized:input_type -> octelium.api.main.enterprise.v1.IsAuthorizedRequest
-	88,  // 626: octelium.api.main.enterprise.v1.ClusterService.UpgradeCluster:input_type -> octelium.api.main.enterprise.v1.UpgradeClusterRequest
-	90,  // 627: octelium.api.main.enterprise.v1.ClusterService.JoinCluster:input_type -> octelium.api.main.enterprise.v1.JoinClusterRequest
-	95,  // 628: octelium.api.main.enterprise.v1.ClusterService.GetClusterInfo:input_type -> octelium.api.main.enterprise.v1.GetClusterInfoRequest
-	98,  // 629: octelium.api.main.enterprise.v1.ClusterService.SetLicense:input_type -> octelium.api.main.enterprise.v1.SetLicenseRequest
-	100, // 630: octelium.api.main.enterprise.v1.ClusterService.GetLicense:input_type -> octelium.api.main.enterprise.v1.GetLicenseRequest
-	102, // 631: octelium.api.main.enterprise.v1.ClusterService.DeleteLicense:input_type -> octelium.api.main.enterprise.v1.DeleteLicenseRequest
-	104, // 632: octelium.api.main.enterprise.v1.AgentService.GetAgent:input_type -> octelium.api.main.enterprise.v1.GetAgentRequest
-	105, // 633: octelium.api.main.enterprise.v1.AgentService.InitializeAgent:input_type -> octelium.api.main.enterprise.v1.InitializeAgentRequest
-	106, // 634: octelium.api.main.enterprise.v1.AgentService.CreateAgentWorkspace:input_type -> octelium.api.main.enterprise.v1.CreateAgentWorkspaceRequest
-	44,  // 635: octelium.api.main.enterprise.v1.MainService.GetClusterConfig:output_type -> octelium.api.main.enterprise.v1.ClusterConfig
-	44,  // 636: octelium.api.main.enterprise.v1.MainService.UpdateClusterConfig:output_type -> octelium.api.main.enterprise.v1.ClusterConfig
-	42,  // 637: octelium.api.main.enterprise.v1.MainService.CreateCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporter
-	42,  // 638: octelium.api.main.enterprise.v1.MainService.GetCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporter
-	43,  // 639: octelium.api.main.enterprise.v1.MainService.ListCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporterList
-	42,  // 640: octelium.api.main.enterprise.v1.MainService.UpdateCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporter
-	439, // 641: octelium.api.main.enterprise.v1.MainService.DeleteCollectorExporter:output_type -> octelium.api.main.meta.v1.OperationResult
-	58,  // 642: octelium.api.main.enterprise.v1.MainService.GetDNSProvider:output_type -> octelium.api.main.enterprise.v1.DNSProvider
-	59,  // 643: octelium.api.main.enterprise.v1.MainService.ListDNSProvider:output_type -> octelium.api.main.enterprise.v1.DNSProviderList
-	58,  // 644: octelium.api.main.enterprise.v1.MainService.UpdateDNSProvider:output_type -> octelium.api.main.enterprise.v1.DNSProvider
-	48,  // 645: octelium.api.main.enterprise.v1.MainService.GetCertificate:output_type -> octelium.api.main.enterprise.v1.Certificate
-	48,  // 646: octelium.api.main.enterprise.v1.MainService.UpdateCertificate:output_type -> octelium.api.main.enterprise.v1.Certificate
-	49,  // 647: octelium.api.main.enterprise.v1.MainService.ListCertificate:output_type -> octelium.api.main.enterprise.v1.CertificateList
-	70,  // 648: octelium.api.main.enterprise.v1.MainService.IssueCertificate:output_type -> octelium.api.main.enterprise.v1.IssueCertificateResponse
-	72,  // 649: octelium.api.main.enterprise.v1.MainService.SetCertificate:output_type -> octelium.api.main.enterprise.v1.SetCertificateResponse
-	50,  // 650: octelium.api.main.enterprise.v1.MainService.GetCertificateIssuer:output_type -> octelium.api.main.enterprise.v1.CertificateIssuer
-	51,  // 651: octelium.api.main.enterprise.v1.MainService.ListCertificateIssuer:output_type -> octelium.api.main.enterprise.v1.CertificateIssuerList
-	50,  // 652: octelium.api.main.enterprise.v1.MainService.UpdateCertificateIssuer:output_type -> octelium.api.main.enterprise.v1.CertificateIssuer
-	52,  // 653: octelium.api.main.enterprise.v1.MainService.CreateDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProvider
-	52,  // 654: octelium.api.main.enterprise.v1.MainService.GetDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProvider
-	53,  // 655: octelium.api.main.enterprise.v1.MainService.ListDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProviderList
-	52,  // 656: octelium.api.main.enterprise.v1.MainService.UpdateDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProvider
-	439, // 657: octelium.api.main.enterprise.v1.MainService.DeleteDirectoryProvider:output_type -> octelium.api.main.meta.v1.OperationResult
-	68,  // 658: octelium.api.main.enterprise.v1.MainService.GenerateDirectoryProviderCredential:output_type -> octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse
-	55,  // 659: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderUser:output_type -> octelium.api.main.enterprise.v1.DirectoryProviderUserList
-	57,  // 660: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderGroup:output_type -> octelium.api.main.enterprise.v1.DirectoryProviderGroupList
-	86,  // 661: octelium.api.main.enterprise.v1.MainService.SynchronizeDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderResponse
-	45,  // 662: octelium.api.main.enterprise.v1.MainService.CreateSecret:output_type -> octelium.api.main.enterprise.v1.Secret
-	46,  // 663: octelium.api.main.enterprise.v1.MainService.ListSecret:output_type -> octelium.api.main.enterprise.v1.SecretList
-	439, // 664: octelium.api.main.enterprise.v1.MainService.DeleteSecret:output_type -> octelium.api.main.meta.v1.OperationResult
-	45,  // 665: octelium.api.main.enterprise.v1.MainService.GetSecret:output_type -> octelium.api.main.enterprise.v1.Secret
-	45,  // 666: octelium.api.main.enterprise.v1.MainService.UpdateSecret:output_type -> octelium.api.main.enterprise.v1.Secret
-	65,  // 667: octelium.api.main.enterprise.v1.MainService.GetSecretStore:output_type -> octelium.api.main.enterprise.v1.SecretStore
-	66,  // 668: octelium.api.main.enterprise.v1.MainService.ListSecretStore:output_type -> octelium.api.main.enterprise.v1.SecretStoreList
-	65,  // 669: octelium.api.main.enterprise.v1.MainService.UpdateSecretStore:output_type -> octelium.api.main.enterprise.v1.SecretStore
-	94,  // 670: octelium.api.main.enterprise.v1.MainService.SynchronizeSecretStore:output_type -> octelium.api.main.enterprise.v1.SynchronizeSecretStoreResponse
-	75,  // 671: octelium.api.main.enterprise.v1.MainService.CreateDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManager
-	75,  // 672: octelium.api.main.enterprise.v1.MainService.GetDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManager
-	76,  // 673: octelium.api.main.enterprise.v1.MainService.ListDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManagerList
-	75,  // 674: octelium.api.main.enterprise.v1.MainService.UpdateDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManager
-	439, // 675: octelium.api.main.enterprise.v1.MainService.DeleteDeviceManager:output_type -> octelium.api.main.meta.v1.OperationResult
-	439, // 676: octelium.api.main.enterprise.v1.MainService.ResetDeviceBinding:output_type -> octelium.api.main.meta.v1.OperationResult
-	422, // 677: octelium.api.main.enterprise.v1.MainService.GetCoreCondition:output_type -> octelium.api.main.core.v1.Condition
-	83,  // 678: octelium.api.main.enterprise.v1.PolicyPortalService.IsAuthorized:output_type -> octelium.api.main.enterprise.v1.IsAuthorizedResponse
-	89,  // 679: octelium.api.main.enterprise.v1.ClusterService.UpgradeCluster:output_type -> octelium.api.main.enterprise.v1.UpgradeClusterResponse
-	91,  // 680: octelium.api.main.enterprise.v1.ClusterService.JoinCluster:output_type -> octelium.api.main.enterprise.v1.JoinClusterResponse
-	96,  // 681: octelium.api.main.enterprise.v1.ClusterService.GetClusterInfo:output_type -> octelium.api.main.enterprise.v1.GetClusterInfoResponse
-	99,  // 682: octelium.api.main.enterprise.v1.ClusterService.SetLicense:output_type -> octelium.api.main.enterprise.v1.SetLicenseResponse
-	101, // 683: octelium.api.main.enterprise.v1.ClusterService.GetLicense:output_type -> octelium.api.main.enterprise.v1.GetLicenseResponse
-	103, // 684: octelium.api.main.enterprise.v1.ClusterService.DeleteLicense:output_type -> octelium.api.main.enterprise.v1.DeleteLicenseResponse
-	107, // 685: octelium.api.main.enterprise.v1.AgentService.GetAgent:output_type -> octelium.api.main.enterprise.v1.Agent
-	107, // 686: octelium.api.main.enterprise.v1.AgentService.InitializeAgent:output_type -> octelium.api.main.enterprise.v1.Agent
-	409, // 687: octelium.api.main.enterprise.v1.AgentService.CreateAgentWorkspace:output_type -> octelium.api.main.enterprise.v1.Agent.Workspace
-	635, // [635:688] is the sub-list for method output_type
-	582, // [582:635] is the sub-list for method input_type
-	582, // [582:582] is the sub-list for extension type_name
-	582, // [582:582] is the sub-list for extension extendee
-	0,   // [0:582] is the sub-list for field type_name
+	448, // 111: octelium.api.main.enterprise.v1.Agent.spaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 112: octelium.api.main.enterprise.v1.Agent.templateRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	433, // 113: octelium.api.main.enterprise.v1.Agent.workspaces:type_name -> octelium.api.main.enterprise.v1.Agent.Workspace
+	40,  // 114: octelium.api.main.enterprise.v1.SupportInfo.state:type_name -> octelium.api.main.enterprise.v1.SupportInfo.State
+	434, // 115: octelium.api.main.enterprise.v1.SupportInfo.organization:type_name -> octelium.api.main.enterprise.v1.SupportInfo.Organization
+	43,  // 116: octelium.api.main.enterprise.v1.SupportInfo.supportLevel:type_name -> octelium.api.main.enterprise.v1.SupportRequest.SupportLevel
+	435, // 117: octelium.api.main.enterprise.v1.SupportInfo.limits:type_name -> octelium.api.main.enterprise.v1.SupportInfo.Limits
+	436, // 118: octelium.api.main.enterprise.v1.SupportInfo.environment:type_name -> octelium.api.main.enterprise.v1.SupportInfo.EnvironmentEntry
+	42,  // 119: octelium.api.main.enterprise.v1.SupportRequest.status:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Status
+	41,  // 120: octelium.api.main.enterprise.v1.SupportRequest.priority:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Priority
+	41,  // 121: octelium.api.main.enterprise.v1.SupportRequest.requestedPriority:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Priority
+	43,  // 122: octelium.api.main.enterprise.v1.SupportRequest.supportLevel:type_name -> octelium.api.main.enterprise.v1.SupportRequest.SupportLevel
+	44,  // 123: octelium.api.main.enterprise.v1.SupportRequest.channel:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Channel
+	438, // 124: octelium.api.main.enterprise.v1.SupportRequest.reporter:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Reporter
+	439, // 125: octelium.api.main.enterprise.v1.SupportRequest.sla:type_name -> octelium.api.main.enterprise.v1.SupportRequest.SLA
+	443, // 126: octelium.api.main.enterprise.v1.SupportRequest.environment:type_name -> octelium.api.main.enterprise.v1.SupportRequest.EnvironmentEntry
+	452, // 127: octelium.api.main.enterprise.v1.SupportRequest.createdAt:type_name -> google.protobuf.Timestamp
+	452, // 128: octelium.api.main.enterprise.v1.SupportRequest.updatedAt:type_name -> google.protobuf.Timestamp
+	452, // 129: octelium.api.main.enterprise.v1.SupportRequest.lastActivityAt:type_name -> google.protobuf.Timestamp
+	452, // 130: octelium.api.main.enterprise.v1.SupportRequest.resolvedAt:type_name -> google.protobuf.Timestamp
+	452, // 131: octelium.api.main.enterprise.v1.SupportRequest.closedAt:type_name -> google.protobuf.Timestamp
+	440, // 132: octelium.api.main.enterprise.v1.SupportRequest.events:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Event
+	441, // 133: octelium.api.main.enterprise.v1.SupportRequest.attachments:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Attachment
+	442, // 134: octelium.api.main.enterprise.v1.SupportRequest.actions:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Actions
+	48,  // 135: octelium.api.main.enterprise.v1.ListSupportRequestOptions.filter:type_name -> octelium.api.main.enterprise.v1.ListSupportRequestOptions.Filter
+	119, // 136: octelium.api.main.enterprise.v1.SupportRequestList.items:type_name -> octelium.api.main.enterprise.v1.SupportRequest
+	440, // 137: octelium.api.main.enterprise.v1.SupportRequestEventList.items:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Event
+	41,  // 138: octelium.api.main.enterprise.v1.CreateSupportRequestRequest.priority:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Priority
+	47,  // 139: octelium.api.main.enterprise.v1.AddSupportRequestAttachmentRequest.purpose:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose
+	444, // 140: octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse.header:type_name -> octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse.Header
+	134, // 141: octelium.api.main.enterprise.v1.CollectorExporter.Spec.otlp:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP
+	135, // 142: octelium.api.main.enterprise.v1.CollectorExporter.Spec.otlpHTTP:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP
+	137, // 143: octelium.api.main.enterprise.v1.CollectorExporter.Spec.clickhouse:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse
+	138, // 144: octelium.api.main.enterprise.v1.CollectorExporter.Spec.elasticsearch:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch
+	139, // 145: octelium.api.main.enterprise.v1.CollectorExporter.Spec.logzio:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio
+	140, // 146: octelium.api.main.enterprise.v1.CollectorExporter.Spec.influxDB:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB
+	141, // 147: octelium.api.main.enterprise.v1.CollectorExporter.Spec.kafka:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka
+	142, // 148: octelium.api.main.enterprise.v1.CollectorExporter.Spec.datadog:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog
+	143, // 149: octelium.api.main.enterprise.v1.CollectorExporter.Spec.splunk:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk
+	144, // 150: octelium.api.main.enterprise.v1.CollectorExporter.Spec.azureMonitor:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor
+	145, // 151: octelium.api.main.enterprise.v1.CollectorExporter.Spec.azureDataExplorer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer
+	136, // 152: octelium.api.main.enterprise.v1.CollectorExporter.Spec.prometheusRemoteWrite:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite
+	146, // 153: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Header
+	147, // 154: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth
+	148, // 155: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.TLS
+	0,   // 156: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.compression:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Compression
+	453, // 157: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	149, // 158: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.keepalive:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive
+	155, // 159: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header
+	156, // 160: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth
+	1,   // 161: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.encoding:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Encoding
+	2,   // 162: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.compression:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Compression
+	157, // 163: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS
+	453, // 164: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	163, // 165: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header
+	165, // 166: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth
+	166, // 167: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS
+	164, // 168: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.externalLabels:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel
+	453, // 169: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	167, // 170: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.remoteWriteQueue:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue
+	168, // 171: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.resourceToTelemetryConversion:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion
+	169, // 172: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.targetInfo:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo
+	3,   // 173: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.translationStrategy:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TranslationStrategy
+	175, // 174: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Password
+	176, // 175: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS
+	177, // 176: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.connectionParams:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam
+	179, // 177: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.metricsTables:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables
+	453, // 178: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ttl:type_name -> octelium.api.main.meta.v1.Duration
+	4,   // 179: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.compression:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Compression
+	178, // 180: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.tableEngine:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine
+	453, // 181: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	180, // 182: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header
+	181, // 183: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth
+	5,   // 184: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.compression:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Compression
+	453, // 185: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	182, // 186: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS
+	186, // 187: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.token:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.Token
+	453, // 188: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	188, // 189: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.token:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Token
+	187, // 190: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.headers:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header
+	6,   // 191: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.metricsSchema:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.MetricsSchema
+	7,   // 192: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.precision:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Precision
+	453, // 193: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	189, // 194: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.v1Compatibility:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility
+	194, // 195: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.logs:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal
+	194, // 196: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.metrics:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal
+	191, // 197: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.recordHeaders:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header
+	192, // 198: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth
+	193, // 199: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS
+	453, // 200: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	453, // 201: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.connIdleTimeout:type_name -> octelium.api.main.meta.v1.Duration
+	195, // 202: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.producer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer
+	199, // 203: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.api:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API
+	200, // 204: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.metrics:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics
+	201, // 205: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.logs:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs
+	202, // 206: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.hostMetadata:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata
+	453, // 207: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.hostnameDetectionTimeout:type_name -> octelium.api.main.meta.v1.Duration
+	203, // 208: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.token:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.Token
+	453, // 209: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	204, // 210: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.tls:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.TLS
+	205, // 211: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.connectionString:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString
+	206, // 212: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.instrumentationKey:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey
+	453, // 213: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.maxBatchInterval:type_name -> octelium.api.main.meta.v1.Duration
+	453, // 214: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.shutdownTimeout:type_name -> octelium.api.main.meta.v1.Duration
+	211, // 215: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.auth:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth
+	11,  // 216: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ingestionType:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.IngestionType
+	453, // 217: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	150, // 218: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.bearer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Bearer
+	151, // 219: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic
+	152, // 220: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.custom:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom
+	453, // 221: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive.time:type_name -> octelium.api.main.meta.v1.Duration
+	453, // 222: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	153, // 223: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic.Password
+	154, // 224: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom.value:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom.Value
+	158, // 225: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.bearer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Bearer
+	159, // 226: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic
+	160, // 227: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.custom:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom
+	161, // 228: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic.Password
+	162, // 229: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom.value:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom.Value
+	170, // 230: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.bearer:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Bearer
+	171, // 231: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic
+	172, // 232: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.custom:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom
+	173, // 233: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.Password
+	174, // 234: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom.value:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom.Value
+	183, // 235: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.apiKey:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.APIKey
+	184, // 236: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.basic:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic
+	185, // 237: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic.Password
+	190, // 238: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password
+	196, // 239: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.sasl:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL
+	8,   // 240: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal.encoding:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Encoding
+	9,   // 241: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer.compression:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.ProducerCompression
+	453, // 242: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer.linger:type_name -> octelium.api.main.meta.v1.Duration
+	197, // 243: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.password:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password
+	10,  // 244: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.mechanism:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Mechanism
+	198, // 245: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API.key:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey
+	453, // 246: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs.batchWait:type_name -> octelium.api.main.meta.v1.Duration
+	453, // 247: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata.reporterPeriod:type_name -> octelium.api.main.meta.v1.Duration
+	207, // 248: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal.applicationKey:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey
+	208, // 249: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth.servicePrincipal:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal
+	209, // 250: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth.managedIdentity:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity
+	210, // 251: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth.azureDefault:type_name -> octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth
+	214, // 252: octelium.api.main.enterprise.v1.ClusterConfig.Spec.collector:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector
+	215, // 253: octelium.api.main.enterprise.v1.ClusterConfig.Spec.scaler:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler
+	216, // 254: octelium.api.main.enterprise.v1.ClusterConfig.Spec.certificate:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate
+	217, // 255: octelium.api.main.enterprise.v1.ClusterConfig.Spec.agent:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent
+	223, // 256: octelium.api.main.enterprise.v1.ClusterConfig.Status.upgradeRequest:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest
+	223, // 257: octelium.api.main.enterprise.v1.ClusterConfig.Status.lastUpgradeRequests:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest
+	225, // 258: octelium.api.main.enterprise.v1.ClusterConfig.Status.licenseInfo:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo
+	224, // 259: octelium.api.main.enterprise.v1.ClusterConfig.Status.joinRequest:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest
+	224, // 260: octelium.api.main.enterprise.v1.ClusterConfig.Status.lastJoinRequests:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest
+	218, // 261: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.pipelines:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.Pipeline
+	219, // 262: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.octovigil:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Octovigil
+	220, // 263: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.ingress:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Ingress
+	221, // 264: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.collector:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Scaler.Collector
+	16,  // 265: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Certificate.defaultMode:type_name -> octelium.api.main.enterprise.v1.Certificate.Spec.Mode
+	222, // 266: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.llm:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.LLM
+	454, // 267: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.image:type_name -> octelium.api.main.cordium.v1.Workspace.Spec.Image
+	455, // 268: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.limit:type_name -> octelium.api.main.cordium.v1.Workspace.Spec.Limit
+	456, // 269: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Agent.config:type_name -> google.protobuf.Struct
+	12,  // 270: octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.Pipeline.type:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Spec.Collector.Pipeline.Type
+	452, // 271: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.createdAt:type_name -> google.protobuf.Timestamp
+	13,  // 272: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.state:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.State
+	452, // 273: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.doneAt:type_name -> google.protobuf.Timestamp
+	419, // 274: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.request:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request
+	226, // 275: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.regions:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region
+	452, // 276: octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.createdAt:type_name -> google.protobuf.Timestamp
+	14,  // 277: octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.state:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.State
+	452, // 278: octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.doneAt:type_name -> google.protobuf.Timestamp
+	99,  // 279: octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.request:type_name -> octelium.api.main.enterprise.v1.JoinClusterRequest
+	448, // 280: octelium.api.main.enterprise.v1.ClusterConfig.Status.JoinRequest.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 281: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.licenseSecretRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	15,  // 282: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.state:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State
+	452, // 283: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.setAt:type_name -> google.protobuf.Timestamp
+	452, // 284: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.stateCheckedAt:type_name -> google.protobuf.Timestamp
+	448, // 285: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	13,  // 286: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region.state:type_name -> octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.State
+	452, // 287: octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest.Region.doneAt:type_name -> google.protobuf.Timestamp
+	230, // 288: octelium.api.main.enterprise.v1.Secret.Spec.data:type_name -> octelium.api.main.enterprise.v1.Secret.Spec.Data
+	231, // 289: octelium.api.main.enterprise.v1.Secret.Status.ext:type_name -> octelium.api.main.enterprise.v1.Secret.Status.ExtEntry
+	232, // 290: octelium.api.main.enterprise.v1.Secret.Data.dataMap:type_name -> octelium.api.main.enterprise.v1.Secret.Data.DataMap
+	456, // 291: octelium.api.main.enterprise.v1.Secret.Data.attrs:type_name -> google.protobuf.Struct
+	456, // 292: octelium.api.main.enterprise.v1.Secret.Spec.Data.attrs:type_name -> google.protobuf.Struct
+	456, // 293: octelium.api.main.enterprise.v1.Secret.Status.ExtEntry.value:type_name -> google.protobuf.Struct
+	233, // 294: octelium.api.main.enterprise.v1.Secret.Data.DataMap.map:type_name -> octelium.api.main.enterprise.v1.Secret.Data.DataMap.MapEntry
+	16,  // 295: octelium.api.main.enterprise.v1.Certificate.Spec.mode:type_name -> octelium.api.main.enterprise.v1.Certificate.Spec.Mode
+	448, // 296: octelium.api.main.enterprise.v1.Certificate.Status.secretRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	236, // 297: octelium.api.main.enterprise.v1.Certificate.Status.issuance:type_name -> octelium.api.main.enterprise.v1.Certificate.Status.Issuance
+	236, // 298: octelium.api.main.enterprise.v1.Certificate.Status.lastIssuances:type_name -> octelium.api.main.enterprise.v1.Certificate.Status.Issuance
+	448, // 299: octelium.api.main.enterprise.v1.Certificate.Status.certificateIssuerRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 300: octelium.api.main.enterprise.v1.Certificate.Status.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 301: octelium.api.main.enterprise.v1.Certificate.Status.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	237, // 302: octelium.api.main.enterprise.v1.Certificate.Status.info:type_name -> octelium.api.main.enterprise.v1.Certificate.Status.Info
+	452, // 303: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.createdAt:type_name -> google.protobuf.Timestamp
+	17,  // 304: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.state:type_name -> octelium.api.main.enterprise.v1.Certificate.Status.Issuance.State
+	452, // 305: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.issuanceStartedAt:type_name -> google.protobuf.Timestamp
+	452, // 306: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.issuanceCompletedAt:type_name -> google.protobuf.Timestamp
+	452, // 307: octelium.api.main.enterprise.v1.Certificate.Status.Issuance.expiresAt:type_name -> google.protobuf.Timestamp
+	452, // 308: octelium.api.main.enterprise.v1.Certificate.Status.Info.notBefore:type_name -> google.protobuf.Timestamp
+	452, // 309: octelium.api.main.enterprise.v1.Certificate.Status.Info.notAfter:type_name -> google.protobuf.Timestamp
+	240, // 310: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.acme:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME
+	18,  // 311: octelium.api.main.enterprise.v1.CertificateIssuer.Status.state:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Status.State
+	243, // 312: octelium.api.main.enterprise.v1.CertificateIssuer.Status.acme:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Status.ACME
+	241, // 313: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.solver:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver
+	242, // 314: octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver.dns:type_name -> octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver.DNS
+	448, // 315: octelium.api.main.enterprise.v1.CertificateIssuer.Status.ACME.secretRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	246, // 316: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.scim:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.SCIM
+	247, // 317: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.googleWorkspace:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace
+	248, // 318: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.keycloak:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak
+	448, // 319: octelium.api.main.enterprise.v1.DirectoryProvider.Status.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 320: octelium.api.main.enterprise.v1.DirectoryProvider.Status.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	253, // 321: octelium.api.main.enterprise.v1.DirectoryProvider.Status.synchronization:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization
+	253, // 322: octelium.api.main.enterprise.v1.DirectoryProvider.Status.lastSynchronizations:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization
+	249, // 323: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.serviceAccount:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount
+	250, // 324: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.polling:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling
+	251, // 325: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.clientSecret:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret
+	252, // 326: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.polling:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling
+	453, // 327: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling.interval:type_name -> octelium.api.main.meta.v1.Duration
+	453, // 328: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling.interval:type_name -> octelium.api.main.meta.v1.Duration
+	452, // 329: octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization.createdAt:type_name -> google.protobuf.Timestamp
+	19,  // 330: octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization.state:type_name -> octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization.State
+	452, // 331: octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization.completedAt:type_name -> google.protobuf.Timestamp
+	448, // 332: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 333: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	456, // 334: octelium.api.main.enterprise.v1.DirectoryProviderUser.Status.attrs:type_name -> google.protobuf.Struct
+	448, // 335: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status.directoryProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 336: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status.groupRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	456, // 337: octelium.api.main.enterprise.v1.DirectoryProviderGroup.Status.attrs:type_name -> google.protobuf.Struct
+	260, // 338: octelium.api.main.enterprise.v1.DNSProvider.Spec.cloudflare:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare
+	261, // 339: octelium.api.main.enterprise.v1.DNSProvider.Spec.aws:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS
+	262, // 340: octelium.api.main.enterprise.v1.DNSProvider.Spec.digitalocean:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean
+	263, // 341: octelium.api.main.enterprise.v1.DNSProvider.Spec.google:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Google
+	264, // 342: octelium.api.main.enterprise.v1.DNSProvider.Spec.azure:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure
+	265, // 343: octelium.api.main.enterprise.v1.DNSProvider.Spec.linode:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode
+	266, // 344: octelium.api.main.enterprise.v1.DNSProvider.Spec.ovh:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH
+	267, // 345: octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.apiToken:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.APIToken
+	268, // 346: octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.secretAccessKey:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.SecretAccessKey
+	269, // 347: octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.apiToken:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.APIToken
+	270, // 348: octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.serviceAccount:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.ServiceAccount
+	271, // 349: octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.clientSecret:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.ClientSecret
+	272, // 350: octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.apiToken:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.APIToken
+	273, // 351: octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.applicationSecret:type_name -> octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.ApplicationSecret
+	279, // 352: octelium.api.main.enterprise.v1.SecretStore.Spec.azureKeyVault:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.AzureKeyVault
+	276, // 353: octelium.api.main.enterprise.v1.SecretStore.Spec.hashicorpVault:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.HashicorpVault
+	277, // 354: octelium.api.main.enterprise.v1.SecretStore.Spec.googleCloudKeyManagementService:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.GoogleCloudKeyManagementService
+	278, // 355: octelium.api.main.enterprise.v1.SecretStore.Spec.awsKeyManagementService:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.AWSKeyManagementService
+	280, // 356: octelium.api.main.enterprise.v1.SecretStore.Spec.kubernetes:type_name -> octelium.api.main.enterprise.v1.SecretStore.Spec.Kubernetes
+	20,  // 357: octelium.api.main.enterprise.v1.SecretStore.Status.type:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.Type
+	21,  // 358: octelium.api.main.enterprise.v1.SecretStore.Status.state:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.State
+	281, // 359: octelium.api.main.enterprise.v1.SecretStore.Status.synchronization:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization
+	281, // 360: octelium.api.main.enterprise.v1.SecretStore.Status.lastSynchronizations:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization
+	452, // 361: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.createdAt:type_name -> google.protobuf.Timestamp
+	22,  // 362: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.state:type_name -> octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.State
+	452, // 363: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.completedAt:type_name -> google.protobuf.Timestamp
+	448, // 364: octelium.api.main.enterprise.v1.AuditLog.Entry.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 365: octelium.api.main.enterprise.v1.AuditLog.Entry.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 366: octelium.api.main.enterprise.v1.AuditLog.Entry.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 367: octelium.api.main.enterprise.v1.AuditLog.Entry.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	457, // 368: octelium.api.main.enterprise.v1.DeviceManager.Spec.condition:type_name -> octelium.api.main.core.v1.Condition
+	295, // 369: octelium.api.main.enterprise.v1.DeviceManager.Spec.polling:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling
+	296, // 370: octelium.api.main.enterprise.v1.DeviceManager.Spec.linking:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking
+	287, // 371: octelium.api.main.enterprise.v1.DeviceManager.Spec.crowdStrike:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike
+	288, // 372: octelium.api.main.enterprise.v1.DeviceManager.Spec.sentinelOne:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne
+	289, // 373: octelium.api.main.enterprise.v1.DeviceManager.Spec.microsoftIntune:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune
+	290, // 374: octelium.api.main.enterprise.v1.DeviceManager.Spec.jamf:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf
+	291, // 375: octelium.api.main.enterprise.v1.DeviceManager.Spec.onePassword:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword
+	292, // 376: octelium.api.main.enterprise.v1.DeviceManager.Spec.fleetDM:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM
+	293, // 377: octelium.api.main.enterprise.v1.DeviceManager.Spec.huntress:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress
+	294, // 378: octelium.api.main.enterprise.v1.DeviceManager.Spec.iru:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru
+	26,  // 379: octelium.api.main.enterprise.v1.DeviceManager.Status.type:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status.Type
+	27,  // 380: octelium.api.main.enterprise.v1.DeviceManager.Status.state:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status.State
+	298, // 381: octelium.api.main.enterprise.v1.DeviceManager.Status.collection:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status.Collection
+	299, // 382: octelium.api.main.enterprise.v1.DeviceManager.Status.linking:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Status.Linking
+	24,  // 383: octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.region:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.Region
+	286, // 384: octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.clientSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	286, // 385: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	297, // 386: octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.agentFilters:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.AgentFiltersEntry
+	286, // 387: octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.clientSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	25,  // 388: octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.cloud:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.Cloud
+	286, // 389: octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf.clientSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	286, // 390: octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	286, // 391: octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	286, // 392: octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress.apiSecret:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	286, // 393: octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru.apiToken:type_name -> octelium.api.main.enterprise.v1.DeviceManager.Spec.SecretRef
+	453, // 394: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.interval:type_name -> octelium.api.main.meta.v1.Duration
+	453, // 395: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.timeout:type_name -> octelium.api.main.meta.v1.Duration
+	453, // 396: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.staleAfter:type_name -> octelium.api.main.meta.v1.Duration
+	453, // 397: octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling.maxObservationAge:type_name -> octelium.api.main.meta.v1.Duration
+	453, // 398: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.verificationInterval:type_name -> octelium.api.main.meta.v1.Duration
+	452, // 399: octelium.api.main.enterprise.v1.DeviceManager.Status.Collection.lastAttemptAt:type_name -> google.protobuf.Timestamp
+	452, // 400: octelium.api.main.enterprise.v1.DeviceManager.Status.Collection.lastSuccessAt:type_name -> google.protobuf.Timestamp
+	452, // 401: octelium.api.main.enterprise.v1.DeviceManager.Status.Linking.lastSweepAt:type_name -> google.protobuf.Timestamp
+	458, // 402: octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional.inlinePolicies:type_name -> octelium.api.main.core.v1.InlinePolicy
+	93,  // 403: octelium.api.main.enterprise.v1.Condition.All.of:type_name -> octelium.api.main.enterprise.v1.Condition
+	93,  // 404: octelium.api.main.enterprise.v1.Condition.Any.of:type_name -> octelium.api.main.enterprise.v1.Condition
+	93,  // 405: octelium.api.main.enterprise.v1.Condition.None.of:type_name -> octelium.api.main.enterprise.v1.Condition
+	305, // 406: octelium.api.main.enterprise.v1.Condition.Not.expression:type_name -> octelium.api.main.enterprise.v1.Condition.Expression
+	306, // 407: octelium.api.main.enterprise.v1.Condition.Expression.user:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.User
+	310, // 408: octelium.api.main.enterprise.v1.Condition.Expression.device:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Device
+	309, // 409: octelium.api.main.enterprise.v1.Condition.Expression.session:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Session
+	312, // 410: octelium.api.main.enterprise.v1.Condition.Expression.service:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Service
+	313, // 411: octelium.api.main.enterprise.v1.Condition.Expression.namespace:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Namespace
+	308, // 412: octelium.api.main.enterprise.v1.Condition.Expression.group:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.Group
+	316, // 413: octelium.api.main.enterprise.v1.Condition.Expression.sessionType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionType
+	307, // 414: octelium.api.main.enterprise.v1.Condition.Expression.userType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UserType
+	311, // 415: octelium.api.main.enterprise.v1.Condition.Expression.deviceOSType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType
+	314, // 416: octelium.api.main.enterprise.v1.Condition.Expression.serviceMode:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode
+	315, // 417: octelium.api.main.enterprise.v1.Condition.Expression.servicePublic:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic
+	317, // 418: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType
+	318, // 419: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationAAL:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL
+	319, // 420: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationIdentityProvider:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider
+	320, // 421: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredential:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential
+	327, // 422: octelium.api.main.enterprise.v1.Condition.Expression.sessionBrowser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser
+	321, // 423: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOPasskey:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey
+	326, // 424: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorAAGUID:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorAAGUID
+	328, // 425: octelium.api.main.enterprise.v1.Condition.Expression.timeBefore:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore
+	329, // 426: octelium.api.main.enterprise.v1.Condition.Expression.timeAfter:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter
+	322, // 427: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOHardware:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware
+	325, // 428: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOAttestationVerified:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified
+	330, // 429: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredentialType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType
+	323, // 430: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOUserVerified:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified
+	324, // 431: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationCredAuthenticatorFIDOUserPresent:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent
+	331, // 432: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationGeoipCountryCode:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode
+	332, // 433: octelium.api.main.enterprise.v1.Condition.Expression.sessionAuthenticationGeoipContinentCode:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode
+	333, // 434: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPPath:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath
+	334, // 435: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPMethod:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod
+	335, // 436: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHasHeader:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader
+	336, // 437: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHeaderValue:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue
+	337, // 438: octelium.api.main.enterprise.v1.Condition.Expression.requestIP:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestIP
+	338, // 439: octelium.api.main.enterprise.v1.Condition.Expression.requestIPInRange:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange
+	403, // 440: octelium.api.main.enterprise.v1.Condition.Expression.apiServerReadOnlyMethods:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods
+	404, // 441: octelium.api.main.enterprise.v1.Condition.Expression.apiServerMethods:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods
+	405, // 442: octelium.api.main.enterprise.v1.Condition.Expression.apiServerServices:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices
+	406, // 443: octelium.api.main.enterprise.v1.Condition.Expression.apiServerCore:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore
+	407, // 444: octelium.api.main.enterprise.v1.Condition.Expression.apiServerUser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser
+	408, // 445: octelium.api.main.enterprise.v1.Condition.Expression.apiServerEnterprise:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise
+	409, // 446: octelium.api.main.enterprise.v1.Condition.Expression.apiServerCordium:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium
+	410, // 447: octelium.api.main.enterprise.v1.Condition.Expression.apiServerAccess:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess
+	383, // 448: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPProtocolVersion:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion
+	384, // 449: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPMethod:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod
+	385, // 450: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPToolName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName
+	386, // 451: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPPromptName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName
+	387, // 452: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPResourceURI:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI
+	388, // 453: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPIsNotification:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification
+	390, // 454: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMProtocol:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol
+	391, // 455: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMOperation:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation
+	392, // 456: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMModel:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMModel
+	393, // 457: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMStream:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMStream
+	394, // 458: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMEstimatedInputTokens:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens
+	395, // 459: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMEstimateQuality:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality
+	396, // 460: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMMaxOutputTokens:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens
+	397, // 461: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMHasTools:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools
+	398, // 462: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMToolCount:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount
+	399, // 463: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMToolName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName
+	400, // 464: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMInputItemCount:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount
+	401, // 465: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMHasImageInput:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput
+	402, // 466: octelium.api.main.enterprise.v1.Condition.Expression.requestLLMHasAudioInput:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput
+	344, // 467: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHost:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost
+	345, // 468: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPProtocol:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol
+	346, // 469: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPScheme:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme
+	347, // 470: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPURI:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI
+	348, // 471: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPSize:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize
+	349, // 472: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPHasQueryParam:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam
+	350, // 473: octelium.api.main.enterprise.v1.Condition.Expression.requestHTTPQueryParamValue:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue
+	351, // 474: octelium.api.main.enterprise.v1.Condition.Expression.requestSSH:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH
+	352, // 475: octelium.api.main.enterprise.v1.Condition.Expression.requestSSHUser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser
+	353, // 476: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetes:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes
+	354, // 477: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesVerb:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb
+	355, // 478: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesAPIPrefix:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix
+	356, // 479: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesAPIGroup:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup
+	357, // 480: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesAPIVersion:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion
+	358, // 481: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesNamespace:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace
+	359, // 482: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesResource:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource
+	360, // 483: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesSubresource:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource
+	361, // 484: octelium.api.main.enterprise.v1.Condition.Expression.requestKubernetesName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName
+	362, // 485: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPC:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC
+	363, // 486: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCMethod:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod
+	364, // 487: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCService:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService
+	365, // 488: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCServiceFullName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName
+	366, // 489: octelium.api.main.enterprise.v1.Condition.Expression.requestGRPCPackage:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage
+	367, // 490: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnect:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect
+	368, // 491: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnectUser:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser
+	369, // 492: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnectDatabase:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase
+	370, // 493: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresConnectApplicationName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName
+	371, // 494: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresQuery:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery
+	372, // 495: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresQueryText:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText
+	373, // 496: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresParse:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse
+	374, // 497: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresParseName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName
+	375, // 498: octelium.api.main.enterprise.v1.Condition.Expression.requestPostgresParseQuery:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery
+	376, // 499: octelium.api.main.enterprise.v1.Condition.Expression.requestDNS:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS
+	377, // 500: octelium.api.main.enterprise.v1.Condition.Expression.requestDNSName:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName
+	378, // 501: octelium.api.main.enterprise.v1.Condition.Expression.requestDNSTypeID:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID
+	379, // 502: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5
+	380, // 503: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5Host:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host
+	381, // 504: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5Port:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port
+	382, // 505: octelium.api.main.enterprise.v1.Condition.Expression.requestSOCKS5AddressType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType
+	411, // 506: octelium.api.main.enterprise.v1.Condition.Expression.timeDayType:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType
+	389, // 507: octelium.api.main.enterprise.v1.Condition.Expression.requestMCPToolArgument:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument
+	448, // 508: octelium.api.main.enterprise.v1.Condition.Expression.User.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	459, // 509: octelium.api.main.enterprise.v1.Condition.Expression.UserType.type:type_name -> octelium.api.main.core.v1.User.Spec.Type
+	448, // 510: octelium.api.main.enterprise.v1.Condition.Expression.Group.groupRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 511: octelium.api.main.enterprise.v1.Condition.Expression.Session.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 512: octelium.api.main.enterprise.v1.Condition.Expression.Device.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	460, // 513: octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType.osType:type_name -> octelium.api.main.core.v1.Device.Status.OSType
+	448, // 514: octelium.api.main.enterprise.v1.Condition.Expression.Service.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 515: octelium.api.main.enterprise.v1.Condition.Expression.Namespace.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	461, // 516: octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
+	462, // 517: octelium.api.main.enterprise.v1.Condition.Expression.SessionType.type:type_name -> octelium.api.main.core.v1.Session.Status.Type
+	463, // 518: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType.type:type_name -> octelium.api.main.core.v1.Session.Status.Authentication.Info.Type
+	464, // 519: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL.aal:type_name -> octelium.api.main.core.v1.Session.Status.Authentication.Info.AAL
+	448, // 520: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider.identityProviderRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 521: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential.credentialRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	452, // 522: octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore.timestamp:type_name -> google.protobuf.Timestamp
+	452, // 523: octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter.timestamp:type_name -> google.protobuf.Timestamp
+	465, // 524: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType.type:type_name -> octelium.api.main.core.v1.Credential.Spec.Type
+	340, // 525: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch
+	340, // 526: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch
+	339, // 527: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 528: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 529: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 530: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue.header:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 531: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue.value:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	412, // 532: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.in:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In
+	413, // 533: octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.in:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In
+	339, // 534: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 535: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 536: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 537: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	342, // 538: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.IntMatch
+	339, // 539: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 540: octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 541: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 542: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 543: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 544: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 545: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 546: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 547: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 548: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 549: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 550: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 551: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 552: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 553: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 554: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 555: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 556: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 557: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 558: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 559: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	342, // 560: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.IntMatch
+	339, // 561: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	341, // 562: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
+	466, // 563: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType.addressType:type_name -> octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType
+	339, // 564: octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 565: octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 566: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 567: octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 568: octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	339, // 569: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.stringMatch:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	343, // 570: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.doubleMatch:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch
+	414, // 571: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.boolMatch:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch
+	415, // 572: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.isNull:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull
+	416, // 573: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.exists:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists
+	467, // 574: octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol.protocol:type_name -> octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol
+	468, // 575: octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation.operation:type_name -> octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation
+	339, // 576: octelium.api.main.enterprise.v1.Condition.Expression.LLMModel.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	341, // 577: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
+	469, // 578: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality.quality:type_name -> octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality
+	341, // 579: octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
+	341, // 580: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
+	339, // 581: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+	341, // 582: octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount.match:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
+	29,  // 583: octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise.service:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise.Service
+	30,  // 584: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium.service:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium.Service
+	31,  // 585: octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess.service:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess.Service
+	32,  // 586: octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType.type:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType.Type
+	28,  // 587: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch.value:type_name -> octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch.Value
+	448, // 588: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 589: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	448, // 590: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	470, // 591: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.authentication:type_name -> octelium.api.main.core.v1.Session.Status.Authentication
+	33,  // 592: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.status:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Status
+	418, // 593: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.failure:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure
+	34,  // 594: octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.reason:type_name -> octelium.api.main.enterprise.v1.AuthenticationLog.Entry.Failure.Reason
+	420, // 595: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.core:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.Core
+	421, // 596: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.packageEnterprise:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageEnterprise
+	422, // 597: octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.packageCordium:type_name -> octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageCordium
+	424, // 598: octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.kubeconfig:type_name -> octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.Kubeconfig
+	425, // 599: octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.bearerToken:type_name -> octelium.api.main.enterprise.v1.JoinClusterRequest.Kubernetes.BearerToken
+	452, // 600: octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core.setAt:type_name -> google.protobuf.Timestamp
+	452, // 601: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise.setAt:type_name -> google.protobuf.Timestamp
+	452, // 602: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium.setAt:type_name -> google.protobuf.Timestamp
+	36,  // 603: octelium.api.main.enterprise.v1.License.Plan.type:type_name -> octelium.api.main.enterprise.v1.License.Plan.Type
+	431, // 604: octelium.api.main.enterprise.v1.License.Plan.support:type_name -> octelium.api.main.enterprise.v1.License.Plan.Support
+	432, // 605: octelium.api.main.enterprise.v1.License.Plan.limits:type_name -> octelium.api.main.enterprise.v1.License.Plan.Limits
+	37,  // 606: octelium.api.main.enterprise.v1.License.Plan.Support.type:type_name -> octelium.api.main.enterprise.v1.License.Plan.Support.Type
+	39,  // 607: octelium.api.main.enterprise.v1.Agent.Workspace.type:type_name -> octelium.api.main.enterprise.v1.Agent.Workspace.Type
+	471, // 608: octelium.api.main.enterprise.v1.Agent.Workspace.workspace:type_name -> octelium.api.main.cordium.v1.Workspace
+	45,  // 609: octelium.api.main.enterprise.v1.SupportRequest.Actor.type:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Actor.Type
+	452, // 610: octelium.api.main.enterprise.v1.SupportRequest.SLA.firstResponseDueAt:type_name -> google.protobuf.Timestamp
+	452, // 611: octelium.api.main.enterprise.v1.SupportRequest.SLA.firstRespondedAt:type_name -> google.protobuf.Timestamp
+	452, // 612: octelium.api.main.enterprise.v1.SupportRequest.SLA.nextUpdateDueAt:type_name -> google.protobuf.Timestamp
+	46,  // 613: octelium.api.main.enterprise.v1.SupportRequest.Event.type:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Event.Type
+	437, // 614: octelium.api.main.enterprise.v1.SupportRequest.Event.actor:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Actor
+	44,  // 615: octelium.api.main.enterprise.v1.SupportRequest.Event.channel:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Channel
+	452, // 616: octelium.api.main.enterprise.v1.SupportRequest.Event.createdAt:type_name -> google.protobuf.Timestamp
+	47,  // 617: octelium.api.main.enterprise.v1.SupportRequest.Attachment.purpose:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Attachment.Purpose
+	437, // 618: octelium.api.main.enterprise.v1.SupportRequest.Attachment.uploadedBy:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Actor
+	44,  // 619: octelium.api.main.enterprise.v1.SupportRequest.Attachment.channel:type_name -> octelium.api.main.enterprise.v1.SupportRequest.Channel
+	452, // 620: octelium.api.main.enterprise.v1.SupportRequest.Attachment.createdAt:type_name -> google.protobuf.Timestamp
+	49,  // 621: octelium.api.main.enterprise.v1.MainService.GetClusterConfig:input_type -> octelium.api.main.enterprise.v1.GetClusterConfigRequest
+	53,  // 622: octelium.api.main.enterprise.v1.MainService.UpdateClusterConfig:input_type -> octelium.api.main.enterprise.v1.ClusterConfig
+	51,  // 623: octelium.api.main.enterprise.v1.MainService.CreateCollectorExporter:input_type -> octelium.api.main.enterprise.v1.CollectorExporter
+	472, // 624: octelium.api.main.enterprise.v1.MainService.GetCollectorExporter:input_type -> octelium.api.main.meta.v1.GetOptions
+	50,  // 625: octelium.api.main.enterprise.v1.MainService.ListCollectorExporter:input_type -> octelium.api.main.enterprise.v1.ListCollectorExporterOptions
+	51,  // 626: octelium.api.main.enterprise.v1.MainService.UpdateCollectorExporter:input_type -> octelium.api.main.enterprise.v1.CollectorExporter
+	473, // 627: octelium.api.main.enterprise.v1.MainService.DeleteCollectorExporter:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	472, // 628: octelium.api.main.enterprise.v1.MainService.GetDNSProvider:input_type -> octelium.api.main.meta.v1.GetOptions
+	69,  // 629: octelium.api.main.enterprise.v1.MainService.ListDNSProvider:input_type -> octelium.api.main.enterprise.v1.ListDNSProviderOptions
+	67,  // 630: octelium.api.main.enterprise.v1.MainService.UpdateDNSProvider:input_type -> octelium.api.main.enterprise.v1.DNSProvider
+	472, // 631: octelium.api.main.enterprise.v1.MainService.GetCertificate:input_type -> octelium.api.main.meta.v1.GetOptions
+	57,  // 632: octelium.api.main.enterprise.v1.MainService.UpdateCertificate:input_type -> octelium.api.main.enterprise.v1.Certificate
+	71,  // 633: octelium.api.main.enterprise.v1.MainService.ListCertificate:input_type -> octelium.api.main.enterprise.v1.ListCertificateOptions
+	78,  // 634: octelium.api.main.enterprise.v1.MainService.IssueCertificate:input_type -> octelium.api.main.enterprise.v1.IssueCertificateRequest
+	80,  // 635: octelium.api.main.enterprise.v1.MainService.SetCertificate:input_type -> octelium.api.main.enterprise.v1.SetCertificateRequest
+	472, // 636: octelium.api.main.enterprise.v1.MainService.GetCertificateIssuer:input_type -> octelium.api.main.meta.v1.GetOptions
+	72,  // 637: octelium.api.main.enterprise.v1.MainService.ListCertificateIssuer:input_type -> octelium.api.main.enterprise.v1.ListCertificateIssuerOptions
+	59,  // 638: octelium.api.main.enterprise.v1.MainService.UpdateCertificateIssuer:input_type -> octelium.api.main.enterprise.v1.CertificateIssuer
+	61,  // 639: octelium.api.main.enterprise.v1.MainService.CreateDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.DirectoryProvider
+	472, // 640: octelium.api.main.enterprise.v1.MainService.GetDirectoryProvider:input_type -> octelium.api.main.meta.v1.GetOptions
+	70,  // 641: octelium.api.main.enterprise.v1.MainService.ListDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.ListDirectoryProviderOptions
+	61,  // 642: octelium.api.main.enterprise.v1.MainService.UpdateDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.DirectoryProvider
+	473, // 643: octelium.api.main.enterprise.v1.MainService.DeleteDirectoryProvider:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	76,  // 644: octelium.api.main.enterprise.v1.MainService.GenerateDirectoryProviderCredential:input_type -> octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest
+	89,  // 645: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderUser:input_type -> octelium.api.main.enterprise.v1.ListDirectoryProviderUserOptions
+	90,  // 646: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderGroup:input_type -> octelium.api.main.enterprise.v1.ListDirectoryProviderGroupOptions
+	94,  // 647: octelium.api.main.enterprise.v1.MainService.SynchronizeDirectoryProvider:input_type -> octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderRequest
+	54,  // 648: octelium.api.main.enterprise.v1.MainService.CreateSecret:input_type -> octelium.api.main.enterprise.v1.Secret
+	56,  // 649: octelium.api.main.enterprise.v1.MainService.ListSecret:input_type -> octelium.api.main.enterprise.v1.ListSecretOptions
+	473, // 650: octelium.api.main.enterprise.v1.MainService.DeleteSecret:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	472, // 651: octelium.api.main.enterprise.v1.MainService.GetSecret:input_type -> octelium.api.main.meta.v1.GetOptions
+	54,  // 652: octelium.api.main.enterprise.v1.MainService.UpdateSecret:input_type -> octelium.api.main.enterprise.v1.Secret
+	472, // 653: octelium.api.main.enterprise.v1.MainService.GetSecretStore:input_type -> octelium.api.main.meta.v1.GetOptions
+	83,  // 654: octelium.api.main.enterprise.v1.MainService.ListSecretStore:input_type -> octelium.api.main.enterprise.v1.ListSecretStoreOptions
+	74,  // 655: octelium.api.main.enterprise.v1.MainService.UpdateSecretStore:input_type -> octelium.api.main.enterprise.v1.SecretStore
+	102, // 656: octelium.api.main.enterprise.v1.MainService.SynchronizeSecretStore:input_type -> octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest
+	84,  // 657: octelium.api.main.enterprise.v1.MainService.CreateDeviceManager:input_type -> octelium.api.main.enterprise.v1.DeviceManager
+	472, // 658: octelium.api.main.enterprise.v1.MainService.GetDeviceManager:input_type -> octelium.api.main.meta.v1.GetOptions
+	86,  // 659: octelium.api.main.enterprise.v1.MainService.ListDeviceManager:input_type -> octelium.api.main.enterprise.v1.ListDeviceManagerOptions
+	84,  // 660: octelium.api.main.enterprise.v1.MainService.UpdateDeviceManager:input_type -> octelium.api.main.enterprise.v1.DeviceManager
+	473, // 661: octelium.api.main.enterprise.v1.MainService.DeleteDeviceManager:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	87,  // 662: octelium.api.main.enterprise.v1.MainService.ResetDeviceBinding:input_type -> octelium.api.main.enterprise.v1.ResetDeviceBindingRequest
+	93,  // 663: octelium.api.main.enterprise.v1.MainService.GetCoreCondition:input_type -> octelium.api.main.enterprise.v1.Condition
+	91,  // 664: octelium.api.main.enterprise.v1.PolicyPortalService.IsAuthorized:input_type -> octelium.api.main.enterprise.v1.IsAuthorizedRequest
+	97,  // 665: octelium.api.main.enterprise.v1.ClusterService.UpgradeCluster:input_type -> octelium.api.main.enterprise.v1.UpgradeClusterRequest
+	99,  // 666: octelium.api.main.enterprise.v1.ClusterService.JoinCluster:input_type -> octelium.api.main.enterprise.v1.JoinClusterRequest
+	104, // 667: octelium.api.main.enterprise.v1.ClusterService.GetClusterInfo:input_type -> octelium.api.main.enterprise.v1.GetClusterInfoRequest
+	107, // 668: octelium.api.main.enterprise.v1.ClusterService.SetLicense:input_type -> octelium.api.main.enterprise.v1.SetLicenseRequest
+	109, // 669: octelium.api.main.enterprise.v1.ClusterService.GetLicense:input_type -> octelium.api.main.enterprise.v1.GetLicenseRequest
+	111, // 670: octelium.api.main.enterprise.v1.ClusterService.DeleteLicense:input_type -> octelium.api.main.enterprise.v1.DeleteLicenseRequest
+	113, // 671: octelium.api.main.enterprise.v1.AgentService.GetAgent:input_type -> octelium.api.main.enterprise.v1.GetAgentRequest
+	114, // 672: octelium.api.main.enterprise.v1.AgentService.InitializeAgent:input_type -> octelium.api.main.enterprise.v1.InitializeAgentRequest
+	115, // 673: octelium.api.main.enterprise.v1.AgentService.CreateAgentWorkspace:input_type -> octelium.api.main.enterprise.v1.CreateAgentWorkspaceRequest
+	117, // 674: octelium.api.main.enterprise.v1.SupportService.GetSupportInfo:input_type -> octelium.api.main.enterprise.v1.GetSupportInfoRequest
+	120, // 675: octelium.api.main.enterprise.v1.SupportService.ListSupportRequest:input_type -> octelium.api.main.enterprise.v1.ListSupportRequestOptions
+	122, // 676: octelium.api.main.enterprise.v1.SupportService.GetSupportRequest:input_type -> octelium.api.main.enterprise.v1.GetSupportRequestRequest
+	123, // 677: octelium.api.main.enterprise.v1.SupportService.ListSupportRequestEvent:input_type -> octelium.api.main.enterprise.v1.ListSupportRequestEventOptions
+	125, // 678: octelium.api.main.enterprise.v1.SupportService.CreateSupportRequest:input_type -> octelium.api.main.enterprise.v1.CreateSupportRequestRequest
+	126, // 679: octelium.api.main.enterprise.v1.SupportService.AddSupportRequestMessage:input_type -> octelium.api.main.enterprise.v1.AddSupportRequestMessageRequest
+	127, // 680: octelium.api.main.enterprise.v1.SupportService.AddSupportRequestAttachment:input_type -> octelium.api.main.enterprise.v1.AddSupportRequestAttachmentRequest
+	128, // 681: octelium.api.main.enterprise.v1.SupportService.ResolveSupportRequest:input_type -> octelium.api.main.enterprise.v1.ResolveSupportRequestRequest
+	129, // 682: octelium.api.main.enterprise.v1.SupportService.EscalateSupportRequest:input_type -> octelium.api.main.enterprise.v1.EscalateSupportRequestRequest
+	130, // 683: octelium.api.main.enterprise.v1.SupportService.DownloadSupportRequestAttachment:input_type -> octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentRequest
+	53,  // 684: octelium.api.main.enterprise.v1.MainService.GetClusterConfig:output_type -> octelium.api.main.enterprise.v1.ClusterConfig
+	53,  // 685: octelium.api.main.enterprise.v1.MainService.UpdateClusterConfig:output_type -> octelium.api.main.enterprise.v1.ClusterConfig
+	51,  // 686: octelium.api.main.enterprise.v1.MainService.CreateCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporter
+	51,  // 687: octelium.api.main.enterprise.v1.MainService.GetCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporter
+	52,  // 688: octelium.api.main.enterprise.v1.MainService.ListCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporterList
+	51,  // 689: octelium.api.main.enterprise.v1.MainService.UpdateCollectorExporter:output_type -> octelium.api.main.enterprise.v1.CollectorExporter
+	474, // 690: octelium.api.main.enterprise.v1.MainService.DeleteCollectorExporter:output_type -> octelium.api.main.meta.v1.OperationResult
+	67,  // 691: octelium.api.main.enterprise.v1.MainService.GetDNSProvider:output_type -> octelium.api.main.enterprise.v1.DNSProvider
+	68,  // 692: octelium.api.main.enterprise.v1.MainService.ListDNSProvider:output_type -> octelium.api.main.enterprise.v1.DNSProviderList
+	67,  // 693: octelium.api.main.enterprise.v1.MainService.UpdateDNSProvider:output_type -> octelium.api.main.enterprise.v1.DNSProvider
+	57,  // 694: octelium.api.main.enterprise.v1.MainService.GetCertificate:output_type -> octelium.api.main.enterprise.v1.Certificate
+	57,  // 695: octelium.api.main.enterprise.v1.MainService.UpdateCertificate:output_type -> octelium.api.main.enterprise.v1.Certificate
+	58,  // 696: octelium.api.main.enterprise.v1.MainService.ListCertificate:output_type -> octelium.api.main.enterprise.v1.CertificateList
+	79,  // 697: octelium.api.main.enterprise.v1.MainService.IssueCertificate:output_type -> octelium.api.main.enterprise.v1.IssueCertificateResponse
+	81,  // 698: octelium.api.main.enterprise.v1.MainService.SetCertificate:output_type -> octelium.api.main.enterprise.v1.SetCertificateResponse
+	59,  // 699: octelium.api.main.enterprise.v1.MainService.GetCertificateIssuer:output_type -> octelium.api.main.enterprise.v1.CertificateIssuer
+	60,  // 700: octelium.api.main.enterprise.v1.MainService.ListCertificateIssuer:output_type -> octelium.api.main.enterprise.v1.CertificateIssuerList
+	59,  // 701: octelium.api.main.enterprise.v1.MainService.UpdateCertificateIssuer:output_type -> octelium.api.main.enterprise.v1.CertificateIssuer
+	61,  // 702: octelium.api.main.enterprise.v1.MainService.CreateDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProvider
+	61,  // 703: octelium.api.main.enterprise.v1.MainService.GetDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProvider
+	62,  // 704: octelium.api.main.enterprise.v1.MainService.ListDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProviderList
+	61,  // 705: octelium.api.main.enterprise.v1.MainService.UpdateDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.DirectoryProvider
+	474, // 706: octelium.api.main.enterprise.v1.MainService.DeleteDirectoryProvider:output_type -> octelium.api.main.meta.v1.OperationResult
+	77,  // 707: octelium.api.main.enterprise.v1.MainService.GenerateDirectoryProviderCredential:output_type -> octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialResponse
+	64,  // 708: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderUser:output_type -> octelium.api.main.enterprise.v1.DirectoryProviderUserList
+	66,  // 709: octelium.api.main.enterprise.v1.MainService.ListDirectoryProviderGroup:output_type -> octelium.api.main.enterprise.v1.DirectoryProviderGroupList
+	95,  // 710: octelium.api.main.enterprise.v1.MainService.SynchronizeDirectoryProvider:output_type -> octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderResponse
+	54,  // 711: octelium.api.main.enterprise.v1.MainService.CreateSecret:output_type -> octelium.api.main.enterprise.v1.Secret
+	55,  // 712: octelium.api.main.enterprise.v1.MainService.ListSecret:output_type -> octelium.api.main.enterprise.v1.SecretList
+	474, // 713: octelium.api.main.enterprise.v1.MainService.DeleteSecret:output_type -> octelium.api.main.meta.v1.OperationResult
+	54,  // 714: octelium.api.main.enterprise.v1.MainService.GetSecret:output_type -> octelium.api.main.enterprise.v1.Secret
+	54,  // 715: octelium.api.main.enterprise.v1.MainService.UpdateSecret:output_type -> octelium.api.main.enterprise.v1.Secret
+	74,  // 716: octelium.api.main.enterprise.v1.MainService.GetSecretStore:output_type -> octelium.api.main.enterprise.v1.SecretStore
+	75,  // 717: octelium.api.main.enterprise.v1.MainService.ListSecretStore:output_type -> octelium.api.main.enterprise.v1.SecretStoreList
+	74,  // 718: octelium.api.main.enterprise.v1.MainService.UpdateSecretStore:output_type -> octelium.api.main.enterprise.v1.SecretStore
+	103, // 719: octelium.api.main.enterprise.v1.MainService.SynchronizeSecretStore:output_type -> octelium.api.main.enterprise.v1.SynchronizeSecretStoreResponse
+	84,  // 720: octelium.api.main.enterprise.v1.MainService.CreateDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManager
+	84,  // 721: octelium.api.main.enterprise.v1.MainService.GetDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManager
+	85,  // 722: octelium.api.main.enterprise.v1.MainService.ListDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManagerList
+	84,  // 723: octelium.api.main.enterprise.v1.MainService.UpdateDeviceManager:output_type -> octelium.api.main.enterprise.v1.DeviceManager
+	474, // 724: octelium.api.main.enterprise.v1.MainService.DeleteDeviceManager:output_type -> octelium.api.main.meta.v1.OperationResult
+	474, // 725: octelium.api.main.enterprise.v1.MainService.ResetDeviceBinding:output_type -> octelium.api.main.meta.v1.OperationResult
+	457, // 726: octelium.api.main.enterprise.v1.MainService.GetCoreCondition:output_type -> octelium.api.main.core.v1.Condition
+	92,  // 727: octelium.api.main.enterprise.v1.PolicyPortalService.IsAuthorized:output_type -> octelium.api.main.enterprise.v1.IsAuthorizedResponse
+	98,  // 728: octelium.api.main.enterprise.v1.ClusterService.UpgradeCluster:output_type -> octelium.api.main.enterprise.v1.UpgradeClusterResponse
+	100, // 729: octelium.api.main.enterprise.v1.ClusterService.JoinCluster:output_type -> octelium.api.main.enterprise.v1.JoinClusterResponse
+	105, // 730: octelium.api.main.enterprise.v1.ClusterService.GetClusterInfo:output_type -> octelium.api.main.enterprise.v1.GetClusterInfoResponse
+	108, // 731: octelium.api.main.enterprise.v1.ClusterService.SetLicense:output_type -> octelium.api.main.enterprise.v1.SetLicenseResponse
+	110, // 732: octelium.api.main.enterprise.v1.ClusterService.GetLicense:output_type -> octelium.api.main.enterprise.v1.GetLicenseResponse
+	112, // 733: octelium.api.main.enterprise.v1.ClusterService.DeleteLicense:output_type -> octelium.api.main.enterprise.v1.DeleteLicenseResponse
+	116, // 734: octelium.api.main.enterprise.v1.AgentService.GetAgent:output_type -> octelium.api.main.enterprise.v1.Agent
+	116, // 735: octelium.api.main.enterprise.v1.AgentService.InitializeAgent:output_type -> octelium.api.main.enterprise.v1.Agent
+	433, // 736: octelium.api.main.enterprise.v1.AgentService.CreateAgentWorkspace:output_type -> octelium.api.main.enterprise.v1.Agent.Workspace
+	118, // 737: octelium.api.main.enterprise.v1.SupportService.GetSupportInfo:output_type -> octelium.api.main.enterprise.v1.SupportInfo
+	121, // 738: octelium.api.main.enterprise.v1.SupportService.ListSupportRequest:output_type -> octelium.api.main.enterprise.v1.SupportRequestList
+	119, // 739: octelium.api.main.enterprise.v1.SupportService.GetSupportRequest:output_type -> octelium.api.main.enterprise.v1.SupportRequest
+	124, // 740: octelium.api.main.enterprise.v1.SupportService.ListSupportRequestEvent:output_type -> octelium.api.main.enterprise.v1.SupportRequestEventList
+	119, // 741: octelium.api.main.enterprise.v1.SupportService.CreateSupportRequest:output_type -> octelium.api.main.enterprise.v1.SupportRequest
+	119, // 742: octelium.api.main.enterprise.v1.SupportService.AddSupportRequestMessage:output_type -> octelium.api.main.enterprise.v1.SupportRequest
+	441, // 743: octelium.api.main.enterprise.v1.SupportService.AddSupportRequestAttachment:output_type -> octelium.api.main.enterprise.v1.SupportRequest.Attachment
+	119, // 744: octelium.api.main.enterprise.v1.SupportService.ResolveSupportRequest:output_type -> octelium.api.main.enterprise.v1.SupportRequest
+	119, // 745: octelium.api.main.enterprise.v1.SupportService.EscalateSupportRequest:output_type -> octelium.api.main.enterprise.v1.SupportRequest
+	131, // 746: octelium.api.main.enterprise.v1.SupportService.DownloadSupportRequestAttachment:output_type -> octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse
+	684, // [684:747] is the sub-list for method output_type
+	621, // [621:684] is the sub-list for method input_type
+	621, // [621:621] is the sub-list for extension type_name
+	621, // [621:621] is the sub-list for extension extendee
+	0,   // [0:621] is the sub-list for field type_name
 }
 
 func init() { file_enterprisev1_proto_init() }
@@ -34934,7 +38094,11 @@ func file_enterprisev1_proto_init() {
 		(*Condition_MatchAny)(nil),
 		(*Condition_Expression_)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[68].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[82].OneofWrappers = []any{
+		(*DownloadSupportRequestAttachmentResponse_Header_)(nil),
+		(*DownloadSupportRequestAttachmentResponse_Chunk)(nil),
+	}
+	file_enterprisev1_proto_msgTypes[83].OneofWrappers = []any{
 		(*CollectorExporter_Spec_Otlp)(nil),
 		(*CollectorExporter_Spec_OtlpHTTP)(nil),
 		(*CollectorExporter_Spec_Clickhouse_)(nil),
@@ -34948,128 +38112,128 @@ func file_enterprisev1_proto_init() {
 		(*CollectorExporter_Spec_AzureDataExplorer_)(nil),
 		(*CollectorExporter_Spec_PrometheusRemoteWrite_)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[83].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[98].OneofWrappers = []any{
 		(*CollectorExporter_Spec_OTLP_Auth_Bearer_)(nil),
 		(*CollectorExporter_Spec_OTLP_Auth_Basic_)(nil),
 		(*CollectorExporter_Spec_OTLP_Auth_Custom_)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[86].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[101].OneofWrappers = []any{
 		(*CollectorExporter_Spec_OTLP_Auth_Bearer_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[89].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[104].OneofWrappers = []any{
 		(*CollectorExporter_Spec_OTLP_Auth_Basic_Password_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[90].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[105].OneofWrappers = []any{
 		(*CollectorExporter_Spec_OTLP_Auth_Custom_Value_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[92].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[107].OneofWrappers = []any{
 		(*CollectorExporter_Spec_OTLPHTTP_Auth_Bearer_)(nil),
 		(*CollectorExporter_Spec_OTLPHTTP_Auth_Basic_)(nil),
 		(*CollectorExporter_Spec_OTLPHTTP_Auth_Custom_)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[94].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[109].OneofWrappers = []any{
 		(*CollectorExporter_Spec_OTLPHTTP_Auth_Bearer_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[97].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[112].OneofWrappers = []any{
 		(*CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[98].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[113].OneofWrappers = []any{
 		(*CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[101].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[116].OneofWrappers = []any{
 		(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer_)(nil),
 		(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_)(nil),
 		(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[106].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[121].OneofWrappers = []any{
 		(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[109].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[124].OneofWrappers = []any{
 		(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[110].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[125].OneofWrappers = []any{
 		(*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[111].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[126].OneofWrappers = []any{
 		(*CollectorExporter_Spec_Clickhouse_Password_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[117].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[132].OneofWrappers = []any{
 		(*CollectorExporter_Spec_Elasticsearch_Auth_ApiKey)(nil),
 		(*CollectorExporter_Spec_Elasticsearch_Auth_Basic_)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[119].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[134].OneofWrappers = []any{
 		(*CollectorExporter_Spec_Elasticsearch_Auth_APIKey_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[121].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[136].OneofWrappers = []any{
 		(*CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[122].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[137].OneofWrappers = []any{
 		(*CollectorExporter_Spec_Logzio_Token_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[124].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[139].OneofWrappers = []any{
 		(*CollectorExporter_Spec_InfluxDB_Token_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[126].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[141].OneofWrappers = []any{
 		(*CollectorExporter_Spec_InfluxDB_V1Compatibility_Password_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[128].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[143].OneofWrappers = []any{
 		(*CollectorExporter_Spec_Kafka_Auth_Sasl)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[133].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[148].OneofWrappers = []any{
 		(*CollectorExporter_Spec_Kafka_Auth_SASL_Password_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[134].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[149].OneofWrappers = []any{
 		(*CollectorExporter_Spec_Datadog_APIKey_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[139].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[154].OneofWrappers = []any{
 		(*CollectorExporter_Spec_Splunk_Token_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[141].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[156].OneofWrappers = []any{
 		(*CollectorExporter_Spec_AzureMonitor_ConnectionString_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[142].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[157].OneofWrappers = []any{
 		(*CollectorExporter_Spec_AzureMonitor_InstrumentationKey_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[143].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[158].OneofWrappers = []any{
 		(*CollectorExporter_Spec_AzureDataExplorer_ApplicationKey_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[147].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[162].OneofWrappers = []any{
 		(*CollectorExporter_Spec_AzureDataExplorer_Auth_ServicePrincipal)(nil),
 		(*CollectorExporter_Spec_AzureDataExplorer_Auth_ManagedIdentity)(nil),
 		(*CollectorExporter_Spec_AzureDataExplorer_Auth_AzureDefault)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[165].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[180].OneofWrappers = []any{
 		(*Secret_Data_Value)(nil),
 		(*Secret_Data_ValueBytes)(nil),
 		(*Secret_Data_DataMap_)(nil),
 		(*Secret_Data_Attrs)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[166].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[181].OneofWrappers = []any{
 		(*Secret_Spec_Data_Value)(nil),
 		(*Secret_Spec_Data_ValueBytes)(nil),
 		(*Secret_Spec_Data_Attrs)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[174].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[189].OneofWrappers = []any{
 		(*CertificateIssuer_Spec_Acme)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[175].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[190].OneofWrappers = []any{
 		(*CertificateIssuer_Status_Acme)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[177].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[192].OneofWrappers = []any{
 		(*CertificateIssuer_Spec_ACME_Solver_Dns)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[180].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[195].OneofWrappers = []any{
 		(*DirectoryProvider_Spec_Scim)(nil),
 		(*DirectoryProvider_Spec_GoogleWorkspace_)(nil),
 		(*DirectoryProvider_Spec_Keycloak_)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[185].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[200].OneofWrappers = []any{
 		(*DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[187].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[202].OneofWrappers = []any{
 		(*DirectoryProvider_Spec_Keycloak_ClientSecret_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[194].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[209].OneofWrappers = []any{
 		(*DNSProvider_Spec_Cloudflare_)(nil),
 		(*DNSProvider_Spec_Aws)(nil),
 		(*DNSProvider_Spec_Digitalocean)(nil),
@@ -35078,35 +38242,35 @@ func file_enterprisev1_proto_init() {
 		(*DNSProvider_Spec_Linode_)(nil),
 		(*DNSProvider_Spec_Ovh)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[203].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[218].OneofWrappers = []any{
 		(*DNSProvider_Spec_Cloudflare_APIToken_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[204].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[219].OneofWrappers = []any{
 		(*DNSProvider_Spec_AWS_SecretAccessKey_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[205].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[220].OneofWrappers = []any{
 		(*DNSProvider_Spec_DigitalOcean_APIToken_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[206].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[221].OneofWrappers = []any{
 		(*DNSProvider_Spec_Google_ServiceAccount_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[207].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[222].OneofWrappers = []any{
 		(*DNSProvider_Spec_Azure_ClientSecret_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[208].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[223].OneofWrappers = []any{
 		(*DNSProvider_Spec_Linode_APIToken_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[209].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[224].OneofWrappers = []any{
 		(*DNSProvider_Spec_OVH_ApplicationSecret_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[210].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[225].OneofWrappers = []any{
 		(*SecretStore_Spec_AzureKeyVault_)(nil),
 		(*SecretStore_Spec_HashicorpVault_)(nil),
 		(*SecretStore_Spec_GoogleCloudKeyManagementService_)(nil),
 		(*SecretStore_Spec_AwsKeyManagementService)(nil),
 		(*SecretStore_Spec_Kubernetes_)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[220].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[235].OneofWrappers = []any{
 		(*DeviceManager_Spec_CrowdStrike_)(nil),
 		(*DeviceManager_Spec_SentinelOne_)(nil),
 		(*DeviceManager_Spec_MicrosoftIntune_)(nil),
@@ -35116,11 +38280,11 @@ func file_enterprisev1_proto_init() {
 		(*DeviceManager_Spec_Huntress_)(nil),
 		(*DeviceManager_Spec_Iru_)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[222].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[237].OneofWrappers = []any{
 		(*DeviceManager_Spec_SecretRef_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[228].OneofWrappers = []any{}
-	file_enterprisev1_proto_msgTypes[241].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[243].OneofWrappers = []any{}
+	file_enterprisev1_proto_msgTypes[256].OneofWrappers = []any{
 		(*Condition_Expression_User_)(nil),
 		(*Condition_Expression_Device_)(nil),
 		(*Condition_Expression_Session_)(nil),
@@ -35223,52 +38387,52 @@ func file_enterprisev1_proto_init() {
 		(*Condition_Expression_TimeDayType_)(nil),
 		(*Condition_Expression_RequestMCPToolArgument)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[275].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[290].OneofWrappers = []any{
 		(*Condition_Expression_StringMatch_Exact)(nil),
 		(*Condition_Expression_StringMatch_Prefix)(nil),
 		(*Condition_Expression_StringMatch_Suffix)(nil),
 		(*Condition_Expression_StringMatch_Contains)(nil),
 		(*Condition_Expression_StringMatch_In_)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[276].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[291].OneofWrappers = []any{
 		(*Condition_Expression_StringSetMatch_Exact)(nil),
 		(*Condition_Expression_StringSetMatch_In_)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[277].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[292].OneofWrappers = []any{
 		(*Condition_Expression_UIntMatch_Exact)(nil),
 		(*Condition_Expression_UIntMatch_LessThan)(nil),
 		(*Condition_Expression_UIntMatch_LessThanOrEqual)(nil),
 		(*Condition_Expression_UIntMatch_GreaterThan)(nil),
 		(*Condition_Expression_UIntMatch_GreaterThanOrEqual)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[278].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[293].OneofWrappers = []any{
 		(*Condition_Expression_IntMatch_Exact)(nil),
 		(*Condition_Expression_IntMatch_LessThan)(nil),
 		(*Condition_Expression_IntMatch_LessThanOrEqual)(nil),
 		(*Condition_Expression_IntMatch_GreaterThan)(nil),
 		(*Condition_Expression_IntMatch_GreaterThanOrEqual)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[279].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[294].OneofWrappers = []any{
 		(*Condition_Expression_DoubleMatch_LessThan)(nil),
 		(*Condition_Expression_DoubleMatch_LessThanOrEqual)(nil),
 		(*Condition_Expression_DoubleMatch_GreaterThan)(nil),
 		(*Condition_Expression_DoubleMatch_GreaterThanOrEqual)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[325].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[340].OneofWrappers = []any{
 		(*Condition_Expression_MCPToolArgument_StringMatch)(nil),
 		(*Condition_Expression_MCPToolArgument_DoubleMatch)(nil),
 		(*Condition_Expression_MCPToolArgument_BoolMatch_)(nil),
 		(*Condition_Expression_MCPToolArgument_IsNull_)(nil),
 		(*Condition_Expression_MCPToolArgument_Exists_)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[359].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[374].OneofWrappers = []any{
 		(*JoinClusterRequest_Kubernetes_Kubeconfig_)(nil),
 		(*JoinClusterRequest_Kubernetes_BearerToken_)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[360].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[375].OneofWrappers = []any{
 		(*JoinClusterRequest_Kubernetes_Kubeconfig_FromSecret)(nil),
 	}
-	file_enterprisev1_proto_msgTypes[361].OneofWrappers = []any{
+	file_enterprisev1_proto_msgTypes[376].OneofWrappers = []any{
 		(*JoinClusterRequest_Kubernetes_BearerToken_FromSecret)(nil),
 	}
 	type x struct{}
@@ -35276,10 +38440,10 @@ func file_enterprisev1_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_enterprisev1_proto_rawDesc,
-			NumEnums:      40,
-			NumMessages:   370,
+			NumEnums:      49,
+			NumMessages:   396,
 			NumExtensions: 0,
-			NumServices:   4,
+			NumServices:   5,
 		},
 		GoTypes:           file_enterprisev1_proto_goTypes,
 		DependencyIndexes: file_enterprisev1_proto_depIdxs,

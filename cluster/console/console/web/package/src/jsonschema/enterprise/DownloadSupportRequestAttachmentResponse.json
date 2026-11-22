@@ -1,0 +1,77 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/DownloadSupportRequestAttachmentResponse",
+    "definitions": {
+        "DownloadSupportRequestAttachmentResponse": {
+            "properties": {
+                "header": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse.Header",
+                    "additionalProperties": false,
+                    "description": "Header is the header of the file. It is only set in the first message."
+                },
+                "chunk": {
+                    "type": "string",
+                    "description": "Chunk is the next chunk of the content of the file.",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "header"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "chunk"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "header"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "chunk"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Download Support Request Attachment Response",
+            "description": "DownloadSupportRequestAttachmentResponse is a message of the stream of the DownloadSupportRequestAttachment method."
+        },
+        "octelium.api.main.enterprise.v1.DownloadSupportRequestAttachmentResponse.Header": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the file."
+                },
+                "contentType": {
+                    "type": "string",
+                    "description": "ContentType is the media type of the file."
+                },
+                "size": {
+                    "type": "integer",
+                    "description": "Size is the size of the file in bytes."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Header",
+            "description": "Header is the header of the downloaded file."
+        }
+    }
+}

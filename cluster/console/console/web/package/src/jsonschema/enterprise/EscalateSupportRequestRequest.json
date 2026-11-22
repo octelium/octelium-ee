@@ -1,0 +1,22 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/EscalateSupportRequestRequest",
+    "definitions": {
+        "EscalateSupportRequestRequest": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the unique identifier of the request."
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "Reason is why the request needs more urgency."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Escalate Support Request Request",
+            "description": "EscalateSupportRequestRequest is the request of the EscalateSupportRequest method."
+        }
+    }
+}

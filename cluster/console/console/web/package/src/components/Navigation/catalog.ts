@@ -30,6 +30,7 @@ import {
   LayoutDashboard,
   LayoutTemplate,
   Library,
+  LifeBuoy,
   LockKeyhole,
   LockOpen,
   PanelTop,
@@ -402,6 +403,13 @@ export const pageAgent: NavItem = {
   keywords: ["agent", "ai", "assistant", "chat", "conversations"],
 };
 
+export const pageSupport: NavItem = {
+  title: "Support",
+  url: "/support",
+  icon: LifeBuoy,
+  keywords: ["help", "ticket", "issue", "bug", "diagnostics", "octelium"],
+};
+
 export const pageSettings: NavItem = {
   title: "Settings",
   url: "/settings",
@@ -483,6 +491,27 @@ export const resolveTrail = (rawPathname: string): Crumb[] => {
   const home = homeCrumb();
   if (pathname === "/") {
     return [home];
+  }
+
+  if (
+    pathname === pageSupport.url ||
+    pathname.startsWith(`${pageSupport.url}/`)
+  ) {
+    const trail: Crumb[] = [
+      home,
+      {
+        label: pageSupport.title,
+        path: pageSupport.url,
+        icon: pageSupport.icon,
+      },
+    ];
+    const rest = pathname.split("/").filter(Boolean).slice(1);
+    if (rest[0] === "new") {
+      trail.push({ label: "New request", path: `${pageSupport.url}/new` });
+    } else if (rest[0] === "requests" && rest[1]) {
+      trail.push({ label: "Request", path: pathname });
+    }
+    return trail;
   }
 
   for (const page of [pageAgent, pageSettings]) {

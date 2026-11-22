@@ -5,6 +5,7 @@ import routerAgent from "./Agent/router";
 import routerClusterMan from "./clusterman/router";
 import Home from "./Home";
 import routerSettings from "./Settings/router";
+import routerSupport from "./support/router";
 
 import Root from "./index";
 import * as React from "react";
@@ -98,6 +99,7 @@ export default (): RouteObject => {
         element: <LazyRouteGroup load={loadEnterpriseRoutes} />,
       },
       routerClusterMan(),
+      routerSupport(),
       {
         path: "visibility/*",
         element: <LazyRouteGroup load={loadVisibilityRoutes} />,

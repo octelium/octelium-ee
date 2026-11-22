@@ -2499,3 +2499,521 @@ var AgentService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "enterprisev1.proto",
 }
+
+const (
+	SupportService_GetSupportInfo_FullMethodName                   = "/octelium.api.main.enterprise.v1.SupportService/GetSupportInfo"
+	SupportService_ListSupportRequest_FullMethodName               = "/octelium.api.main.enterprise.v1.SupportService/ListSupportRequest"
+	SupportService_GetSupportRequest_FullMethodName                = "/octelium.api.main.enterprise.v1.SupportService/GetSupportRequest"
+	SupportService_ListSupportRequestEvent_FullMethodName          = "/octelium.api.main.enterprise.v1.SupportService/ListSupportRequestEvent"
+	SupportService_CreateSupportRequest_FullMethodName             = "/octelium.api.main.enterprise.v1.SupportService/CreateSupportRequest"
+	SupportService_AddSupportRequestMessage_FullMethodName         = "/octelium.api.main.enterprise.v1.SupportService/AddSupportRequestMessage"
+	SupportService_AddSupportRequestAttachment_FullMethodName      = "/octelium.api.main.enterprise.v1.SupportService/AddSupportRequestAttachment"
+	SupportService_ResolveSupportRequest_FullMethodName            = "/octelium.api.main.enterprise.v1.SupportService/ResolveSupportRequest"
+	SupportService_EscalateSupportRequest_FullMethodName           = "/octelium.api.main.enterprise.v1.SupportService/EscalateSupportRequest"
+	SupportService_DownloadSupportRequestAttachment_FullMethodName = "/octelium.api.main.enterprise.v1.SupportService/DownloadSupportRequestAttachment"
+)
+
+// SupportServiceClient is the client API for SupportService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// SupportService lets the Cluster administrators open and follow technical
+// support requests with Octelium Support and send them diagnostics directly
+// from the Cluster. The Cluster authenticates to the Octelium customer portal
+// with its License and its installation key, which never leave the Cluster
+// except to the customer portal. The calling User is recorded as the
+// unverified reporter of the requests that it opens. Only the requests that
+// were opened from this Cluster installation are visible via this service.
+// All the support requests of the organization, including the billing and
+// licensing ones, are available in the customer portal.
+type SupportServiceClient interface {
+	// GetSupportInfo retrieves whether support requests can currently be opened
+	// from the Cluster, the support level of the Cluster's subscription, the
+	// limits of the requests and the Cluster details that are sent along with
+	// every new request.
+	GetSupportInfo(ctx context.Context, in *GetSupportInfoRequest, opts ...grpc.CallOption) (*SupportInfo, error)
+	// ListSupportRequest lists the support requests that were opened from the
+	// Cluster, the most recently active first.
+	ListSupportRequest(ctx context.Context, in *ListSupportRequestOptions, opts ...grpc.CallOption) (*SupportRequestList, error)
+	// GetSupportRequest retrieves a support request with its latest public
+	// timeline events and its files.
+	GetSupportRequest(ctx context.Context, in *GetSupportRequestRequest, opts ...grpc.CallOption) (*SupportRequest, error)
+	// ListSupportRequestEvent lists the earlier public timeline events of a
+	// support request.
+	ListSupportRequestEvent(ctx context.Context, in *ListSupportRequestEventOptions, opts ...grpc.CallOption) (*SupportRequestEventList, error)
+	// CreateSupportRequest opens a new technical support request. The details
+	// of the Cluster (i.e. the `environment` field of SupportInfo) are sent
+	// along with the request.
+	CreateSupportRequest(ctx context.Context, in *CreateSupportRequestRequest, opts ...grpc.CallOption) (*SupportRequest, error)
+	// AddSupportRequestMessage adds a reply to a support request. Replying to a
+	// resolved request or to a request that waits on the customer reopens it.
+	AddSupportRequestMessage(ctx context.Context, in *AddSupportRequestMessageRequest, opts ...grpc.CallOption) (*SupportRequest, error)
+	// AddSupportRequestAttachment adds a file (e.g. diagnostics, a log file or a
+	// screenshot) to a support request. The file can then be referenced by a
+	// reply.
+	AddSupportRequestAttachment(ctx context.Context, in *AddSupportRequestAttachmentRequest, opts ...grpc.CallOption) (*SupportRequest_Attachment, error)
+	// ResolveSupportRequest marks a support request as resolved.
+	ResolveSupportRequest(ctx context.Context, in *ResolveSupportRequestRequest, opts ...grpc.CallOption) (*SupportRequest, error)
+	// EscalateSupportRequest escalates a support request to the Octelium
+	// support management with a written reason. A request can only be
+	// escalated once.
+	EscalateSupportRequest(ctx context.Context, in *EscalateSupportRequestRequest, opts ...grpc.CallOption) (*SupportRequest, error)
+	// DownloadSupportRequestAttachment downloads a file of a support request.
+	// The first message carries the header of the file and the following ones
+	// its content.
+	DownloadSupportRequestAttachment(ctx context.Context, in *DownloadSupportRequestAttachmentRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadSupportRequestAttachmentResponse], error)
+}
+
+type supportServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewSupportServiceClient(cc grpc.ClientConnInterface) SupportServiceClient {
+	return &supportServiceClient{cc}
+}
+
+func (c *supportServiceClient) GetSupportInfo(ctx context.Context, in *GetSupportInfoRequest, opts ...grpc.CallOption) (*SupportInfo, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SupportInfo)
+	err := c.cc.Invoke(ctx, SupportService_GetSupportInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) ListSupportRequest(ctx context.Context, in *ListSupportRequestOptions, opts ...grpc.CallOption) (*SupportRequestList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SupportRequestList)
+	err := c.cc.Invoke(ctx, SupportService_ListSupportRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) GetSupportRequest(ctx context.Context, in *GetSupportRequestRequest, opts ...grpc.CallOption) (*SupportRequest, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SupportRequest)
+	err := c.cc.Invoke(ctx, SupportService_GetSupportRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) ListSupportRequestEvent(ctx context.Context, in *ListSupportRequestEventOptions, opts ...grpc.CallOption) (*SupportRequestEventList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SupportRequestEventList)
+	err := c.cc.Invoke(ctx, SupportService_ListSupportRequestEvent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) CreateSupportRequest(ctx context.Context, in *CreateSupportRequestRequest, opts ...grpc.CallOption) (*SupportRequest, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SupportRequest)
+	err := c.cc.Invoke(ctx, SupportService_CreateSupportRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) AddSupportRequestMessage(ctx context.Context, in *AddSupportRequestMessageRequest, opts ...grpc.CallOption) (*SupportRequest, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SupportRequest)
+	err := c.cc.Invoke(ctx, SupportService_AddSupportRequestMessage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) AddSupportRequestAttachment(ctx context.Context, in *AddSupportRequestAttachmentRequest, opts ...grpc.CallOption) (*SupportRequest_Attachment, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SupportRequest_Attachment)
+	err := c.cc.Invoke(ctx, SupportService_AddSupportRequestAttachment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) ResolveSupportRequest(ctx context.Context, in *ResolveSupportRequestRequest, opts ...grpc.CallOption) (*SupportRequest, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SupportRequest)
+	err := c.cc.Invoke(ctx, SupportService_ResolveSupportRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) EscalateSupportRequest(ctx context.Context, in *EscalateSupportRequestRequest, opts ...grpc.CallOption) (*SupportRequest, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SupportRequest)
+	err := c.cc.Invoke(ctx, SupportService_EscalateSupportRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supportServiceClient) DownloadSupportRequestAttachment(ctx context.Context, in *DownloadSupportRequestAttachmentRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadSupportRequestAttachmentResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &SupportService_ServiceDesc.Streams[0], SupportService_DownloadSupportRequestAttachment_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[DownloadSupportRequestAttachmentRequest, DownloadSupportRequestAttachmentResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type SupportService_DownloadSupportRequestAttachmentClient = grpc.ServerStreamingClient[DownloadSupportRequestAttachmentResponse]
+
+// SupportServiceServer is the server API for SupportService service.
+// All implementations must embed UnimplementedSupportServiceServer
+// for forward compatibility.
+//
+// SupportService lets the Cluster administrators open and follow technical
+// support requests with Octelium Support and send them diagnostics directly
+// from the Cluster. The Cluster authenticates to the Octelium customer portal
+// with its License and its installation key, which never leave the Cluster
+// except to the customer portal. The calling User is recorded as the
+// unverified reporter of the requests that it opens. Only the requests that
+// were opened from this Cluster installation are visible via this service.
+// All the support requests of the organization, including the billing and
+// licensing ones, are available in the customer portal.
+type SupportServiceServer interface {
+	// GetSupportInfo retrieves whether support requests can currently be opened
+	// from the Cluster, the support level of the Cluster's subscription, the
+	// limits of the requests and the Cluster details that are sent along with
+	// every new request.
+	GetSupportInfo(context.Context, *GetSupportInfoRequest) (*SupportInfo, error)
+	// ListSupportRequest lists the support requests that were opened from the
+	// Cluster, the most recently active first.
+	ListSupportRequest(context.Context, *ListSupportRequestOptions) (*SupportRequestList, error)
+	// GetSupportRequest retrieves a support request with its latest public
+	// timeline events and its files.
+	GetSupportRequest(context.Context, *GetSupportRequestRequest) (*SupportRequest, error)
+	// ListSupportRequestEvent lists the earlier public timeline events of a
+	// support request.
+	ListSupportRequestEvent(context.Context, *ListSupportRequestEventOptions) (*SupportRequestEventList, error)
+	// CreateSupportRequest opens a new technical support request. The details
+	// of the Cluster (i.e. the `environment` field of SupportInfo) are sent
+	// along with the request.
+	CreateSupportRequest(context.Context, *CreateSupportRequestRequest) (*SupportRequest, error)
+	// AddSupportRequestMessage adds a reply to a support request. Replying to a
+	// resolved request or to a request that waits on the customer reopens it.
+	AddSupportRequestMessage(context.Context, *AddSupportRequestMessageRequest) (*SupportRequest, error)
+	// AddSupportRequestAttachment adds a file (e.g. diagnostics, a log file or a
+	// screenshot) to a support request. The file can then be referenced by a
+	// reply.
+	AddSupportRequestAttachment(context.Context, *AddSupportRequestAttachmentRequest) (*SupportRequest_Attachment, error)
+	// ResolveSupportRequest marks a support request as resolved.
+	ResolveSupportRequest(context.Context, *ResolveSupportRequestRequest) (*SupportRequest, error)
+	// EscalateSupportRequest escalates a support request to the Octelium
+	// support management with a written reason. A request can only be
+	// escalated once.
+	EscalateSupportRequest(context.Context, *EscalateSupportRequestRequest) (*SupportRequest, error)
+	// DownloadSupportRequestAttachment downloads a file of a support request.
+	// The first message carries the header of the file and the following ones
+	// its content.
+	DownloadSupportRequestAttachment(*DownloadSupportRequestAttachmentRequest, grpc.ServerStreamingServer[DownloadSupportRequestAttachmentResponse]) error
+	mustEmbedUnimplementedSupportServiceServer()
+}
+
+// UnimplementedSupportServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedSupportServiceServer struct{}
+
+func (UnimplementedSupportServiceServer) GetSupportInfo(context.Context, *GetSupportInfoRequest) (*SupportInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSupportInfo not implemented")
+}
+func (UnimplementedSupportServiceServer) ListSupportRequest(context.Context, *ListSupportRequestOptions) (*SupportRequestList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListSupportRequest not implemented")
+}
+func (UnimplementedSupportServiceServer) GetSupportRequest(context.Context, *GetSupportRequestRequest) (*SupportRequest, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSupportRequest not implemented")
+}
+func (UnimplementedSupportServiceServer) ListSupportRequestEvent(context.Context, *ListSupportRequestEventOptions) (*SupportRequestEventList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListSupportRequestEvent not implemented")
+}
+func (UnimplementedSupportServiceServer) CreateSupportRequest(context.Context, *CreateSupportRequestRequest) (*SupportRequest, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateSupportRequest not implemented")
+}
+func (UnimplementedSupportServiceServer) AddSupportRequestMessage(context.Context, *AddSupportRequestMessageRequest) (*SupportRequest, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddSupportRequestMessage not implemented")
+}
+func (UnimplementedSupportServiceServer) AddSupportRequestAttachment(context.Context, *AddSupportRequestAttachmentRequest) (*SupportRequest_Attachment, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddSupportRequestAttachment not implemented")
+}
+func (UnimplementedSupportServiceServer) ResolveSupportRequest(context.Context, *ResolveSupportRequestRequest) (*SupportRequest, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResolveSupportRequest not implemented")
+}
+func (UnimplementedSupportServiceServer) EscalateSupportRequest(context.Context, *EscalateSupportRequestRequest) (*SupportRequest, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EscalateSupportRequest not implemented")
+}
+func (UnimplementedSupportServiceServer) DownloadSupportRequestAttachment(*DownloadSupportRequestAttachmentRequest, grpc.ServerStreamingServer[DownloadSupportRequestAttachmentResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadSupportRequestAttachment not implemented")
+}
+func (UnimplementedSupportServiceServer) mustEmbedUnimplementedSupportServiceServer() {}
+func (UnimplementedSupportServiceServer) testEmbeddedByValue()                        {}
+
+// UnsafeSupportServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SupportServiceServer will
+// result in compilation errors.
+type UnsafeSupportServiceServer interface {
+	mustEmbedUnimplementedSupportServiceServer()
+}
+
+func RegisterSupportServiceServer(s grpc.ServiceRegistrar, srv SupportServiceServer) {
+	// If the following call pancis, it indicates UnimplementedSupportServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&SupportService_ServiceDesc, srv)
+}
+
+func _SupportService_GetSupportInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSupportInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).GetSupportInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_GetSupportInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).GetSupportInfo(ctx, req.(*GetSupportInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_ListSupportRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSupportRequestOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).ListSupportRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_ListSupportRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).ListSupportRequest(ctx, req.(*ListSupportRequestOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_GetSupportRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSupportRequestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).GetSupportRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_GetSupportRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).GetSupportRequest(ctx, req.(*GetSupportRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_ListSupportRequestEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSupportRequestEventOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).ListSupportRequestEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_ListSupportRequestEvent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).ListSupportRequestEvent(ctx, req.(*ListSupportRequestEventOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_CreateSupportRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateSupportRequestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).CreateSupportRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_CreateSupportRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).CreateSupportRequest(ctx, req.(*CreateSupportRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_AddSupportRequestMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddSupportRequestMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).AddSupportRequestMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_AddSupportRequestMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).AddSupportRequestMessage(ctx, req.(*AddSupportRequestMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_AddSupportRequestAttachment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddSupportRequestAttachmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).AddSupportRequestAttachment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_AddSupportRequestAttachment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).AddSupportRequestAttachment(ctx, req.(*AddSupportRequestAttachmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_ResolveSupportRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResolveSupportRequestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).ResolveSupportRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_ResolveSupportRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).ResolveSupportRequest(ctx, req.(*ResolveSupportRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_EscalateSupportRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EscalateSupportRequestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupportServiceServer).EscalateSupportRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupportService_EscalateSupportRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupportServiceServer).EscalateSupportRequest(ctx, req.(*EscalateSupportRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupportService_DownloadSupportRequestAttachment_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadSupportRequestAttachmentRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(SupportServiceServer).DownloadSupportRequestAttachment(m, &grpc.GenericServerStream[DownloadSupportRequestAttachmentRequest, DownloadSupportRequestAttachmentResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type SupportService_DownloadSupportRequestAttachmentServer = grpc.ServerStreamingServer[DownloadSupportRequestAttachmentResponse]
+
+// SupportService_ServiceDesc is the grpc.ServiceDesc for SupportService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var SupportService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "octelium.api.main.enterprise.v1.SupportService",
+	HandlerType: (*SupportServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetSupportInfo",
+			Handler:    _SupportService_GetSupportInfo_Handler,
+		},
+		{
+			MethodName: "ListSupportRequest",
+			Handler:    _SupportService_ListSupportRequest_Handler,
+		},
+		{
+			MethodName: "GetSupportRequest",
+			Handler:    _SupportService_GetSupportRequest_Handler,
+		},
+		{
+			MethodName: "ListSupportRequestEvent",
+			Handler:    _SupportService_ListSupportRequestEvent_Handler,
+		},
+		{
+			MethodName: "CreateSupportRequest",
+			Handler:    _SupportService_CreateSupportRequest_Handler,
+		},
+		{
+			MethodName: "AddSupportRequestMessage",
+			Handler:    _SupportService_AddSupportRequestMessage_Handler,
+		},
+		{
+			MethodName: "AddSupportRequestAttachment",
+			Handler:    _SupportService_AddSupportRequestAttachment_Handler,
+		},
+		{
+			MethodName: "ResolveSupportRequest",
+			Handler:    _SupportService_ResolveSupportRequest_Handler,
+		},
+		{
+			MethodName: "EscalateSupportRequest",
+			Handler:    _SupportService_EscalateSupportRequest_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "DownloadSupportRequestAttachment",
+			Handler:       _SupportService_DownloadSupportRequestAttachment_Handler,
+			ServerStreams: true,
+		},
+	},
+	Metadata: "enterprisev1.proto",
+}

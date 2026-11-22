@@ -183,6 +183,13 @@ export const getClientCluster = (): EnterpriseC.ClusterServiceClient => {
   return clusterClient;
 };
 
+let supportClient: EnterpriseC.SupportServiceClient | undefined;
+
+export const getClientSupport = (): EnterpriseC.SupportServiceClient => {
+  supportClient ??= new EnterpriseC.SupportServiceClient(getTransport());
+  return supportClient;
+};
+
 let agentClient: EnterpriseC.AgentServiceClient | undefined;
 
 export const getClientAgent = (): EnterpriseC.AgentServiceClient => {

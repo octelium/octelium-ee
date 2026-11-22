@@ -17,6 +17,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/cluster"
 	eesrv "github.com/octelium/octelium-ee/cluster/apiserver/apiserver/enterprise"
 	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/policyportal"
+	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/support"
 	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/visibility"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/accessv1"
@@ -134,6 +135,7 @@ func Run(ctx context.Context) error {
 	}
 
 	agentSrv := agent.NewServer(octeliumC)
+	supportSrv := support.NewServer(octeliumC)
 
 	accessMainSrv := access.NewServerMain(octeliumC)
 	accessReviewSrv := access.NewServerReviewer(octeliumC)
@@ -156,6 +158,7 @@ func Run(ctx context.Context) error {
 	enterprisev1.RegisterPolicyPortalServiceServer(s, policyPortalSrv)
 	enterprisev1.RegisterClusterServiceServer(s, clusterSrv)
 	enterprisev1.RegisterAgentServiceServer(s, agentSrv)
+	enterprisev1.RegisterSupportServiceServer(s, supportSrv)
 
 	accessv1.RegisterMainServiceServer(s, accessMainSrv)
 	accessv1.RegisterReviewerServiceServer(s, accessReviewSrv)

@@ -1,0 +1,38 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/AddSupportRequestAttachmentRequest",
+    "definitions": {
+        "AddSupportRequestAttachmentRequest": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the unique identifier of the request."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the file including its extension."
+                },
+                "data": {
+                    "type": "string",
+                    "description": "Data is the content of the file.",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "purpose": {
+                    "enum": [
+                        "PURPOSE_UNKNOWN",
+                        "FILE",
+                        "DIAGNOSTIC"
+                    ],
+                    "type": "string",
+                    "title": "Purpose",
+                    "description": "Purpose is the purpose of the file."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Add Support Request Attachment Request",
+            "description": "AddSupportRequestAttachmentRequest is the request of the AddSupportRequestAttachment method."
+        }
+    }
+}

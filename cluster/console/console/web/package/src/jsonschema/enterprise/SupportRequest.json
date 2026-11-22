@@ -1,0 +1,425 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/SupportRequest",
+    "definitions": {
+        "SupportRequest": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the unique identifier of the request."
+                },
+                "number": {
+                    "type": "integer",
+                    "description": "Number is the human-readable number of the request (e.g. 1042)."
+                },
+                "subject": {
+                    "type": "string",
+                    "description": "Subject is the subject of the request."
+                },
+                "status": {
+                    "enum": [
+                        "STATUS_UNKNOWN",
+                        "NEW",
+                        "OPEN",
+                        "WAITING_ON_CUSTOMER",
+                        "ON_HOLD",
+                        "RESOLVED",
+                        "CLOSED"
+                    ],
+                    "type": "string",
+                    "title": "Status",
+                    "description": "Status is the status of a request."
+                },
+                "priority": {
+                    "enum": [
+                        "PRIORITY_UNKNOWN",
+                        "P1",
+                        "P2",
+                        "P3",
+                        "P4"
+                    ],
+                    "type": "string",
+                    "title": "Priority",
+                    "description": "Priority is the priority of a request as defined by the Octelium Support SLA."
+                },
+                "requestedPriority": {
+                    "enum": [
+                        "PRIORITY_UNKNOWN",
+                        "P1",
+                        "P2",
+                        "P3",
+                        "P4"
+                    ],
+                    "type": "string",
+                    "title": "Priority",
+                    "description": "Priority is the priority of a request as defined by the Octelium Support SLA."
+                },
+                "supportLevel": {
+                    "enum": [
+                        "SUPPORT_LEVEL_UNKNOWN",
+                        "NONE",
+                        "STANDARD",
+                        "PREMIUM"
+                    ],
+                    "type": "string",
+                    "title": "Support Level",
+                    "description": "SupportLevel is a support level as defined by the Octelium Support SLA."
+                },
+                "channel": {
+                    "enum": [
+                        "CHANNEL_UNKNOWN",
+                        "PORTAL",
+                        "EMAIL",
+                        "CLUSTER",
+                        "AGENT",
+                        "SLACK",
+                        "SYSTEM"
+                    ],
+                    "type": "string",
+                    "title": "Channel",
+                    "description": "Channel is the channel through which a change was made."
+                },
+                "reporter": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.SupportRequest.Reporter",
+                    "additionalProperties": false,
+                    "description": "Reporter is the person who opened the request."
+                },
+                "assignee": {
+                    "type": "string",
+                    "description": "Assignee is the name of the engineer assigned to the request, if any."
+                },
+                "sla": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.SupportRequest.SLA",
+                    "additionalProperties": false,
+                    "description": "SLA is the state of the service level agreement of the request."
+                },
+                "isEscalated": {
+                    "type": "boolean",
+                    "description": "IsEscalated is whether the request was escalated."
+                },
+                "clusterDomain": {
+                    "type": "string",
+                    "description": "ClusterDomain is the domain of the Cluster from which the request was opened."
+                },
+                "environment": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Environment is the set of the Cluster details that were sent along with the request."
+                },
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the creation date of the request.",
+                    "format": "date-time"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "description": "UpdatedAt is the date of the last change of the request.",
+                    "format": "date-time"
+                },
+                "lastActivityAt": {
+                    "type": "string",
+                    "description": "LastActivityAt is the date of the last activity on the request.",
+                    "format": "date-time"
+                },
+                "resolvedAt": {
+                    "type": "string",
+                    "description": "ResolvedAt is the date at which the request was resolved.",
+                    "format": "date-time"
+                },
+                "closedAt": {
+                    "type": "string",
+                    "description": "ClosedAt is the date at which the request was closed.",
+                    "format": "date-time"
+                },
+                "messageCount": {
+                    "type": "integer",
+                    "description": "MessageCount is the number of the messages of the request."
+                },
+                "attachmentCount": {
+                    "type": "integer",
+                    "description": "AttachmentCount is the number of the files of the request."
+                },
+                "events": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.enterprise.v1.SupportRequest.Event"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Events is the list of the latest public timeline events of the request, the oldest first. It is not set when listing requests."
+                },
+                "eventsCursor": {
+                    "type": "string",
+                    "description": "EventsCursor is set when the request has earlier events. They are listed via the ListSupportRequestEvent method."
+                },
+                "attachments": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.enterprise.v1.SupportRequest.Attachment"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Attachments is the list of the files of the request. It is not set when listing requests."
+                },
+                "actions": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.SupportRequest.Actions",
+                    "additionalProperties": false,
+                    "description": "Actions are the actions that are currently allowed on the request. It is not set when listing requests."
+                },
+                "portalURL": {
+                    "type": "string",
+                    "description": "PortalURL is the URL of the request in the customer portal."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Support Request",
+            "description": "SupportRequest is a technical support request with Octelium Support."
+        },
+        "octelium.api.main.enterprise.v1.SupportRequest.Actions": {
+            "properties": {
+                "canReply": {
+                    "type": "boolean",
+                    "description": "CanReply is whether a reply can be added."
+                },
+                "canResolve": {
+                    "type": "boolean",
+                    "description": "CanResolve is whether the request can be marked as resolved."
+                },
+                "canEscalate": {
+                    "type": "boolean",
+                    "description": "CanEscalate is whether the request can be escalated."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Actions",
+            "description": "Actions are the actions that are currently allowed on the request."
+        },
+        "octelium.api.main.enterprise.v1.SupportRequest.Actor": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "CUSTOMER",
+                        "CLUSTER",
+                        "EMAIL",
+                        "AGENT",
+                        "SYSTEM"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the type of the author."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the author, if known."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Actor",
+            "description": "Actor is the author of a change."
+        },
+        "octelium.api.main.enterprise.v1.SupportRequest.Attachment": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the unique identifier of the file."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the file."
+                },
+                "contentType": {
+                    "type": "string",
+                    "description": "ContentType is the media type of the file."
+                },
+                "size": {
+                    "type": "integer",
+                    "description": "Size is the size of the file in bytes."
+                },
+                "sha256": {
+                    "type": "string",
+                    "description": "SHA256 is the hex-encoded SHA-256 digest of the file, if known."
+                },
+                "purpose": {
+                    "enum": [
+                        "PURPOSE_UNKNOWN",
+                        "FILE",
+                        "DIAGNOSTIC"
+                    ],
+                    "type": "string",
+                    "title": "Purpose",
+                    "description": "Purpose is the purpose of the file."
+                },
+                "uploadedBy": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.SupportRequest.Actor",
+                    "additionalProperties": false,
+                    "description": "UploadedBy is the author of the file."
+                },
+                "channel": {
+                    "enum": [
+                        "CHANNEL_UNKNOWN",
+                        "PORTAL",
+                        "EMAIL",
+                        "CLUSTER",
+                        "AGENT",
+                        "SLACK",
+                        "SYSTEM"
+                    ],
+                    "type": "string",
+                    "title": "Channel",
+                    "description": "Channel is the channel through which a change was made."
+                },
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the date at which the file was added.",
+                    "format": "date-time"
+                },
+                "isAvailable": {
+                    "type": "boolean",
+                    "description": "IsAvailable is whether the file can still be downloaded. Files are deleted some time after the request is closed."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Attachment",
+            "description": "Attachment is a file of the request."
+        },
+        "octelium.api.main.enterprise.v1.SupportRequest.Event": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the unique identifier of the event."
+                },
+                "sequence": {
+                    "type": "integer",
+                    "description": "Sequence is the revision of the request that recorded the event."
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "CREATED",
+                        "MESSAGE",
+                        "STATUS",
+                        "PRIORITY",
+                        "CATEGORY",
+                        "ASSIGNMENT",
+                        "ESCALATION",
+                        "ATTACHMENT",
+                        "ORGANIZATION"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the type of the event."
+                },
+                "actor": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.SupportRequest.Actor",
+                    "additionalProperties": false,
+                    "description": "Actor is the author of the event."
+                },
+                "channel": {
+                    "enum": [
+                        "CHANNEL_UNKNOWN",
+                        "PORTAL",
+                        "EMAIL",
+                        "CLUSTER",
+                        "AGENT",
+                        "SLACK",
+                        "SYSTEM"
+                    ],
+                    "type": "string",
+                    "title": "Channel",
+                    "description": "Channel is the channel through which a change was made."
+                },
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the date of the event.",
+                    "format": "date-time"
+                },
+                "body": {
+                    "type": "string",
+                    "description": "Body is the text of a description, a reply or the name of a new file."
+                },
+                "attachmentIDs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "AttachmentIDs is the list of the files that the event references."
+                },
+                "from": {
+                    "type": "string",
+                    "description": "From is the previous value of a change."
+                },
+                "to": {
+                    "type": "string",
+                    "description": "To is the new value of a change."
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "Reason is the written reason of a change."
+                },
+                "skippedAttachments": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "SkippedAttachments is the list of the names of the files that were not accepted."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Event",
+            "description": "Event is a public entry of the timeline of the request."
+        },
+        "octelium.api.main.enterprise.v1.SupportRequest.Reporter": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the reporter, if known."
+                },
+                "isVerified": {
+                    "type": "boolean",
+                    "description": "IsVerified is whether the reporter is a verified member of the organization in the customer portal. The reporters of the requests that are opened from a Cluster are never verified."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Reporter",
+            "description": "Reporter is the person who opened the request."
+        },
+        "octelium.api.main.enterprise.v1.SupportRequest.SLA": {
+            "properties": {
+                "coverage": {
+                    "type": "string",
+                    "description": "Coverage is the coverage of the response time (i.e. \"BUSINESS\" for business hours or \"CONTINUOUS\" for 24/7)."
+                },
+                "firstResponseDueAt": {
+                    "type": "string",
+                    "description": "FirstResponseDueAt is the deadline of the first response.",
+                    "format": "date-time"
+                },
+                "firstRespondedAt": {
+                    "type": "string",
+                    "description": "FirstRespondedAt is the date of the first response.",
+                    "format": "date-time"
+                },
+                "isPaused": {
+                    "type": "boolean",
+                    "description": "IsPaused is whether the response time is paused because Octelium is waiting on the customer."
+                },
+                "nextUpdateDueAt": {
+                    "type": "string",
+                    "description": "NextUpdateDueAt is the deadline of the next update of Octelium Support.",
+                    "format": "date-time"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "SLA",
+            "description": "SLA is the state of the service level agreement of the request. It is only set for the requests that are covered by the Octelium Support SLA."
+        }
+    }
+}

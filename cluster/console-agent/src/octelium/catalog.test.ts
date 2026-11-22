@@ -61,6 +61,10 @@ describe("catalog", () => {
       catalog.resolveMethod("cordium.v1.WorkspaceService/CreateTerminal"),
       undefined,
     );
+    assert.equal(
+      catalog.resolveMethod("enterprise.v1.SupportService/CreateSupportRequest"),
+      undefined,
+    );
   });
 
   it("resolves the method IDs in their different forms", () => {

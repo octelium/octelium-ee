@@ -5,8 +5,10 @@ import {
   pageAgent,
   pageOverview,
   pageSettings,
+  pageSupport,
   sectionItems,
 } from "@/components/Navigation/catalog";
+import { useSupportAvailable } from "@/components/Support/context";
 import { ActionIcon } from "@mantine/core";
 import { Search } from "lucide-react";
 import * as React from "react";
@@ -32,8 +34,10 @@ const pages = [
 
 const shortcuts = [pageOverview, ...sectionItems];
 
+const pagesWithSupport = [pageSupport, ...pages];
+
 const iconFor = (path: string) =>
-  kindIcon(path) ?? pages.find((page) => page.url === path)?.icon;
+  kindIcon(path) ?? pagesWithSupport.find((page) => page.url === path)?.icon;
 
 const PaletteContext = React.createContext<() => void>(() => {});
 
@@ -42,6 +46,7 @@ export const CommandPaletteProvider = (props: {
 }) => {
   const [opened, setOpened] = React.useState(false);
   const [loaded, setLoaded] = React.useState(false);
+  const supportAvailable = useSupportAvailable();
 
   const open = React.useCallback(() => {
     setLoaded(true);
@@ -73,7 +78,7 @@ export const CommandPaletteProvider = (props: {
           <Palette
             opened={opened}
             onClose={() => setOpened(false)}
-            pages={pages}
+            pages={supportAvailable ? pagesWithSupport : pages}
             shortcuts={shortcuts}
             iconFor={iconFor}
           />

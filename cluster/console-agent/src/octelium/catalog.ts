@@ -61,6 +61,7 @@ const packagePriors: Record<string, number> = {
 
 const excludedServices = new Set([
   "octelium.api.main.cordium.v1.WorkspaceService",
+  "octelium.api.main.enterprise.v1.SupportService",
 ]);
 
 const excludedMethods = new Set([

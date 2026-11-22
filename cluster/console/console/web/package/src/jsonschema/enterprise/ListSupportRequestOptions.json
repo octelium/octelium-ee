@@ -1,0 +1,28 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ListSupportRequestOptions",
+    "definitions": {
+        "ListSupportRequestOptions": {
+            "properties": {
+                "filter": {
+                    "enum": [
+                        "ALL",
+                        "OPEN",
+                        "CLOSED"
+                    ],
+                    "type": "string",
+                    "title": "Filter",
+                    "description": "Filter selects the requests by their status."
+                },
+                "cursor": {
+                    "type": "string",
+                    "description": "Cursor is the `nextCursor` of the previous page."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "List Support Request Options",
+            "description": "ListSupportRequestOptions is the list options of the ListSupportRequest method."
+        }
+    }
+}

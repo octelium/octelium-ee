@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/AddSupportRequestMessageRequest",
+    "definitions": {
+        "AddSupportRequestMessageRequest": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the unique identifier of the request."
+                },
+                "body": {
+                    "type": "string",
+                    "description": "Body is the text of the reply."
+                },
+                "attachmentIDs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "AttachmentIDs is the list of the files of the request that the reply references."
+                },
+                "idempotencyKey": {
+                    "type": "string",
+                    "description": "IdempotencyKey is a unique key of the submission that is reused when a submission is retried so that it does not add a duplicate reply."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Add Support Request Message Request",
+            "description": "AddSupportRequestMessageRequest is the request of the AddSupportRequestMessage method."
+        }
+    }
+}

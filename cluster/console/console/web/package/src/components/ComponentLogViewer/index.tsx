@@ -24,6 +24,7 @@ import { SelectFromTimestamp } from "../AccessLogViewer/utils";
 import CopyText from "../CopyText";
 import TimeAgo from "../TimeAgo";
 import ComponentLogSummary from "../LogSummary/ComponentLogSummary";
+import ReportButton from "../Support/ReportButton";
 import { CompactSummary } from "../Summary";
 
 const DetailField = ({
@@ -121,6 +122,23 @@ const ComponentLogDetails = ({ log }: { log: ComponentLog }) => {
         </h4>
         <div className="flex items-center gap-1.5">
           <AskLog item={x} />
+          <ReportButton
+            report={() => ({
+              subject: [entry?.component?.type, entry?.message]
+                .filter(Boolean)
+                .join(": ")
+                .replace(/\s+/g, " ")
+                .slice(0, 120),
+              message: entry?.message,
+              time: entry?.time
+                ? Timestamp.toDate(entry.time).toISOString()
+                : undefined,
+              level: entry?.level
+                ? ComponentLog_Entry_Level[entry.level]
+                : undefined,
+              component: entry?.component,
+            })}
+          />
           <Editor item={x} />
         </div>
       </div>

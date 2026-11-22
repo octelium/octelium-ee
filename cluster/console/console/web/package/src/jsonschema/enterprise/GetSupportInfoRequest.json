@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/GetSupportInfoRequest",
+    "definitions": {
+        "GetSupportInfoRequest": {
+            "properties": {
+                "skipPortal": {
+                    "type": "boolean",
+                    "description": "SkipPortal only returns the local information of the Cluster (i.e. the License state, the Cluster domain and the Cluster details) without contacting the customer portal. The state is then STATE_UNKNOWN unless the Cluster has no valid License."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Get Support Info Request",
+            "description": "GetSupportInfoRequest is the request of the GetSupportInfo method."
+        }
+    }
+}

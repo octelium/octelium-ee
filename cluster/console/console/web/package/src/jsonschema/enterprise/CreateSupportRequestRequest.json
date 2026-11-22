@@ -1,0 +1,38 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/CreateSupportRequestRequest",
+    "definitions": {
+        "CreateSupportRequestRequest": {
+            "properties": {
+                "subject": {
+                    "type": "string",
+                    "description": "Subject is a single-line summary of the issue."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description is the detailed description of the issue."
+                },
+                "priority": {
+                    "enum": [
+                        "PRIORITY_UNKNOWN",
+                        "P1",
+                        "P2",
+                        "P3",
+                        "P4"
+                    ],
+                    "type": "string",
+                    "title": "Priority",
+                    "description": "Priority is the priority of a request as defined by the Octelium Support SLA."
+                },
+                "idempotencyKey": {
+                    "type": "string",
+                    "description": "IdempotencyKey is a unique key of the submission (e.g. a random UUID) that is reused when a submission is retried so that it does not open a duplicate request."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Create Support Request Request",
+            "description": "CreateSupportRequestRequest is the request of the CreateSupportRequest method."
+        }
+    }
+}

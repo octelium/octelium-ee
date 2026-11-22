@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import PageHeader from "@/components/PageHeader";
 import { PageHeaderProvider } from "@/components/PageHeader/context";
 import ConsoleShell from "@/components/SideBar/Shell";
+import { SupportProvider } from "@/components/Support/provider";
 import TopBar from "@/components/TopBar";
 import { setStatus } from "@/features/settings/slice";
 import { getClientUser } from "@/utils/client";
@@ -29,9 +30,11 @@ import "@fontsource/plus-jakarta-sans/700.css";
 
 const ShellProviders = (props: { children: React.ReactNode }) => (
   <PageHeaderProvider>
-    <AgentProvider>
-      <CommandPaletteProvider>{props.children}</CommandPaletteProvider>
-    </AgentProvider>
+    <SupportProvider>
+      <AgentProvider>
+        <CommandPaletteProvider>{props.children}</CommandPaletteProvider>
+      </AgentProvider>
+    </SupportProvider>
   </PageHeaderProvider>
 );
 
