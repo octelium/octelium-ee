@@ -67,6 +67,10 @@ const embeddedOption = (config: Config, update: Update) => {
       note: "Each connected Octelium client serves its own embedded SSH server, so there is no upstream to set.",
       onChange: (enabled: boolean) => {
         type.ssh.eSSHMode = enabled;
+        const hostKey = type.ssh.upstreamHostKey?.type;
+        if (enabled && hostKey?.oneofKind === "key" && !hostKey.key.trim()) {
+          type.ssh.upstreamHostKey = undefined;
+        }
         update();
       },
     };

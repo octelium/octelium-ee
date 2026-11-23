@@ -138,6 +138,145 @@ describe("Service edit", () => {
     assert.equal(value.spec.config.tls, undefined);
   });
 
+  const pickSSHMode = async () => {
+    await page.getByRole("button", { name: /Change the mode/ }).click();
+    await page.getByRole("textbox", { name: "Search modes" }).fill("ssh");
+    await page.keyboard.press("Enter");
+    await page.getByRole("tab", { name: "SSH" }).waitFor();
+  };
+  const hostKeyKind = () =>
+    page
+      .getByRole("radiogroup", { name: "Verify the server with" })
+      .getByRole("radio", { checked: true })
+      .textContent();
+  const sshIssues = () =>
+    page.getByRole("tab", { name: "SSH" }).getAttribute("title");
+  const sshValue = () =>
+    page.evaluate(() => window.serviceEdit.value?.spec.config.ssh);
+  const caCallout = () =>
+    page.getByRole("note").filter({ hasText: "needs a host certificate" });
+
+  it("pins a host key by default in new SSH Services", async () => {
+    await load("/edit-only");
+    await pickSSHMode();
+    assert.equal(await sshIssues(), "Set the host public key of the SSH server");
+    assert.deepEqual((await sshValue()).upstreamHostKey, { key: "" });
+
+    await page.getByRole("tab", { name: "SSH" }).click();
+    assert.match(await hostKeyKind(), /^Pinned key/);
+    assert.equal(await caCallout().count(), 0);
+    await page
+      .getByRole("textbox", { name: /^Host public key/ })
+      .fill("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExample");
+    assert.equal(await sshIssues(), null);
+    assert.deepEqual((await sshValue()).upstreamHostKey, {
+      key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExample",
+    });
+
+    await page.getByRole("textbox", { name: /^Host public key/ }).fill("  \n");
+    assert.equal(await sshIssues(), "Set the host public key of the SSH server");
+
+    await page.getByRole("radio", { name: /^Cluster CA/ }).click();
+    assert.equal(await sshIssues(), null);
+    assert.equal((await sshValue()).upstreamHostKey, undefined);
+    await caCallout().waitFor();
+  });
+
+  it("pins a host key only in a new SSH Configuration", async () => {
+    await load("/edit-only", { name: "ssh-defaults" });
+    await page.getByRole("button", { name: /Change the mode/ }).click();
+    await page.getByRole("textbox", { name: "Search modes" }).fill("http");
+    await page.keyboard.press("Enter");
+    await page.getByRole("tab", { name: "HTTP" }).waitFor();
+    await pickSSHMode();
+    assert.equal(await sshIssues(), null);
+    assert.equal((await sshValue()).upstreamHostKey, undefined);
+
+    await load("/edit-only", { name: "api-gateway" });
+    await pickSSHMode();
+    assert.deepEqual((await sshValue()).upstreamHostKey, { key: "" });
+  });
+
+  for (const name of ["ssh-defaults", "ssh-ca"]) {
+    it(`keeps the Cluster CA of the existing ${name} Service`, async () => {
+      await load("/edit-only", { name });
+      await page.getByRole("tab", { name: "SSH" }).click();
+      assert.match(await hostKeyKind(), /^Cluster CA/);
+      await caCallout().waitFor();
+      assert.equal(await sshIssues(), null);
+
+      await page.getByRole("switch", { name: /^Subsystems/ }).check();
+      const value = await sshValue();
+      assert.equal(value.enableSubsystem, true);
+      assert.equal(value.upstreamHostKey, undefined);
+    });
+  }
+
+  it("keeps the pinned host key of an existing SSH Service", async () => {
+    await load("/edit-only", { name: "prod-ssh" });
+    await page.getByRole("tab", { name: "SSH" }).click();
+    assert.match(await hostKeyKind(), /^Pinned key/);
+    assert.equal(await caCallout().count(), 0);
+    assert.equal(
+      await page.getByRole("textbox", { name: /^Host public key/ }).inputValue(),
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExample",
+    );
+
+    await page.getByRole("tab", { name: "Upstream" }).click();
+    await page.getByRole("radio", { name: /^Connected client/ }).click();
+    const value = await sshValue();
+    assert.equal(value.eSSHMode, true);
+    assert.deepEqual(value.upstreamHostKey, {
+      key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExample",
+    });
+  });
+
+  it("drops the empty pinned host key for embedded SSH", async () => {
+    await load("/edit-only");
+    await pickSSHMode();
+    await page.getByRole("radio", { name: /^Connected client/ }).click();
+    const value = await sshValue();
+    assert.equal(value.eSSHMode, true);
+    assert.equal(value.upstreamHostKey, undefined);
+    assert.equal(await sshIssues(), null);
+  });
+
+  it("inherits the host key in new dynamic SSH settings", async () => {
+    await load("/edit-only", { name: "prod-ssh" });
+    await page.getByRole("tab", { name: "Dynamic" }).click();
+    await page.getByRole("button", { name: "Add Configuration" }).click();
+    await page.getByRole("button", { name: "Add SSH settings" }).click();
+    const value = await page.evaluate(() => window.serviceEdit.value);
+    assert.deepEqual(value.spec.dynamicConfig.configs[0].ssh, {});
+    assert.deepEqual(value.spec.config.ssh.upstreamHostKey, {
+      key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExample",
+    });
+  });
+
+  for (const theme of ["light", "dark"]) {
+    it(`fits the host key choices at 390px in the ${theme} theme`, async () => {
+      await page.setViewportSize({ width: 390, height: 1000 });
+      for (const [name, element] of [
+        ["ssh-ca", caCallout],
+        ["prod-ssh", () => page.getByRole("textbox", { name: /^Host public key/ })],
+      ]) {
+        await load("/edit-only", { name, theme });
+        await page.getByRole("tab", { name: "SSH" }).click();
+        for (const locator of [
+          page.getByRole("radiogroup", { name: "Verify the server with" }),
+          element(),
+        ]) {
+          const box = await locator.boundingBox();
+          assert.ok(box.x >= 0 && box.x + box.width <= 390, `${name}: ${JSON.stringify(box)}`);
+        }
+        assert.equal(
+          await page.evaluate(() => document.documentElement.scrollWidth),
+          390,
+        );
+      }
+    });
+  }
+
   it("only offers public access without anonymous for Kubernetes", async () => {
     await load("/edit-only", { name: "k8s-cluster" });
     await page.getByRole("tab", { name: "Access" }).click();

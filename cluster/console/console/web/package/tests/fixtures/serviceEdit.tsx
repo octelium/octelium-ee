@@ -311,6 +311,17 @@ const services: Record<string, CoreP.Service> = {
     mode: "SSH",
     config: { ssh: { eSSHMode: true, enableSubsystem: true } },
   }),
+  "ssh-defaults": service("ssh-defaults", {
+    mode: "SSH",
+    config: { upstream: { url: "ssh://10.0.0.5" } },
+  }),
+  "ssh-ca": service("ssh-ca", {
+    mode: "SSH",
+    config: {
+      upstream: { url: "ssh://10.0.0.6" },
+      ssh: { user: "deploy" },
+    },
+  }),
   "pg-main": service("pg-main", {
     mode: "POSTGRES",
     config: {

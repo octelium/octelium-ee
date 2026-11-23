@@ -60,13 +60,21 @@ export const createConfigType = (kind: ConfigKind): Config["type"] => {
   }
 };
 
-export const createConfig = (info: ModeInfo) =>
-  CoreP.Service_Spec_Config.create({
+export const createConfig = (info: ModeInfo) => {
+  const ret = CoreP.Service_Spec_Config.create({
     upstream: CoreP.Service_Spec_Config_Upstream.create({
       type: { oneofKind: "url", url: "" },
     }),
     type: createConfigType(info.config),
   });
+  if (ret.type.oneofKind === "ssh") {
+    ret.type.ssh.upstreamHostKey =
+      CoreP.Service_Spec_Config_SSH_UpstreamHostKey.create({
+        type: { oneofKind: "key", key: "" },
+      });
+  }
+  return ret;
+};
 
 export const cloneForEdit = (item: CoreP.Service) => {
   const next = CoreP.Service.clone(item);
@@ -353,6 +361,12 @@ const protocolIssues = (config: Config) => {
   }
   if (type.oneofKind === "llm" && type.llm.embedding) {
     if (!type.llm.embedding.model) ret.push("Set the embedding model");
+  }
+  if (type.oneofKind === "ssh" && !type.ssh.eSSHMode) {
+    const hostKey = type.ssh.upstreamHostKey?.type;
+    if (hostKey?.oneofKind === "key" && !hostKey.key.trim()) {
+      ret.push("Set the host public key of the SSH server");
+    }
   }
   return ret;
 };

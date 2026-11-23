@@ -168,6 +168,13 @@ export const SSHForm = (props: {
               update();
             }}
           />
+          {hostKeyKind === "ca" && (
+            <Callout tone="info" title="The SSH server needs a host certificate">
+              It must present a host certificate signed by the Cluster SSH CA.
+              Most SSH servers only have plain host keys, so pin one of them
+              instead.
+            </Callout>
+          )}
           {hostKey?.oneofKind === "key" && (
             <Textarea
               label="Host public key"
