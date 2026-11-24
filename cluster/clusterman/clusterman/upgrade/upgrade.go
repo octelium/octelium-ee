@@ -11,6 +11,7 @@ package upgrade
 import (
 	"context"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/clusterman/clusterman/genesisjob"
@@ -21,10 +22,13 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/client/octops/commands/install"
+	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	batchv1 "k8s.io/api/batch/v1"
 	k8scorev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -310,6 +314,143 @@ func getGenesisJob(domain string, regionName string, pkg string, version string,
 		Version: version,
 		SPIFFE:  spiffe,
 	})
+}
+
+func IsDone(state enterprisev1.ClusterConfig_Status_UpgradeRequest_State) bool {
+	switch state {
+	case enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS,
+		enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED:
+		return true
+	default:
+		return false
+	}
+}
+
+func GetRegionResults(ctx context.Context, octeliumC octeliumc.ClientInterface,
+	req *enterprisev1.ClusterConfig_Status_UpgradeRequest,
+	before *timestamppb.Timestamp) ([]*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region, error) {
+	if req == nil {
+		return nil, errors.Errorf("nil upgrade request")
+	}
+
+	regions, err := getRequestRegions(ctx, octeliumC, req)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, itm := range regions {
+		if IsDone(itm.State) || (itm.RegionRef.GetName() == "" && itm.RegionRef.GetUid() == "") {
+			continue
+		}
+
+		rgn, err := octeliumC.CoreC().GetRegion(ctx, apivalidation.ObjectReferenceToRGetOptions(itm.RegionRef))
+		if err != nil {
+			if grpcerr.IsNotFound(err) {
+				continue
+			}
+			return nil, err
+		}
+
+		if doneAt := getAppliedAt(rgn, req, before); doneAt != nil {
+			itm.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS
+			itm.DoneAt = doneAt
+			itm.Message = ""
+		}
+	}
+
+	return regions, nil
+}
+
+func getRequestRegions(ctx context.Context, octeliumC octeliumc.ClientInterface,
+	req *enterprisev1.ClusterConfig_Status_UpgradeRequest) ([]*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region, error) {
+	if len(req.Regions) > 0 {
+		ret := make([]*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region, 0, len(req.Regions))
+		for _, itm := range req.Regions {
+			ret = append(ret, pbutils.Clone(itm).(*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region))
+		}
+		return ret, nil
+	}
+
+	rgnList, err := octeliumC.CoreC().ListRegion(ctx, &rmetav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	var targets []*corev1.Region
+	for _, rgn := range rgnList.Items {
+		if rgn.Metadata.Name != regionutils.DefaultRegion && !regionutils.IsJoinCompleted(rgn) {
+			continue
+		}
+
+		if req.CreatedAt.IsValid() && rgn.Metadata.CreatedAt.IsValid() &&
+			!rgn.Metadata.CreatedAt.AsTime().Before(req.CreatedAt.AsTime()) {
+			continue
+		}
+
+		targets = append(targets, rgn)
+	}
+
+	slices.SortFunc(targets, func(a, b *corev1.Region) int {
+		switch {
+		case a.Metadata.Name == regionutils.DefaultRegion:
+			return -1
+		case b.Metadata.Name == regionutils.DefaultRegion:
+			return 1
+		default:
+			return int(a.Status.Index) - int(b.Status.Index)
+		}
+	})
+
+	ret := make([]*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region, 0, len(targets))
+	for _, rgn := range targets {
+		ret = append(ret, &enterprisev1.ClusterConfig_Status_UpgradeRequest_Region{
+			RegionRef: umetav1.GetObjectReference(rgn),
+			State:     enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED,
+		})
+	}
+
+	return ret, nil
+}
+
+func getAppliedAt(rgn *corev1.Region, req *enterprisev1.ClusterConfig_Status_UpgradeRequest,
+	before *timestamppb.Timestamp) *timestamppb.Timestamp {
+	versions := make(map[string]string)
+
+	if req.Request.GetCore() != nil {
+		versions[regionutils.PackageCore] = req.Request.Core.Version
+	}
+
+	if req.Request.GetPackageEnterprise() != nil {
+		versions[regionutils.PackageEnterprise] = req.Request.PackageEnterprise.Version
+	}
+
+	if req.Request.GetPackageCordium() != nil &&
+		(rgn.Metadata.GetName() == regionutils.DefaultRegion || regionutils.HasPackage(rgn, regionutils.PackageCordium)) {
+		versions[regionutils.PackageCordium] = req.Request.PackageCordium.Version
+	}
+
+	if len(versions) == 0 {
+		return nil
+	}
+
+	var ret *timestamppb.Timestamp
+	for pkg, version := range versions {
+		if !regionutils.IsPackageSetWithin(rgn, pkg, req.CreatedAt, before) ||
+			!isSameVersion(regionutils.GetPackageVersion(rgn, pkg), version) {
+			return nil
+		}
+
+		setAt := rgn.Status.VersionInfoMap[pkg].SetAt
+		if ret == nil || setAt.AsTime().After(ret.AsTime()) {
+			ret = setAt
+		}
+	}
+
+	return ret
+}
+
+func isSameVersion(installed string, requested string) bool {
+	return requested == "latest" || strings.TrimPrefix(installed, "v") == strings.TrimPrefix(requested, "v")
 }
 
 func truncateMessage(msg string) string {

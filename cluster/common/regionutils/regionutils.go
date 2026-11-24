@@ -15,6 +15,7 @@ import (
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const DefaultRegion = "default"
@@ -91,6 +92,19 @@ func GetPackageVersion(rgn *corev1.Region, pkg string) string {
 
 func HasPackage(rgn *corev1.Region, pkg string) bool {
 	return GetPackageVersion(rgn, pkg) != ""
+}
+
+func IsPackageSetWithin(rgn *corev1.Region, pkg string, from, to *timestamppb.Timestamp) bool {
+	if !HasPackage(rgn, pkg) || !from.IsValid() {
+		return false
+	}
+
+	setAt := rgn.Status.VersionInfoMap[pkg].SetAt
+	if !setAt.IsValid() || setAt.AsTime().Before(from.AsTime()) {
+		return false
+	}
+
+	return to == nil || setAt.AsTime().Before(to.AsTime())
 }
 
 func IsJoinCompleted(rgn *corev1.Region) bool {

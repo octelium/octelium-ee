@@ -28,9 +28,11 @@ import (
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	k8scorev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
@@ -64,6 +66,42 @@ func JoinCluster(ctx context.Context, o *JoinClusterOpts) (*corev1.Region, error
 	}
 
 	return ctl.run(ctx)
+}
+
+func GetJoinedRegion(ctx context.Context, octeliumC octeliumc.ClientInterface,
+	req *enterprisev1.ClusterConfig_Status_JoinRequest, before *timestamppb.Timestamp) (*corev1.Region, error) {
+	if req.GetRequest().GetName() == "" {
+		return nil, nil
+	}
+
+	rgn, err := octeliumC.CoreC().GetRegion(ctx, &rmetav1.GetOptions{
+		Name: req.Request.Name,
+	})
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	if !regionutils.IsJoinCompleted(rgn) ||
+		!regionutils.IsPackageSetWithin(rgn, regionutils.PackageEnterprise, req.CreatedAt, before) {
+		return nil, nil
+	}
+
+	defaultRgn, err := octeliumC.CoreC().GetRegion(ctx, &rmetav1.GetOptions{
+		Name: regionutils.DefaultRegion,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if regionutils.HasPackage(defaultRgn, regionutils.PackageCordium) &&
+		!regionutils.HasPackage(rgn, regionutils.PackageCordium) {
+		return nil, nil
+	}
+
+	return rgn, nil
 }
 
 type controller struct {

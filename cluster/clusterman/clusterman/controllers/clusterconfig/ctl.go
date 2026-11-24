@@ -10,8 +10,10 @@ package clusterconfig
 
 import (
 	"context"
+	"sync"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/clusterman/clusterman/genesisjob"
 	"github.com/octelium/octelium-ee/cluster/clusterman/clusterman/regionk8s"
 	"github.com/octelium/octelium-ee/cluster/clusterman/clusterman/upgrade"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -22,23 +24,37 @@ import (
 	gcomponents "github.com/octelium/octelium/cluster/genesis/genesis/components"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"k8s.io/client-go/kubernetes"
 )
 
 const maxUpgradeDuration = 24 * time.Hour
 
 const (
-	recoverTimeout       = 5 * time.Minute
-	recoverRetryInterval = 2 * time.Second
+	reconcileInterval      = 30 * time.Second
+	reconcileRetryInterval = 2 * time.Second
+	recordTimeout          = time.Hour
+	reportTimeout          = time.Minute
+	clusterManAttempts     = 8
 
 	interruptedRequestMessage = "Cluster Manager restarted before this request finished. " +
 		"Its genesis Job may still be running. Check the Cluster before requesting it again"
+	supersededRequestMessage = "A newer request replaced this request before it finished. " +
+		"Check the Cluster before requesting it again"
+)
+
+const (
+	taskUpgrade = "upgrade"
+	taskJoin    = "join"
 )
 
 type Controller struct {
 	octeliumC     octeliumc.ClientInterface
 	k8sC          kubernetes.Interface
 	newRegionK8sC regionk8s.NewClientFn
+
+	mu    sync.Mutex
+	tasks map[string]*timestamppb.Timestamp
 }
 
 func NewController(
@@ -49,6 +65,7 @@ func NewController(
 		octeliumC:     octeliumC,
 		k8sC:          k8sC,
 		newRegionK8sC: regionk8s.NewClientFactory(octeliumC),
+		tasks:         make(map[string]*timestamppb.Timestamp),
 	}
 }
 
@@ -65,82 +82,144 @@ func (c *Controller) OnUpdate(ctx context.Context, new, old *enterprisev1.Cluste
 	return nil
 }
 
-func (c *Controller) RecoverInterrupted(ctx context.Context) {
+func (c *Controller) RunReconciler(ctx context.Context) {
 	go func() {
-		ctx, cancel := context.WithTimeout(ctx, recoverTimeout)
-		defer cancel()
+		retryInterval := reconcileRetryInterval
 
 		for {
-			err := c.doRecoverInterrupted(ctx)
-			if err == nil {
-				return
+			interval := reconcileInterval
+			if err := c.doReconcile(ctx); err != nil {
+				zap.L().Warn("Could not reconcile the Cluster requests", zap.Error(err))
+				interval = retryInterval
+				retryInterval = min(2*retryInterval, reconcileInterval)
+			} else {
+				retryInterval = reconcileRetryInterval
 			}
-
-			zap.L().Warn("Could not record the interrupted requests", zap.Error(err))
 
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(recoverRetryInterval):
+			case <-time.After(interval):
 			}
 		}
 	}()
 }
 
-func (c *Controller) doRecoverInterrupted(ctx context.Context) error {
-	return c.updateStatus(ctx, func(cc *enterprisev1.ClusterConfig) bool {
-		isUpgrade := failInterruptedUpgrade(cc)
-		isJoin := failInterruptedJoin(cc)
-		return isUpgrade || isJoin
-	})
-}
-
-func failInterruptedUpgrade(cc *enterprisev1.ClusterConfig) bool {
-	req := cc.Status.UpgradeRequest
-	if req == nil || req.State != enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING {
-		return false
+func (c *Controller) doReconcile(ctx context.Context) error {
+	cc, err := c.octeliumC.EnterpriseV1Utils().GetClusterConfig(ctx)
+	if err != nil {
+		return err
 	}
 
-	zap.L().Warn("Recording the upgrade interrupted by a restart as failed", zap.Any("request", req))
+	if cc.Status == nil {
+		return nil
+	}
 
-	now := pbutils.Now()
-	req.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED
-	req.DoneAt = now
+	upgradeErr := c.reconcileUpgrade(ctx, cc)
+	joinErr := c.reconcileJoin(ctx, cc)
 
-	for _, rgn := range req.Regions {
-		switch rgn.State {
-		case enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS,
-			enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED:
-		default:
-			rgn.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED
-			rgn.DoneAt = now
-			rgn.Message = interruptedRequestMessage
+	if upgradeErr != nil {
+		return upgradeErr
+	}
+
+	return joinErr
+}
+
+func (c *Controller) reconcileUpgrade(ctx context.Context, cc *enterprisev1.ClusterConfig) error {
+	for i, req := range cc.Status.LastUpgradeRequests {
+		if upgrade.IsDone(req.State) || c.isOwned(taskUpgrade, req.CreatedAt) {
+			continue
+		}
+
+		before := cc.Status.UpgradeRequest.GetCreatedAt()
+		if i > 0 {
+			before = cc.Status.LastUpgradeRequests[i-1].CreatedAt
+		}
+
+		zap.L().Info("Recording the replaced upgrade request", zap.Any("request", req))
+
+		regions, err := upgrade.GetRegionResults(ctx, c.octeliumC, req, before)
+		if err != nil {
+			return err
+		}
+
+		if _, err := c.recordUpgrade(ctx, req,
+			completeUpgradeRegions(regions, supersededRequestMessage), isUpgradeSucceeded(regions)); err != nil {
+			return err
 		}
 	}
 
-	cc.Status.LastUpgradeRequests = prependUpgradeHistory(cc.Status.LastUpgradeRequests, req)
-	cc.Status.UpgradeRequest = nil
-	cc.Status.TotalFailedUpgrades += 1
+	req := cc.Status.UpgradeRequest
+	if req == nil || c.isBusy(taskUpgrade) {
+		return nil
+	}
+
+	switch req.State {
+	case enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED:
+		zap.L().Info("Starting the pending upgrade request", zap.Any("request", req))
+		c.update(cc)
+		return nil
+	case enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING:
+		return c.recoverUpgrade(ctx, req)
+	default:
+		return nil
+	}
+}
+
+func (c *Controller) recoverUpgrade(ctx context.Context, req *enterprisev1.ClusterConfig_Status_UpgradeRequest) error {
+	regions, err := upgrade.GetRegionResults(ctx, c.octeliumC, req, nil)
+	if err != nil {
+		return err
+	}
+
+	isSuccess := isUpgradeSucceeded(regions)
+	if !isSuccess {
+		isActive, err := genesisjob.HasActive(ctx, c.k8sC)
+		if err != nil {
+			return err
+		}
+
+		if isActive {
+			zap.L().Debug("Waiting for the running genesis Job before recording the interrupted upgrade")
+			return nil
+		}
+	}
+
+	zap.L().Info("Recording the interrupted upgrade request",
+		zap.Any("request", req), zap.Bool("success", isSuccess))
+
+	_, err = c.recordUpgrade(ctx, req, completeUpgradeRegions(regions, interruptedRequestMessage), isSuccess)
+	return err
+}
+
+func isUpgradeSucceeded(regions []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region) bool {
+	if len(regions) == 0 {
+		return false
+	}
+
+	for _, rgn := range regions {
+		if rgn.State != enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS {
+			return false
+		}
+	}
 
 	return true
 }
 
-func failInterruptedJoin(cc *enterprisev1.ClusterConfig) bool {
-	req := cc.Status.JoinRequest
-	if req == nil || req.State != enterprisev1.ClusterConfig_Status_JoinRequest_JOINING {
-		return false
+func completeUpgradeRegions(regions []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region,
+	msg string) []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region {
+	now := pbutils.Now()
+	for _, rgn := range regions {
+		if upgrade.IsDone(rgn.State) {
+			continue
+		}
+
+		rgn.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED
+		rgn.DoneAt = now
+		rgn.Message = msg
 	}
 
-	zap.L().Warn("Recording the join interrupted by a restart as failed", zap.Any("request", req))
-
-	req.State = enterprisev1.ClusterConfig_Status_JoinRequest_FAILED
-	req.DoneAt = pbutils.Now()
-	req.Message = interruptedRequestMessage
-
-	cc.Status.LastJoinRequests = prependJoinHistory(cc.Status.LastJoinRequests, req)
-	cc.Status.JoinRequest = nil
-
-	return true
+	return regions
 }
 
 func (c *Controller) update(cluster *enterprisev1.ClusterConfig) {
@@ -149,27 +228,6 @@ func (c *Controller) update(cluster *enterprisev1.ClusterConfig) {
 		defer cancel()
 		if err := c.doUpgrade(ctx, cluster); err != nil {
 			zap.L().Warn("Could not doUpdate", zap.Error(err))
-			cluster, err = c.octeliumC.EnterpriseV1Utils().GetClusterConfig(ctx)
-			if err != nil {
-				zap.L().Warn("Could not get ClusterConfig after update failure", zap.Error(err))
-				return
-			}
-
-			if cluster.Status.UpgradeRequest != nil &&
-				cluster.Status.UpgradeRequest.State == enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING {
-				cluster.Status.UpgradeRequest.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED
-				cluster.Status.UpgradeRequest.DoneAt = pbutils.Now()
-
-				cluster.Status.LastUpgradeRequests = prependUpgradeHistory(
-					cluster.Status.LastUpgradeRequests, cluster.Status.UpgradeRequest)
-
-				cluster.Status.UpgradeRequest = nil
-				cluster.Status.TotalFailedUpgrades += 1
-				_, err := c.octeliumC.EnterpriseC().UpdateClusterConfig(ctx, cluster)
-				if err != nil {
-					zap.L().Warn("Could not updateCluster after update failure", zap.Error(err))
-				}
-			}
 		}
 	}()
 }
@@ -204,102 +262,211 @@ func (c *Controller) doUpgrade(ctx context.Context, cluster *enterprisev1.Cluste
 		return nil
 	}
 
-	zap.L().Debug("Starting doUpgrade", zap.Any("cluster", cluster))
-
-	cluster.Status.UpgradeRequest.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING
-	cluster, err := c.octeliumC.EnterpriseC().UpdateClusterConfig(ctx, cluster)
-	if err != nil {
-		return err
+	if !c.acquire(taskUpgrade, req.CreatedAt) {
+		zap.L().Debug("Another upgrade request is being handled. Nothing to be done...")
+		return nil
 	}
+	defer c.release(taskUpgrade)
 
-	started := cluster.Status.UpgradeRequest
-
-	{
-		if err := upgrade.UpgradeCluster(ctx, &upgrade.UpgradeClusterOpts{
-			OcteliumC:      c.octeliumC,
-			K8sC:           c.k8sC,
-			UpgradeRequest: started,
-			NewRegionK8sC:  c.newRegionK8sC,
-			OnRegions: func(ctx context.Context, regions []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region) {
-				c.setUpgradeRegions(ctx, started, regions)
-			},
-		}); err != nil {
-			zap.L().Warn("Could not upgradeCluster", zap.Error(err))
-			cluster, err = c.octeliumC.EnterpriseV1Utils().GetClusterConfig(ctx)
-			if err != nil {
-				return err
-			}
-			if !isSameUpgradeRequest(cluster.Status.UpgradeRequest, started) {
-				zap.L().Debug("The upgrade request was already recorded. Nothing to be done...")
-				return nil
-			}
-			cluster.Status.UpgradeRequest.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED
-			cluster.Status.UpgradeRequest.DoneAt = pbutils.Now()
-
-			cluster.Status.LastUpgradeRequests = prependUpgradeHistory(
-				cluster.Status.LastUpgradeRequests, cluster.Status.UpgradeRequest)
-			cluster.Status.UpgradeRequest = nil
-			cluster.Status.TotalFailedUpgrades += 1
-			_, err = c.octeliumC.EnterpriseC().UpdateClusterConfig(ctx, cluster)
-			if err != nil {
-				return err
-			}
-
-			return err
+	isStarted := false
+	if err := c.updateStatus(ctx, func(cc *enterprisev1.ClusterConfig) bool {
+		cur := cc.Status.UpgradeRequest
+		if !isSameUpgradeRequest(cur, req) {
+			isStarted = false
+			return false
 		}
+
+		if isStarted && cur.State == enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING {
+			return false
+		}
+
+		isStarted = cur.State == enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED
+		if isStarted {
+			cur.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING
+		}
+
+		return isStarted
+	}); err != nil {
+		return err
 	}
 
-	// TODO: Check upgrade completed
-	cluster, err = c.octeliumC.EnterpriseV1Utils().GetClusterConfig(ctx)
+	if !isStarted {
+		zap.L().Debug("The upgrade request is already handled. Nothing to be done...")
+		return nil
+	}
+
+	zap.L().Debug("Starting doUpgrade", zap.Any("request", req))
+
+	var regions []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region
+	upgradeErr := upgrade.UpgradeCluster(ctx, &upgrade.UpgradeClusterOpts{
+		OcteliumC:      c.octeliumC,
+		K8sC:           c.k8sC,
+		UpgradeRequest: req,
+		NewRegionK8sC:  c.newRegionK8sC,
+		OnRegions: func(ctx context.Context, rgns []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region) {
+			regions = rgns
+			c.setUpgradeRegions(ctx, req, rgns)
+		},
+	})
+	if upgradeErr != nil {
+		zap.L().Warn("Could not upgradeCluster", zap.Error(upgradeErr))
+	}
+
+	recordCtx, cancel := context.WithTimeout(context.Background(), recordTimeout)
+	defer cancel()
+
+	isRecorded, err := c.recordUpgrade(recordCtx, req, regions, upgradeErr == nil)
 	if err != nil {
 		return err
 	}
 
-	if !isSameUpgradeRequest(cluster.Status.UpgradeRequest, started) {
+	if !isRecorded {
 		zap.L().Debug("The upgrade request was already recorded. Nothing to be done...")
 		return nil
 	}
 
-	cluster.Status.UpgradeRequest.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS
-	cluster.Status.UpgradeRequest.DoneAt = pbutils.Now()
-	upgradeReq := cluster.Status.UpgradeRequest
-	cluster.Status.LastUpgradeRequests = prependUpgradeHistory(
-		cluster.Status.LastUpgradeRequests, cluster.Status.UpgradeRequest)
-	cluster.Status.UpgradeRequest = nil
+	if upgradeErr == nil && req.Request.GetPackageEnterprise() != nil {
+		if err := c.upgradeClusterMan(recordCtx, req.Request.PackageEnterprise.Version); err != nil {
+			return err
+		}
+	}
 
-	cluster.Status.TotalSuccessfulUpgrades += 1
+	zap.L().Debug("Completed doUpgrade", zap.Any("request", req), zap.Bool("success", upgradeErr == nil))
 
-	cluster, err = c.octeliumC.EnterpriseC().UpdateClusterConfig(ctx, cluster)
+	return nil
+}
+
+func (c *Controller) recordUpgrade(ctx context.Context,
+	req *enterprisev1.ClusterConfig_Status_UpgradeRequest,
+	regions []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region, isSuccess bool) (bool, error) {
+	isRecorded := false
+
+	err := c.updateStatus(ctx, func(cc *enterprisev1.ClusterConfig) bool {
+		isRecorded = false
+
+		cur := cc.Status.UpgradeRequest
+		isCurrent := isSameUpgradeRequest(cur, req)
+		if !isCurrent {
+			cur = findUpgradeRequest(cc.Status.LastUpgradeRequests, req)
+		}
+
+		if cur == nil || upgrade.IsDone(cur.State) {
+			return false
+		}
+
+		if len(regions) > 0 {
+			cur.Regions = regions
+		}
+
+		cur.DoneAt = pbutils.Now()
+		if isSuccess {
+			cur.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS
+			cc.Status.TotalSuccessfulUpgrades += 1
+		} else {
+			cur.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED
+			cc.Status.TotalFailedUpgrades += 1
+		}
+
+		if isCurrent {
+			cc.Status.LastUpgradeRequests = prependUpgradeHistory(cc.Status.LastUpgradeRequests, cur)
+			cc.Status.UpgradeRequest = nil
+		}
+
+		isRecorded = true
+		return true
+	})
+
+	return isRecorded, err
+}
+
+func findUpgradeRequest(history []*enterprisev1.ClusterConfig_Status_UpgradeRequest,
+	req *enterprisev1.ClusterConfig_Status_UpgradeRequest) *enterprisev1.ClusterConfig_Status_UpgradeRequest {
+	for _, itm := range history {
+		if isSameUpgradeRequest(itm, req) {
+			return itm
+		}
+	}
+
+	return nil
+}
+
+func (c *Controller) upgradeClusterMan(ctx context.Context, version string) error {
+	var err error
+	interval := statusRetryInterval
+
+	for range clusterManAttempts {
+		if err = c.doUpgradeClusterMan(ctx, version); err == nil {
+			return nil
+		}
+
+		zap.L().Warn("Could not CreateClusterMan. Trying again...", zap.Error(err))
+
+		select {
+		case <-ctx.Done():
+			return err
+		case <-time.After(interval):
+		}
+
+		interval = min(2*interval, maxStatusRetryInterval)
+	}
+
+	return err
+}
+
+func (c *Controller) doUpgradeClusterMan(ctx context.Context, version string) error {
+	cc, err := c.octeliumC.CoreV1Utils().GetClusterConfig(ctx)
 	if err != nil {
 		return err
 	}
 
-	if upgradeReq.Request != nil && upgradeReq.Request.PackageEnterprise != nil {
-
-		cc, err := c.octeliumC.CoreV1Utils().GetClusterConfig(ctx)
-		if err != nil {
-			return err
-		}
-
-		rgn, err := c.octeliumC.CoreC().GetRegion(ctx, &rmetav1.GetOptions{
-			Name: vutils.GetMyRegionName(),
-		})
-		if err != nil {
-			return err
-		}
-		if err := components.CreateClusterMan(ctx, &components.CommonOpts{
-			CommonOpts: gcomponents.CommonOpts{
-				K8sC:          c.k8sC,
-				ClusterConfig: cc,
-				Region:        rgn,
-			},
-			Version: upgradeReq.Request.PackageEnterprise.Version,
-		}); err != nil {
-			zap.L().Warn("Could not CreateClusterMan", zap.Error(err))
-		}
+	rgn, err := c.octeliumC.CoreC().GetRegion(ctx, &rmetav1.GetOptions{
+		Name: vutils.GetMyRegionName(),
+	})
+	if err != nil {
+		return err
 	}
 
-	zap.L().Debug("Completed doUpgrade", zap.Any("cluster", cluster))
+	return components.CreateClusterMan(ctx, &components.CommonOpts{
+		CommonOpts: gcomponents.CommonOpts{
+			K8sC:          c.k8sC,
+			ClusterConfig: cc,
+			Region:        rgn,
+		},
+		Version: version,
+	})
+}
 
-	return nil
+func (c *Controller) acquire(task string, createdAt *timestamppb.Timestamp) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if _, ok := c.tasks[task]; ok {
+		return false
+	}
+
+	c.tasks[task] = createdAt
+	return true
+}
+
+func (c *Controller) release(task string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	delete(c.tasks, task)
+}
+
+func (c *Controller) isBusy(task string) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	_, ok := c.tasks[task]
+	return ok
+}
+
+func (c *Controller) isOwned(task string, createdAt *timestamppb.Timestamp) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	cur, ok := c.tasks[task]
+	return ok && isSameTimestamp(cur, createdAt)
 }

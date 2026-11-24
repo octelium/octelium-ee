@@ -15,6 +15,7 @@ import (
 	"maps"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/regionutils"
@@ -22,12 +23,15 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/client/octops/commands/install"
 	cocteliumc "github.com/octelium/octelium/cluster/common/octeliumc"
 	"github.com/octelium/octelium/cluster/common/vutils"
+	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	batchv1 "k8s.io/api/batch/v1"
 	k8scorev1 "k8s.io/api/core/v1"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -470,4 +474,155 @@ func TestUpgradeBindsAllPackagesToSourceClusterAndRegion(t *testing.T) {
 			}
 		})
 	}
+}
+
+func setTestRegionVersions(t *testing.T, octeliumC octeliumc.ClientInterface, name string,
+	versions map[string]*corev1.Region_Status_VersionInfo) {
+	t.Helper()
+	rgn, err := octeliumC.CoreC().GetRegion(t.Context(), &rmetav1.GetOptions{Name: name})
+	require.NoError(t, err)
+	rgn.Status.VersionInfoMap = versions
+	_, err = octeliumC.CoreC().UpdateRegion(t.Context(), rgn)
+	require.NoError(t, err)
+}
+
+func TestGetRegionResults(t *testing.T) {
+	ctx := t.Context()
+
+	tst, err := otests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() { tst.Destroy() })
+	octeliumC := tst.C.OcteliumC
+
+	for _, rgn := range []*corev1.Region{
+		getTestJoinedRegion(t, "east", 5, regionutils.PackageCore, regionutils.PackageEnterprise),
+		getTestJoinedRegion(t, "west", 2, regionutils.PackageCore, regionutils.PackageEnterprise, regionutils.PackageCordium),
+		getTestJoinedRegion(t, "partial", 3, regionutils.PackageCore),
+	} {
+		rgn.Metadata.Uid = ""
+		_, err := octeliumC.CoreC().CreateRegion(ctx, rgn)
+		require.NoError(t, err)
+	}
+
+	createdAt := time.Now()
+	at := func(d time.Duration) *timestamppb.Timestamp {
+		return timestamppb.New(createdAt.Add(d))
+	}
+
+	late := getTestJoinedRegion(t, "late", 6, regionutils.PackageCore, regionutils.PackageEnterprise)
+	late.Metadata.Uid = ""
+	_, err = octeliumC.CoreC().CreateRegion(ctx, late)
+	require.NoError(t, err)
+
+	setTestRegionVersions(t, octeliumC, "default", map[string]*corev1.Region_Status_VersionInfo{
+		regionutils.PackageCore:    {Version: "1.2.3", SetAt: at(time.Minute)},
+		regionutils.PackageCordium: {Version: "v1.2.3", SetAt: at(2 * time.Minute)},
+	})
+	setTestRegionVersions(t, octeliumC, "west", map[string]*corev1.Region_Status_VersionInfo{
+		regionutils.PackageCore:       {Version: "v1.2.3", SetAt: at(time.Minute)},
+		regionutils.PackageEnterprise: {Version: "v1.0.0", SetAt: at(-time.Hour)},
+		regionutils.PackageCordium:    {Version: "v1.0.0", SetAt: at(-time.Hour)},
+	})
+	setTestRegionVersions(t, octeliumC, "east", map[string]*corev1.Region_Status_VersionInfo{
+		regionutils.PackageCore:       {Version: "v1.2.3", SetAt: at(3 * time.Minute)},
+		regionutils.PackageEnterprise: {Version: "v1.0.0", SetAt: at(-time.Hour)},
+	})
+	setTestRegionVersions(t, octeliumC, "late", map[string]*corev1.Region_Status_VersionInfo{
+		regionutils.PackageCore:       {Version: "v1.2.3", SetAt: at(time.Minute)},
+		regionutils.PackageEnterprise: {Version: "v1.0.0", SetAt: at(-time.Hour)},
+	})
+
+	req := &enterprisev1.ClusterConfig_Status_UpgradeRequest{
+		CreatedAt: timestamppb.New(createdAt),
+		State:     enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING,
+		Request: &enterprisev1.UpgradeClusterRequest_Request{
+			Core:           &enterprisev1.UpgradeClusterRequest_Request_Core{Version: "v1.2.3"},
+			PackageCordium: &enterprisev1.UpgradeClusterRequest_Request_PackageCordium{Version: "v1.2.3"},
+		},
+	}
+
+	states := func(regions []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region) map[string]enterprisev1.ClusterConfig_Status_UpgradeRequest_State {
+		ret := map[string]enterprisev1.ClusterConfig_Status_UpgradeRequest_State{}
+		for _, rgn := range regions {
+			ret[rgn.RegionRef.GetName()] = rgn.State
+		}
+		return ret
+	}
+
+	t.Run("TargetsAreComputedWhenNotRecorded", func(t *testing.T) {
+		regions, err := GetRegionResults(ctx, octeliumC, req, nil)
+		require.NoError(t, err)
+		require.Len(t, regions, 3)
+		assert.Equal(t, "default", regions[0].RegionRef.Name)
+		assert.Equal(t, "west", regions[1].RegionRef.Name)
+		assert.Equal(t, "east", regions[2].RegionRef.Name)
+		assert.NotEmpty(t, regions[0].RegionRef.Uid)
+		assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS, regions[0].State)
+		assert.True(t, pbutils.IsEqual(at(2*time.Minute), regions[0].DoneAt))
+		assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED, regions[1].State)
+		assert.Nil(t, regions[1].DoneAt)
+		assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS, regions[2].State)
+		assert.True(t, pbutils.IsEqual(at(3*time.Minute), regions[2].DoneAt))
+	})
+
+	t.Run("VersionsSetAfterTheNextRequestAreIgnored", func(t *testing.T) {
+		regions, err := GetRegionResults(ctx, octeliumC, req, at(150*time.Second))
+		require.NoError(t, err)
+		assert.Equal(t, map[string]enterprisev1.ClusterConfig_Status_UpgradeRequest_State{
+			"default": enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS,
+			"west":    enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED,
+			"east":    enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED,
+		}, states(regions))
+	})
+
+	t.Run("RecordedRegionsAreKept", func(t *testing.T) {
+		recorded := pbutils.Clone(req).(*enterprisev1.ClusterConfig_Status_UpgradeRequest)
+		recorded.Regions = []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region{
+			{RegionRef: &metav1.ObjectReference{Name: "default"}, State: enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING},
+			{RegionRef: &metav1.ObjectReference{Name: "east"}, State: enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED, Message: "boom"},
+			{State: enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING},
+			{RegionRef: &metav1.ObjectReference{Name: "gone"}, State: enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING},
+		}
+		before := pbutils.Clone(recorded)
+
+		regions, err := GetRegionResults(ctx, octeliumC, recorded, nil)
+		require.NoError(t, err)
+		require.Len(t, regions, 4)
+		assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS, regions[0].State)
+		assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED, regions[1].State)
+		assert.Equal(t, "boom", regions[1].Message)
+		assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING, regions[2].State)
+		assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING, regions[3].State)
+		assert.True(t, pbutils.IsEqual(before, recorded))
+	})
+
+	t.Run("RequestedVersionsMustMatch", func(t *testing.T) {
+		for version, isApplied := range map[string]bool{"latest": true, "1.2.3": true, "v1.2.4": false} {
+			other := pbutils.Clone(req).(*enterprisev1.ClusterConfig_Status_UpgradeRequest)
+			other.Request = &enterprisev1.UpgradeClusterRequest_Request{
+				Core: &enterprisev1.UpgradeClusterRequest_Request_Core{Version: version},
+			}
+			regions, err := GetRegionResults(ctx, octeliumC, other, nil)
+			require.NoError(t, err)
+			assert.Equal(t, isApplied, regions[0].State == enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS, version)
+			assert.Equal(t, isApplied, regions[1].State == enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS, version)
+		}
+	})
+
+	t.Run("NothingIsAppliedWithoutPackagesOrCreationTime", func(t *testing.T) {
+		for _, other := range []*enterprisev1.ClusterConfig_Status_UpgradeRequest{
+			{CreatedAt: req.CreatedAt, Request: &enterprisev1.UpgradeClusterRequest_Request{}},
+			{Request: req.Request},
+		} {
+			regions, err := GetRegionResults(ctx, octeliumC, other, nil)
+			require.NoError(t, err)
+			require.NotEmpty(t, regions)
+			for _, rgn := range regions {
+				assert.Equal(t, enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED, rgn.State)
+			}
+		}
+
+		_, err := GetRegionResults(ctx, octeliumC, nil, nil)
+		assert.Error(t, err)
+	})
 }

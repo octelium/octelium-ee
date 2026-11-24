@@ -10,6 +10,7 @@ package regionutils
 
 import (
 	"testing"
+	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium/apis/main/corev1"
@@ -17,6 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestRegionExtInfo(t *testing.T) {
@@ -75,4 +77,27 @@ func TestRegionExtInfo(t *testing.T) {
 	_, err = GetRegionExtInfo(rgn)
 	assert.Error(t, err)
 	assert.False(t, IsJoinedRegion(rgn))
+}
+
+func TestIsPackageSetWithin(t *testing.T) {
+	from := time.Now()
+	at := func(d time.Duration) *timestamppb.Timestamp {
+		return timestamppb.New(from.Add(d))
+	}
+
+	rgn := &corev1.Region{Status: &corev1.Region_Status{VersionInfoMap: map[string]*corev1.Region_Status_VersionInfo{
+		PackageCore:       {Version: "1.0.0", SetAt: at(time.Minute)},
+		PackageEnterprise: {Version: "1.0.0"},
+		PackageCordium:    {SetAt: at(time.Minute)},
+	}}}
+
+	assert.True(t, IsPackageSetWithin(rgn, PackageCore, at(0), nil))
+	assert.True(t, IsPackageSetWithin(rgn, PackageCore, at(time.Minute), at(2*time.Minute)))
+	assert.False(t, IsPackageSetWithin(rgn, PackageCore, at(2*time.Minute), nil))
+	assert.False(t, IsPackageSetWithin(rgn, PackageCore, at(0), at(time.Minute)))
+	assert.False(t, IsPackageSetWithin(rgn, PackageCore, nil, nil))
+	assert.False(t, IsPackageSetWithin(rgn, PackageEnterprise, at(0), nil))
+	assert.False(t, IsPackageSetWithin(rgn, PackageCordium, at(0), nil))
+	assert.False(t, IsPackageSetWithin(rgn, "unknown", at(0), nil))
+	assert.False(t, IsPackageSetWithin(nil, PackageCore, at(0), nil))
 }

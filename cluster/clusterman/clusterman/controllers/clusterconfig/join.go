@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/clusterman/clusterman/join"
+	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
@@ -24,10 +25,11 @@ import (
 )
 
 const (
-	joinTimeout          = 55 * time.Minute
-	maxLastJoinRequests  = 200
-	maxStatusMessageLen  = 1024
-	statusUpdateAttempts = 8
+	joinTimeout            = 55 * time.Minute
+	maxLastJoinRequests    = 200
+	maxStatusMessageLen    = 1024
+	statusRetryInterval    = 200 * time.Millisecond
+	maxStatusRetryInterval = 10 * time.Second
 )
 
 func (c *Controller) join(cluster *enterprisev1.ClusterConfig) {
@@ -47,15 +49,30 @@ func (c *Controller) doJoin(ctx context.Context, cluster *enterprisev1.ClusterCo
 		return nil
 	}
 
+	if !c.acquire(taskJoin, req.CreatedAt) {
+		zap.L().Debug("Another join request is being handled. Nothing to be done...")
+		return nil
+	}
+	defer c.release(taskJoin)
+
 	isStarted := false
-	if err := c.updateJoinRequest(ctx, req, func(cur *enterprisev1.ClusterConfig_Status_JoinRequest) bool {
-		if cur.State != enterprisev1.ClusterConfig_Status_JoinRequest_JOIN_REQUESTED {
+	if err := c.updateStatus(ctx, func(cc *enterprisev1.ClusterConfig) bool {
+		cur := cc.Status.JoinRequest
+		if !isSameJoinRequest(cur, req) {
+			isStarted = false
 			return false
 		}
 
-		cur.State = enterprisev1.ClusterConfig_Status_JoinRequest_JOINING
-		isStarted = true
-		return true
+		if isStarted && cur.State == enterprisev1.ClusterConfig_Status_JoinRequest_JOINING {
+			return false
+		}
+
+		isStarted = cur.State == enterprisev1.ClusterConfig_Status_JoinRequest_JOIN_REQUESTED
+		if isStarted {
+			cur.State = enterprisev1.ClusterConfig_Status_JoinRequest_JOINING
+		}
+
+		return isStarted
 	}); err != nil {
 		return err
 	}
@@ -77,7 +94,7 @@ func (c *Controller) doJoin(ctx context.Context, cluster *enterprisev1.ClusterCo
 		zap.L().Warn("Could not join the Region", zap.Error(joinErr))
 	}
 
-	doneCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	doneCtx, cancel := context.WithTimeout(context.Background(), recordTimeout)
 	defer cancel()
 
 	if joinErr != nil {
@@ -88,30 +105,7 @@ func (c *Controller) doJoin(ctx context.Context, cluster *enterprisev1.ClusterCo
 		}
 	}
 
-	if err := c.updateStatus(doneCtx, func(cc *enterprisev1.ClusterConfig) bool {
-		cur := cc.Status.JoinRequest
-		if !isSameJoinRequest(cur, req) ||
-			cur.State != enterprisev1.ClusterConfig_Status_JoinRequest_JOINING {
-			return false
-		}
-
-		cur.DoneAt = pbutils.Now()
-		if rgn != nil {
-			cur.RegionRef = umetav1.GetObjectReference(rgn)
-		}
-
-		if joinErr != nil {
-			cur.State = enterprisev1.ClusterConfig_Status_JoinRequest_FAILED
-			cur.Message = truncateStatusMessage(joinErr.Error())
-		} else {
-			cur.State = enterprisev1.ClusterConfig_Status_JoinRequest_SUCCESS
-		}
-
-		cc.Status.LastJoinRequests = prependJoinHistory(cc.Status.LastJoinRequests, cur)
-		cc.Status.JoinRequest = nil
-
-		return true
-	}); err != nil {
+	if err := c.recordJoin(doneCtx, req, rgn, joinErr); err != nil {
 		return err
 	}
 
@@ -127,6 +121,9 @@ func (c *Controller) doJoin(ctx context.Context, cluster *enterprisev1.ClusterCo
 func (c *Controller) setUpgradeRegions(ctx context.Context,
 	req *enterprisev1.ClusterConfig_Status_UpgradeRequest,
 	regions []*enterprisev1.ClusterConfig_Status_UpgradeRequest_Region) {
+	ctx, cancel := context.WithTimeout(ctx, reportTimeout)
+	defer cancel()
+
 	if err := c.updateStatus(ctx, func(cc *enterprisev1.ClusterConfig) bool {
 		cur := cc.Status.UpgradeRequest
 		if cur == nil || req == nil ||
@@ -142,49 +139,158 @@ func (c *Controller) setUpgradeRegions(ctx context.Context,
 	}
 }
 
-func (c *Controller) updateJoinRequest(ctx context.Context,
-	req *enterprisev1.ClusterConfig_Status_JoinRequest,
-	fn func(cur *enterprisev1.ClusterConfig_Status_JoinRequest) bool) error {
+func (c *Controller) recordJoin(ctx context.Context,
+	req *enterprisev1.ClusterConfig_Status_JoinRequest, rgn *corev1.Region, joinErr error) error {
 	return c.updateStatus(ctx, func(cc *enterprisev1.ClusterConfig) bool {
-		if !isSameJoinRequest(cc.Status.JoinRequest, req) {
+		cur := cc.Status.JoinRequest
+		isCurrent := isSameJoinRequest(cur, req)
+		if !isCurrent {
+			cur = findJoinRequest(cc.Status.LastJoinRequests, req)
+		}
+
+		if cur == nil || isJoinDone(cur.State) {
 			return false
 		}
 
-		return fn(cc.Status.JoinRequest)
+		cur.DoneAt = pbutils.Now()
+		if rgn != nil {
+			cur.RegionRef = umetav1.GetObjectReference(rgn)
+		}
+
+		if joinErr != nil {
+			cur.State = enterprisev1.ClusterConfig_Status_JoinRequest_FAILED
+			cur.Message = truncateStatusMessage(joinErr.Error())
+		} else {
+			cur.State = enterprisev1.ClusterConfig_Status_JoinRequest_SUCCESS
+			cur.Message = ""
+		}
+
+		if isCurrent {
+			cc.Status.LastJoinRequests = prependJoinHistory(cc.Status.LastJoinRequests, cur)
+			cc.Status.JoinRequest = nil
+		}
+
+		return true
 	})
 }
 
-func (c *Controller) updateStatus(ctx context.Context, fn func(cc *enterprisev1.ClusterConfig) bool) error {
-	for range statusUpdateAttempts {
-		cc, err := c.octeliumC.EnterpriseV1Utils().GetClusterConfig(ctx)
-		if err != nil {
+func (c *Controller) reconcileJoin(ctx context.Context, cc *enterprisev1.ClusterConfig) error {
+	for i, req := range cc.Status.LastJoinRequests {
+		if isJoinDone(req.State) || c.isOwned(taskJoin, req.CreatedAt) {
+			continue
+		}
+
+		before := cc.Status.JoinRequest.GetCreatedAt()
+		if i > 0 {
+			before = cc.Status.LastJoinRequests[i-1].CreatedAt
+		}
+
+		zap.L().Info("Recording the replaced join request", zap.Any("request", req))
+
+		if err := c.recoverJoin(ctx, req, before, supersededRequestMessage); err != nil {
 			return err
-		}
-
-		if cc.Status == nil {
-			cc.Status = &enterprisev1.ClusterConfig_Status{}
-		}
-
-		if !fn(cc) {
-			return nil
-		}
-
-		if _, err := c.octeliumC.EnterpriseC().UpdateClusterConfig(ctx, cc); err == nil {
-			return nil
-		} else if !grpcerr.IsResourceChanged(err) {
-			return err
-		}
-
-		zap.L().Debug("The ClusterConfig has changed. Trying again...")
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(200 * time.Millisecond):
 		}
 	}
 
-	return errors.Errorf("Could not update the ClusterConfig status after %d attempts", statusUpdateAttempts)
+	req := cc.Status.JoinRequest
+	if req == nil || c.isBusy(taskJoin) {
+		return nil
+	}
+
+	switch req.State {
+	case enterprisev1.ClusterConfig_Status_JoinRequest_JOIN_REQUESTED:
+		zap.L().Info("Starting the pending join request", zap.String("region", req.Request.GetName()))
+		c.join(cc)
+		return nil
+	case enterprisev1.ClusterConfig_Status_JoinRequest_JOINING:
+		zap.L().Info("Recording the interrupted join request", zap.String("region", req.Request.GetName()))
+		return c.recoverJoin(ctx, req, nil, interruptedRequestMessage)
+	default:
+		return nil
+	}
+}
+
+func (c *Controller) recoverJoin(ctx context.Context,
+	req *enterprisev1.ClusterConfig_Status_JoinRequest, before *timestamppb.Timestamp, msg string) error {
+	rgn, err := join.GetJoinedRegion(ctx, c.octeliumC, req, before)
+	if err != nil {
+		return err
+	}
+
+	var joinErr error
+	if rgn == nil {
+		joinErr = errors.New(msg)
+	}
+
+	return c.recordJoin(ctx, req, rgn, joinErr)
+}
+
+func isJoinDone(state enterprisev1.ClusterConfig_Status_JoinRequest_State) bool {
+	switch state {
+	case enterprisev1.ClusterConfig_Status_JoinRequest_SUCCESS,
+		enterprisev1.ClusterConfig_Status_JoinRequest_FAILED:
+		return true
+	default:
+		return false
+	}
+}
+
+func findJoinRequest(history []*enterprisev1.ClusterConfig_Status_JoinRequest,
+	req *enterprisev1.ClusterConfig_Status_JoinRequest) *enterprisev1.ClusterConfig_Status_JoinRequest {
+	for _, itm := range history {
+		if isSameJoinRequest(itm, req) {
+			return itm
+		}
+	}
+
+	return nil
+}
+
+func (c *Controller) updateStatus(ctx context.Context, fn func(cc *enterprisev1.ClusterConfig) bool) error {
+	interval := statusRetryInterval
+
+	for {
+		err := c.doUpdateStatus(ctx, fn)
+		if err == nil || !isTransientErr(err) {
+			return err
+		}
+
+		zap.L().Debug("Could not update the ClusterConfig status. Trying again...", zap.Error(err))
+
+		select {
+		case <-ctx.Done():
+			return err
+		case <-time.After(interval):
+		}
+
+		interval = min(2*interval, maxStatusRetryInterval)
+	}
+}
+
+func (c *Controller) doUpdateStatus(ctx context.Context, fn func(cc *enterprisev1.ClusterConfig) bool) error {
+	cc, err := c.octeliumC.EnterpriseV1Utils().GetClusterConfig(ctx)
+	if err != nil {
+		return err
+	}
+
+	if cc.Status == nil {
+		cc.Status = &enterprisev1.ClusterConfig_Status{}
+	}
+
+	if !fn(cc) {
+		return nil
+	}
+
+	_, err = c.octeliumC.EnterpriseC().UpdateClusterConfig(ctx, cc)
+	return err
+}
+
+func isTransientErr(err error) bool {
+	return grpcerr.IsResourceChanged(err) ||
+		grpcerr.IsUnavailable(err) ||
+		grpcerr.IsInternal(err) ||
+		grpcerr.IsDeadlineExceeded(err) ||
+		grpcerr.IsResourceExhausted(err)
 }
 
 func isSameJoinRequest(a, b *enterprisev1.ClusterConfig_Status_JoinRequest) bool {

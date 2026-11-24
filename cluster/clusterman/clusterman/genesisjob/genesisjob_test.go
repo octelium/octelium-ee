@@ -121,6 +121,38 @@ func TestJobStatusClassification(t *testing.T) {
 	}
 }
 
+func TestHasActive(t *testing.T) {
+	labels := map[string]string{"octelium.com/component": "genesis"}
+	recent := k8smetav1.NewTime(time.Now().Add(-time.Minute))
+	for _, tc := range []struct {
+		name   string
+		job    *batchv1.Job
+		active bool
+	}{
+		{name: "Running", job: &batchv1.Job{ObjectMeta: k8smetav1.ObjectMeta{CreationTimestamp: recent, Labels: labels}, Status: batchv1.JobStatus{Active: 1}}, active: true},
+		{name: "Pending", job: &batchv1.Job{ObjectMeta: k8smetav1.ObjectMeta{CreationTimestamp: recent, Labels: labels}}, active: true},
+		{name: "Complete", job: &batchv1.Job{ObjectMeta: k8smetav1.ObjectMeta{CreationTimestamp: recent, Labels: labels}, Status: batchv1.JobStatus{Conditions: []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: k8scorev1.ConditionTrue}}}}},
+		{name: "Failed", job: &batchv1.Job{ObjectMeta: k8smetav1.ObjectMeta{CreationTimestamp: recent, Labels: labels}, Status: batchv1.JobStatus{Conditions: []batchv1.JobCondition{{Type: batchv1.JobFailed, Status: k8scorev1.ConditionTrue}}}}},
+		{name: "Deleted", job: &batchv1.Job{ObjectMeta: k8smetav1.ObjectMeta{CreationTimestamp: recent, Labels: labels, DeletionTimestamp: &recent, Finalizers: []string{"test"}}, Status: batchv1.JobStatus{Active: 1}}},
+		{name: "Expired", job: &batchv1.Job{ObjectMeta: k8smetav1.ObjectMeta{CreationTimestamp: k8smetav1.NewTime(time.Now().Add(-DefaultTimeout - time.Minute)), Labels: labels}, Status: batchv1.JobStatus{Active: 1}}},
+		{name: "NotGenesis", job: &batchv1.Job{ObjectMeta: k8smetav1.ObjectMeta{CreationTimestamp: recent}, Status: batchv1.JobStatus{Active: 1}}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.job.Name = "upgrade"
+			tc.job.Namespace = vutils.K8sNS
+			active, err := HasActive(t.Context(), fake.NewSimpleClientset(tc.job))
+			require.NoError(t, err)
+			assert.Equal(t, tc.active, active)
+		})
+	}
+
+	failure := errors.New("Kubernetes temporarily unavailable")
+	k8sC := fake.NewSimpleClientset()
+	k8sC.PrependReactor("list", "jobs", func(ktesting.Action) (bool, runtime.Object, error) { return true, nil, failure })
+	_, err := HasActive(t.Context(), k8sC)
+	assert.ErrorIs(t, err, failure)
+}
+
 func TestJobGetFailureIsRetriable(t *testing.T) {
 	failure := errors.New("Kubernetes temporarily unavailable")
 	k8sC := fake.NewSimpleClientset()

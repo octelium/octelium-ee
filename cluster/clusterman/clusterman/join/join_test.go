@@ -15,6 +15,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/regionutils"
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
@@ -28,6 +29,7 @@ import (
 	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	batchv1 "k8s.io/api/batch/v1"
 	k8scorev1 "k8s.io/api/core/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
@@ -673,4 +675,72 @@ func TestJoinExistingBoundRegion(t *testing.T) {
 	stored, err := env.targetC.CoreV1().ConfigMaps(vutils.K8sNS).Get(t.Context(), cm.Name, k8smetav1.GetOptions{})
 	require.NoError(t, err)
 	assert.Equal(t, cm, stored)
+}
+
+func TestGetJoinedRegion(t *testing.T) {
+	ctx := t.Context()
+
+	tst, err := otests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() { tst.Destroy() })
+	octeliumC := tst.C.OcteliumC
+
+	req := getTestJoinRequest("west")
+	at := func(d time.Duration) *timestamppb.Timestamp {
+		return timestamppb.New(req.CreatedAt.AsTime().Add(d))
+	}
+
+	rgn := &corev1.Region{
+		Metadata: &metav1.Metadata{Name: "west"},
+		Spec:     &corev1.Region_Spec{},
+		Status: &corev1.Region_Status{
+			Index: 1,
+			VersionInfoMap: map[string]*corev1.Region_Status_VersionInfo{
+				regionutils.PackageEnterprise: {Version: "1.0.0", SetAt: at(time.Minute)},
+			},
+		},
+	}
+	require.NoError(t, regionutils.SetRegionExtInfo(rgn, &enterprisev1.RegionExtInfo{Kubernetes: getTestKubernetes()}))
+	rgn, err = octeliumC.CoreC().CreateRegion(ctx, rgn)
+	require.NoError(t, err)
+
+	joined, err := GetJoinedRegion(ctx, octeliumC, req, nil)
+	require.NoError(t, err)
+	require.NotNil(t, joined)
+	assert.Equal(t, rgn.Metadata.Uid, joined.Metadata.Uid)
+
+	for _, tc := range []struct {
+		name   string
+		req    *enterprisev1.ClusterConfig_Status_JoinRequest
+		before *timestamppb.Timestamp
+	}{
+		{name: "JoinedBeforeRequest", req: &enterprisev1.ClusterConfig_Status_JoinRequest{CreatedAt: at(2 * time.Minute), Request: req.Request}},
+		{name: "JoinedAfterNextRequest", req: req, before: at(30 * time.Second)},
+		{name: "NotFound", req: getTestJoinRequest("east")},
+		{name: "NoName", req: &enterprisev1.ClusterConfig_Status_JoinRequest{CreatedAt: req.CreatedAt}},
+	} {
+		joined, err := GetJoinedRegion(ctx, octeliumC, tc.req, tc.before)
+		require.NoError(t, err, tc.name)
+		assert.Nil(t, joined, tc.name)
+	}
+
+	defaultRgn, err := octeliumC.CoreC().GetRegion(ctx, &rmetav1.GetOptions{Name: regionutils.DefaultRegion})
+	require.NoError(t, err)
+	defaultRgn.Status.VersionInfoMap = map[string]*corev1.Region_Status_VersionInfo{
+		regionutils.PackageCordium: {Version: "1.0.0"},
+	}
+	_, err = octeliumC.CoreC().UpdateRegion(ctx, defaultRgn)
+	require.NoError(t, err)
+
+	joined, err = GetJoinedRegion(ctx, octeliumC, req, nil)
+	require.NoError(t, err)
+	assert.Nil(t, joined)
+
+	rgn.Status.VersionInfoMap[regionutils.PackageCordium] = &corev1.Region_Status_VersionInfo{Version: "1.0.0"}
+	_, err = octeliumC.CoreC().UpdateRegion(ctx, rgn)
+	require.NoError(t, err)
+
+	joined, err = GetJoinedRegion(ctx, octeliumC, req, nil)
+	require.NoError(t, err)
+	assert.NotNil(t, joined)
 }

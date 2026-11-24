@@ -180,6 +180,37 @@ func terminalErr(format string, args ...any) error {
 	}
 }
 
+func HasActive(ctx context.Context, k8sC kubernetes.Interface) (bool, error) {
+	jobs, err := k8sC.BatchV1().Jobs(vutils.K8sNS).List(ctx, k8smetav1.ListOptions{
+		LabelSelector: "octelium.com/component=genesis",
+	})
+	if err != nil {
+		return false, err
+	}
+
+	for _, job := range jobs.Items {
+		if job.DeletionTimestamp != nil || isFinished(&job) ||
+			time.Since(job.CreationTimestamp.Time) > DefaultTimeout {
+			continue
+		}
+
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func isFinished(job *batchv1.Job) bool {
+	for _, cond := range job.Status.Conditions {
+		if (cond.Type == batchv1.JobComplete || cond.Type == batchv1.JobFailed) &&
+			cond.Status == k8scorev1.ConditionTrue {
+			return true
+		}
+	}
+
+	return false
+}
+
 func Check(ctx context.Context, k8sC kubernetes.Interface, jobName string) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
