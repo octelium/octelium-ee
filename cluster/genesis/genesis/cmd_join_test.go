@@ -431,6 +431,11 @@ func TestRunJoin(t *testing.T) {
 	{
 		assert.Error(t, g.RunJoin(ctx, nil))
 		assert.Error(t, g.RunJoin(ctx, &JoinOpts{CoreVersion: " "}))
+		k8sC.ClearActions()
+		assert.ErrorContains(t, g.RunJoin(ctx, &JoinOpts{CoreVersion: "0.52.0"}), "Upgrade the Cluster core package")
+		for _, action := range k8sC.Actions() {
+			assert.Contains(t, []string{"get", "list"}, action.GetVerb())
+		}
 	}
 
 	for range 2 {
@@ -1172,5 +1177,33 @@ func TestPasswordResolutionFailurePreservesExistingStorageSecrets(t *testing.T) 
 		stored, err := c.Tracker().Get(k8scorev1.SchemeGroupVersion.WithResource("secrets"), "octelium", before.Name)
 		require.NoError(t, err)
 		assert.Equal(t, before, stored)
+	}
+}
+
+func TestCheckJoinCoreVersion(t *testing.T) {
+	for _, tc := range []struct {
+		version string
+		ok      bool
+	}{
+		{"0.53.0", true},
+		{"v0.53.0", true},
+		{"0.53.0-rc1", true},
+		{"0.60.1", true},
+		{"1.0.0", true},
+		{"9.9.9", true},
+		{"main", true},
+		{"latest", true},
+		{"0.52.0", false},
+		{"v0.52.9", false},
+		{"0.39.0", false},
+	} {
+		t.Run(tc.version, func(t *testing.T) {
+			err := checkJoinCoreVersion(tc.version)
+			if tc.ok {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tc.version)
+			}
+		})
 	}
 }

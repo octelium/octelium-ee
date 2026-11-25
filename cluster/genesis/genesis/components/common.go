@@ -28,6 +28,7 @@ import (
 )
 
 const componentNocturne = components.Nocturne
+const componentNocturneRuntime = components.Nocturne + "-runtime"
 const componentCloudMan = components.CloudMan
 const componentCollector = components.Collector
 const componentRscServer = components.RscServer

@@ -48,7 +48,7 @@ func GetJob(o *Opts) *batchv1.Job {
 
 	svcAccount := o.SvcAccount
 	if svcAccount == "" {
-		svcAccount = "octelium-nocturne"
+		svcAccount = install.GenesisServiceAccount
 	}
 
 	podSpec := install.GetGenesisPodSpec(&install.GenesisPodSpecOpts{
@@ -95,6 +95,13 @@ func Run(ctx context.Context, k8sC kubernetes.Interface, job *batchv1.Job, timeo
 	bound, err := install.BindGenesisJobTarget(ctx, k8sC, job)
 	if err != nil {
 		return errors.Wrap(err, "Could not validate the genesis target")
+	}
+	if bound.Spec.Template.Spec.ServiceAccountName == install.GenesisServiceAccount {
+		svcAccount, err := install.EnsureGenesisServiceAccount(ctx, k8sC)
+		if err != nil {
+			return errors.Wrap(err, "Could not prepare the genesis ServiceAccount")
+		}
+		bound.Spec.Template.Spec.ServiceAccountName = svcAccount
 	}
 	accepted, err := install.SubmitGenesisJobWithResult(ctx, k8sC, bound, nil)
 	if err != nil {

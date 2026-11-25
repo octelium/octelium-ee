@@ -154,7 +154,7 @@ func TestGenesisJobPackageIdentityAndSPIFFE(t *testing.T) {
 			assert.Equal(t, "genesis", job.Labels["octelium.com/component"])
 			assert.Equal(t, job.Labels, job.Spec.Template.Labels)
 			pod := job.Spec.Template.Spec
-			assert.Equal(t, "octelium-nocturne", pod.ServiceAccountName)
+			assert.Equal(t, "octelium-genesis", pod.ServiceAccountName)
 			assert.Equal(t, k8scorev1.RestartPolicyNever, pod.RestartPolicy)
 			require.Len(t, pod.Containers, 1)
 			container := pod.Containers[0]

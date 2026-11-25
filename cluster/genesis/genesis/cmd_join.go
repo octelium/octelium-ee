@@ -15,6 +15,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/hashicorp/go-version"
 	netv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 	oc "github.com/octelium/octelium-ee/cluster/common/components"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -46,8 +47,24 @@ const joinInitSecretName = "octelium-init"
 const installationConfigMapName = "octelium-installation"
 const installationConfigMapKey = "installation.json"
 
+const minJoinCoreVersion = "0.53.0"
+
 type JoinOpts struct {
 	CoreVersion string
+}
+
+func checkJoinCoreVersion(coreVersion string) error {
+	cur, err := version.NewSemver(coreVersion)
+	if err != nil {
+		return nil
+	}
+
+	if cur.Core().LessThan(version.Must(version.NewSemver(minJoinCoreVersion))) {
+		return errors.Errorf("The core package version %s is older than %s. Upgrade the Cluster core package before joining Regions",
+			coreVersion, minJoinCoreVersion)
+	}
+
+	return nil
 }
 
 type joinResources struct {
@@ -69,6 +86,10 @@ func (g *Genesis) RunJoin(ctx context.Context, o *JoinOpts) error {
 	coreVersion := strings.TrimSpace(o.CoreVersion)
 	if coreVersion == "" {
 		return errors.Errorf("The core package version is not set")
+	}
+
+	if err := checkJoinCoreVersion(coreVersion); err != nil {
+		return err
 	}
 
 	if err := k8sutils.WaitForNodesReadiness(ctx, g.k8sC); err != nil {

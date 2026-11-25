@@ -68,6 +68,12 @@ func testEnterpriseTopology(t *testing.T, ch *harness.H) {
 			dep.Spec.Template.Spec.ServiceAccountName)
 	})
 
+	t.Run("NocturneRunsWithItsRuntimeServiceAccount", func(t *testing.T) {
+		dep := h.MustK8sDeployment(t, "octeliumee-nocturne")
+		assert.Equal(t, "octeliumee-nocturne-runtime",
+			dep.Spec.Template.Spec.ServiceAccountName)
+	})
+
 	t.Run("EveryEnterpriseDeploymentIsReady", func(t *testing.T) {
 		for _, name := range eescenario.Deployments {
 			h.MustWaitDeployment(t, name)

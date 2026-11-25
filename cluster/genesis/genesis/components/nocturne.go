@@ -41,7 +41,7 @@ func getNocturneDeployment(o *CommonOpts) *appsv1.Deployment {
 				},
 				Spec: k8scorev1.PodSpec{
 					NodeSelector:       getNodeSelectorControlPlane(o.ClusterConfig),
-					ServiceAccountName: getComponentName(componentNocturne),
+					ServiceAccountName: getComponentName(componentNocturneRuntime),
 					ImagePullSecrets:   getImagePullSecrets(),
 
 					Containers: []k8scorev1.Container{
@@ -121,6 +121,57 @@ func getNocturneRoleBinding() *rbacv1.ClusterRoleBinding {
 	}
 }
 
+func getNocturneRuntimeServiceAccount() *k8scorev1.ServiceAccount {
+	return &k8scorev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      getComponentName(componentNocturneRuntime),
+			Namespace: ns,
+		},
+	}
+}
+
+func getNocturneRuntimeRole() *rbacv1.Role {
+	return &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      getComponentName(componentNocturneRuntime),
+			Namespace: ns,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments"},
+				ResourceNames: []string{
+					getComponentName(componentCollector),
+					"octelium-octovigil",
+					"octelium-ingress-dataplane",
+				},
+				Verbs: []string{"get", "update"},
+			},
+		},
+	}
+}
+
+func getNocturneRuntimeRoleBinding() *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      getComponentName(componentNocturneRuntime),
+			Namespace: ns,
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     getComponentName(componentNocturneRuntime),
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      getComponentName(componentNocturneRuntime),
+				Namespace: ns,
+			},
+		},
+	}
+}
+
 func getNocturneNetworkPolicy(c *corev1.ClusterConfig) *networkingv1.NetworkPolicy {
 	return &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -139,6 +190,18 @@ func getNocturneNetworkPolicy(c *corev1.ClusterConfig) *networkingv1.NetworkPoli
 }
 
 func CreateNocturne(ctx context.Context, o *CommonOpts) error {
+
+	if _, err := k8sutils.CreateOrUpdateServiceAccount(ctx, o.K8sC, getNocturneRuntimeServiceAccount()); err != nil {
+		return err
+	}
+
+	if _, err := k8sutils.CreateOrUpdateRole(ctx, o.K8sC, getNocturneRuntimeRole()); err != nil {
+		return err
+	}
+
+	if _, err := k8sutils.CreateOrUpdateRoleBinding(ctx, o.K8sC, getNocturneRuntimeRoleBinding()); err != nil {
+		return err
+	}
 
 	if _, err := k8sutils.CreateOrUpdateServiceAccount(ctx, o.K8sC, getNocturneServiceAccount()); err != nil {
 		return err

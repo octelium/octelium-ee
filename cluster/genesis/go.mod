@@ -3,6 +3,7 @@ module github.com/octelium/octelium-ee/cluster/genesis
 go 1.27.4
 
 require (
+	github.com/hashicorp/go-version v1.9.0
 	github.com/k8snetworkplumbingwg/network-attachment-definition-client v1.7.7
 	github.com/lib/pq v1.12.3
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000

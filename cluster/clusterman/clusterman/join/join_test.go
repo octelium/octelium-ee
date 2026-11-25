@@ -455,7 +455,7 @@ func TestJoinCluster(t *testing.T) {
 
 			if withCordium {
 				cordiumJob := env.jobs[1].Spec.Template.Spec
-				assert.Equal(t, "octelium-nocturne", cordiumJob.ServiceAccountName)
+				assert.Equal(t, genesisSvcAccount, cordiumJob.ServiceAccountName)
 				assert.Equal(t, "cordium-genesis", cordiumJob.Containers[0].Name)
 				assert.True(t, strings.HasSuffix(cordiumJob.Containers[0].Image, ":0.9.0"), cordiumJob.Containers[0].Image)
 				assert.Equal(t, []string{"init"}, cordiumJob.Containers[0].Args)

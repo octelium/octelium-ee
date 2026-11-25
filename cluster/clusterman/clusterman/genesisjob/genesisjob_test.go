@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 	batchv1 "k8s.io/api/batch/v1"
 	k8scorev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -53,7 +54,7 @@ func TestGetJob(t *testing.T) {
 		assert.Equal(t, "genesis", job.Labels["octelium.com/component"])
 		assert.Equal(t, job.Labels, job.Spec.Template.Labels)
 		pod := job.Spec.Template.Spec
-		assert.Equal(t, "octelium-nocturne", pod.ServiceAccountName)
+		assert.Equal(t, "octelium-genesis", pod.ServiceAccountName)
 		require.Len(t, pod.Containers, 1)
 		container := pod.Containers[0]
 		assert.Equal(t, "octeliumee-genesis", container.Name)
@@ -243,6 +244,48 @@ func TestRun(t *testing.T) {
 			return true, job, err
 		})
 		require.NoError(t, Run(t.Context(), k8sC, GetJob(&Opts{Cmd: "init", Package: "cordium"}), DefaultTimeout))
+	}
+}
+
+func TestRunServiceAccount(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		svcAccount string
+		forbidden  bool
+		want       string
+	}{
+		{name: "Installer", want: "octelium-genesis"},
+		{name: "LegacyFallback", forbidden: true, want: "octelium-nocturne"},
+		{name: "Explicit", svcAccount: "octelium-custom", forbidden: true, want: "octelium-custom"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			k8sC := fake.NewSimpleClientset()
+			if tc.forbidden {
+				k8sC.PrependReactor("create", "clusterroles", func(ktesting.Action) (bool, runtime.Object, error) {
+					return true, nil, k8serr.NewForbidden(rbacv1.Resource("clusterroles"), "octelium-genesis", errors.New("not permitted"))
+				})
+			}
+			var svcAccount string
+			k8sC.PrependReactor("create", "jobs", func(action ktesting.Action) (bool, runtime.Object, error) {
+				job := action.(ktesting.CreateAction).GetObject().(*batchv1.Job).DeepCopy()
+				svcAccount = job.Spec.Template.Spec.ServiceAccountName
+				job.UID = types.UID("job-" + job.Name)
+				job.Status.Succeeded = 1
+				job.Status.Conditions = []batchv1.JobCondition{{Type: batchv1.JobComplete, Status: k8scorev1.ConditionTrue}}
+				err := k8sC.Tracker().Create(batchv1.SchemeGroupVersion.WithResource("jobs"), job, job.Namespace)
+				return true, job, err
+			})
+			require.NoError(t, Run(t.Context(), k8sC, GetJob(&Opts{Cmd: "upgrade", Package: "octelium", SvcAccount: tc.svcAccount}), DefaultTimeout))
+			assert.Equal(t, tc.want, svcAccount)
+
+			binding, err := k8sC.RbacV1().ClusterRoleBindings().Get(t.Context(), "octelium-genesis", k8smetav1.GetOptions{})
+			if tc.want == "octelium-genesis" {
+				require.NoError(t, err)
+				assert.Equal(t, []rbacv1.Subject{{Kind: "ServiceAccount", Name: "octelium-genesis", Namespace: "octelium"}}, binding.Subjects)
+			} else {
+				assert.True(t, k8serr.IsNotFound(err))
+			}
+		})
 	}
 }
 
@@ -494,12 +537,23 @@ func TestRunRejectsForeignTargetBeforeCreate(t *testing.T) {
 func TestRunHTTPUncertainAcknowledgement(t *testing.T) {
 	var mu sync.Mutex
 	var stored *batchv1.Job
-	creates, reads, unexpected := 0, 0, 0
+	creates, reads, unexpected, rbacWrites := 0, 0, 0, 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mu.Lock()
 		defer mu.Unlock()
 		w.Header().Set("Content-Type", "application/json")
 		switch {
+		case r.Method == http.MethodPost && (strings.HasSuffix(r.URL.Path, "/namespaces/octelium/serviceaccounts") ||
+			strings.HasSuffix(r.URL.Path, "/clusterroles") || strings.HasSuffix(r.URL.Path, "/clusterrolebindings")):
+			rbacWrites++
+			body, err := io.ReadAll(r.Body)
+			assert.NoError(t, err)
+			w.WriteHeader(http.StatusCreated)
+			_, err = w.Write(body)
+			assert.NoError(t, err)
+		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/clusterrolebindings/octelium-genesis"):
+			w.WriteHeader(http.StatusNotFound)
+			assert.NoError(t, json.NewEncoder(w).Encode(&k8smetav1.Status{TypeMeta: k8smetav1.TypeMeta{Kind: "Status", APIVersion: "v1"}, Status: "Failure", Reason: k8smetav1.StatusReasonNotFound, Code: http.StatusNotFound}))
 		case r.Method == http.MethodGet && (strings.HasSuffix(r.URL.Path, "/configmaps/octelium-installation") || strings.HasSuffix(r.URL.Path, "/secrets/octelium-init")):
 			w.WriteHeader(http.StatusNotFound)
 			assert.NoError(t, json.NewEncoder(w).Encode(&k8smetav1.Status{TypeMeta: k8smetav1.TypeMeta{Kind: "Status", APIVersion: "v1"}, Status: "Failure", Reason: k8smetav1.StatusReasonNotFound, Code: http.StatusNotFound}))
@@ -538,6 +592,8 @@ func TestRunHTTPUncertainAcknowledgement(t *testing.T) {
 	assert.Equal(t, 1, creates)
 	assert.GreaterOrEqual(t, reads, 2)
 	assert.Zero(t, unexpected)
+	assert.Equal(t, 3, rbacWrites)
+	assert.Equal(t, "octelium-genesis", stored.Spec.Template.Spec.ServiceAccountName)
 	require.NotNil(t, stored)
 	assert.Equal(t, job.Name, stored.Name)
 	assert.Equal(t, job.Spec, stored.Spec)

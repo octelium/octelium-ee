@@ -275,12 +275,13 @@ func (c *controller) run(ctx context.Context) (*corev1.Region, error) {
 
 	if versions.cordium != "" {
 		cordiumJob := genesisjob.GetJob(&genesisjob.Opts{
-			Domain:  cc.Status.Domain,
-			Region:  regionName,
-			Package: regionutils.PackageCordium,
-			Cmd:     "init",
-			Version: versions.cordium,
-			SPIFFE:  spiffe,
+			Domain:     cc.Status.Domain,
+			Region:     regionName,
+			Package:    regionutils.PackageCordium,
+			Cmd:        "init",
+			Version:    versions.cordium,
+			SvcAccount: genesisSvcAccount,
+			SPIFFE:     spiffe,
 		})
 		if uid := cc.GetMetadata().GetUid(); uid != "" {
 			cordiumJob.Spec.Template.Spec.Containers[0].Env = append(cordiumJob.Spec.Template.Spec.Containers[0].Env, k8scorev1.EnvVar{Name: "OCTELIUM_GENESIS_CLUSTER_UID", Value: uid})
