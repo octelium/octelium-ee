@@ -16108,12 +16108,6 @@ export interface ClusterConfig_Spec_Device {
      * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Spec.Device.Workload workload = 2
      */
     workload?: ClusterConfig_Spec_Device_Workload;
-    /**
-     * Probing sets the device probing options
-     *
-     * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Spec.Device.Probing probing = 3
-     */
-    probing?: ClusterConfig_Spec_Device_Probing;
 }
 /**
  * Human sets the Device defaults of the HUMAN Users
@@ -16152,20 +16146,6 @@ export interface ClusterConfig_Spec_Device_Workload {
      * @generated from protobuf field: uint32 maxPerUser = 2
      */
     maxPerUser: number;
-}
-/**
- * Probing sets the Cluster-wide options of running Probes on the
- * Devices
- *
- * @generated from protobuf message octelium.api.main.core.v1.ClusterConfig.Spec.Device.Probing
- */
-export interface ClusterConfig_Spec_Device_Probing {
-    /**
-     * IsDisabled disables running Probes on the Devices
-     *
-     * @generated from protobuf field: bool isDisabled = 1
-     */
-    isDisabled: boolean;
 }
 /**
  * Gateway sets the Cluster-wide options of the Gateways
@@ -16616,6 +16596,12 @@ export interface ClusterConfig_Spec_Authentication {
      * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation geolocation = 1
      */
     geolocation?: ClusterConfig_Spec_Authentication_Geolocation;
+    /**
+     * Login sets the options of the Cluster's web login page
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login login = 2
+     */
+    login?: ClusterConfig_Spec_Authentication_Login;
 }
 /**
  * Geolocation sets the geolocation resolution of the authenticating
@@ -16881,6 +16867,68 @@ export interface ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Aut
          * @generated from protobuf field: string fromSecret = 1
          */
         fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * Login sets the options of the Cluster's web login page
+ *
+ * @generated from protobuf message octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login
+ */
+export interface ClusterConfig_Spec_Authentication_Login {
+    /**
+     * Icon overrides the default Octelium logo that is shown on top of the
+     * web login page
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login.Icon icon = 1
+     */
+    icon?: ClusterConfig_Spec_Authentication_Login_Icon;
+}
+/**
+ * Icon overrides the default Octelium logo that is shown on top of the
+ * web login page (e.g. with your company's logo). The icon is shown
+ * inside the same dedicated space of the default logo while keeping
+ * its aspect ratio. The supported formats are SVG, PNG, JPEG and WebP
+ * and the format is detected from the icon's content. An invalid or
+ * unsupported icon falls back to the default Octelium logo.
+ *
+ * @generated from protobuf message octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login.Icon
+ */
+export interface ClusterConfig_Spec_Authentication_Login_Icon {
+    /**
+     * Type sets the source of the icon's content
+     *
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "inline";
+        /**
+         * Inline sets the icon's content as a string (e.g. an SVG
+         * document). The inline content cannot exceed 32 KiB.
+         *
+         * @generated from protobuf field: string inline = 1
+         */
+        inline: string;
+    } | {
+        oneofKind: "inlineBytes";
+        /**
+         * InlineBytes sets the icon's content as an array of bytes (e.g.
+         * a PNG image). The inline content cannot exceed 32 KiB.
+         *
+         * @generated from protobuf field: bytes inlineBytes = 2
+         */
+        inlineBytes: Uint8Array;
+    } | {
+        oneofKind: "fromConfig";
+        /**
+         * FromConfig sets the name of the Config whose data contains the
+         * icon's content. This is the recommended way for larger icons.
+         * The Config's content cannot exceed 128 KiB.
+         *
+         * @generated from protobuf field: string fromConfig = 3
+         */
+        fromConfig: string;
     } | {
         oneofKind: undefined;
     };
@@ -43197,8 +43245,7 @@ class ClusterConfig_Spec_Device$Type extends MessageType<ClusterConfig_Spec_Devi
     constructor() {
         super("octelium.api.main.core.v1.ClusterConfig.Spec.Device", [
             { no: 1, name: "human", kind: "message", T: () => ClusterConfig_Spec_Device_Human },
-            { no: 2, name: "workload", kind: "message", T: () => ClusterConfig_Spec_Device_Workload },
-            { no: 3, name: "probing", kind: "message", T: () => ClusterConfig_Spec_Device_Probing }
+            { no: 2, name: "workload", kind: "message", T: () => ClusterConfig_Spec_Device_Workload }
         ]);
     }
     create(value?: PartialMessage<ClusterConfig_Spec_Device>): ClusterConfig_Spec_Device {
@@ -43218,9 +43265,6 @@ class ClusterConfig_Spec_Device$Type extends MessageType<ClusterConfig_Spec_Devi
                 case /* octelium.api.main.core.v1.ClusterConfig.Spec.Device.Workload workload */ 2:
                     message.workload = ClusterConfig_Spec_Device_Workload.internalBinaryRead(reader, reader.uint32(), options, message.workload);
                     break;
-                case /* octelium.api.main.core.v1.ClusterConfig.Spec.Device.Probing probing */ 3:
-                    message.probing = ClusterConfig_Spec_Device_Probing.internalBinaryRead(reader, reader.uint32(), options, message.probing);
-                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -43239,9 +43283,6 @@ class ClusterConfig_Spec_Device$Type extends MessageType<ClusterConfig_Spec_Devi
         /* octelium.api.main.core.v1.ClusterConfig.Spec.Device.Workload workload = 2; */
         if (message.workload)
             ClusterConfig_Spec_Device_Workload.internalBinaryWrite(message.workload, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.core.v1.ClusterConfig.Spec.Device.Probing probing = 3; */
-        if (message.probing)
-            ClusterConfig_Spec_Device_Probing.internalBinaryWrite(message.probing, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -43362,53 +43403,6 @@ class ClusterConfig_Spec_Device_Workload$Type extends MessageType<ClusterConfig_
  * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Spec.Device.Workload
  */
 export const ClusterConfig_Spec_Device_Workload = new ClusterConfig_Spec_Device_Workload$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class ClusterConfig_Spec_Device_Probing$Type extends MessageType<ClusterConfig_Spec_Device_Probing> {
-    constructor() {
-        super("octelium.api.main.core.v1.ClusterConfig.Spec.Device.Probing", [
-            { no: 1, name: "isDisabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
-        ]);
-    }
-    create(value?: PartialMessage<ClusterConfig_Spec_Device_Probing>): ClusterConfig_Spec_Device_Probing {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.isDisabled = false;
-        if (value !== undefined)
-            reflectionMergePartial<ClusterConfig_Spec_Device_Probing>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Spec_Device_Probing): ClusterConfig_Spec_Device_Probing {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* bool isDisabled */ 1:
-                    message.isDisabled = reader.bool();
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: ClusterConfig_Spec_Device_Probing, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bool isDisabled = 1; */
-        if (message.isDisabled !== false)
-            writer.tag(1, WireType.Varint).bool(message.isDisabled);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Spec.Device.Probing
- */
-export const ClusterConfig_Spec_Device_Probing = new ClusterConfig_Spec_Device_Probing$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class ClusterConfig_Spec_Gateway$Type extends MessageType<ClusterConfig_Spec_Gateway> {
     constructor() {
@@ -44003,7 +43997,8 @@ export const ClusterConfig_Spec_Authenticator_TPM_EndorsementTrust = new Cluster
 class ClusterConfig_Spec_Authentication$Type extends MessageType<ClusterConfig_Spec_Authentication> {
     constructor() {
         super("octelium.api.main.core.v1.ClusterConfig.Spec.Authentication", [
-            { no: 1, name: "geolocation", kind: "message", T: () => ClusterConfig_Spec_Authentication_Geolocation }
+            { no: 1, name: "geolocation", kind: "message", T: () => ClusterConfig_Spec_Authentication_Geolocation },
+            { no: 2, name: "login", kind: "message", T: () => ClusterConfig_Spec_Authentication_Login }
         ]);
     }
     create(value?: PartialMessage<ClusterConfig_Spec_Authentication>): ClusterConfig_Spec_Authentication {
@@ -44020,6 +44015,9 @@ class ClusterConfig_Spec_Authentication$Type extends MessageType<ClusterConfig_S
                 case /* octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation geolocation */ 1:
                     message.geolocation = ClusterConfig_Spec_Authentication_Geolocation.internalBinaryRead(reader, reader.uint32(), options, message.geolocation);
                     break;
+                case /* octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login login */ 2:
+                    message.login = ClusterConfig_Spec_Authentication_Login.internalBinaryRead(reader, reader.uint32(), options, message.login);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -44035,6 +44033,9 @@ class ClusterConfig_Spec_Authentication$Type extends MessageType<ClusterConfig_S
         /* octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation geolocation = 1; */
         if (message.geolocation)
             ClusterConfig_Spec_Authentication_Geolocation.internalBinaryWrite(message.geolocation, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login login = 2; */
+        if (message.login)
+            ClusterConfig_Spec_Authentication_Login.internalBinaryWrite(message.login, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -44651,6 +44652,122 @@ class ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth_Query_Val
  * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Query.Value
  */
 export const ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth_Query_Value = new ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth_Query_Value$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Spec_Authentication_Login$Type extends MessageType<ClusterConfig_Spec_Authentication_Login> {
+    constructor() {
+        super("octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login", [
+            { no: 1, name: "icon", kind: "message", T: () => ClusterConfig_Spec_Authentication_Login_Icon }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Spec_Authentication_Login>): ClusterConfig_Spec_Authentication_Login {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Spec_Authentication_Login>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Spec_Authentication_Login): ClusterConfig_Spec_Authentication_Login {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login.Icon icon */ 1:
+                    message.icon = ClusterConfig_Spec_Authentication_Login_Icon.internalBinaryRead(reader, reader.uint32(), options, message.icon);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Spec_Authentication_Login, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login.Icon icon = 1; */
+        if (message.icon)
+            ClusterConfig_Spec_Authentication_Login_Icon.internalBinaryWrite(message.icon, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login
+ */
+export const ClusterConfig_Spec_Authentication_Login = new ClusterConfig_Spec_Authentication_Login$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Spec_Authentication_Login_Icon$Type extends MessageType<ClusterConfig_Spec_Authentication_Login_Icon> {
+    constructor() {
+        super("octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login.Icon", [
+            { no: 1, name: "inline", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "inlineBytes", kind: "scalar", oneof: "type", T: 12 /*ScalarType.BYTES*/ },
+            { no: 3, name: "fromConfig", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Spec_Authentication_Login_Icon>): ClusterConfig_Spec_Authentication_Login_Icon {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Spec_Authentication_Login_Icon>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Spec_Authentication_Login_Icon): ClusterConfig_Spec_Authentication_Login_Icon {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string inline */ 1:
+                    message.type = {
+                        oneofKind: "inline",
+                        inline: reader.string()
+                    };
+                    break;
+                case /* bytes inlineBytes */ 2:
+                    message.type = {
+                        oneofKind: "inlineBytes",
+                        inlineBytes: reader.bytes()
+                    };
+                    break;
+                case /* string fromConfig */ 3:
+                    message.type = {
+                        oneofKind: "fromConfig",
+                        fromConfig: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Spec_Authentication_Login_Icon, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string inline = 1; */
+        if (message.type.oneofKind === "inline")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.inline);
+        /* bytes inlineBytes = 2; */
+        if (message.type.oneofKind === "inlineBytes")
+            writer.tag(2, WireType.LengthDelimited).bytes(message.type.inlineBytes);
+        /* string fromConfig = 3; */
+        if (message.type.oneofKind === "fromConfig")
+            writer.tag(3, WireType.LengthDelimited).string(message.type.fromConfig);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login.Icon
+ */
+export const ClusterConfig_Spec_Authentication_Login_Icon = new ClusterConfig_Spec_Authentication_Login_Icon$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class ClusterConfig_Status$Type extends MessageType<ClusterConfig_Status> {
     constructor() {

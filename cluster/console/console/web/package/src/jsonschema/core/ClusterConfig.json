@@ -87,6 +87,11 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation",
                     "additionalProperties": false,
                     "description": "Geolocation sets the geolocation resolution of the authenticating clients"
+                },
+                "login": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login",
+                    "additionalProperties": false,
+                    "description": "Login sets the options of the Cluster's web login page"
                 }
             },
             "additionalProperties": false,
@@ -461,6 +466,83 @@
             "title": "Value",
             "description": "Value is the value of the query parameter"
         },
+        "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login": {
+            "properties": {
+                "icon": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login.Icon",
+                    "additionalProperties": false,
+                    "description": "Icon overrides the default Octelium logo that is shown on top of the web login page"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Login",
+            "description": "Login sets the options of the Cluster's web login page"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Login.Icon": {
+            "properties": {
+                "inline": {
+                    "type": "string",
+                    "description": "Inline sets the icon's content as a string (e.g. an SVG document). The inline content cannot exceed 32 KiB."
+                },
+                "inlineBytes": {
+                    "type": "string",
+                    "description": "InlineBytes sets the icon's content as an array of bytes (e.g. a PNG image). The inline content cannot exceed 32 KiB.",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "fromConfig": {
+                    "type": "string",
+                    "description": "FromConfig sets the name of the Config whose data contains the icon's content. This is the recommended way for larger icons. The Config's content cannot exceed 128 KiB."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "inline"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "inlineBytes"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "fromConfig"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "inline"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "inlineBytes"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "fromConfig"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Icon",
+            "description": "Icon overrides the default Octelium logo that is shown on top of the web login page (e.g. with your company's logo). The icon is shown inside the same dedicated space of the default logo while keeping its aspect ratio. The supported formats are SVG, PNG, JPEG and WebP and the format is detected from the icon's content. An invalid or unsupported icon falls back to the default Octelium logo."
+        },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator": {
             "properties": {
                 "registrationEnforcementRules": {
@@ -728,11 +810,6 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Device.Workload",
                     "additionalProperties": false,
                     "description": "Workload sets Device options for WORKLOAD Users"
-                },
-                "probing": {
-                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Device.Probing",
-                    "additionalProperties": false,
-                    "description": "Probing sets the device probing options"
                 }
             },
             "additionalProperties": false,
@@ -762,18 +839,6 @@
             "type": "object",
             "title": "Human",
             "description": "Human sets the Device defaults of the HUMAN Users"
-        },
-        "octelium.api.main.core.v1.ClusterConfig.Spec.Device.Probing": {
-            "properties": {
-                "isDisabled": {
-                    "type": "boolean",
-                    "description": "IsDisabled disables running Probes on the Devices"
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "Probing",
-            "description": "Probing sets the Cluster-wide options of running Probes on the Devices"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Device.Workload": {
             "properties": {
