@@ -6,9 +6,9 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20261114160625-c2433476ab35
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261114160625-c2433476ab35
-	github.com/octelium/octelium/pkg v0.0.0-20261114160625-c2433476ab35
+	github.com/octelium/octelium/cluster/common v0.0.0-20261125030142-32124dd30ea5
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261125030142-32124dd30ea5
+	github.com/octelium/octelium/pkg v0.0.0-20261125030142-32124dd30ea5
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.1
 	go.uber.org/zap v1.28.0
@@ -48,8 +48,8 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	golang.org/x/net v0.62.0 // indirect
-	golang.org/x/sys v0.49.0 // indirect
-	golang.org/x/text v0.43.0 // indirect
+	golang.org/x/sys v0.50.0 // indirect
+	golang.org/x/text v0.44.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260928230214-8a89bd6388cc // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260928230214-8a89bd6388cc // indirect
 	google.golang.org/protobuf v1.36.12 // indirect

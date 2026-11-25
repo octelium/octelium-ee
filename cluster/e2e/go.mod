@@ -4,11 +4,11 @@ go 1.27.4
 
 require (
 	github.com/go-resty/resty/v2 v2.17.2
-	github.com/octelium/octelium/apis v0.51.0
-	github.com/octelium/octelium/cluster/common v0.0.0-20261114160625-c2433476ab35
-	github.com/octelium/octelium/cluster/e2e v0.0.0-20261114160625-c2433476ab35
-	github.com/octelium/octelium/octelium-go v0.51.0
-	github.com/octelium/octelium/pkg v0.0.0-20261114160625-c2433476ab35
+	github.com/octelium/octelium/apis v0.52.0
+	github.com/octelium/octelium/cluster/common v0.0.0-20261125030142-32124dd30ea5
+	github.com/octelium/octelium/cluster/e2e v0.0.0-20261125030142-32124dd30ea5
+	github.com/octelium/octelium/octelium-go v0.52.1-0.20261125030142-32124dd30ea5
+	github.com/octelium/octelium/pkg v0.0.0-20261125030142-32124dd30ea5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/collector/pdata v1.71.0
@@ -89,8 +89,8 @@ require (
 	github.com/nats-io/nats.go v1.46.1 // indirect
 	github.com/nats-io/nkeys v0.4.11 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/octelium/octelium/client/common v0.0.0-20261114160625-c2433476ab35 // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261114160625-c2433476ab35 // indirect
+	github.com/octelium/octelium/client/common v0.0.0-20261125030142-32124dd30ea5 // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20261125030142-32124dd30ea5 // indirect
 	github.com/openai/openai-go/v3 v3.2.0 // indirect
 	github.com/paulmach/orb v0.11.1 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
@@ -125,14 +125,14 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.6 // indirect
-	golang.org/x/crypto v0.58.0 // indirect
+	golang.org/x/crypto v0.59.0 // indirect
 	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc // indirect
 	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/oauth2 v0.38.0 // indirect
-	golang.org/x/sync v0.24.0 // indirect
-	golang.org/x/sys v0.49.0 // indirect
-	golang.org/x/term v0.47.0 // indirect
-	golang.org/x/text v0.43.0 // indirect
+	golang.org/x/sync v0.25.0 // indirect
+	golang.org/x/sys v0.50.0 // indirect
+	golang.org/x/term v0.48.0 // indirect
+	golang.org/x/text v0.44.0 // indirect
 	golang.org/x/time v0.16.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard v0.0.0-20261024220952-b3bc704ef0ee // indirect
