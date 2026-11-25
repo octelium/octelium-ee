@@ -175,6 +175,10 @@ func (c *controller) run(ctx context.Context) (*corev1.Region, error) {
 		return nil, err
 	}
 
+	if err := regionutils.CheckJoinCoreVersion(versions.core); err != nil {
+		return nil, err
+	}
+
 	rgnList, err := c.octeliumC.CoreC().ListRegion(ctx, &rmetav1.ListOptions{})
 	if err != nil {
 		return nil, err

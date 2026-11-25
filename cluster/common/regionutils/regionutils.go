@@ -9,6 +9,7 @@
 package regionutils
 
 import (
+	"github.com/hashicorp/go-version"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
@@ -19,6 +20,8 @@ import (
 )
 
 const DefaultRegion = "default"
+
+const MinJoinCoreVersion = "0.53.0"
 
 const (
 	PackageCore       = "octelium"
@@ -109,4 +112,18 @@ func IsPackageSetWithin(rgn *corev1.Region, pkg string, from, to *timestamppb.Ti
 
 func IsJoinCompleted(rgn *corev1.Region) bool {
 	return IsJoinedRegion(rgn) && HasPackage(rgn, PackageEnterprise)
+}
+
+func CheckJoinCoreVersion(coreVersion string) error {
+	cur, err := version.NewSemver(coreVersion)
+	if err != nil {
+		return nil
+	}
+
+	if cur.Core().LessThan(version.Must(version.NewSemver(MinJoinCoreVersion))) {
+		return errors.Errorf("The core package version %s is older than %s. Upgrade the Cluster core package before joining Regions",
+			coreVersion, MinJoinCoreVersion)
+	}
+
+	return nil
 }

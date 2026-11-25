@@ -600,6 +600,47 @@ func TestJoinRejectsForeignTargetBeforePreparation(t *testing.T) {
 	}
 }
 
+func TestJoinRejectsIncompatibleCoreVersionBeforePreparation(t *testing.T) {
+	for _, tc := range []struct {
+		version string
+		ok      bool
+	}{
+		{version: "0.52.0"},
+		{version: "v0.39.0"},
+		{version: "0.53.0", ok: true},
+		{version: "main", ok: true},
+	} {
+		t.Run(tc.version, func(t *testing.T) {
+			ctx := t.Context()
+			env := newTestJoinEnv(t, true)
+			env.simulateGenesis(t, "")
+
+			defaultRgn, err := env.tst.C.OcteliumC.CoreC().GetRegion(ctx, &rmetav1.GetOptions{Name: "default"})
+			require.NoError(t, err)
+			defaultRgn.Status.VersionInfoMap[regionutils.PackageCore].Version = tc.version
+			_, err = env.tst.C.OcteliumC.CoreC().UpdateRegion(ctx, defaultRgn)
+			require.NoError(t, err)
+
+			_, err = JoinCluster(ctx, env.opts(getTestJoinRequest("west")))
+			if tc.ok {
+				require.NoError(t, err)
+				assert.NotEmpty(t, env.jobs)
+				return
+			}
+
+			require.ErrorContains(t, err, tc.version)
+			assert.ErrorContains(t, err, "Upgrade the Cluster core package")
+			for _, action := range env.targetC.Actions() {
+				assert.Equal(t, "get", action.GetVerb())
+			}
+			for _, action := range env.localC.Actions() {
+				assert.Contains(t, []string{"get", "list"}, action.GetVerb())
+			}
+			assert.Empty(t, env.jobs)
+		})
+	}
+}
+
 func TestJoinTargetChecksRetryTransientReads(t *testing.T) {
 	for _, resource := range []string{"namespaces", "secrets"} {
 		for _, transient := range []bool{false, true} {

@@ -5,6 +5,7 @@ go 1.27.4
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.32.1
 	github.com/google/uuid v1.6.0
+	github.com/hashicorp/go-version v1.9.0
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/cluster/common v0.0.0-20261114160625-c2433476ab35

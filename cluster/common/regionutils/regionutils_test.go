@@ -101,3 +101,31 @@ func TestIsPackageSetWithin(t *testing.T) {
 	assert.False(t, IsPackageSetWithin(rgn, "unknown", at(0), nil))
 	assert.False(t, IsPackageSetWithin(nil, PackageCore, at(0), nil))
 }
+
+func TestCheckJoinCoreVersion(t *testing.T) {
+	for _, tc := range []struct {
+		version string
+		ok      bool
+	}{
+		{"0.53.0", true},
+		{"v0.53.0", true},
+		{"0.53.0-rc1", true},
+		{"0.60.1", true},
+		{"1.0.0", true},
+		{"9.9.9", true},
+		{"main", true},
+		{"latest", true},
+		{"0.52.0", false},
+		{"v0.52.9", false},
+		{"0.39.0", false},
+	} {
+		t.Run(tc.version, func(t *testing.T) {
+			err := CheckJoinCoreVersion(tc.version)
+			if tc.ok {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tc.version)
+			}
+		})
+	}
+}
