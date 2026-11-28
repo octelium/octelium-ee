@@ -422,6 +422,8 @@ func tstUserCtx() context.Context {
 }
 
 func TestGetPortalURL(t *testing.T) {
+	t.Setenv("OCTELIUM_DEV", "true")
+
 	assert.Equal(t, devPortalURL, getPortalURL())
 
 	for _, tc := range []struct {
@@ -785,6 +787,8 @@ func TestPortalClientInvalidateToken(t *testing.T) {
 }
 
 func TestServer(t *testing.T) {
+	t.Setenv("OCTELIUM_DEV", "true")
+
 	ctx := context.Background()
 	tst, err := tests.Initialize(nil)
 	require.Nil(t, err)
